@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon id="plugin.video.jackktorr" name="haru" version="1.8.0" provider-name="sam-max">
+  <requires>
+    <import addon="xbmc.python" version="3.00.0"/>
+    <import addon="script.module.resolveurl" version="5.1.61"/>
+    <import addon="script.module.requests" version="2.25.0"/>
+    <import addon="script.module.beautifulsoup4" version="4.9.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="jackktorr.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <reuselanguageinvoker>true</reuselanguageinvoker>
+    <summary lang="en">haru</summary>
+    <description lang="en">a simple anime addon</description>
+    <license>GPL-2.0-only</license>
+    <source>https://github.com/</source>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
+
+
