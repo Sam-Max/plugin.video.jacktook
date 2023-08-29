@@ -3,7 +3,7 @@
 
     <category label="Torrent">
         <setting label="Torrent Service:" type="lsep"/>
-        <setting id="torrent_clients" type="labelenum" label="Engine/Client" values="Select|Torrest" default="Torrest"/>
+        <setting id="torrent_clients" type="labelenum" label="Client" values="Select|Torrest" default="Torrest"/>
     </category>
 
      <category label="Jackett">

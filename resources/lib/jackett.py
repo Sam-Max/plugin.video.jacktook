@@ -1,14 +1,15 @@
 
+import os
 import re
 import requests
 from resources.lib.client import Jackett
 from resources.lib.database import Database
-from resources.lib.util import bytes_to_human_readable, get_setting, hide_busy_dialog, notify, sort_results
+from resources.lib.util import ADDON_PATH, bytes_to_human_readable, get_setting, hide_busy_dialog, notify, sort_results
 from resources.lib.util import HANDLE, get_url, hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 import xbmc
-import xbmcgui
-import xbmcplugin
+from xbmcgui import ListItem, Dialog
+from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 from urllib.parse import quote
 
 
@@ -78,27 +79,27 @@ def show_results(result, client):
 
         torrent_title = f"[{tracker}] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-        list_item = xbmcgui.ListItem(label=torrent_title)
+        list_item = ListItem(label=torrent_title)
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
         list_item.setInfo(
             "video",
             {"title": title, "mediatype": "video", "plot": description},
         )
         list_item.setProperty("IsPlayable", "true")
         is_folder = False
-        xbmcplugin.addDirectoryItem(
-            HANDLE,
+        addDirectoryItem(HANDLE,
             get_url(action="play_jackett", title=title, magnet=magnet, url=url),
             list_item,
             is_folder,
         )
 
-    xbmcplugin.endOfDirectory(HANDLE)
+    endOfDirectory(HANDLE)
 
 def clear():
-    dialog = xbmcgui.Dialog()
+    dialog = Dialog()
     confirmed = dialog.yesno(
         "Clear History",
-        "Do you want to clear this history list?\n\nWatched statuses will be preserved.",
+        "Do you want to clear this history list?.",
     )
     if confirmed:
         db.database["jt:history"] = {}
@@ -106,24 +107,21 @@ def clear():
         xbmc.executebuiltin("Container.Refresh")
 
 def history():
-    xbmcplugin.setPluginCategory(HANDLE, f"Jackett Torrents - History")
+    setPluginCategory(HANDLE, f"Jackett Torrents - History")
 
-    list_item = xbmcgui.ListItem(label="Clear History")
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="clear_history"), list_item
-    )
+    list_item = ListItem(label="Clear History")
+    addDirectoryItem(HANDLE, get_url(action="clear_history"), list_item)
 
     for title, data in reversed(db.database["jt:history"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
         label = f"[COLOR palevioletred]{title} [I][LIGHT]— {formatted_time}[/LIGHT][/I][/COLOR]"
-        list_item = xbmcgui.ListItem(label=label)
+        list_item = ListItem(label=label)
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
         list_item.setProperty("IsPlayable", "true")
         is_folder = False
-        xbmcplugin.addDirectoryItem(
-            HANDLE, 
-            get_url(action= "play_jackett", title=title, magnet=data.get("magnet", None),
-                url=data.get("url", None)),
+        addDirectoryItem(HANDLE, 
+            get_url(action= "play_jackett", title=title, magnet=data.get("magnet", None), url=data.get("url", None)),
             list_item, 
             is_folder)
 
-    xbmcplugin.endOfDirectory(HANDLE)
+    endOfDirectory(HANDLE)

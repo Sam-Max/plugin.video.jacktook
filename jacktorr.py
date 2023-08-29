@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import inspect
+import os
 import sys
 from urllib.parse import parse_qsl, quote
 from resources.lib.jackett import clear, get_client, history, search_jackett
 import xbmc
-import xbmcgui
-import xbmcplugin
+from xbmcgui import ListItem
+from xbmcplugin import addDirectoryItem, endOfDirectory, setResolvedUrl, setPluginCategory
 from resources.lib.util import *
 
 
@@ -17,40 +18,29 @@ def register(f):
     return f
 
 def main_menu():
-    xbmcplugin.setPluginCategory(HANDLE, "Main Menu")
+    setPluginCategory(HANDLE, "Main Menu")
+    
+    item = ListItem(label="Jackett - Search")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
+    addDirectoryItem(HANDLE, get_url(action="jackett_search"), item, isFolder= True)
 
-    xbmcplugin.setContent(HANDLE, "videos")
-    item = xbmcgui.ListItem(label="Jackett - Search")
-    is_folder = True
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_search"), item, is_folder
-    )
+    item = ListItem(label="Jackett - TV Search")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
+    addDirectoryItem(HANDLE, get_url(action="jackett_tvsearch"), item,  isFolder= True)
 
-    item = xbmcgui.ListItem(label="Jackett - TV Search")
-    is_folder = True
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_tvsearch"), item, is_folder
-    )
+    item = ListItem(label="Jackett - Movie Search")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
+    addDirectoryItem(HANDLE, get_url(action="jackett_moviesearch"), item,  isFolder= True)
 
-    item = xbmcgui.ListItem(label="Jackett - Movie Search")
-    is_folder = True
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_moviesearch"), item, is_folder
-    )
+    item = ListItem(label="Jackett Nyaa - Search")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
+    addDirectoryItem(HANDLE, get_url(action="jackett_nyaa_search"), item, isFolder= True)
 
-    item = xbmcgui.ListItem(label="Jackett Nyaa - Search")
-    is_folder = True
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_nyaa_search"), item, is_folder
-    )
-
-    item = xbmcgui.ListItem(label="Jackett - History")
-    is_folder = True
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_history"), item, is_folder
-    )
-
-    xbmcplugin.endOfDirectory(HANDLE)
+    item = ListItem(label="Jackett - History")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
+    addDirectoryItem(HANDLE, get_url(action="jackett_history"), item,  isFolder= True)
+   
+    endOfDirectory(HANDLE)
     
 def _play(magnet, url):
     if magnet == "None":
@@ -71,7 +61,7 @@ def _play(magnet, url):
         else:
             dialog_ok("jacktorr", 'You need to install the Torrent Engine/Client: Torrest (plugin.video.torrest)')
             return 
-    xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
+    setResolvedUrl(HANDLE, True, listitem=play_item)
 
 @register
 def play_jackett(title, magnet, url):
