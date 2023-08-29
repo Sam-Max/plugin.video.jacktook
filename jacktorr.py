@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import inspect
-import os
 import sys
 from urllib.parse import parse_qsl, quote
 from resources.lib.jackett import clear, get_client, history, search_jackett
