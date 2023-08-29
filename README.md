@@ -1,7 +1,9 @@
 
 # Jacktorr
 
-A kodi addon that integrates Jackett with Torrest.
+A kodi addon that integrates Jackett with Torrest. 
+
+Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 ## Requirements.
 
