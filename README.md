@@ -1,7 +1,7 @@
 
-# jacktorrt
+# Jacktorr
 
-An addon that integrates jackett with torrest and debrid services.
+A kodi addon that integrates jackett with torrest.
 
 ## Requirements
 
@@ -10,6 +10,5 @@ An addon that integrates jackett with torrest and debrid services.
 ## Features
 
 - Jackett integration
-- Debrid Integration
 - Torrest Integration (torrent client)
 

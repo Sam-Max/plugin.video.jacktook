@@ -8,11 +8,12 @@
 
      <category label="Jackett">
         <setting label="Jackett Configuration:" type="lsep"/>
-        <setting id="jackett_apikey" type="text" label="Jackett API KEY" default=""/>
-        <setting id="jackett_url" type="text" label="Jackett URL" default=""/>
+        <setting id="jackett_apikey" type="text" label="Jackett Api Key" default=""/>
+        <setting id="jackett_url" type="text" label="Jackett Url" default=""/>
         <setting id="jackett_indexer" type="text" label="Indexer" default="all"/>
         <setting id="jackett_desc_length" type="number" label="Description length" default="100"/>
         <setting id="jackett_insecure" type="bool" label="Insecure connection" default="false"/>
+        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|PublishDate" default="Seeds"/>
     </category>
 
 </settings>
