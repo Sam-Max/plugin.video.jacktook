@@ -2,7 +2,6 @@
 import inspect
 import sys
 from urllib.parse import parse_qsl, quote
-import resolveurl
 from resources.lib.jackett import clear, get_client, history, search_jackett
 import xbmc
 import xbmcgui
@@ -53,24 +52,13 @@ def main_menu():
 
     xbmcplugin.endOfDirectory(HANDLE)
     
-@register
-def settings():
-    xbmcplugin.setPluginCategory(HANDLE, "Settings")
-    xbmcplugin.setContent(HANDLE, "videos")
-
-    list_item = xbmcgui.ListItem(label="ResolveURL Settings")
-    is_folder = False
-    xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="resolveurl_settings"), list_item, is_folder
-    )
-
 def _play(magnet, url):
     if magnet == "None":
         magnet = None
     elif url == "None":
         url = None
 
-    torrent_client = get_setting('torrent_clients', default='Debrid')
+    torrent_client = get_setting('torrent_clients', default='Torrest')
     if torrent_client == 'Torrest':
         if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
             if magnet:
@@ -83,13 +71,6 @@ def _play(magnet, url):
         else:
             dialog_ok("jacktorr", 'You need to install the Torrent Engine/Client: Torrest (plugin.video.torrest)')
             return 
-    elif torrent_client == 'Debrid':
-        if magnet:
-            resolved_url = resolveurl.HostedMediaFile(url=magnet).resolve()
-        elif url:
-            resolved_url = resolveurl.HostedMediaFile(url=url).resolve()
-        play_item = xbmcgui.ListItem(path=resolved_url)
-   
     xbmcplugin.setResolvedUrl(HANDLE, True, listitem=play_item)
 
 @register
@@ -117,10 +98,6 @@ def jackett_nyaa_search():
 @register
 def jackett_history():
     history()
-
-@register
-def resolveurl_settings():
-    resolveurl.display_settings()
 
 @register
 def clear_history():

@@ -4,15 +4,13 @@ from urllib.parse import urlencode
 import xbmc
 import xbmcgui
 import xbmcaddon
-from resolveurl.lib import kodi
 from xbmc import executebuiltin
 
 
 _URL = sys.argv[0]
 HANDLE = int(sys.argv[1])
-VIDEO_FORMATS = list(filter(None, kodi.supported_video_extensions()))
-
 ADDON = xbmcaddon.Addon()
+
 ID = ADDON.getAddonInfo("id")
 NAME = ADDON.getAddonInfo("name")
 
