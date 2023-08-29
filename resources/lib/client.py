@@ -37,7 +37,7 @@ class Jackett():
                     url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
-                dialog_ok("jacktorr", f"The request to Jackett failed. ({r.status_code})")
+                dialog_ok("jacktorr", f"The request to Jackett failed. ({res.status_code})")
                 return None
             res_dict = json.loads(res.content)
             return res_dict
