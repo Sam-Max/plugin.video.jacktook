@@ -13,6 +13,7 @@ ADDON = xbmcaddon.Addon()
 
 ID = ADDON.getAddonInfo("id")
 NAME = ADDON.getAddonInfo("name")
+ADDON_PATH = ADDON.getAddonInfo("path")
 
 def get_setting(name, default=None):
     value = ADDON.getSetting(name)

@@ -75,9 +75,10 @@ def show_results(result, client):
         watched = client.is_torrent_watched(title)
         if watched:
             title = f"[COLOR palevioletred]{title}[/COLOR]"
-        title = f"[{tracker}] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-        list_item = xbmcgui.ListItem(label=title)
+        torrent_title = f"[{tracker}] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+
+        list_item = xbmcgui.ListItem(label=torrent_title)
         list_item.setInfo(
             "video",
             {"title": title, "mediatype": "video", "plot": description},

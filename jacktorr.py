@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import inspect
+import os
 import sys
 from urllib.parse import parse_qsl, quote
 from resources.lib.jackett import clear, get_client, history, search_jackett
@@ -20,34 +21,34 @@ def main_menu():
     xbmcplugin.setPluginCategory(HANDLE, "Main Menu")
 
     xbmcplugin.setContent(HANDLE, "videos")
-    list_item = xbmcgui.ListItem(label="Jackett - Search")
+    item = xbmcgui.ListItem(label="Jackett - Search")
     is_folder = True
     xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_search"), list_item, is_folder
+        HANDLE, get_url(action="jackett_search"), item, is_folder
     )
 
-    list_item = xbmcgui.ListItem(label="Jackett - TV Search")
+    item = xbmcgui.ListItem(label="Jackett - TV Search")
     is_folder = True
     xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_tvsearch"), list_item, is_folder
+        HANDLE, get_url(action="jackett_tvsearch"), item, is_folder
     )
 
-    list_item = xbmcgui.ListItem(label="Jackett - Movie Search")
+    item = xbmcgui.ListItem(label="Jackett - Movie Search")
     is_folder = True
     xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_moviesearch"), list_item, is_folder
+        HANDLE, get_url(action="jackett_moviesearch"), item, is_folder
     )
 
-    list_item = xbmcgui.ListItem(label="Jackett Nyaa - Search")
+    item = xbmcgui.ListItem(label="Jackett Nyaa - Search")
     is_folder = True
     xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_nyaa_search"), list_item, is_folder
+        HANDLE, get_url(action="jackett_nyaa_search"), item, is_folder
     )
 
-    list_item = xbmcgui.ListItem(label="Jackett - History")
+    item = xbmcgui.ListItem(label="Jackett - History")
     is_folder = True
     xbmcplugin.addDirectoryItem(
-        HANDLE, get_url(action="jackett_history"), list_item, is_folder
+        HANDLE, get_url(action="jackett_history"), item, is_folder
     )
 
     xbmcplugin.endOfDirectory(HANDLE)
