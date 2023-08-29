@@ -92,6 +92,6 @@ def sort_results(res):
         sorted_results = sorted(res['Results'], key=lambda r: int(r['Seeders']), reverse=True)
     elif sort_by == 'Size':
         sorted_results = sorted(res['Results'], key=lambda r: r['Size'], reverse=True)
-    elif sort_by == 'PublishDate':
+    elif sort_by == 'Date':
         sorted_results = sorted(res['Results'], key=lambda r: r['PublishDate'], reverse=True)
     return sorted_results
