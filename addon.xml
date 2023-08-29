@@ -11,7 +11,7 @@
     <summary lang="en">jacktorr</summary>
     <description lang="en">Kodi addon to integrate jackett with torrest</description>
     <license>GPL-2.0-only</license>
-    <source>https://github.com/</source>
+    <source>https://github.com/Sam-Max/plugin.video.jacktorr</source>
     <assets>
       <icon>icon.png</icon>
     </assets>
