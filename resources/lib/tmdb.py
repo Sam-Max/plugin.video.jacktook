@@ -1,9 +1,8 @@
 
 import os
-from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.objs.season import Season
-from resources.lib.tmdbv3api.objs.tv import TV
+from resources.lib.tmdbv3api.objs.trending import Trending
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.util import ADDON_PATH, HANDLE, get_setting, get_url, hide_busy_dialog, notify
 from xbmc import Keyboard
@@ -38,19 +37,19 @@ def search_tmdb(mode, page=1):
                     page=page,
                     type='multi')
     elif mode == 'movie':
-        movie= Movie()
-        popular = movie.popular(page=page)
+        trending = Trending()
+        movies = trending.movie_week(page=page)
         page += 1
-        show_results(popular, 
+        show_results(movies.results, 
                     action='search_jackett_tmdb_movie', 
                     next_action='next_page_movie', 
                     page=page,
                     type='movie')
     elif mode == 'tv':
-        tv = TV()
-        popular = tv.popular(page=page)
+        trending = Trending()
+        shows= trending.tv_day(page=page)
         page += 1
-        show_results(popular, 
+        show_results(shows.results, 
                     action='search_jackett_tmdb_tv', 
                     next_action='next_page_tv', 
                     page=page,
