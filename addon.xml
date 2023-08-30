@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon id="plugin.video.jacktorr" name="jacktorr" version="1.8.0" provider-name="sam-max">
+<addon id="plugin.video.jacktorr" name="jacktorr" version="1.0.0" provider-name="sam-max">
   <requires>
     <import addon="xbmc.python" version="3.00.0"/>
     <import addon="script.module.requests" version="2.25.0"/>
