@@ -15,6 +15,8 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 - Torrest Integration
 
+- TMDB Integration
+
 ## Steps.
 
 1. You need to deploy Jackett either on local or remote server. [Jackett](https://github.com/Jackett/Jackett)
