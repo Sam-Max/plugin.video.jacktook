@@ -29,24 +29,27 @@ def get_client():
     
     return Jackett(db, url, api_key)
 
-def search_jackett(tracker='', method=''):
+def search_jackett(query= '', tracker='', method=''):
     insecure = get_setting('jackett_insecure')
     if not insecure:
         # Disable the InsecureRequestWarning
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
     jackett = get_client()
-
-    keyboard = xbmc.Keyboard("", "Search for torrents:", False)
-    keyboard.doModal()
-    if keyboard.isConfirmed():
-        text = keyboard.getText().strip()
-    else:
-        hide_busy_dialog()
+    if not jackett:
         return
-    query = quote(text)
+    if query:
+        res = jackett.search(query, tracker, method, insecure)    
+    else:
+        keyboard = xbmc.Keyboard("", "Search for torrents:", False)
+        keyboard.doModal()
+        if keyboard.isConfirmed():
+            text = keyboard.getText().strip()
+        else:
+            hide_busy_dialog()
+            return
+        text = quote(text)
+        res = jackett.search(text, tracker, method, insecure)
 
-    res = jackett.search(query, tracker, method, insecure)
     if res:
         sorted_res= sort_results(res)
         show_results(sorted_res, jackett)

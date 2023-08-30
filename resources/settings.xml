@@ -16,6 +16,11 @@
         <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date" default="Seeds"/>
     </category>
 
+    <category label="TMDB">
+        <setting label="TMDB Configuration:" type="lsep"/>
+        <setting id="tmdb_apikey" type="text" label="TMDB Api Key" default=""/>
+    </category>
+
 </settings>
 
 </settings>

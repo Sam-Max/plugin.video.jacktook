@@ -8,9 +8,11 @@ import xbmc
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory, setResolvedUrl, setPluginCategory
 from resources.lib.util import *
+from resources.lib.tmdb import search_tmdb, tv_details
 
 
 routes = {}
+
 
 def register(f):
     argspec = inspect.getfullargspec(f)
@@ -19,24 +21,36 @@ def register(f):
 
 def main_menu():
     setPluginCategory(HANDLE, "Main Menu")
-    
-    item = ListItem(label="Jackett - Search")
+
+    item = ListItem(label="Search")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
+    addDirectoryItem(HANDLE, get_url(action="tmdb_multi"), item, isFolder= True)
+
+    item = ListItem(label="Search TV")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
+    addDirectoryItem(HANDLE, get_url(action="tmdb_tv"), item, isFolder= True)
+
+    item = ListItem(label="Search Movies")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
+    addDirectoryItem(HANDLE, get_url(action="tmdb_movie"), item, isFolder= True)
+
+    item = ListItem(label="Direct - Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_search"), item, isFolder= True)
 
-    item = ListItem(label="Jackett - TV Search")
+    item = ListItem(label="Direct - TV Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_tvsearch"), item,  isFolder= True)
 
-    item = ListItem(label="Jackett - Movie Search")
+    item = ListItem(label="Direct - Movie Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_moviesearch"), item,  isFolder= True)
 
-    item = ListItem(label="Jackett Nyaa - Search")
+    item = ListItem(label="Direct Nyaa - Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_nyaa_search"), item, isFolder= True)
 
-    item = ListItem(label="Jackett - History")
+    item = ListItem(label="History")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_history"), item,  isFolder= True)
    
@@ -69,6 +83,24 @@ def play_jackett(title, magnet, url):
     jackett.set_watched(title=title, magnet=magnet, url=url)
     return _play(magnet, url)
 
+#################
+#####Search TMDB######
+
+@register
+def search_jackett_tmdb(query):
+    search_jackett(query=query)
+
+@register
+def search_jackett_tmdb_tv(query):
+    search_jackett(query=query, method='tv')
+
+@register
+def search_jackett_tmdb_movie(query):
+    search_jackett(query=query, method='movie')
+
+#################
+#####Search Direct######
+
 @register
 def jackett_search():
     search_jackett()
@@ -84,6 +116,38 @@ def jackett_moviesearch():
 @register
 def jackett_nyaa_search():
     search_jackett(tracker='nyaa')
+
+#################
+
+@register
+def tmdb_multi():
+    search_tmdb(mode='multi')
+
+@register
+def tmdb_tv():
+    search_tmdb(mode='tv')
+
+@register
+def tmdb_movie():
+    search_tmdb(mode='movie')
+
+@register
+def next_page_multi(page):
+     search_tmdb(mode='multi', page=int(page))
+
+@register
+def next_page_tv(page):
+     search_tmdb(mode='tv', page=int(page))
+
+@register
+def next_page_movie(page):
+     search_tmdb(mode='movie', page=int(page))
+
+@register
+def search_tv_details(id):
+    tv_details(int(id))
+
+#################
 
 @register
 def jackett_history():

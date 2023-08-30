@@ -24,14 +24,14 @@ class Jackett():
     def is_torrent_watched(self, title):
         return self.db.database["jt:watch"].get(title, False)
 
-    def search(self, query, tracker='', mode='', insecure=False):
+    def search(self, query, tracker='', method='', insecure=False):
         try:
             if tracker == 'nyaa':
                 url = f"{self.jackett_url}/api/v2.0/indexers/nyaasi/results?apikey={self.jackett_apikey}&Query={query}"
             else:
-                if mode == 'tv':
+                if method == 'tv':
                     url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=tvsearch&Query={query}"
-                elif mode == 'movie':
+                elif method == 'movie':
                     url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=movie&Query={query}"
                 else:
                     url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&Query={query}"
