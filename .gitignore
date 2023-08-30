@@ -7,5 +7,5 @@ test.py
 *.egg
 build
 htmlcov
-
+venv/
 __pycache__
