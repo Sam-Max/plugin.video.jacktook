@@ -80,7 +80,7 @@ def show_results(result, client):
         if watched:
             title = f"[COLOR palevioletred]{title}[/COLOR]"
 
-        torrent_title = f"[{tracker}] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+        torrent_title = f"{title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I] - [B][COLOR palevioletred]{tracker}[/COLOR][/B]"
 
         list_item = ListItem(label=torrent_title)
         list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})

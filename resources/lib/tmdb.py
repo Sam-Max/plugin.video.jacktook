@@ -10,7 +10,8 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 
-tmdb_base_image_url= "http://image.tmdb.org/t/p/w500"
+
+tmdb_img_url= "http://image.tmdb.org/t/p/"
 
 
 def search_tmdb(mode, page=1):
@@ -64,7 +65,7 @@ def tv_details(id):
         list_item = ListItem(label=title)
         url= ''
         if ep.still_path:
-            url = tmdb_base_image_url + ep.still_path
+            url = tmdb_img_url + 'w500' + ep.still_path
 
         list_item.setArt({'poster': url, "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
         list_item.setInfo("video",{"title": title, "mediatype": "video", "plot": f"{ep.overview}"})
@@ -84,16 +85,28 @@ def show_results(results, action, next_action, page, type=''):
                 title = res.name 
             if 'title' in res:
                 title= res.title
-        url= ''
+
+        poster= ''
+        backdrop_path= ''
         if res.poster_path:
-            url = tmdb_base_image_url + res.poster_path
+            poster= tmdb_img_url + 'w500' + res.poster_path
+        if res.backdrop_path:
+            backdrop_path= tmdb_img_url + 'w780' + res.backdrop_path
 
         list_item = ListItem(label=title)
-        list_item.setArt({'poster': url, "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
-        list_item.setInfo(
-            "video",
-            {"title": title, "mediatype": "video", "plot": f"{res.overview}"},
-        )
+        
+        list_item.setArt(
+            {'poster': poster, 
+             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
+             "fanart": backdrop_path,
+             })
+        
+        list_item.setInfo("video",
+            {"title": title, 
+             "mediatype": "video", 
+             "plot": f"{res.overview}"
+             })
+
         list_item.setProperty("IsPlayable", "false")
 
         addDirectoryItem(HANDLE, get_url(action=action, query=title), list_item, isFolder=True)
