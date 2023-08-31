@@ -30,3 +30,6 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 3. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest)
 
 4. Configure Torrest addon with a local o remote torrent server.
+
+
+Legal Disclaimer: This addon should only be used to access movies and TV shows not protected by copyright
