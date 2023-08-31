@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import sys
 from urllib.parse import urlencode
 import xbmc
@@ -94,4 +95,33 @@ def sort_results(res):
         sorted_results = sorted(res['Results'], key=lambda r: r['Size'], reverse=True)
     elif sort_by == 'Date':
         sorted_results = sorted(res['Results'], key=lambda r: r['PublishDate'], reverse=True)
+    elif sort_by == 'Quality':
+        sorted_results= filter_quality(res['Results'])
+    return sorted_results
+
+def filter_quality(results):
+    quality_720p = []
+    quality_1080p = []
+    quality_4k = []
+
+    for res in results:
+        matches = re.findall(r'\b\d+p\b|\b\d+k\b', res['Title'])
+
+        for match in matches:
+            if '720p' in match:
+                res['Title']= '[COLOR palevioletred][720p][/COLOR]' + res['Title']
+                res['Quality'] = '720p'
+                quality_720p.append(res)
+            elif '1080p' in match:
+                res['Title']= '[COLOR palevioletred][1080p][/COLOR]' + res['Title']
+                res['Quality'] = '1080p'
+                quality_1080p.append(res)
+            elif '4k' in match:
+                res['Title']= '[COLOR palevioletred][4k][/COLOR]' + res['Title']
+                res['Quality'] = '4k'
+                quality_4k.append(res)
+
+    combined_list = quality_720p + quality_1080p + quality_4k
+    sorted_results = sorted(combined_list, key=lambda r: r['Quality'], reverse=True)
+
     return sorted_results
