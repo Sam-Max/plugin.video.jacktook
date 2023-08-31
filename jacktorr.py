@@ -50,6 +50,10 @@ def main_menu():
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_nyaa_search"), item, isFolder= True)
 
+    item = ListItem(label="Settings")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "settings.png")})
+    addDirectoryItem(HANDLE, get_url(action="settings"), item,  isFolder= True)
+
     item = ListItem(label="History")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_history"), item,  isFolder= True)
@@ -148,6 +152,10 @@ def search_tv_details(id):
     tv_details(int(id))
 
 #################
+
+@register
+def settings():
+    addon_settings()
 
 @register
 def jackett_history():

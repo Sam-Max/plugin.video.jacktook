@@ -27,6 +27,9 @@ def get_setting(name, default=None):
     else:
         return value
 
+def addon_settings():
+    return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ID)
+
 def get_int_setting(setting):
     return int(get_setting(setting))
 
