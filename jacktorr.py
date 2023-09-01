@@ -2,11 +2,10 @@
 import inspect
 import os
 import sys
-from urllib.parse import parse_qsl, quote
-from resources.lib.jackett import clear, get_client, history, search_jackett
-import xbmc
+from urllib.parse import parse_qsl
+from resources.lib.jackett import clear, history, play, search_jackett
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory, setResolvedUrl, setPluginCategory
+from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 from resources.lib.util import *
 from resources.lib.tmdb import search_tmdb, tv_details
 
@@ -60,32 +59,9 @@ def main_menu():
    
     endOfDirectory(HANDLE)
     
-def _play(magnet, url):
-    if magnet == "None":
-        magnet = None
-    elif url == "None":
-        url = None
-
-    torrent_client = get_setting('torrent_clients', default='Torrest')
-    if torrent_client == 'Torrest':
-        if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
-            if magnet:
-                plugin_url = "plugin://plugin.video.torrest/play_magnet?magnet="
-                encoded_url = quote(magnet)
-            elif url:
-                plugin_url = "plugin://plugin.video.torrest/play_url?url="
-                encoded_url = quote(url)
-            play_item = xbmcgui.ListItem(path=plugin_url + encoded_url)
-        else:
-            dialog_ok("jacktorr", 'You need to install the Torrent Engine/Client: Torrest (plugin.video.torrest)')
-            return 
-    setResolvedUrl(HANDLE, True, listitem=play_item)
-
 @register
 def play_jackett(title, magnet, url):
-    jackett= get_client()
-    jackett.set_watched(title=title, magnet=magnet, url=url)
-    return _play(magnet, url)
+    play(title=title, magnet=magnet, url=url)
 
 #################
 #####Search TMDB######

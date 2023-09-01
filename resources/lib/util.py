@@ -98,8 +98,6 @@ def sort_results(res):
         sorted_results = sorted(res['Results'], key=lambda r: r['Size'], reverse=True)
     elif sort_by == 'Date':
         sorted_results = sorted(res['Results'], key=lambda r: r['PublishDate'], reverse=True)
-    elif sort_by == 'Quality':
-        sorted_results= filter_quality(res['Results'])
     return sorted_results
 
 def filter_quality(results):
@@ -112,15 +110,15 @@ def filter_quality(results):
 
         for match in matches:
             if '720p' in match:
-                res['Title']= '[B][COLOR orange]720p [/COLOR][/B]' + res['Title']
+                res['Title']= '[B][COLOR orange]720p - [/COLOR][/B]' + res['Title']
                 res['Quality'] = '720p'
                 quality_720p.append(res)
             elif '1080p' in match:
-                res['Title']= '[B][COLOR blue]1080p [/COLOR][/B]' + res['Title']
+                res['Title']= '[B][COLOR blue]1080p - [/COLOR][/B]' + res['Title']
                 res['Quality'] = '1080p'
                 quality_1080p.append(res)
             elif '4k' in match:
-                res['Title']= '[B][COLOR yellow]4k [/COLOR][/B]' + res['Title']
+                res['Title']= '[B][COLOR yellow]4k - [/COLOR][/B]' + res['Title']
                 res['Quality'] = '4k'
                 quality_4k.append(res)
 

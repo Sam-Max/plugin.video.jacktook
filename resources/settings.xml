@@ -2,17 +2,17 @@
 <settings>
     <category label="Torrent">
         <setting label="Torrent Service:" type="lsep"/>
-        <setting id="torrent_clients" type="labelenum" label="Client" values="Select|Torrest" default="Torrest"/>
+        <setting id="torrent_clients" type="labelenum" label="Client" values="Torrest|None" default="Torrest"/>
     </category>
 
      <category label="Jackett">
         <setting label="Jackett Configuration:" type="lsep"/>
         <setting id="jackett_apikey" type="text" label="Jackett Api Key" default=""/>
-        <setting id="jackett_url" type="text" label="Jackett Url" default=""/>
+        <setting id="jackett_host" type="text" label="Jackett Host" default=""/>
         <setting id="jackett_indexer" type="text" label="Indexer" default="all"/>
         <setting id="jackett_desc_length" type="number" label="Description length" default="100"/>
         <setting id="jackett_insecure" type="bool" label="Insecure connection" default="false"/>
-        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date|Quality" default="Seeds"/>
+        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date" default="Seeds"/>
     </category>
 
     <category label="TMDB">

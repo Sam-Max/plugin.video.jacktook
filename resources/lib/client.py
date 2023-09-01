@@ -5,10 +5,10 @@ from resources.lib.util import dialog_ok
 
 
 class Jackett():
-    def __init__(self, db, url, apikey) -> None:
+    def __init__(self, db, host, apikey) -> None:
         self.db = db
         self.jackett_apikey = apikey
-        self.jackett_url = url
+        self.jackett_host = host
 
     def set_watched(self, title, magnet, url):
         if title not in self.db.database["jt:watch"]:
@@ -27,14 +27,14 @@ class Jackett():
     def search(self, query, tracker='', method='', insecure=False):
         try:
             if tracker == 'nyaa':
-                url = f"{self.jackett_url}/api/v2.0/indexers/nyaasi/results?apikey={self.jackett_apikey}&Query={query}"
+                url = f"{self.jackett_host}/api/v2.0/indexers/nyaasi/results?apikey={self.jackett_apikey}&Query={query}"
             else:
                 if method == 'tv':
-                    url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=tvsearch&Query={query}"
+                    url = f"{self.jackett_host}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=tvsearch&Query={query}"
                 elif method == 'movie':
-                    url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=movie&Query={query}"
+                    url = f"{self.jackett_host}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&t=movie&Query={query}"
                 else:
-                    url = f"{self.jackett_url}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&Query={query}"
+                    url = f"{self.jackett_host}/api/v2.0/indexers/all/results?apikey={self.jackett_apikey}&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
                 dialog_ok("jacktorr", f"The request to Jackett failed. ({res.status_code})")

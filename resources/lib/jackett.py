@@ -4,22 +4,22 @@ import re
 import requests
 from resources.lib.client import Jackett
 from resources.lib.database import Database
-from resources.lib.util import ADDON_PATH, bytes_to_human_readable, get_setting, hide_busy_dialog, notify, sort_results
+from resources.lib.util import ADDON_PATH, bytes_to_human_readable, dialog_ok, filter_quality, get_setting, hide_busy_dialog, notify, sort_results
 from resources.lib.util import HANDLE, get_url, hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 import xbmc
 from xbmcgui import ListItem, Dialog
-from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
+from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory, setResolvedUrl
 from urllib.parse import quote
 
 
 db = Database()
 
 def get_client():
-    url = get_setting('jackett_url')
+    host = get_setting('jackett_host')
     api_key = get_setting('jackett_apikey')
 
-    if not url or not api_key:
+    if not host or not api_key:
         notify("You need to configure Jackett first")
         return
 
@@ -27,7 +27,7 @@ def get_client():
         notify("Jackett API key is invalid")
         return
     
-    return Jackett(db, url, api_key)
+    return Jackett(db, host, api_key)
 
 def search_jackett(query= '', tracker='', method=''):
     insecure = get_setting('jackett_insecure')
@@ -52,9 +52,33 @@ def search_jackett(query= '', tracker='', method=''):
 
     if res:
         sorted_res= sort_results(res)
-        show_results(sorted_res, jackett)
+        filtered_res= filter_quality(sorted_res)
+        show_results(filtered_res, jackett)
 
+def play(title, magnet, url):
+    jackett= get_client()
+    jackett.set_watched(title=title, magnet=magnet, url=url)
 
+    magnet = None if magnet == "None" else magnet
+    url = None if url == "None" else url
+
+    torrent_client = get_setting('torrent_clients')
+    if torrent_client == 'Torrest':
+        if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
+            if magnet:
+                plugin_url = "plugin://plugin.video.torrest/play_magnet?magnet="
+                encoded_url = quote(magnet)
+            elif url:
+                plugin_url = "plugin://plugin.video.torrest/play_url?url="
+                encoded_url = quote(url)
+            play_item = ListItem(path=plugin_url + encoded_url)
+            setResolvedUrl(HANDLE, True, listitem=play_item)
+        else:
+            dialog_ok("jacktorr", 'You need to install the Torrent Engine/Client: Torrest (plugin.video.torrest)')
+            return 
+    else:
+        notify("You need to select a torrent client")
+    
 def show_results(result, client):
     description_length = int(get_setting('jackett_desc_length'))
 
@@ -80,7 +104,7 @@ def show_results(result, client):
         if watched:
             title = f"[COLOR palevioletred]{title}[/COLOR]"
 
-        torrent_title = f"{title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I] - [B][COLOR palevioletred]{tracker}[/COLOR][/B]"
+        torrent_title = f"[B][COLOR palevioletred][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
         list_item = ListItem(label=torrent_title)
         list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
