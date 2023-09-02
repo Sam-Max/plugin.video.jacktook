@@ -34,9 +34,38 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 7. Configure Torrest addon with the Torrest service that you deployed on step 4.
 
 
-Note:
+**Note**:
 
 - You can deploy the Torrest service and Jackket either on local or on a remote server.
 
+## How to run Torrest service using Docker:
 
-Legal Disclaimer: This addon should only be used to access movies and TV shows not protected by copyright
+1. Create a Dockerfile with the following content (make sure to check before the latest `VERSION` of the binary and your `OS` and `ARCH` and update accordingly).
+
+```
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y curl unzip
+
+ARG VERSION=0.0.4 OS=linux ARCH=x64
+
+RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSION}/torrest.${VERSION}.${OS}_${ARCH}.zip -o torrest.zip \
+    && unzip torrest.zip -d /usr/local/lib \
+    && rm torrest.zip
+
+RUN chmod +x /usr/local/lib/torrest
+
+CMD ["/usr/local/lib/torrest"]
+```
+
+2. Build the Dockerfile
+
+    docker build -t torrest-cpp .
+
+2. Run the container on port 8080 (default port).
+    
+    docker run -p 8080:8080 torrest-cpp
+
+## Legal Disclaimer:
+
+This addon should only be used to access movies and TV shows not protected by copyright
