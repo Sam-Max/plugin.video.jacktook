@@ -1,12 +1,13 @@
 
-## 1.0.0 (2023-08-28)
-
+## 0.0.1 (2023-09-02)
 
 ### Features
 
-* 
+    *  Jackett integration
 
-### Bug Fixes
+    *  Torrest Integration
 
-* 
+    *  TMDB Integration
+
+
 
