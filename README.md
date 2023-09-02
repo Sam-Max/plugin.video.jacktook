@@ -31,12 +31,17 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 6. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest)
 
-7. Configure Torrest addon with the Torrest service that you deployed on step 4.
+7. Configure Torrest addon with the Torrest service that you deployed on step 5.
 
 
 **Note**:
 
-- You can deploy the Torrest service and Jackket either on local or on a remote server.
+- You can deploy the Torrest service and Jackett either on local or on a remote server.
+
+
+## How to run Jackett service using Docker:
+
+Detailed instructions are available at [LinuxServer.io Jackett Docker](https://hub.docker.com/r/linuxserver/jackett/) 
 
 ## How to run Torrest service using Docker:
 
@@ -62,9 +67,10 @@ CMD ["/usr/local/lib/torrest"]
 
     docker build -t torrest-cpp .
 
-2. Run the container on port 8080 (default port).
+3. Run the container on port 8080 (default port).
     
     docker run -p 8080:8080 torrest-cpp
+
 
 ## Legal Disclaimer:
 
