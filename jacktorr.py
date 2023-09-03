@@ -45,9 +45,9 @@ def main_menu():
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_moviesearch"), item,  isFolder= True)
 
-    item = ListItem(label="Direct Anime - Search")
+    item = ListItem(label="Direct - Anime Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_nyaa_search"), item, isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="jackett_anime_search"), item, isFolder= True)
 
     item = ListItem(label="Settings")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "settings.png")})
@@ -94,7 +94,7 @@ def jackett_moviesearch():
     search_jackett(method='movie')
 
 @register
-def jackett_nyaa_search():
+def jackett_anime_search():
     search_jackett(tracker='nyaa')
 
 #################

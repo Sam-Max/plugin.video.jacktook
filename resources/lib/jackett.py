@@ -137,6 +137,7 @@ def history():
     setPluginCategory(HANDLE, f"Jackett Torrents - History")
 
     list_item = ListItem(label="Clear History")
+    
     addDirectoryItem(HANDLE, get_url(action="clear_history"), list_item)
 
     for title, data in reversed(db.database["jt:history"].items()):

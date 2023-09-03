@@ -76,7 +76,11 @@ CMD ["/usr/local/lib/torrest"]
     
     docker run -p 8080:8080 torrest-cpp
 
+## Screenshots:
+
+![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktorr/master/resources/screenshots/jacktorr.png)
 
 ## Legal Disclaimer:
 
 This addon should only be used to access movies and TV shows not protected by copyright
+
