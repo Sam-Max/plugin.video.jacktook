@@ -45,7 +45,7 @@ def main_menu():
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_moviesearch"), item,  isFolder= True)
 
-    item = ListItem(label="Direct Nyaa - Search")
+    item = ListItem(label="Direct Anime - Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(HANDLE, get_url(action="jackett_nyaa_search"), item, isFolder= True)
 
