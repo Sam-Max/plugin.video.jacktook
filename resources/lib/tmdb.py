@@ -4,7 +4,7 @@ from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.trending import Trending
 from resources.lib.tmdbv3api.tmdb import TMDb
-from resources.lib.util import ADDON_PATH, HANDLE, get_setting, get_url, hide_busy_dialog, notify
+from resources.lib.kodi import ADDON_PATH, HANDLE, get_setting, get_url, hide_busy_dialog, notify
 from xbmc import Keyboard
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -33,7 +33,7 @@ def search_tmdb(mode, page=1):
         search = Search()
         results = search.multi(str(text), page=page)
         show_results(results,
-                    action='search_jackett_tmdb', 
+                    action='tmdb_search', 
                     next_action='next_page_multi', 
                     page=page,
                     type='multi')
@@ -42,7 +42,7 @@ def search_tmdb(mode, page=1):
         movies = trending.movie_week(page=page)
         page += 1
         show_results(movies.results, 
-                    action='search_jackett_tmdb_movie', 
+                    action='search_tmdb_movie', 
                     next_action='next_page_movie', 
                     page=page,
                     type='movie')
@@ -51,7 +51,7 @@ def search_tmdb(mode, page=1):
         shows= trending.tv_day(page=page)
         page += 1
         show_results(shows.results, 
-                    action='search_jackett_tmdb_tv', 
+                    action='search_tmdb_tv', 
                     next_action='next_page_tv', 
                     page=page,
                     type='tv')
@@ -70,7 +70,7 @@ def tv_details(id):
         list_item.setArt({'poster': url, "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
         list_item.setInfo("video",{"title": title, "mediatype": "video", "plot": f"{ep.overview}"})
         list_item.setProperty("IsPlayable", "false")
-        addDirectoryItem(HANDLE, get_url(action='search_jackett_tmdb_tv', query=search_title), list_item, isFolder=True)
+        addDirectoryItem(HANDLE, get_url(action='search_tmdb_tv', query=search_title), list_item, isFolder=True)
 
     endOfDirectory(HANDLE)
 

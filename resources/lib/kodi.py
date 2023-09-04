@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import re
 import sys
 from urllib.parse import urlencode
 import xbmc
@@ -15,6 +14,7 @@ ADDON = xbmcaddon.Addon()
 ID = ADDON.getAddonInfo("id")
 NAME = ADDON.getAddonInfo("name")
 ADDON_PATH = ADDON.getAddonInfo("path")
+
 
 def get_setting(name, default=None):
     value = ADDON.getSetting(name)
@@ -79,50 +79,11 @@ def hide_busy_dialog():
     execute_builtin('Dialog.Close(busydialog)')
 
 def bytes_to_human_readable(size, unit="B"):
-    # Define the units and their respective size
     units = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5}
 
-    # Convert the size to the largest possible unit
     while size >= 1024 and unit != "PB":
         size /= 1024
         unit = list(units.keys())[list(units.values()).index(units[unit] + 1)]
 
     return f"{size:.2f} {unit}"
 
-def sort_results(res):
-    sort_by = get_setting('jackett_sort_by')
-
-    if sort_by == 'Seeds':
-        sorted_results = sorted(res['Results'], key=lambda r: int(r['Seeders']), reverse=True)
-    elif sort_by == 'Size':
-        sorted_results = sorted(res['Results'], key=lambda r: r['Size'], reverse=True)
-    elif sort_by == 'Date':
-        sorted_results = sorted(res['Results'], key=lambda r: r['PublishDate'], reverse=True)
-    return sorted_results
-
-def filter_quality(results):
-    quality_720p = []
-    quality_1080p = []
-    quality_4k = []
-
-    for res in results:
-        matches = re.findall(r'\b\d+p\b|\b\d+k\b', res['Title'])
-
-        for match in matches:
-            if '720p' in match:
-                res['Title']= '[B][COLOR orange]720p - [/COLOR][/B]' + res['Title']
-                res['Quality'] = '720p'
-                quality_720p.append(res)
-            elif '1080p' in match:
-                res['Title']= '[B][COLOR blue]1080p - [/COLOR][/B]' + res['Title']
-                res['Quality'] = '1080p'
-                quality_1080p.append(res)
-            elif '4k' in match:
-                res['Title']= '[B][COLOR yellow]4k - [/COLOR][/B]' + res['Title']
-                res['Quality'] = '4k'
-                quality_4k.append(res)
-
-    combined_list = quality_720p + quality_1080p + quality_4k
-    sorted_results = sorted(combined_list, key=lambda r: r['Quality'], reverse=False)
-
-    return sorted_results

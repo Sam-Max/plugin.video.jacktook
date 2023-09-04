@@ -3,10 +3,10 @@ import inspect
 import os
 import sys
 from urllib.parse import parse_qsl
-from resources.lib.jackett import clear, history, play, search_jackett
+from resources.lib.utils import clear, history, play, search_api
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
-from resources.lib.util import *
+from resources.lib.kodi import *
 from resources.lib.tmdb import search_tmdb, tv_details
 
 
@@ -35,19 +35,19 @@ def main_menu():
 
     item = ListItem(label="Direct - Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_search"), item, isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="search"), item, isFolder= True)
 
     item = ListItem(label="Direct - TV Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_tvsearch"), item,  isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="tv_search"), item,  isFolder= True)
 
     item = ListItem(label="Direct - Movie Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_moviesearch"), item,  isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="movie_search"), item,  isFolder= True)
 
     item = ListItem(label="Direct - Anime Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_anime_search"), item, isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="anime_search"), item, isFolder= True)
 
     item = ListItem(label="Settings")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "settings.png")})
@@ -55,7 +55,7 @@ def main_menu():
 
     item = ListItem(label="History")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
-    addDirectoryItem(HANDLE, get_url(action="jackett_history"), item,  isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="main_history"), item,  isFolder= True)
    
     endOfDirectory(HANDLE)
     
@@ -64,40 +64,7 @@ def play_jackett(title, magnet, url):
     play(title=title, magnet=magnet, url=url)
 
 #################
-#####Search TMDB######
-
-@register
-def search_jackett_tmdb(query):
-    search_jackett(query=query)
-
-@register
-def search_jackett_tmdb_tv(query):
-    search_jackett(query=query, method='tv')
-
-@register
-def search_jackett_tmdb_movie(query):
-    search_jackett(query=query, method='movie')
-
-#################
-#####Search Direct######
-
-@register
-def jackett_search():
-    search_jackett()
-
-@register
-def jackett_tvsearch():
-    search_jackett(method='tv')
-
-@register
-def jackett_moviesearch():
-    search_jackett(method='movie')
-
-@register
-def jackett_anime_search():
-    search_jackett(tracker='nyaa')
-
-#################
+######Main#######
 
 @register
 def tmdb_multi():
@@ -111,6 +78,43 @@ def tmdb_tv():
 def tmdb_movie():
     search_tmdb(mode='movie')
 
+#################
+#####Search TMDB######
+
+@register
+def tmdb_search(query):
+    search_api(query=query)
+
+@register
+def search_tmdb_tv(query):
+    search_api(query=query, method='tv')
+
+@register
+def search_tmdb_movie(query):
+    search_api(query=query, method='movie')
+
+#################
+#####Search Direct######
+
+@register
+def search():
+    search_api()
+
+@register
+def tv_search():
+    search_api(method='tv')
+
+@register
+def movie_search():
+    search_api(method='movie')
+
+@register
+def anime_search():
+    search_api(tracker='anime')
+
+#################
+######Next#######
+
 @register
 def next_page_multi(page):
      search_tmdb(mode='multi', page=int(page))
@@ -123,18 +127,18 @@ def next_page_tv(page):
 def next_page_movie(page):
      search_tmdb(mode='movie', page=int(page))
 
+#################
+
 @register
 def search_tv_details(id):
     tv_details(int(id))
-
-#################
 
 @register
 def settings():
     addon_settings()
 
 @register
-def jackett_history():
+def main_history():
     history()
 
 @register

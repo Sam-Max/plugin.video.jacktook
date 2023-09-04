@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pickle
-from resources.lib.util import ID
+from resources.lib.kodi import ID
 import xbmcvfs
 
 
@@ -33,3 +33,4 @@ class Database:
     def commit(self):
         with open(self.database_path, "wb") as f:
             pickle.dump(self.database, f)
+
