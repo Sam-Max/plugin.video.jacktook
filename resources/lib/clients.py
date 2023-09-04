@@ -21,11 +21,11 @@ class Jackett():
                     url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
-                dialog_ok("jacktorr", f"The request to Jackett failed. ({res.status_code})")
+                dialog_ok("jackewlarr", f"The request to Jackett failed. ({res.status_code})")
                 return
             return json.loads(res.content)
         except Exception as e:
-            dialog_ok("jacktorr", f"The request to Jackett failed. {str(e)}")
+            dialog_ok("jackewlarr", f"The request to Jackett failed. {str(e)}")
             return
 
 class Prowlarr():

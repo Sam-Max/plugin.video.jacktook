@@ -34,7 +34,7 @@ def get_int_setting(setting):
     return int(get_setting(setting))
 
 def log(x):
-    xbmc.log("[JACKTORR] " + str(x), xbmc.LOGINFO)
+    xbmc.log("[JACKEWLARR] " + str(x), xbmc.LOGINFO)
 
 
 def get_url(**kwargs):

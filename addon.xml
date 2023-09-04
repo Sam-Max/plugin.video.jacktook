@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon id="plugin.video.jacktorr" name="jacktorr" version="0.0.2" provider-name="Sam-Max">
+<addon id="plugin.video.jackewlarr" name="jackewlarr" version="0.0.2" provider-name="Sam-Max">
   <requires>
     <import addon="xbmc.python" version="3.00.0"/>
     <import addon="script.module.requests" version="2.25.1"/>
   </requires>
-  <extension point="xbmc.python.pluginsource" library="jacktorr.py">
+  <extension point="xbmc.python.pluginsource" library="jackewlarr.py">
     <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">jacktorr</summary>
-    <description lang="en">Kodi addon to integrate jackett with torrest</description>
+    <summary lang="en">jackewlarr</summary>
+    <description lang="en">Kodi addon to integrate jackett and prowlarr with torrest</description>
     <license>GPL-2.0-only</license>
-    <source>https://github.com/Sam-Max/plugin.video.jacktorr</source>
+    <source>https://github.com/Sam-Max/plugin.video.jackewlarr</source>
     <assets>
       <icon>icon.png</icon>
     </assets>
