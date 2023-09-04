@@ -45,7 +45,7 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jackewlarr), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.2/plugin.video.jackewlarr-0.0.2.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.3/plugin.video.jackewlarr-0.0.3.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## How to run Jackett service using Docker:
 
