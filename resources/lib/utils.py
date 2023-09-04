@@ -114,6 +114,10 @@ def play(title, magnet, url):
     magnet = None if magnet == "None" else magnet
     url = None if url == "None" else url
 
+    if magnet is None and url is None:
+        notify("No sources found to play")
+        return
+
     torrent_client = get_setting('torrent_client')
     if torrent_client == 'Torrest':
         if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
@@ -193,7 +197,17 @@ def show_results(result):
             size = bytes_to_human_readable(r['size'])
             seeders = r['seeders']
 
-            magnet = r.get('guid') or r.get('magnetUrl')
+            magnet= None
+            guid= r.get('guid')
+            if guid and is_magnet_link(guid):
+                magnet = r.get('guid')
+            else:
+                magnetUrl= r.get('magnetUrl')
+                if magnetUrl:
+                    res = requests.get(magnetUrl, allow_redirects=False)
+                    if 'location' in res.headers:
+                        magnet = res.headers['location']
+    
             url = r.get('downloadUrl')
             indexer = r['indexer']
 
@@ -333,3 +347,7 @@ def filter_quality(results):
     sorted_results = sorted(combined_list, key=lambda r: r['Quality'], reverse=False)
 
     return sorted_results
+
+def is_magnet_link(link):
+    pattern = r'^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}&dn=.+&tr=.+$'
+    return bool(re.match(pattern, link))
