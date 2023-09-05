@@ -16,7 +16,13 @@ from urllib.parse import quote
 
 db = Database()
 
-class Indexer:
+
+class Enum:
+    @classmethod
+    def values(cls):
+        return [value for name, value in vars(cls).items() if not name.startswith("_")]
+    
+class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
 
@@ -80,25 +86,25 @@ def search_api(query= '', tracker='', method=''):
                 return
 
     elif selected_indexer == Indexer.PROWLARR:
-        if indexers:= get_setting('prowlarr_indexer_ids'):
-            indexers= indexers.split()
+        indexers_ids = get_setting('prowlarr_indexer_ids')
+        indexers_ids_list= indexers_ids.split() if indexers_ids else None
 
-        if anime_indexers:= get_setting('prowlarr_anime_indexer_ids'):
-            anime_indexers= anime_indexers.split()
-
+        anime_ids= get_setting('prowlarr_anime_indexer_ids')
+        anime_indexers_ids_list= anime_ids.split() if anime_ids else None
+            
         prowlarr = get_client()
         if not prowlarr:
             return
         
         if query:
-            response = prowlarr.search(query, tracker, indexers, anime_indexers, method, prowlarr_insecured)    
+            response = prowlarr.search(query, tracker, indexers_ids_list, anime_indexers_ids_list, method, prowlarr_insecured)    
         else:
             keyboard = xbmc.Keyboard("", "Search for torrents:", False)
             keyboard.doModal()
             if keyboard.isConfirmed():
                 text = keyboard.getText().strip()
                 text = quote(text)
-                response = prowlarr.search(text, tracker, indexers, anime_indexers, method, prowlarr_insecured)
+                response = prowlarr.search(text, tracker, indexers_ids_list, anime_indexers_ids_list, method, prowlarr_insecured)
             else:
                 hide_busy_dialog()
                 return

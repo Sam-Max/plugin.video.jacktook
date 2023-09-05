@@ -40,7 +40,8 @@ class Prowlarr():
         try:
             if tracker == 'anime':
                 if anime_indexers:
-                    url = f"{self.host}/api/v1/search?query={query}&indexerIds={anime_indexers}"
+                    anime_indexers_url = ''.join([f"&IndexerIds={index}" for index in anime_indexers])
+                    url = f"{self.host}/api/v1/search?query={query}{anime_indexers_url}"
                 else:
                     dialog_ok("Prowlarr", f"You need to set Anime Indexer Ids for direct anime search")
                     return
@@ -52,7 +53,8 @@ class Prowlarr():
                 else:
                     url = f"{self.host}/api/v1/search?query={query}"
                 if indexers:
-                    url = url + f"&indexerIds={indexers}" 
+                    indexers_url = ''.join([f"&IndexerIds={index}" for index in indexers])
+                    url = url + indexers_url 
             res = requests.get(url, verify=insecure, headers=headers)
             if res.status_code != 200:
                 dialog_ok("Prowlarr", f"The request to Prowlarr failed. ({res.status_code})")

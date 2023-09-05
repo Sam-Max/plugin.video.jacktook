@@ -64,8 +64,7 @@ def compat(line1, line2, line3):
     return message
 
 def notify(message, image=None):
-    dialog = xbmcgui.Dialog()
-    dialog.notification(NAME, message, icon=image, sound=False)
+    dialog = xbmcgui.Dialog().notification(NAME, message, icon=image, sound=False)
     del dialog
 
 def dialog_ok(heading, line1, line2="", line3=""):

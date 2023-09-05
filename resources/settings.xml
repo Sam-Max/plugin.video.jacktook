@@ -19,8 +19,8 @@
         <setting label="Prowlarr Configuration:" type="lsep"/>
         <setting id="prowlarr_apikey" type="text" label="Prowlarr Api Key" default=""/>
         <setting id="prowlarr_host" type="text" label="Prowlarr Host" default=""/>
-        <setting id="prowlarr_indexer_ids" type="text" label="IndexerIds" default=""/>
-        <setting id="prowlarr_anime_indexer_ids" type="text" label="Anime IndexerIds" default=""/>
+        <setting id="prowlarr_indexer_ids" type="text" label="Indexer Ids" default=""/>
+        <setting id="prowlarr_anime_indexer_ids" type="text" label="Anime Indexer Ids" default=""/>
         <setting id="prowlarr_desc_length" type="number" label="Description length" default="100"/>
         <setting id="prowlarr_insecured" type="bool" label="Insecured connection" default="false"/>
         <setting id="prowlarr_sort_by" type="labelenum" label="Sort by" values="Seeds|Size" default="Seeds"/>
