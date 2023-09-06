@@ -155,9 +155,12 @@ def show_results(results, action, next_action, page, genre_id=0, mode=''):
     for res in results:
         if mode == 'movie':
             title = res.title
+            release_date = res.release_date
         elif mode == 'tv':
             title = res.name
+            release_date = res.first_air_date
         elif mode == 'multi':
+            release_date = res.first_air_date
             if 'name' in res:
                 title = res.name 
             if 'title' in res:
@@ -177,7 +180,8 @@ def show_results(results, action, next_action, page, genre_id=0, mode=''):
              })
         list_item.setInfo("video", {"title": title, 
              "mediatype": "video", 
-             "plot": f"{res.overview}"
+             "aired": release_date,
+             "plot": res.overview
              })
         list_item.setProperty("IsPlayable", "false")
 
