@@ -27,11 +27,15 @@ def main_menu():
 
     item = ListItem(label="Search TV")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
-    addDirectoryItem(HANDLE, get_url(action="tmdb_tv"), item, isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="tmdb_tv", mode='tv'), item, isFolder= True)
 
     item = ListItem(label="Search Movies")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
-    addDirectoryItem(HANDLE, get_url(action="tmdb_movie"), item, isFolder= True)
+    addDirectoryItem(HANDLE, get_url(action="tmdb_movie", mode='movie'), item, isFolder= True)
+
+    item = ListItem(label="Search by Genre")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
+    addDirectoryItem(HANDLE, get_url(action="genre_menu"), item, isFolder= True)
 
     item = ListItem(label="Direct - Search")
     item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
@@ -58,12 +62,23 @@ def main_menu():
     addDirectoryItem(HANDLE, get_url(action="main_history"), item,  isFolder= True)
    
     endOfDirectory(HANDLE)
-    
+
+@register
+def genre_menu():
+    item = ListItem(label="TV Shows")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tv.png")})
+    addDirectoryItem(HANDLE, get_url(action="tmb_search_genre", mode="tv_genres"), item,  isFolder= True)
+
+    item = ListItem(label="Movies")
+    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "movies.png")})
+    addDirectoryItem(HANDLE, get_url(action="tmb_search_genre", mode="movie_genres"), item,  isFolder= True)
+
+    endOfDirectory(HANDLE)
+
 @register
 def play_jackett(title, magnet, url):
     play(title=title, magnet=magnet, url=url)
 
-#################
 ######Main#######
 
 @register
@@ -71,14 +86,17 @@ def tmdb_multi():
     search_tmdb(mode='multi')
 
 @register
-def tmdb_tv():
-    search_tmdb(mode='tv')
+def tmdb_tv(mode, id=0):
+    search_tmdb(mode, genre_id=id)
 
 @register
-def tmdb_movie():
-    search_tmdb(mode='movie')
+def tmdb_movie(mode, id=0):
+    search_tmdb(mode, genre_id=id)
 
-#################
+@register
+def tmb_search_genre(mode):
+    search_tmdb(mode)
+
 #####Search TMDB######
 
 @register
@@ -93,7 +111,6 @@ def search_tmdb_tv(query):
 def search_tmdb_movie(query):
     search_api(query=query, method='movie')
 
-#################
 #####Search Direct######
 
 @register
@@ -112,7 +129,6 @@ def movie_search():
 def anime_search():
     search_api(tracker='anime')
 
-#################
 ######Next#######
 
 @register
@@ -127,7 +143,7 @@ def next_page_tv(page):
 def next_page_movie(page):
      search_tmdb(mode='movie', page=int(page))
 
-#################
+#####Others######
 
 @register
 def search_tv_details(id):

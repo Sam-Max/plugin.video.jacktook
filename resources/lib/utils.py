@@ -5,7 +5,7 @@ import re
 import requests
 from resources.lib.clients import Jackett, Prowlarr
 from resources.lib.database import Database
-from resources.lib.kodi import ADDON_PATH, bytes_to_human_readable, get_setting, hide_busy_dialog, notify
+from resources.lib.kodi import ADDON_PATH, bytes_to_human_readable, get_int_setting, get_setting, hide_busy_dialog, notify
 from resources.lib.kodi import HANDLE, get_url, hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 import xbmc
@@ -284,6 +284,17 @@ def history():
             is_folder)
 
     endOfDirectory(HANDLE)
+
+def limit_results(res):
+    selected_indexer = get_setting('selected_indexer')
+    results_per_page= get_int_setting('results_per_page') 
+    
+    if selected_indexer == Indexer.JACKETT:
+        sliced_res= res['Results'][:results_per_page]
+    elif selected_indexer == Indexer.PROWLARR:
+        sliced_res= res[:results_per_page]
+    
+    return sliced_res
 
 def sort_results(res):
     selected_indexer = get_setting('selected_indexer')
