@@ -35,46 +35,52 @@ def search_tmdb(mode, genre_id=0, page=1):
         search = Search()
         results = search.multi(str(text), page=page)
         show_results(results,
-                    action='tmdb_search', 
-                    next_action='next_page_multi', 
+                    action='tmdb_search_api', 
+                    next_action='next_page', 
                     page=page,
-                    type='multi')
+                    mode='multi')
     elif mode == 'movie':
         if genre_id != 0:
+            page += 1
             discover = Discover()
-            movies = discover.discover_movies({'with_genres': genre_id})
+            movies = discover.discover_movies({'with_genres': genre_id, 'page': page})
             show_results(movies.results, 
-                        action='search_tmdb_movie', 
-                        next_action='next_page_movie', 
+                        action='tmdb_search_api', 
+                        next_action='next_page', 
                         page=page,
-                        type='movie')
+                        genre_id=genre_id,
+                        mode='movie')
         else:
             trending = Trending()
             movies = trending.movie_week(page=page)
             page += 1
             show_results(movies.results, 
-                        action='search_tmdb_movie', 
-                        next_action='next_page_movie', 
+                        action='tmdb_search_api', 
+                        next_action='next_page', 
                         page=page,
-                        type='movie')
+                        genre_id= genre_id,
+                        mode='movie')
     elif mode == 'tv':
         if genre_id != 0:
+            page += 1
             discover = Discover()
-            tv_shows = discover.discover_tv_shows({'with_genres': genre_id})
+            tv_shows = discover.discover_tv_shows({'with_genres': genre_id, 'page': page})
             show_results(tv_shows.results, 
-                        action='search_tmdb_tv', 
-                        next_action='next_page_tv', 
+                        action='tmdb_search_api', 
+                        next_action='next_page', 
                         page=page,
-                        type='tv')
+                        genre_id= genre_id,
+                        mode='tv')
         else:
             trending = Trending()
             shows= trending.tv_day(page=page)
             page += 1
             show_results(shows.results, 
-                        action='search_tmdb_tv', 
-                        next_action='next_page_tv', 
+                        action='tmdb_search_api', 
+                        next_action='next_page', 
                         page=page,
-                        type='tv')
+                        genre_id= genre_id,
+                        mode='tv')
     elif mode == 'movie_genres':
         movies= Genre().movie_list()
         for gen in movies.genres:
@@ -83,7 +89,7 @@ def search_tmdb(mode, genre_id=0, page=1):
             name = gen['name']
             item = ListItem(label=name)
             add_icon_genre(item, name)
-            addDirectoryItem(HANDLE, get_url(action="tmdb_movie", id=gen['id'], mode="movie"), item, isFolder=True)
+            addDirectoryItem(HANDLE, get_url(action="tmdb", id=gen['id'], mode="movie"), item, isFolder=True)
         endOfDirectory(HANDLE)
     elif mode == 'tv_genres':
         tv= Genre().tv_list()
@@ -91,7 +97,7 @@ def search_tmdb(mode, genre_id=0, page=1):
             name = gen['name']
             item = ListItem(label=name)
             add_icon_genre(item, name)
-            addDirectoryItem(HANDLE, get_url(action="tmdb_tv", id=gen['id'], mode="tv"), item, isFolder=True)
+            addDirectoryItem(HANDLE, get_url(action="tmdb", id=gen['id'], mode="tv"), item, isFolder=True)
         endOfDirectory(HANDLE)
 
 def tv_details(id):
@@ -108,7 +114,7 @@ def tv_details(id):
         list_item.setArt({'poster': url, "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
         list_item.setInfo("video",{"title": title, "mediatype": "video", "plot": f"{ep.overview}"})
         list_item.setProperty("IsPlayable", "false")
-        addDirectoryItem(HANDLE, get_url(action='search_tmdb_tv', query=search_title), list_item, isFolder=True)
+        addDirectoryItem(HANDLE, get_url(action='', query=search_title), list_item, isFolder=True)
 
     endOfDirectory(HANDLE)
 
@@ -145,13 +151,13 @@ def add_icon_genre(item, name):
     if icon_path:
         item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", icon_path)})  
 
-def show_results(results, action, next_action, page, type=''):
+def show_results(results, action, next_action, page, genre_id=0, mode=''):
     for res in results:
-        if type == 'movie':
+        if mode == 'movie':
             title = res.title
-        elif type == 'tv':
+        elif mode == 'tv':
             title = res.name
-        elif type == 'multi':
+        elif mode == 'multi':
             if 'name' in res:
                 title = res.name 
             if 'title' in res:
@@ -175,14 +181,11 @@ def show_results(results, action, next_action, page, type=''):
              })
         list_item.setProperty("IsPlayable", "false")
 
-        addDirectoryItem(HANDLE, get_url(action=action, query=title), list_item, isFolder=True)
+        addDirectoryItem(HANDLE, get_url(action=action, query=title, mode=mode), list_item, isFolder=True)
 
     list_item = ListItem(label='Next')
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
-    addDirectoryItem(HANDLE, get_url(action=next_action, page=page),
-            list_item,
-            isFolder=True,
-        )
+    addDirectoryItem(HANDLE, get_url(action=next_action, mode=mode, page=page, genre_id=genre_id), list_item, isFolder=True)
     
     endOfDirectory(HANDLE)
 
