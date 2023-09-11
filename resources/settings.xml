@@ -30,4 +30,10 @@
         <setting label="TMDB Configuration:" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="TMDB Api Key" default=""/>
     </category>
+
+     <category label="AniList">
+        <setting label="AniList Configuration:" type="lsep"/>
+        <setting id="anilist_client_id" type="text" label="Client ID" default=""/>
+        <setting id="anilist_client_secret" type="text" label="Client Secret" default=""/>
+    </category>
 </settings>

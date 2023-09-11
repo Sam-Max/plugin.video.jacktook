@@ -8,16 +8,16 @@ class Jackett():
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, tracker='', method='', insecure=False):
+    def search(self, query, tracker, mode, insecure=False):
         try:
             if tracker == 'anime':
                 url = f"{self.host}/api/v2.0/indexers/nyaasi/results?apikey={self.apikey}&Query={query}"
-            else:
-                if method == 'tv':
+            elif tracker == 'all':
+                if mode == 'tv':
                     url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=tvsearch&Query={query}"
-                elif method == 'movie':
+                elif mode == 'movie':
                     url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=movie&Query={query}"
-                else:
+                elif mode == 'multi':
                     url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
@@ -33,7 +33,7 @@ class Prowlarr():
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, tracker, indexers, anime_indexers, method, insecure=False):
+    def search(self, query, tracker, indexers, anime_indexers, mode, insecure=False):
         headers = {"Accept": "application/json",
                    "Content-Type": "application/json",
                    "X-Api-Key": self.apikey}
@@ -45,12 +45,12 @@ class Prowlarr():
                 else:
                     dialog_ok("Prowlarr", f"You need to set Anime Indexer Ids for direct anime search")
                     return
-            else:
-                if method == 'tv':
+            elif tracker == 'all':
+                if mode == 'tv':
                     url = f"{self.host}/api/v1/search?query={query}&Categories=5000"
-                elif method == 'movie':
+                elif mode == 'movie':
                     url = f"{self.host}/api/v1/search?query={query}&Categories=2000"
-                else:
+                elif mode == 'multi':
                     url = f"{self.host}/api/v1/search?query={query}"
                 if indexers:
                     indexers_url = ''.join([f"&IndexerIds={index}" for index in indexers])

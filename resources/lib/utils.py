@@ -1,18 +1,21 @@
 
 from datetime import datetime
+import logging
 import os
 import re
 import requests
+
 from resources.lib.clients import Jackett, Prowlarr
 from resources.lib.database import Database
 from resources.lib.kodi import ADDON_PATH, bytes_to_human_readable, get_int_setting, get_setting, hide_busy_dialog, notify
 from resources.lib.kodi import HANDLE, get_url, hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
+
 import xbmc
 from xbmcgui import ListItem, Dialog
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory, setResolvedUrl
-from urllib.parse import quote
 
+from urllib.parse import quote
 
 db = Database()
 
@@ -57,13 +60,13 @@ def get_client():
         
         return Prowlarr(host, api_key)
 
-def search_api(query= '', tracker='', method=''):
-
+def search_api(query, mode, tracker):
+    query = None if query == "None" else query
     selected_indexer= get_setting('selected_indexer')
-
+    
     jackett_insecured= get_setting('jackett_insecured')
     prowlarr_insecured = get_setting('prowlarr_insecured')
-    
+
     if prowlarr_insecured or jackett_insecured:
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
@@ -73,17 +76,18 @@ def search_api(query= '', tracker='', method=''):
             return
         
         if query:
-            response = jackett.search(query, tracker, method, jackett_insecured)    
+            response = jackett.search(query, tracker, mode, jackett_insecured)    
         else:
             keyboard = xbmc.Keyboard("", "Search for torrents:", False)
             keyboard.doModal()
             if keyboard.isConfirmed():
                 text = keyboard.getText().strip()
                 text = quote(text)
-                response = jackett.search(text, tracker, method, jackett_insecured)
+                response = jackett.search(text, tracker, mode, jackett_insecured)
             else:
                 hide_busy_dialog()
                 return
+        return response
 
     elif selected_indexer == Indexer.PROWLARR:
         indexers_ids = get_setting('prowlarr_indexer_ids')
@@ -95,26 +99,22 @@ def search_api(query= '', tracker='', method=''):
         prowlarr = get_client()
         if not prowlarr:
             return
-        
+
         if query:
-            response = prowlarr.search(query, tracker, indexers_ids_list, anime_indexers_ids_list, method, prowlarr_insecured)    
+            response = prowlarr.search(query, tracker, indexers_ids_list, anime_indexers_ids_list, mode, prowlarr_insecured)    
         else:
             keyboard = xbmc.Keyboard("", "Search for torrents:", False)
             keyboard.doModal()
             if keyboard.isConfirmed():
                 text = keyboard.getText().strip()
                 text = quote(text)
-                response = prowlarr.search(text, tracker, indexers_ids_list, anime_indexers_ids_list, method, prowlarr_insecured)
+                response = prowlarr.search(text, tracker, indexers_ids_list, anime_indexers_ids_list, mode, prowlarr_insecured)
             else:
                 hide_busy_dialog()
                 return
+        return response
             
-    if response:
-        sorted_res= sort_results(response)
-        filtered_res= filter_quality(sorted_res)
-        show_results(filtered_res)
-                
-def play(title, magnet, url):
+def play(url, title, magnet):
     set_watched(title=title, magnet=magnet, url=url)
 
     magnet = None if magnet == "None" else magnet
@@ -128,20 +128,17 @@ def play(title, magnet, url):
     if torrent_client == 'Torrest':
         if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
             if magnet:
-                plugin_url = "plugin://plugin.video.torrest/play_magnet?magnet="
-                encoded_url = quote(magnet)
+                plugin_url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
             elif url:
-                plugin_url = "plugin://plugin.video.torrest/play_url?url="
-                encoded_url = quote(url)
-            play_item = ListItem(path=plugin_url + encoded_url)
-            setResolvedUrl(HANDLE, True, listitem=play_item)
+                plugin_url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
+            setResolvedUrl(HANDLE, True, ListItem(path=plugin_url))
         else:
             notify('You need to install the addon Torrest(plugin.video.torrest)')
             return 
     else:
         notify("You need to select a torrent client")
     
-def show_results(result):
+def api_show_results(result, plugin, func):
     selected_indexer = get_setting('selected_indexer')
 
     if selected_indexer == Indexer.JACKETT:
@@ -159,8 +156,6 @@ def show_results(result):
 
             size = bytes_to_human_readable(r['Size'])
             seeders = r['Seeders']
-            description = r['Description']
-
             magnet = r['MagnetUri']
             url = r['Link']
             tracker = r['Tracker']
@@ -170,22 +165,21 @@ def show_results(result):
                 title = f"[COLOR palevioletred]{title}[/COLOR]"
 
             torrent_title = f"[B][COLOR palevioletred][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
-
+            
             list_item = ListItem(label=torrent_title)
-            list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
-            list_item.setInfo(
-                "video",
-                {"title": title, "mediatype": "video", "plot": description},
-            )
+            list_item.setArt({
+                "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")
+                })
+            list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": ''})
             list_item.setProperty("IsPlayable", "true")
-            is_folder = False
-            addDirectoryItem(HANDLE,
-                get_url(action="play_jackett", title=title, magnet=magnet, url=url),
+
+            addDirectoryItem(plugin.handle, 
+                plugin.url_for(func, query=f"{url} {magnet} {title}"),
                 list_item,
-                is_folder,
+                isFolder=False
             )
 
-        endOfDirectory(HANDLE)
+        endOfDirectory(plugin.handle)
 
     elif selected_indexer == Indexer.PROWLARR:
         description_length = int(get_setting('prowlarr_desc_length'))
@@ -230,11 +224,11 @@ def show_results(result):
                 {"title": title, "mediatype": "video", "plot": ""},
             )
             list_item.setProperty("IsPlayable", "true")
-            is_folder = False
+
             addDirectoryItem(HANDLE,
-                get_url(action="play_jackett", title=title, magnet=magnet, url=url),
+                get_url(action="play_torrent", title=title, magnet=magnet, url=url),
                 list_item,
-                is_folder,
+                False,
             )
 
         endOfDirectory(HANDLE)
@@ -264,35 +258,34 @@ def clear():
         db.commit()
         xbmc.executebuiltin("Container.Refresh")
 
-def history():
-    setPluginCategory(HANDLE, f"Jackett Torrents - History")
-
+def history(plugin, func1, func2):
+    setPluginCategory(plugin.handle, f"Jackett Torrents - History")
     list_item = ListItem(label="Clear History")
-    
-    addDirectoryItem(HANDLE, get_url(action="clear_history"), list_item)
+    addDirectoryItem(plugin.handle, plugin.url_for(func1), list_item)
 
     for title, data in reversed(db.database["jt:history"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
         label = f"[COLOR palevioletred]{title} [I][LIGHT]— {formatted_time}[/LIGHT][/I][/COLOR]"
+        
         list_item = ListItem(label=label)
         list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
         list_item.setProperty("IsPlayable", "true")
-        is_folder = False
-        addDirectoryItem(HANDLE, 
-            get_url(action= "play_jackett", title=title, magnet=data.get("magnet", None), url=data.get("url", None)),
-            list_item, 
-            is_folder)
 
-    endOfDirectory(HANDLE)
+        addDirectoryItem(plugin.handle, 
+            plugin.url_for(func2, query= f"{data.get('url', None)} {data.get('magnet', None)} {title}"),
+            list_item, 
+            False)
+
+    endOfDirectory(plugin.handle)
 
 def limit_results(res):
     selected_indexer = get_setting('selected_indexer')
-    results_per_page= get_int_setting('results_per_page') 
+    rsp= get_int_setting('results_per_page') 
     
     if selected_indexer == Indexer.JACKETT:
-        sliced_res= res['Results'][:results_per_page]
+        sliced_res= res['Results'][:rsp]
     elif selected_indexer == Indexer.PROWLARR:
-        sliced_res= res[:results_per_page]
+        sliced_res= res[:rsp]
     
     return sliced_res
 
