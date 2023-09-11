@@ -1,9 +1,7 @@
 
 # Jackewlarr
 
-A kodi addon that integrates Jackett and Prowlarr with Torrest. 
-
-Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
+A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent finding and streaming.
 
 ## Requirements.
 
@@ -19,6 +17,8 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 - TMDB Integration
 
+- AniList Integration
+
 ## Steps.
 
 1. Install Jackett. [Jackett](https://github.com/Jackett/Jackett) and/or [Prowlarr](https://github.com/Prowlarr/Prowlarr)
@@ -27,7 +27,7 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 3. Add configuration on addon settings to connect with Jackett and/or Prowlarr
 
-4. Add configuration on addon settings to connect with TMDB (Api Key).
+4. Add configuration on addon settings to connect with TMDB and/or AniList (Api Key). 
 
 5. Install Torrest service (torrent client which provides an API specially made for streaming). [Torrest Service](https://github.com/i96751414/torrest-cpp)
 
@@ -38,8 +38,7 @@ Inspired by [Haru Addon](https://github.com/pikdum/plugin.video.haru)
 
 **Note**:
 
-- You can deploy Prowlarr and Jackett either on local or on a remote server.
-- You can deploy the Torrest service either on local or on a remote server or use the built-in torrent service from addon that runs on localhost.
+- You can deploy the Torrest service either on local or on a remote server or use the built-in Torrest service of Torrest addon that runs on localhost.
 
 ## Installation of this addon (Jackewlarr)
 
