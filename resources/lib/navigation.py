@@ -97,7 +97,6 @@ def search_tmdb(mode, genre_id, page):
                     mode=mode)
     elif mode == 'movie':
         if genre_id != -1:
-            page += 1
             discover = Discover()
             movies = discover.discover_movies({'with_genres': genre_id, 'page': page})
             tmdb_show_results(movies.results, 
@@ -110,7 +109,6 @@ def search_tmdb(mode, genre_id, page):
         else:
             trending = Trending()
             movies = trending.movie_week(page=page)
-            page += 1
             tmdb_show_results(movies.results, 
                         action_func=search, 
                         next_action_func=next_page, 
@@ -120,7 +118,6 @@ def search_tmdb(mode, genre_id, page):
                         mode=mode)
     elif mode == 'tv':
         if genre_id != -1:
-            page += 1
             discover = Discover()
             tv_shows = discover.discover_tv_shows({'with_genres': genre_id, 'page': page})
             tmdb_show_results(tv_shows.results, 
@@ -133,7 +130,6 @@ def search_tmdb(mode, genre_id, page):
         else:
             trending = Trending()
             shows= trending.tv_day(page=page)
-            page += 1
             tmdb_show_results(shows.results, 
                         action_func=tv_details, 
                         next_action_func=next_page, 

@@ -225,13 +225,13 @@ def api_show_results(result, plugin, func):
             )
             list_item.setProperty("IsPlayable", "true")
 
-            addDirectoryItem(HANDLE,
-                get_url(action="play_torrent", title=title, magnet=magnet, url=url),
+            addDirectoryItem(plugin.handle,
+                plugin.url_for(func, query=f"{url} {magnet} {title}"),
                 list_item,
                 False,
             )
 
-        endOfDirectory(HANDLE)
+        endOfDirectory(plugin.handle)
 
 def set_watched(title, magnet, url):
     if title not in db.database["jt:watch"]:

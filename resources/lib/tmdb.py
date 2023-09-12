@@ -84,13 +84,16 @@ def tmdb_show_results(results, action_func, next_action_func, page, plugin, mode
         list_item.setProperty("IsPlayable", "false")
 
         if action_func.__name__ == "search":
-            addDirectoryItem(plugin.handle, plugin.url_for(action_func, mode=mode, query=title, tracker='all'), list_item, isFolder=True)
+            addDirectoryItem(plugin.handle, plugin.url_for(action_func, mode=mode, query=title, tracker='all'), 
+                             list_item, isFolder=True)
         else:
             addDirectoryItem(plugin.handle, plugin.url_for(action_func, id=id), list_item, isFolder=True)
 
     list_item = ListItem(label='Next')
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
-    addDirectoryItem(plugin.handle, plugin.url_for(next_action_func, mode=mode, page=page, genre_id=genre_id), list_item, isFolder=True)
+    page += 1
+    addDirectoryItem(plugin.handle, plugin.url_for(next_action_func, mode=mode, page=page, genre_id=genre_id), 
+                     list_item, isFolder=True)
     
     endOfDirectory(plugin.handle)
 
