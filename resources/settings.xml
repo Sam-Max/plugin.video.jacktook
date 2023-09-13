@@ -14,7 +14,7 @@
         <setting id="jackett_host" type="text" label="Jackett Host" default=""/>
         <setting id="jackett_desc_length" type="number" label="Description length" default="100"/>
         <setting id="jackett_insecured" type="bool" label="Insecured connection" default="false"/>
-        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date" default="Seeds"/>
+        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date|Quality" default="Seeds"/>
    
         <setting label="Prowlarr Configuration:" type="lsep"/>
         <setting id="prowlarr_apikey" type="text" label="Prowlarr Api Key" default=""/>
@@ -23,7 +23,7 @@
         <setting id="prowlarr_anime_indexer_ids" type="text" label="Anime Indexer Ids" default=""/>
         <setting id="prowlarr_desc_length" type="number" label="Description length" default="100"/>
         <setting id="prowlarr_insecured" type="bool" label="Insecured connection" default="false"/>
-        <setting id="prowlarr_sort_by" type="labelenum" label="Sort by" values="Seeds|Size" default="Seeds"/>
+        <setting id="prowlarr_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date|Quality" default="Seeds"/>
     </category>
 
     <category label="TMDB">

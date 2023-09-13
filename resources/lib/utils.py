@@ -8,7 +8,7 @@ import requests
 from resources.lib.clients import Jackett, Prowlarr
 from resources.lib.database import Database
 from resources.lib.kodi import ADDON_PATH, bytes_to_human_readable, get_int_setting, get_setting, hide_busy_dialog, notify
-from resources.lib.kodi import HANDLE, get_url, hide_busy_dialog
+from resources.lib.kodi import HANDLE, hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 
 import xbmc
@@ -215,7 +215,7 @@ def api_show_results(result, plugin, func):
             if watched:
                 title = f"[COLOR palevioletred]{title}[/COLOR]"
 
-            torrent_title = f"[B][COLOR palevioletred][{indexer}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+            torrent_title = f"[B][COLOR palevioletred][{indexer}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
             list_item = ListItem(label=torrent_title)
             list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
@@ -295,11 +295,13 @@ def sort_results(res):
     if selected_indexer == Indexer.JACKETT:
         sort_by = get_setting('jackett_sort_by')
         if sort_by == 'Seeds':
-            sorted_results = sorted(res['Results'], key=lambda r: int(r['Seeders']), reverse=True)
+            sorted_results = sorted(res, key=lambda r: int(r['Seeders']), reverse=True)
         elif sort_by == 'Size':
-            sorted_results = sorted(res['Results'], key=lambda r: r['Size'], reverse=True)
+            sorted_results = sorted(res, key=lambda r: r['Size'], reverse=True)
         elif sort_by == 'Date':
-            sorted_results = sorted(res['Results'], key=lambda r: r['PublishDate'], reverse=True)
+            sorted_results = sorted(res, key=lambda r: r['PublishDate'], reverse=True)
+        elif sort_by == 'Quality':
+            sorted_results = sorted(res, key=lambda r: r['Quality'], reverse=False)
         return sorted_results
     
     elif selected_indexer == Indexer.PROWLARR:
@@ -308,9 +310,13 @@ def sort_results(res):
             sorted_results = sorted(res, key=lambda r: int(r['seeders']), reverse=True)
         elif sort_by == 'Size':
             sorted_results = sorted(res, key=lambda r: r['size'], reverse=True)
+        elif sort_by == 'Date':
+            sorted_results = sorted(res, key=lambda r: r['publishDate'], reverse=True)
+        elif sort_by == 'Quality':
+            sorted_results = sorted(res, key=lambda r: r['Quality'], reverse=False)
         return sorted_results
 
-def filter_quality(results):
+def filter_by_quality(response):
     quality_720p = []
     quality_1080p = []
     quality_4k = []
@@ -321,10 +327,12 @@ def filter_quality(results):
 
     if selected_indexer == Indexer.JACKETT:
         jackett= Indexer.JACKETT
+        response = response['Results']
     elif selected_indexer == Indexer.PROWLARR:
         prowlarr = Indexer.PROWLARR
+        response = response
 
-    for res in results:
+    for res in response:
         if jackett:
             matches = re.findall(r'\b\d+p\b|\b\d+k\b', res['Title'])
         elif prowlarr:
@@ -353,10 +361,8 @@ def filter_quality(results):
                 res['Quality'] = '4k'
                 quality_4k.append(res)
    
-    combined_list = quality_720p + quality_1080p + quality_4k
-    sorted_results = sorted(combined_list, key=lambda r: r['Quality'], reverse=False)
-
-    return sorted_results
+    combined_list = quality_4k + quality_1080p + quality_720p 
+    return combined_list
 
 def is_magnet_link(link):
     pattern = r'^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}&dn=.+&tr=.+$'

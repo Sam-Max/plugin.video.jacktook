@@ -10,7 +10,7 @@ from resources.lib.tmdbv3api.objs.trending import Trending
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import TMDB_POSTER_URL, add_icon_genre, tmdb_show_results
 from resources.lib.anilist import search_anilist
-from resources.lib.utils import api_show_results, clear, filter_quality, history, play, search_api, sort_results
+from resources.lib.utils import api_show_results, clear, filter_by_quality, history, play, search_api, sort_results
 from resources.lib.kodi import ADDON_PATH, addon_settings, get_setting, hide_busy_dialog, notify
 from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
@@ -57,9 +57,9 @@ def genre_menu():
 def search(mode, query, tracker):
     response= search_api(query, mode, tracker)
     if response:
-        sorted_res= sort_results(response)
-        filtered_res= filter_quality(sorted_res)
-        api_show_results(filtered_res, plugin, func=play_torrent)
+        filtered_res= filter_by_quality(response)
+        sorted_res= sort_results(filtered_res)
+        api_show_results(sorted_res, plugin, func=play_torrent)
 
 @plugin.route("/play_torrent")
 def play_torrent():
