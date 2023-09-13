@@ -174,6 +174,7 @@ def tv_season_details(tv_name, id, season_num):
     for ep in tv_season.episodes:
         title = f"{season_num}x0{ep.episode_number}. {ep.name}"
         air_date = ep.air_date
+        duration = ep.runtime
 
         list_item = ListItem(label=title)
         url= ''
@@ -183,7 +184,8 @@ def tv_season_details(tv_name, id, season_num):
         list_item.setArt({'poster': url, "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
         list_item.setInfo("video", {"title": title, 
                            "mediatype": "video", 
-                           "aired": air_date, 
+                           "aired": air_date,
+                           "duration": duration,
                            "plot": f"{ep.overview}"})
         list_item.setProperty("IsPlayable", "false")
         

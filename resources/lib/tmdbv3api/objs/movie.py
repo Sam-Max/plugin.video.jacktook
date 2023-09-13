@@ -31,7 +31,7 @@ class Movie(TMDb):
         "upcoming": "/movie/upcoming",
     }
 
-    def details(self, movie_id, append_to_response="videos,trailers,images,casts,translations,keywords,release_dates"):
+    def details(self, movie_id, append_to_response="videos,trailers,images,casts,translations,keywords,release_dates,runtime"):
         """
         Get the primary information about a movie.
         :param movie_id: int

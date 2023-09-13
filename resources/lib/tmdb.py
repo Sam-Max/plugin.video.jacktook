@@ -2,6 +2,7 @@
 import os
 
 from resources.lib.kodi import ADDON_PATH
+from resources.lib.tmdbv3api.objs.movie import Movie
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -45,12 +46,15 @@ def add_icon_genre(item, name):
     
 def tmdb_show_results(results, action_func, next_action_func, page, plugin, mode, genre_id=0):
     for res in results:
-        id = res.id
+        id = int(res.id)
         release_date = ''
-        
+        duration= ''
+
         if mode == 'movie':
             title = res.title
             release_date = res.release_date
+            details = Movie().details(id)
+            duration =  details.runtime
         elif mode == 'tv':
             title = res.name
             release_date = res.first_air_date
@@ -79,6 +83,7 @@ def tmdb_show_results(results, action_func, next_action_func, page, plugin, mode
         list_item.setInfo("video", {"title": title, 
              "mediatype": "video", 
              "aired": release_date,
+             "duration": duration,
              "plot": overview
              })
         list_item.setProperty("IsPlayable", "false")

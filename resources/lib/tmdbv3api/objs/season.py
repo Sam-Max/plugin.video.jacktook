@@ -14,7 +14,7 @@ class Season(TMDb):
         "videos": "/tv/%s/season/%s/videos",
     }
 
-    def details(self, tv_id, season_num, append_to_response="videos,trailers,images,credits,translations"):
+    def details(self, tv_id, season_num, append_to_response="videos,trailers,images,credits,translations,runtime"):
         """
         Get the TV season details by id.
         :param tv_id: int
