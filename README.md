@@ -25,21 +25,14 @@ A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent findi
 
 2. Install this addon.
 
-3. Add configuration on addon settings to connect with Jackett and/or Prowlarr
+3. Add configuration on addon settings to connect with Jackett and/or Prowlarr 
 
-4. Add configuration on addon settings to connect with TMDB and/or AniList (Api Key). 
-
-5. Install Torrest service (torrent client which provides an API specially made for streaming). [Torrest Service](https://github.com/i96751414/torrest-cpp)
-
-6. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest)
-
-7. Configure Torrest addon with the Torrest service that you deployed on step 5.
+4. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest)
 
 
 **Note**:
 
-- You can deploy the Torrest service either on local or on a remote server or use the built-in Torrest service of Torrest addon that runs on localhost.
-
+You can deploy/install the Torrest service (torrent client that comes built-in on Torrest Addon, which provides an API specially made for streaming). [Torrest Service](https://github.com/i96751414/torrest-cpp), on a remote server (instructions more below). After that, you need to configure Torrest addon with the Torrest service IP/Domain and Port.
 ## Installation of this addon (Jackewlarr)
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jackewlarr), so that any updates will be automatically installed.
@@ -50,13 +43,11 @@ You can also install the addon without installing its repository. To do so, get 
 
 Detailed instructions are available at [LinuxServer.io Jackett Docker](https://hub.docker.com/r/linuxserver/jackett/) 
 
-
 ## How to run Prowlarr service using Docker:
 
 Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
 
-
-## How to run Torrest service using Docker:
+## How to run Torrest service using Docker (optional):
 
 1. Create a Dockerfile with the following content (make sure to check before the latest `VERSION` of the binary and your `OS` and `ARCH` and update accordingly).
 
