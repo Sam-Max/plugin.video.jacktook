@@ -7,9 +7,12 @@ from resources.lib.kodi import ADDON_PATH, get_setting, hide_busy_dialog, notify
 
 
 def search_anilist(category, page, plugin, action, next_action):
-    anime = Anime(
-        get_setting("anilist_client_id"), get_setting("anilist_client_secret")
+    client_id = get_setting("anilist_client_id", "14375")
+    client_secret = get_setting(
+        "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
     )
+
+    anime = Anime(client_id, client_secret)
     page += 1
 
     if category == "Trending":

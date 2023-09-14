@@ -182,13 +182,9 @@ def search_tmdb(mode, genre_id, page):
     page = int(page)
     genre_id = int(genre_id)
 
-    api_key = get_setting("tmdb_apikey")
-    if api_key:
-        tmdb = TMDb()
-        tmdb.api_key = api_key
-    else:
-        notify("No TMDB api key set")
-        return
+    tmdb = TMDb()
+    api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
+    tmdb.api_key = api_key
 
     if mode == "multi":
         keyboard = Keyboard("", "Search on TMDB:", False)
@@ -345,7 +341,12 @@ def tv_season_details(show_name, id, season_num):
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
-                search_tv_episode, show_name, episode_name, episode_num, season_num_, "all"
+                search_tv_episode,
+                show_name,
+                episode_name,
+                episode_num,
+                season_num_,
+                "all",
             ),
             list_item,
             isFolder=True,
