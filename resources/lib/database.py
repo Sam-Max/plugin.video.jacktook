@@ -12,7 +12,9 @@ class Database:
             "jt:history": {},
         }
 
-        data_dir = xbmcvfs.translatePath(os.path.join("special://profile/addon_data/", ID))
+        data_dir = xbmcvfs.translatePath(
+            os.path.join("special://profile/addon_data/", ID)
+        )
         database_path = os.path.join(data_dir, "database.pickle")
         xbmcvfs.mkdirs(data_dir)
 
@@ -33,4 +35,3 @@ class Database:
     def commit(self):
         with open(self.database_path, "wb") as f:
             pickle.dump(self.database, f)
-

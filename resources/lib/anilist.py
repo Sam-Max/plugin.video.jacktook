@@ -7,25 +7,31 @@ from resources.lib.kodi import ADDON_PATH, get_setting, hide_busy_dialog, notify
 
 
 def search_anilist(category, page, plugin, action, next_action):
-    anime= Anime(get_setting('anilist_client_id'), get_setting('anilist_client_secret'))
+    anime = Anime(
+        get_setting("anilist_client_id"), get_setting("anilist_client_secret")
+    )
     page += 1
 
     if category == "Trending":
         trending = anime.get_trending(page=page, perPage=10)
-        anilist_show_results(trending, 
-                     action=action, 
-                     next_action=next_action, 
-                     category=category, 
-                     page=page,
-                     plugin=plugin)
+        anilist_show_results(
+            trending,
+            action=action,
+            next_action=next_action,
+            category=category,
+            page=page,
+            plugin=plugin,
+        )
     elif category == "Popular":
         popular = anime.get_popular(page=page, perPage=10)
-        anilist_show_results(popular, 
-                     action=action, 
-                     next_action=next_action, 
-                     category=category, 
-                     page=page,
-                     plugin=plugin)
+        anilist_show_results(
+            popular,
+            action=action,
+            next_action=next_action,
+            category=category,
+            page=page,
+            plugin=plugin,
+        )
     elif category == "search":
         keyboard = Keyboard("", "Search on AniList:", False)
         keyboard.doModal()
@@ -35,46 +41,64 @@ def search_anilist(category, page, plugin, action, next_action):
             hide_busy_dialog()
             return
         results = anime.search(str(text))
-        anilist_show_results(results,
-                    action=action, 
-                    next_action=next_action, 
-                    category=category, 
-                    page=page,
-                    plugin=plugin)
+        anilist_show_results(
+            results,
+            action=action,
+            next_action=next_action,
+            category=category,
+            page=page,
+            plugin=plugin,
+        )
+
 
 def anilist_show_results(results, action, next_action, category, page, plugin):
     for res in results:
-        if res['title']['english']:
-            title = res['title']['english']
+        if res["title"]["english"]:
+            title = res["title"]["english"]
         else:
-            title = res['title']['romaji']
+            title = res["title"]["romaji"]
 
-        description= res['description'] 
-        coverImage= res['coverImage']['large']  
-        backdrop_path= ''  
+        description = res["description"]
+        coverImage = res["coverImage"]["large"]
+        backdrop_path = ""
 
         list_item = ListItem(label=title)
-        list_item.setArt({'poster': coverImage, 
-             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-             "fanart": backdrop_path,
-             })
-        list_item.setInfo("video", {"title": title, 
-             "mediatype": "video", 
-             "aired": '',
-             "plot": description
-             })
+        list_item.setArt(
+            {
+                "poster": coverImage,
+                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
+                "fanart": backdrop_path,
+            }
+        )
+        list_item.setInfo(
+            "video",
+            {"title": title, "mediatype": "video", "aired": "", "plot": description},
+        )
         list_item.setProperty("IsPlayable", "false")
 
-        addDirectoryItem(plugin.handle, plugin.url_for(action, query=title, mode='multi', tracker='anime'), list_item, isFolder=True)
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(action, query=title, mode="multi", tracker="anime"),
+            list_item,
+            isFolder=True,
+        )
 
-    list_item = ListItem(label='Next')
-    list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
-    addDirectoryItem(plugin.handle, plugin.url_for(next_action, category=category, page=page), list_item, isFolder=True)
-    
+    list_item = ListItem(label="Next")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(next_action, category=category, page=page),
+        list_item,
+        isFolder=True,
+    )
+
     endOfDirectory(plugin.handle)
 
-#GraphQL Anilist
-TRENDING= '''
+
+# GraphQL Anilist
+TRENDING = """
         query ($page: Int, $perPage: Int) {
             Page (page: $page, perPage: $perPage) {
                     media (type: ANIME, sort: TRENDING_DESC) {
@@ -93,9 +117,9 @@ TRENDING= '''
                 }
             }
         }
-        '''
+        """
 
-POPULARITY= '''
+POPULARITY = """
         query ($page: Int, $perPage: Int) {
             Page (page: $page, perPage: $perPage) {
                     media (type: ANIME, sort: POPULARITY_DESC) {
@@ -114,9 +138,9 @@ POPULARITY= '''
                 }
             }
         }
-        '''
+        """
 
-SEARCH = '''
+SEARCH = """
         query ($search: String) {
             Page {
                 media(search: $search, type: ANIME) {
@@ -132,64 +156,71 @@ SEARCH = '''
                 }
             }
         }
-        '''
+        """
+
 
 class Anime:
     def __init__(self, client_id, client_secret):
         self.base_url = "https://graphql.anilist.co"
         self.auth_url = "https://anilist.co/api/v2/oauth/token"
-        self.token= self.get_token(client_id, client_secret)
-        self.auth = {'Authorization': f'Bearer {self.token}'}
+        self.token = self.get_token(client_id, client_secret)
+        self.auth = {"Authorization": f"Bearer {self.token}"}
 
     def search(self, query):
-        variables = {'search': query}
+        variables = {"search": query}
 
-        res = requests.post(self.base_url, json={'query': SEARCH, 'variables': variables}, headers=self.auth)
+        res = requests.post(
+            self.base_url,
+            json={"query": SEARCH, "variables": variables},
+            headers=self.auth,
+        )
 
         if res.status_code == 200:
-            media = res.json()['data']['Page']['media']
+            media = res.json()["data"]["Page"]["media"]
             return media
         else:
             notify(f"Error:{res.text}")
 
     def get_popular(self, page, perPage):
-        variables = {'page': page, 'perPage': perPage}
+        variables = {"page": page, "perPage": perPage}
 
-        res = requests.post(self.base_url, json={'query': POPULARITY, 'variables': variables}, headers=self.auth)
+        res = requests.post(
+            self.base_url,
+            json={"query": POPULARITY, "variables": variables},
+            headers=self.auth,
+        )
 
         if res.status_code == 200:
-            media = res.json()['data']['Page']['media']
+            media = res.json()["data"]["Page"]["media"]
             return media
         else:
             notify(f"Error:{res.text}")
-        
 
     def get_trending(self, page, perPage):
-        variables = {'page': page,'perPage': perPage}
+        variables = {"page": page, "perPage": perPage}
 
-        res = requests.post(self.base_url, json={'query': TRENDING, 'variables': variables}, headers=self.auth)
+        res = requests.post(
+            self.base_url,
+            json={"query": TRENDING, "variables": variables},
+            headers=self.auth,
+        )
 
         if res.status_code == 200:
-            media = res.json()['data']['Page']['media']
+            media = res.json()["data"]["Page"]["media"]
             return media
         else:
             notify(f"Error:{res.text}")
 
     def get_token(self, client_id, client_secret):
         data = {
-            'grant_type': 'client_credentials',
-            'client_id': client_id,
-            'client_secret': client_secret
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
         }
 
         res = requests.post(self.auth_url, data=data)
 
         if res.status_code == 200:
-            return res.json()['access_token']
+            return res.json()["access_token"]
         else:
             notify(f"Error:{res.text}")
-
-
-
-    
-
