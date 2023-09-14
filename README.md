@@ -32,12 +32,14 @@ A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent findi
 
 **Note**:
 
-You can deploy/install the Torrest service (torrent client that comes built-in on Torrest Addon, which provides an API specially made for streaming). [Torrest Service](https://github.com/i96751414/torrest-cpp), on a remote server (instructions more below). After that, you need to configure Torrest addon with the Torrest service IP/Domain and Port.
+You can deploy/install the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming), on a remote server (instructions more below). After that, you need to configure Torrest addon with the Torrest service IP/Domain and Port.
+
+
 ## Installation of this addon (Jackewlarr)
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jackewlarr), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.5/plugin.video.jackewlarr-0.0.5.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.7/plugin.video.jackewlarr-0.0.7.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## How to run Jackett service using Docker:
 
