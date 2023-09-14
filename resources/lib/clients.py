@@ -18,7 +18,7 @@ class Jackett():
                 elif mode == 'movie':
                     url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=movie&Query={query}"
                 elif mode == 'multi':
-                    url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&Query={query}"
+                    url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=tvsearch&t=movie&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
                 dialog_ok("jackewlarr", f"The request to Jackett failed. ({res.status_code})")

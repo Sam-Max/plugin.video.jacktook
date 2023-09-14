@@ -1,16 +1,16 @@
 
 import logging
 import os
-from resources.lib.tmdbv3api.objs.genre import Genre
 import routing
 
 from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.objs.trending import Trending
+from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import TMDB_POSTER_URL, add_icon_genre, tmdb_show_results
 from resources.lib.anilist import search_anilist
-from resources.lib.utils import api_show_results, clear, filter_by_quality, history, play, search_api, sort_results
+from resources.lib.utils import api_show_results, clear, filter_by_episode, filter_by_quality, history, play, search_api, sort_results
 from resources.lib.kodi import ADDON_PATH, addon_settings, get_setting, hide_busy_dialog, notify
 from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
@@ -26,7 +26,6 @@ plugin = routing.Plugin()
 @plugin.route("/")
 def main_menu():
     setPluginCategory(plugin.handle, "Main Menu")
-
     addDirectoryItem(plugin.handle, plugin.url_for(search_tmdb, mode='multi', genre_id=-1, page=1),  list_item("Search", "search.png"), isFolder= True)
     addDirectoryItem(plugin.handle, plugin.url_for(search_tmdb, mode='tv', genre_id=-1, page=1),  list_item("TV Shows", "tv.png"), isFolder= True)
     addDirectoryItem(plugin.handle, plugin.url_for(search_tmdb, mode='movie', genre_id=-1, page=1), list_item("Movies", "movies.png"), isFolder= True)
@@ -55,10 +54,19 @@ def genre_menu():
 
 @plugin.route("/search/<mode>/<query>/<tracker>")
 def search(mode, query, tracker):
-    response= search_api(query, mode, tracker)
-    if response:
-        filtered_res= filter_by_quality(response)
-        sorted_res= sort_results(filtered_res)
+    results= search_api(query, mode, tracker)
+    if results:
+        f_quality= filter_by_quality(results)
+        sorted_res= sort_results(f_quality)
+        api_show_results(sorted_res, plugin, func=play_torrent)
+
+@plugin.route("/search_season/<query>/<episode_num>/<season_num>/<tracker>")
+def search_tv_episode(query, episode_num, season_num, tracker):
+    results= search_api(query=query, mode="multi", tracker=tracker)
+    if results:
+        f_episodes= filter_by_episode(results, episode_num, season_num)
+        f_quality= filter_by_quality(f_episodes, mode="tv_episode")
+        sorted_res= sort_results(f_quality)
         api_show_results(sorted_res, plugin, func=play_torrent)
 
 @plugin.route("/play_torrent")
@@ -148,11 +156,11 @@ def tv_details(id):
     tv = TV()
     details = tv.details(id)
 
-    tv_name= details.original_name
+    show_name= details.name
     number_of_seasons= details.number_of_seasons
 
     for i in range(number_of_seasons):
-        number = i+1
+        number = i + 1
         title= f'Season {number}'
         list_item = ListItem(label=title)
         poster_path= ''
@@ -163,16 +171,19 @@ def tv_details(id):
         list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": f"{details.overview}"})
         list_item.setProperty("IsPlayable", "false")
         
-        addDirectoryItem(plugin.handle, plugin.url_for(tv_season_details, tv_name=tv_name, id=id, season_num=number), list_item, isFolder=True)
+        addDirectoryItem(plugin.handle, plugin.url_for(tv_season_details, show_name=show_name, id=id, season_num=number), list_item, isFolder=True)
 
     endOfDirectory(plugin.handle)
 
-@plugin.route("/tv/details/season/<tv_name>/<id>/<season_num>")
-def tv_season_details(tv_name, id, season_num):    
+@plugin.route("/tv/details/season/<show_name>/<id>/<season_num>")
+def tv_season_details(show_name, id, season_num):    
     season = Season()
     tv_season = season.details(id, season_num)
     for ep in tv_season.episodes:
-        title = f"{season_num}x0{ep.episode_number}. {ep.name}"
+        episode_num= f"{ep.episode_number:02}"
+        season_num_= f"{int(season_num):02}"
+
+        title = f"{season_num}x{episode_num}. {ep.name}"
         air_date = ep.air_date
         duration = ep.runtime
 
@@ -188,8 +199,8 @@ def tv_season_details(tv_name, id, season_num):
                            "duration": duration,
                            "plot": f"{ep.overview}"})
         list_item.setProperty("IsPlayable", "false")
-        
-        addDirectoryItem(plugin.handle, plugin.url_for(search, query=tv_name, mode='tv', tracker='all'), list_item, isFolder=True)
+
+        addDirectoryItem(plugin.handle, plugin.url_for(search_tv_episode, show_name, episode_num, season_num_, 'all'), list_item, isFolder=True)
 
     endOfDirectory(plugin.handle)
 

@@ -138,13 +138,13 @@ def play(url, title, magnet):
     else:
         notify("You need to select a torrent client")
     
-def api_show_results(result, plugin, func):
+def api_show_results(results, plugin, func):
     selected_indexer = get_setting('selected_indexer')
 
     if selected_indexer == Indexer.JACKETT:
         description_length = int(get_setting('jackett_desc_length'))
 
-        for r in result:
+        for r in results:
             title = r['Title']
             if len(title) > description_length:
                 title = title[0:description_length]
@@ -184,7 +184,7 @@ def api_show_results(result, plugin, func):
     elif selected_indexer == Indexer.PROWLARR:
         description_length = int(get_setting('prowlarr_desc_length'))
 
-        for r in result:
+        for r in results:
             title = r['title']
             if len(title) > description_length:
                 title = title[0:description_length]
@@ -289,50 +289,80 @@ def limit_results(res):
     
     return sliced_res
 
-def sort_results(res):
+def sort_results(results):
     selected_indexer = get_setting('selected_indexer')
 
     if selected_indexer == Indexer.JACKETT:
         sort_by = get_setting('jackett_sort_by')
         if sort_by == 'Seeds':
-            sorted_results = sorted(res, key=lambda r: int(r['Seeders']), reverse=True)
+            sorted_results = sorted(results, key=lambda r: int(r['Seeders']), reverse=True)
         elif sort_by == 'Size':
-            sorted_results = sorted(res, key=lambda r: r['Size'], reverse=True)
+            sorted_results = sorted(results, key=lambda r: r['Size'], reverse=True)
         elif sort_by == 'Date':
-            sorted_results = sorted(res, key=lambda r: r['PublishDate'], reverse=True)
+            sorted_results = sorted(results, key=lambda r: r['PublishDate'], reverse=True)
         elif sort_by == 'Quality':
-            sorted_results = sorted(res, key=lambda r: r['Quality'], reverse=False)
-        return sorted_results
-    
+            sorted_results = sorted(results, key=lambda r: r['Quality'], reverse=False)
     elif selected_indexer == Indexer.PROWLARR:
         sort_by = get_setting('prowlarr_sort_by')
         if sort_by == 'Seeds':
-            sorted_results = sorted(res, key=lambda r: int(r['seeders']), reverse=True)
+            sorted_results = sorted(results, key=lambda r: int(r['seeders']), reverse=True)
         elif sort_by == 'Size':
-            sorted_results = sorted(res, key=lambda r: r['size'], reverse=True)
+            sorted_results = sorted(results, key=lambda r: r['size'], reverse=True)
         elif sort_by == 'Date':
-            sorted_results = sorted(res, key=lambda r: r['publishDate'], reverse=True)
+            sorted_results = sorted(results, key=lambda r: r['publishDate'], reverse=True)
         elif sort_by == 'Quality':
-            sorted_results = sorted(res, key=lambda r: r['Quality'], reverse=False)
-        return sorted_results
+            sorted_results = sorted(results, key=lambda r: r['Quality'], reverse=False)
+    return sorted_results
 
-def filter_by_quality(response):
+def filter_by_episode(results, episode_num, season_num):
+    filtered_episodes= []
+    pattern1 = 'S%sE%s' % (season_num, episode_num)
+    pattern2 = '%sx%s' % (season_num, episode_num)
+    pattern3 = '\s%s\s' % (episode_num)
+
+    pattern = "|".join([pattern1, pattern2, pattern3])
+
+    jackett= False
+    prowlarr = False
+
+    selected_indexer = get_setting('selected_indexer')
+    if selected_indexer == Indexer.JACKETT:
+        jackett= True
+        results = results['Results']
+    elif selected_indexer == Indexer.PROWLARR:
+        prowlarr = True
+        results = results
+
+    for res in results:
+        if jackett:
+            title = res['Title']
+        elif prowlarr:
+            title = res['title']    
+        match = re.search(r'{}'.format(pattern), title)
+        if match:
+            filtered_episodes.append(res)
+    return filtered_episodes
+
+def filter_by_quality(results, mode=None):
     quality_720p = []
     quality_1080p = []
     quality_4k = []
     
+    jackett= False
+    prowlarr = False
+
     selected_indexer = get_setting('selected_indexer')
-    jackett= ""
-    prowlarr = ""
-
     if selected_indexer == Indexer.JACKETT:
-        jackett= Indexer.JACKETT
-        response = response['Results']
+        jackett= True
+        if mode == 'tv_episode':
+            results = results
+        else:
+            results = results['Results']
     elif selected_indexer == Indexer.PROWLARR:
-        prowlarr = Indexer.PROWLARR
-        response = response
+        prowlarr = True
+        results = results
 
-    for res in response:
+    for res in results:
         if jackett:
             matches = re.findall(r'\b\d+p\b|\b\d+k\b', res['Title'])
         elif prowlarr:
