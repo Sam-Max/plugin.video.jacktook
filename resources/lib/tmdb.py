@@ -59,7 +59,7 @@ def tmdb_show_results(
             duration = details.runtime
         elif mode == "tv":
             title = res.name
-            release_date = res.first_air_date
+            release_date = res.get("first_air_date")
         elif mode == "multi":
             if "name" in res:
                 title = res.name

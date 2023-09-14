@@ -379,8 +379,9 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     pattern1 = "S%sE%s" % (season_num, episode_num)
     pattern2 = "%sx%s" % (season_num, episode_num)
     pattern3 = "\s%s\s" % (episode_num)
+    pattern4 = "\sS%s\s" % (season_num)
 
-    pattern = "|".join([pattern1, pattern2, pattern3, episode_name])
+    pattern = "|".join([pattern1, pattern2, pattern3, pattern4, episode_name])
 
     jackett = False
     prowlarr = False
