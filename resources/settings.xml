@@ -31,9 +31,15 @@
         <setting id="tmdb_apikey" type="text" label="TMDB Api Key" default=""/>
     </category>
 
-     <category label="AniList">
+    <category label="AniList">
         <setting label="AniList Configuration:" type="lsep"/>
         <setting id="anilist_client_id" type="text" label="Client ID" default=""/>
         <setting id="anilist_client_secret" type="text" label="Client Secret" default=""/>
     </category>
+
+    <category label="Fanart.TV">
+        <setting label="Fanart.TV Configuration:" type="lsep"/>
+        <setting id="fanarttv_client_id" type="text" label="Client ID" default=""/>
+    </category>
+
 </settings>

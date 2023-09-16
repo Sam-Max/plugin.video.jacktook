@@ -37,7 +37,7 @@ class TV(TMDb):
         "top_rated": "/tv/top_rated",
     }
 
-    def details(self, tv_id, append_to_response="videos,trailers,images,credits,translations"):
+    def details(self, tv_id, append_to_response="videos,trailers,images,credits,translations,external_ids"):
         """
         Get the primary TV show details by id.
         :param tv_id: int

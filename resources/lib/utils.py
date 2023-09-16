@@ -6,6 +6,7 @@ import requests
 
 from resources.lib.clients import Jackett, Prowlarr
 from resources.lib.database import Database
+from resources.lib.fanarttv import get_api_fanarttv
 from resources.lib.kodi import (
     ADDON_PATH,
     bytes_to_human_readable,
@@ -170,8 +171,14 @@ def play(url, title, magnet):
         notify("You need to select a torrent client")
 
 
-def api_show_results(results, plugin, func):
+def api_show_results(results, plugin, id, mode, func):
     selected_indexer = get_setting("selected_indexer")
+
+    poster = ""
+    if id:
+        fanart_data = get_fanartv(id, mode)
+        if fanart_data:
+            poster = fanart_data["clearlogo2"]
 
     if selected_indexer == Indexer.JACKETT:
         description_length = int(get_setting("jackett_desc_length"))
@@ -200,7 +207,11 @@ def api_show_results(results, plugin, func):
 
             list_item = ListItem(label=torrent_title)
             list_item.setArt(
-                {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
+                {
+                    "poster": poster,
+                    "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+                    "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+                }
             )
             list_item.setInfo(
                 "video", {"title": title, "mediatype": "video", "plot": ""}
@@ -284,8 +295,39 @@ def set_watched(title, magnet, url):
     db.commit()
 
 
+def save_db_fanarttv(id, poster, fanart, clearlogo):
+    db.database["jt:fanarttv"][id] = {
+        "poster2": poster,
+        "fanart2": fanart,
+        "clearlogo2": clearlogo,
+    }
+    db.commit()
+
+
+def get_db_fanarttv(id):
+    if id in db.database["jt:fanarttv"]:
+        return db.database["jt:fanarttv"][id]
+    return None
+
+
 def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
+
+
+def get_fanartv(id, mode="tv"):
+    fanart_data = get_db_fanarttv(id)
+    if fanart_data:
+        return fanart_data
+    else:
+        fanart_data, _ = get_api_fanarttv(mode, "en", id)
+        if fanart_data:
+            poster = fanart_data["poster2"]
+            fanart = fanart_data["fanart2"]
+            clearlogo2 = fanart_data["clearlogo2"]
+            save_db_fanarttv(id, poster, fanart, clearlogo2)
+            fanart_data = get_db_fanarttv(id)
+            if fanart_data:
+                return fanart_data
 
 
 def clear():
@@ -405,7 +447,7 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     return filtered_episodes
 
 
-def filter_by_quality(results, mode=None):
+def filter_by_quality(results, mode=""):
     quality_720p = []
     quality_1080p = []
     quality_4k = []
@@ -460,3 +502,5 @@ def filter_by_quality(results, mode=None):
 def is_magnet_link(link):
     pattern = r"^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}&dn=.+&tr=.+$"
     return bool(re.match(pattern, link))
+
+

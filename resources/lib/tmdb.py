@@ -7,7 +7,7 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w500"
-TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w780"
+TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 
 def add_icon_genre(item, name):
@@ -41,12 +41,15 @@ def add_icon_genre(item, name):
     }
     icon_path = genre_icons.get(name)
     if icon_path:
-        item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", icon_path)})
+        item.setArt(
+            {
+                "icon": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+                "thumb": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+            }
+        )
 
 
-def tmdb_show_results(
-    results, action_func, next_action_func, page, plugin, mode, genre_id=0
-):
+def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
     for res in results:
         id = int(res.id)
         release_date = ""
@@ -66,13 +69,12 @@ def tmdb_show_results(
             if "title" in res:
                 title = res.title
 
-        poster_path = res.poster_path if res.get("poster_path") else ""
-        backdrop_path = res.backdrop_path if res.get("backdrop_path") else ""
-
-        if poster_path:
-            poster_path = TMDB_POSTER_URL + res.poster_path
-        if backdrop_path:
-            backdrop_path = TMDB_BACKDROP_URL + res.backdrop_path
+        poster_path = (
+            TMDB_POSTER_URL + res.poster_path if res.get("poster_path") else ""
+        )
+        backdrop_path = (
+            TMDB_BACKDROP_URL + res.backdrop_path if res.get("backdrop_path") else ""
+        )
 
         overview = res.overview if res.get("overview") else ""
 
@@ -80,8 +82,8 @@ def tmdb_show_results(
         list_item.setArt(
             {
                 "poster": poster_path,
-                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
                 "fanart": backdrop_path,
+                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
         list_item.setInfo(
@@ -96,17 +98,17 @@ def tmdb_show_results(
         )
         list_item.setProperty("IsPlayable", "false")
 
-        if action_func.__name__ == "search":
+        if func.__name__ == "search":
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(action_func, mode=mode, query=title, tracker="all"),
+                plugin.url_for(func, mode=mode, query=title, id=id, tracker="all"),
                 list_item,
                 isFolder=True,
             )
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(action_func, id=id),
+                plugin.url_for(func, id=id),
                 list_item,
                 isFolder=True,
             )
@@ -118,7 +120,7 @@ def tmdb_show_results(
     page += 1
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(next_action_func, mode=mode, page=page, genre_id=genre_id),
+        plugin.url_for(next_func, mode=mode, page=page, genre_id=genre_id),
         list_item,
         isFolder=True,
     )

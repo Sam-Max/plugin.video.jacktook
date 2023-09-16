@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import sys
 from urllib.parse import urlencode
 import xbmc
@@ -51,13 +52,14 @@ def set_art(list_item, artwork_url):
 
 
 def slugify(text):
-    return (
-        text.lower()
-        .replace(" ", "-")
-        .replace(",", "")
-        .replace("!", "")
-        .replace("+", "")
-    )
+    text = text.lower()
+    text = re.sub(r"\[.*?\]", "", text)
+    text = text.replace("(", "").replace(")", "")
+    text = text.replace("'", "").replace("’", "")
+    text = text.replace("+", "").replace("@", "")
+    text = re.sub(r"[^a-zA-Z0-9_]+", "-", text)
+    text = text.strip("-")
+    return text
 
 
 def compat(line1, line2, line3):

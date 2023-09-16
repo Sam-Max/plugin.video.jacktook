@@ -7,13 +7,18 @@ from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.objs.trending import Trending
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.tmdb import TMDb
-from resources.lib.tmdb import TMDB_POSTER_URL, add_icon_genre, tmdb_show_results
+from resources.lib.tmdb import (
+    TMDB_POSTER_URL,
+    add_icon_genre,
+    tmdb_show_results,
+)
 from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
     api_show_results,
     clear,
     filter_by_episode,
     filter_by_quality,
+    get_fanartv,
     history,
     play,
     search_api,
@@ -72,28 +77,11 @@ def main_menu():
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, tracker="all"),
-        list_item("Direct - Search", "search.png"),
+        plugin.url_for(direct_menu),
+        list_item("Direct Search", "search.png"),
         isFolder=True,
     )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search, mode="tv", query=None, tracker="all"),
-        list_item("Direct - TV Search", "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search, mode="movie", query=None, tracker="all"),
-        list_item("Direct - Movie Search", "movies.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, tracker="anime"),
-        list_item("Direct - Anime Search", "search.png"),
-        isFolder=True,
-    )
+
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(settings),
@@ -104,6 +92,35 @@ def main_menu():
         plugin.handle,
         plugin.url_for(main_history),
         list_item("History", "history.png"),
+        isFolder=True,
+    )
+    endOfDirectory(plugin.handle)
+
+
+@plugin.route("/direct")
+def direct_menu():
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search, mode="multi", query=None, id=None, tracker="all"),
+        list_item("Search", "search.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search, mode="tv", query=None, id=None, tracker="all"),
+        list_item("TV Search", "tv.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search, mode="movie", query=None, id=None, tracker="all"),
+        list_item("Movie Search", "movies.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search, mode="multi", query=None, id=None, tracker="anime"),
+        list_item("Anime Search", "search.png"),
         isFolder=True,
     )
     endOfDirectory(plugin.handle)
@@ -152,23 +169,25 @@ def genre_menu():
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/search/<mode>/<query>/<tracker>")
-def search(mode, query, tracker):
+@plugin.route("/search/<mode>/<query>/<id>/<tracker>")
+def search(mode, query, id, tracker):
     results = search_api(query, mode, tracker)
     if results:
         f_quality = filter_by_quality(results)
         sorted_res = sort_results(f_quality)
-        api_show_results(sorted_res, plugin, func=play_torrent)
+        api_show_results(sorted_res, plugin, id, mode="movies", func=play_torrent)
 
 
-@plugin.route("/search_season/<query>/<episode_name>/<episode_num>/<season_num>/<tracker>")
-def search_tv_episode(query, episode_name, episode_num, season_num, tracker):
+@plugin.route(
+    "/search_season/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>/<tracker>"
+)
+def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num, tracker):
     results = search_api(query=query, mode="tv", tracker=tracker)
     if results:
         f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
         f_quality = filter_by_quality(f_episodes, mode="tv_episode")
         sorted_res = sort_results(f_quality)
-        api_show_results(sorted_res, plugin, func=play_torrent)
+        api_show_results(sorted_res, plugin, tvdb_id, mode="tv", func=play_torrent)
 
 
 @plugin.route("/play_torrent")
@@ -177,7 +196,7 @@ def play_torrent():
     play(url=url, title=title, magnet=magnet)
 
 
-@plugin.route("/search/tmdb/<mode>/<genre_id>/<page>")
+@plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
     page = int(page)
     genre_id = int(genre_id)
@@ -198,8 +217,8 @@ def search_tmdb(mode, genre_id, page):
         results = search_.multi(str(text), page=page)
         tmdb_show_results(
             results,
-            action_func=search,
-            next_action_func=next_page,
+            func=search,
+            next_func=next_page,
             page=page,
             plugin=plugin,
             mode=mode,
@@ -210,8 +229,8 @@ def search_tmdb(mode, genre_id, page):
             movies = discover.discover_movies({"with_genres": genre_id, "page": page})
             tmdb_show_results(
                 movies.results,
-                action_func=search,
-                next_action_func=next_page,
+                func=search,
+                next_func=next_page,
                 page=page,
                 plugin=plugin,
                 genre_id=genre_id,
@@ -222,8 +241,8 @@ def search_tmdb(mode, genre_id, page):
             movies = trending.movie_week(page=page)
             tmdb_show_results(
                 movies.results,
-                action_func=search,
-                next_action_func=next_page,
+                func=search,
+                next_func=next_page,
                 page=page,
                 plugin=plugin,
                 genre_id=genre_id,
@@ -237,8 +256,8 @@ def search_tmdb(mode, genre_id, page):
             )
             tmdb_show_results(
                 tv_shows.results,
-                action_func=tv_details,
-                next_action_func=next_page,
+                func=tv_details,
+                next_func=next_page,
                 page=page,
                 plugin=plugin,
                 genre_id=genre_id,
@@ -249,8 +268,8 @@ def search_tmdb(mode, genre_id, page):
             shows = trending.tv_day(page=page)
             tmdb_show_results(
                 shows.results,
-                action_func=tv_details,
-                next_action_func=next_page,
+                func=tv_details,
+                next_func=next_page,
                 page=page,
                 plugin=plugin,
                 genre_id=genre_id,
@@ -269,18 +288,27 @@ def tv_details(id):
 
     show_name = details.name
     number_of_seasons = details.number_of_seasons
+    tvdb_id = details.external_ids.tvdb_id
+
+    fanart_data = get_fanartv(tvdb_id)
+    if fanart_data:
+        poster = fanart_data["clearlogo2"]
+        fanart = fanart_data["fanart2"]
+    else:
+        poster = (
+            TMDB_POSTER_URL + details.poster_path if details.get("poster_path") else ""
+        )
+        fanart = poster
 
     for i in range(number_of_seasons):
         number = i + 1
         title = f"Season {number}"
-        list_item = ListItem(label=title)
-        poster_path = ""
-        if details.poster_path:
-            poster_path = TMDB_POSTER_URL + details.poster_path
 
+        list_item = ListItem(label=title)
         list_item.setArt(
             {
-                "poster": poster_path,
+                "poster": poster,
+                "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
@@ -293,7 +321,11 @@ def tv_details(id):
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
-                tv_season_details, show_name=show_name, id=id, season_num=number
+                tv_season_details,
+                show_name=show_name,
+                id=id,
+                tvdb_id=tvdb_id,
+                season_num=number,
             ),
             list_item,
             isFolder=True,
@@ -302,10 +334,11 @@ def tv_details(id):
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/tv/details/season/<show_name>/<id>/<season_num>")
-def tv_season_details(show_name, id, season_num):
+@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<season_num>")
+def tv_season_details(show_name, id, tvdb_id, season_num):
     season = Season()
     tv_season = season.details(id, season_num)
+
     for ep in tv_season.episodes:
         episode_name = ep.name
         episode_num = f"{ep.episode_number:02}"
@@ -315,14 +348,12 @@ def tv_season_details(show_name, id, season_num):
         air_date = ep.air_date
         duration = ep.runtime
 
-        list_item = ListItem(label=title)
-        url = ""
-        if ep.still_path:
-            url = TMDB_POSTER_URL + ep.still_path
+        poster = TMDB_POSTER_URL + ep.still_path if ep.get("still_path") else ""
 
+        list_item = ListItem(label=title)
         list_item.setArt(
             {
-                "poster": url,
+                "poster": poster,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
@@ -343,6 +374,7 @@ def tv_season_details(show_name, id, season_num):
             plugin.url_for(
                 search_tv_episode,
                 show_name,
+                tvdb_id,
                 episode_name,
                 episode_num,
                 season_num_,
@@ -389,7 +421,12 @@ def clear_history():
 
 def list_item(label, icon):
     item = ListItem(label)
-    item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", icon)})
+    item.setArt(
+        {
+            "icon": os.path.join(ADDON_PATH, "resources", "img", icon),
+            "thumb": os.path.join(ADDON_PATH, "resources", "img", icon),
+        }
+    )
     return item
 
 

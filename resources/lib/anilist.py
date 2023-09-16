@@ -63,14 +63,13 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
 
         description = res["description"]
         coverImage = res["coverImage"]["large"]
-        backdrop_path = ""
 
         list_item = ListItem(label=title)
         list_item.setArt(
             {
                 "poster": coverImage,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-                "fanart": backdrop_path,
+                "fanart": coverImage,
             }
         )
         list_item.setInfo(
@@ -81,7 +80,7 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
 
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(action, query=title, mode="multi", tracker="anime"),
+            plugin.url_for(action, query=title, mode="multi", id=None, tracker="anime"),
             list_item,
             isFolder=True,
         )

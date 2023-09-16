@@ -5,12 +5,11 @@ from resources.lib.kodi import ID
 import xbmcvfs
 
 
+# Modified from:
+# https://github.com/pikdum/plugin.video.haru/blob/master/resources/lib/database.py
 class Database:
     def __init__(self):
-        BASE_DATABASE = {
-            "jt:watch": {},
-            "jt:history": {},
-        }
+        BASE_DATABASE = {"jt:watch": {}, "jt:history": {}, "jt:fanarttv": {}}
 
         data_dir = xbmcvfs.translatePath(
             os.path.join("special://profile/addon_data/", ID)
