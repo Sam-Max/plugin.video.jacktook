@@ -1,5 +1,5 @@
 
-# Jackewlarr
+# Jacktook
 
 A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent finding and streaming.
 
@@ -37,11 +37,11 @@ A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent findi
 You can deploy/install the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming), on a remote server (instructions more below). After that, you need to configure Torrest addon with the Torrest service IP/Domain and Port.
 
 
-## Installation of this addon (Jackewlarr)
+## Installation of this addon (Jacktook)
 
-The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jackewlarr), so that any updates will be automatically installed.
+The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.8/plugin.video.jackewlarr-0.0.8.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jacktook/releases/download/v0.0.8/plugin.video.jacktook-0.0.8.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## How to run Jackett service using Docker:
 
@@ -81,7 +81,7 @@ CMD ["/usr/local/lib/torrest"]
 
 ## Screenshots:
 
-![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jackewlarr/master/resources/screenshots/jackewlarr.png)
+![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/jacktook.png)
 
 ## Legal Disclaimer:
 

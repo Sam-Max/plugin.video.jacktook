@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<addon id="plugin.video.jackewlarr" name="Jackewlarr" version="0.0.8" provider-name="Sam-Max">
+<addon id="plugin.video.jacktook" name="Jacktook" version="0.0.8" provider-name="Sam-Max">
   <requires>
     <import addon="xbmc.python" version="3.00.0"/>
     <import addon="script.module.requests" version="2.25.1"/>
     <import addon="script.module.routing" version="0.2.3"/>
   </requires>
-  <extension point="xbmc.python.pluginsource" library="jackewlarr.py">
+  <extension point="xbmc.python.pluginsource" library="jacktook.py">
     <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
-    <summary lang="en">jackewlarr</summary>
+    <summary lang="en">jacktook</summary>
     <description lang="en">Kodi addon to integrate jackett and prowlarr with torrest</description>
     <license>GPL-2.0-only</license>
-    <source>https://github.com/Sam-Max/plugin.video.jackewlarr</source>
+    <source>https://github.com/Sam-Max/plugin.video.jacktook</source>
     <assets>
       <icon>icon.png</icon>
     </assets>

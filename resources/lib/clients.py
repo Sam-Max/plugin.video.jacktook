@@ -24,12 +24,12 @@ class Jackett:
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
                 dialog_ok(
-                    "jackewlarr", f"The request to Jackett failed. ({res.status_code})"
+                    "Jacktook", f"The request to Jackett failed. ({res.status_code})"
                 )
                 return
             return json.loads(res.content)
         except Exception as e:
-            dialog_ok("jackewlarr", f"The request to Jackett failed. {str(e)}")
+            dialog_ok("Jacktook", f"The request to Jackett failed. {str(e)}")
             return
 
 
