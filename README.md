@@ -19,6 +19,8 @@ A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent findi
 
 - AniList Integration
 
+- Fanart.tv Integration
+
 ## Steps.
 
 1. Install Jackett. [Jackett](https://github.com/Jackett/Jackett) and/or [Prowlarr](https://github.com/Prowlarr/Prowlarr)
@@ -39,7 +41,7 @@ You can deploy/install the [Torrest Service](https://github.com/i96751414/torres
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jackewlarr), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.7/plugin.video.jackewlarr-0.0.7.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jackewlarr/releases/download/v0.0.8/plugin.video.jackewlarr-0.0.8.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## How to run Jackett service using Docker:
 
