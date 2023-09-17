@@ -56,7 +56,7 @@ Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#
 1. Create a Dockerfile with the following content (make sure to check before the latest `VERSION` of the binary and your `OS` and `ARCH` and update accordingly).
 
 ```
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y curl unzip
 
@@ -81,7 +81,7 @@ CMD ["/usr/local/lib/torrest"]
 
 ## Screenshots:
 
-![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/jacktook.png)
+![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
 
 ## Legal Disclaimer:
 
