@@ -425,6 +425,7 @@ def list_item(label, icon):
         {
             "icon": os.path.join(ADDON_PATH, "resources", "img", icon),
             "thumb": os.path.join(ADDON_PATH, "resources", "img", icon),
+            "fanart": os.path.join(ADDON_PATH, "fanart.png"),
         }
     )
     return item

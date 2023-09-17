@@ -15,6 +15,9 @@
     <source>https://github.com/Sam-Max/plugin.video.jacktook</source>
     <assets>
       <icon>icon.png</icon>
+      <fanart>fanart.png</fanart>
+      <screenshot>resources/screenshots/home.png</screenshot>
+      <screenshot>resources/screenshots/tv.png</screenshot>
     </assets>
  </extension>
 </addon>
