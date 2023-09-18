@@ -9,12 +9,12 @@ from xbmc import executebuiltin
 
 
 _URL = sys.argv[0]
-HANDLE = int(sys.argv[1])
 ADDON = xbmcaddon.Addon()
+ADDON_PATH = ADDON.getAddonInfo("path")
+ADDON_ICON =(ADDON.getAddonInfo("icon"))
 
 ID = ADDON.getAddonInfo("id")
 NAME = ADDON.getAddonInfo("name")
-ADDON_PATH = ADDON.getAddonInfo("path")
 
 
 def get_setting(name, default=None):
@@ -71,9 +71,8 @@ def compat(line1, line2, line3):
     return message
 
 
-def notify(message, image=None):
-    dialog = xbmcgui.Dialog().notification(NAME, message, icon=image, sound=False)
-    del dialog
+def notify(message, image=ADDON_ICON):
+    xbmcgui.Dialog().notification(NAME, message, icon=image, sound=False)
 
 
 def dialog_ok(heading, line1, line2="", line3=""):
@@ -84,8 +83,11 @@ def execute_builtin(command, block=False):
     return executebuiltin(command, block)
 
 
+def container_refresh():
+    execute_builtin("Container.Refresh")
+
+
 def hide_busy_dialog():
-    execute_builtin("Dialog.Close(busydialognocancel)")
     execute_builtin("Dialog.Close(busydialog)")
 
 

@@ -10,13 +10,16 @@ from resources.lib.fanarttv import get_api_fanarttv
 from resources.lib.kodi import (
     ADDON_PATH,
     bytes_to_human_readable,
+    container_refresh,
     get_int_setting,
     get_setting,
     hide_busy_dialog,
     notify,
 )
-from resources.lib.kodi import HANDLE, hide_busy_dialog
+from resources.lib.kodi import hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
+from resources.lib.tmdbv3api.objs.discover import Discover
+from resources.lib.tmdbv3api.objs.trending import Trending
 
 import xbmc
 from xbmcgui import ListItem, Dialog
@@ -144,7 +147,7 @@ def search_api(query, mode, tracker):
         return response
 
 
-def play(url, title, magnet):
+def play(url, title, magnet, plugin):
     set_watched(title=title, magnet=magnet, url=url)
 
     magnet = None if magnet == "None" else magnet
@@ -163,7 +166,7 @@ def play(url, title, magnet):
                 )
             elif url:
                 plugin_url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
-            setResolvedUrl(HANDLE, True, ListItem(path=plugin_url))
+            setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
         else:
             notify("You need to install the addon Torrest(plugin.video.torrest)")
             return
@@ -176,7 +179,7 @@ def api_show_results(results, plugin, id, mode, func):
 
     poster = ""
     if id:
-        fanart_data = get_fanartv(id, mode)
+        fanart_data = fanartv_get(id, mode)
         if fanart_data:
             poster = fanart_data["clearlogo2"]
 
@@ -295,39 +298,51 @@ def set_watched(title, magnet, url):
     db.commit()
 
 
-def save_db_fanarttv(id, poster, fanart, clearlogo):
-    db.database["jt:fanarttv"][id] = {
-        "poster2": poster,
-        "fanart2": fanart,
-        "clearlogo2": clearlogo,
-    }
-    db.commit()
-
-
-def get_db_fanarttv(id):
-    if id in db.database["jt:fanarttv"]:
-        return db.database["jt:fanarttv"][id]
-    return None
-
-
 def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
 
 
-def get_fanartv(id, mode="tv"):
-    fanart_data = get_db_fanarttv(id)
-    if fanart_data:
-        return fanart_data
-    else:
+def fanartv_get(id, mode="tv"):
+    fanart_data = db.get_fanarttv("jt:fanarttv", id)
+    if not fanart_data:
         fanart_data, _ = get_api_fanarttv(mode, "en", id)
         if fanart_data:
-            poster = fanart_data["poster2"]
-            fanart = fanart_data["fanart2"]
-            clearlogo2 = fanart_data["clearlogo2"]
-            save_db_fanarttv(id, poster, fanart, clearlogo2)
-            fanart_data = get_db_fanarttv(id)
-            if fanart_data:
-                return fanart_data
+            db.set_fanarttv(
+                "jt:fanarttv",
+                id,
+                fanart_data["poster2"],
+                fanart_data["fanart2"],
+                fanart_data["clearlogo2"],
+            )
+    return fanart_data
+
+
+def tmdb_get(path, params):
+    identifier = "{}|{}".format(path, params)
+    tmdb_data = db.get_tmdb("jt:tmdb", identifier)
+    if not tmdb_data:
+        if path == "discover_movie":
+            discover = Discover()
+            tmdb_data = discover.discover_movies(params)
+            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
+        elif path == "discover_tv":
+            discover = Discover()
+            tmdb_data = discover.discover_tv_shows(params)
+            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
+        elif path == "trending_movie":
+            trending = Trending()
+            tmdb_data = trending.movie_week(page=params)
+            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
+        elif path == "trending_tv":
+            trending = Trending()
+            tmdb_data = trending.tv_day(page=params)
+            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
+    return tmdb_data
+
+
+def clear_tmdb_cache():
+    db.database["jt:tmdb"] = {}
+    db.commit()
 
 
 def clear():
@@ -339,11 +354,11 @@ def clear():
     if confirmed:
         db.database["jt:history"] = {}
         db.commit()
-        xbmc.executebuiltin("Container.Refresh")
+        container_refresh()
 
 
 def history(plugin, func1, func2):
-    setPluginCategory(plugin.handle, f"Jackett Torrents - History")
+    setPluginCategory(plugin.handle, f"Torrents - History")
     list_item = ListItem(label="Clear History")
     addDirectoryItem(plugin.handle, plugin.url_for(func1), list_item)
 
@@ -502,5 +517,3 @@ def filter_by_quality(results, mode=""):
 def is_magnet_link(link):
     pattern = r"^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}&dn=.+&tr=.+$"
     return bool(re.match(pattern, link))
-
-

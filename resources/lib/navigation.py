@@ -2,9 +2,7 @@ import logging
 import os
 import routing
 
-from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.search import Search
-from resources.lib.tmdbv3api.objs.trending import Trending
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import (
@@ -16,13 +14,15 @@ from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
     api_show_results,
     clear,
+    clear_tmdb_cache,
+    fanartv_get,
     filter_by_episode,
     filter_by_quality,
-    get_fanartv,
     history,
     play,
     search_api,
     sort_results,
+    tmdb_get,
 )
 from resources.lib.kodi import (
     ADDON_PATH,
@@ -40,6 +40,10 @@ from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 
 
 plugin = routing.Plugin()
+
+tmdb = TMDb()
+tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
+tmdb.cache = True
 
 
 @plugin.route("/")
@@ -193,17 +197,13 @@ def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num, tra
 @plugin.route("/play_torrent")
 def play_torrent():
     url, magnet, title = plugin.args["query"][0].split(" ", 2)
-    play(url=url, title=title, magnet=magnet)
+    play(url, title, magnet, plugin)
 
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
     page = int(page)
     genre_id = int(genre_id)
-
-    tmdb = TMDb()
-    api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
-    tmdb.api_key = api_key
 
     if mode == "multi":
         keyboard = Keyboard("", "Search on TMDB:", False)
@@ -225,10 +225,9 @@ def search_tmdb(mode, genre_id, page):
         )
     elif mode == "movie":
         if genre_id != -1:
-            discover = Discover()
-            movies = discover.discover_movies({"with_genres": genre_id, "page": page})
+            data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
             tmdb_show_results(
-                movies.results,
+                data.results,
                 func=search,
                 next_func=next_page,
                 page=page,
@@ -237,10 +236,9 @@ def search_tmdb(mode, genre_id, page):
                 mode=mode,
             )
         else:
-            trending = Trending()
-            movies = trending.movie_week(page=page)
+            data = tmdb_get("trending_movie", page)
             tmdb_show_results(
-                movies.results,
+                data.results,
                 func=search,
                 next_func=next_page,
                 page=page,
@@ -250,12 +248,9 @@ def search_tmdb(mode, genre_id, page):
             )
     elif mode == "tv":
         if genre_id != -1:
-            discover = Discover()
-            tv_shows = discover.discover_tv_shows(
-                {"with_genres": genre_id, "page": page}
-            )
+            data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
             tmdb_show_results(
-                tv_shows.results,
+                data.results,
                 func=tv_details,
                 next_func=next_page,
                 page=page,
@@ -264,10 +259,9 @@ def search_tmdb(mode, genre_id, page):
                 mode=mode,
             )
         else:
-            trending = Trending()
-            shows = trending.tv_day(page=page)
+            data = tmdb_get("trending_tv", page)
             tmdb_show_results(
-                shows.results,
+                data.results,
                 func=tv_details,
                 next_func=next_page,
                 page=page,
@@ -284,19 +278,19 @@ def search_tmdb(mode, genre_id, page):
 @plugin.route("/tv/details/<id>")
 def tv_details(id):
     tv = TV()
-    details = tv.details(id)
+    d = tv.details(id)
 
-    show_name = details.name
-    number_of_seasons = details.number_of_seasons
-    tvdb_id = details.external_ids.tvdb_id
+    show_name = d.name
+    number_of_seasons = d.number_of_seasons
+    tvdb_id = d.external_ids.tvdb_id
 
-    fanart_data = get_fanartv(tvdb_id)
+    fanart_data = fanartv_get(tvdb_id)
     if fanart_data:
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
         poster = (
-            TMDB_POSTER_URL + details.poster_path if details.get("poster_path") else ""
+            TMDB_POSTER_URL + d.poster_path if d.get("poster_path") else ""
         )
         fanart = poster
 
@@ -314,7 +308,7 @@ def tv_details(id):
         )
         list_item.setInfo(
             "video",
-            {"title": title, "mediatype": "video", "plot": f"{details.overview}"},
+            {"title": title, "mediatype": "video", "plot": f"{d.overview}"},
         )
         list_item.setProperty("IsPlayable", "false")
 
@@ -418,7 +412,6 @@ def main_history():
 def clear_history():
     clear()
 
-
 def list_item(label, icon):
     item = ListItem(label)
     item.setArt(
@@ -462,6 +455,10 @@ def menu_genre(mode, page):
             )
     endOfDirectory(plugin.handle)
 
+@plugin.route("/clear_cached_tmdb")
+def clear_cached_tmdb():
+    clear_tmdb_cache()
+    notify("TMDB cache cleared")
 
 def run():
     try:
