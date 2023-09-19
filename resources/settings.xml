@@ -1,40 +1,39 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <category label="Torrents">
-        <setting label="Torrent Clients:" type="lsep"/>
-        <setting id="torrent_client" type="labelenum" label="Client" values="Torrest|None" default="Torrest"/>
+    <category label="30000">
+        <setting label="30001" type="lsep"/>
+        <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|None" default="Torrest"/>
     </category>
-    <category label="Indexers">
-        <setting label="Indexer:" type="lsep"/>
-        <setting id="selected_indexer" type="labelenum" label="Indexer" values="Jackett|Prowlarr" default="Jackett"/>
-        <setting label="Jackett Configuration:" type="lsep"/>
-        <setting id="jackett_apikey" type="text" label="Jackett Api Key" default=""/>
-        <setting id="jackett_host" type="text" label="Jackett Host" default=""/>
-        <setting id="jackett_desc_length" type="number" label="Description length" default="100"/>
-        <setting id="jackett_insecured" type="bool" label="Insecured connection" default="false"/>
-        <setting id="jackett_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date|Quality" default="Seeds"/>
-        <setting label="Prowlarr Configuration:" type="lsep"/>
-        <setting id="prowlarr_apikey" type="text" label="Prowlarr Api Key" default=""/>
-        <setting id="prowlarr_host" type="text" label="Prowlarr Host" default=""/>
-        <setting id="prowlarr_indexer_ids" type="text" label="Indexer Ids" default=""/>
-        <setting id="prowlarr_anime_indexer_ids" type="text" label="Anime Indexer Ids" default=""/>
-        <setting id="prowlarr_desc_length" type="number" label="Description length" default="100"/>
-        <setting id="prowlarr_insecured" type="bool" label="Insecured connection" default="false"/>
-        <setting id="prowlarr_sort_by" type="labelenum" label="Sort by" values="Seeds|Size|Date|Quality" default="Seeds"/>
+    <category label="30020">
+        <setting id="selected_indexer" type="labelenum" label="30021" values="Jackett|Prowlarr" default="Jackett"/>
+        <setting label="30022" type="lsep"/>
+        <setting id="jackett_apikey" type="text" label="30023" default=""/>
+        <setting id="jackett_host" type="text" label="30025" default=""/>
+        <setting id="jackett_desc_length" type="number" label="30026" default="100"/>
+        <setting id="jackett_insecured" type="bool" label="30027" default="false"/>
+        <setting id="jackett_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality" default="Seeds"/>
+        <setting label="30050" type="lsep"/>
+        <setting id="prowlarr_apikey" type="text" label="30051" default=""/>
+        <setting id="prowlarr_host" type="text" label="30052" default=""/>
+        <setting id="prowlarr_indexer_ids" type="text" label="30053" default=""/>
+        <setting id="prowlarr_anime_indexer_ids" type="text" label="30054" default=""/>
+        <setting id="prowlarr_desc_length" type="number" label="30026" default="100"/>
+        <setting id="prowlarr_insecured" type="bool" label="30027" default="false"/>
+        <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality" default="Seeds"/>
     </category>
-    <category label="TMDB">
-        <setting label="TMDB Configuration:" type="lsep"/>
-        <setting id="tmdb_apikey" type="text" label="TMDB Api Key" default=""/>
-        <setting type="action" label="Clear tmdb cache" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)" 
+    <category label="30100">
+        <setting label="30102" type="lsep"/>
+        <setting id="tmdb_apikey" type="text" label="30103" default=""/>
+        <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)" 
                  subsetting="true"/>
     </category>
-    <category label="AniList">
-        <setting label="AniList Configuration:" type="lsep"/>
-        <setting id="anilist_client_id" type="text" label="Client ID" default=""/>
-        <setting id="anilist_client_secret" type="text" label="Client Secret" default=""/>
+    <category label="30140">
+        <setting label="30142" type="lsep"/>
+        <setting id="anilist_client_id" type="text" label="30143" default=""/>
+        <setting id="anilist_client_secret" type="text" label="30144" default=""/>
     </category>
-    <category label="Fanart.TV">
-        <setting label="Fanart.TV Configuration:" type="lsep"/>
-        <setting id="fanarttv_client_id" type="text" label="Client ID" default=""/>
+    <category label="30200">
+        <setting label="30202" type="lsep"/>
+        <setting id="fanarttv_client_id" type="text" label="30203" default=""/>
     </category>
 </settings>
