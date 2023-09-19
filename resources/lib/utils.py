@@ -1,10 +1,12 @@
 from datetime import datetime
-import logging
+import hashlib
+import io
 import os
 import re
 import requests
 
-from resources.lib.clients import Jackett, Prowlarr
+from resources.lib.torf._torrent import Torrent
+from resources.lib.torf._magnet import Magnet
 from resources.lib.database import Database
 from resources.lib.fanarttv import get_api_fanarttv
 from resources.lib.kodi import (
@@ -13,11 +15,11 @@ from resources.lib.kodi import (
     container_refresh,
     get_int_setting,
     get_setting,
-    hide_busy_dialog,
+    log,
     notify,
+    translation,
 )
-from resources.lib.kodi import hide_busy_dialog
-from urllib3.exceptions import InsecureRequestWarning
+
 from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.trending import Trending
 
@@ -34,6 +36,8 @@ from urllib.parse import quote
 
 db = Database()
 
+PROVIDER_COLOR_MIN_BRIGHTNESS = 50
+
 
 class Enum:
     @classmethod
@@ -46,107 +50,6 @@ class Indexer(Enum):
     JACKETT = "Jackett"
 
 
-def get_client():
-    selected_indexer = get_setting("selected_indexer")
-
-    if selected_indexer == Indexer.JACKETT:
-        host = get_setting("jackett_host")
-        api_key = get_setting("jackett_apikey")
-
-        if not host or not api_key:
-            notify("You need to configure Jackett first")
-            return
-
-        if len(api_key) != 32:
-            notify("Jackett API key is invalid")
-            return
-
-        return Jackett(host, api_key)
-
-    elif selected_indexer == Indexer.PROWLARR:
-        host = get_setting("prowlarr_host")
-        api_key = get_setting("prowlarr_apikey")
-
-        if not host or not api_key:
-            notify("You need to configure Prowlarr first")
-            return
-
-        if len(api_key) != 32:
-            notify("Prowlarr API key is invalid")
-            return
-
-        return Prowlarr(host, api_key)
-
-
-def search_api(query, mode, tracker):
-    query = None if query == "None" else query
-    selected_indexer = get_setting("selected_indexer")
-
-    jackett_insecured = get_setting("jackett_insecured")
-    prowlarr_insecured = get_setting("prowlarr_insecured")
-
-    if prowlarr_insecured or jackett_insecured:
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
-    if selected_indexer == Indexer.JACKETT:
-        jackett = get_client()
-        if not jackett:
-            return
-
-        if query:
-            response = jackett.search(query, tracker, mode, jackett_insecured)
-        else:
-            keyboard = xbmc.Keyboard("", "Search for torrents:", False)
-            keyboard.doModal()
-            if keyboard.isConfirmed():
-                text = keyboard.getText().strip()
-                text = quote(text)
-                response = jackett.search(text, tracker, mode, jackett_insecured)
-            else:
-                hide_busy_dialog()
-                return
-        return response
-
-    elif selected_indexer == Indexer.PROWLARR:
-        indexers_ids = get_setting("prowlarr_indexer_ids")
-        indexers_ids_list = indexers_ids.split() if indexers_ids else None
-
-        anime_ids = get_setting("prowlarr_anime_indexer_ids")
-        anime_indexers_ids_list = anime_ids.split() if anime_ids else None
-
-        prowlarr = get_client()
-        if not prowlarr:
-            return
-
-        if query:
-            response = prowlarr.search(
-                query,
-                tracker,
-                indexers_ids_list,
-                anime_indexers_ids_list,
-                mode,
-                prowlarr_insecured,
-            )
-        else:
-            keyboard = xbmc.Keyboard("", "Search for torrents:", False)
-            keyboard.doModal()
-            if keyboard.isConfirmed():
-                text = keyboard.getText().strip()
-                text = quote(text)
-                response = prowlarr.search(
-                    text,
-                    tracker,
-                    indexers_ids_list,
-                    anime_indexers_ids_list,
-                    mode,
-                    prowlarr_insecured,
-                )
-            else:
-                hide_busy_dialog()
-                return
-        return response
-
-
 def play(url, title, magnet, plugin):
     set_watched(title=title, magnet=magnet, url=url)
 
@@ -154,137 +57,85 @@ def play(url, title, magnet, plugin):
     url = None if url == "None" else url
 
     if magnet is None and url is None:
-        notify("No sources found to play")
+        notify(translation(30251))
         return
 
     torrent_client = get_setting("torrent_client")
     if torrent_client == "Torrest":
         if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
             if magnet:
-                plugin_url = (
-                    "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
-                )
+                plugin_url = ("plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet))
+                setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
             elif url:
                 plugin_url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
-            setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
+                setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
         else:
-            notify("You need to install the addon Torrest(plugin.video.torrest)")
+            notify(translation(30250))
             return
-    else:
-        notify("You need to select a torrent client")
-
 
 def api_show_results(results, plugin, id, mode, func):
     selected_indexer = get_setting("selected_indexer")
+    if selected_indexer == Indexer.JACKETT:
+        description_length = int(get_setting("jackett_desc_length"))
+    elif selected_indexer == Indexer.PROWLARR:
+        description_length = int(get_setting("prowlarr_desc_length"))
 
     poster = ""
     if id:
         fanart_data = fanartv_get(id, mode)
         if fanart_data:
             poster = fanart_data["clearlogo2"]
+        
+    for r in results:
+        title = r["title"]
+        if len(title) > description_length:
+            title = title[0:description_length]
 
-    if selected_indexer == Indexer.JACKETT:
-        description_length = int(get_setting("jackett_desc_length"))
+        date = r["publishDate"]
+        match = re.search(r"\d{4}-\d{2}-\d{2}", date)
+        if match:
+            date = match.group()
+        size = bytes_to_human_readable(r["size"])
+        seeders = r["seeders"]
+        tracker = r["indexer"]
+        
+        magnet = None
+        guid = r.get("guid")
+        if guid and is_magnet_link(guid):
+            magnet = guid
+        else:
+            magnetUrl = r.get("magnetUrl")
+            magnet = get_magnet(magnetUrl)
+        url = r.get("downloadUrl")
 
-        for r in results:
-            title = r["Title"]
-            if len(title) > description_length:
-                title = title[0:description_length]
+        watched = is_torrent_watched(title)
+        if watched:
+            title = f"[COLOR palevioletred]{title}[/COLOR]"
+        tracker_color = get_tracker_color(tracker)
 
-            date = r["PublishDate"]
-            match = re.search(r"\d{4}-\d{2}-\d{2}", date)
-            if match:
-                date = match.group()
+        torrent_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-            size = bytes_to_human_readable(r["Size"])
-            seeders = r["Seeders"]
-            magnet = r["MagnetUri"]
-            url = r["Link"]
-            tracker = r["Tracker"]
+        list_item = ListItem(label=torrent_title)
+        list_item.setArt(
+            {
+                "poster": poster,
+                "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+                "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+            }
+        )
+        list_item.setInfo(
+            "video", {"title": title, "mediatype": "video", "plot": ""}
+        )
+        list_item.setProperty("IsPlayable", "true")
 
-            watched = is_torrent_watched(title)
-            if watched:
-                title = f"[COLOR palevioletred]{title}[/COLOR]"
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(func, query=f"{url} {magnet} {title}"),
+            list_item,
+            isFolder=False,
+        )
 
-            torrent_title = f"[B][COLOR palevioletred][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
-
-            list_item = ListItem(label=torrent_title)
-            list_item.setArt(
-                {
-                    "poster": poster,
-                    "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-                    "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-                }
-            )
-            list_item.setInfo(
-                "video", {"title": title, "mediatype": "video", "plot": ""}
-            )
-            list_item.setProperty("IsPlayable", "true")
-
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(func, query=f"{url} {magnet} {title}"),
-                list_item,
-                isFolder=False,
-            )
-
-        endOfDirectory(plugin.handle)
-
-    elif selected_indexer == Indexer.PROWLARR:
-        description_length = int(get_setting("prowlarr_desc_length"))
-
-        for r in results:
-            title = r["title"]
-            if len(title) > description_length:
-                title = title[0:description_length]
-
-            date = r["publishDate"]
-            match = re.search(r"\d{4}-\d{2}-\d{2}", date)
-            if match:
-                date = match.group()
-
-            size = bytes_to_human_readable(r["size"])
-            seeders = r["seeders"]
-
-            magnet = None
-            guid = r.get("guid")
-            if guid and is_magnet_link(guid):
-                magnet = r.get("guid")
-            else:
-                magnetUrl = r.get("magnetUrl")
-                if magnetUrl:
-                    res = requests.get(magnetUrl, allow_redirects=False)
-                    if "location" in res.headers:
-                        magnet = res.headers["location"]
-
-            url = r.get("downloadUrl")
-            indexer = r["indexer"]
-
-            watched = is_torrent_watched(title)
-            if watched:
-                title = f"[COLOR palevioletred]{title}[/COLOR]"
-
-            torrent_title = f"[B][COLOR palevioletred][{indexer}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
-
-            list_item = ListItem(label=torrent_title)
-            list_item.setArt(
-                {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
-            )
-            list_item.setInfo(
-                "video",
-                {"title": title, "mediatype": "video", "plot": ""},
-            )
-            list_item.setProperty("IsPlayable", "true")
-
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(func, query=f"{url} {magnet} {title}"),
-                list_item,
-                False,
-            )
-
-        endOfDirectory(plugin.handle)
-
+    endOfDirectory(plugin.handle)
 
 def set_watched(title, magnet, url):
     if title not in db.database["jt:watch"]:
@@ -340,6 +191,29 @@ def tmdb_get(path, params):
     return tmdb_data
 
 
+# This method was taken from script.elementum.jackett
+def get_tracker_color(provider_name):
+    hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
+    colors = []
+
+    spec = 10
+    for i in range(0, 3):
+        offset = spec * i
+        rounded = round(
+            int(hash[offset : offset + spec], 16) / int("F" * spec, 16) * 255
+        )
+        colors.append(int(max(rounded, PROVIDER_COLOR_MIN_BRIGHTNESS)))
+
+    while (sum(colors) / 3) < PROVIDER_COLOR_MIN_BRIGHTNESS:
+        for i in range(0, 3):
+            colors[i] += 10
+
+    for i in range(0, 3):
+        colors[i] = f"{colors[i]:02x}"
+
+    return "FF" + "".join(colors).upper()
+
+
 def clear_tmdb_cache():
     db.database["jt:tmdb"] = {}
     db.commit()
@@ -385,14 +259,14 @@ def history(plugin, func1, func2):
     endOfDirectory(plugin.handle)
 
 
-def limit_results(res):
+def limit_results(results):
     selected_indexer = get_setting("selected_indexer")
     rsp = get_int_setting("results_per_page")
 
     if selected_indexer == Indexer.JACKETT:
-        sliced_res = res["Results"][:rsp]
+        sliced_res = results[:rsp]
     elif selected_indexer == Indexer.PROWLARR:
-        sliced_res = res[:rsp]
+        sliced_res = results[:rsp]
 
     return sliced_res
 
@@ -402,32 +276,18 @@ def sort_results(results):
 
     if selected_indexer == Indexer.JACKETT:
         sort_by = get_setting("jackett_sort_by")
-        if sort_by == "Seeds":
-            sorted_results = sorted(
-                results, key=lambda r: int(r["Seeders"]), reverse=True
-            )
-        elif sort_by == "Size":
-            sorted_results = sorted(results, key=lambda r: r["Size"], reverse=True)
-        elif sort_by == "Date":
-            sorted_results = sorted(
-                results, key=lambda r: r["PublishDate"], reverse=True
-            )
-        elif sort_by == "Quality":
-            sorted_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
     elif selected_indexer == Indexer.PROWLARR:
         sort_by = get_setting("prowlarr_sort_by")
-        if sort_by == "Seeds":
-            sorted_results = sorted(
-                results, key=lambda r: int(r["seeders"]), reverse=True
-            )
-        elif sort_by == "Size":
-            sorted_results = sorted(results, key=lambda r: r["size"], reverse=True)
-        elif sort_by == "Date":
-            sorted_results = sorted(
-                results, key=lambda r: r["publishDate"], reverse=True
-            )
-        elif sort_by == "Quality":
-            sorted_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
+
+    if sort_by == "Seeds":
+        sorted_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
+    elif sort_by == "Size":
+        sorted_results = sorted(results, key=lambda r: r["size"], reverse=True)
+    elif sort_by == "Date":
+        sorted_results = sorted(results, key=lambda r: r["publishDate"], reverse=True)
+    elif sort_by == "Quality":
+        sorted_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
+
     return sorted_results
 
 
@@ -440,78 +300,63 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
 
     pattern = "|".join([pattern1, pattern2, pattern3, pattern4, episode_name])
 
-    jackett = False
-    prowlarr = False
-
-    selected_indexer = get_setting("selected_indexer")
-    if selected_indexer == Indexer.JACKETT:
-        jackett = True
-        results = results["Results"]
-    elif selected_indexer == Indexer.PROWLARR:
-        prowlarr = True
-        results = results
-
     for res in results:
-        if jackett:
-            title = res["Title"]
-        elif prowlarr:
-            title = res["title"]
+        title = res["title"]
         match = re.search(r"{}".format(pattern), title)
         if match:
             filtered_episodes.append(res)
     return filtered_episodes
 
 
-def filter_by_quality(results, mode=""):
+def filter_by_quality(results):
     quality_720p = []
     quality_1080p = []
     quality_4k = []
 
-    jackett = False
-    prowlarr = False
-
-    selected_indexer = get_setting("selected_indexer")
-    if selected_indexer == Indexer.JACKETT:
-        jackett = True
-        if mode == "tv_episode":
-            results = results
-        else:
-            results = results["Results"]
-    elif selected_indexer == Indexer.PROWLARR:
-        prowlarr = True
-        results = results
-
     for res in results:
-        if jackett:
-            matches = re.findall(r"\b\d+p\b|\b\d+k\b", res["Title"])
-        elif prowlarr:
-            matches = re.findall(r"\b\d+p\b|\b\d+k\b", res["title"])
-
+        matches = re.findall(r"\b\d+p\b|\b\d+k\b", res["title"])
         for match in matches:
             if "720p" in match:
-                if jackett:
-                    res["Title"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["Title"]
-                elif prowlarr:
-                    res["title"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
+                res["title"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
                 res["Quality"] = "720p"
                 quality_720p.append(res)
             elif "1080p" in match:
-                if jackett:
-                    res["Title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["Title"]
-                elif prowlarr:
-                    res["title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
+                res["title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
                 res["Quality"] = "1080p"
                 quality_1080p.append(res)
             elif "4k" in match:
-                if jackett:
-                    res["Title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["Title"]
-                elif prowlarr:
-                    res["title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
+                res["title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
                 res["Quality"] = "4k"
                 quality_4k.append(res)
 
     combined_list = quality_4k + quality_1080p + quality_720p
     return combined_list
+
+
+def get_magnet(uri):
+    if uri is None:
+        return
+
+    magnet_prefix = 'magnet:'
+    uri = uri
+
+    if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
+        return uri
+    res = requests.get(uri, allow_redirects=False)
+    if res.is_redirect:
+        uri= res.headers["Location"]
+        if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
+            return uri
+    elif (
+        res.status_code == 200 and res.headers.get("Content-Type") == "application/x-bittorrent"
+    ):
+        torrent = Torrent.read_stream(io.BytesIO(res.content))
+        return str(torrent.magnet())
+    else:
+        log(f"Could not get final redirect location for URI {uri}")
+
+def get_info_hash(magnet):
+    return Magnet.from_string(magnet).infohash
 
 
 def is_magnet_link(link):

@@ -1,5 +1,6 @@
 import logging
 import os
+from resources.lib.clients import search_api
 import routing
 
 from resources.lib.tmdbv3api.objs.search import Search
@@ -20,7 +21,6 @@ from resources.lib.utils import (
     filter_by_quality,
     history,
     play,
-    search_api,
     sort_results,
     tmdb_get,
 )
@@ -30,12 +30,13 @@ from resources.lib.kodi import (
     get_setting,
     hide_busy_dialog,
     notify,
+    translation,
 )
 from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
 from xbmcgui import ListItem
-from xbmc import Keyboard
+from xbmc import Keyboard, getLanguage, ISO_639_1
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 
 
@@ -43,7 +44,9 @@ plugin = routing.Plugin()
 
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
-tmdb.cache = True
+kodi_lang = getLanguage(ISO_639_1)
+if kodi_lang:
+    tmdb.language = kodi_lang
 
 
 @plugin.route("/")
@@ -189,7 +192,7 @@ def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num, tra
     results = search_api(query=query, mode="tv", tracker=tracker)
     if results:
         f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
-        f_quality = filter_by_quality(f_episodes, mode="tv_episode")
+        f_quality = filter_by_quality(f_episodes)
         sorted_res = sort_results(f_quality)
         api_show_results(sorted_res, plugin, tvdb_id, mode="tv", func=play_torrent)
 
@@ -289,9 +292,7 @@ def tv_details(id):
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
-        poster = (
-            TMDB_POSTER_URL + d.poster_path if d.get("poster_path") else ""
-        )
+        poster = TMDB_POSTER_URL + d.poster_path if d.get("poster_path") else ""
         fanart = poster
 
     for i in range(number_of_seasons):
@@ -412,6 +413,7 @@ def main_history():
 def clear_history():
     clear()
 
+
 def list_item(label, icon):
     item = ListItem(label)
     item.setArt(
@@ -455,10 +457,12 @@ def menu_genre(mode, page):
             )
     endOfDirectory(plugin.handle)
 
+
 @plugin.route("/clear_cached_tmdb")
 def clear_cached_tmdb():
     clear_tmdb_cache()
-    notify("TMDB cache cleared")
+    notify(translation(30240))
+
 
 def run():
     try:

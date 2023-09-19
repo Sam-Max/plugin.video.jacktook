@@ -11,7 +11,7 @@ from xbmc import executebuiltin
 _URL = sys.argv[0]
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
-ADDON_ICON =(ADDON.getAddonInfo("icon"))
+ADDON_ICON = ADDON.getAddonInfo("icon")
 
 ID = ADDON.getAddonInfo("id")
 NAME = ADDON.getAddonInfo("name")
@@ -36,6 +36,10 @@ def addon_settings():
 
 def get_int_setting(setting):
     return int(get_setting(setting))
+
+
+def translation(id_value):
+    return ADDON.getLocalizedString(id_value)
 
 
 def log(x):
