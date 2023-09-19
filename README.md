@@ -1,7 +1,9 @@
 
 # Jacktook
 
-A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent finding and streaming.
+A Kodi addon for torrent finding and streaming. 
+
+The addon doesn't get sources by itself on torrent websites for legal reason and should only be used to access movies and TV shows not protected by copyright.
 
 ## Requirements.
 
@@ -10,16 +12,13 @@ A Kodi addon that integrates Jackett and Prowlarr with Torrest for torrent findi
 ## Features.
 
 - Jackett integration
-
 - Prowlarr integration
-
 - Torrest Integration
-
-- TMDB Integration
-
+- TMDB Integration 
 - AniList Integration
-
 - Fanart.tv Integration
+- API calls caching
+
 
 ## Steps.
 
@@ -83,7 +82,4 @@ CMD ["/usr/local/lib/torrest"]
 
 ![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
 
-## Legal Disclaimer:
-
-This addon should only be used to access movies and TV shows not protected by copyright
 
