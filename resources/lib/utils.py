@@ -177,23 +177,23 @@ def tmdb_get(path, params):
     if not data:
         if path == "discover_movie":
             discover = Discover()
-            tmdb_data = discover.discover_movies(params)
+            data = discover.discover_movies(params)
         elif path == "discover_tv":
             discover = Discover()
-            tmdb_data = discover.discover_tv_shows(params)
+            data = discover.discover_tv_shows(params)
         elif path == "trending_movie":
             trending = Trending()
-            tmdb_data = trending.movie_week(page=params)
+            data = trending.movie_week(page=params)
         elif path == "trending_tv":
             trending = Trending()
-            tmdb_data = trending.tv_day(page=params)
+            data = trending.tv_day(page=params)
         cache.set(
             identifier,
-            tmdb_data,
+            data,
             timedelta(hours=get_cache_expiration()),
             hashed_key=True,
         )
-    return tmdb_data
+    return data
 
 
 # This method was taken from script.elementum.jackett
