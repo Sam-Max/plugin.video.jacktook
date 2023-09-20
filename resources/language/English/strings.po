@@ -95,6 +95,10 @@ msgctxt "#30104"
 msgid "Clear tmdb cache"
 msgstr ""
 
+msgctxt "#30105"
+msgid "Cache expiration hours"
+msgstr ""
+
 msgctxt "#30140"
 msgid "AniList"
 msgstr ""

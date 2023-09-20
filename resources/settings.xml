@@ -26,6 +26,8 @@
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
         <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)" 
                  subsetting="true"/>
+        <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="7"
+                 subsetting="true"/>
     </category>
     <category label="30140">
         <setting label="30142" type="lsep"/>

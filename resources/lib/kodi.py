@@ -12,9 +12,9 @@ _URL = sys.argv[0]
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
-
-ID = ADDON.getAddonInfo("id")
-NAME = ADDON.getAddonInfo("name")
+ADDON_ID = ADDON.getAddonInfo("id")
+ADDON_VERSION = ADDON.getAddonInfo("version")
+ADDON_NAME = ADDON.getAddonInfo("name")
 
 
 def get_setting(name, default=None):
@@ -31,7 +31,12 @@ def get_setting(name, default=None):
 
 
 def addon_settings():
-    return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ID)
+    return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ADDON_ID)
+
+
+def addon_status():
+    message = f"Version: {ADDON_VERSION}"
+    return xbmcgui.Dialog().textviewer("Status", message, False)
 
 
 def get_int_setting(setting):
@@ -76,7 +81,7 @@ def compat(line1, line2, line3):
 
 
 def notify(message, image=ADDON_ICON):
-    xbmcgui.Dialog().notification(NAME, message, icon=image, sound=False)
+    xbmcgui.Dialog().notification(ADDON_NAME, message, icon=image, sound=False)
 
 
 def dialog_ok(heading, line1, line2="", line3=""):
@@ -93,6 +98,10 @@ def container_refresh():
 
 def hide_busy_dialog():
     execute_builtin("Dialog.Close(busydialog)")
+
+
+def get_cache_expiration():
+    return get_int_setting("cache_expiration")
 
 
 def bytes_to_human_readable(size, unit="B"):

@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import io
 import os
 import re
 import requests
+from resources.lib.cached import Cache
 
 from resources.lib.torf._torrent import Torrent
 from resources.lib.torf._magnet import Magnet
@@ -13,6 +14,7 @@ from resources.lib.kodi import (
     ADDON_PATH,
     bytes_to_human_readable,
     container_refresh,
+    get_cache_expiration,
     get_int_setting,
     get_setting,
     log,
@@ -35,6 +37,7 @@ from xbmcplugin import (
 from urllib.parse import quote
 
 db = Database()
+cache = Cache.get_instance()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 50
 
@@ -64,7 +67,9 @@ def play(url, title, magnet, plugin):
     if torrent_client == "Torrest":
         if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
             if magnet:
-                plugin_url = ("plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet))
+                plugin_url = (
+                    "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
+                )
                 setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
             elif url:
                 plugin_url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
@@ -73,6 +78,7 @@ def play(url, title, magnet, plugin):
             notify(translation(30250))
             return
 
+
 def api_show_results(results, plugin, id, mode, func):
     selected_indexer = get_setting("selected_indexer")
     if selected_indexer == Indexer.JACKETT:
@@ -80,12 +86,10 @@ def api_show_results(results, plugin, id, mode, func):
     elif selected_indexer == Indexer.PROWLARR:
         description_length = int(get_setting("prowlarr_desc_length"))
 
-    poster = ""
     if id:
         fanart_data = fanartv_get(id, mode)
-        if fanart_data:
-            poster = fanart_data["clearlogo2"]
-        
+        poster = fanart_data["clearlogo2"] if fanart_data else ""
+
     for r in results:
         title = r["title"]
         if len(title) > description_length:
@@ -98,7 +102,7 @@ def api_show_results(results, plugin, id, mode, func):
         size = bytes_to_human_readable(r["size"])
         seeders = r["seeders"]
         tracker = r["indexer"]
-        
+
         magnet = None
         guid = r.get("guid")
         if guid and is_magnet_link(guid):
@@ -113,9 +117,9 @@ def api_show_results(results, plugin, id, mode, func):
             title = f"[COLOR palevioletred]{title}[/COLOR]"
         tracker_color = get_tracker_color(tracker)
 
-        torrent_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+        torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-        list_item = ListItem(label=torrent_title)
+        list_item = ListItem(label=torr_title)
         list_item.setArt(
             {
                 "poster": poster,
@@ -123,9 +127,7 @@ def api_show_results(results, plugin, id, mode, func):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
             }
         )
-        list_item.setInfo(
-            "video", {"title": title, "mediatype": "video", "plot": ""}
-        )
+        list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": ""})
         list_item.setProperty("IsPlayable", "true")
 
         addDirectoryItem(
@@ -136,6 +138,7 @@ def api_show_results(results, plugin, id, mode, func):
         )
 
     endOfDirectory(plugin.handle)
+
 
 def set_watched(title, magnet, url):
     if title not in db.database["jt:watch"]:
@@ -156,7 +159,7 @@ def is_torrent_watched(title):
 def fanartv_get(id, mode="tv"):
     fanart_data = db.get_fanarttv("jt:fanarttv", id)
     if not fanart_data:
-        fanart_data, _ = get_api_fanarttv(mode, "en", id)
+        fanart_data = get_api_fanarttv(mode, "en", id)
         if fanart_data:
             db.set_fanarttv(
                 "jt:fanarttv",
@@ -170,24 +173,26 @@ def fanartv_get(id, mode="tv"):
 
 def tmdb_get(path, params):
     identifier = "{}|{}".format(path, params)
-    tmdb_data = db.get_tmdb("jt:tmdb", identifier)
-    if not tmdb_data:
+    data = cache.get(identifier, hashed_key=True)
+    if not data:
         if path == "discover_movie":
             discover = Discover()
             tmdb_data = discover.discover_movies(params)
-            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
         elif path == "discover_tv":
             discover = Discover()
             tmdb_data = discover.discover_tv_shows(params)
-            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
         elif path == "trending_movie":
             trending = Trending()
             tmdb_data = trending.movie_week(page=params)
-            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
         elif path == "trending_tv":
             trending = Trending()
             tmdb_data = trending.tv_day(page=params)
-            db.set_tmdb("jt:tmdb", identifier, tmdb_data)
+        cache.set(
+            identifier,
+            tmdb_data,
+            timedelta(hours=get_cache_expiration()),
+            hashed_key=True,
+        )
     return tmdb_data
 
 
@@ -337,23 +342,25 @@ def get_magnet(uri):
     if uri is None:
         return
 
-    magnet_prefix = 'magnet:'
+    magnet_prefix = "magnet:"
     uri = uri
 
     if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
         return uri
     res = requests.get(uri, allow_redirects=False)
     if res.is_redirect:
-        uri= res.headers["Location"]
+        uri = res.headers["Location"]
         if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
             return uri
     elif (
-        res.status_code == 200 and res.headers.get("Content-Type") == "application/x-bittorrent"
+        res.status_code == 200
+        and res.headers.get("Content-Type") == "application/x-bittorrent"
     ):
         torrent = Torrent.read_stream(io.BytesIO(res.content))
         return str(torrent.magnet())
     else:
         log(f"Could not get final redirect location for URI {uri}")
+
 
 def get_info_hash(magnet):
     return Magnet.from_string(magnet).infohash

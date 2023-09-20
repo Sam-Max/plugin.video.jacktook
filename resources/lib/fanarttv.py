@@ -80,7 +80,7 @@ def get_api_fanarttv(media_type, language, media_id):
         "discart": discart,
         "keyart": keyart,
     }
-    return fanart_data, all_fanart_images
+    return fanart_data
 
 
 def parse_season_art(art, language):

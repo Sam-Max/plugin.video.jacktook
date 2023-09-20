@@ -27,6 +27,7 @@ from resources.lib.utils import (
 from resources.lib.kodi import (
     ADDON_PATH,
     addon_settings,
+    addon_status,
     get_setting,
     hide_busy_dialog,
     notify,
@@ -95,6 +96,14 @@ def main_menu():
         list_item("Settings", "settings.png"),
         isFolder=True,
     )
+
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(status),
+        list_item("Status", "status.png"),
+        isFolder=True,
+    )
+
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(main_history),
@@ -334,12 +343,15 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
     season = Season()
     tv_season = season.details(id, season_num)
 
+    fanart_data = fanartv_get(tvdb_id)
+    fanart = fanart_data.get("fanart2") if fanart_data else ""
+
     for ep in tv_season.episodes:
-        episode_name = ep.name
-        episode_num = f"{ep.episode_number:02}"
+        ep_name = ep.name
+        ep_num = f"{ep.episode_number:02}"
         season_num_ = f"{int(season_num):02}"
 
-        title = f"{season_num}x{episode_num}. {episode_name}"
+        title = f"{season_num}x{ep_num}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
 
@@ -349,6 +361,7 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
         list_item.setArt(
             {
                 "poster": poster,
+                "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
@@ -370,8 +383,8 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
                 search_tv_episode,
                 show_name,
                 tvdb_id,
-                episode_name,
-                episode_num,
+                ep_name,
+                ep_num,
                 season_num_,
                 "all",
             ),
@@ -397,6 +410,11 @@ def next_page_anilist(category, page):
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
 def next_page(mode, page, genre_id):
     search_tmdb(mode=mode, genre_id=int(genre_id), page=int(page))
+
+
+@plugin.route("/status")
+def status():
+    addon_status()
 
 
 @plugin.route("/settings")

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pickle
-from resources.lib.kodi import ID, log
+from resources.lib.kodi import ADDON_ID
 import xbmcvfs
 
 
@@ -17,7 +17,7 @@ class Database:
         }
 
         data_dir = xbmcvfs.translatePath(
-            os.path.join("special://profile/addon_data/", ID)
+            os.path.join("special://profile/addon_data/", ADDON_ID)
         )
         database_path = os.path.join(data_dir, "database.pickle")
         xbmcvfs.mkdirs(data_dir)
@@ -33,29 +33,29 @@ class Database:
         self.database = database
         self.database_path = database_path
         self.addon_xml_path = xbmcvfs.translatePath(
-            os.path.join("special://home/addons/", ID, "addon.xml")
+            os.path.join("special://home/addons/", ADDON_ID, "addon.xml")
         )
 
-    def get_fanarttv(self, dict, id):
-        if id in self.database[dict]:
-            return self.database[dict][id]
+    def get_fanarttv(self, key, id):
+        if id in self.database[key]:
+            return self.database[key][id]
         return None
 
-    def set_fanarttv(self, dict, id, poster, fanart, clear):
-        self.database[dict][id] = {
+    def set_fanarttv(self, key, id, poster, fanart, clear):
+        self.database[key][id] = {
             "poster2": poster,
             "fanart2": fanart,
             "clearlogo2": clear,
         }
         self.commit()
     
-    def get_tmdb(self, dict, identifier):
-        if identifier in self.database[dict]:
-            return self.database[dict][identifier]
+    def get_tmdb(self, key, identifier):
+        if identifier in self.database[key]:
+            return self.database[key][identifier]
         return None
 
-    def set_tmdb(self, dict, identifier, tmdb_data):
-        self.database[dict][identifier] = tmdb_data
+    def set_tmdb(self, key, identifier, tmdb_data):
+        self.database[key][identifier] = tmdb_data
         self.commit()
 
     def commit(self):
