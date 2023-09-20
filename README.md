@@ -3,7 +3,7 @@
 
 A Kodi addon for torrent finding and streaming. 
 
-The addon doesn't get sources by itself on torrent websites for legal reason and should only be used to access movies and TV shows not protected by copyright.
+This addon doesn't get sources by itself on torrent websites for legal reason and it should only be used to access movies and TV shows not protected by copyright.
 
 ## Requirements.
 
