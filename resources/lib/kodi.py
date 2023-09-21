@@ -39,6 +39,10 @@ def addon_status():
     return xbmcgui.Dialog().textviewer("Status", message, False)
 
 
+def is_torrest_addon():
+    return xbmc.getCondVisibility(f"System.HasAddon({ADDON_ID})")
+
+
 def get_int_setting(setting):
     return int(get_setting(setting))
 
@@ -112,3 +116,12 @@ def bytes_to_human_readable(size, unit="B"):
         unit = list(units.keys())[list(units.values()).index(units[unit] + 1)]
 
     return f"{size:.2f} {unit}"
+
+
+def Keyboard(id, default="", hidden=False):
+    keyboard = xbmc.Keyboard(default, translation(id), hidden)
+    keyboard.doModal()
+    if keyboard.isConfirmed():
+        return keyboard.getText()
+
+

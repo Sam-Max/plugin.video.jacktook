@@ -17,6 +17,7 @@ from resources.lib.kodi import (
     get_cache_expiration,
     get_int_setting,
     get_setting,
+    is_torrest_addon,
     log,
     notify,
     translation,
@@ -25,7 +26,6 @@ from resources.lib.kodi import (
 from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.trending import Trending
 
-import xbmc
 from xbmcgui import ListItem, Dialog
 from xbmcplugin import (
     addDirectoryItem,
@@ -63,9 +63,9 @@ def play(url, title, magnet, plugin):
         notify(translation(30251))
         return
 
-    torrent_client = get_setting("torrent_client")
-    if torrent_client == "Torrest":
-        if xbmc.getCondVisibility('System.HasAddon("plugin.video.torrest")'):
+    torr_client = get_setting("torrent_client")
+    if torr_client == "Torrest":
+        if is_torrest_addon():
             if magnet:
                 plugin_url = (
                     "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)

@@ -151,6 +151,18 @@ msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache de TMDB limpiada"
 
+msgctxt "#30241"
+msgid "Search on TMDB:"
+msgstr "Buscar en TMDB"
+
+msgctxt "#30242"
+msgid "Search on AniList:"
+msgstr "Buscar en AniList"
+
+msgctxt "#30243"
+msgid "Search for torrents:"
+msgstr "Buscar torrents"
+
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"
 msgstr "El Addon de Torrest no esta instalado - (plugin.video.torrest)"

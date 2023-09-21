@@ -1,14 +1,13 @@
 import json
 from urllib.parse import quote
 import requests
-from resources.lib.kodi import get_setting, log, notify, translation
+from resources.lib.kodi import Keyboard, get_setting, log, notify, translation
 
 from resources.lib.utils import Indexer
 from resources.lib.kodi import hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 
 from xbmcgui import DialogProgressBG
-from xbmc import Keyboard
 
 
 def get_client():
@@ -151,17 +150,13 @@ def search_api(query, mode, tracker):
             return
 
         if not query:
-            keyboard = Keyboard("", "Search for torrents:", False)
-            keyboard.doModal()
-            if keyboard.isConfirmed():
-                text = keyboard.getText().strip()
+            text = Keyboard(id=30243)
+            if text:
+                text = quote(text)
                 p_dialog.create(
                     "Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching..."
                 )
-                response = jackett.search(quote(text), tracker, mode, jackett_insecured)
-            else:
-                hide_busy_dialog()
-                return
+                response = jackett.search(text, tracker, mode, jackett_insecured)
         else:
             p_dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
             response = jackett.search(query, tracker, mode, jackett_insecured)
@@ -178,10 +173,8 @@ def search_api(query, mode, tracker):
             return
 
         if not query:
-            keyboard = Keyboard("", "Search for torrents:", False)
-            keyboard.doModal()
-            if keyboard.isConfirmed():
-                text = keyboard.getText().strip()
+            text = Keyboard(id=30243)
+            if text:
                 text = quote(text)
                 p_dialog.create(
                     "Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching..."

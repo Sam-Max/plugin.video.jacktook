@@ -26,10 +26,10 @@ from resources.lib.utils import (
 )
 from resources.lib.kodi import (
     ADDON_PATH,
+    Keyboard,
     addon_settings,
     addon_status,
     get_setting,
-    hide_busy_dialog,
     notify,
     translation,
 )
@@ -37,7 +37,7 @@ from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
 from xbmcgui import ListItem
-from xbmc import Keyboard, getLanguage, ISO_639_1
+from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 
 
@@ -218,23 +218,18 @@ def search_tmdb(mode, genre_id, page):
     genre_id = int(genre_id)
 
     if mode == "multi":
-        keyboard = Keyboard("", "Search on TMDB:", False)
-        keyboard.doModal()
-        if keyboard.isConfirmed():
-            text = keyboard.getText().strip()
-        else:
-            hide_busy_dialog()
-            return
-        search_ = Search()
-        results = search_.multi(str(text), page=page)
-        tmdb_show_results(
-            results,
-            func=search,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            mode=mode,
-        )
+        text = Keyboard(id=30241)
+        if text:
+            search_ = Search()
+            results = search_.multi(str(text), page=page)
+            tmdb_show_results(
+                results,
+                func=search,
+                next_func=next_page,
+                page=page,
+                plugin=plugin,
+                mode=mode,
+            )
     elif mode == "movie":
         if genre_id != -1:
             data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})

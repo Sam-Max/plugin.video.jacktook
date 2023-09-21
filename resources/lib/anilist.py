@@ -2,8 +2,7 @@ import os
 import requests
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from xbmc import Keyboard
-from resources.lib.kodi import ADDON_PATH, get_setting, hide_busy_dialog, notify
+from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, notify
 
 
 def search_anilist(category, page, plugin, action, next_action):
@@ -36,22 +35,17 @@ def search_anilist(category, page, plugin, action, next_action):
             plugin=plugin,
         )
     elif category == "search":
-        keyboard = Keyboard("", "Search on AniList:", False)
-        keyboard.doModal()
-        if keyboard.isConfirmed():
-            text = keyboard.getText().strip()
-        else:
-            hide_busy_dialog()
-            return
-        results = anime.search(str(text))
-        anilist_show_results(
-            results,
-            action=action,
-            next_action=next_action,
-            category=category,
-            page=page,
-            plugin=plugin,
-        )
+        text = Keyboard(id=30242)
+        if text:
+            results = anime.search(str(text))
+            anilist_show_results(
+                results,
+                action=action,
+                next_action=next_action,
+                category=category,
+                page=page,
+                plugin=plugin,
+            )
 
 
 def anilist_show_results(results, action, next_action, category, page, plugin):
