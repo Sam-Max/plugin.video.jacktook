@@ -5,15 +5,18 @@ from xbmcplugin import addDirectoryItem, endOfDirectory
 from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, notify
 
 
-def search_anilist(category, page, plugin, action, next_action):
-    client_id = get_setting("anilist_client_id", "14375")
-    client_secret = get_setting(
-        "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
+def get_anime_client():
+    return Anime(
+        get_setting("anilist_client_id", "14375"),
+        get_setting(
+            "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
+        ),
     )
 
-    anime = Anime(client_id, client_secret)
-    page += 1
 
+def search_anilist(category, page, plugin, action, next_action):
+    page += 1
+    anime = get_anime_client()
     if category == "Trending":
         trending = anime.get_trending(page=page, perPage=10)
         anilist_show_results(
@@ -55,6 +58,7 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
         else:
             title = res["title"]["romaji"]
 
+        id = res["id"]
         description = res["description"]
         coverImage = res["coverImage"]["large"]
 
@@ -74,7 +78,7 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
 
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(action, query=title, mode="multi", id=None, tracker="anime"),
+            plugin.url_for(action, query=title, mode="anime", id=id),
             list_item,
             isFolder=True,
         )
@@ -154,6 +158,23 @@ SEARCH = """
         }
         """
 
+SEARCH_ID = """
+        query ($id: Int) {
+            Media (id: $id, type: ANIME) {
+                id
+                title {
+                    romaji
+                    english
+                    native
+                }
+                description
+                coverImage {
+                    large
+                }
+            }
+        }
+"""
+
 
 class Anime:
     def __init__(self, client_id, client_secret):
@@ -162,12 +183,10 @@ class Anime:
         self.token = self.get_token(client_id, client_secret)
         self.auth = {"Authorization": f"Bearer {self.token}"}
 
-    def search(self, query):
-        variables = {"search": query}
-
+    def make_request(self, query, variables):
         res = requests.post(
             self.base_url,
-            json={"query": SEARCH, "variables": variables},
+            json={"query": query, "variables": variables},
             headers=self.auth,
         )
 
@@ -176,33 +195,30 @@ class Anime:
             return media
         else:
             notify(f"Error:{res.text}")
+
+    def search(self, query):
+        variables = {"search": query}
+        return self.make_request(SEARCH, variables)
 
     def get_popular(self, page, perPage):
         variables = {"page": page, "perPage": perPage}
-
-        res = requests.post(
-            self.base_url,
-            json={"query": POPULARITY, "variables": variables},
-            headers=self.auth,
-        )
-
-        if res.status_code == 200:
-            media = res.json()["data"]["Page"]["media"]
-            return media
-        else:
-            notify(f"Error:{res.text}")
+        return self.make_request(POPULARITY, variables)
 
     def get_trending(self, page, perPage):
         variables = {"page": page, "perPage": perPage}
+        return self.make_request(TRENDING, variables)
+
+    def get_by_id(self, id):
+        variables = {"id": id}
 
         res = requests.post(
             self.base_url,
-            json={"query": TRENDING, "variables": variables},
+            json={"query": SEARCH_ID, "variables": variables},
             headers=self.auth,
         )
 
         if res.status_code == 200:
-            media = res.json()["data"]["Page"]["media"]
+            media = res.json()["data"]["Media"]
             return media
         else:
             notify(f"Error:{res.text}")
@@ -213,9 +229,7 @@ class Anime:
             "client_id": client_id,
             "client_secret": client_secret,
         }
-
         res = requests.post(self.auth_url, data=data)
-
         if res.status_code == 200:
             return res.json()["access_token"]
         else:

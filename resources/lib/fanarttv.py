@@ -20,6 +20,7 @@ session = make_session("https://webservice.fanart.tv")
 
 
 def get_api_fanarttv(media_type, language, media_id):
+    media_type = "movies" if media_type == "movie" else media_type
     query = base_url % (media_type, media_id)
     headers = {"client-key": CLIENT_KEY, "api-key": API_KEY}
     try:
@@ -27,7 +28,7 @@ def get_api_fanarttv(media_type, language, media_id):
     except:
         art = None
     if art == None or "error_message" in art:
-        return None, None
+        return None
     art_get = art.get
     if media_type == "movies":
         poster = art_get("movieposter", [])
@@ -70,16 +71,6 @@ def get_api_fanarttv(media_type, language, media_id):
             "keyart": "",
             "fanart_added": True,
         }
-    all_fanart_images = {
-        "poster": [i["url"] for i in poster],
-        "fanart": [i["url"] for i in fanart],
-        "clearlogo": [i["url"] for i in clearlogo],
-        "banner": [i["url"] for i in banner],
-        "clearart": [i["url"] for i in clearart],
-        "landscape": [i["url"] for i in landscape],
-        "discart": discart,
-        "keyart": keyart,
-    }
     return fanart_data
 
 
@@ -128,3 +119,15 @@ def parse_art(art, language, season=None):
     except:
         result = ""
     return result
+
+
+""" all_fanart_images = {
+        "poster": [i["url"] for i in poster],
+        "fanart": [i["url"] for i in fanart],
+        "clearlogo": [i["url"] for i in clearlogo],
+        "banner": [i["url"] for i in banner],
+        "clearart": [i["url"] for i in clearart],
+        "landscape": [i["url"] for i in landscape],
+        "discart": discart,
+        "keyart": keyart,
+    } """

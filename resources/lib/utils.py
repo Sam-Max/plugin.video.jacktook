@@ -4,7 +4,10 @@ import io
 import os
 import re
 import requests
+from resources.lib.anilist import get_anime_client
 from resources.lib.cached import Cache
+from resources.lib.tmdbv3api.objs.find import Find
+from resources.lib.tmdbv3api.objs.movie import Movie
 
 from resources.lib.torf._torrent import Torrent
 from resources.lib.torf._magnet import Magnet
@@ -86,10 +89,27 @@ def api_show_results(results, plugin, id, mode, func):
     elif selected_indexer == Indexer.PROWLARR:
         description_length = int(get_setting("prowlarr_desc_length"))
 
-    if id:
-        fanart_data = fanartv_get(id, mode)
-        poster = fanart_data["clearlogo2"] if fanart_data else ""
+    poster = ""
+    overview = ""
 
+    if int(id) != -1:
+        data = fanartv_get(id, mode)
+        if data:
+            poster = data["clearlogo2"] 
+       
+        if mode == "tv":
+            result = Find().find_by_tvdb_id(id)
+            overview = result["tv_results"][0]["overview"] 
+        elif mode== "movie":
+            details = Movie().details(id)
+            overview = details["overview"] if details.get("overview") else ""
+        elif mode== "anime":
+            anime = get_anime_client()
+            result = anime.get_by_id(id)
+            if result:
+                overview = result["description"]
+                poster = result["coverImage"]["large"]
+   
     for r in results:
         title = r["title"]
         if len(title) > description_length:
@@ -127,7 +147,9 @@ def api_show_results(results, plugin, id, mode, func):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
             }
         )
-        list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": ""})
+        list_item.setInfo(
+            "video", {"title": title, "mediatype": "video", "plot": overview}
+        )
         list_item.setProperty("IsPlayable", "true")
 
         addDirectoryItem(
@@ -157,6 +179,8 @@ def is_torrent_watched(title):
 
 
 def fanartv_get(id, mode="tv"):
+    if mode == "anime":
+        return
     fanart_data = db.get_fanarttv("jt:fanarttv", id)
     if not fanart_data:
         fanart_data = get_api_fanarttv(mode, "en", id)

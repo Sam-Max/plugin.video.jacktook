@@ -101,7 +101,7 @@ def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
         if func.__name__ == "search":
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func, mode=mode, query=title, id=id, tracker="all"),
+                plugin.url_for(func, mode=mode, query=title, id=id),
                 list_item,
                 isFolder=True,
             )

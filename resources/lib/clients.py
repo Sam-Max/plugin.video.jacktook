@@ -49,17 +49,16 @@ class Jackett:
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, tracker, mode, insecure=False):
+    def search(self, query, mode, insecure=False):
         try:
-            if tracker == "anime":
+            if mode == "tv":
+                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=tvsearch&Query={query}"
+            elif mode == "movie":
+                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=movie&Query={query}"
+            elif mode == "anime":
                 url = f"{self.host}/api/v2.0/indexers/nyaasi/results?apikey={self.apikey}&t=search&Query={query}"
-            elif tracker == "all":
-                if mode == "tv":
-                    url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=tvsearch&Query={query}"
-                elif mode == "movie":
-                    url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=movie&Query={query}"
-                elif mode == "multi":
-                    url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=search&Query={query}"
+            elif mode == "multi":
+                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=search&Query={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
                 notify(f"{translation(30229)} ({res.status_code})")
@@ -94,14 +93,18 @@ class Prowlarr:
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, tracker, indexers, anime_indexers, mode, insecure=False):
+    def search(self, query, indexers, anime_indexers, mode, insecure=False):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "X-Api-Key": self.apikey,
         }
         try:
-            if tracker == "anime":
+            if mode == "tv":
+                url = f"{self.host}/api/v1/search?query={query}&Categories=5000"
+            elif mode == "movie":
+                url = f"{self.host}/api/v1/search?query={query}&Categories=2000"
+            elif mode == "anime":
                 if anime_indexers:
                     anime_indexers_url = "".join(
                         [f"&IndexerIds={index}" for index in anime_indexers]
@@ -110,18 +113,13 @@ class Prowlarr:
                 else:
                     notify(translation(30231))
                     return
-            elif tracker == "all":
-                if mode == "tv":
-                    url = f"{self.host}/api/v1/search?query={query}&Categories=5000"
-                elif mode == "movie":
-                    url = f"{self.host}/api/v1/search?query={query}&Categories=2000"
-                elif mode == "multi":
-                    url = f"{self.host}/api/v1/search?query={query}"
-                if indexers:
-                    indexers_url = "".join(
-                        [f"&IndexerIds={index}" for index in indexers]
-                    )
-                    url = url + indexers_url
+            elif mode == "multi":
+                url = f"{self.host}/api/v1/search?query={query}"
+            if indexers:
+                indexers_url = "".join(
+                    [f"&IndexerIds={index}" for index in indexers]
+                )
+                url = url + indexers_url
             res = requests.get(url, verify=insecure, headers=headers)
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
@@ -132,7 +130,7 @@ class Prowlarr:
             return
 
 
-def search_api(query, mode, tracker):
+def search_api(query, mode):
     query = None if query == "None" else query
 
     selected_indexer = get_setting("selected_indexer")
@@ -156,10 +154,10 @@ def search_api(query, mode, tracker):
                 p_dialog.create(
                     "Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching..."
                 )
-                response = jackett.search(text, tracker, mode, jackett_insecured)
+                response = jackett.search(text, mode, jackett_insecured)
         else:
             p_dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
-            response = jackett.search(query, tracker, mode, jackett_insecured)
+            response = jackett.search(query, mode, jackett_insecured)
 
     elif selected_indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
@@ -181,7 +179,6 @@ def search_api(query, mode, tracker):
                 )
                 response = prowlarr.search(
                     text,
-                    tracker,
                     indexers_ids_list,
                     anime_indexers_ids_list,
                     mode,
@@ -194,7 +191,6 @@ def search_api(query, mode, tracker):
             p_dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
             response = prowlarr.search(
                 query,
-                tracker,
                 indexers_ids_list,
                 anime_indexers_ids_list,
                 mode,

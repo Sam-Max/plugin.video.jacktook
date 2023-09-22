@@ -117,25 +117,25 @@ def main_menu():
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, id=None, tracker="all"),
+        plugin.url_for(search, mode="multi", query=None, id=-1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", query=None, id=None, tracker="all"),
+        plugin.url_for(search, mode="tv", query=None, id=-1),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="movie", query=None, id=None, tracker="all"),
+        plugin.url_for(search, mode="movie", query=None, id=-1),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, id=None, tracker="anime"),
+        plugin.url_for(search, mode="anime", query=None, id=-1),
         list_item("Anime Search", "search.png"),
         isFolder=True,
     )
@@ -185,20 +185,20 @@ def genre_menu():
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/search/<mode>/<query>/<id>/<tracker>")
-def search(mode, query, id, tracker):
-    results = search_api(query, mode, tracker)
+@plugin.route("/search/<mode>/<query>/<id>")
+def search(mode, query, id):
+    results = search_api(query, mode)
     if results:
         f_quality = filter_by_quality(results)
         sorted_res = sort_results(f_quality)
-        api_show_results(sorted_res, plugin, id, mode="movies", func=play_torrent)
+        api_show_results(sorted_res, plugin, id, mode, func=play_torrent)
 
 
 @plugin.route(
-    "/search_season/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>/<tracker>"
+    "/search_season/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>"
 )
-def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num, tracker):
-    results = search_api(query=query, mode="tv", tracker=tracker)
+def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num):
+    results = search_api(query=query, mode="tv")
     if results:
         f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
         f_quality = filter_by_quality(f_episodes)
@@ -381,7 +381,6 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
                 ep_name,
                 ep_num,
                 season_num_,
-                "all",
             ),
             list_item,
             isFolder=True,
