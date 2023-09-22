@@ -1,10 +1,9 @@
 import json
 from urllib.parse import quote
 import requests
-from resources.lib.kodi import Keyboard, get_setting, log, notify, translation
+from resources.lib.kodi import Keyboard, get_setting, notify, translation
 
 from resources.lib.utils import Indexer
-from resources.lib.kodi import hide_busy_dialog
 from urllib3.exceptions import InsecureRequestWarning
 
 from xbmcgui import DialogProgressBG
@@ -116,9 +115,7 @@ class Prowlarr:
             elif mode == "multi":
                 url = f"{self.host}/api/v1/search?query={query}"
             if indexers:
-                indexers_url = "".join(
-                    [f"&IndexerIds={index}" for index in indexers]
-                )
+                indexers_url = "".join([f"&IndexerIds={index}" for index in indexers])
                 url = url + indexers_url
             res = requests.get(url, verify=insecure, headers=headers)
             if res.status_code != 200:
@@ -155,9 +152,13 @@ def search_api(query, mode):
                     "Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching..."
                 )
                 response = jackett.search(text, mode, jackett_insecured)
+                p_dialog.close()
+            else:
+                return
         else:
             p_dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
             response = jackett.search(query, mode, jackett_insecured)
+            p_dialog.close()
 
     elif selected_indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
@@ -184,8 +185,8 @@ def search_api(query, mode):
                     mode,
                     prowlarr_insecured,
                 )
+                p_dialog.close()
             else:
-                hide_busy_dialog()
                 return
         else:
             p_dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
@@ -196,8 +197,7 @@ def search_api(query, mode):
                 mode,
                 prowlarr_insecured,
             )
+            p_dialog.close()
 
-    p_dialog.close()
     del p_dialog
-
     return response
