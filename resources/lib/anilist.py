@@ -16,9 +16,9 @@ def get_anime_client():
 
 def search_anilist(category, page, plugin, action, next_action):
     page += 1
-    anime = get_anime_client()
+    client = get_anime_client()
     if category == "Trending":
-        trending = anime.get_trending(page=page, perPage=10)
+        trending = client.get_trending(page=page, perPage=10)
         anilist_show_results(
             trending,
             action=action,
@@ -28,7 +28,7 @@ def search_anilist(category, page, plugin, action, next_action):
             plugin=plugin,
         )
     elif category == "Popular":
-        popular = anime.get_popular(page=page, perPage=10)
+        popular = client.get_popular(page=page, perPage=10)
         anilist_show_results(
             popular,
             action=action,
@@ -40,7 +40,7 @@ def search_anilist(category, page, plugin, action, next_action):
     elif category == "search":
         text = Keyboard(id=30242)
         if text:
-            results = anime.search(str(text))
+            results = client.search(str(text))
             anilist_show_results(
                 results,
                 action=action,
@@ -75,6 +75,8 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
             {"title": title, "mediatype": "video", "aired": "", "plot": description},
         )
         list_item.setProperty("IsPlayable", "false")
+
+        title = str(title).replace("/", "")
 
         addDirectoryItem(
             plugin.handle,
@@ -141,9 +143,9 @@ POPULARITY = """
         """
 
 SEARCH = """
-        query ($search: String) {
+        query ($query: String) {
             Page {
-                media(search: $search, type: ANIME) {
+                media(search: $query, type: ANIME) {
                     id
                     title {
                         english
@@ -197,7 +199,7 @@ class Anime:
             notify(f"Error:{res.text}")
 
     def search(self, query):
-        variables = {"search": query}
+        variables = {"query": query}
         return self.make_request(SEARCH, variables)
 
     def get_popular(self, page, perPage):

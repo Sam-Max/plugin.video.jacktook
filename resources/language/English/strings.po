@@ -59,6 +59,10 @@ msgctxt "#30028"
 msgid "Sort by"
 msgstr ""
 
+msgctxt "#30029"
+msgid "Total Results"
+msgstr ""
+
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
 msgstr ""
@@ -113,6 +117,18 @@ msgstr ""
 
 msgctxt "#30144"
 msgid "Client Secret"
+msgstr ""
+
+msgctxt "#30150"
+msgid "Debrid"
+msgstr ""
+
+msgctxt "#30152"
+msgid "Debrid Configuration"
+msgstr ""
+
+msgctxt "#30154"
+msgid "Token"
 msgstr ""
 
 msgctxt "#30200"

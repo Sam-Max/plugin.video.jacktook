@@ -14,13 +14,18 @@ from resources.lib.tmdb import (
 from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
     api_show_results,
+    check_debrid_cached,
     clear,
     clear_tmdb_cache,
     fanartv_get,
     filter_by_episode,
     filter_by_quality,
+    get_cached_db,
     history,
+    limit_results,
     play,
+    remove_duplicate,
+    set_cached_db,
     sort_results,
     tmdb_get,
 )
@@ -30,6 +35,7 @@ from resources.lib.kodi import (
     addon_settings,
     addon_status,
     get_setting,
+    log,
     notify,
     translation,
 )
@@ -39,7 +45,7 @@ from resources.lib.tmdbv3api.objs.tv import TV
 from xbmcgui import ListItem
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
-
+from xbmcgui import DialogProgressBG
 
 plugin = routing.Plugin()
 
@@ -187,23 +193,77 @@ def genre_menu():
 
 @plugin.route("/search/<mode>/<query>/<id>")
 def search(mode, query, id):
-    results = search_api(query, mode)
+    torr_client = get_setting("torrent_client")
+    p_dialog = DialogProgressBG()
+
+    results, query = search_api(query, mode, dialog=p_dialog)
     if results:
-        f_quality = filter_by_quality(results)
-        sorted_res = sort_results(f_quality)
-        api_show_results(sorted_res, plugin, id, mode, func=play_torrent)
+        results = limit_results(results)
+        if torr_client == "Debrid":
+            cached_results = get_cached_db(query)
+            if cached_results:
+                process_search_result(cached_results, mode, id, p_dialog)
+            else:
+                results = limit_results(results)
+                results = remove_duplicate(results)
+                cached_results = check_debrid_cached(results, p_dialog)
+                if cached_results:
+                    set_cached_db(cached_results, query)
+                    process_search_result(cached_results, mode, id, p_dialog)
+        else:
+            process_search_result(results, mode, id, p_dialog)
+
+    del p_dialog
 
 
 @plugin.route(
-    "/search_season/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>"
+    "/search_season/<mode>/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>"
 )
-def search_tv_episode(query, tvdb_id, episode_name, episode_num, season_num):
-    results = search_api(query=query, mode="tv")
+def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_num):
+    torr_client = get_setting("torrent_client")
+    p_dialog = DialogProgressBG()
+
+    results, query = search_api(query, mode, p_dialog)
     if results:
-        f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
-        f_quality = filter_by_quality(f_episodes)
-        sorted_res = sort_results(f_quality)
-        api_show_results(sorted_res, plugin, tvdb_id, mode="tv", func=play_torrent)
+        if torr_client == "Debrid":
+            cached_results = get_cached_db(query)
+            if cached_results:
+                process_tv_result(
+                    cached_results,
+                    mode,
+                    episode_name,
+                    episode_num,
+                    season_num,
+                    tvdb_id,
+                    p_dialog,
+                )
+            else:
+                results = limit_results(results)
+                results = remove_duplicate(results)
+                cached_results = check_debrid_cached(results, p_dialog)
+                if cached_results:
+                    set_cached_db(cached_results, query)
+                    process_tv_result(
+                        cached_results,
+                        mode,
+                        episode_name,
+                        episode_num,
+                        season_num,
+                        tvdb_id,
+                        p_dialog,
+                    )
+        else:
+            process_tv_result(
+                results,
+                mode,
+                episode_name,
+                episode_num,
+                season_num,
+                tvdb_id,
+                p_dialog,
+            )
+
+    del p_dialog
 
 
 @plugin.route("/play_torrent")
@@ -372,11 +432,15 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
         )
         list_item.setProperty("IsPlayable", "false")
 
+        query = str(show_name).replace("/", "")
+        ep_name = str(ep_name).replace("/", "")
+
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
                 search_tv_episode,
-                show_name,
+                "tv",
+                query,
                 tvdb_id,
                 ep_name,
                 ep_num,
@@ -436,6 +500,25 @@ def list_item(label, icon):
         }
     )
     return item
+
+
+def process_search_result(results, mode, id, p_dialog):
+    f_quality = filter_by_quality(results)
+    sorted_res = sort_results(f_quality)
+    api_show_results(sorted_res, plugin, id, mode, func=play_torrent)
+    p_dialog.close()
+
+
+def process_tv_result(
+    results, mode, episode_name, episode_num, season_num, tvdb_id, p_dialog
+):
+    f_episodes = filter_by_episode(
+        results, episode_name, episode_num, season_num
+    )
+    f_quality = filter_by_quality(f_episodes)
+    sorted_res = sort_results(f_quality)
+    api_show_results(sorted_res, plugin, tvdb_id, mode=mode, func=play_torrent)
+    p_dialog.close()
 
 
 def menu_genre(mode, page):

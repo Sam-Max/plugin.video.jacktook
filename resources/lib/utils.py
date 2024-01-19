@@ -3,9 +3,11 @@ import hashlib
 import io
 import os
 import re
+from threading import Thread
 import requests
 from resources.lib.anilist import get_anime_client
 from resources.lib.cached import Cache
+from resources.lib.debrid import ProviderException, RealDebrid
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.tmdbv3api.objs.movie import Movie
 
@@ -29,6 +31,7 @@ from resources.lib.kodi import (
 from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.trending import Trending
 
+from xbmc import Player
 from xbmcgui import ListItem, Dialog
 from xbmcplugin import (
     addDirectoryItem,
@@ -36,7 +39,7 @@ from xbmcplugin import (
     setPluginCategory,
     setResolvedUrl,
 )
-
+from xbmc import getSupportedMedia
 from urllib.parse import quote
 
 db = Database()
@@ -56,13 +59,10 @@ class Indexer(Enum):
     JACKETT = "Jackett"
 
 
-def play(url, title, magnet, plugin):
+def play(url, title, magnet, plugin, force=False):
     set_watched(title=title, magnet=magnet, url=url)
 
-    magnet = None if magnet == "None" else magnet
-    url = None if url == "None" else url
-
-    if magnet is None and url is None:
+    if not magnet and not url:
         notify(translation(30251))
         return
 
@@ -70,23 +70,31 @@ def play(url, title, magnet, plugin):
     if torr_client == "Torrest":
         if is_torrest_addon():
             if magnet:
-                plugin_url = (
-                    "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
+                _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(
+                    magnet
                 )
-                setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
-            elif url:
-                plugin_url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
-                setResolvedUrl(plugin.handle, True, ListItem(path=plugin_url))
+            else:
+                _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
         else:
             notify(translation(30250))
             return
+    elif torr_client == "Debrid":
+        if url:
+            _url = url
+
+    list_item = ListItem(label=title, path=_url)
+
+    if not force:
+        setResolvedUrl(plugin.handle, True, list_item)
+    else:
+        Player().play(item=_url, listitem=list_item)
 
 
 def api_show_results(results, plugin, id, mode, func):
-    selected_indexer = get_setting("selected_indexer")
-    if selected_indexer == Indexer.JACKETT:
+    indexer = get_setting("indexer")
+    if indexer == Indexer.JACKETT:
         description_length = int(get_setting("jackett_desc_length"))
-    elif selected_indexer == Indexer.PROWLARR:
+    elif indexer == Indexer.PROWLARR:
         description_length = int(get_setting("prowlarr_desc_length"))
 
     poster = ""
@@ -95,42 +103,34 @@ def api_show_results(results, plugin, id, mode, func):
     if int(id) != -1:
         data = fanartv_get(id, mode)
         if data:
-            poster = data["clearlogo2"] 
-       
+            poster = data["clearlogo2"]
+
         if mode == "tv":
             result = Find().find_by_tvdb_id(id)
-            overview = result["tv_results"][0]["overview"] 
-        elif mode== "movie":
+            overview = result["tv_results"][0]["overview"]
+        elif mode == "movie":
             details = Movie().details(id)
             overview = details["overview"] if details.get("overview") else ""
-        elif mode== "anime":
+        elif mode == "anime":
             anime = get_anime_client()
             result = anime.get_by_id(id)
             if result:
                 overview = result["description"]
                 poster = result["coverImage"]["large"]
-   
+
     for r in results:
         title = r["title"]
         if len(title) > description_length:
             title = title[0:description_length]
 
-        date = r["publishDate"]
+        magnet = ""
+        date = r.get("publishDate", "")
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
             date = match.group()
-        size = bytes_to_human_readable(r["size"])
+        size = bytes_to_human_readable(r.get("size", ""))
         seeders = r["seeders"]
         tracker = r["indexer"]
-
-        magnet = None
-        guid = r.get("guid")
-        if guid and is_magnet_link(guid):
-            magnet = guid
-        else:
-            magnetUrl = r.get("magnetUrl")
-            magnet = get_magnet(magnetUrl)
-        url = r.get("downloadUrl")
 
         watched = is_torrent_watched(title)
         if watched:
@@ -139,27 +139,47 @@ def api_show_results(results, plugin, id, mode, func):
 
         torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-        list_item = ListItem(label=torr_title)
-        list_item.setArt(
-            {
-                "poster": poster,
-                "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-                "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-            }
-        )
-        list_item.setInfo(
-            "video", {"title": title, "mediatype": "video", "plot": overview}
-        )
-        list_item.setProperty("IsPlayable", "true")
-
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(func, query=f"{url} {magnet} {title}"),
-            list_item,
-            isFolder=False,
-        )
+        if r["rdCached"]:
+            links = r.get("rdLinks", [])
+            if links:
+                for link in links:
+                    url = link
+                    list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
+                    set_video_item(list_item, title, poster, overview)
+                    add_item(list_item, title, url, magnet, func, plugin)
+        else:
+            url = r.get("downloadUrl", "")
+            guid = r.get("guid")
+            if guid.startswith("magnet:?"):
+                magnet = guid
+            else:
+                magnet = get_magnet_from_uri(r.get("magnetUrl", ""))
+            list_item = ListItem(label=torr_title)
+            set_video_item(list_item, title, poster, overview)
+            add_item(list_item, title, url, magnet, func, plugin)
 
     endOfDirectory(plugin.handle)
+
+
+def add_item(list_item, title, url, magnet, func, plugin):
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(func, query=f"{url} {magnet} {title}"),
+        list_item,
+        isFolder=False,
+    )
+
+
+def set_video_item(list_item, title, poster, overview):
+    list_item.setArt(
+        {
+            "poster": poster,
+            "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+            "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+        }
+    )
+    list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": overview})
+    list_item.setProperty("IsPlayable", "true")
 
 
 def set_watched(title, magnet, url):
@@ -193,6 +213,24 @@ def fanartv_get(id, mode="tv"):
                 fanart_data["clearlogo2"],
             )
     return fanart_data
+
+
+def get_cached_db(path):
+    identifier = "{}|{}".format(path, {})
+    log(identifier)
+    return cache.get(identifier, hashed_key=True)
+
+
+def set_cached_db(results, path):
+    identifier = "{}|{}".format(path, {})
+    log("set_cached_db")
+    log(identifier)
+    cache.set(
+        identifier,
+        results,
+        timedelta(hours=get_cache_expiration()),
+        hashed_key=True,
+    )
 
 
 def tmdb_get(path, params):
@@ -289,35 +327,46 @@ def history(plugin, func1, func2):
 
 
 def limit_results(results):
-    selected_indexer = get_setting("selected_indexer")
-    rsp = get_int_setting("results_per_page")
+    indexer = get_setting("indexer")
+    if indexer == Indexer.JACKETT:
+        limit = get_int_setting("jackett_results_per_page")
+        results = results[:limit]
+    elif indexer == Indexer.PROWLARR:
+        limit = get_int_setting("prowlarr_results_per_page")
+        results = results[:limit]
+    return results
 
-    if selected_indexer == Indexer.JACKETT:
-        sliced_res = results[:rsp]
-    elif selected_indexer == Indexer.PROWLARR:
-        sliced_res = results[:rsp]
 
-    return sliced_res
+def remove_duplicate(results):
+    seen_values = []
+    result_dict = []
+    for res in results:
+        if res not in seen_values:
+            result_dict.append(res)
+            seen_values.append(res)
+    return result_dict
 
 
 def sort_results(results):
-    selected_indexer = get_setting("selected_indexer")
+    indexer = get_setting("indexer")
 
-    if selected_indexer == Indexer.JACKETT:
+    if indexer == Indexer.JACKETT:
         sort_by = get_setting("jackett_sort_by")
-    elif selected_indexer == Indexer.PROWLARR:
+    elif indexer == Indexer.PROWLARR:
         sort_by = get_setting("prowlarr_sort_by")
 
     if sort_by == "Seeds":
-        sorted_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
+        sort_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
     elif sort_by == "Size":
-        sorted_results = sorted(results, key=lambda r: r["size"], reverse=True)
+        sort_results = sorted(results, key=lambda r: r["size"], reverse=True)
     elif sort_by == "Date":
-        sorted_results = sorted(results, key=lambda r: r["publishDate"], reverse=True)
+        sort_results = sorted(results, key=lambda r: r["publishDate"], reverse=True)
     elif sort_by == "Quality":
-        sorted_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
+        sort_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
+    elif sort_by == "Cached":
+        sort_results = sorted(results, key=lambda r: r["rdCached"], reverse=True)
 
-    return sorted_results
+    return sort_results
 
 
 def filter_by_episode(results, episode_name, episode_num, season_num):
@@ -334,6 +383,7 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
         match = re.search(r"{}".format(pattern), title)
         if match:
             filtered_episodes.append(res)
+
     return filtered_episodes
 
 
@@ -341,6 +391,7 @@ def filter_by_quality(results):
     quality_720p = []
     quality_1080p = []
     quality_4k = []
+    no_quarlity = []
 
     for res in results:
         matches = re.findall(r"\b\d+p\b|\b\d+k\b", res["title"])
@@ -353,37 +404,99 @@ def filter_by_quality(results):
                 res["title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
                 res["Quality"] = "1080p"
                 quality_1080p.append(res)
-            elif "4k" in match:
+            elif "4k" or "2160" in match:
                 res["title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
                 res["Quality"] = "4k"
                 quality_4k.append(res)
+            else:
+                res["title"] = res["title"]
+                res["Quality"] = "Unknown"
+                no_quarlity.append(res)
 
-    combined_list = quality_4k + quality_1080p + quality_720p
+    combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
     return combined_list
 
 
-def get_magnet(uri):
-    if uri is None:
-        return
+def get_magnet_from_uri(uri):
+    if uri:
+        magnet_prefix = "magnet:"
+        uri = uri
 
-    magnet_prefix = "magnet:"
-    uri = uri
-
-    if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
-        return uri
-    res = requests.get(uri, allow_redirects=False)
-    if res.is_redirect:
-        uri = res.headers["Location"]
         if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
             return uri
-    elif (
-        res.status_code == 200
-        and res.headers.get("Content-Type") == "application/x-bittorrent"
-    ):
-        torrent = Torrent.read_stream(io.BytesIO(res.content))
-        return str(torrent.magnet())
-    else:
-        log(f"Could not get final redirect location for URI {uri}")
+        res = requests.get(uri, allow_redirects=False)
+        if res.is_redirect:
+            uri = res.headers["Location"]
+            if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
+                return uri
+        elif (
+            res.status_code == 200
+            and res.headers.get("Content-Type") == "application/x-bittorrent"
+        ):
+            torrent = Torrent.read_stream(io.BytesIO(res.content))
+            return str(torrent.magnet())
+        else:
+            log(f"Could not get final redirect location for URI {uri}")
+
+
+def check_debrid_cached(results, dialog):
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    dialog.update(50, "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]", "Searching...")
+    try:
+        threads = []
+        hashes = "/".join([res["infoHash"] for res in results if res["infoHash"]])
+        if hashes:
+            torr_available = rd_client.get_torrent_instant_availability(hashes)
+            for res in results:
+                guid = res.get("guid", "")
+                if guid.startswith("magnet:?"):
+                    magnet = guid
+                else:
+                    magnet = get_magnet_from_uri(res.get("magnetUrl", ""))
+                if magnet:
+                    if res["infoHash"] in torr_available:
+                        info = torr_available[res["infoHash"]]
+                        if isinstance(info, dict) and len(info.get("rd")) > 0:
+                            res["rdCached"] = True
+                        thread = Thread(
+                            target=get_dd_link, args=(rd_client, magnet, res)
+                        )
+                        threads.append(thread)
+            [i.start() for i in threads]
+            [i.join() for i in threads]
+            return results
+    except ProviderException as e:
+        log(f"Error {e.message}")
+
+
+def get_dd_link(rd_client, magnet, res):
+    response = rd_client.add_magent_link(magnet)
+    torr_info = rd_client.get_torrent_info(response["id"])
+    if torr_info["status"] == "waiting_files_selection":
+        files = torr_info["files"]
+        extensions = supported_video_extensions()[:-1]
+        torr_keys = [
+            str(item["id"])
+            for item in files
+            for x in extensions
+            if item["path"].lower().endswith(x)
+        ]
+        torr_keys = ",".join(torr_keys)
+        rd_client.select_files(torr_info["id"], torr_keys)
+    torr_info = rd_client.get_torrent_info(response["id"])
+    links = []
+    if torr_info["links"]:
+        response = rd_client.create_download_link(torr_info["links"][0])
+        links.append(response["download"])
+        # for link in torr_info["links"]:
+        #     response = rd_client.create_download_link(link)
+        #     links.append(response["download"])
+    res["rdLinks"] = links
+
+
+def supported_video_extensions():
+    media_types = getSupportedMedia("video")
+    return media_types.split("|")
 
 
 def get_info_hash(magnet):
@@ -391,5 +504,9 @@ def get_info_hash(magnet):
 
 
 def is_magnet_link(link):
-    pattern = r"^magnet:\?xt=urn:btih:[a-fA-F0-9]{40}&dn=.+&tr=.+$"
-    return bool(re.match(pattern, link))
+    if link.startswith("magnet:?"):
+        return link
+
+
+def debrid_add(link):
+    pass

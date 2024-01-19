@@ -2,17 +2,15 @@ import json
 from urllib.parse import quote
 import requests
 from resources.lib.kodi import Keyboard, get_setting, notify, translation
-
 from resources.lib.utils import Indexer
 from urllib3.exceptions import InsecureRequestWarning
 
-from xbmcgui import DialogProgressBG
 
 
 def get_client():
-    selected_indexer = get_setting("selected_indexer")
+    indexer = get_setting("indexer")
 
-    if selected_indexer == Indexer.JACKETT:
+    if indexer == Indexer.JACKETT:
         host = get_setting("jackett_host")
         host = host.rstrip("/")
         api_key = get_setting("jackett_apikey")
@@ -27,7 +25,7 @@ def get_client():
 
         return Jackett(host, api_key)
 
-    elif selected_indexer == Indexer.PROWLARR:
+    elif indexer == Indexer.PROWLARR:
         host = get_setting("prowlarr_host")
         host = host.rstrip("/")
         api_key = get_setting("prowlarr_apikey")
@@ -82,6 +80,8 @@ class Jackett:
                 "seeders": res["Seeders"],
                 "peers": res["Peers"],
                 "infoHash": res["InfoHash"],
+                "rdCached": False,
+                "rdLinks": [],
             }
             results.append(model)
         return results
@@ -127,40 +127,36 @@ class Prowlarr:
             return
 
 
-def search_api(query, mode):
+def search_api(query, mode, dialog):
     query = None if query == "None" else query
 
-    selected_indexer = get_setting("selected_indexer")
+    indexer = get_setting("indexer")
     jackett_insecured = get_setting("jackett_insecured")
     prowlarr_insecured = get_setting("prowlarr_insecured")
 
     if prowlarr_insecured or jackett_insecured:
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 
-    p_dialog = DialogProgressBG()
-
-    if selected_indexer == Indexer.JACKETT:
+    if indexer == Indexer.JACKETT:
         jackett = get_client()
         if not jackett:
-            return
+            return None, None
 
         if not query:
             text = Keyboard(id=30243)
             if text:
-                text = quote(text)
-                p_dialog.create(
+                query = quote(text)
+                dialog.create(
                     "Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching..."
                 )
-                response = jackett.search(text, mode, jackett_insecured)
-                p_dialog.close()
+                response = jackett.search(query, mode, jackett_insecured)
             else:
-                return
+                return None, None
         else:
-            p_dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
+            dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
             response = jackett.search(query, mode, jackett_insecured)
-            p_dialog.close()
 
-    elif selected_indexer == Indexer.PROWLARR:
+    elif indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
         indexers_ids_list = indexers_ids.split() if indexers_ids else None
 
@@ -169,27 +165,26 @@ def search_api(query, mode):
 
         prowlarr = get_client()
         if not prowlarr:
-            return
+            return None, None
 
         if not query:
             text = Keyboard(id=30243)
             if text:
-                text = quote(text)
-                p_dialog.create(
+                query = quote(text)
+                dialog.create(
                     "Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching..."
                 )
                 response = prowlarr.search(
-                    text,
+                    query,
                     indexers_ids_list,
                     anime_indexers_ids_list,
                     mode,
                     prowlarr_insecured,
                 )
-                p_dialog.close()
             else:
-                return
+                return None, None
         else:
-            p_dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
+            dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
             response = prowlarr.search(
                 query,
                 indexers_ids_list,
@@ -197,7 +192,5 @@ def search_api(query, mode):
                 mode,
                 prowlarr_insecured,
             )
-            p_dialog.close()
 
-    del p_dialog
-    return response
+    return response, query

@@ -2,24 +2,26 @@
 <settings>
     <category label="30000">
         <setting label="30001" type="lsep"/>
-        <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|None" default="Torrest"/>
+        <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|Debrid" default="Torrest"/>
     </category>
     <category label="30020">
-        <setting id="selected_indexer" type="labelenum" label="30021" values="Jackett|Prowlarr" default="Jackett"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr" default="Jackett"/>
         <setting label="30022" type="lsep"/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_desc_length" type="number" label="30026" default="100"/>
+        <setting id="jackett_results_per_page" type="number" label="30029" default="10"/>
         <setting id="jackett_insecured" type="bool" label="30027" default="false"/>
-        <setting id="jackett_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality" default="Seeds"/>
+        <setting id="jackett_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
         <setting label="30050" type="lsep"/>
         <setting id="prowlarr_apikey" type="text" label="30051" default=""/>
         <setting id="prowlarr_host" type="text" label="30052" default=""/>
         <setting id="prowlarr_indexer_ids" type="text" label="30053" default=""/>
         <setting id="prowlarr_anime_indexer_ids" type="text" label="30054" default=""/>
         <setting id="prowlarr_desc_length" type="number" label="30026" default="100"/>
+        <setting id="prowlarr_results_per_page" type="number" label="30029" default="10"/>
         <setting id="prowlarr_insecured" type="bool" label="30027" default="false"/>
-        <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality" default="Seeds"/>
+        <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
     </category>
     <category label="30100">
         <setting label="30102" type="lsep"/>
@@ -34,8 +36,13 @@
         <setting id="anilist_client_id" type="text" label="30143" default=""/>
         <setting id="anilist_client_secret" type="text" label="30144" default=""/>
     </category>
+    <category label="30150">
+        <setting label="30152" type="lsep"/>
+        <setting id="real_debrid_token" type="text" label="30154" default=""/>
+    </category>
     <category label="30200">
         <setting label="30202" type="lsep"/>
         <setting id="fanarttv_client_id" type="text" label="30203" default=""/>
     </category>
+    
 </settings>
