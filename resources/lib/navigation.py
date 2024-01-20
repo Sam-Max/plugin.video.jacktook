@@ -13,23 +13,20 @@ from resources.lib.tmdb import (
 )
 from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
-    api_show_results,
     check_debrid_cached,
     clear,
     clear_tmdb_cache,
     fanartv_get,
-    filter_by_episode,
-    filter_by_quality,
     get_cached_db,
     history,
-    limit_results,
+    list_item,
     list_pack_torrent,
     play,
     process_results,
     real_debrid_auth,
-    remove_duplicate,
     set_cached_db,
-    sort_results,
+    show_search_result,
+    show_tv_result,
     tmdb_get,
 )
 from resources.lib.kodi import (
@@ -201,7 +198,6 @@ def search(mode, query, id):
 
     results, query = search_api(query, mode, dialog=p_dialog)
     if results:
-        results = limit_results(results)
         if torr_client == "Debrid":
             cached_results = get_cached_db(query)
             if cached_results:
@@ -216,9 +212,19 @@ def search(mode, query, id):
                     cached = False
                     notify("No debrid results")
             if cached:
-                process_search_result(cached_results, mode, id, p_dialog)
+                show_search_result(
+                    cached_results,
+                    mode,
+                    id,
+                    p_dialog,
+                    plugin,
+                    func=play_torrent,
+                    func2=show_pack,
+                )
         else:
-            process_search_result(results, mode, id, p_dialog)
+            show_search_result(
+                results, mode, id, p_dialog, plugin, func=play_torrent, func2=show_pack
+            )
     else:
         notify("No results")
 
@@ -248,7 +254,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     cached = False
                     notify("No debrid results")
             if cached:
-                process_tv_result(
+                show_tv_result(
                     cached_results,
                     mode,
                     episode_name,
@@ -256,9 +262,12 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     season_num,
                     tvdb_id,
                     p_dialog,
+                    plugin,
+                    func=play_torrent,
+                    func2=show_pack,
                 )
         else:
-            process_tv_result(
+            show_tv_result(
                 results,
                 mode,
                 episode_name,
@@ -266,9 +275,13 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                 season_num,
                 tvdb_id,
                 p_dialog,
+                plugin,
+                func=play_torrent,
+                func2=show_pack,
             )
     else:
         notify("No results")
+
     del p_dialog
 
 
@@ -276,12 +289,6 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
 def play_torrent():
     url, magnet, title = plugin.args["query"][0].split(" ", 2)
     play(url, title, magnet, plugin)
-
-
-@plugin.route("/show_pack")
-def show_pack():
-    id, _ = plugin.args["query"][0].split(" ", 1)
-    list_pack_torrent(id, func=play_torrent, plugin=plugin)
 
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
@@ -465,6 +472,12 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
     endOfDirectory(plugin.handle)
 
 
+@plugin.route("/show_pack")
+def show_pack():
+    id, _ = plugin.args["query"][0].split(" ", 1)
+    list_pack_torrent(id, func=play_torrent, plugin=plugin)
+
+
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
     search_anilist(category, page, plugin, action=search, next_action=next_page_anilist)
@@ -500,37 +513,6 @@ def main_history():
 @plugin.route("/history/clear")
 def clear_history():
     clear()
-
-
-def list_item(label, icon):
-    item = ListItem(label)
-    item.setArt(
-        {
-            "icon": os.path.join(ADDON_PATH, "resources", "img", icon),
-            "thumb": os.path.join(ADDON_PATH, "resources", "img", icon),
-            "fanart": os.path.join(ADDON_PATH, "fanart.png"),
-        }
-    )
-    return item
-
-
-def process_search_result(results, mode, id, p_dialog):
-    f_quality = filter_by_quality(results)
-    sorted_res = sort_results(f_quality)
-    api_show_results(sorted_res, plugin, id, mode, func=play_torrent, func2=show_pack)
-    p_dialog.close()
-
-
-def process_tv_result(
-    results, mode, episode_name, episode_num, season_num, tvdb_id, p_dialog
-):
-    f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
-    f_quality = filter_by_quality(f_episodes)
-    sorted_res = sort_results(f_quality)
-    api_show_results(
-        sorted_res, plugin, tvdb_id, mode=mode, func=play_torrent, func2=show_pack
-    )
-    p_dialog.close()
 
 
 def menu_genre(mode, page):

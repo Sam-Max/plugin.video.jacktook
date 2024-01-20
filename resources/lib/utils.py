@@ -90,6 +90,35 @@ def play(url, title, magnet, plugin, force=False):
         Player().play(item=_url, listitem=list_item)
 
 
+def show_search_result(results, mode, id, p_dialog, plugin, func, func2):
+    f_quality = filter_by_quality(results)
+    sorted_res = sort_results(f_quality)
+    api_show_results(sorted_res, plugin, id, mode, func=func, func2=func2)
+    p_dialog.close()
+
+
+def show_tv_result(
+    results, mode, epn, epnb, sen, tvdb_id, p_dialog, plugin, func, func2
+):
+    f_episodes = filter_by_episode(results, epn, epnb, sen)
+    f_quality = filter_by_quality(f_episodes)
+    sorted_res = sort_results(f_quality)
+    api_show_results(sorted_res, plugin, tvdb_id, mode=mode, func=func, func2=func2)
+    p_dialog.close()
+
+
+def list_item(label, icon):
+    item = ListItem(label)
+    item.setArt(
+        {
+            "icon": os.path.join(ADDON_PATH, "resources", "img", icon),
+            "thumb": os.path.join(ADDON_PATH, "resources", "img", icon),
+            "fanart": os.path.join(ADDON_PATH, "fanart.png"),
+        }
+    )
+    return item
+
+
 def api_show_results(results, plugin, id, mode, func, func2):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
@@ -428,9 +457,7 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     pattern4 = "\sS%s\s" % (season_num)
     pattern5 = "\.S%s" % (season_num)
 
-    pattern = "|".join(
-        [pattern1, pattern2, pattern3, pattern4, pattern5, episode_name]
-    )
+    pattern = "|".join([pattern1, pattern2, pattern3, pattern4, pattern5, episode_name])
 
     for res in results:
         title = res["title"]
