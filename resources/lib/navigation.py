@@ -23,7 +23,10 @@ from resources.lib.utils import (
     get_cached_db,
     history,
     limit_results,
+    list_pack_torrent,
     play,
+    process_results,
+    real_debrid_auth,
     remove_duplicate,
     set_cached_db,
     sort_results,
@@ -202,16 +205,22 @@ def search(mode, query, id):
         if torr_client == "Debrid":
             cached_results = get_cached_db(query)
             if cached_results:
-                process_search_result(cached_results, mode, id, p_dialog)
+                cached = True
             else:
-                results = limit_results(results)
-                results = remove_duplicate(results)
-                cached_results = check_debrid_cached(results, p_dialog)
+                presults = process_results(results)
+                cached_results = check_debrid_cached(presults, p_dialog)
                 if cached_results:
                     set_cached_db(cached_results, query)
-                    process_search_result(cached_results, mode, id, p_dialog)
+                    cached = True
+                else:
+                    cached = False
+                    notify("No debrid results")
+            if cached:
+                process_search_result(cached_results, mode, id, p_dialog)
         else:
             process_search_result(results, mode, id, p_dialog)
+    else:
+        notify("No results")
 
     del p_dialog
 
@@ -228,6 +237,17 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
         if torr_client == "Debrid":
             cached_results = get_cached_db(query)
             if cached_results:
+                cached = True
+            else:
+                presults = process_results(results)
+                cached_results = check_debrid_cached(presults, p_dialog)
+                if cached_results:
+                    set_cached_db(cached_results, query)
+                    cached = True
+                else:
+                    cached = False
+                    notify("No debrid results")
+            if cached:
                 process_tv_result(
                     cached_results,
                     mode,
@@ -237,21 +257,6 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     tvdb_id,
                     p_dialog,
                 )
-            else:
-                results = limit_results(results)
-                results = remove_duplicate(results)
-                cached_results = check_debrid_cached(results, p_dialog)
-                if cached_results:
-                    set_cached_db(cached_results, query)
-                    process_tv_result(
-                        cached_results,
-                        mode,
-                        episode_name,
-                        episode_num,
-                        season_num,
-                        tvdb_id,
-                        p_dialog,
-                    )
         else:
             process_tv_result(
                 results,
@@ -262,7 +267,8 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                 tvdb_id,
                 p_dialog,
             )
-
+    else:
+        notify("No results")
     del p_dialog
 
 
@@ -270,6 +276,12 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
 def play_torrent():
     url, magnet, title = plugin.args["query"][0].split(" ", 2)
     play(url, title, magnet, plugin)
+
+
+@plugin.route("/show_pack")
+def show_pack():
+    id, _ = plugin.args["query"][0].split(" ", 1)
+    list_pack_torrent(id, func=play_torrent, plugin=plugin)
 
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
@@ -505,19 +517,19 @@ def list_item(label, icon):
 def process_search_result(results, mode, id, p_dialog):
     f_quality = filter_by_quality(results)
     sorted_res = sort_results(f_quality)
-    api_show_results(sorted_res, plugin, id, mode, func=play_torrent)
+    api_show_results(sorted_res, plugin, id, mode, func=play_torrent, func2=show_pack)
     p_dialog.close()
 
 
 def process_tv_result(
     results, mode, episode_name, episode_num, season_num, tvdb_id, p_dialog
 ):
-    f_episodes = filter_by_episode(
-        results, episode_name, episode_num, season_num
-    )
+    f_episodes = filter_by_episode(results, episode_name, episode_num, season_num)
     f_quality = filter_by_quality(f_episodes)
     sorted_res = sort_results(f_quality)
-    api_show_results(sorted_res, plugin, tvdb_id, mode=mode, func=play_torrent)
+    api_show_results(
+        sorted_res, plugin, tvdb_id, mode=mode, func=play_torrent, func2=show_pack
+    )
     p_dialog.close()
 
 
@@ -557,6 +569,11 @@ def menu_genre(mode, page):
 def clear_cached_tmdb():
     clear_tmdb_cache()
     notify(translation(30240))
+
+
+@plugin.route("/rd_auth")
+def rd_auth():
+    real_debrid_auth()
 
 
 def run():

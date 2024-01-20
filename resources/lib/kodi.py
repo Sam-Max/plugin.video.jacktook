@@ -4,9 +4,9 @@ import sys
 from urllib.parse import urlencode
 import xbmc
 import xbmcgui
+from xbmcgui import Window
 import xbmcaddon
 from xbmc import executebuiltin
-
 
 _URL = sys.argv[0]
 ADDON = xbmcaddon.Addon()
@@ -17,8 +17,8 @@ ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 
 
-def get_setting(name, default=None):
-    value = ADDON.getSetting(name)
+def get_setting(value, default=None):
+    value = ADDON.getSetting(value)
     if not value:
         return default
 
@@ -28,6 +28,18 @@ def get_setting(name, default=None):
         return False
     else:
         return value
+
+
+def get_property(prop):
+    return Window(10000).getProperty(prop)
+
+
+def set_setting(id, value):
+    ADDON.setSetting(id, value)
+
+
+def set_property(prop, value):
+    return Window(10000).setProperty(prop, value)
 
 
 def addon_settings():
@@ -92,6 +104,16 @@ def dialog_ok(heading, line1, line2="", line3=""):
     return xbmcgui.Dialog().ok(heading, compat(line1=line1, line2=line2, line3=line3))
 
 
+def dialog_text(heading, content):
+    dialog = xbmcgui.Dialog()
+    dialog.textviewer(heading, content, False)
+    return dialog
+
+
+def close_all_dialog():
+    execute_builtin("Dialog.Close(all,true)")
+
+
 def execute_builtin(command, block=False):
     return executebuiltin(command, block)
 
@@ -123,5 +145,3 @@ def Keyboard(id, default="", hidden=False):
     keyboard.doModal()
     if keyboard.isConfirmed():
         return keyboard.getText()
-
-

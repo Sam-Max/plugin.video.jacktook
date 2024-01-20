@@ -80,6 +80,7 @@ class Jackett:
                 "seeders": res["Seeders"],
                 "peers": res["Peers"],
                 "infoHash": res["InfoHash"],
+                "rdId": "",
                 "rdCached": False,
                 "rdLinks": [],
             }

@@ -90,7 +90,7 @@ def play(url, title, magnet, plugin, force=False):
         Player().play(item=_url, listitem=list_item)
 
 
-def api_show_results(results, plugin, id, mode, func):
+def api_show_results(results, plugin, id, mode, func, func2):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
         description_length = int(get_setting("jackett_desc_length"))
@@ -140,13 +140,15 @@ def api_show_results(results, plugin, id, mode, func):
         torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
         if r["rdCached"]:
-            links = r.get("rdLinks", [])
-            if links:
-                for link in links:
-                    url = link
-                    list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
-                    set_video_item(list_item, title, poster, overview)
-                    add_item(list_item, title, url, magnet, func, plugin)
+            links = r.get("rdLinks")
+            if len(links) > 0:
+                list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
+                set_video_item(list_item, title, poster, overview)
+                add_item(list_item, title, links[0], magnet, func, plugin)
+            else:
+                id = r.get("rdId")
+                list_item = ListItem(label=f"[B][PACK-Cached][/B]-{torr_title}")
+                add_pack_item(list_item, title, id, func2, plugin)
         else:
             url = r.get("downloadUrl", "")
             guid = r.get("guid")
@@ -168,6 +170,54 @@ def add_item(list_item, title, url, magnet, func, plugin):
         list_item,
         isFolder=False,
     )
+
+
+def add_pack_item(list_item, title, id, func, plugin):
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(func, query=f"{id} {title}"),
+        list_item,
+        isFolder=True,
+    )
+
+
+def list_pack_torrent(id, func, plugin):
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    links = get_cached_db(id)
+    if links:
+        cached = True
+    else:
+        cached = False
+        torr_info = rd_client.get_torrent_info(id)
+        links = []
+        files = torr_info["files"]
+        extensions = supported_video_extensions()[:-1]
+        torr_names = [
+            item["path"]
+            for item in files
+            for x in extensions
+            if item["path"].lower().endswith(x)
+        ]
+        for i, name in enumerate(torr_names):
+            title = str(name).split("/", 1)[1].rsplit(".", 1)[0]
+            response = rd_client.create_download_link(torr_info["links"][i])
+            links.append((response["download"], title))
+        if links:
+            set_cached_db(links, id)
+            cached = True
+    if cached:
+        for link, title in links:
+            list_item = ListItem(label=f"{title}")
+            set_video_item(list_item, title, "", "")
+            add_item(
+                list_item,
+                title,
+                url=link,
+                magnet="",
+                func=func,
+                plugin=plugin,
+            )
+        endOfDirectory(plugin.handle)
 
 
 def set_video_item(list_item, title, poster, overview):
@@ -223,8 +273,6 @@ def get_cached_db(path):
 
 def set_cached_db(results, path):
     identifier = "{}|{}".format(path, {})
-    log("set_cached_db")
-    log(identifier)
     cache.set(
         identifier,
         results,
@@ -286,6 +334,10 @@ def clear_tmdb_cache():
     db.commit()
 
 
+def real_debrid_auth():
+    RealDebrid().auth()
+
+
 def clear():
     dialog = Dialog()
     confirmed = dialog.yesno(
@@ -302,17 +354,14 @@ def history(plugin, func1, func2):
     setPluginCategory(plugin.handle, f"Torrents - History")
     list_item = ListItem(label="Clear History")
     addDirectoryItem(plugin.handle, plugin.url_for(func1), list_item)
-
     for title, data in reversed(db.database["jt:history"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
         label = f"[COLOR palevioletred]{title} [I][LIGHT]— {formatted_time}[/LIGHT][/I][/COLOR]"
-
         list_item = ListItem(label=label)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
         )
         list_item.setProperty("IsPlayable", "true")
-
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
@@ -322,7 +371,6 @@ def history(plugin, func1, func2):
             list_item,
             False,
         )
-
     endOfDirectory(plugin.handle)
 
 
@@ -347,9 +395,12 @@ def remove_duplicate(results):
     return result_dict
 
 
+def process_results(results):
+    return remove_duplicate(limit_results(results))
+
+
 def sort_results(results):
     indexer = get_setting("indexer")
-
     if indexer == Indexer.JACKETT:
         sort_by = get_setting("jackett_sort_by")
     elif indexer == Indexer.PROWLARR:
@@ -375,15 +426,17 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     pattern2 = "%sx%s" % (season_num, episode_num)
     pattern3 = "\s%s\s" % (episode_num)
     pattern4 = "\sS%s\s" % (season_num)
+    pattern5 = "\.S%s" % (season_num)
 
-    pattern = "|".join([pattern1, pattern2, pattern3, pattern4, episode_name])
+    pattern = "|".join(
+        [pattern1, pattern2, pattern3, pattern4, pattern5, episode_name]
+    )
 
     for res in results:
         title = res["title"]
-        match = re.search(r"{}".format(pattern), title)
+        match = re.search(f"r{pattern}", title)
         if match:
             filtered_episodes.append(res)
-
     return filtered_episodes
 
 
@@ -484,14 +537,11 @@ def get_dd_link(rd_client, magnet, res):
         torr_keys = ",".join(torr_keys)
         rd_client.select_files(torr_info["id"], torr_keys)
     torr_info = rd_client.get_torrent_info(response["id"])
-    links = []
-    if torr_info["links"]:
+    if len(torr_info["links"]) > 1:
+        res["rdId"] = response["id"]
+    else:
         response = rd_client.create_download_link(torr_info["links"][0])
-        links.append(response["download"])
-        # for link in torr_info["links"]:
-        #     response = rd_client.create_download_link(link)
-        #     links.append(response["download"])
-    res["rdLinks"] = links
+        res["rdLinks"] = [response["download"]]
 
 
 def supported_video_extensions():
@@ -506,7 +556,3 @@ def get_info_hash(magnet):
 def is_magnet_link(link):
     if link.startswith("magnet:?"):
         return link
-
-
-def debrid_add(link):
-    pass
