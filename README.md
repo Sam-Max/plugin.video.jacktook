@@ -17,6 +17,7 @@ This addon doesn't get sources by itself on torrent websites for legal reason an
 - TMDB Integration 
 - AniList Integration
 - Fanart.tv Integration
+- Real Debrid Integration
 - API calls caching
 
 
