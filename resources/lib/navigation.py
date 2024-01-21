@@ -57,7 +57,6 @@ if kodi_lang:
     tmdb.language = kodi_lang
 
 
-
 @plugin.route("/")
 def main_menu():
     setPluginCategory(plugin.handle, "Main Menu")
@@ -203,13 +202,13 @@ def search(mode, query, id):
         p_results = process_results(results)
         if p_results:
             if torr_client == "Debrid":
-                cached_results = get_cached_db(query)
+                cached_results = get_cached_db(query, params=(len(p_results)))
                 if cached_results:
                     cached = True
                 else:
                     cached_results = check_debrid_cached(p_results, p_dialog)
                     if cached_results:
-                        set_cached_db(cached_results, query)
+                        set_cached_db(cached_results, query, params=(len(p_results)))
                         cached = True
                     else:
                         cached = False
@@ -226,7 +225,13 @@ def search(mode, query, id):
                     )
             else:
                 show_search_result(
-                    p_results, mode, id, p_dialog, plugin, func=play_torrent, func2=show_pack
+                    p_results,
+                    mode,
+                    id,
+                    p_dialog,
+                    plugin,
+                    func=play_torrent,
+                    func2=show_pack,
                 )
     else:
         notify("No results")
@@ -250,13 +255,17 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
         )
         if p_results:
             if torr_client == "Debrid":
-                cached_results = get_cached_db(query)
+                cached_results = get_cached_db(
+                    query, params=(episode_num, len(p_results))
+                )
                 if cached_results:
                     cached = True
                 else:
                     cached_results = check_debrid_cached(p_results, p_dialog)
                     if cached_results:
-                        set_cached_db(cached_results, query)
+                        set_cached_db(
+                            cached_results, query, params=(episode_num, len(p_results))
+                        )
                         cached = True
                     else:
                         cached = False

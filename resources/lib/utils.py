@@ -287,14 +287,14 @@ def fanartv_get(id, mode="tv"):
     return fanart_data
 
 
-def get_cached_db(path):
-    identifier = "{}|{}".format(path, {})
+def get_cached_db(path, params={}):
+    identifier = "{}|{}".format(path, params)
     log(identifier)
     return cache.get(identifier, hashed_key=True)
 
 
-def set_cached_db(results, path):
-    identifier = "{}|{}".format(path, {})
+def set_cached_db(results, path, params={}):
+    identifier = "{}|{}".format(path, params)
     cache.set(
         identifier,
         results,
@@ -425,10 +425,10 @@ def process_results(results):
     return res
 
 
-def process_tv_results(results, epn, epnb, sen):
+def process_tv_results(results, episode_name, episode_num, season_num):
     res = remove_duplicate(results)
     res = limit_results(res)
-    res = filter_by_episode(res, epn, epnb, sen)
+    res = filter_by_episode(res, episode_name, episode_num, season_num)
     if res:
         res = filter_by_quality(res)
         res = sort_results(res)
@@ -463,10 +463,10 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     pattern1 = "S%sE%s" % (season_num, episode_num)
     pattern2 = "%sx%s" % (season_num, episode_num)
     pattern3 = "\s%s\s" % (episode_num)
-    pattern4 = "\sS%s\s" % (season_num)
-    pattern5 = "\.S%s" % (season_num)
+    pattern5 = "\.S%sE%s" % (season_num, episode_num)
+    pattern6 = "\sS%sE%s\s" % (season_num, episode_num)
 
-    pattern = "|".join([pattern1, pattern2, pattern3, pattern4, pattern5, episode_name])
+    pattern = "|".join([pattern1, pattern2, pattern3, pattern5, pattern6, episode_name])
 
     for res in results:
         title = res["title"]
