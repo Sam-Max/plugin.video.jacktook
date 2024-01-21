@@ -91,19 +91,12 @@ def play(url, title, magnet, plugin, force=False):
 
 
 def show_search_result(results, mode, id, p_dialog, plugin, func, func2):
-    f_quality = filter_by_quality(results)
-    sorted_res = sort_results(f_quality)
-    api_show_results(sorted_res, plugin, id, mode, func=func, func2=func2)
+    api_show_results(results, plugin, id, mode, func=func, func2=func2)
     p_dialog.close()
 
 
-def show_tv_result(
-    results, mode, epn, epnb, sen, tvdb_id, p_dialog, plugin, func, func2
-):
-    f_episodes = filter_by_episode(results, epn, epnb, sen)
-    f_quality = filter_by_quality(f_episodes)
-    sorted_res = sort_results(f_quality)
-    api_show_results(sorted_res, plugin, tvdb_id, mode=mode, func=func, func2=func2)
+def show_tv_result(results, mode, tvdb_id, p_dialog, plugin, func, func2):
+    api_show_results(results, plugin, tvdb_id, mode=mode, func=func, func2=func2)
     p_dialog.close()
 
 
@@ -425,7 +418,23 @@ def remove_duplicate(results):
 
 
 def process_results(results):
-    return remove_duplicate(limit_results(results))
+    res = remove_duplicate(results)
+    res = limit_results(res)
+    res = filter_by_quality(res)
+    res = sort_results(res)
+    return res
+
+
+def process_tv_results(results, epn, epnb, sen):
+    res = remove_duplicate(results)
+    res = limit_results(res)
+    res = filter_by_episode(res, epn, epnb, sen)
+    if res:
+        res = filter_by_quality(res)
+        res = sort_results(res)
+        return res
+    else:
+        notify("No episodes found")
 
 
 def sort_results(results):
@@ -524,6 +533,7 @@ def check_debrid_cached(results, dialog):
     dialog.update(50, "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]", "Searching...")
     try:
         threads = []
+        cached_results = []
         hashes = "/".join([res["infoHash"] for res in results if res["infoHash"]])
         if hashes:
             torr_available = rd_client.get_torrent_instant_availability(hashes)
@@ -538,13 +548,14 @@ def check_debrid_cached(results, dialog):
                         info = torr_available[res["infoHash"]]
                         if isinstance(info, dict) and len(info.get("rd")) > 0:
                             res["rdCached"] = True
+                            cached_results.append(res)
                         thread = Thread(
                             target=get_dd_link, args=(rd_client, magnet, res)
                         )
                         threads.append(thread)
             [i.start() for i in threads]
             [i.join() for i in threads]
-            return results
+            return cached_results
     except ProviderException as e:
         log(f"Error {e.message}")
 

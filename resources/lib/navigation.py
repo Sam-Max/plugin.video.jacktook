@@ -23,6 +23,7 @@ from resources.lib.utils import (
     list_pack_torrent,
     play,
     process_results,
+    process_tv_results,
     real_debrid_auth,
     set_cached_db,
     show_search_result,
@@ -54,6 +55,7 @@ tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 kodi_lang = getLanguage(ISO_639_1)
 if kodi_lang:
     tmdb.language = kodi_lang
+
 
 
 @plugin.route("/")
@@ -198,36 +200,36 @@ def search(mode, query, id):
 
     results, query = search_api(query, mode, dialog=p_dialog)
     if results:
-        if torr_client == "Debrid":
-            cached_results = get_cached_db(query)
-            if cached_results:
-                cached = True
-            else:
-                presults = process_results(results)
-                cached_results = check_debrid_cached(presults, p_dialog)
+        p_results = process_results(results)
+        if p_results:
+            if torr_client == "Debrid":
+                cached_results = get_cached_db(query)
                 if cached_results:
-                    set_cached_db(cached_results, query)
                     cached = True
                 else:
-                    cached = False
-                    notify("No debrid results")
-            if cached:
+                    cached_results = check_debrid_cached(p_results, p_dialog)
+                    if cached_results:
+                        set_cached_db(cached_results, query)
+                        cached = True
+                    else:
+                        cached = False
+                        notify("No debrid results")
+                if cached:
+                    show_search_result(
+                        cached_results,
+                        mode,
+                        id,
+                        p_dialog,
+                        plugin,
+                        func=play_torrent,
+                        func2=show_pack,
+                    )
+            else:
                 show_search_result(
-                    cached_results,
-                    mode,
-                    id,
-                    p_dialog,
-                    plugin,
-                    func=play_torrent,
-                    func2=show_pack,
+                    p_results, mode, id, p_dialog, plugin, func=play_torrent, func2=show_pack
                 )
-        else:
-            show_search_result(
-                results, mode, id, p_dialog, plugin, func=play_torrent, func2=show_pack
-            )
     else:
         notify("No results")
-
     del p_dialog
 
 
@@ -240,48 +242,47 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
 
     results, query = search_api(query, mode, p_dialog)
     if results:
-        if torr_client == "Debrid":
-            cached_results = get_cached_db(query)
-            if cached_results:
-                cached = True
-            else:
-                presults = process_results(results)
-                cached_results = check_debrid_cached(presults, p_dialog)
+        p_results = process_tv_results(
+            results,
+            episode_name,
+            episode_num,
+            season_num,
+        )
+        if p_results:
+            if torr_client == "Debrid":
+                cached_results = get_cached_db(query)
                 if cached_results:
-                    set_cached_db(cached_results, query)
                     cached = True
                 else:
-                    cached = False
-                    notify("No debrid results")
-            if cached:
+                    cached_results = check_debrid_cached(p_results, p_dialog)
+                    if cached_results:
+                        set_cached_db(cached_results, query)
+                        cached = True
+                    else:
+                        cached = False
+                        notify("No debrid results")
+                if cached:
+                    show_tv_result(
+                        cached_results,
+                        mode,
+                        tvdb_id,
+                        p_dialog,
+                        plugin,
+                        func=play_torrent,
+                        func2=show_pack,
+                    )
+            else:
                 show_tv_result(
-                    cached_results,
+                    p_results,
                     mode,
-                    episode_name,
-                    episode_num,
-                    season_num,
                     tvdb_id,
                     p_dialog,
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
                 )
-        else:
-            show_tv_result(
-                results,
-                mode,
-                episode_name,
-                episode_num,
-                season_num,
-                tvdb_id,
-                p_dialog,
-                plugin,
-                func=play_torrent,
-                func2=show_pack,
-            )
     else:
         notify("No results")
-
     del p_dialog
 
 
