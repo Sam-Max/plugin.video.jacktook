@@ -51,14 +51,14 @@ def add_icon_genre(item, name):
 
 def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
     for res in results:
-        id = int(res.id)
+        id = res.id
         release_date = ""
         duration = ""
 
         if mode == "movie":
             title = res.title
             release_date = res.release_date
-            details = Movie().details(id)
+            details = Movie().details(int(id))
             duration = details.runtime
         elif mode == "tv":
             title = res.name

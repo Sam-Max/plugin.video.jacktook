@@ -118,6 +118,10 @@ def execute_builtin(command, block=False):
     return executebuiltin(command, block)
 
 
+def run_plugin(plugin):
+    xbmc.executebuiltin("RunPlugin({})".format(plugin))
+
+
 def container_refresh():
     execute_builtin("Container.Refresh")
 

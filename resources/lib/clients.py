@@ -71,6 +71,7 @@ class Jackett:
         for res in res_dict["Results"]:
             model = {
                 "title": res["Title"],
+                "qtTitle": "",
                 "indexer": res["Tracker"],
                 "publishDate": res["PublishDate"],
                 "guid": res["Guid"],

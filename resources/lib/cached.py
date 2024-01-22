@@ -114,7 +114,6 @@ class Cache(_BaseCache):
             "data BLOB NOT NULL, "
             "expires TIMESTAMP NOT NULL"
             ")")
-        # self._conn.execute('CREATE UNIQUE INDEX IF NOT EXISTS key_idx ON `{}` (key)'.format(self._table_name))
         for k, v in SQLITE_SETTINGS.items():
             self._conn.execute("PRAGMA {}={}".format(k, v))
         self._cleanup_interval = cleanup_interval
@@ -153,6 +152,9 @@ class Cache(_BaseCache):
         self._conn.execute(
             "DELETE FROM `cached` WHERE expires <= STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")
         self._last_cleanup = datetime.utcnow()
+
+    def clean_all(self):
+        self._conn.execute("DELETE FROM cached")
 
     def check_clean_up(self):
         clean_up = self.needs_cleanup

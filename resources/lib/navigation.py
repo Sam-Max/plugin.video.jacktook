@@ -43,10 +43,13 @@ from resources.lib.kodi import (
 from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
-from xbmcgui import ListItem
+from xbmcgui import ListItem, DialogProgressBG
 from xbmc import getLanguage, ISO_639_1
-from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
-from xbmcgui import DialogProgressBG
+from xbmcplugin import (
+    addDirectoryItem,
+    endOfDirectory,
+    setPluginCategory,
+)
 
 plugin = routing.Plugin()
 
@@ -218,7 +221,6 @@ def search(mode, query, id):
                         cached_results,
                         mode,
                         id,
-                        p_dialog,
                         plugin,
                         func=play_torrent,
                         func2=show_pack,
@@ -228,14 +230,14 @@ def search(mode, query, id):
                     p_results,
                     mode,
                     id,
-                    p_dialog,
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
                 )
     else:
         notify("No results")
-    del p_dialog
+
+    p_dialog.close()
 
 
 @plugin.route(
@@ -275,7 +277,6 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                         cached_results,
                         mode,
                         tvdb_id,
-                        p_dialog,
                         plugin,
                         func=play_torrent,
                         func2=show_pack,
@@ -285,20 +286,20 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     p_results,
                     mode,
                     tvdb_id,
-                    p_dialog,
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
                 )
     else:
         notify("No results")
-    del p_dialog
+
+    p_dialog.close()
 
 
 @plugin.route("/play_torrent")
 def play_torrent():
-    url, magnet, title = plugin.args["query"][0].split(" ", 2)
-    play(url, title, magnet, plugin)
+    url, magnet, id, title = plugin.args["query"][0].split(" ", 3)
+    play(url, magnet, id, title, plugin)
 
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
@@ -462,6 +463,7 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
         list_item.setProperty("IsPlayable", "false")
 
         query = str(show_name).replace("/", "")
+        query = f"{query} S{season_num_}E{ep_num}"
         ep_name = str(ep_name).replace("/", "")
 
         addDirectoryItem(
