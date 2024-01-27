@@ -153,6 +153,7 @@ def search_api(query, mode, dialog):
                 )
                 response = jackett.search(query, mode, jackett_insecured)
             else:
+                dialog.create("")
                 return None, None
         else:
             dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
@@ -184,6 +185,7 @@ def search_api(query, mode, dialog):
                     prowlarr_insecured,
                 )
             else:
+                dialog.create("")
                 return None, None
         else:
             dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")

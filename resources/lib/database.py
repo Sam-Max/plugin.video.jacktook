@@ -11,9 +11,10 @@ class Database:
     def __init__(self):
         BASE_DATABASE = {
             "jt:watch": {},
-            "jt:history": {},
             "jt:fanarttv": {},
             "jt:tmdb": {},
+            "jt:lth":{},
+            "jt:lfh": {}
         }
 
         data_dir = xbmcvfs.translatePath(

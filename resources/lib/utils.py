@@ -60,8 +60,8 @@ class Indexer(Enum):
 
 
 def play(url, magnet, id, title, plugin, debrid=False):
-    set_watched(title=title, magnet=magnet, url=url)
-    
+    set_watched_file(title, id, magnet, url)
+
     if not magnet and not url:
         notify(translation(30251))
         return
@@ -262,16 +262,27 @@ def set_video_item(list_item, title, poster, overview):
     list_item.setProperty("IsPlayable", "true")
 
 
-def set_watched(title, magnet, url):
+def set_watched_file(title, id, magnet, url):
     if title not in db.database["jt:watch"]:
         db.database["jt:watch"][title] = True
 
-    db.database["jt:history"][title] = {
+    db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
+        "id": id,
         "url": url,
         "magnet": magnet,
     }
     db.commit()
+
+
+def set_watched_title(title, id, mode=""):
+    if title != "None":
+        db.database["jt:lth"][title] = {
+            "timestamp": datetime.now(),
+            "id": id,
+            "mode": mode,
+        }
+        db.commit()
 
 
 def is_torrent_watched(title):
@@ -369,26 +380,72 @@ def real_debrid_auth():
     RealDebrid().auth()
 
 
-def clear():
+def clear(type=""):
     dialog = Dialog()
     confirmed = dialog.yesno(
         "Clear History",
         "Do you want to clear this history list?.",
     )
     if confirmed:
-        db.database["jt:history"] = {}
+        if type == "lth":
+            db.database["jt:lth"] = {}
+        else:
+            db.database["jt:lfh"] = {}
         db.commit()
         container_refresh()
 
 
-def history(plugin, func1, func2):
-    setPluginCategory(plugin.handle, f"Torrents - History")
+def last_titles(plugin, func1, func2, func3):
+    setPluginCategory(plugin.handle, f"Last Titles - History")
 
-    addDirectoryItem(plugin.handle, plugin.url_for(func1), ListItem(label="Clear History"))
+    addDirectoryItem(plugin.handle, plugin.url_for(func1, type="lth"), ListItem(label="Clear"))
 
-    for title, data in reversed(db.database["jt:history"].items()):
+    for title, data in reversed(db.database["jt:lth"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
-        label = f"[COLOR palevioletred]{title} [I][LIGHT]— {formatted_time}[/LIGHT][/I][/COLOR]"
+        list_item = ListItem(label=f"{title}— {formatted_time}")
+        list_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
+        )
+        list_item.setProperty("IsPlayable", "false")
+
+        mode = data["mode"]
+        id = data.get("id")
+
+        if mode == "tv":
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(
+                    func2,
+                    id=id,
+                ),
+                list_item,
+                isFolder=True,
+            )
+        else:
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(
+                    func3,
+                    mode=mode,
+                    query=title,
+                    id=id
+                ),
+                list_item,
+                isFolder=True,
+            )
+    endOfDirectory(plugin.handle)
+
+
+def last_files(plugin, func1, func2):
+    setPluginCategory(plugin.handle, f"Last Files - History")
+
+    addDirectoryItem(
+        plugin.handle, plugin.url_for(func1, type="lfh"), ListItem(label="Clear History")
+    )
+
+    for title, data in reversed(db.database["jt:lfh"].items()):
+        formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
+        label = f"{title}—{formatted_time}"
         list_item = ListItem(label=label)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
@@ -398,7 +455,7 @@ def history(plugin, func1, func2):
             plugin.handle,
             plugin.url_for(
                 func2,
-                query=f"{data.get('url', None)} {data.get('magnet', None)} {title}",
+                query=f"{data.get('url', None)} {data.get('magnet', None)} {data.get('id')} {title}",
             ),
             list_item,
             False,

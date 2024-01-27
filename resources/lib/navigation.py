@@ -18,7 +18,8 @@ from resources.lib.utils import (
     clear_tmdb_cache,
     fanartv_get,
     get_cached_db,
-    history,
+    last_files,
+    last_titles,
     list_item,
     list_pack_torrent,
     play,
@@ -26,6 +27,7 @@ from resources.lib.utils import (
     process_tv_results,
     real_debrid_auth,
     set_cached_db,
+    set_watched_title,
     show_search_result,
     show_tv_result,
     tmdb_get,
@@ -116,8 +118,15 @@ def main_menu():
 
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(main_history),
-        list_item("History", "history.png"),
+        plugin.url_for(last_titles_history),
+        list_item("Titles History", "history.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(last_files_history),
+        list_item("Files History", "history.png"),
         isFolder=True,
     )
     endOfDirectory(plugin.handle)
@@ -199,6 +208,8 @@ def genre_menu():
 def search(mode, query, id):
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
+
+    set_watched_title(query, id, mode)
 
     results, query = search_api(query, mode, dialog=p_dialog)
     if results:
@@ -381,6 +392,8 @@ def tv_details(id):
     number_of_seasons = d.number_of_seasons
     tvdb_id = d.external_ids.tvdb_id
 
+    set_watched_title(show_name, id=id, mode="tv")
+
     fanart_data = fanartv_get(tvdb_id)
     if fanart_data:
         poster = fanart_data["clearlogo2"]
@@ -466,7 +479,7 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
         ep_name = ep_name.replace("/", "")
 
         query = f"{query} S{season_num_}E{ep_num}"
-        
+
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
@@ -518,14 +531,19 @@ def settings():
     addon_settings()
 
 
-@plugin.route("/history")
-def main_history():
-    history(plugin, clear_history, play_torrent)
+@plugin.route("/history/clear/<type>")
+def clear_history(type):
+    clear(type=type)
 
 
-@plugin.route("/history/clear")
-def clear_history():
-    clear()
+@plugin.route("/files_history")
+def last_files_history():
+    last_files(plugin, clear_history, play_torrent)
+
+
+@plugin.route("/titles_history")
+def last_titles_history():
+    last_titles(plugin, clear_history, tv_details, search)
 
 
 def menu_genre(mode, page):
