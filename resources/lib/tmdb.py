@@ -98,7 +98,7 @@ def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
         )
         list_item.setProperty("IsPlayable", "false")
 
-        title = str(title).replace("/", "")
+        title = title.replace("/", "")
 
         if func.__name__ == "search":
             addDirectoryItem(

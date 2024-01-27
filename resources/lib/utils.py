@@ -168,12 +168,13 @@ def api_show_results(results, plugin, id, mode, func, func2):
             links = r.get("rdLinks")
             if len(links) > 0:
                 url = links[0]
+                title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
                 set_video_item(list_item, title, poster, overview)
                 add_item(list_item, url, magnet, id, title, func, plugin)
             else:
                 rdId = r.get("rdId")
-                list_item = ListItem(label=f"[B][PACK-Cached][/B]-{torr_title}")
+                list_item = ListItem(label=f"[B][Pack-Cached][/B]-{torr_title}")
                 add_pack_item(list_item, title, rdId, func2, plugin)
         else:
             url = r.get("downloadUrl", "")
@@ -383,8 +384,7 @@ def clear():
 def history(plugin, func1, func2):
     setPluginCategory(plugin.handle, f"Torrents - History")
 
-    list_item = ListItem(label="Clear History")
-    addDirectoryItem(plugin.handle, plugin.url_for(func1), list_item)
+    addDirectoryItem(plugin.handle, plugin.url_for(func1), ListItem(label="Clear History"))
 
     for title, data in reversed(db.database["jt:history"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")

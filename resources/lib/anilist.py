@@ -76,7 +76,7 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
         )
         list_item.setProperty("IsPlayable", "false")
 
-        title = str(title).replace("/", "")
+        title = title.replace("/", "")
 
         addDirectoryItem(
             plugin.handle,
