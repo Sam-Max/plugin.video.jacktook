@@ -16,6 +16,8 @@ ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 
+progressDialog = xbmcgui.DialogProgress()
+
 
 def get_setting(value, default=None):
     value = ADDON.getSetting(value)
@@ -35,7 +37,7 @@ def get_property(prop):
 
 
 def set_setting(id, value):
-    ADDON.setSetting(id, value)
+    ADDON.setSetting(id=id, value=value)
 
 
 def set_property(prop, value):
@@ -149,3 +151,24 @@ def Keyboard(id, default="", hidden=False):
     keyboard.doModal()
     if keyboard.isConfirmed():
         return keyboard.getText()
+
+
+def copy2clip(txt):
+    import subprocess
+
+    platform = sys.platform
+
+    if platform == "win32":
+        try:
+            cmd = "echo %s|clip" % txt.strip()
+            return subprocess.check_call(cmd, shell=True)
+        except:
+            pass
+    elif platform == "linux2":
+        try:
+            from subprocess import PIPE, Popen
+
+            p = Popen(["xsel", "-pi"], stdin=PIPE)
+            p.communicate(input=txt)
+        except:
+            pass

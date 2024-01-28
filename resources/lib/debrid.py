@@ -4,7 +4,7 @@ from base64 import b64encode, b64decode
 from typing import Any
 import requests
 from requests import RequestException, JSONDecodeError
-from resources.lib.kodi import dialog_ok, set_setting
+from resources.lib.kodi import copy2clip, dialog_ok, set_setting, progressDialog
 
 # Source: https://github.com/mhdzumair/MediaFusion/blob/main/streaming_providers/realdebrid/client.py
 # Modified to add func add_torrent_file, get_user_downloads_list
@@ -144,21 +144,35 @@ class RealDebrid:
 
     def auth(self):
         response = self.get_device_code()
-        user_code = response['user_code']
         interval = int(response["interval"])
         expires_in = int(response["expires_in"])
-        content = '%s[CR]%s[CR]%s' % ('Authorize Debrid Services', 'Navigate to: [B]%s[/B]' % 'https://real-debrid.com/device',
-                                                        'Enter the following code: [COLOR seagreen][B]%s[/B][/COLOR]' % user_code)
-        device_code = response['device_code']
+        device_code = response["device_code"]
+        user_code = response["user_code"]
+        copy2clip(user_code)
+        content = "%s[CR]%s[CR]%s" % (
+            "Authorize Debrid Services",
+            "Navigate to: [B]%s[/B]" % "https://real-debrid.com/device",
+            "Enter the following code: [COLOR seagreen][B]%s[/B][/COLOR]" % user_code,
+        )
+        progressDialog.create("Real-Debrid Auth")
+        progressDialog.update(-1, content)
         start_time = time()
         while time() - start_time < expires_in:
-            response = self.authorize(device_code)
-            if "token" in response:
-                set_setting("real_debrid_token", response["token"])
-                dialog_ok("Authorization", "Success")
-                break
-            sleep(1000 * interval)
-                
+            try:
+                response = self.authorize(device_code)
+                if "token" in response:
+                    progressDialog.close()
+                    set_setting("real_debrid_token", response["token"])
+                    dialog_ok("Authorization", "Authentication completed.")
+                    return
+                if progressDialog.iscanceled():
+                    progressDialog.close()
+                    return
+                sleep(interval)
+            except Exception as e:
+                dialog_ok("Error:", f"Error: {e}.")
+                return
+
     def get_hosts(self):
         return self._make_request("GET", f"{self.BASE_URL}/hosts")
 
@@ -234,9 +248,8 @@ class RealDebrid:
             is_return_none=True,
         )
 
+
 class ProviderException(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
-
-
