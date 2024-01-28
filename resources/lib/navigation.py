@@ -321,50 +321,21 @@ def search_tmdb(mode, genre_id, page):
     if mode == "multi":
         text = Keyboard(id=30241)
         if text:
-            results = Search().multi(str(text), page=page)
-        tmdb_show_results(
-            results,
-            func=search,
-            func2=tv_details,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            genre_id=genre_id,
-            mode=mode,
-        )
+            data = Search().multi(str(text), page=page)
+            show_tmdb_results(data, mode, genre_id, page, plugin)
     elif mode == "movie":
         if genre_id != -1:
             data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
         else:
             data = tmdb_get("trending_movie", page)
-        tmdb_show_results(
-            data.results,
-            func=search,
-            func2=tv_details,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            genre_id=genre_id,
-            mode=mode,
-        )
+        show_tmdb_results(data, mode, genre_id, page, plugin)
     elif mode == "tv":
         if genre_id != -1:
             data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
         else:
             data = tmdb_get("trending_tv", page)
-        tmdb_show_results(
-            data.results,
-            func=search,
-            func2=tv_details,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            genre_id=genre_id,
-            mode=mode,
-        )
-    elif mode == "movie_genres":
-        menu_genre(mode, page)
-    elif mode == "tv_genres":
+        show_tmdb_results(data, mode, genre_id, page, plugin)
+    elif mode == "movie_genres" or mode == "tv_genres":
         menu_genre(mode, page)
 
 
@@ -531,38 +502,6 @@ def last_titles_history():
     last_titles(plugin, clear_history, tv_details, search)
 
 
-def menu_genre(mode, page):
-    if mode == "movie_genres":
-        movies = Genre().movie_list()
-        for gen in movies.genres:
-            if gen["name"] == "TV Movie":
-                continue
-            name = gen["name"]
-            item = ListItem(label=name)
-            add_icon_genre(item, name)
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(
-                    search_tmdb, mode="movie", genre_id=gen["id"], page=page
-                ),
-                item,
-                isFolder=True,
-            )
-    elif mode == "tv_genres":
-        tv = Genre().tv_list()
-        for gen in tv.genres:
-            name = gen["name"]
-            item = ListItem(label=name)
-            add_icon_genre(item, name)
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(search_tmdb, mode="tv", genre_id=gen["id"], page=page),
-                item,
-                isFolder=True,
-            )
-    endOfDirectory(plugin.handle)
-
-
 @plugin.route("/clear_cached_tmdb")
 def clear_cached_tmdb():
     clear_tmdb_cache()
@@ -572,6 +511,42 @@ def clear_cached_tmdb():
 @plugin.route("/rd_auth")
 def rd_auth():
     real_debrid_auth()
+
+
+def menu_genre(mode, page):
+    if mode == "movie_genres":
+        data = Genre().movie_list()
+    elif mode == "tv_genres":
+        data = Genre().tv_list()
+
+    mode = mode.split("_")[0]
+    
+    for d in data.genres:
+        name = d["name"]
+        if name == "TV Movie":
+            continue
+        item = ListItem(label=name)
+        add_icon_genre(item, name)
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(search_tmdb, mode=mode, genre_id=d["id"], page=page),
+            item,
+            isFolder=True,
+        )
+    endOfDirectory(plugin.handle)
+
+
+def show_tmdb_results(data, mode, genre_id, page, plugin):
+    tmdb_show_results(
+        data.results,
+        func=search,
+        func2=tv_details,
+        next_func=next_page,
+        page=page,
+        plugin=plugin,
+        genre_id=genre_id,
+        mode=mode,
+    )
 
 
 def run():
