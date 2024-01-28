@@ -1,6 +1,6 @@
 import os
 
-from resources.lib.kodi import ADDON_PATH
+from resources.lib.kodi import ADDON_PATH, log
 from resources.lib.tmdbv3api.objs.movie import Movie
 
 from xbmcgui import ListItem
@@ -49,25 +49,33 @@ def add_icon_genre(item, name):
         )
 
 
-def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
+def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre_id=0):
     for res in results:
         id = res.id
-        release_date = ""
         duration = ""
+        media_type= ""
 
         if mode == "movie":
             title = res.title
             release_date = res.release_date
-            details = Movie().details(int(id))
-            duration = details.runtime
+            duration = Movie().details(int(id)).runtime
         elif mode == "tv":
             title = res.name
-            release_date = res.get("first_air_date")
+            release_date = res.get("first_air_date", "")
         elif mode == "multi":
             if "name" in res:
                 title = res.name
-            if "title" in res:
+            elif "title" in res:
                 title = res.title
+            if res["media_type"] == "movie":
+                media_type = "movie"
+                release_date = res.release_date
+                duration = Movie().details(int(id)).runtime
+                title= f"[B][MOVIE][/B]- {title}"
+            elif res["media_type"] == "tv":
+                media_type = "tv"
+                release_date = res.get("first_air_date", "")
+                title= f"[B][TV][/B]- {title}"
 
         poster_path = (
             TMDB_POSTER_URL + res.poster_path if res.get("poster_path") else ""
@@ -100,7 +108,7 @@ def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
 
         title = title.replace("/", "")
 
-        if func.__name__ == "search":
+        if "movie" in [mode, media_type]:
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(func, mode=mode, query=title, id=id),
@@ -110,7 +118,7 @@ def tmdb_show_results(results, func, next_func, page, plugin, mode, genre_id=0):
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func, id=id),
+                plugin.url_for(func2, id=id),
                 list_item,
                 isFolder=True,
             )

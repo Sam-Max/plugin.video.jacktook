@@ -321,62 +321,47 @@ def search_tmdb(mode, genre_id, page):
     if mode == "multi":
         text = Keyboard(id=30241)
         if text:
-            search_ = Search()
-            results = search_.multi(str(text), page=page)
-            tmdb_show_results(
-                results,
-                func=search,
-                next_func=next_page,
-                page=page,
-                plugin=plugin,
-                mode=mode,
-            )
+            results = Search().multi(str(text), page=page)
+        tmdb_show_results(
+            results,
+            func=search,
+            func2=tv_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
     elif mode == "movie":
         if genre_id != -1:
             data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
-            tmdb_show_results(
-                data.results,
-                func=search,
-                next_func=next_page,
-                page=page,
-                plugin=plugin,
-                genre_id=genre_id,
-                mode=mode,
-            )
         else:
             data = tmdb_get("trending_movie", page)
-            tmdb_show_results(
-                data.results,
-                func=search,
-                next_func=next_page,
-                page=page,
-                plugin=plugin,
-                genre_id=genre_id,
-                mode=mode,
-            )
+        tmdb_show_results(
+            data.results,
+            func=search,
+            func2=tv_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
     elif mode == "tv":
         if genre_id != -1:
             data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
-            tmdb_show_results(
-                data.results,
-                func=tv_details,
-                next_func=next_page,
-                page=page,
-                plugin=plugin,
-                genre_id=genre_id,
-                mode=mode,
-            )
         else:
             data = tmdb_get("trending_tv", page)
-            tmdb_show_results(
-                data.results,
-                func=tv_details,
-                next_func=next_page,
-                page=page,
-                plugin=plugin,
-                genre_id=genre_id,
-                mode=mode,
-            )
+        tmdb_show_results(
+            data.results,
+            func=search,
+            func2=tv_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
     elif mode == "movie_genres":
         menu_genre(mode, page)
     elif mode == "tv_genres":
