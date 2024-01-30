@@ -68,21 +68,25 @@ def play(url, magnet, id, title, plugin, debrid=False):
 
     torr_client = get_setting("torrent_client")
     if torr_client == "Torrest":
-        if is_torrest_addon():
-            if magnet:
-                _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(
-                    magnet
-                )
-            else:
-                _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
-        else:
+        if not is_torrest_addon():
             notify(translation(30250))
             return
+        if magnet:
+            _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(
+                magnet
+            )
+        else:
+            if not url.endswith(".torrent"):
+                notify("Not a torrent url.")
+                return
+            _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
     elif torr_client == "Debrid":
         debrid = True
-        if url:
-            _url = url
-
+        if url.endswith(".torrent") or magnet:
+            notify("Not a playable url.")
+            return
+        _url = url
+            
     list_item = ListItem(title, path=_url)
     setResolvedUrl(plugin.handle, True, list_item)
     if debrid:

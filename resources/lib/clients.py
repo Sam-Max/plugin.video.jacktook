@@ -1,7 +1,7 @@
 import json
 from urllib.parse import quote
 import requests
-from resources.lib.kodi import Keyboard, get_setting, notify, translation
+from resources.lib.kodi import Keyboard, get_setting, log, notify, translation
 from resources.lib.utils import Indexer
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -123,12 +123,22 @@ class Prowlarr:
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
                 return
-            return json.loads(res.text)
+            return self._parse_response(res)
         except Exception as e:
             notify(f"{translation(30230)} {str(e)}")
             return
 
-
+    def _parse_response(self, response):
+        res_dict = json.loads(response.text)
+        for res in res_dict:
+            res.update({
+                "qtTitle": "",
+                "rdId": "",
+                "rdCached": False,
+                "rdLinks": [],
+            })
+        return res_dict
+    
 def search_api(query, mode, dialog):
     query = None if query == "None" else query
 

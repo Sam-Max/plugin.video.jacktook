@@ -17,27 +17,8 @@ def get_anime_client():
 def search_anilist(category, page, plugin, action, next_action):
     page += 1
     client = get_anime_client()
-    if category == "Trending":
-        trending = client.get_trending(page=page, perPage=10)
-        anilist_show_results(
-            trending,
-            action=action,
-            next_action=next_action,
-            category=category,
-            page=page,
-            plugin=plugin,
-        )
-    elif category == "Popular":
-        popular = client.get_popular(page=page, perPage=10)
-        anilist_show_results(
-            popular,
-            action=action,
-            next_action=next_action,
-            category=category,
-            page=page,
-            plugin=plugin,
-        )
-    elif category == "search":
+
+    if category == "search":
         text = Keyboard(id=30242)
         if text:
             results = client.search(str(text))
@@ -49,6 +30,21 @@ def search_anilist(category, page, plugin, action, next_action):
                 page=page,
                 plugin=plugin,
             )
+            return
+
+    if category == "Trending":
+        data = client.get_trending(page=page, perPage=10)
+    elif category == "Popular":
+        data = client.get_popular(page=page, perPage=10)
+
+    anilist_show_results(
+        data,
+        action=action,
+        next_action=next_action,
+        category=category,
+        page=page,
+        plugin=plugin,
+    )
 
 
 def anilist_show_results(results, action, next_action, category, page, plugin):
