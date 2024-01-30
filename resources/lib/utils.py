@@ -72,9 +72,7 @@ def play(url, magnet, id, title, plugin, debrid=False):
             notify(translation(30250))
             return
         if magnet:
-            _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(
-                magnet
-            )
+            _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
         else:
             if not url.endswith(".torrent"):
                 notify("Not a torrent url.")
@@ -86,7 +84,7 @@ def play(url, magnet, id, title, plugin, debrid=False):
             notify("Not a playable url.")
             return
         _url = url
-            
+
     list_item = ListItem(title, path=_url)
     setResolvedUrl(plugin.handle, True, list_item)
     if debrid:
@@ -402,7 +400,9 @@ def clear(type=""):
 def last_titles(plugin, func1, func2, func3):
     setPluginCategory(plugin.handle, f"Last Titles - History")
 
-    addDirectoryItem(plugin.handle, plugin.url_for(func1, type="lth"), ListItem(label="Clear"))
+    addDirectoryItem(
+        plugin.handle, plugin.url_for(func1, type="lth"), ListItem(label="Clear")
+    )
 
     for title, data in reversed(db.database["jt:lth"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
@@ -428,12 +428,7 @@ def last_titles(plugin, func1, func2, func3):
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(
-                    func3,
-                    mode=mode,
-                    query=title,
-                    id=id
-                ),
+                plugin.url_for(func3, mode=mode, query=title, id=id),
                 list_item,
                 isFolder=True,
             )
@@ -444,7 +439,9 @@ def last_files(plugin, func1, func2):
     setPluginCategory(plugin.handle, f"Last Files - History")
 
     addDirectoryItem(
-        plugin.handle, plugin.url_for(func1, type="lfh"), ListItem(label="Clear History")
+        plugin.handle,
+        plugin.url_for(func1, type="lfh"),
+        ListItem(label="Clear History"),
     )
 
     for title, data in reversed(db.database["jt:lfh"].items()):
@@ -604,7 +601,7 @@ def check_debrid_cached(results, dialog):
     dialog.update(50, "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]", "Searching...")
     threads = []
     cached_results = []
-    hashes = "/".join([res["infoHash"] for res in results if res["infoHash"]])
+    hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
     if hashes:
         torr_available = rd_client.get_torrent_instant_availability(hashes)
         for res in results:
