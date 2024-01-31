@@ -3,8 +3,6 @@
 
 A Kodi addon for torrent finding and streaming. 
 
-This addon doesn't get sources by itself on torrent websites for legal reason and it should only be used to access movies and TV shows not protected by copyright.
-
 ## Requirements.
 
 - Kodi 19+
@@ -14,10 +12,10 @@ This addon doesn't get sources by itself on torrent websites for legal reason an
 - Jackett integration
 - Prowlarr integration
 - Torrest Integration
+- Real Debrid Integration
 - TMDB Integration 
 - AniList Integration
 - Fanart.tv Integration
-- Real Debrid Integration
 - API calls caching
 
 
@@ -34,7 +32,7 @@ This addon doesn't get sources by itself on torrent websites for legal reason an
 
 **Note**:
 
-You can deploy/install the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming), on a remote server (instructions more below). After that, you need to configure Torrest addon with the Torrest service IP/Domain and Port.
+You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
 
 
 ## Installation of this addon (Jacktook)
@@ -60,7 +58,7 @@ FROM ubuntu:22.04
 
 RUN apt-get update && apt-get install -y curl unzip
 
-ARG VERSION=0.0.4 OS=linux ARCH=x64
+ARG VERSION=0.0.5 OS=linux ARCH=x64
 
 RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSION}/torrest.${VERSION}.${OS}_${ARCH}.zip -o torrest.zip \
     && unzip torrest.zip -d /usr/local/lib \
@@ -68,7 +66,7 @@ RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSIO
 
 RUN chmod +x /usr/local/lib/torrest
 
-CMD ["/usr/local/lib/torrest"]
+CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
 ```
 
 2. Build the Dockerfile
@@ -77,10 +75,12 @@ CMD ["/usr/local/lib/torrest"]
 
 3. Run the container on port 8080 (default port).
     
-    docker run -p 8080:8080 torrest-cpp
+    docker run -p 8080:8080 --name torrest-service torrest-cpp
 
 ## Screenshots:
 
 ![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
 
+## Disclaimer:
 
+This addon doesn't get sources by itself on torrent websites for legal reason and it should only be used to access movies and TV shows not protected by copyright.
