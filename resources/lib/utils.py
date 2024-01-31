@@ -184,7 +184,8 @@ def api_show_results(results, plugin, id, mode, func, func2):
             if guid.startswith("magnet:?"):
                 magnet = guid
             else:
-                magnet = get_magnet_from_uri(r.get("magnetUrl", ""))
+                uri = r.get("magnetUrl") or r.get("downloadUrl")
+                magnet = get_magnet_from_uri(uri)
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
             add_item(list_item, url, magnet, id, title, func, plugin)
@@ -577,14 +578,10 @@ def filter_by_quality(results):
 def get_magnet_from_uri(uri):
     if uri:
         magnet_prefix = "magnet:"
-        uri = uri
-
-        if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
-            return uri
         res = requests.get(uri, allow_redirects=False)
         if res.is_redirect:
             uri = res.headers["Location"]
-            if len(uri) >= len(magnet_prefix) and uri[0:7] == magnet_prefix:
+            if uri.startswith(magnet_prefix):
                 return uri
         elif (
             res.status_code == 200
@@ -609,7 +606,8 @@ def check_debrid_cached(results, dialog):
             if guid.startswith("magnet:?"):
                 magnet = guid
             else:
-                magnet = get_magnet_from_uri(res.get("magnetUrl", ""))
+                uri = res.get("magnetUrl") or res.get("downloadUrl")
+                magnet = get_magnet_from_uri(uri)
             if magnet:
                 if res["infoHash"] in torr_available:
                     info = torr_available[res["infoHash"]]
