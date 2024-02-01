@@ -9,6 +9,8 @@ import xbmcaddon
 from xbmc import executebuiltin
 
 _URL = sys.argv[0]
+TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
+TORREST_ADDON_ID = TORREST_ADDON.getAddonInfo("id")
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
@@ -32,12 +34,12 @@ def get_setting(value, default=None):
         return value
 
 
-def get_property(prop):
-    return Window(10000).getProperty(prop)
-
-
 def set_setting(id, value):
     ADDON.setSetting(id=id, value=value)
+
+
+def get_property(prop):
+    return Window(10000).getProperty(prop)
 
 
 def set_property(prop, value):
@@ -49,12 +51,14 @@ def addon_settings():
 
 
 def addon_status():
-    message = f"Version: {ADDON_VERSION}"
-    return xbmcgui.Dialog().textviewer("Status", message, False)
+    msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
+    msg += f"[B]Torrest Server IP/Address[/B]: {TORREST_ADDON.getSetting('service_address')}\n"
+    msg += f"[B]Torrest Server Port[/B]: {TORREST_ADDON.getSetting('port')}"
+    return xbmcgui.Dialog().textviewer("Status", msg, False)
 
 
 def is_torrest_addon():
-    return xbmc.getCondVisibility(f"System.HasAddon({ADDON_ID})")
+    return xbmc.getCondVisibility(f"System.HasAddon({TORREST_ADDON_ID})")
 
 
 def get_int_setting(setting):
