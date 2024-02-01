@@ -30,7 +30,7 @@ def search_anilist(category, page, plugin, action, next_action):
                 page=page,
                 plugin=plugin,
             )
-            return
+        return
 
     if category == "Trending":
         data = client.get_trending(page=page, perPage=10)
