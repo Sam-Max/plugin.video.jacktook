@@ -39,7 +39,7 @@ from xbmcplugin import (
     setPluginCategory,
     setResolvedUrl,
 )
-from xbmc import getSupportedMedia, Player
+from xbmc import getSupportedMedia
 from urllib.parse import quote
 
 db = Database()
@@ -74,9 +74,6 @@ def play(url, magnet, id, title, plugin, debrid=False):
         if magnet:
             _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
         else:
-            if not url.endswith(".torrent"):
-                notify("Not a torrent url.")
-                return
             _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
     elif torr_client == "Debrid":
         debrid = True
@@ -122,7 +119,7 @@ def api_show_results(results, plugin, id, mode, func, func2):
 
     poster = ""
     overview = ""
-
+    
     if int(id) != -1:
         data = fanartv_get(id, mode)
         if data:
@@ -167,7 +164,7 @@ def api_show_results(results, plugin, id, mode, func, func2):
         torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {qtTitle}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
         if r["rdCached"]:
-            links = r.get("rdLinks")
+            links = r.get("rdLinks", "")
             if len(links) > 0:
                 url = links[0]
                 title = f"[B][Cached][/B]-{title}"
@@ -180,12 +177,13 @@ def api_show_results(results, plugin, id, mode, func, func2):
                 add_pack_item(list_item, title, rdId, func2, plugin)
         else:
             url = r.get("downloadUrl", "")
-            guid = r.get("guid")
+            guid = r.get("guid", "")
             if guid.startswith("magnet:?"):
                 magnet = guid
             else:
-                uri = r.get("magnetUrl") or r.get("downloadUrl")
-                magnet = get_magnet_from_uri(uri)
+                uri = r.get("magnetUrl")
+                if uri:
+                    magnet = get_magnet_from_uri(uri)
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
             add_item(list_item, url, magnet, id, title, func, plugin)
@@ -214,13 +212,12 @@ def add_pack_item(list_item, title, id, func, plugin):
 def list_pack_torrent(id, func, plugin):
     rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
     try:
+        cached = False
         links = get_cached_db(id)
         if links:
             cached = True
         else:
-            cached = False
             torr_info = rd_client.get_torrent_info(id)
-            links = []
             files = torr_info["files"]
             extensions = supported_video_extensions()[:-1]
             torr_names = [
@@ -229,8 +226,9 @@ def list_pack_torrent(id, func, plugin):
                 for x in extensions
                 if item["path"].lower().endswith(x)
             ]
+            links = []
             for i, name in enumerate(torr_names):
-                title = str(name).split("/", 1)[1].rsplit(".", 1)[0]
+                title = f"[Cached] - {name.split('/', 1)[1].rsplit('.', 1)[0]}"
                 response = rd_client.create_download_link(torr_info["links"][i])
                 links.append((response["download"], title))
             if links:
@@ -242,9 +240,10 @@ def list_pack_torrent(id, func, plugin):
                 set_video_item(list_item, title, "", "")
                 add_item(
                     list_item,
-                    title,
-                    url=link,
+                    link,
                     magnet="",
+                    id="",
+                    title=title,
                     func=func,
                     plugin=plugin,
                 )
@@ -552,45 +551,47 @@ def filter_by_quality(results):
     no_quarlity = []
 
     for res in results:
-        matches = re.findall(r"\b\d+p\b|\b\d+k\b", res["title"])
-        for match in matches:
-            if "720p" in match:
-                res["qtTitle"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
-                res["Quality"] = "720p"
-                quality_720p.append(res)
-            elif "1080p" in match:
-                res["qtTitle"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
-                res["Quality"] = "1080p"
-                quality_1080p.append(res)
-            elif "4k" or "2160" in match:
-                res["qtTitle"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
-                res["Quality"] = "4k"
-                quality_4k.append(res)
-            else:
-                res["qtTitle"] = res["title"]
-                res["Quality"] = "Unknown"
-                no_quarlity.append(res)
+        title = res["title"]
+        if "480p" in title:
+            res["qtTitle"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
+            res["Quality"] = "480p"
+            quality_720p.append(res)
+        elif "720p" in title:
+            res["qtTitle"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
+            res["Quality"] = "720p"
+            quality_720p.append(res)
+        elif "1080p" in title:
+            res["qtTitle"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
+            res["Quality"] = "1080p"
+            quality_1080p.append(res)
+        elif "2160" in title:
+            res["qtTitle"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
+            res["Quality"] = "4k"
+            quality_4k.append(res)
+        else:
+            res["qtTitle"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
+            res["Quality"] = "N/A"
+            no_quarlity.append(res)
 
     combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
     return combined_list
 
 
 def get_magnet_from_uri(uri):
-    if uri:
-        magnet_prefix = "magnet:"
-        res = requests.get(uri, allow_redirects=False)
-        if res.is_redirect:
-            uri = res.headers["Location"]
-            if uri.startswith(magnet_prefix):
-                return uri
-        elif (
-            res.status_code == 200
-            and res.headers.get("Content-Type") == "application/x-bittorrent"
-        ):
-            torrent = Torrent.read_stream(io.BytesIO(res.content))
-            return str(torrent.magnet())
-        else:
-            log(f"Could not get final redirect location for URI {uri}")
+    magnet_prefix = "magnet:"
+    res = requests.get(uri, allow_redirects=False)
+    if res.is_redirect:
+        uri = res.headers["Location"]
+        if uri.startswith(magnet_prefix):
+            return uri
+    elif (
+        res.status_code == 200
+        and res.headers.get("Content-Type") == "application/x-bittorrent"
+    ):
+        torrent = Torrent.read_stream(io.BytesIO(res.content))
+        return str(torrent.magnet())
+    else:
+        log(f"Could not get final redirect location for URI {uri}")
 
 
 def check_debrid_cached(results, dialog):
@@ -601,15 +602,17 @@ def check_debrid_cached(results, dialog):
     hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
     if hashes:
         torr_available = rd_client.get_torrent_instant_availability(hashes)
+        magnet = ""
         for res in results:
             guid = res.get("guid", "")
             if guid.startswith("magnet:?"):
                 magnet = guid
             else:
                 uri = res.get("magnetUrl") or res.get("downloadUrl")
-                magnet = get_magnet_from_uri(uri)
+                if uri:
+                    magnet = get_magnet_from_uri(uri)
             if magnet:
-                if res["infoHash"] in torr_available:
+                if res.get("infoHash", "") in torr_available:
                     info = torr_available[res["infoHash"]]
                     if isinstance(info, dict) and len(info.get("rd")) > 0:
                         res["rdCached"] = True
