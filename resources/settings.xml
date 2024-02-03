@@ -40,6 +40,7 @@
         <setting label="30152" type="lsep"/>
         <setting id="real_debrid_token" type="text" label="30154" default=""/>
         <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
+        <setting id="show_uncached" type="bool" label="Show uncached torrents" default="false"/>
     </category>
     <category label="30200">
         <setting label="30202" type="lsep"/>

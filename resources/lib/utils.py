@@ -7,7 +7,6 @@ from threading import Thread
 import requests
 from resources.lib.anilist import get_anime_client
 from resources.lib.cached import Cache
-from resources.lib.debrid import RealDebrid
 from resources.lib.player import JacktookPlayer
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.tmdbv3api.objs.movie import Movie
@@ -18,6 +17,7 @@ from resources.lib.database import Database
 from resources.lib.fanarttv import get_api_fanarttv
 from resources.lib.kodi import (
     ADDON_PATH,
+    action,
     bytes_to_human_readable,
     container_refresh,
     get_cache_expiration,
@@ -90,12 +90,14 @@ def play(url, magnet, id, title, plugin, debrid=False):
         player.run(list_item)
 
 
-def show_search_result(results, mode, id, plugin, func, func2):
-    api_show_results(results, plugin, id, mode, func=func, func2=func2)
+def show_search_result(results, mode, id, plugin, func, func2, func3):
+    api_show_results(results, plugin, id, mode, func=func, func2=func2, func3=func3)
 
 
-def show_tv_result(results, mode, tvdb_id, plugin, func, func2):
-    api_show_results(results, plugin, tvdb_id, mode=mode, func=func, func2=func2)
+def show_tv_result(results, mode, tvdb_id, plugin, func, func2, func3):
+    api_show_results(
+        results, plugin, tvdb_id, mode=mode, func=func, func2=func2, func3=func3
+    )
 
 
 def list_item(label, icon):
@@ -110,7 +112,7 @@ def list_item(label, icon):
     return item
 
 
-def api_show_results(results, plugin, id, mode, func, func2):
+def api_show_results(results, plugin, id, mode, func, func2, func3):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
         description_length = int(get_setting("jackett_desc_length"))
@@ -119,7 +121,7 @@ def api_show_results(results, plugin, id, mode, func, func2):
 
     poster = ""
     overview = ""
-    
+
     if int(id) != -1:
         data = fanartv_get(id, mode)
         if data:
@@ -186,6 +188,10 @@ def api_show_results(results, plugin, id, mode, func, func2):
                     magnet = get_magnet_from_uri(uri)
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
+            if magnet:
+                list_item.addContextMenuItems(
+                    [("Download to Debrid", action(plugin, func3, query=magnet))]
+                )
             add_item(list_item, url, magnet, id, title, func, plugin)
 
     endOfDirectory(plugin.handle)
@@ -209,15 +215,14 @@ def add_pack_item(list_item, title, id, func, plugin):
     )
 
 
-def list_pack_torrent(id, func, plugin):
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+def list_pack_torrent(id, func, client, plugin):
     try:
         cached = False
         links = get_cached_db(id)
         if links:
             cached = True
         else:
-            torr_info = rd_client.get_torrent_info(id)
+            torr_info = client.get_torrent_info(id)
             files = torr_info["files"]
             extensions = supported_video_extensions()[:-1]
             torr_names = [
@@ -228,8 +233,8 @@ def list_pack_torrent(id, func, plugin):
             ]
             links = []
             for i, name in enumerate(torr_names):
-                title = f"[Cached] - {name.split('/', 1)[1].rsplit('.', 1)[0]}"
-                response = rd_client.create_download_link(torr_info["links"][i])
+                title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
+                response = client.create_download_link(torr_info["links"][i])
                 links.append((response["download"], title))
             if links:
                 set_cached_db(links, id)
@@ -250,6 +255,24 @@ def list_pack_torrent(id, func, plugin):
             endOfDirectory(plugin.handle)
     except Exception as e:
         log(f"Error {str(e)}")
+
+
+""" def direct_download(url, file_name):
+    progressDialog.create("Download Manager")
+
+    response = requests.get(url, stream=True)
+    total_size = int(response.headers.get("content-length", 0))
+
+    with open(file_name, "wb") as file:
+        for data in response.iter_content(chunk_size=1024):
+            file.write(data)
+            content = f"Downloaded: {int(file.tell() / total_size * 100)}%"
+            progressDialog.update(-1, content)
+            if progressDialog.iscanceled():
+                progressDialog.close()
+                return
+
+    progressDialog.update(-1, "Download complete.") """
 
 
 def set_video_item(list_item, title, poster, overview):
@@ -310,7 +333,6 @@ def fanartv_get(id, mode="tv"):
 
 def get_cached_db(path, params={}):
     identifier = "{}|{}".format(path, params)
-    log(identifier)
     return cache.get(identifier, hashed_key=True)
 
 
@@ -376,10 +398,6 @@ def clear_tmdb_cache():
     cache.clean_all()
     db.database["jt:tmdb"] = {}
     db.commit()
-
-
-def real_debrid_auth():
-    RealDebrid().auth()
 
 
 def clear(type=""):
@@ -594,14 +612,14 @@ def get_magnet_from_uri(uri):
         log(f"Could not get final redirect location for URI {uri}")
 
 
-def check_debrid_cached(results, dialog):
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+def check_debrid_cached(results, client, dialog):
     dialog.update(50, "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]", "Searching...")
     threads = []
     cached_results = []
+    uncached_results = []
     hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
     if hashes:
-        torr_available = rd_client.get_torrent_instant_availability(hashes)
+        torr_available = client.get_torrent_instant_availability(hashes)
         magnet = ""
         for res in results:
             guid = res.get("guid", "")
@@ -612,16 +630,27 @@ def check_debrid_cached(results, dialog):
                 if uri:
                     magnet = get_magnet_from_uri(uri)
             if magnet:
-                if res.get("infoHash", "") in torr_available:
-                    info = torr_available[res["infoHash"]]
+                infoHash = res.get("infoHash")
+                if infoHash in torr_available:
+                    info = torr_available[infoHash]
                     if isinstance(info, dict) and len(info.get("rd")) > 0:
                         res["rdCached"] = True
                         cached_results.append(res)
-                    thread = Thread(target=get_dd_link, args=(rd_client, magnet, res))
+                    else:
+                        res["rdCached"] = False
+                        uncached_results.append(res)
+                    thread = Thread(target=get_dd_link, args=(client, magnet, res))
                     threads.append(thread)
+                else:
+                    res["rdCached"] = False
+                    uncached_results.append(res)
         [i.start() for i in threads]
         [i.join() for i in threads]
-        return cached_results
+        if get_setting("show_uncached"):
+            cached_results.extend(uncached_results)
+            return cached_results
+        else:
+            return cached_results
 
 
 def get_dd_link(rd_client, magnet, res):
@@ -661,3 +690,19 @@ def get_info_hash(magnet):
 def is_magnet_link(link):
     if link.startswith("magnet:?"):
         return link
+
+
+""" def direct_download():
+    import urllib.request
+
+    url = 'your_file_url'
+    file_name = 'your_file_name'
+
+    def reporthook(block_num, block_size, total_size):
+        downloaded = block_num * block_size
+        if total_size > 0:
+            percent = min(int(downloaded * 100 / total_size), 100)
+            print(f'Downloading: {percent}%', end='\r')
+
+    urllib.request.urlretrieve(url, file_name, reporthook)
+    print('Download complete') """

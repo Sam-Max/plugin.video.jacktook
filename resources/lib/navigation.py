@@ -1,6 +1,8 @@
 import logging
 import os
+from threading import Thread
 from resources.lib.clients import search_api
+from resources.lib.debrid import RealDebrid
 import routing
 
 from resources.lib.tmdbv3api.objs.search import Search
@@ -25,7 +27,6 @@ from resources.lib.utils import (
     play,
     process_results,
     process_tv_results,
-    real_debrid_auth,
     set_cached_db,
     set_watched_title,
     show_search_result,
@@ -37,8 +38,8 @@ from resources.lib.kodi import (
     Keyboard,
     addon_settings,
     addon_status,
+    dialogyesno,
     get_setting,
-    log,
     notify,
     translation,
 )
@@ -60,6 +61,8 @@ tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 kodi_lang = getLanguage(ISO_639_1)
 if kodi_lang:
     tmdb.language = kodi_lang
+
+rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
 
 
 @plugin.route("/")
@@ -220,7 +223,7 @@ def search(mode, query, id):
                 if cached_results:
                     cached = True
                 else:
-                    cached_results = check_debrid_cached(p_results, p_dialog)
+                    cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
                     if cached_results:
                         set_cached_db(cached_results, query, params=(len(p_results)))
                         cached = True
@@ -235,6 +238,7 @@ def search(mode, query, id):
                         plugin,
                         func=play_torrent,
                         func2=show_pack,
+                        func3=download,
                     )
             else:
                 show_search_result(
@@ -244,6 +248,7 @@ def search(mode, query, id):
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
+                    func3=download,
                 )
     else:
         notify("No results")
@@ -274,7 +279,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                 if cached_results:
                     cached = True
                 else:
-                    cached_results = check_debrid_cached(p_results, p_dialog)
+                    cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
                     if cached_results:
                         set_cached_db(
                             cached_results, query, params=(episode_num, len(p_results))
@@ -291,6 +296,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                         plugin,
                         func=play_torrent,
                         func2=show_pack,
+                        func3=download,
                     )
             else:
                 show_tv_result(
@@ -300,6 +306,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
+                    func3=download,
                 )
     else:
         notify("No results")
@@ -457,7 +464,7 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
 @plugin.route("/show_pack")
 def show_pack():
     id, _ = plugin.args["query"][0].split(" ", 1)
-    list_pack_torrent(id, func=play_torrent, plugin=plugin)
+    list_pack_torrent(id, func=play_torrent, client=rd_client, plugin=plugin)
 
 
 @plugin.route("/anilist/<category>")
@@ -475,6 +482,18 @@ def next_page_anilist(category, page):
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
 def next_page(mode, page, genre_id):
     search_tmdb(mode=mode, genre_id=int(genre_id), page=int(page))
+
+
+@plugin.route("/download")
+def download():
+    magnet = plugin.args["query"][0]
+    response = dialogyesno(
+        "Kodi", "Do you want to transfer this file to your Real Debrid Cloud?"
+    )
+    if response:
+        Thread(
+            target=rd_client.download, args=(magnet, ), kwargs={"pack": False}
+        ).start()
 
 
 @plugin.route("/status")
@@ -510,7 +529,7 @@ def clear_cached_tmdb():
 
 @plugin.route("/rd_auth")
 def rd_auth():
-    real_debrid_auth()
+    rd_client.auth()
 
 
 def menu_genre(mode, page):
@@ -520,7 +539,7 @@ def menu_genre(mode, page):
         data = Genre().tv_list()
 
     mode = mode.split("_")[0]
-    
+
     for d in data.genres:
         name = d["name"]
         if name == "TV Movie":

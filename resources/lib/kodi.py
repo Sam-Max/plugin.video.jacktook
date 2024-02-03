@@ -116,6 +116,18 @@ def dialog_text(heading, content):
     return dialog
 
 
+def dialogyesno(header, text):
+    dialog = xbmcgui.Dialog()
+    confirmed = dialog.yesno(
+        header,
+        text,
+    )
+    if confirmed:
+        return True
+    else:
+        return False
+
+
 def close_all_dialog():
     execute_builtin("Dialog.Close(all,true)")
 
@@ -124,8 +136,23 @@ def execute_builtin(command, block=False):
     return executebuiltin(command, block)
 
 
-def run_plugin(plugin):
-    xbmc.executebuiltin("RunPlugin({})".format(plugin))
+""" def run_plugin(func):
+    plugin_url = "plugin://plugin.video.jacktook/" + func
+    xbmc.executebuiltin("RunPlugin({})".format(plugin_url)) """
+
+
+def run_plugin(plugin, func, *args, **kwargs):
+    return xbmc.executebuiltin(
+        "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
+    )
+
+
+def action(plugin, func, *args, **kwargs):
+    return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
+
+
+def show_busy_dialog():
+    return execute_builtin("ActivateWindow(busydialognocancel)")
 
 
 def container_refresh():
@@ -133,6 +160,7 @@ def container_refresh():
 
 
 def hide_busy_dialog():
+    execute_builtin("Dialog.Close(busydialognocancel)")
     execute_builtin("Dialog.Close(busydialog)")
 
 
@@ -148,6 +176,10 @@ def bytes_to_human_readable(size, unit="B"):
         unit = list(units.keys())[list(units.values()).index(units[unit] + 1)]
 
     return f"{size:.2f} {unit}"
+
+
+def sleep(miliseconds):
+    xbmc.sleep(miliseconds)
 
 
 def Keyboard(id, default="", hidden=False):
