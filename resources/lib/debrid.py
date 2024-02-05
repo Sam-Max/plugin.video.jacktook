@@ -36,14 +36,14 @@ class RealDebrid:
 
     def _make_request(
         self,
-        method: str,
-        url: str,
+        method,
+        url,
         data=None,
         file=None,
         params=None,
         is_return_none=False,
         is_expected_to_fail=False,
-    ) -> dict:
+    ):
         if method == "GET":
             response = requests.get(url, params=params, headers=self.headers)
         elif method == "POST":
@@ -96,12 +96,12 @@ class RealDebrid:
             }
 
     @staticmethod
-    def encode_token_data(client_id: str, client_secret: str, code: str):
+    def encode_token_data(client_id, client_secret, code):
         token = f"{client_id}:{client_secret}:{code}"
         return b64encode(str(token).encode()).decode()
 
     @staticmethod
-    def decode_token_str(token: str) -> dict[str, str]:
+    def decode_token_str(token):
         try:
             client_id, client_secret, code = b64decode(token).decode().split(":")
         except ValueError:
@@ -328,7 +328,7 @@ class RealDebrid:
             is_return_none=True,
         )
 
-    def get_available_torrent(self, info_hash) -> dict[str, Any] | None:
+    def get_available_torrent(self, info_hash):
         available_torrents = self.get_user_torrent_list()
         for torrent in available_torrents:
             if torrent["hash"] == info_hash:

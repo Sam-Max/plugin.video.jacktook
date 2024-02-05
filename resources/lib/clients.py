@@ -67,37 +67,38 @@ class Jackett:
 
     def _parse_response(self, res):
         res = xmltodict.parse(res.content)
-        items = res["rss"]["channel"]["item"]
-        results = []
-        for item in items:
-            for sub_item in item["torznab:attr"]:
-                if sub_item["@name"] == "seeders":
-                    seeders = sub_item["@value"]
-                elif sub_item["@name"] == "peers":
-                    peers = sub_item["@value"]
-                elif sub_item["@name"] == "magneturl":
-                    magnetUrl = sub_item["@value"]
-                elif sub_item["@name"] == "infohash":
-                    infohash = sub_item["@value"]
-            results.append(
-                {
-                    "qtTitle": "",
-                    "title": item["title"],
-                    "indexer": item["jackettindexer"]["#text"],
-                    "publishDate": item["pubDate"],
-                    "guid": item["guid"],
-                    "downloadUrl": item["link"],
-                    "size": item["size"],
-                    "magnetUrl": magnetUrl,
-                    "seeders": seeders,
-                    "peers": peers,
-                    "infoHash": infohash,
-                    "rdId": "",
-                    "rdCached": False,
-                    "rdLinks": [],
-                }
-            )
-        return results
+        if "item" in res["rss"]["channel"]:
+            items = res["rss"]["channel"]["item"]
+            results = []
+            for item in items:
+                for sub_item in item["torznab:attr"]:
+                    if sub_item["@name"] == "seeders":
+                        seeders = sub_item["@value"]
+                    elif sub_item["@name"] == "peers":
+                        peers = sub_item["@value"]
+                    elif sub_item["@name"] == "magneturl":
+                        magnetUrl = sub_item["@value"]
+                    elif sub_item["@name"] == "infohash":
+                        infohash = sub_item["@value"]
+                results.append(
+                    {
+                        "qtTitle": "",
+                        "title": item["title"],
+                        "indexer": item["jackettindexer"]["#text"],
+                        "publishDate": item["pubDate"],
+                        "guid": item["guid"],
+                        "downloadUrl": item["link"],
+                        "size": item["size"],
+                        "magnetUrl": magnetUrl,
+                        "seeders": seeders,
+                        "peers": peers,
+                        "infoHash": infohash,
+                        "rdId": "",
+                        "rdCached": False,
+                        "rdLinks": [],
+                    }
+                )
+            return results
 
 
 class Prowlarr:
