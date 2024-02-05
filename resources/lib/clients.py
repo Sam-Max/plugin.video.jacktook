@@ -69,6 +69,8 @@ class Jackett:
         res = xmltodict.parse(res.content)
         if "item" in res["rss"]["channel"]:
             items = res["rss"]["channel"]["item"]
+            magnetUrl = ""
+            infohash = ""
             results = []
             for item in items:
                 for sub_item in item["torznab:attr"]:
