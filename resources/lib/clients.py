@@ -4,7 +4,7 @@ import requests
 from resources.lib.kodi import Keyboard, get_setting, log, notify, translation
 from resources.lib.utils import Indexer
 from urllib3.exceptions import InsecureRequestWarning
-import xmltodict
+from resources.lib import xmltodict
 
 
 def get_client():
