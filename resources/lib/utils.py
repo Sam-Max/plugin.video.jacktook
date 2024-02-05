@@ -154,7 +154,7 @@ def api_show_results(results, plugin, id, mode, func, func2, func3):
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
             date = match.group()
-        size = bytes_to_human_readable(r.get("size", ""))
+        size = bytes_to_human_readable(int(r.get("size")))
         seeders = r["seeders"]
         tracker = r["indexer"]
 
@@ -549,10 +549,13 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
     pattern1 = "S%sE%s" % (season_num, episode_num)
     pattern2 = "%sx%s" % (season_num, episode_num)
     pattern3 = "\s%s\s" % (episode_num)
+    pattern4 = "\.S%s" % (season_num)
     pattern5 = "\.S%sE%s" % (season_num, episode_num)
     pattern6 = "\sS%sE%s\s" % (season_num, episode_num)
 
-    pattern = "|".join([pattern1, pattern2, pattern3, pattern5, pattern6, episode_name])
+    pattern = "|".join(
+        [pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, episode_name]
+    )
 
     for res in results:
         title = res["title"]

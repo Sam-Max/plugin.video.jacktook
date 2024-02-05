@@ -40,6 +40,7 @@ from resources.lib.kodi import (
     addon_status,
     dialogyesno,
     get_setting,
+    log,
     notify,
     translation,
 )
@@ -214,7 +215,7 @@ def search(mode, query, id):
 
     set_watched_title(query, id, mode)
 
-    results, query = search_api(query, mode, dialog=p_dialog)
+    results, query = search_api(query, mode, p_dialog)
     if results:
         p_results = process_results(results)
         if p_results:
@@ -257,24 +258,24 @@ def search(mode, query, id):
 
 
 @plugin.route(
-    "/search_season/<mode>/<query>/<tvdb_id>/<episode_name>/<episode_num>/<season_num>"
+    "/search_season/<mode>/<query>/<tvdb_id>/<episode_name>/<episode>/<season>"
 )
-def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_num):
+def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
 
-    results, query = search_api(query, mode, p_dialog)
+    results, query = search_api(query, mode, p_dialog, season, episode)
     if results:
         p_results = process_tv_results(
             results,
             episode_name,
-            episode_num,
-            season_num,
+            episode,
+            season,
         )
         if p_results:
             if torr_client == "Debrid":
                 cached_results = get_cached_db(
-                    query, params=(episode_num, len(p_results))
+                    query, params=(episode, len(p_results))
                 )
                 if cached_results:
                     cached = True
@@ -282,7 +283,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode_num, season_nu
                     cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
                     if cached_results:
                         set_cached_db(
-                            cached_results, query, params=(episode_num, len(p_results))
+                            cached_results, query, params=(episode, len(p_results))
                         )
                         cached = True
                     else:
@@ -390,7 +391,7 @@ def tv_details(id):
                 show_name=show_name,
                 id=id,
                 tvdb_id=tvdb_id,
-                season_num=number,
+                season=number,
             ),
             list_item,
             isFolder=True,
@@ -399,20 +400,20 @@ def tv_details(id):
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<season_num>")
-def tv_season_details(show_name, id, tvdb_id, season_num):
-    season = Season()
-    tv_season = season.details(id, season_num)
+@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<season>")
+def tv_season_details(show_name, id, tvdb_id, season):
+    tmdb_season = Season()
+    season_details = tmdb_season.details(id, season)
 
     fanart_data = fanartv_get(tvdb_id)
     fanart = fanart_data.get("fanart2") if fanart_data else ""
 
-    for ep in tv_season.episodes:
+    for ep in season_details.episodes:
         ep_name = ep.name
-        ep_num = f"{ep.episode_number:02}"
-        season_num_ = f"{int(season_num):02}"
+        episode = f"{ep.episode_number:02}"
+        season = f"{int(season):02}"
 
-        title = f"{season_num}x{ep_num}. {ep_name}"
+        title = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
 
@@ -441,8 +442,6 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
         query = show_name.replace("/", "")
         ep_name = ep_name.replace("/", "")
 
-        query = f"{query} S{season_num_}E{ep_num}"
-
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
@@ -451,8 +450,8 @@ def tv_season_details(show_name, id, tvdb_id, season_num):
                 query,
                 tvdb_id,
                 ep_name,
-                ep_num,
-                season_num_,
+                episode,
+                season,
             ),
             list_item,
             isFolder=True,

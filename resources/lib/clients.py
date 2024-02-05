@@ -4,7 +4,7 @@ import requests
 from resources.lib.kodi import Keyboard, get_setting, log, notify, translation
 from resources.lib.utils import Indexer
 from urllib3.exceptions import InsecureRequestWarning
-
+import xmltodict
 
 
 def get_client():
@@ -46,16 +46,17 @@ class Jackett:
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, mode, insecure=False):
+    def search(self, query, mode, season, episode, insecure=False):
         try:
             if mode == "tv":
-                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=tvsearch&Query={query}"
+                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
+                log(url)
             elif mode == "movie":
-                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=movie&Query={query}"
+                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=movie&q={query}"
             elif mode == "anime":
-                url = f"{self.host}/api/v2.0/indexers/nyaasi/results?apikey={self.apikey}&t=search&Query={query}"
+                url = f"{self.host}/api/v2.0/indexers/nyaasi/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
             elif mode == "multi":
-                url = f"{self.host}/api/v2.0/indexers/all/results?apikey={self.apikey}&t=search&Query={query}"
+                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
             res = requests.get(url, verify=insecure)
             if res.status_code != 200:
                 notify(f"{translation(30229)} ({res.status_code})")
@@ -63,29 +64,39 @@ class Jackett:
             return self._parse_response(res)
         except Exception as e:
             notify(f"{translation(30229)} {str(e)}")
-            return
 
-    def _parse_response(self, response):
+    def _parse_response(self, res):
+        res = xmltodict.parse(res.content)
+        items = res["rss"]["channel"]["item"]
         results = []
-        res_dict = json.loads(response.content)
-        for res in res_dict["Results"]:
-            model = {
-                "title": res["Title"],
-                "qtTitle": "",
-                "indexer": res["Tracker"],
-                "publishDate": res["PublishDate"],
-                "guid": res["Guid"],
-                "magnetUrl": res["MagnetUri"],
-                "downloadUrl": res["Link"],
-                "size": res["Size"],
-                "seeders": res["Seeders"],
-                "peers": res["Peers"],
-                "infoHash": res["InfoHash"],
-                "rdId": "",
-                "rdCached": False,
-                "rdLinks": [],
-            }
-            results.append(model)
+        for item in items:
+            for sub_item in item["torznab:attr"]:
+                if sub_item["@name"] == "seeders":
+                    seeders = sub_item["@value"]
+                elif sub_item["@name"] == "peers":
+                    peers = sub_item["@value"]
+                elif sub_item["@name"] == "magneturl":
+                    magnetUrl = sub_item["@value"]
+                elif sub_item["@name"] == "infohash":
+                    infohash = sub_item["@value"]
+            results.append(
+                {
+                    "qtTitle": "",
+                    "title": item["title"],
+                    "indexer": item["jackettindexer"]["#text"],
+                    "publishDate": item["pubDate"],
+                    "guid": item["guid"],
+                    "downloadUrl": item["link"],
+                    "size": item["size"],
+                    "magnetUrl": magnetUrl,
+                    "seeders": seeders,
+                    "peers": peers,
+                    "infoHash": infohash,
+                    "rdId": "",
+                    "rdCached": False,
+                    "rdLinks": [],
+                }
+            )
         return results
 
 
@@ -94,7 +105,7 @@ class Prowlarr:
         self.host = host
         self.apikey = apikey
 
-    def search(self, query, indexers, anime_indexers, mode, insecure=False):
+    def search(self, query, mode, season, episode, indexers, anime_indexers, insecure=False):
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -102,6 +113,7 @@ class Prowlarr:
         }
         try:
             if mode == "tv":
+                query = f"{query} S{season}E{episode}"
                 url = f"{self.host}/api/v1/search?query={query}&Categories=5000"
             elif mode == "movie":
                 url = f"{self.host}/api/v1/search?query={query}&Categories=2000"
@@ -123,23 +135,23 @@ class Prowlarr:
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
                 return
-            return self._parse_response(res)
+            res = json.loads(res.text)
+            for r in res:
+                r.update(
+                    {
+                        "qtTitle": "",
+                        "rdId": "",
+                        "rdCached": False,
+                        "rdLinks": [],
+                    }
+                )
+            return res
         except Exception as e:
             notify(f"{translation(30230)} {str(e)}")
             return
 
-    def _parse_response(self, response):
-        res_dict = json.loads(response.text)
-        for res in res_dict:
-            res.update({
-                "qtTitle": "",
-                "rdId": "",
-                "rdCached": False,
-                "rdLinks": [],
-            })
-        return res_dict
-    
-def search_api(query, mode, dialog):
+
+def search_api(query, mode, dialog, season=1, episode=1):
     query = None if query == "None" else query
 
     indexer = get_setting("indexer")
@@ -161,13 +173,17 @@ def search_api(query, mode, dialog):
                 dialog.create(
                     "Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching..."
                 )
-                response = jackett.search(query, mode, jackett_insecured)
+                response = jackett.search(
+                    query, mode, season, episode, jackett_insecured
+                )
             else:
                 dialog.create("")
                 return None, None
         else:
             dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
-            response = jackett.search(query, mode, jackett_insecured)
+            response = jackett.search(
+                query, mode, season, episode, jackett_insecured
+            )
 
     elif indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
@@ -189,9 +205,11 @@ def search_api(query, mode, dialog):
                 )
                 response = prowlarr.search(
                     query,
+                    mode,
+                    season, 
+                    episode, 
                     indexers_ids_list,
                     anime_indexers_ids_list,
-                    mode,
                     prowlarr_insecured,
                 )
             else:
@@ -201,9 +219,11 @@ def search_api(query, mode, dialog):
             dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
             response = prowlarr.search(
                 query,
+                mode,
+                season, 
+                episode,
                 indexers_ids_list,
                 anime_indexers_ids_list,
-                mode,
                 prowlarr_insecured,
             )
 
