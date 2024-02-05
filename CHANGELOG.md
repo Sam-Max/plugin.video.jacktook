@@ -1,4 +1,11 @@
 
+## 0.1.2 (2024-02-5)
+
+### Features
+
+    * Add download uncached magnet to debrid option menu
+    * Add show uncached option
+    * Switch to torznab api for Jackett
 
 ## 0.1.1 (2024-01-30)
 
