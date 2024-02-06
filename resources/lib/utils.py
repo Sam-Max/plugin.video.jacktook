@@ -46,6 +46,7 @@ db = Database()
 cache = Cache.get_instance()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 50
+URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
 
 
 class Enum:
@@ -600,19 +601,20 @@ def filter_by_quality(results):
 
 def get_magnet_from_uri(uri):
     magnet_prefix = "magnet:"
-    res = requests.get(uri, allow_redirects=False)
-    if res.is_redirect:
-        uri = res.headers["Location"]
-        if uri.startswith(magnet_prefix):
-            return uri
-    elif (
-        res.status_code == 200
-        and res.headers.get("Content-Type") == "application/x-bittorrent"
-    ):
-        torrent = Torrent.read_stream(io.BytesIO(res.content))
-        return str(torrent.magnet())
-    else:
-        log(f"Could not get final redirect location for URI {uri}")
+    if is_url(uri):
+        res = requests.get(uri, allow_redirects=False)
+        if res.is_redirect:
+            uri = res.headers["Location"]
+            if uri.startswith(magnet_prefix):
+                return uri
+        elif (
+            res.status_code == 200
+            and res.headers.get("Content-Type") == "application/x-bittorrent"
+        ):
+            torrent = Torrent.read_stream(io.BytesIO(res.content))
+            return str(torrent.magnet())
+        else:
+            log(f"Could not get final redirect location for URI {uri}")
 
 
 def check_debrid_cached(results, client, dialog):
@@ -693,6 +695,10 @@ def get_info_hash(magnet):
 def is_magnet_link(link):
     if link.startswith("magnet:?"):
         return link
+
+
+def is_url(url):
+    return bool(re.match(URL_REGEX, url))
 
 
 """ def direct_download():

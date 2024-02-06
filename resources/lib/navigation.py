@@ -439,8 +439,8 @@ def tv_season_details(show_name, id, tvdb_id, season):
         )
         list_item.setProperty("IsPlayable", "false")
 
-        query = show_name.replace("/", "")
-        ep_name = ep_name.replace("/", "")
+        query = show_name.replace("/", "").replace("?", "")
+        ep_name = ep_name.replace("/", "").replace("?", "")
 
         addDirectoryItem(
             plugin.handle,
