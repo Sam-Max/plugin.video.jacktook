@@ -84,7 +84,7 @@ msgid "TMDB"
 msgstr "TMDB"
 
 msgctxt "#30102"
-msgid "TMDB Configuration:"
+msgid "TMDB Configuracion:"
 msgstr "Configuracion de TMDB"
 
 msgctxt "#30103"
@@ -93,7 +93,15 @@ msgstr "TMDB Api Key"
 
 msgctxt "#30104"
 msgid "Clear tmdb cache"
-msgstr "Borrar cache de tmdb"
+msgstr "Borrar la cache de tmdb"
+
+msgctxt "#30105"
+msgid "Cache expiration hours"
+msgstr "Expiracion de Cache"
+
+msgctxt "#30106"
+msgid "Clear all cache"
+msgstr "Borrar toda la cache"
 
 msgctxt "#30140"
 msgid "AniList"
@@ -162,6 +170,10 @@ msgstr "Buscar en AniList"
 msgctxt "#30243"
 msgid "Search for torrents:"
 msgstr "Buscar torrents"
+
+msgctxt "#30244"
+msgid "Cache limpiada"
+msgstr ""
 
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"

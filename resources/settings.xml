@@ -3,6 +3,10 @@
     <category label="30000">
         <setting label="30001" type="lsep"/>
         <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|Debrid" default="Torrest"/>
+        <setting label="Cache" type="lsep"/>
+        <setting type="action" label="30106" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_all)" />
+        <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)"/>
+        <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="7"/>
     </category>
     <category label="30020">
         <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr" default="Jackett"/>
@@ -26,10 +30,6 @@
     <category label="30100">
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
-        <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)" 
-                 subsetting="true"/>
-        <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="7"
-                 subsetting="true"/>
     </category>
     <category label="30140">
         <setting label="30142" type="lsep"/>

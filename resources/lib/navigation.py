@@ -17,9 +17,10 @@ from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
     check_debrid_cached,
     clear,
+    clear_all_cache,
     clear_tmdb_cache,
     fanartv_get,
-    get_cached_db,
+    get_cached,
     last_files,
     last_titles,
     list_item,
@@ -27,7 +28,7 @@ from resources.lib.utils import (
     play,
     process_results,
     process_tv_results,
-    set_cached_db,
+    set_cached,
     set_watched_title,
     show_search_result,
     show_tv_result,
@@ -210,40 +211,39 @@ def genre_menu():
 
 @plugin.route("/search/<mode>/<query>/<id>")
 def search(mode, query, id):
-    torr_client = get_setting("torrent_client")
-    p_dialog = DialogProgressBG()
-
     set_watched_title(query, id, mode)
+    
+    p_dialog = DialogProgressBG()
+    torr_client = get_setting("torrent_client")
 
-    results, query = search_api(query, mode, p_dialog)
-    if results:
-        p_results = process_results(results)
-        if p_results:
-            if torr_client == "Debrid":
-                cached_results = get_cached_db(query, params=(len(p_results)))
-                if cached_results:
+    cached_results = get_cached(query, params=("index"))
+    if cached_results:
+        p_results = cached_results
+    else:
+        results, query = search_api(query, mode, p_dialog)
+        if results:
+            p_results = process_results(results)
+            set_cached(p_results, query, params=("index"))
+        else:
+            notify("No results")
+            p_dialog.close()
+            return
+    if p_results:
+        if torr_client == "Debrid":
+            deb_cached_results = get_cached(query, params=("deb"))
+            if deb_cached_results:
+                cached = True
+            else:
+                deb_cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
+                if deb_cached_results:
+                    set_cached(deb_cached_results, query, params=("deb"))
                     cached = True
                 else:
-                    cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
-                    if cached_results:
-                        set_cached_db(cached_results, query, params=(len(p_results)))
-                        cached = True
-                    else:
-                        cached = False
-                        notify("No debrid results")
-                if cached:
-                    show_search_result(
-                        cached_results,
-                        mode,
-                        id,
-                        plugin,
-                        func=play_torrent,
-                        func2=show_pack,
-                        func3=download,
-                    )
-            else:
+                    cached = False
+                    notify("No debrid results")
+            if cached:
                 show_search_result(
-                    p_results,
+                    deb_cached_results,
                     mode,
                     id,
                     plugin,
@@ -251,57 +251,67 @@ def search(mode, query, id):
                     func2=show_pack,
                     func3=download,
                 )
+        elif torr_client == "Torrest":
+            show_search_result(
+                p_results,
+                mode,
+                id,
+                plugin,
+                func=play_torrent,
+                func2=show_pack,
+                func3=download,
+            )
     else:
         notify("No results")
 
-    p_dialog.close()
+    try:
+        p_dialog.close()
+    except:
+        pass
 
 
 @plugin.route(
     "/search_season/<mode>/<query>/<tvdb_id>/<episode_name>/<episode>/<season>"
 )
 def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
+    set_watched_title(query, tvdb_id, mode)
+
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
 
-    results, query = search_api(query, mode, p_dialog, season, episode)
-    if results:
-        p_results = process_tv_results(
-            results,
-            episode_name,
-            episode,
-            season,
-        )
-        if p_results:
-            if torr_client == "Debrid":
-                cached_results = get_cached_db(
-                    query, params=(episode, len(p_results))
-                )
-                if cached_results:
+    cached_results = get_cached(query, params=(episode, "index"))
+    if cached_results:
+        p_results = cached_results
+    else:
+        results, query = search_api(query, mode, p_dialog, season, episode)
+        if results:
+            p_results = process_tv_results(
+                results,
+                episode_name,
+                episode,
+                season,
+            )
+            set_cached(p_results, query, params=(episode, "index"))
+        else:
+            notify("No results")
+            p_dialog.close()
+            return
+    if p_results:
+        if torr_client == "Debrid":
+            deb_cached_results = get_cached(query, params=(episode, "deb"))
+            if deb_cached_results:
+                cached = True
+            else:
+                deb_cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
+                if deb_cached_results:
+                    set_cached(deb_cached_results, query, params=(episode, "deb"))
                     cached = True
                 else:
-                    cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
-                    if cached_results:
-                        set_cached_db(
-                            cached_results, query, params=(episode, len(p_results))
-                        )
-                        cached = True
-                    else:
-                        cached = False
-                        notify("No debrid results")
-                if cached:
-                    show_tv_result(
-                        cached_results,
-                        mode,
-                        tvdb_id,
-                        plugin,
-                        func=play_torrent,
-                        func2=show_pack,
-                        func3=download,
-                    )
-            else:
+                    cached = False
+                    notify("No debrid results")
+            if cached:
                 show_tv_result(
-                    p_results,
+                    deb_cached_results,
                     mode,
                     tvdb_id,
                     plugin,
@@ -309,10 +319,23 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
                     func2=show_pack,
                     func3=download,
                 )
+        else:
+            show_tv_result(
+                p_results,
+                mode,
+                tvdb_id,
+                plugin,
+                func=play_torrent,
+                func2=show_pack,
+                func3=download,
+            )
     else:
         notify("No results")
 
-    p_dialog.close()
+    try:
+        p_dialog.close()
+    except:
+        pass
 
 
 @plugin.route("/play_torrent")
@@ -491,7 +514,7 @@ def download():
     )
     if response:
         Thread(
-            target=rd_client.download, args=(magnet, ), kwargs={"pack": False}
+            target=rd_client.download, args=(magnet,), kwargs={"pack": False}
         ).start()
 
 
@@ -524,6 +547,12 @@ def last_titles_history():
 def clear_cached_tmdb():
     clear_tmdb_cache()
     notify(translation(30240))
+
+
+@plugin.route("/clear_cached_all")
+def clear_cached_all():
+    clear_all_cache()
+    notify(translation(30244))
 
 
 @plugin.route("/rd_auth")

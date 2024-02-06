@@ -103,6 +103,10 @@ msgctxt "#30105"
 msgid "Cache expiration hours"
 msgstr ""
 
+msgctxt "#30106"
+msgid "Clear all cache"
+msgstr ""
+
 msgctxt "#30140"
 msgid "AniList"
 msgstr ""
@@ -181,6 +185,10 @@ msgstr ""
 
 msgctxt "#30243"
 msgid "Search for torrents:"
+msgstr ""
+
+msgctxt "#30244"
+msgid "Cache cleared"
 msgstr ""
 
 msgctxt "#30250"

@@ -332,12 +332,12 @@ def fanartv_get(id, mode="tv"):
     return fanart_data
 
 
-def get_cached_db(path, params={}):
+def get_cached(path, params={}):
     identifier = "{}|{}".format(path, params)
     return cache.get(identifier, hashed_key=True)
 
 
-def set_cached_db(results, path, params={}):
+def set_cached(results, path, params={}):
     identifier = "{}|{}".format(path, params)
     cache.set(
         identifier,
@@ -396,6 +396,11 @@ def get_tracker_color(provider_name):
 
 
 def clear_tmdb_cache():
+    db.database["jt:tmdb"] = {}
+    db.commit()
+
+
+def clear_all_cache():
     cache.clean_all()
     db.database["jt:tmdb"] = {}
     db.commit()
