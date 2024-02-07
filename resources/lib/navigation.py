@@ -218,6 +218,7 @@ def search(mode, query, id):
 
     cached_results = get_cached(query, params=("index"))
     if cached_results:
+        p_dialog.create("")
         p_results = cached_results
     else:
         results, query = search_api(query, mode, p_dialog)
@@ -281,6 +282,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
 
     cached_results = get_cached(query, params=(episode, "index"))
     if cached_results:
+        p_dialog.create("")
         p_results = cached_results
     else:
         results, query = search_api(query, mode, p_dialog, season, episode)

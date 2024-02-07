@@ -636,8 +636,6 @@ def check_debrid_cached(results, client, dialog):
     hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
     if hashes:
         torr_available = client.get_torrent_instant_availability(hashes)
-        if not torr_available:
-            return
         magnet = ""
         for res in results:
             guid = res.get("guid", "")
