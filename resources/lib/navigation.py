@@ -466,7 +466,8 @@ def tv_season_details(show_name, id, tvdb_id, season):
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(title)
-        info_tag.setDuration(int(duration))
+        if duration:
+            info_tag.setDuration(int(duration))
         info_tag.setFirstAired(air_date)
         info_tag.setPlot(ep.overview)
 
