@@ -363,6 +363,8 @@ def tmdb_get(path, params):
         elif path == "trending_tv":
             trending = Trending()
             data = trending.tv_day(page=params)
+        elif path == "movie_details":
+            data = Movie().details(params).runtime
         cache.set(
             identifier,
             data,

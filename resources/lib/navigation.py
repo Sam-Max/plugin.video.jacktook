@@ -212,7 +212,7 @@ def genre_menu():
 @plugin.route("/search/<mode>/<query>/<id>")
 def search(mode, query, id):
     set_watched_title(query, id, mode)
-    
+
     p_dialog = DialogProgressBG()
     torr_client = get_setting("torrent_client")
 
@@ -349,25 +349,34 @@ def search_tmdb(mode, genre_id, page):
     page = int(page)
     genre_id = int(genre_id)
 
+    if mode == "movie_genres" or mode == "tv_genres":
+        menu_genre(mode, page)
+        return
+
     if mode == "multi":
         text = Keyboard(id=30241)
         if text:
             data = Search().multi(str(text), page=page)
-            show_tmdb_results(data, mode, genre_id, page, plugin)
     elif mode == "movie":
         if genre_id != -1:
             data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
         else:
             data = tmdb_get("trending_movie", page)
-        show_tmdb_results(data, mode, genre_id, page, plugin)
     elif mode == "tv":
         if genre_id != -1:
             data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
         else:
             data = tmdb_get("trending_tv", page)
-        show_tmdb_results(data, mode, genre_id, page, plugin)
-    elif mode == "movie_genres" or mode == "tv_genres":
-        menu_genre(mode, page)
+    tmdb_show_results(
+        data.results,
+        func=search,
+        func2=tv_details,
+        next_func=next_page,
+        page=page,
+        plugin=plugin,
+        genre_id=genre_id,
+        mode=mode,
+    )
 
 
 @plugin.route("/tv/details/<id>")
@@ -581,19 +590,6 @@ def menu_genre(mode, page):
             isFolder=True,
         )
     endOfDirectory(plugin.handle)
-
-
-def show_tmdb_results(data, mode, genre_id, page, plugin):
-    tmdb_show_results(
-        data.results,
-        func=search,
-        func2=tv_details,
-        next_func=next_page,
-        page=page,
-        plugin=plugin,
-        genre_id=genre_id,
-        mode=mode,
-    )
 
 
 def run():

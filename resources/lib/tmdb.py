@@ -2,6 +2,7 @@ import os
 
 from resources.lib.kodi import ADDON_PATH, log
 from resources.lib.tmdbv3api.objs.movie import Movie
+from resources.lib.utils import tmdb_get
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -58,7 +59,7 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
         if mode == "movie":
             title = res.title
             release_date = res.release_date
-            duration = Movie().details(int(id)).runtime
+            duration = tmdb_get("movie_details", int(id))
         elif mode == "tv":
             title = res.name
             release_date = res.get("first_air_date", "")
@@ -70,7 +71,7 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
             if res["media_type"] == "movie":
                 media_type = "movie"
                 release_date = res.release_date
-                duration = Movie().details(int(id)).runtime
+                duration = tmdb_get("movie_details", int(id))
                 title= f"[B][MOVIE][/B]- {title}"
             elif res["media_type"] == "tv":
                 media_type = "tv"
