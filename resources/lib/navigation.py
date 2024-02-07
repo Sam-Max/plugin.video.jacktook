@@ -355,8 +355,9 @@ def search_tmdb(mode, genre_id, page):
 
     if mode == "multi":
         text = Keyboard(id=30241)
-        if text:
-            data = Search().multi(str(text), page=page)
+        if not text:
+            return
+        data = Search().multi(str(text), page=page)
     elif mode == "movie":
         if genre_id != -1:
             data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
@@ -410,10 +411,12 @@ def tv_details(id):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setInfo(
-            "video",
-            {"title": title, "mediatype": "video", "plot": f"{d.overview}"},
-        )
+
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setMediaType("video")
+        info_tag.setTitle(title)
+        info_tag.setPlot(d.overview)
+
         list_item.setProperty("IsPlayable", "false")
 
         addDirectoryItem(
@@ -459,16 +462,14 @@ def tv_season_details(show_name, id, tvdb_id, season):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setInfo(
-            "video",
-            {
-                "title": title,
-                "mediatype": "video",
-                "aired": air_date,
-                "duration": duration,
-                "plot": f"{ep.overview}",
-            },
-        )
+
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setMediaType("video")
+        info_tag.setTitle(title)
+        info_tag.setDuration(int(duration))
+        info_tag.setFirstAired(air_date)
+        info_tag.setPlot(ep.overview)
+
         list_item.setProperty("IsPlayable", "false")
 
         query = show_name.replace("/", "").replace("?", "")

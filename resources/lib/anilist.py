@@ -66,10 +66,11 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
                 "fanart": coverImage,
             }
         )
-        list_item.setInfo(
-            "video",
-            {"title": title, "mediatype": "video", "aired": "", "plot": description},
-        )
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setMediaType('video')
+        info_tag.setTitle(title)
+        info_tag.setPlot(description)
+
         list_item.setProperty("IsPlayable", "false")
 
         title = title.replace("/", "")

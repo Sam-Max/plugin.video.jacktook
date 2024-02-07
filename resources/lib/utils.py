@@ -219,7 +219,7 @@ def add_pack_item(list_item, title, id, func, plugin):
 def list_pack_torrent(id, func, client, plugin):
     try:
         cached = False
-        links = get_cached_db(id)
+        links = get_cached(id)
         if links:
             cached = True
         else:
@@ -238,7 +238,7 @@ def list_pack_torrent(id, func, client, plugin):
                 response = client.create_download_link(torr_info["links"][i])
                 links.append((response["download"], title))
             if links:
-                set_cached_db(links, id)
+                set_cached(links, id)
                 cached = True
         if cached:
             for link, title in links:
@@ -284,7 +284,11 @@ def set_video_item(list_item, title, poster, overview):
             "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
         }
     )
-    list_item.setInfo("video", {"title": title, "mediatype": "video", "plot": overview})
+    info_tag = list_item.getVideoInfoTag()
+    info_tag.setMediaType('video')
+    info_tag.setTitle(title)
+    info_tag.setPlot(overview)
+    
     list_item.setProperty("IsPlayable", "true")
 
 
@@ -632,6 +636,8 @@ def check_debrid_cached(results, client, dialog):
     hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
     if hashes:
         torr_available = client.get_torrent_instant_availability(hashes)
+        if not torr_available:
+            return
         magnet = ""
         for res in results:
             guid = res.get("guid", "")

@@ -1,10 +1,10 @@
 from time import time
-from resources.lib.kodi import sleep as ksleep
+from resources.lib.kodi import log, sleep as ksleep
 import traceback
 from base64 import b64encode, b64decode
 from typing import Any
 import requests
-from requests import RequestException, JSONDecodeError
+from requests import RequestException, JSONDecodeError, ConnectionError
 from resources.lib.kodi import (
     copy2clip,
     dialog_ok,
@@ -42,48 +42,42 @@ class RealDebrid:
         file=None,
         params=None,
         is_return_none=False,
-        is_expected_to_fail=False,
     ):
-        if method == "GET":
-            response = requests.get(url, params=params, headers=self.headers)
-        elif method == "POST":
-            response = requests.post(url, data=data, headers=self.headers)
-        elif method == "DELETE":
-            response = requests.delete(url, headers=self.headers)
-        elif method == "PUT":
-            response = requests.put(url, data=file, headers=self.headers)
-        else:
-            raise ValueError(f"Unsupported method: {method}")
-
         try:
+            if method == "GET":
+                response = requests.get(url, params=params, headers=self.headers)
+            elif method == "POST":
+                response = requests.post(url, data=data, headers=self.headers)
+            elif method == "DELETE":
+                response = requests.delete(url, headers=self.headers)
+            elif method == "PUT":
+                response = requests.put(url, data=file, headers=self.headers)
+
             response.raise_for_status()
-        except RequestException as error:
-            if is_expected_to_fail:
-                pass
-            elif error.response.status_code == 401:
-                raise ProviderException("Invalid token")
+            
+        except ConnectionError:
+            notify("No network connection")
+            return
+        except RequestException as err:
+            if err.response.status_code == 401:
+                notify("Invalid token")
+                return
             elif (
-                error.response.status_code == 403
+                err.response.status_code == 403
                 and response.json().get("error_code") == 9
             ):
-                raise ProviderException(
-                    "Real-Debrid Permission denied for free account"
-                )
+                notify("Real-Debrid Permission denied for free account")
+                return
             else:
-                formatted_traceback = "".join(traceback.format_exception(error))
-                raise ProviderException(
-                    f"status code: {error.response.status_code}, data: {error.response.content}, trace log:\n {formatted_traceback}"
-                )
+                notify(err.response.content)
+                return
 
         if is_return_none:
             return {}
         try:
             return response.json()
-        except JSONDecodeError as error:
-            formatted_traceback = "".join(traceback.format_exception(error))
-            raise ProviderException(
-                f"Failed to parse response. content: {response.text}, trace log:\n {formatted_traceback}"
-            )
+        except JSONDecodeError:
+            log(f"Failed to parse response. content: {response.text}")
 
     def initialize_headers(self):
         if self.encoded_token:
@@ -91,9 +85,10 @@ class RealDebrid:
             access_token_data = self.get_token(
                 token_data["client_id"], token_data["client_secret"], token_data["code"]
             )
-            self.headers = {
-                "Authorization": f"Bearer {access_token_data['access_token']}"
-            }
+            if access_token_data:
+                self.headers = {
+                    "Authorization": f"Bearer {access_token_data['access_token']}"
+                }
 
     @staticmethod
     def encode_token_data(client_id, client_secret, code):
@@ -132,7 +127,6 @@ class RealDebrid:
             "GET",
             f"{self.OAUTH_URL}/device/credentials",
             params={"client_id": self.OPENSOURCE_CLIENT_ID, "code": device_code},
-            is_expected_to_fail=True,
         )
 
         if "client_secret" not in response_data:
@@ -154,6 +148,8 @@ class RealDebrid:
 
     def auth(self):
         response = self.get_device_code()
+        if not response:
+            return
         interval = int(response["interval"])
         expires_in = int(response["expires_in"])
         device_code = response["device_code"]
@@ -170,6 +166,8 @@ class RealDebrid:
         while time() - start_time < expires_in:
             try:
                 response = self.authorize(device_code)
+                if not response:
+                    return
                 if "token" in response:
                     progressDialog.close()
                     set_setting("real_debrid_token", response["token"])
@@ -188,9 +186,13 @@ class RealDebrid:
         cancelled = False
         DEBRID_ERROR_STATUS = ("magnet_error", "error", "virus", "dead")
         response = self.add_magent_link(magnet_url)
+        if not response:
+            return
         torrent_id = response["id"]
         progressDialog = DialogProgress()
         torrent_info = self.get_torrent_info(torrent_id)
+        if not torrent_info:
+            return
         status = torrent_info["status"]
         if status == "magnet_conversion":
             msg = "Converting Magnet...\n\n"
@@ -205,6 +207,8 @@ class RealDebrid:
                 progress_timeout -= interval
                 ksleep(1000 * interval)
                 torrent_info = self.get_torrent_info(torrent_id)
+                if not torrent_info:
+                    return
                 status = torrent_info["status"]
                 if any(x in status for x in DEBRID_ERROR_STATUS):
                     notify("Real Debrid Error.")
@@ -339,7 +343,6 @@ class RealDebrid:
             "POST",
             f"{self.BASE_URL}/unrestrict/link",
             data={"link": link},
-            is_expected_to_fail=True,
         )
         if "download" in response:
             return response

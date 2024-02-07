@@ -1,7 +1,6 @@
 import os
 
 from resources.lib.kodi import ADDON_PATH, log
-from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.utils import tmdb_get
 
 from xbmcgui import ListItem
@@ -95,16 +94,14 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setInfo(
-            "video",
-            {
-                "title": title,
-                "mediatype": "video",
-                "aired": release_date,
-                "duration": duration,
-                "plot": overview,
-            },
-        )
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setMediaType('video')
+        info_tag.setTitle(title)
+        info_tag.setPlot(overview)
+        info_tag.setFirstAired(release_date)
+        if duration:
+            info_tag.setDuration(int(duration))
+
         list_item.setProperty("IsPlayable", "false")
 
         title = title.replace("/", "")

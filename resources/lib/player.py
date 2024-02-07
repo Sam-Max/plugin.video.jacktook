@@ -21,6 +21,7 @@ class JacktookPlayer(xbmc_player):
     def make_listing(self, listitem, url, title, imdb_id):
         self.set_constants(url)
         listitem.setContentLookup(False)
+        
         info_tag = listitem.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setFilenameAndPath(self.url)
