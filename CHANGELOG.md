@@ -1,4 +1,9 @@
 
+## 0.1.3 (2024-02-7)
+    * Add "clear all cache" option on addon settings
+    * Caching of indexers results
+    * Improvements and fixes
+
 ## 0.1.2 (2024-02-5)
 
 ### Features
