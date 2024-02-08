@@ -104,7 +104,7 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
 
         list_item.setProperty("IsPlayable", "false")
 
-        title = title.replace("/", "")
+        title = title.replace("/", "").replace("?", "")
 
         if "movie" in [mode, media_type]:
             addDirectoryItem(

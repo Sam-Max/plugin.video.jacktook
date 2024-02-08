@@ -91,7 +91,7 @@ def main_menu():
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(anime_menu),
-        list_item("Anime", "movies.png"),
+        list_item("Anime", "anime.png"),
         isFolder=True,
     )
     addDirectoryItem(
