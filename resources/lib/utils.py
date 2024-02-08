@@ -626,6 +626,7 @@ def get_magnet_from_uri(uri):
             return str(torrent.magnet()), torrent.magnet().infohash
         else:
             log(f"Could not get final redirect location for URI {uri}")
+            return None, None
 
 
 def check_debrid_cached(results, client, dialog):
