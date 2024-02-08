@@ -179,21 +179,21 @@ def api_show_results(results, plugin, id, mode, func, func2, func3):
                 list_item = ListItem(label=f"[B][Pack-Cached][/B]-{torr_title}")
                 add_pack_item(list_item, title, rdId, func2, plugin)
         else:
-            url = r.get("downloadUrl", "")
-            guid = r.get("guid", "")
-            if guid.startswith("magnet:?"):
-                magnet = guid
-            else:
-                uri = r.get("magnetUrl")
-                if uri:
-                    magnet = get_magnet_from_uri(uri)
+            downloadUrl = r.get("downloadUrl") or r.get("magnetUrl")
+            guid = r.get("guid")
+            if guid:
+                if guid.startswith("magnet:?"):
+                    magnet = guid
+                else:
+                    # For some indexers, the guid is a torrent file url
+                    downloadUrl = r.get("guid")
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
             if magnet:
                 list_item.addContextMenuItems(
                     [("Download to Debrid", action(plugin, func3, query=magnet))]
                 )
-            add_item(list_item, url, magnet, id, title, func, plugin)
+            add_item(list_item, downloadUrl, magnet, id, title, func, plugin)
 
     endOfDirectory(plugin.handle)
 
@@ -285,10 +285,10 @@ def set_video_item(list_item, title, poster, overview):
         }
     )
     info_tag = list_item.getVideoInfoTag()
-    info_tag.setMediaType('video')
+    info_tag.setMediaType("video")
     info_tag.setTitle(title)
     info_tag.setPlot(overview)
-    
+
     list_item.setProperty("IsPlayable", "true")
 
 
@@ -617,62 +617,85 @@ def get_magnet_from_uri(uri):
         if res.is_redirect:
             uri = res.headers["Location"]
             if uri.startswith(magnet_prefix):
-                return uri
+                return uri, get_info_hash(uri)
         elif (
             res.status_code == 200
             and res.headers.get("Content-Type") == "application/x-bittorrent"
         ):
             torrent = Torrent.read_stream(io.BytesIO(res.content))
-            return str(torrent.magnet())
+            return str(torrent.magnet()), torrent.magnet().infohash
         else:
             log(f"Could not get final redirect location for URI {uri}")
 
 
 def check_debrid_cached(results, client, dialog):
-    dialog.update(50, "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]", "Searching...")
+    count = -1
+    percent = 50
+    percent, count = debrid_dialog_update(results, dialog, percent, count)
     threads = []
     cached_results = []
     uncached_results = []
-    hashes = "/".join([res["infoHash"] for res in results if res.get("infoHash")])
-    if hashes:
-        torr_available = client.get_torrent_instant_availability(hashes)
+    for res in results:
+        infoHash = res.get("infoHash")
+        guid = res.get("guid")
         magnet = ""
-        for res in results:
-            guid = res.get("guid", "")
+        if guid:
             if guid.startswith("magnet:?"):
                 magnet = guid
+                percent, count = debrid_dialog_update(results, dialog, percent, count)
             else:
-                uri = res.get("magnetUrl") or res.get("downloadUrl")
-                if uri:
-                    magnet = get_magnet_from_uri(uri)
-            if magnet:
-                infoHash = res.get("infoHash")
-                if infoHash in torr_available:
-                    info = torr_available[infoHash]
-                    if isinstance(info, dict) and len(info.get("rd")) > 0:
-                        res["rdCached"] = True
-                        cached_results.append(res)
-                    else:
-                        res["rdCached"] = False
-                        uncached_results.append(res)
-                    thread = Thread(target=get_dd_link, args=(client, magnet, res))
-                    threads.append(thread)
+                # In some indexers, the guid is a torrent file url
+                downloadUrl = res.get("guid")
+                if downloadUrl:
+                    magnet, infoHash = get_magnet_from_uri(downloadUrl)
+                    percent, count = debrid_dialog_update(
+                        results, dialog, percent, count
+                    )
+        else:
+            downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
+            if downloadUrl:
+                magnet, infoHash = get_magnet_from_uri(downloadUrl)
+                percent, count = debrid_dialog_update(results, dialog, percent, count)
+        if infoHash and magnet:
+            torr_available = client.get_torrent_instant_availability(infoHash)
+            if infoHash in torr_available:
+                info = torr_available[infoHash]
+                if isinstance(info, dict) and len(info.get("rd")) > 0:
+                    res["rdCached"] = True
+                    cached_results.append(res)
                 else:
                     res["rdCached"] = False
                     uncached_results.append(res)
-        [i.start() for i in threads]
-        [i.join() for i in threads]
-        if get_setting("show_uncached"):
-            cached_results.extend(uncached_results)
-            return cached_results
-        else:
-            return cached_results
+                thread = Thread(target=get_dd_link, args=(client, magnet, res))
+                threads.append(thread)
+            else:
+                res["rdCached"] = False
+                uncached_results.append(res)
+    [i.start() for i in threads]
+    [i.join() for i in threads]
+    debrid_dialog_update(results, dialog, percent=100)
+    if get_setting("show_uncached"):
+        cached_results.extend(uncached_results)
+        return cached_results
+    else:
+        return cached_results
 
 
-def get_dd_link(rd_client, magnet, res):
+def debrid_dialog_update(results, dialog, percent=0, count=-1):
+    count += 1
+    percent += 2
+    dialog.update(
+        percent,
+        "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+        f"Checking: {count}/{len(results)}",
+    )
+    return percent, count
+
+
+def get_dd_link(client, magnet, res):
     try:
-        response = rd_client.add_magent_link(magnet)
-        torr_info = rd_client.get_torrent_info(response["id"])
+        response = client.add_magent_link(magnet)
+        torr_info = client.get_torrent_info(response["id"])
         if torr_info["status"] == "waiting_files_selection":
             files = torr_info["files"]
             extensions = supported_video_extensions()[:-1]
@@ -683,12 +706,12 @@ def get_dd_link(rd_client, magnet, res):
                 if item["path"].lower().endswith(x)
             ]
             torr_keys = ",".join(torr_keys)
-            rd_client.select_files(torr_info["id"], torr_keys)
-        torr_info = rd_client.get_torrent_info(response["id"])
+            client.select_files(torr_info["id"], torr_keys)
+        torr_info = client.get_torrent_info(response["id"])
         if len(torr_info["links"]) > 1:
             res["rdId"] = response["id"]
         else:
-            response = rd_client.create_download_link(torr_info["links"][0])
+            response = client.create_download_link(torr_info["links"][0])
             res["rdLinks"] = [response["download"]]
     except Exception as e:
         log(f"Error {str(e)}")

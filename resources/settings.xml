@@ -14,7 +14,7 @@
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_desc_length" type="number" label="30026" default="100"/>
-        <setting id="jackett_results_per_page" type="number" label="30029" default="10"/>
+        <setting id="jackett_results_per_page" type="number" label="30029" default="25"/>
         <setting id="jackett_insecured" type="bool" label="30027" default="false"/>
         <setting id="jackett_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
         <setting label="30050" type="lsep"/>
@@ -23,7 +23,7 @@
         <setting id="prowlarr_indexer_ids" type="text" label="30053" default=""/>
         <setting id="prowlarr_anime_indexer_ids" type="text" label="30054" default=""/>
         <setting id="prowlarr_desc_length" type="number" label="30026" default="100"/>
-        <setting id="prowlarr_results_per_page" type="number" label="30029" default="10"/>
+        <setting id="prowlarr_results_per_page" type="number" label="30029" default="25"/>
         <setting id="prowlarr_insecured" type="bool" label="30027" default="false"/>
         <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
     </category>
