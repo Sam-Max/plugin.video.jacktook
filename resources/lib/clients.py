@@ -117,13 +117,13 @@ class Prowlarr:
         try:
             if mode == "tv":
                 query = f"{query} S{season}E{episode}"
-                url = f"{self.host}/api/v1/search?query={query}&Categories=5000"
+                url = f"{self.host}/api/v1/search?query={query}&categories=5000"
             elif mode == "movie":
-                url = f"{self.host}/api/v1/search?query={query}&Categories=2000"
+                url = f"{self.host}/api/v1/search?query={query}&categories=2000"
             elif mode == "anime":
                 if anime_indexers:
                     anime_indexers_url = "".join(
-                        [f"&IndexerIds={index}" for index in anime_indexers]
+                        [f"&indexerIds={index}" for index in anime_indexers]
                     )
                     url = f"{self.host}/api/v1/search?query={query}{anime_indexers_url}"
                 else:
@@ -132,8 +132,7 @@ class Prowlarr:
             elif mode == "multi":
                 url = f"{self.host}/api/v1/search?query={query}"
             if indexers:
-                indexers_url = "".join([f"&IndexerIds={index}" for index in indexers])
-                url = url + indexers_url
+                url = url + "".join([f"&indexerIds={index}" for index in indexers])
             res = requests.get(url, verify=insecure, headers=headers)
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
