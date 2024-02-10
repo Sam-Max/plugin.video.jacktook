@@ -26,18 +26,18 @@ Metadata:
 
 ## Steps.
 
-1. Install Jackett. [Jackett](https://github.com/Jackett/Jackett) and/or [Prowlarr](https://github.com/Prowlarr/Prowlarr)
+1. Install Jackett. [Jackett](https://github.com/Jackett/Jackett) and/or [Prowlarr](https://github.com/Prowlarr/Prowlarr) 
 
 2. Install this addon.
 
 3. Add configuration on addon settings to connect with Jackett and/or Prowlarr 
 
-4. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest)
-
+4. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest) 
 
 **Note**:
-
-You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
+1. Jackett and Prowlarr are optional if using Torrentio Scraper. 
+2. Torrest is optional if using Debrid service.
+3. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
 
 
 ## Installation of this addon (Jacktook)
