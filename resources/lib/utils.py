@@ -3,13 +3,14 @@ import hashlib
 import io
 import os
 import re
-from threading import Thread
+from threading import Lock, Thread
 import requests
 from resources.lib.anilist import get_anime_client
 from resources.lib.cached import Cache
 from resources.lib.player import JacktookPlayer
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.tmdbv3api.objs.movie import Movie
+from resources.lib.tmdbv3api.objs.tv import TV
 
 from resources.lib.torf._torrent import Torrent
 from resources.lib.torf._magnet import Magnet
@@ -58,6 +59,7 @@ class Enum:
 class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
+    TORRENTIO = "Torrentio"
 
 
 def play(url, magnet, id, title, plugin, debrid=False):
@@ -91,16 +93,6 @@ def play(url, magnet, id, title, plugin, debrid=False):
         player.run(list_item)
 
 
-def show_search_result(results, mode, id, plugin, func, func2, func3):
-    api_show_results(results, plugin, id, mode, func=func, func2=func2, func3=func3)
-
-
-def show_tv_result(results, mode, tvdb_id, plugin, func, func2, func3):
-    api_show_results(
-        results, plugin, tvdb_id, mode=mode, func=func, func2=func2, func3=func3
-    )
-
-
 def list_item(label, icon):
     item = ListItem(label)
     item.setArt(
@@ -113,27 +105,32 @@ def list_item(label, icon):
     return item
 
 
-def api_show_results(results, plugin, id, mode, func, func2, func3):
+def api_show_results(results, mode, id, tvdb_id, plugin, func, func2, func3):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
-        description_length = int(get_setting("jackett_desc_length"))
+        desc_length = "jackett_desc_length"
     elif indexer == Indexer.PROWLARR:
-        description_length = int(get_setting("prowlarr_desc_length"))
+        desc_length = "prowlarr_desc_length"
+    elif indexer == Indexer.TORRENTIO:
+        desc_length = "torrentio_desc_length"
+    description_length = int(get_setting(desc_length))
 
     poster = ""
     overview = ""
 
-    if int(id) != -1:
-        data = fanartv_get(id, mode)
-        if data:
-            poster = data["clearlogo2"]
-
+    if id != "-1":  # Direct Search -1
         if mode == "tv":
-            result = Find().find_by_tvdb_id(id)
+            result = Find().find_by_tvdb_id(tvdb_id)
             overview = result["tv_results"][0]["overview"]
+            data = fanartv_get(tvdb_id, mode)
+            if data:
+                poster = data["clearlogo2"]
         elif mode == "movie":
             details = Movie().details(id)
             overview = details["overview"] if details.get("overview") else ""
+            data = fanartv_get(tvdb_id, mode)
+            if data:
+                poster = data["clearlogo2"]
         elif mode == "anime":
             anime = get_anime_client()
             result = anime.get_by_id(id)
@@ -141,23 +138,23 @@ def api_show_results(results, plugin, id, mode, func, func2, func3):
                 overview = result["description"]
                 poster = result["coverImage"]["large"]
 
-    for r in results:
-        title = r["title"]
+    for res in results:
+        title = res["title"]
         if len(title) > description_length:
             title = title[:description_length]
 
-        qtTitle = r["qtTitle"]
+        qtTitle = res["qtTitle"]
         if len(qtTitle) > description_length:
             qtTitle = qtTitle[:description_length]
 
         magnet = ""
-        date = r.get("publishDate", "")
+        date = res.get("publishDate", "")
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
             date = match.group()
-        size = bytes_to_human_readable(int(r.get("size")))
-        seeders = r["seeders"]
-        tracker = r["indexer"]
+        size = bytes_to_human_readable(int(res.get("size")))
+        seeders = res["seeders"]
+        tracker = res["indexer"]
 
         watched = is_torrent_watched(qtTitle)
         if watched:
@@ -166,27 +163,28 @@ def api_show_results(results, plugin, id, mode, func, func2, func3):
         tracker_color = get_tracker_color(tracker)
         torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {qtTitle}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
-        if r["rdCached"]:
-            links = r.get("rdLinks", "")
-            if len(links) > 0:
-                url = links[0]
-                title = f"[B][Cached][/B]-{title}"
-                list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
-                set_video_item(list_item, title, poster, overview)
-                add_item(list_item, url, magnet, id, title, func, plugin)
-            else:
-                rdId = r.get("rdId")
-                list_item = ListItem(label=f"[B][Pack-Cached][/B]-{torr_title}")
-                add_pack_item(list_item, title, rdId, func2, plugin)
+        if res["rdCached"]:
+            rd_links = res.get("rdLinks")
+            if rd_links:
+                if len(rd_links) > 1:
+                    rdId = res.get("rdId")
+                    list_item = ListItem(label=f"[B][Pack-Cached][/B]-{torr_title}")
+                    add_pack_item(list_item, title, rdId, func2, plugin)
+                else:
+                    url = rd_links[0]
+                    title = f"[B][Cached][/B]-{title}"
+                    list_item = ListItem(label=f"[B][Cached][/B]-{torr_title}")
+                    set_video_item(list_item, title, poster, overview)
+                    add_item(list_item, url, magnet, id, title, func, plugin)
         else:
-            downloadUrl = r.get("downloadUrl") or r.get("magnetUrl")
-            guid = r.get("guid")
+            downloadUrl = res.get("downloadUrl") or res.get("magnetUrl")
+            guid = res.get("guid")
             if guid:
                 if guid.startswith("magnet:?"):
                     magnet = guid
                 else:
                     # For some indexers, the guid is a torrent file url
-                    downloadUrl = r.get("guid")
+                    downloadUrl = res.get("guid")
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
             if magnet:
@@ -216,29 +214,23 @@ def add_pack_item(list_item, title, id, func, plugin):
     )
 
 
-def list_pack_torrent(id, func, client, plugin):
+def list_pack_torrent(torrent_id, func, client, plugin):
     try:
         cached = False
-        links = get_cached(id)
+        links = get_cached(torrent_id)
         if links:
             cached = True
         else:
-            torr_info = client.get_torrent_info(id)
+            torr_info = client.get_torrent_info(torrent_id)
             files = torr_info["files"]
-            extensions = supported_video_extensions()[:-1]
-            torr_names = [
-                item["path"]
-                for item in files
-                for x in extensions
-                if item["path"].lower().endswith(x)
-            ]
+            torr_names = [item["path"] for item in files]
             links = []
             for i, name in enumerate(torr_names):
                 title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
                 response = client.create_download_link(torr_info["links"][i])
                 links.append((response["download"], title))
             if links:
-                set_cached(links, id)
+                set_cached(links, torrent_id)
                 cached = True
         if cached:
             for link, title in links:
@@ -255,7 +247,7 @@ def list_pack_torrent(id, func, client, plugin):
                 )
             endOfDirectory(plugin.handle)
     except Exception as e:
-        log(f"Error {str(e)}")
+        log(f"Error: {str(e)}")
 
 
 """ def direct_download(url, file_name):
@@ -305,11 +297,13 @@ def set_watched_file(title, id, magnet, url):
     db.commit()
 
 
-def set_watched_title(title, id, mode=""):
+def set_watched_title(title, id, tvdb_id=-1, imdb_id=-1, mode=""):
     if title != "None":
         db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
             "id": id,
+            "tvdb_id": tvdb_id,
+            "imdb_id": imdb_id,
             "mode": mode,
         }
         db.commit()
@@ -368,7 +362,9 @@ def tmdb_get(path, params):
             trending = Trending()
             data = trending.tv_day(page=params)
         elif path == "movie_details":
-            data = Movie().details(params).runtime
+            data = Movie().details(params)
+        elif path == "tv_details":
+            data = TV().details(params)
         cache.set(
             identifier,
             data,
@@ -458,7 +454,9 @@ def last_titles(plugin, func1, func2, func3):
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func3, mode=mode, query=title, id=id),
+                plugin.url_for(
+                    func3, mode=mode, query=title, id=id, tvdb_id=-1, imdb_id=-1
+                ),
                 list_item,
                 isFolder=True,
             )
@@ -498,11 +496,11 @@ def limit_results(results):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
         limit = get_int_setting("jackett_results_per_page")
-        results = results[:limit]
     elif indexer == Indexer.PROWLARR:
         limit = get_int_setting("prowlarr_results_per_page")
-        results = results[:limit]
-    return results
+    elif indexer == Indexer.TORRENTIO:
+        limit = get_int_setting("torrentio_results_per_page")
+    return results[:limit]
 
 
 def remove_duplicate(results):
@@ -523,10 +521,10 @@ def process_results(results):
     return res
 
 
-def process_tv_results(results, episode_name, episode_num, season_num):
+def process_tv_results(results, episode_name, episode, season):
     res = remove_duplicate(results)
     res = limit_results(res)
-    res = filter_by_episode(res, episode_name, episode_num, season_num)
+    res = filter_by_episode(res, episode_name, episode, season)
     if res:
         res = filter_by_quality(res)
         res = sort_results(res)
@@ -541,6 +539,8 @@ def sort_results(results):
         sort_by = get_setting("jackett_sort_by")
     elif indexer == Indexer.PROWLARR:
         sort_by = get_setting("prowlarr_sort_by")
+    elif indexer == Indexer.TORRENTIO:
+        sort_by = get_setting("torrentio_sort_by")
 
     if sort_by == "Seeds":
         sort_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
@@ -557,6 +557,9 @@ def sort_results(results):
 
 
 def filter_by_episode(results, episode_name, episode_num, season_num):
+    episode_num = f"{int(episode_num):02}"
+    season_num = f"{int(season_num):02}"
+
     filtered_episodes = []
     pattern1 = "S%sE%s" % (season_num, episode_num)
     pattern2 = "%sx%s" % (season_num, episode_num)
@@ -633,53 +636,31 @@ def get_magnet_from_uri(uri):
             return None, None
 
 
+count = -1
+percent = 50
+
 
 def check_debrid_cached(results, client, dialog):
-    count = -1
-    percent = 50
-    percent, count = debrid_dialog_update(results, dialog, percent, count)
     threads = []
+    lock = Lock()
     cached_results = []
     uncached_results = []
     for res in results:
-        infoHash = res.get("infoHash")
-        guid = res.get("guid")
-        magnet = ""
-        if guid:
-            if guid.startswith("magnet:?"):
-                magnet = guid
-                percent, count = debrid_dialog_update(results, dialog, percent, count)
-            else:
-                # In some indexers, the guid is a torrent file url
-                downloadUrl = res.get("guid")
-                if downloadUrl:
-                    magnet, infoHash = get_magnet_from_uri(downloadUrl)
-                    percent, count = debrid_dialog_update(
-                        results, dialog, percent, count
-                    )
-        else:
-            downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
-            if downloadUrl:
-                magnet, infoHash = get_magnet_from_uri(downloadUrl)
-                percent, count = debrid_dialog_update(results, dialog, percent, count)
-        if infoHash and magnet:
-            torr_available = client.get_torrent_instant_availability(infoHash)
-            if infoHash in torr_available:
-                info = torr_available[infoHash]
-                if isinstance(info, dict) and len(info.get("rd")) > 0:
-                    res["rdCached"] = True
-                    cached_results.append(res)
-                else:
-                    res["rdCached"] = False
-                    uncached_results.append(res)
-                thread = Thread(target=get_dd_link, args=(client, magnet, res))
-                threads.append(thread)
-            else:
-                res["rdCached"] = False
-                uncached_results.append(res)
+        thread = Thread(
+            target=get_dd_link,
+            args=(
+                client,
+                res,
+                len(results),
+                dialog,
+                lock,
+                cached_results,
+                uncached_results,
+            ),
+        )
+        threads.append(thread)
     [i.start() for i in threads]
     [i.join() for i in threads]
-    debrid_dialog_update(results, dialog, percent=100)
     if get_setting("show_uncached"):
         cached_results.extend(uncached_results)
         return cached_results
@@ -687,40 +668,76 @@ def check_debrid_cached(results, client, dialog):
         return cached_results
 
 
-def debrid_dialog_update(results, dialog, percent=0, count=-1):
-    count += 1
-    percent += 2
+def get_dd_link(client, res, total, dialog, lock, cached_results, uncached_result):
+    guid = res.get("guid")
+    magnet = ""
+    if guid:
+        if guid.startswith("magnet:?") or len(guid) == 40:
+            magnet = guid
+            infoHash = res.get("infoHash")
+            debrid_dialog_update(total, dialog, lock)
+        else:
+            # In some indexers, the guid is a torrent file url
+            downloadUrl = res.get("guid")
+            magnet, infoHash = get_magnet_from_uri(downloadUrl)
+            debrid_dialog_update(total, dialog, lock)
+    else:
+        downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
+        magnet, infoHash = get_magnet_from_uri(downloadUrl)
+        debrid_dialog_update(total, dialog, lock)
+    if infoHash and magnet:
+        try:
+            torr_available = client.get_torrent_instant_availability(infoHash)
+            if infoHash in torr_available:
+                with lock:
+                    res["rdCached"] = True
+                    cached_results.append(res)
+                if res.get("indexer") == Indexer.TORRENTIO:
+                    magnet = info_hash_to_magnet(infoHash)
+                response = client.add_magent_link(magnet)
+                torrent_id = response.get("id")
+                if not torrent_id:
+                    log("Failed to add magnet link to Real-Debrid")
+                    return
+                torr_info = client.get_torrent_info(torrent_id)
+                if torr_info["status"] == "waiting_files_selection":
+                    files = torr_info["files"]
+                    extensions = supported_video_extensions()[:-1]
+                    torr_keys = [
+                        str(item["id"])
+                        for item in files
+                        for x in extensions
+                        if item["path"].lower().endswith(x)
+                    ]
+                    torr_keys = ",".join(torr_keys)
+                    client.select_files(torr_info["id"], torr_keys)
+                torr_info = client.get_torrent_info(torrent_id)
+                with lock:
+                    if len(torr_info["links"]) > 1:
+                        res["rdId"] = torrent_id
+                        res["rdLinks"] = torr_info["links"]
+                    else:
+                        response = client.create_download_link(torr_info["links"][0])
+                        res["rdLinks"] = [response["download"]]
+            else:
+                with lock:
+                    res["rdCached"] = False
+                    uncached_result.append(res)
+        except Exception as e:
+            log(f"Error: {str(e)}")
+
+
+def debrid_dialog_update(total, dialog, lock):
+    global count
+    global percent
+    with lock:
+        count += 1
+        percent += 2
     dialog.update(
         percent,
         "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-        f"Checking: {count}/{len(results)}",
+        f"Checking: {count}/{total}",
     )
-    return percent, count
-
-
-def get_dd_link(client, magnet, res):
-    try:
-        response = client.add_magent_link(magnet)
-        torr_info = client.get_torrent_info(response["id"])
-        if torr_info["status"] == "waiting_files_selection":
-            files = torr_info["files"]
-            extensions = supported_video_extensions()[:-1]
-            torr_keys = [
-                str(item["id"])
-                for item in files
-                for x in extensions
-                if item["path"].lower().endswith(x)
-            ]
-            torr_keys = ",".join(torr_keys)
-            client.select_files(torr_info["id"], torr_keys)
-        torr_info = client.get_torrent_info(response["id"])
-        if len(torr_info["links"]) > 1:
-            res["rdId"] = response["id"]
-        else:
-            response = client.create_download_link(torr_info["links"][0])
-            res["rdLinks"] = [response["download"]]
-    except Exception as e:
-        log(f"Error {str(e)}")
 
 
 def supported_video_extensions():
@@ -739,6 +756,10 @@ def is_magnet_link(link):
 
 def is_url(url):
     return bool(re.match(URL_REGEX, url))
+
+
+def info_hash_to_magnet(info_hash):
+    return f"magnet:?xt=urn:btih:{info_hash}"
 
 
 """ def direct_download():

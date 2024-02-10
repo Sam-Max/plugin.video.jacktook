@@ -49,16 +49,19 @@ def add_icon_genre(item, name):
         )
 
 
-def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre_id=0):
-    for res in results:
+def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id=0):
+    for res in data.results:
         id = res.id
         duration = ""
-        media_type= ""
+        media_type = ""
 
         if mode == "movie":
             title = res.title
             release_date = res.release_date
-            duration = tmdb_get("movie_details", int(id))
+            details = tmdb_get("movie_details", int(id))
+            imdb_id = details.external_ids.get("imdb_id")
+            tvdb_id = details.external_ids.get("tvdb_id")
+            duration = details.runtime
         elif mode == "tv":
             title = res.name
             release_date = res.get("first_air_date", "")
@@ -70,12 +73,15 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
             if res["media_type"] == "movie":
                 media_type = "movie"
                 release_date = res.release_date
-                duration = tmdb_get("movie_details", int(id))
-                title= f"[B][MOVIE][/B]- {title}"
+                details = tmdb_get("movie_details", int(id))
+                imdb_id = details.external_ids.get("imdb_id")
+                tvdb_id = details.external_ids.get("tvdb_id")
+                duration = details.runtime
+                title = f"[B][MOVIE][/B]- {title}"
             elif res["media_type"] == "tv":
                 media_type = "tv"
                 release_date = res.get("first_air_date", "")
-                title= f"[B][TV][/B]- {title}"
+                title = f"[B][TV][/B]- {title}"
 
         poster_path = (
             TMDB_POSTER_URL + res.poster_path if res.get("poster_path") else ""
@@ -95,7 +101,7 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
             }
         )
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType('video')
+        info_tag.setMediaType("video")
         info_tag.setTitle(title)
         info_tag.setPlot(overview)
         info_tag.setFirstAired(release_date)
@@ -109,7 +115,14 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
         if "movie" in [mode, media_type]:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func, mode=mode, query=title, id=id),
+                plugin.url_for(
+                    func,
+                    mode=mode,
+                    query=title,
+                    id=id,
+                    tvdb_id=tvdb_id,
+                    imdb_id=imdb_id,
+                ),
                 list_item,
                 isFolder=True,
             )

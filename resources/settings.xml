@@ -9,7 +9,12 @@
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr" default="Jackett"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio" default="Torrentio"/>
+        <setting label="Torrentio Configuration" type="lsep"/>
+        <setting id="torrentio_host" type="text" label="Torrentio" default="https://torrentio.strem.fun"/>
+        <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
+        <setting id="torrentio_results_per_page" type="number" label="30029" default="25"/>
+        <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Cached" default="Seeds"/>
         <setting label="30022" type="lsep"/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
         <setting id="jackett_host" type="text" label="30025" default=""/>

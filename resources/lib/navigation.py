@@ -15,6 +15,7 @@ from resources.lib.tmdb import (
 )
 from resources.lib.anilist import search_anilist
 from resources.lib.utils import (
+    api_show_results,
     check_debrid_cached,
     clear,
     clear_all_cache,
@@ -30,8 +31,6 @@ from resources.lib.utils import (
     process_tv_results,
     set_cached,
     set_watched_title,
-    show_search_result,
-    show_tv_result,
     tmdb_get,
 )
 from resources.lib.kodi import (
@@ -141,25 +140,25 @@ def main_menu():
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, id=-1),
+        plugin.url_for(search, mode="multi", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", query=None, id=-1),
+        plugin.url_for(search, mode="tv", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="movie", query=None, id=-1),
+        plugin.url_for(search, mode="movie", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="anime", query=None, id=-1),
+        plugin.url_for(search, mode="anime", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Anime Search", "search.png"),
         isFolder=True,
     )
@@ -209,9 +208,53 @@ def genre_menu():
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/search/<mode>/<query>/<id>")
-def search(mode, query, id):
-    set_watched_title(query, id, mode)
+@plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
+def search_tmdb(mode, genre_id, page):
+    page = int(page)
+    genre_id = int(genre_id)
+
+    if mode == "movie_genres" or mode == "tv_genres":
+        menu_genre(mode, page)
+        return
+
+    if mode == "multi":
+        text = Keyboard(id=30241)
+        if not text:
+            return
+        data = Search().multi(str(text), page=page)
+    elif mode == "movie":
+        if genre_id != -1:
+            data = tmdb_get(
+                "discover_movie",
+                {
+                    "with_genres": genre_id,
+                    "append_to_response": "external_ids",
+                    "page": page,
+                },
+            )
+        else:
+            data = tmdb_get("trending_movie", page)
+    elif mode == "tv":
+        if genre_id != -1:
+            data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
+        else:
+            data = tmdb_get("trending_tv", page)
+
+    tmdb_show_results(
+        data,
+        func=search,
+        func2=tv_details,
+        next_func=next_page,
+        page=page,
+        plugin=plugin,
+        genre_id=genre_id,
+        mode=mode,
+    )
+
+
+@plugin.route("/search/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>")
+def search(mode, query, id, tvdb_id, imdb_id):
+    set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     p_dialog = DialogProgressBG()
     torr_client = get_setting("torrent_client")
@@ -221,7 +264,7 @@ def search(mode, query, id):
         p_dialog.create("")
         p_results = cached_results
     else:
-        results, query = search_api(query, mode, p_dialog)
+        results, query = search_api(query, imdb_id, mode, p_dialog)
         if results:
             p_results = process_results(results)
             set_cached(p_results, query, params=("index"))
@@ -243,20 +286,22 @@ def search(mode, query, id):
                     cached = False
                     notify("No debrid results")
             if cached:
-                show_search_result(
+                api_show_results(
                     deb_cached_results,
                     mode,
                     id,
+                    tvdb_id,
                     plugin,
                     func=play_torrent,
                     func2=show_pack,
                     func3=download,
                 )
         elif torr_client == "Torrest":
-            show_search_result(
+            api_show_results(
                 p_results,
                 mode,
                 id,
+                tvdb_id,
                 plugin,
                 func=play_torrent,
                 func2=show_pack,
@@ -272,10 +317,10 @@ def search(mode, query, id):
 
 
 @plugin.route(
-    "/search_season/<mode>/<query>/<tvdb_id>/<episode_name>/<episode>/<season>"
+    "/search_season/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>/<episode_name>/<episode>/<season>"
 )
-def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
-    set_watched_title(query, tvdb_id, mode)
+def search_tv_episode(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
+    set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
@@ -285,7 +330,7 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
         p_dialog.create("")
         p_results = cached_results
     else:
-        results, query = search_api(query, mode, p_dialog, season, episode)
+        results, query = search_api(query, imdb_id, mode, p_dialog, season, episode)
         if results:
             p_results = process_tv_results(
                 results,
@@ -312,9 +357,10 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
                     cached = False
                     notify("No debrid results")
             if cached:
-                show_tv_result(
+                api_show_results(
                     deb_cached_results,
                     mode,
+                    id,
                     tvdb_id,
                     plugin,
                     func=play_torrent,
@@ -322,9 +368,10 @@ def search_tv_episode(mode, query, tvdb_id, episode_name, episode, season):
                     func3=download,
                 )
         else:
-            show_tv_result(
+            api_show_results(
                 p_results,
                 mode,
+                id,
                 tvdb_id,
                 plugin,
                 func=play_torrent,
@@ -346,59 +393,24 @@ def play_torrent():
     play(url, magnet, id, title, plugin)
 
 
-@plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
-def search_tmdb(mode, genre_id, page):
-    page = int(page)
-    genre_id = int(genre_id)
-
-    if mode == "movie_genres" or mode == "tv_genres":
-        menu_genre(mode, page)
-        return
-
-    if mode == "multi":
-        text = Keyboard(id=30241)
-        if not text:
-            return
-        data = Search().multi(str(text), page=page)
-    elif mode == "movie":
-        if genre_id != -1:
-            data = tmdb_get("discover_movie", {"with_genres": genre_id, "page": page})
-        else:
-            data = tmdb_get("trending_movie", page)
-    elif mode == "tv":
-        if genre_id != -1:
-            data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
-        else:
-            data = tmdb_get("trending_tv", page)
-    tmdb_show_results(
-        data.results,
-        func=search,
-        func2=tv_details,
-        next_func=next_page,
-        page=page,
-        plugin=plugin,
-        genre_id=genre_id,
-        mode=mode,
-    )
-
-
 @plugin.route("/tv/details/<id>")
 def tv_details(id):
-    tv = TV()
-    d = tv.details(id)
+    details = TV().details(id)
+    name = details.name
+    number_of_seasons = details.number_of_seasons
+    tvdb_id = details.external_ids.tvdb_id
+    imdb_id = details.external_ids.imdb_id
 
-    show_name = d.name
-    number_of_seasons = d.number_of_seasons
-    tvdb_id = d.external_ids.tvdb_id
-
-    set_watched_title(show_name, id=id, mode="tv")
+    set_watched_title(name, id=id, mode="tv")
 
     fanart_data = fanartv_get(tvdb_id)
     if fanart_data:
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
-        poster = TMDB_POSTER_URL + d.poster_path if d.get("poster_path") else ""
+        poster = (
+            TMDB_POSTER_URL + details.poster_path if details.get("poster_path") else ""
+        )
         fanart = poster
 
     for i in range(number_of_seasons):
@@ -417,7 +429,7 @@ def tv_details(id):
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(title)
-        info_tag.setPlot(d.overview)
+        info_tag.setPlot(details.overview)
 
         list_item.setProperty("IsPlayable", "false")
 
@@ -425,9 +437,10 @@ def tv_details(id):
             plugin.handle,
             plugin.url_for(
                 tv_season_details,
-                show_name=show_name,
+                show_name=name,
                 id=id,
                 tvdb_id=tvdb_id,
+                imdb_id=imdb_id,
                 season=number,
             ),
             list_item,
@@ -437,8 +450,8 @@ def tv_details(id):
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<season>")
-def tv_season_details(show_name, id, tvdb_id, season):
+@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<imdb_id>/<season>")
+def tv_season_details(show_name, id, tvdb_id, imdb_id, season):
     tmdb_season = Season()
     season_details = tmdb_season.details(id, season)
 
@@ -447,8 +460,7 @@ def tv_season_details(show_name, id, tvdb_id, season):
 
     for ep in season_details.episodes:
         ep_name = ep.name
-        episode = f"{ep.episode_number:02}"
-        season = f"{int(season):02}"
+        episode = ep.episode_number
 
         title = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
@@ -484,7 +496,9 @@ def tv_season_details(show_name, id, tvdb_id, season):
                 search_tv_episode,
                 "tv",
                 query,
+                id,
                 tvdb_id,
+                imdb_id,
                 ep_name,
                 episode,
                 season,
@@ -498,20 +512,18 @@ def tv_season_details(show_name, id, tvdb_id, season):
 
 @plugin.route("/show_pack")
 def show_pack():
-    id, _ = plugin.args["query"][0].split(" ", 1)
-    list_pack_torrent(id, func=play_torrent, client=rd_client, plugin=plugin)
+    torrent_id, _ = plugin.args["query"][0].split(" ", 1)
+    list_pack_torrent(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
 
 
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
-    search_anilist(category, page, plugin, action=search, next_action=next_page_anilist)
+    search_anilist(category, page, plugin, search, next_page_anilist)
 
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
-    search_anilist(
-        category, int(page), plugin, action=search, next_action=next_page_anilist
-    )
+    search_anilist(category, int(page), plugin, search, next_page_anilist)
 
 
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")

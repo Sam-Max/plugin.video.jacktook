@@ -9,8 +9,7 @@ import xbmcaddon
 from xbmc import executebuiltin
 
 _URL = sys.argv[0]
-TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
-TORREST_ADDON_ID = TORREST_ADDON.getAddonInfo("id")
+TORREST_ADDON_ID = "plugin.video.torrest"
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
@@ -52,8 +51,12 @@ def addon_settings():
 
 def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
-    msg += f"[B]Torrest Server IP/Address[/B]: {TORREST_ADDON.getSetting('service_address')}\n"
-    msg += f"[B]Torrest Server Port[/B]: {TORREST_ADDON.getSetting('port')}"
+    try:
+        TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
+        msg += f"[B]Torrest Server IP/Address[/B]: {TORREST_ADDON.getSetting('service_address')}\n"
+        msg += f"[B]Torrest Server Port[/B]: {TORREST_ADDON.getSetting('port')}"
+    except:
+        pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
 
 
@@ -176,6 +179,16 @@ def bytes_to_human_readable(size, unit="B"):
         unit = list(units.keys())[list(units.values()).index(units[unit] + 1)]
 
     return f"{size:.2f} {unit}"
+
+
+def convert_size_to_bytes(size_str: str) -> int:
+    """Convert size string to bytes."""
+    match = re.match(r"(\d+(?:\.\d+)?)\s*(GB|MB)", size_str, re.IGNORECASE)
+    if match:
+        size, unit = match.groups()
+        size = float(size)
+        return int(size * 1024**3) if "GB" in unit.upper() else int(size * 1024**2)
+    return 0
 
 
 def sleep(miliseconds):

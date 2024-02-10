@@ -128,7 +128,7 @@ msgid "Debrid"
 msgstr ""
 
 msgctxt "#30152"
-msgid "Debrid Configuration"
+msgid "Real Debrid Configuration"
 msgstr ""
 
 msgctxt "#30154"
@@ -161,6 +161,14 @@ msgstr ""
 
 msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
+msgstr ""
+
+msgctxt "#30227"
+msgid "You need to configure Torrentio first"
+msgstr ""
+
+msgctxt "#30228"
+msgid "The request to Torrentio failed."
 msgstr ""
 
 msgctxt "#30229"

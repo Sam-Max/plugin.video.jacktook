@@ -2,35 +2,32 @@ import os
 import requests
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, notify
+from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, log, notify
+
+
+anilist_client_id = get_setting("anilist_client_id", "14375")
+anilist_client_secret = get_setting(
+    "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
+)
 
 
 def get_anime_client():
     return Anime(
-        get_setting("anilist_client_id", "14375"),
-        get_setting(
-            "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
-        ),
+        anilist_client_id,
+        anilist_client_secret,
     )
 
 
-def search_anilist(category, page, plugin, action, next_action):
+def search_anilist(category, page, plugin, func, func2):
     page += 1
     client = get_anime_client()
 
     if category == "search":
         text = Keyboard(id=30242)
         if text:
-            results = client.search(str(text))
-            anilist_show_results(
-                results,
-                action=action,
-                next_action=next_action,
-                category=category,
-                page=page,
-                plugin=plugin,
-            )
-        return
+            data = client.search(str(text))
+        else:
+            return
 
     if category == "Trending":
         data = client.get_trending(page=page, perPage=10)
@@ -39,15 +36,15 @@ def search_anilist(category, page, plugin, action, next_action):
 
     anilist_show_results(
         data,
-        action=action,
-        next_action=next_action,
+        func=func,
+        func2=func2,
         category=category,
         page=page,
         plugin=plugin,
     )
 
 
-def anilist_show_results(results, action, next_action, category, page, plugin):
+def anilist_show_results(results, func, func2, category, page, plugin):
     for res in results:
         if res["title"]["english"]:
             title = res["title"]["english"]
@@ -67,17 +64,19 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
             }
         )
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType('video')
+        info_tag.setMediaType("video")
         info_tag.setTitle(title)
         info_tag.setPlot(description)
 
         list_item.setProperty("IsPlayable", "false")
 
-        title = title.replace("/", "")
+        title = title.replace("/", "").replace("?", "")
 
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(action, query=title, mode="anime", id=id),
+            plugin.url_for(
+                func, query=title, mode="anime", id=id, tvdb_id=-1, imdb_id=-1
+            ),
             list_item,
             isFolder=True,
         )
@@ -88,7 +87,7 @@ def anilist_show_results(results, action, next_action, category, page, plugin):
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(next_action, category=category, page=page),
+        plugin.url_for(func2, category=category, page=page),
         list_item,
         isFolder=True,
     )
@@ -193,7 +192,8 @@ class Anime:
             media = res.json()["data"]["Page"]["media"]
             return media
         else:
-            notify(f"Error:{res.text}")
+            notify(f"Anilist Error::{res.text}")
+            return {}
 
     def search(self, query):
         variables = {"query": query}
@@ -220,7 +220,8 @@ class Anime:
             media = res.json()["data"]["Media"]
             return media
         else:
-            notify(f"Error:{res.text}")
+            notify(f"Anilist Error:{res.text}")
+            return {}
 
     def get_token(self, client_id, client_secret):
         data = {
@@ -232,4 +233,5 @@ class Anime:
         if res.status_code == 200:
             return res.json()["access_token"]
         else:
-            notify(f"Error:{res.text}")
+            notify(f"Anilist Error:{res.text}")
+            return ""

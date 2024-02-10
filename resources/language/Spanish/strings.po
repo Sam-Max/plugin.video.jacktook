@@ -140,12 +140,20 @@ msgid "Jackett API key is invalid"
 msgstr "API de Jackett incorrecta"
 
 msgctxt "#30223"
-msgid "You need to configure Prowlarr"
-msgstr "Necesitas configuar Prowlarr"
+msgid "You need to configure Prowlarr first"
+msgstr "Necesitas configuar Prowlarr primero"
 
 msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
 msgstr "API de Prowlarr incorrecta"
+
+msgctxt "#30227"
+msgid "You need to configure Torrentio first"
+msgstr "Necesitas configurar Torrentio primero"
+
+msgctxt "#30228"
+msgid "The request to Torrentio failed."
+msgstr "La peticion a Torrentio ha fallado"
 
 msgctxt "#30229"
 msgid "The request to Jackett failed."
