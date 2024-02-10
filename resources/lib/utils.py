@@ -180,11 +180,14 @@ def api_show_results(results, mode, id, tvdb_id, plugin, func, func2, func3):
             downloadUrl = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
             if guid:
-                if guid.startswith("magnet:?"):
-                    magnet = guid
+                if Indexer.TORRENTIO:
+                    magnet = info_hash_to_magnet(guid)
                 else:
-                    # For some indexers, the guid is a torrent file url
-                    downloadUrl = res.get("guid")
+                    if guid.startswith("magnet:?"):
+                        magnet = guid
+                    else:
+                        # For some indexers, the guid is a torrent file url
+                        downloadUrl = res.get("guid")
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, title, poster, overview)
             if magnet:
