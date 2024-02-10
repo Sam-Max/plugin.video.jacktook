@@ -1,4 +1,7 @@
 
+## 0.1.4 (2024-02-10)
+    * Add Torrentio support
+
 ## 0.1.3 (2024-02-7)
     * Add "clear all cache" option on addon settings
     * Caching of indexers results
