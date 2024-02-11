@@ -251,6 +251,7 @@ def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
 
     client = get_client(indexer)
     if not client:
+        dialog.create("")
         return None, None
 
     if not query:
