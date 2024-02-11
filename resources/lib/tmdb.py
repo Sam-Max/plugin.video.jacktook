@@ -110,7 +110,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
 
         list_item.setProperty("IsPlayable", "false")
 
-        title = title.replace("/", "").replace("?", "")
+        query = title.replace("/", "").replace("?", "")
 
         if "movie" in [mode, media_type]:
             addDirectoryItem(
@@ -118,7 +118,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                 plugin.url_for(
                     func,
                     mode=mode,
-                    query=title,
+                    query=query,
                     id=id,
                     tvdb_id=tvdb_id,
                     imdb_id=imdb_id,

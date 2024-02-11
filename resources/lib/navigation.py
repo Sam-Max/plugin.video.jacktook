@@ -243,7 +243,7 @@ def search_tmdb(mode, genre_id, page):
     tmdb_show_results(
         data,
         func=search,
-        func2=tv_details,
+        func2=tv_seasons_details,
         next_func=next_page,
         page=page,
         plugin=plugin,
@@ -317,9 +317,9 @@ def search(mode, query, id, tvdb_id, imdb_id):
 
 
 @plugin.route(
-    "/search_season/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>/<episode_name>/<episode>/<season>"
+    "/search_tv/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>/<episode_name>/<episode>/<season>"
 )
-def search_tv_episode(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
+def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
     set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     torr_client = get_setting("torrent_client")
@@ -394,7 +394,7 @@ def play_torrent():
 
 
 @plugin.route("/tv/details/<id>")
-def tv_details(id):
+def tv_seasons_details(id):
     details = TV().details(id)
     name = details.name
     number_of_seasons = details.number_of_seasons
@@ -436,8 +436,8 @@ def tv_details(id):
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
-                tv_season_details,
-                show_name=name,
+                tv_episodes_details,
+                tv_name=name,
                 id=id,
                 tvdb_id=tvdb_id,
                 imdb_id=imdb_id,
@@ -450,8 +450,8 @@ def tv_details(id):
     endOfDirectory(plugin.handle)
 
 
-@plugin.route("/tv/details/season/<show_name>/<id>/<tvdb_id>/<imdb_id>/<season>")
-def tv_season_details(show_name, id, tvdb_id, imdb_id, season):
+@plugin.route("/tv/details/season/<tv_name>/<id>/<tvdb_id>/<imdb_id>/<season>")
+def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
     tmdb_season = Season()
     season_details = tmdb_season.details(id, season)
 
@@ -487,13 +487,13 @@ def tv_season_details(show_name, id, tvdb_id, imdb_id, season):
 
         list_item.setProperty("IsPlayable", "false")
 
-        query = show_name.replace("/", "").replace("?", "")
+        query = tv_name.replace("/", "").replace("?", "")
         ep_name = ep_name.replace("/", "").replace("?", "")
 
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
-                search_tv_episode,
+                search_tv,
                 "tv",
                 query,
                 id,
@@ -565,7 +565,7 @@ def last_files_history():
 
 @plugin.route("/titles_history")
 def last_titles_history():
-    last_titles(plugin, clear_history, tv_details, search)
+    last_titles(plugin, clear_history, tv_seasons_details, search)
 
 
 @plugin.route("/clear_cached_tmdb")
