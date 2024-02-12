@@ -35,19 +35,19 @@ You can also install the addon without installing its repository. To do so, get 
 
 ## Steps.
 
-1. Install Jackett. [Jackett](https://github.com/Jackett/Jackett) and/or [Prowlarr](https://github.com/Prowlarr/Prowlarr) 
+1. Install this addon (recommended way of installing the addon is through its repository)
 
-2. Install this addon (recommended way of installing the addon is through its [repository])
+2. Add configuration on addon settings to connect with Jackett, Prowlarr or Torrentio. 
 
-3. Add configuration on addon settings to connect with Jackett and/or Prowlarr 
+3. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest) 
 
-4. Install Torrest addon. [Torrest](https://github.com/i96751414/plugin.video.torrest) 
 
 **Notes**:
-1. Jackett and Prowlarr are optional if using Torrentio. 
-2. Torrest is optional if using Debrid service.
-3. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
-
+1. Jackett and Prowlarr are optional if using Torrentio.
+1. Torrest is optional if using Debrid service.
+2. Prowlarr IndexerIds and Anime IndexerIds fields are comma separated trackers ids, mandatory to set for anime. Ex. 12,13,14.
+3. When using Jackett or Prowlarr with Debrid don't add many trackers and avoid trackers who gives you torrent files instead of magnet links, to improve search speed and results.
+4. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
 
 ## How to run Jackett service using Docker:
 
