@@ -1,4 +1,9 @@
 
+
+## 0.1.5 (2024-02-12)
+    * Improvements for Prowlarr
+    * Some UI changes
+
 ## 0.1.4 (2024-02-10)
     * Add Torrentio support
 
