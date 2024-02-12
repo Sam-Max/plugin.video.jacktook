@@ -1,10 +1,13 @@
+
 from datetime import datetime, timedelta
 import hashlib
 import io
 import os
 import re
-from threading import Lock, Thread
+
 import requests
+from threading import Lock
+from concurrent.futures import ThreadPoolExecutor
 from resources.lib.anilist import get_anime_client
 from resources.lib.cached import Cache
 from resources.lib.player import JacktookPlayer
@@ -47,7 +50,12 @@ db = Database()
 cache = Cache.get_instance()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 50
+USER_AGENT_HEADER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+}
 URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
+
+dialog_update = {"count": -1, "percent": 50}
 
 
 class Enum:
@@ -429,9 +437,11 @@ def clear(type=""):
 def last_titles(plugin, func1, func2, func3):
     setPluginCategory(plugin.handle, f"Last Titles - History")
 
-    addDirectoryItem(
-        plugin.handle, plugin.url_for(func1, type="lth"), ListItem(label="Clear")
+    list_item = ListItem(label="Clear Titles")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
     )
+    addDirectoryItem(plugin.handle, plugin.url_for(func1, type="lth"), list_item)
 
     for title, data in reversed(db.database["jt:lth"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
@@ -469,10 +479,14 @@ def last_titles(plugin, func1, func2, func3):
 def last_files(plugin, func1, func2):
     setPluginCategory(plugin.handle, f"Last Files - History")
 
+    list_item = ListItem(label="Clear Files")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
+    )
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(func1, type="lfh"),
-        ListItem(label="Clear History"),
+        list_item,
     )
 
     for title, data in reversed(db.database["jt:lfh"].items()):
@@ -616,54 +630,28 @@ def filter_by_quality(results):
     return combined_list
 
 
-def get_magnet_from_uri(uri):
-    magnet_prefix = "magnet:"
-    if is_url(uri):
-        try:
-            res = requests.get(uri, allow_redirects=False)
-            if res.is_redirect:
-                uri = res.headers["Location"]
-                if uri.startswith(magnet_prefix):
-                    return uri, get_info_hash(uri)
-            elif (
-                res.status_code == 200
-                and res.headers.get("Content-Type") == "application/x-bittorrent"
-            ):
-                torrent = Torrent.read_stream(io.BytesIO(res.content))
-                return str(torrent.magnet()), torrent.magnet().infohash
-            else:
-                log(f"Could not get final redirect location for URI {uri}")
-                return None, None
-        except Exception as err:
-            log(f"Error: {err}")
-            return None, None
-
-
-count = -1
-percent = 50
-
-
 def check_debrid_cached(results, client, dialog):
-    threads = []
     lock = Lock()
     cached_results = []
     uncached_results = []
-    for res in results:
-        thread = Thread(
-            target=get_dd_link,
-            args=(
+    total_results = len(results)
+    with ThreadPoolExecutor(max_workers=total_results) as executor:
+        [
+            executor.submit(
+                get_dd_link,
                 client,
                 res,
-                len(results),
+                total_results,
                 dialog,
-                lock,
                 cached_results,
                 uncached_results,
-            ),
-        )
-        threads.append(thread)
-    [i.start() for i in threads]
-    [i.join() for i in threads]
+                lock=lock,
+            )
+            for res in results
+        ]
+        executor.shutdown(wait=True)
+    dialog_update["count"] = -1
+    dialog_update["percent"] = 50
     if get_setting("show_uncached"):
         cached_results.extend(uncached_results)
         return cached_results
@@ -671,32 +659,19 @@ def check_debrid_cached(results, client, dialog):
         return cached_results
 
 
-def get_dd_link(client, res, total, dialog, lock, cached_results, uncached_result):
-    guid = res.get("guid")
-    magnet = ""
-    if guid:
-        if guid.startswith("magnet:?") or len(guid) == 40:
-            magnet = guid
-            infoHash = res.get("infoHash")
-            debrid_dialog_update(total, dialog, lock)
-        else:
-            # In some indexers, the guid is a torrent file url
-            downloadUrl = res.get("guid")
-            magnet, infoHash = get_magnet_from_uri(downloadUrl)
-            debrid_dialog_update(total, dialog, lock)
-    else:
-        downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
-        magnet, infoHash = get_magnet_from_uri(downloadUrl)
+def get_dd_link(client, res, total, dialog, cached_results, uncached_result, lock):
+    try:
+        magnet, infoHash = get_magnet_and_infohash(res, lock)
         debrid_dialog_update(total, dialog, lock)
-    if infoHash and magnet:
-        try:
+
+        if infoHash and magnet:
             torr_available = client.get_torrent_instant_availability(infoHash)
             if infoHash in torr_available:
                 with lock:
                     res["rdCached"] = True
                     cached_results.append(res)
-                if res.get("indexer") == Indexer.TORRENTIO:
-                    magnet = info_hash_to_magnet(infoHash)
+                    if res.get("indexer") == Indexer.TORRENTIO:
+                        magnet = info_hash_to_magnet(infoHash)
                 response = client.add_magent_link(magnet)
                 torrent_id = response.get("id")
                 if not torrent_id:
@@ -726,21 +701,55 @@ def get_dd_link(client, res, total, dialog, lock, cached_results, uncached_resul
                 with lock:
                     res["rdCached"] = False
                     uncached_result.append(res)
-        except Exception as e:
-            log(f"Error: {str(e)}")
+    except Exception as e:
+        log(f"Error: {str(e)}")
+
+
+def get_magnet_and_infohash(res, lock):
+    with lock:
+        guid = res.get("guid")
+        if guid:
+            if guid.startswith("magnet:?") or len(guid) == 40:
+                return guid, res.get("infoHash")
+            else:
+                # In some indexers, the guid is a torrent file url
+                downloadUrl = res.get("guid")
+                return get_magnet_from_uri(downloadUrl)
+        else:
+            downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
+            return get_magnet_from_uri(downloadUrl)
+
+
+def get_magnet_from_uri(uri):
+    if is_url(uri):
+        res = requests.get(
+            uri, allow_redirects=False, timeout=20, headers=USER_AGENT_HEADER
+        )
+        if res.is_redirect:
+            uri = res.headers.get("Location")
+            if uri.startswith("magnet:"):
+                return uri, get_info_hash(uri)
+        elif (
+            res.status_code == 200
+            and res.headers.get("Content-Type") == "application/x-bittorrent"
+        ):
+            torrent = Torrent.read_stream(io.BytesIO(res.content))
+            return str(torrent.magnet()), torrent.magnet().infohash
+        else:
+            log(f"Could not get torrent data from: {uri}")
+            return None, None
 
 
 def debrid_dialog_update(total, dialog, lock):
-    global count
-    global percent
     with lock:
-        count += 1
-        percent += 2
-    dialog.update(
-        percent,
-        "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-        f"Checking: {count}/{total}",
-    )
+        dialog_update["count"] += 1
+        dialog_update["percent"] += 2
+
+        dialog.update(
+            dialog_update.get("percent"),
+            f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+            f"Checking: {dialog_update.get('count')}/{total}",
+        )
 
 
 def supported_video_extensions():
