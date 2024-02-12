@@ -72,11 +72,11 @@ msgid "Prowlarr Host"
 msgstr "Prowlarr Host"
 
 msgctxt "#30053"
-msgid "Indexers Ids"
+msgid "IndexersIds"
 msgstr "Ids Indexadores"
 
 msgctxt "#30054"
-msgid "Anime Indexers Ids"
+msgid "Anime IndexersIds"
 msgstr "Ids Indexadores de Anime"
 
 msgctxt "#30100"
