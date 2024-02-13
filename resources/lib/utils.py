@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 import hashlib
 import io
@@ -225,7 +224,7 @@ def add_pack_item(list_item, title, id, func, plugin):
     )
 
 
-def list_pack_torrent(torrent_id, func, client, plugin):
+def get_pack_torrent(torrent_id, func, client, plugin):
     try:
         cached = False
         links = get_cached(torrent_id)
@@ -234,7 +233,7 @@ def list_pack_torrent(torrent_id, func, client, plugin):
         else:
             torr_info = client.get_torrent_info(torrent_id)
             files = torr_info["files"]
-            torr_names = [item["path"] for item in files]
+            torr_names = [item["path"] for item in files if item["selected"] == 1]
             links = []
             for i, name in enumerate(torr_names):
                 title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"

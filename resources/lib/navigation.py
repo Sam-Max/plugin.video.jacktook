@@ -25,7 +25,7 @@ from resources.lib.utils import (
     last_files,
     last_titles,
     list_item,
-    list_pack_torrent,
+    get_pack_torrent,
     play,
     process_results,
     process_tv_results,
@@ -513,7 +513,7 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 @plugin.route("/show_pack")
 def show_pack():
     torrent_id, _ = plugin.args["query"][0].split(" ", 1)
-    list_pack_torrent(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
+    get_pack_torrent(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
 
 
 @plugin.route("/anilist/<category>")
