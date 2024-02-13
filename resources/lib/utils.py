@@ -677,6 +677,8 @@ def get_dd_link(client, res, total, dialog, cached_results, uncached_result, loc
                     log("Failed to add magnet link to Real-Debrid")
                     return
                 torr_info = client.get_torrent_info(torrent_id)
+                if "magnet_error" in torr_info["status"]:
+                    return
                 if torr_info["status"] == "waiting_files_selection":
                     files = torr_info["files"]
                     extensions = supported_video_extensions()[:-1]
@@ -709,7 +711,12 @@ def get_magnet_and_infohash(res, lock):
         guid = res.get("guid")
         if guid:
             if guid.startswith("magnet:?") or len(guid) == 40:
-                return guid, res.get("infoHash")
+                info_hash = (
+                    res["infoHash"].lower()
+                    if res.get("infoHash")
+                    else get_info_hash(guid).lower()
+                )
+                return guid, info_hash
             else:
                 # In some indexers, the guid is a torrent file url
                 downloadUrl = res.get("guid")
