@@ -1,4 +1,6 @@
 
+## 0.1.6 (2024-02-12)
+    * Fix a critical bug for Prowlarr
 
 ## 0.1.5 (2024-02-12)
     * Improvements for Prowlarr
