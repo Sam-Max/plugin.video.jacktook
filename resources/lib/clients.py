@@ -120,7 +120,7 @@ def get_client(indexer):
 
 class Torrentio:
     def __init__(self, host) -> None:
-        self.host = host
+        self.host = host.rstrip("/")
 
     def search(self, imdb_id, mode, season, episode, insecure=False):
         try:

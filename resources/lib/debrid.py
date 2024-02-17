@@ -43,7 +43,7 @@ def check_debrid_cached(query, results, mode, client, dialog, episode=1):
     with ThreadPoolExecutor(max_workers=total_results) as executor:
         [
             executor.submit(
-                get_dd_link,
+                get_rd_link,
                 client,
                 res,
                 total_results,
@@ -69,7 +69,7 @@ def check_debrid_cached(query, results, mode, client, dialog, episode=1):
     return cached_results
 
 
-def get_dd_link(client, res, total, dialog, cached_results, uncached_result, lock):
+def get_rd_link(client, res, total, dialog, cached_results, uncached_result, lock):
     try:
         magnet, infoHash = get_magnet_and_infohash(res, lock)
         debrid_dialog_update(total, dialog, lock)

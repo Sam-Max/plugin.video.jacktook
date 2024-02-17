@@ -2,7 +2,7 @@ import logging
 import os
 from threading import Thread
 from resources.lib.clients import search_api
-from resources.lib.api.debrid import RealDebrid
+from resources.lib.api.real_debrid_api import RealDebrid
 from resources.lib.debrid import check_debrid_cached, get_rd_pack
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
@@ -262,7 +262,7 @@ def search(mode, query, id, tvdb_id, imdb_id):
         if process_results:
             if torr_client == "Debrid":
                 deb_cached_results = check_debrid_cached(
-                    query, process_results, rd_client, p_dialog
+                    query, process_results, mode, rd_client, p_dialog
                 )
                 if deb_cached_results:
                     final_results = deb_cached_results
