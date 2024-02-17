@@ -45,7 +45,7 @@ You can also install the addon without installing its repository. To do so, get 
 **Notes**:
 1. Jackett and Prowlarr are optional if using Torrentio.
 1. Torrest is optional if using Debrid service.
-2. Prowlarr IndexerIds and Anime IndexerIds fields are comma separated trackers ids, mandatory to set for anime. Ex. 12,13,14. (from version 0.1.5)
+2. Prowlarr IndexerIds and Anime IndexerIds fields are comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
 3. When using Jackett or Prowlarr with Debrid don't add many trackers and avoid trackers that gives you torrent files instead of magnet links, or select on trackers options if available to retrieve magnets as priority, to improve search speed and results.
 4. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp)(torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
 
