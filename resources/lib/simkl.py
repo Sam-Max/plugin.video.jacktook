@@ -3,7 +3,6 @@ import re
 from resources.lib.api.fma import FindMyAnime
 from resources.lib.api.simkl import SIMKLAPI
 from resources.lib.kodi import ADDON_PATH, log
-from six import iteritems
 from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -128,7 +127,7 @@ def extract_season(res):
         if isinstance(res.get("title"), dict):
             s_ids += [
                 re.findall(regex, name, re.IGNORECASE)
-                for lang, name in iteritems(res.get("title"))
+                for lang, name in res.get("title").items()
                 if name is not None
             ]
         else:
@@ -146,7 +145,7 @@ def extract_season(res):
         regex = r"\s(\d+)$"
         cour = False
         if isinstance(res.get("title"), dict):
-            for lang, name in iteritems(res.get("title")):
+            for lang, name in res.get("title").items():
                 if name is not None and (
                     " part " in name.lower() or " cour " in name.lower()
                 ):
@@ -155,7 +154,7 @@ def extract_season(res):
             if not cour:
                 s_ids += [
                     re.findall(regex, name, re.IGNORECASE)
-                    for lang, name in iteritems(res.get("title"))
+                    for lang, name in res.get("title").items()
                     if name is not None
                 ]
                 s_ids += [
