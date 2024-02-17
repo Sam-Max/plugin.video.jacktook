@@ -56,7 +56,7 @@ class Search(TMDb):
             key="results"
         )
     
-    def movies(self, term, adult=None, region=None, year=None, release_year=None, page=1):
+    def movies(self, term, adult=None, region=None, year=None, release_year=None, page=1, append_to_response="external_ids"):
         """
         Search for movies.
         :param term: str
@@ -76,6 +76,7 @@ class Search(TMDb):
             params += "&year=%s" % year
         if release_year is not None:
             params += "&primary_release_year=%s" % release_year
+        params +="&append_to_response=%s" % append_to_response
         return self._request_obj(
             self._urls["movies"],
             params=params,
@@ -123,7 +124,7 @@ class Search(TMDb):
             key="results"
         )
 
-    def tv_shows(self, term, adult=None, release_year=None, page=1):
+    def tv_shows(self, term, adult=None, release_year=None, page=1, append_to_response="external_ids"):
         """
         Search for a TV show.
         :param term: str
@@ -137,6 +138,7 @@ class Search(TMDb):
             params += "&include_adult=%s" % "true" if adult else "false"
         if release_year is not None:
             params += "&first_air_date_year=%s" % release_year
+        params +="&append_to_response=%s" % append_to_response
         return self._request_obj(
             self._urls["tv_shows"],
             params=params,

@@ -62,3 +62,8 @@ class Database:
     def commit(self):
         with open(self.database_path, "wb") as f:
             pickle.dump(self.database, f)
+
+db_instance = Database()
+
+def get_db():
+    return db_instance

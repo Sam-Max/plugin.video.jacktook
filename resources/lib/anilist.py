@@ -1,5 +1,6 @@
 import os
-import requests
+from resources.lib.api.anilist import AniList
+from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, log, notify
@@ -11,51 +12,87 @@ anilist_client_secret = get_setting(
 )
 
 
-def get_anime_client():
-    return Anime(
+def get_anilist_client():
+    return AniList(
         anilist_client_id,
         anilist_client_secret,
     )
 
 
-def search_anilist(category, page, plugin, func, func2):
+def search_anilist(category, page, plugin, func, func2, func3):
     page += 1
-    client = get_anime_client()
+    client = get_anilist_client()
 
     if category == "search":
         text = Keyboard(id=30242)
         if text:
-            data = client.search(str(text))
+            message, data = client.search(str(text))
+            log(data)
         else:
             return
 
     if category == "Trending":
-        data = client.get_trending(page=page, perPage=10)
+        message, data = search_anilist_api(type="Trending", client=client, page=page)
     elif category == "Popular":
-        data = client.get_popular(page=page, perPage=10)
+        message, data = search_anilist_api(type="Popular", client=client, page=page)
+
+    if "error" in message:
+        notify(message)
+        return
 
     anilist_show_results(
         data,
         func=func,
         func2=func2,
+        func3=func3,
         category=category,
         page=page,
         plugin=plugin,
     )
 
 
-def anilist_show_results(results, func, func2, category, page, plugin):
-    for res in results:
-        if res["title"]["english"]:
-            title = res["title"]["english"]
-        else:
-            title = res["title"]["romaji"]
+def search_anilist_api(type, client, page):
+    cached_results = get_cached(type, params=(page))
+    if cached_results:
+        log("cached search_anilist_api")
+        return "", cached_results
+
+    if type == "Trending":
+        message, data = client.get_trending(page=page, perPage=10)
+    elif type == "Popular":
+        message, data = client.get_popular(page=page, perPage=10)
+
+    set_cached(data, type, params=(page))
+
+    return message, data
+
+
+def anilist_show_results(results, func, func2, func3, category, page, plugin):
+    for res in results["ANIME"]:
+        format = res["format"]
+        if format not in ["MOVIE", "TV"]:
+            continue
+
+        _title = res["title"]
+        title = _title.get("english")
+        if title is None:
+            title = _title.get("romaji")
 
         id = res["id"]
+        mal_id = res["idMal"]
+        
+        imdb_id = "tt0000000"
+        if format == "MOVIE":
+            search_res = tmdb_get("search_movie", title)
+            if search_res["results"]:
+                id = search_res["results"][0].get("id")
+                details = tmdb_get("movie_details", id)
+                imdb_id = details.external_ids.get("imdb_id")
+
         description = res["description"]
         coverImage = res["coverImage"]["large"]
 
-        list_item = ListItem(label=title)
+        list_item = ListItem(label=f"[{format}]-{title}")
         list_item.setArt(
             {
                 "poster": coverImage,
@@ -63,23 +100,31 @@ def anilist_show_results(results, func, func2, category, page, plugin):
                 "fanart": coverImage,
             }
         )
+        list_item.setProperty("IsPlayable", "false")
+
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(title)
         info_tag.setPlot(description)
 
-        list_item.setProperty("IsPlayable", "false")
-
         title = title.replace("/", "").replace("?", "")
 
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(
-                func, query=title, mode="anime", id=id, tvdb_id=-1, imdb_id=-1
-            ),
-            list_item,
-            isFolder=True,
-        )
+        if format == "TV":
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(func2, query=title, id=id, mal_id=mal_id),
+                list_item,
+                isFolder=True,
+            )
+        else:
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(
+                    func, mode="movie", query=title, id=id, tvdb_id=-1, imdb_id=imdb_id
+                ),
+                list_item,
+                isFolder=True,
+            )
 
     list_item = ListItem(label="Next")
     list_item.setArt(
@@ -87,151 +132,9 @@ def anilist_show_results(results, func, func2, category, page, plugin):
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func2, category=category, page=page),
+        plugin.url_for(func3, category=category, page=page),
         list_item,
         isFolder=True,
     )
 
     endOfDirectory(plugin.handle)
-
-
-# GraphQL Anilist
-TRENDING = """
-        query ($page: Int, $perPage: Int) {
-            Page (page: $page, perPage: $perPage) {
-                    media (type: ANIME, sort: TRENDING_DESC) {
-                        id
-                        title {
-                            english
-                            romaji
-                        }
-                        description
-                        startDate {
-                        year, month, day
-                        }
-                        coverImage {
-                            large
-                        }
-                }
-            }
-        }
-        """
-
-POPULARITY = """
-        query ($page: Int, $perPage: Int) {
-            Page (page: $page, perPage: $perPage) {
-                    media (type: ANIME, sort: POPULARITY_DESC) {
-                        id
-                        title {
-                            english
-                            romaji
-                        }
-                        description
-                        startDate {
-                        year, month, day
-                        }
-                        coverImage {
-                            large
-                        }
-                }
-            }
-        }
-        """
-
-SEARCH = """
-        query ($query: String) {
-            Page {
-                media(search: $query, type: ANIME) {
-                    id
-                    title {
-                        english
-                        romaji
-                    }
-                    description
-                    coverImage {
-                        large
-                    }
-                }
-            }
-        }
-        """
-
-SEARCH_ID = """
-        query ($id: Int) {
-            Media (id: $id, type: ANIME) {
-                id
-                title {
-                    romaji
-                    english
-                    native
-                }
-                description
-                coverImage {
-                    large
-                }
-            }
-        }
-"""
-
-
-class Anime:
-    def __init__(self, client_id, client_secret):
-        self.base_url = "https://graphql.anilist.co"
-        self.auth_url = "https://anilist.co/api/v2/oauth/token"
-        self.token = self.get_token(client_id, client_secret)
-        self.auth = {"Authorization": f"Bearer {self.token}"}
-
-    def make_request(self, query, variables):
-        res = requests.post(
-            self.base_url,
-            json={"query": query, "variables": variables},
-            headers=self.auth,
-        )
-
-        if res.status_code == 200:
-            media = res.json()["data"]["Page"]["media"]
-            return media
-        else:
-            notify(f"Anilist Error::{res.text}")
-            return {}
-
-    def search(self, query):
-        variables = {"query": query}
-        return self.make_request(SEARCH, variables)
-
-    def get_popular(self, page, perPage):
-        variables = {"page": page, "perPage": perPage}
-        return self.make_request(POPULARITY, variables)
-
-    def get_trending(self, page, perPage):
-        variables = {"page": page, "perPage": perPage}
-        return self.make_request(TRENDING, variables)
-
-    def get_by_id(self, id):
-        variables = {"id": id}
-
-        res = requests.post(
-            self.base_url,
-            json={"query": SEARCH_ID, "variables": variables},
-            headers=self.auth,
-        )
-
-        if res.status_code == 200:
-            media = res.json()["data"]["Media"]
-            return media
-        else:
-            notify(f"Anilist Error:{res.text}")
-            return {}
-
-    def get_token(self, client_id, client_secret):
-        data = {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
-        res = requests.post(self.auth_url, data=data)
-        if res.status_code == 200:
-            return res.json()["access_token"]
-        else:
-            notify(f"Anilist Error:{res.text}")
-            return ""

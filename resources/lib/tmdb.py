@@ -1,7 +1,7 @@
 import os
 
 from resources.lib.kodi import ADDON_PATH, log
-from resources.lib.utils import tmdb_get
+from resources.lib.utils.utils import tmdb_get
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory

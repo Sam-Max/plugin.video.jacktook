@@ -10,9 +10,73 @@ from resources.lib.kodi import (
     notify,
     translation,
 )
-from resources.lib.utils import Indexer
+from resources.lib.utils.utils import Indexer, get_cached, set_cached
 from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
+
+
+def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
+    query = None if query == "None" else query
+
+    if mode in ["tv"]:
+        cached_results = get_cached(query, params=(episode, "index"))
+    else:
+        cached_results = get_cached(query, params=("index"))
+    if cached_results:
+        dialog.create("")
+        return cached_results
+
+    indexer = get_setting("indexer")
+    jackett_insecured = get_setting("jackett_insecured")
+    prowlarr_insecured = get_setting("prowlarr_insecured")
+    if prowlarr_insecured or jackett_insecured:
+        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+
+    client = get_client(indexer)
+    if not client:
+        dialog.create("")
+        return None
+
+    if not query:
+        text = Keyboard(id=30243)
+        if text:
+            query = quote(text)
+        else:
+            dialog.create("")
+            return None
+
+    if indexer == Indexer.JACKETT:
+        dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
+        response = client.search(query, mode, season, episode, jackett_insecured)
+
+    elif indexer == Indexer.PROWLARR:
+        indexers_ids = get_setting("prowlarr_indexer_ids")
+        anime_inedexers_ids = get_setting("prowlarr_anime_indexer_ids")
+
+        dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
+        response = client.search(
+            query,
+            mode,
+            season,
+            episode,
+            indexers_ids,
+            anime_inedexers_ids,
+            prowlarr_insecured,
+        )
+    elif indexer == Indexer.TORRENTIO:
+        if imdb_id == "-1":
+            notify("Direct Search not supported for Torrentio")
+            dialog.create("")
+            return None
+        dialog.create("Jacktook [COLOR FFFF6B00]Torrestio[/COLOR]", "Searching...")
+        response = client.search(imdb_id, mode, season, episode)
+
+    if mode in ["tv"]:
+        set_cached(response, query, params=(episode, "index"))
+    else:
+        set_cached(response, query, params=("index"))
+
+    return response
 
 
 def get_client(indexer):
@@ -58,12 +122,14 @@ class Torrentio:
     def __init__(self, host) -> None:
         self.host = host
 
-    def search(self, id, mode, season, episode, insecure=False):
+    def search(self, imdb_id, mode, season, episode, insecure=False):
         try:
             if mode == "tv":
-                url = f"{self.host}/stream/{mode}/{id}:{season}:{episode}.json"
+                url = f"{self.host}/stream/{mode}/{imdb_id}:{season}:{episode}.json"
+                log(url)
             elif mode in ["movie", "multi"]:
-                url = f"{self.host}/stream/{mode}/{id}.json"
+                url = f"{self.host}/stream/{mode}/{imdb_id}.json"
+                log(url)
             res = requests.get(url, timeout=10, verify=insecure)
             if res.status_code != 200:
                 return
@@ -135,10 +201,10 @@ class Jackett:
         try:
             if mode == "tv":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
+                log(url)
             elif mode == "movie":
-                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=movie&q={query}"
-            elif mode == "anime":
-                url = f"{self.host}/api/v2.0/indexers/nyaasi/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
+                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
+                log(url)
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
             res = requests.get(url, timeout=10, verify=insecure)
@@ -202,15 +268,7 @@ class Prowlarr:
         }
         try:
             if mode == "tv":
-                query = (
-                    f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
-                )
-                url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
-            elif mode == "movie":
-                url = f"{self.host}/api/v1/search?query={query}&categories=2000"
-            elif mode == "multi":
-                url = f"{self.host}/api/v1/search?query={query}"
-            elif mode == "anime":
+                query = f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
                 if anime_indexers:
                     anime_categories = [2000, 5070, 5000, 127720, 140679]
                     anime_categories_id = "".join(
@@ -222,11 +280,18 @@ class Prowlarr:
                     )
                     url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}"
                 else:
-                    notify(translation(30231))
-                    return
-            if mode != "anime" and indexers:
+                    url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
+                    log(url)
+            elif mode == "movie":
+                url = f"{self.host}/api/v1/search?query={query}&categories=2000"
+                log(url)
+            elif mode == "multi":
+                url = f"{self.host}/api/v1/search?query={query}"
+            if indexers and not anime_indexers:
                 indexers_ids = indexers.split(",")
-                indexers_ids = "".join([f"&indexerIds={index}" for index in indexers_ids])
+                indexers_ids = "".join(
+                    [f"&indexerIds={index}" for index in indexers_ids]
+                )
                 url = url + indexers_ids
             res = requests.get(url, timeout=10, verify=insecure, headers=headers)
             if res.status_code != 200:
@@ -246,54 +311,3 @@ class Prowlarr:
         except Exception as e:
             notify(f"{translation(30230)} {str(e)}")
             return
-
-
-def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
-    query = None if query == "None" else query
-
-    indexer = get_setting("indexer")
-    jackett_insecured = get_setting("jackett_insecured")
-    prowlarr_insecured = get_setting("prowlarr_insecured")
-    if prowlarr_insecured or jackett_insecured:
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
-    client = get_client(indexer)
-    if not client:
-        dialog.create("")
-        return None, None
-
-    if not query:
-        text = Keyboard(id=30243)
-        if text:
-            query = quote(text)
-        else:
-            dialog.create("")
-            return None, None
-
-    if indexer == Indexer.JACKETT:
-        dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
-        response = client.search(query, mode, season, episode, jackett_insecured)
-
-    elif indexer == Indexer.PROWLARR:
-        indexers_ids = get_setting("prowlarr_indexer_ids")
-        anime_inedexers_ids = get_setting("prowlarr_anime_indexer_ids")
-
-        dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
-        response = client.search(
-            query,
-            mode,
-            season,
-            episode,
-            indexers_ids,
-            anime_inedexers_ids,
-            prowlarr_insecured,
-        )
-    elif indexer == Indexer.TORRENTIO:
-        if imdb_id == "-1":
-            notify("Direct Search not supported for Torrentio")
-            dialog.create("")
-            return None, None
-        dialog.create("Jacktook [COLOR FFFF6B00]Torrestio[/COLOR]", "Searching...")
-        response = client.search(imdb_id, mode, season, episode)
-
-    return response, query

@@ -2,7 +2,12 @@ import logging
 import os
 from threading import Thread
 from resources.lib.clients import search_api
-from resources.lib.debrid import RealDebrid
+from resources.lib.api.debrid import RealDebrid
+from resources.lib.debrid import check_debrid_cached, get_rd_pack
+from resources.lib.files_history import last_files
+from resources.lib.indexer import indexer_show_results
+from resources.lib.simkl import search_simkl_episodes
+from resources.lib.titles_history import last_titles
 import routing
 
 from resources.lib.tmdbv3api.objs.search import Search
@@ -14,22 +19,15 @@ from resources.lib.tmdb import (
     tmdb_show_results,
 )
 from resources.lib.anilist import search_anilist
-from resources.lib.utils import (
-    api_show_results,
-    check_debrid_cached,
+from resources.lib.utils.utils import (
     clear,
     clear_all_cache,
     clear_tmdb_cache,
     fanartv_get,
-    get_cached,
-    last_files,
-    last_titles,
     list_item,
-    get_pack_torrent,
     play,
-    process_results,
+    process_movie_results,
     process_tv_results,
-    set_cached,
     set_watched_title,
     tmdb_get,
 )
@@ -64,7 +62,6 @@ if kodi_lang:
     tmdb.language = kodi_lang
 
 rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-
 
 @plugin.route("/")
 def main_menu():
@@ -158,7 +155,7 @@ def direct_menu():
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="anime", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="tv", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Anime Search", "search.png"),
         isFolder=True,
     )
@@ -259,46 +256,24 @@ def search(mode, query, id, tvdb_id, imdb_id):
     p_dialog = DialogProgressBG()
     torr_client = get_setting("torrent_client")
 
-    cached_results = get_cached(query, params=("index"))
-    if cached_results:
-        p_dialog.create("")
-        p_results = cached_results
-    else:
-        results, query = search_api(query, imdb_id, mode, p_dialog)
-        if results:
-            p_results = process_results(results)
-            set_cached(p_results, query, params=("index"))
-        else:
-            notify("No results")
-            p_dialog.close()
-            return
-    if p_results:
-        if torr_client == "Debrid":
-            deb_cached_results = get_cached(query, params=("deb"))
-            if deb_cached_results:
-                cached = True
-            else:
-                deb_cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
-                if deb_cached_results:
-                    set_cached(deb_cached_results, query, params=("deb"))
-                    cached = True
-                else:
-                    cached = False
-                    notify("No debrid results")
-            if cached:
-                api_show_results(
-                    deb_cached_results,
-                    mode,
-                    id,
-                    tvdb_id,
-                    plugin,
-                    func=play_torrent,
-                    func2=show_pack,
-                    func3=download,
+    results = search_api(query, imdb_id, mode, p_dialog)
+    if results:
+        process_results = process_movie_results(results)
+        if process_results:
+            if torr_client == "Debrid":
+                deb_cached_results = check_debrid_cached(
+                    query, process_results, rd_client, p_dialog
                 )
-        elif torr_client == "Torrest":
-            api_show_results(
-                p_results,
+                if deb_cached_results:
+                    final_results = deb_cached_results
+                else:
+                    notify("No debrid results")
+                    p_dialog.close()
+                    return
+            elif torr_client == "Torrest":
+                final_results = process_results
+            indexer_show_results(
+                final_results,
                 mode,
                 id,
                 tvdb_id,
@@ -307,6 +282,8 @@ def search(mode, query, id, tvdb_id, imdb_id):
                 func2=show_pack,
                 func3=download,
             )
+        else:
+            notify("No results")
     else:
         notify("No results")
 
@@ -325,51 +302,29 @@ def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
 
-    cached_results = get_cached(query, params=(episode, "index"))
-    if cached_results:
-        p_dialog.create("")
-        p_results = cached_results
-    else:
-        results, query = search_api(query, imdb_id, mode, p_dialog, season, episode)
-        if results:
-            p_results = process_tv_results(
-                results,
-                episode_name,
-                episode,
-                season,
-            )
-            set_cached(p_results, query, params=(episode, "index"))
-        else:
-            notify("No results")
-            p_dialog.close()
-            return
-    if p_results:
-        if torr_client == "Debrid":
-            deb_cached_results = get_cached(query, params=(episode, "deb"))
-            if deb_cached_results:
-                cached = True
-            else:
-                deb_cached_results = check_debrid_cached(p_results, rd_client, p_dialog)
-                if deb_cached_results:
-                    set_cached(deb_cached_results, query, params=(episode, "deb"))
-                    cached = True
-                else:
-                    cached = False
-                    notify("No debrid results")
-            if cached:
-                api_show_results(
-                    deb_cached_results,
-                    mode,
-                    id,
-                    tvdb_id,
-                    plugin,
-                    func=play_torrent,
-                    func2=show_pack,
-                    func3=download,
+    results = search_api(query, imdb_id, mode, p_dialog, season, episode)
+    if results:
+        process_results = process_tv_results(
+            results,
+            episode_name,
+            episode,
+            season,
+        )
+        if process_results:
+            if torr_client == "Debrid":
+                deb_cached_results = check_debrid_cached(
+                    query, process_results, mode, rd_client, p_dialog, episode
                 )
-        else:
-            api_show_results(
-                p_results,
+                if deb_cached_results:
+                    final_result = deb_cached_results
+                else:
+                    notify("No debrid results")
+                    p_dialog.close()
+                    return
+            elif torr_client == "Torrest":
+                final_result = process_results
+            indexer_show_results(
+                final_result,
                 mode,
                 id,
                 tvdb_id,
@@ -378,6 +333,8 @@ def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
                 func2=show_pack,
                 func3=download,
             )
+        else:
+            notify("No results")
     else:
         notify("No results")
 
@@ -513,17 +470,22 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 @plugin.route("/show_pack")
 def show_pack():
     torrent_id, _ = plugin.args["query"][0].split(" ", 1)
-    get_pack_torrent(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
+    get_rd_pack(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
 
 
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
-    search_anilist(category, page, plugin, search, next_page_anilist)
+    search_anilist(category, page, plugin, search, get_anime_episodes, next_page_anilist)
 
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
-    search_anilist(category, int(page), plugin, search, next_page_anilist)
+    search_anilist(category, int(page), plugin, search, get_anime_episodes, next_page_anilist)
+
+
+@plugin.route("/anilist/episodes/<query>/<id>/<mal_id>")
+def get_anime_episodes(query, id, mal_id):
+    search_simkl_episodes(query, id, mal_id, func=search_tv, plugin=plugin)
 
 
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
