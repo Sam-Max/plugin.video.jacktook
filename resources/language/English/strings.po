@@ -132,7 +132,7 @@ msgid "Real Debrid Configuration"
 msgstr ""
 
 msgctxt "#30154"
-msgid "Token"
+msgid "Token:"
 msgstr ""
 
 msgctxt "#30200"

@@ -57,6 +57,7 @@ def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
         response = client.search(
             query,
             mode,
+            imdb_id,
             season,
             episode,
             indexers_ids,
@@ -68,7 +69,15 @@ def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
             notify("Direct Search not supported for Torrentio")
             dialog.create("")
             return None
-        dialog.create("Jacktook [COLOR FFFF6B00]Torrestio[/COLOR]", "Searching...")
+        dialog.create("Jacktook [COLOR FFFF6B00]Torrentio[/COLOR]", "Searching...")
+        response = client.search(imdb_id, mode, season, episode)
+
+    elif indexer == Indexer.ELHOSTED:
+        if imdb_id == "-1":
+            notify("Direct Search not supported for Elfhosted")
+            dialog.create("")
+            return None
+        dialog.create("Jacktook [COLOR FFFF6B00]Elfhosted[/COLOR]", "Searching...")
         response = client.search(imdb_id, mode, season, episode)
 
     if mode in ["tv"]:
@@ -116,6 +125,75 @@ def get_client(indexer):
             return
 
         return Torrentio(host)
+    
+    elif indexer == Indexer.ELHOSTED:
+        host = get_setting("elfhosted_host")
+
+        if not host:
+            notify(translation(30227))
+            return
+
+        return Elfhosted(host)
+
+
+
+class Elfhosted:
+    def __init__(self, host) -> None:
+        self.host = host.rstrip("/")
+
+    def search(self, imdb_id, mode, season, episode):
+        try:
+            if mode == "tv":
+                url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
+                log(url)
+            elif mode in ["movie", "multi"]:
+                url = f"{self.host}/stream/{mode}/{imdb_id}.json"
+                log(url)
+            res = requests.get(url, timeout=10)
+            if res.status_code != 200:
+                return
+            response = self.parse_response(res)
+            return response
+        except Exception as e:
+            log(str(e))
+            notify(f"{translation(30228)}: {str(e)}")
+
+    def parse_response(self, res):
+        res = json.loads(res.text)
+        log(res)
+        results = []
+        for item in res["streams"]:
+            parsed_item = self.parse_stream_title(item["title"])
+            results.append(
+                {
+                    "title": parsed_item["title"],
+                    "quality_title": "",
+                    "indexer": "Elfhosted",
+                    "guid": item["infoHash"],
+                    "infoHash": item["infoHash"],
+                    "size": parsed_item["size"],
+                    "seeders": 0,
+                    "publishDate": "",
+                    "peers": 0,
+                    "debridId": "",
+                    "debridType": "",
+                    "debridCached": False,
+                    "debridLinks": [],
+                }
+            )
+        return results
+
+    def parse_stream_title(self, title):
+        name = title.splitlines()[0]
+
+        size_match = re.search(r"💾 (\d+(?:\.\d+)?\s*(GB|MB))", title, re.IGNORECASE)
+        size = size_match.group(1) if size_match else ""
+        size = convert_size_to_bytes(size)
+
+        return {
+            "title": name,
+            "size": size,
+        }
 
 
 class Torrentio:
@@ -125,7 +203,7 @@ class Torrentio:
     def search(self, imdb_id, mode, season, episode, insecure=False):
         try:
             if mode == "tv":
-                url = f"{self.host}/stream/{mode}/{imdb_id}:{season}:{episode}.json"
+                url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
                 log(url)
             elif mode in ["movie", "multi"]:
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
@@ -147,7 +225,7 @@ class Torrentio:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "qtTitle": "",
+                    "quality_title": "",
                     "indexer": "Torrentio",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
@@ -155,9 +233,10 @@ class Torrentio:
                     "seeders": parsed_item["seeders"],
                     "publishDate": "",
                     "peers": 0,
-                    "rdId": "",
-                    "rdCached": False,
-                    "rdLinks": [],
+                    "debridId": "",
+                    "debridType": "",
+                    "debridCached": False,
+                    "debridLinks": [],
                 }
             )
         return results
@@ -234,7 +313,7 @@ class Jackett:
                         infohash = sub_item["@value"]
                 results.append(
                     {
-                        "qtTitle": "",
+                        "quality_title": "",
                         "title": item["title"],
                         "indexer": item["jackettindexer"]["#text"],
                         "publishDate": item["pubDate"],
@@ -245,9 +324,10 @@ class Jackett:
                         "seeders": seeders,
                         "peers": peers,
                         "infoHash": infohash,
-                        "rdId": "",
-                        "rdCached": False,
-                        "rdLinks": [],
+                        "debridId": "",
+                        "debridType": "",
+                        "debridCached": False,
+                        "debridLinks": [],
                     }
                 )
             return results
@@ -259,7 +339,15 @@ class Prowlarr:
         self.apikey = apikey
 
     def search(
-        self, query, mode, season, episode, indexers, anime_indexers, insecure=False
+        self,
+        query,
+        mode,
+        imdb_id,
+        season,
+        episode,
+        indexers,
+        anime_indexers,
+        insecure=False,
     ):
         headers = {
             "Accept": "application/json",
@@ -301,10 +389,11 @@ class Prowlarr:
             for r in res:
                 r.update(
                     {
-                        "qtTitle": "",
-                        "rdId": "",
-                        "rdCached": False,
-                        "rdLinks": [],
+                        "quality_title": "",
+                        "debridId": "",
+                        "debridType": "",
+                        "debridCached": False,
+                        "debridLinks": [],
                     }
                 )
             return res

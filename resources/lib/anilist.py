@@ -12,7 +12,7 @@ anilist_client_secret = get_setting(
 )
 
 
-def get_anilist_client():
+def anilist_client():
     return AniList(
         anilist_client_id,
         anilist_client_secret,
@@ -21,7 +21,7 @@ def get_anilist_client():
 
 def search_anilist(category, page, plugin, func, func2, func3):
     page += 1
-    client = get_anilist_client()
+    client = anilist_client()
 
     if category == "search":
         text = Keyboard(id=30242)

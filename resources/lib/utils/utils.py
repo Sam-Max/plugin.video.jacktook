@@ -6,6 +6,7 @@ import re
 from resources.lib.db.cached import Cache
 from resources.lib.db.database import get_db
 from resources.lib.player import JacktookPlayer
+from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.objs.tv import TV
@@ -54,6 +55,7 @@ class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
+    ELHOSTED = "Elfhosted"
 
 
 def play(url, magnet, id, title, plugin, debrid=False):
@@ -81,7 +83,7 @@ def play(url, magnet, id, title, plugin, debrid=False):
 
     list_item = ListItem(title, path=_url)
     setResolvedUrl(plugin.handle, True, list_item)
-    
+
     if debrid:
         player = JacktookPlayer()
         list_item = player.make_listing(list_item, _url, title, id)
@@ -99,6 +101,7 @@ def list_item(label, icon):
     )
     return item
 
+
 def add_item(list_item, url, magnet, id, title, func, plugin):
     addDirectoryItem(
         plugin.handle,
@@ -108,10 +111,10 @@ def add_item(list_item, url, magnet, id, title, func, plugin):
     )
 
 
-def add_pack_item(list_item, title, id, func, plugin):
+def add_pack_item(list_item, func, debrid_id, debrid_type, plugin):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{id} {title}"),
+        plugin.url_for(func, query=f"{debrid_id} {debrid_type}"),
         list_item,
         isFolder=True,
     )
@@ -207,11 +210,11 @@ def db_get(name, func, path, params):
     return data
 
 
-def tmdb_get(path, params):
+def tmdb_get(path, params={}):
     identifier = "{}|{}".format(path, params)
     data = cache.get(identifier, hashed_key=True)
     if not data:
-        if path  == "search_tv":
+        if path == "search_tv":
             data = Search().tv_shows(params)
         elif path == "search_movie":
             data = Search().movies(params)
@@ -219,6 +222,10 @@ def tmdb_get(path, params):
             data = Movie().details(params)
         elif path == "tv_details":
             data = TV().details(params)
+        elif path == "movie_genres":
+            data = Genre().movie_list()
+        elif path == "tv_genres":
+            data = Genre().tv_list()
         elif path == "discover_movie":
             discover = Discover()
             data = discover.discover_movies(params)
@@ -241,7 +248,7 @@ def tmdb_get(path, params):
 
 
 # This method was taken from script.elementum.jackett
-def get_tracker_color(provider_name):
+def get_random_color(provider_name):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
     colors = []
 
@@ -297,7 +304,22 @@ def limit_results(results):
         limit = get_int_setting("prowlarr_results_per_page")
     elif indexer == Indexer.TORRENTIO:
         limit = get_int_setting("torrentio_results_per_page")
+    elif indexer == Indexer.ELHOSTED:
+        limit = get_int_setting("elfhosted_results_per_page")
     return results[:limit]
+
+
+def get_description_length():
+    indexer = get_setting("indexer")
+    if indexer == Indexer.JACKETT:
+        desc_length = "jackett_desc_length"
+    elif indexer == Indexer.PROWLARR:
+        desc_length = "prowlarr_desc_length"
+    elif indexer == Indexer.TORRENTIO:
+        desc_length = "torrentio_desc_length"
+    elif indexer == Indexer.ELHOSTED:
+        desc_length = "elfhosted_desc_length"
+    return int(get_setting(desc_length))
 
 
 def remove_duplicate(results):
@@ -336,6 +358,8 @@ def sort_results(results):
         sort_by = get_setting("prowlarr_sort_by")
     elif indexer == Indexer.TORRENTIO:
         sort_by = get_setting("torrentio_sort_by")
+    elif indexer == Indexer.ELHOSTED:
+        sort_by = get_setting("elfhosted_sort_by")
 
     if sort_by == "Seeds":
         sort_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
@@ -346,7 +370,7 @@ def sort_results(results):
     elif sort_by == "Quality":
         sort_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
     elif sort_by == "Cached":
-        sort_results = sorted(results, key=lambda r: r["rdCached"], reverse=True)
+        sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
 
     return sort_results
 
@@ -384,23 +408,23 @@ def filter_by_quality(results):
     for res in results:
         title = res["title"]
         if "480p" in title:
-            res["qtTitle"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
+            res["quality_title"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "480p"
             quality_720p.append(res)
         elif "720p" in title:
-            res["qtTitle"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
+            res["quality_title"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "720p"
             quality_720p.append(res)
         elif "1080p" in title:
-            res["qtTitle"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
+            res["quality_title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "1080p"
             quality_1080p.append(res)
         elif "2160" in title:
-            res["qtTitle"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
+            res["quality_title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
             res["Quality"] = "4k"
             quality_4k.append(res)
         else:
-            res["qtTitle"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
+            res["quality_title"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
             res["Quality"] = "N/A"
             no_quarlity.append(res)
 

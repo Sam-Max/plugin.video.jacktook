@@ -1,17 +1,17 @@
 import logging
 import os
 from threading import Thread
-from resources.lib.clients import search_api
+from resources.lib.api.premiumize import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
-from resources.lib.debrid import check_debrid_cached, get_rd_pack
+from resources.lib.clients import search_api
+from resources.lib.debrid import check_debrid_cached, get_debrid_pack
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
-import routing
+from routing import Plugin
 
 from resources.lib.tmdbv3api.objs.search import Search
-from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import (
     TMDB_POSTER_URL,
@@ -53,7 +53,7 @@ from xbmcplugin import (
     setPluginCategory,
 )
 
-plugin = routing.Plugin()
+plugin = Plugin()
 
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
@@ -61,7 +61,6 @@ kodi_lang = getLanguage(ISO_639_1)
 if kodi_lang:
     tmdb.language = kodi_lang
 
-rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
 
 @plugin.route("/")
 def main_menu():
@@ -262,7 +261,7 @@ def search(mode, query, id, tvdb_id, imdb_id):
         if process_results:
             if torr_client == "Debrid":
                 deb_cached_results = check_debrid_cached(
-                    query, process_results, mode, rd_client, p_dialog
+                    query, process_results, mode, p_dialog
                 )
                 if deb_cached_results:
                     final_results = deb_cached_results
@@ -275,6 +274,7 @@ def search(mode, query, id, tvdb_id, imdb_id):
             indexer_show_results(
                 final_results,
                 mode,
+                query,
                 id,
                 tvdb_id,
                 plugin,
@@ -313,7 +313,11 @@ def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
         if process_results:
             if torr_client == "Debrid":
                 deb_cached_results = check_debrid_cached(
-                    query, process_results, mode, rd_client, p_dialog, episode
+                    query,
+                    process_results,
+                    mode,
+                    p_dialog,
+                    episode,
                 )
                 if deb_cached_results:
                     final_result = deb_cached_results
@@ -326,6 +330,7 @@ def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
             indexer_show_results(
                 final_result,
                 mode,
+                query,
                 id,
                 tvdb_id,
                 plugin,
@@ -352,7 +357,7 @@ def play_torrent():
 
 @plugin.route("/tv/details/<id>")
 def tv_seasons_details(id):
-    details = TV().details(id)
+    details = tmdb_get("tv_details", id)
     name = details.name
     number_of_seasons = details.number_of_seasons
     tvdb_id = details.external_ids.tvdb_id
@@ -365,9 +370,8 @@ def tv_seasons_details(id):
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
-        poster = (
-            TMDB_POSTER_URL + details.poster_path if details.get("poster_path") else ""
-        )
+        poster_path = details.get("poster_path", "") 
+        poster = TMDB_POSTER_URL + poster_path
         fanart = poster
 
     for i in range(number_of_seasons):
@@ -423,12 +427,14 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
         air_date = ep.air_date
         duration = ep.runtime
 
-        poster = TMDB_POSTER_URL + ep.still_path if ep.get("still_path") else ""
+        still_path = ep.get("still_path", "")
+        if still_path:
+            still_path = TMDB_POSTER_URL + still_path
 
         list_item = ListItem(label=title)
         list_item.setArt(
             {
-                "poster": poster,
+                "poster": still_path,
                 "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
@@ -469,18 +475,27 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 
 @plugin.route("/show_pack")
 def show_pack():
-    torrent_id, _ = plugin.args["query"][0].split(" ", 1)
-    get_rd_pack(torrent_id, func=play_torrent, client=rd_client, plugin=plugin)
+    torrent_id, debrid_type = plugin.args["query"][0].split(" ")
+    get_debrid_pack(
+        torrent_id,
+        play_torrent,
+        debrid_type,
+        plugin,
+    )
 
 
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
-    search_anilist(category, page, plugin, search, get_anime_episodes, next_page_anilist)
+    search_anilist(
+        category, page, plugin, search, get_anime_episodes, next_page_anilist
+    )
 
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
-    search_anilist(category, int(page), plugin, search, get_anime_episodes, next_page_anilist)
+    search_anilist(
+        category, int(page), plugin, search, get_anime_episodes, next_page_anilist
+    )
 
 
 @plugin.route("/anilist/episodes/<query>/<id>/<mal_id>")
@@ -495,14 +510,18 @@ def next_page(mode, page, genre_id):
 
 @plugin.route("/download")
 def download():
-    magnet = plugin.args["query"][0]
+    magnet, debrid_type = plugin.args["query"][0].split(" ")
     response = dialogyesno(
         "Kodi", "Do you want to transfer this file to your Real Debrid Cloud?"
     )
     if response:
-        Thread(
-            target=rd_client.download, args=(magnet,), kwargs={"pack": False}
-        ).start()
+        if debrid_type == "RD":
+            rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+            Thread(
+                target=rd_client.download, args=(magnet,), kwargs={"pack": False}
+            ).start()
+        else:
+            notify(f"Not supported for {debrid_type}")
 
 
 @plugin.route("/status")
@@ -544,14 +563,21 @@ def clear_cached_all():
 
 @plugin.route("/rd_auth")
 def rd_auth():
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
     rd_client.auth()
+
+
+@plugin.route("/pm_auth")
+def pm_auth():
+    pm_client = Premiumize(token=get_setting("premiumize_token"))
+    pm_client.auth()
 
 
 def menu_genre(mode, page):
     if mode == "movie_genres":
-        data = Genre().movie_list()
+        data = tmdb_get(mode) 
     elif mode == "tv_genres":
-        data = Genre().tv_list()
+        data = tmdb_get(mode) 
 
     mode = mode.split("_")[0]
 

@@ -18,8 +18,6 @@ def search_simkl_episodes(title, id, mal_id, func, plugin):
 
     imdb_id = "tt0000000"
     title = re.sub(r'Season\s\d' , '', title).strip()
-    log("search_simkl_episodes")
-    log(title)
     res = tmdb_get("search_tv", title)
     if res["results"]:
         for res in res["results"]:
@@ -27,7 +25,6 @@ def search_simkl_episodes(title, id, mal_id, func, plugin):
             if 16 in ids: # anime category
                 details = tmdb_get("tv_details", res.get("id"))
                 imdb_id = details.external_ids.get("imdb_id")
-                log(imdb_id)
                 break
     
     _, res = search_simkl_api(id, mal_id, type="anime_episodes")
@@ -38,11 +35,9 @@ def search_simkl_episodes(title, id, mal_id, func, plugin):
 def search_simkl_api(id, mal_id, type):
     cached_results = get_cached(type, params=(id))
     if cached_results:
-        log("cached search_simkl_api")
         return "", cached_results
     
     simkl = SIMKLAPI()
-
     if type == "anime_ids":
         message, ids = simkl.get_mapping_ids("mal", mal_id)
         log("ids")

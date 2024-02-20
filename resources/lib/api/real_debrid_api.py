@@ -159,7 +159,7 @@ class RealDebrid:
                         if "token" in response:
                             progressDialog.close()
                             set_setting("real_debrid_token", response["token"])
-                            dialog_ok("Authorization", "Authentication completed.")
+                            dialog_ok("Success", "Authentication completed.")
                             return
                     if progressDialog.iscanceled():
                         progressDialog.close()

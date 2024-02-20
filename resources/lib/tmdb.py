@@ -82,15 +82,16 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                 media_type = "tv"
                 release_date = res.get("first_air_date", "")
                 title = f"[B][TV][/B]- {title}"
+        
+        poster_path = res.get("poster_path", "")
+        if poster_path:
+            poster_path = TMDB_POSTER_URL + poster_path
+        
+        backdrop_path = res.get("backdrop_path", "")
+        if backdrop_path:
+            backdrop_path = TMDB_BACKDROP_URL + backdrop_path
 
-        poster_path = (
-            TMDB_POSTER_URL + res.poster_path if res.get("poster_path") else ""
-        )
-        backdrop_path = (
-            TMDB_BACKDROP_URL + res.backdrop_path if res.get("backdrop_path") else ""
-        )
-
-        overview = res.overview if res.get("overview") else ""
+        overview = res.get("overview", "")
 
         list_item = ListItem(label=title)
         list_item.setArt(

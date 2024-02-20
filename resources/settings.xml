@@ -9,12 +9,17 @@
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio" default="Torrentio"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted" default="Torrentio"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="Torrentio Host" default=""/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
         <setting id="torrentio_results_per_page" type="number" label="30029" default="25"/>
-        <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Cached" default="Seeds"/>
+        <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Cached" default="Size"/>
+        <setting label="Elfhosted Configuration" type="lsep"/>
+        <setting id="elfhosted_host" type="text" label="Elfhosted Host" default=""/>
+        <setting id="elfhosted_desc_length" type="number" label="30026" default="100"/>
+        <setting id="elfhosted_results_per_page" type="number" label="30029" default="25"/>
+        <setting id="elfhosted_sort_by" type="labelenum" label="30028" values="Size|Cached" default="Seeds"/>
         <setting label="30022" type="lsep"/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
@@ -32,6 +37,18 @@
         <setting id="prowlarr_insecured" type="bool" label="30027" default="false"/>
         <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
     </category>
+    <category label="30150">
+        <setting label="30152" type="lsep"/>
+        <setting id="real_debrid_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="real_debrid_token" type="text" label="30154" default=""/>
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
+        <setting label="Premiumize Configuration" type="lsep"/>
+        <setting id="premiumize_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="premiumize_token" type="text" label="Token:" default=""/>
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/pm_auth)" />
+        <setting label="" type="lsep"/>
+        <setting id="show_uncached" type="bool" label="Show uncached torrents" default="false"/>
+    </category>
     <category label="30100">
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
@@ -40,12 +57,6 @@
         <setting label="30142" type="lsep"/>
         <setting id="anilist_client_id" type="text" label="30143" default=""/>
         <setting id="anilist_client_secret" type="text" label="30144" default=""/>
-    </category>
-    <category label="30150">
-        <setting label="30152" type="lsep"/>
-        <setting id="real_debrid_token" type="text" label="30154" default=""/>
-        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
-        <setting id="show_uncached" type="bool" label="Show uncached torrents" default="false"/>
     </category>
     <category label="30200">
         <setting label="30202" type="lsep"/>
