@@ -1,4 +1,9 @@
 
+## 0.1.7 (2024-02-21)
+ * Add anime episode search
+ * Add Premiumize support
+ * Add Elfhosted support
+
 ## 0.1.6 (2024-02-12)
     * Fix a critical bug for Prowlarr
 
