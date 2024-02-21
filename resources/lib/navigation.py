@@ -20,6 +20,7 @@ from resources.lib.tmdb import (
 )
 from resources.lib.anilist import search_anilist
 from resources.lib.utils.utils import (
+    add_item,
     clear,
     clear_all_cache,
     clear_tmdb_cache,
@@ -28,6 +29,7 @@ from resources.lib.utils.utils import (
     play,
     process_movie_results,
     process_tv_results,
+    set_video_item,
     set_watched_title,
     tmdb_get,
 )
@@ -38,12 +40,10 @@ from resources.lib.kodi import (
     addon_status,
     dialogyesno,
     get_setting,
-    log,
     notify,
     translation,
 )
 from resources.lib.tmdbv3api.objs.season import Season
-from resources.lib.tmdbv3api.objs.tv import TV
 
 from xbmcgui import ListItem, DialogProgressBG
 from xbmc import getLanguage, ISO_639_1
@@ -370,7 +370,7 @@ def tv_seasons_details(id):
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
-        poster_path = details.get("poster_path", "") 
+        poster_path = details.get("poster_path", "")
         poster = TMDB_POSTER_URL + poster_path
         fanart = poster
 
@@ -476,12 +476,21 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 @plugin.route("/show_pack")
 def show_pack():
     torrent_id, debrid_type = plugin.args["query"][0].split(" ")
-    get_debrid_pack(
-        torrent_id,
-        play_torrent,
-        debrid_type,
-        plugin,
-    )
+    results = get_debrid_pack(torrent_id, debrid_type)
+    if results:
+        for link, title in results:
+            list_item = ListItem(label=f"{title}")
+            set_video_item(list_item, title, "", "")
+            add_item(
+                list_item,
+                link,
+                id="",
+                magnet="",
+                title=title,
+                func=play_torrent,
+                plugin=plugin,
+            )
+        endOfDirectory(plugin.handle)
 
 
 @plugin.route("/anilist/<category>")
@@ -512,7 +521,7 @@ def next_page(mode, page, genre_id):
 def download():
     magnet, debrid_type = plugin.args["query"][0].split(" ")
     response = dialogyesno(
-        "Kodi", "Do you want to transfer this file to your Real Debrid Cloud?"
+        "Kodi", "Do you want to transfer this file to your Debrid Cloud?"
     )
     if response:
         if debrid_type == "RD":
@@ -521,7 +530,10 @@ def download():
                 target=rd_client.download, args=(magnet,), kwargs={"pack": False}
             ).start()
         else:
-            notify(f"Not supported for {debrid_type}")
+            pm_client = Premiumize(token=get_setting("premiumize_token"))
+            Thread(
+                target=pm_client.download, args=(magnet,), kwargs={"pack": False}
+            ).start()
 
 
 @plugin.route("/status")
@@ -575,9 +587,9 @@ def pm_auth():
 
 def menu_genre(mode, page):
     if mode == "movie_genres":
-        data = tmdb_get(mode) 
+        data = tmdb_get(mode)
     elif mode == "tv_genres":
-        data = tmdb_get(mode) 
+        data = tmdb_get(mode)
 
     mode = mode.split("_")[0]
 

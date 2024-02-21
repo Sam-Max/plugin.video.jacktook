@@ -160,7 +160,6 @@ class Elfhosted:
 
     def parse_response(self, res):
         res = json.loads(res.text)
-        log(res)
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])

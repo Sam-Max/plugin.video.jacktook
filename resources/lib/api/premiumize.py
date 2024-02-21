@@ -198,11 +198,47 @@ class Premiumize(DebridClient):
         except:
             pass
 
+    def download(self, magnet):
+        info_hash = magnet_to_info_hash(magnet)
+        folder_id = self.create_or_get_folder_id(info_hash)
+        response_data = self.add_magent_link(magnet, folder_id)
+        if "error" in response_data.get("status"):
+            log(f"Failed to add magnet to Premiumize {response_data.get('message')}")
+            return
+        torrent_id = response_data["id"]
+        torr_info = self.get_torrent_info(torrent_id)
+        if torr_info["status"] == "finished":
+            if torr_info["folder_id"] is None:
+                torr_folder_data = self.get_folder_list(
+                    self.create_or_get_folder_id(info_hash)
+                )
+            else:
+                torr_folder_data = self.get_folder_list(torr_info["folder_id"])
+
+    def create_or_get_folder_id(self, info_hash):
+        folder_data = self.get_folder_list()
+        for folder in folder_data["content"]:
+            if folder["name"] == info_hash:
+                return folder["id"]
+
+        folder_data = self.create_folder(info_hash)
+        if folder_data.get("status") != "success":
+            log("Folder already created in meanwhile")
+            return
+        return folder_data.get("id")
+
     def add_magent_link(self, magnet_link: str, folder_id: str = None):
         return self._make_request(
             "POST",
             f"{self.BASE_URL}/transfer/create",
             data={"src": magnet_link, "folder_id": folder_id},
+        )
+
+    def create_download_link(self, magnet_link: str):
+        return self._make_request(
+            "POST",
+            f"{self.BASE_URL}/transfer/directdl",
+            data={"src": magnet_link},
         )
 
     def create_folder(self, name, parent_id=None):
