@@ -82,7 +82,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 url = debrid_links[0]
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
-                set_video_item(list_item, title, poster, overview)
+                set_video_item(list_item, poster, overview)
                 add_item(list_item, url, magnet, id, title, func, plugin)
         else:
             download_url = res.get("downloadUrl") or res.get("magnetUrl")
@@ -97,7 +97,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                         # For some indexers, the guid is a torrent file url
                         download_url = res.get("guid")
             list_item = ListItem(label=torr_title)
-            set_video_item(list_item, title, poster, overview)
+            set_video_item(list_item, poster, overview)
             if magnet:
                 list_item.addContextMenuItems(
                     [("Download to Debrid", action(plugin, func3, query= f"{magnet} {debrid_type}"))]

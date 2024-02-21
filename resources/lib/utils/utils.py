@@ -9,6 +9,7 @@ from resources.lib.player import JacktookPlayer
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
+from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
 from resources.lib.torf._magnet import Magnet
@@ -120,7 +121,7 @@ def add_pack_item(list_item, func, debrid_id, debrid_type, plugin):
     )
 
 
-def set_video_item(list_item, title, poster, overview):
+def set_video_item(list_item, poster, overview):
     list_item.setArt(
         {
             "poster": poster,
@@ -130,7 +131,6 @@ def set_video_item(list_item, title, poster, overview):
     )
     info_tag = list_item.getVideoInfoTag()
     info_tag.setMediaType("video")
-    info_tag.setTitle(title)
     info_tag.setPlot(overview)
 
     list_item.setProperty("IsPlayable", "true")
@@ -222,6 +222,8 @@ def tmdb_get(path, params={}):
             data = Movie().details(params)
         elif path == "tv_details":
             data = TV().details(params)
+        elif path == "season_details":
+            data = Season().details(params["id"], params["season"])
         elif path == "movie_genres":
             data = Genre().movie_list()
         elif path == "tv_genres":

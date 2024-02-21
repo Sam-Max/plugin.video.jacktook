@@ -43,8 +43,6 @@ from resources.lib.kodi import (
     notify,
     translation,
 )
-from resources.lib.tmdbv3api.objs.season import Season
-
 from xbmcgui import ListItem, DialogProgressBG
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
@@ -413,9 +411,7 @@ def tv_seasons_details(id):
 
 @plugin.route("/tv/details/season/<tv_name>/<id>/<tvdb_id>/<imdb_id>/<season>")
 def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
-    tmdb_season = Season()
-    season_details = tmdb_season.details(id, season)
-
+    season_details = tmdb_get("season_details", {"id": id, "season": season})
     fanart_data = fanartv_get(tvdb_id)
     fanart = fanart_data.get("fanart2") if fanart_data else ""
 
@@ -480,7 +476,7 @@ def show_pack():
     if results:
         for link, title in results:
             list_item = ListItem(label=f"{title}")
-            set_video_item(list_item, title, "", "")
+            set_video_item(list_item, poster="", overview="")
             add_item(
                 list_item,
                 link,
