@@ -1,7 +1,7 @@
 import logging
 import os
 from threading import Thread
-from resources.lib.api.premiumize import Premiumize
+from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
 from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached, get_debrid_pack

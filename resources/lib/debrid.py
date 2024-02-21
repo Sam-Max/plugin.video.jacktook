@@ -4,25 +4,21 @@ import io
 
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
-from resources.lib.api.premiumize import Premiumize
+from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
-from resources.lib.kodi import get_setting, log, notify
+from resources.lib.kodi import get_setting, log
 
 from resources.lib.torf._torrent import Torrent
 from resources.lib.utils.utils import (
     Indexer,
-    add_item,
     get_cached,
     get_info_hash,
     info_hash_to_magnet,
     is_url,
     set_cached,
-    set_video_item,
     supported_video_extensions,
 )
 
-from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
 dialog_update = {"count": -1, "percent": 50}
