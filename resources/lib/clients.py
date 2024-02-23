@@ -15,16 +15,15 @@ from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
 
-def search_api(query, imdb_id, mode, dialog, season=1, episode=1):
-    query = None if query == "None" else query
-
-    if mode in ["tv"]:
-        cached_results = get_cached(query, params=(episode, "index"))
-    else:
-        cached_results = get_cached(query, params=("index"))
-    if cached_results:
-        dialog.create("")
-        return cached_results
+def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1):
+    if not rescrape:
+        if mode in ["tv"]:
+            cached_results = get_cached(query, params=(episode, "index"))
+        else:
+            cached_results = get_cached(query, params=("index"))
+        if cached_results:
+            dialog.create("")
+            return cached_results
 
     indexer = get_setting("indexer")
     jackett_insecured = get_setting("jackett_insecured")
@@ -125,7 +124,7 @@ def get_client(indexer):
             return
 
         return Torrentio(host)
-    
+
     elif indexer == Indexer.ELHOSTED:
         host = get_setting("elfhosted_host")
 
@@ -134,7 +133,6 @@ def get_client(indexer):
             return
 
         return Elfhosted(host)
-
 
 
 class Elfhosted:
@@ -355,7 +353,9 @@ class Prowlarr:
         }
         try:
             if mode == "tv":
-                query = f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
+                query = (
+                    f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
+                )
                 if anime_indexers:
                     anime_categories = [2000, 5070, 5000, 127720, 140679]
                     anime_categories_id = "".join(

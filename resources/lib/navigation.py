@@ -1,3 +1,4 @@
+from functools import wraps
 import logging
 import os
 from threading import Thread
@@ -38,8 +39,10 @@ from resources.lib.kodi import (
     Keyboard,
     addon_settings,
     addon_status,
+    container_update,
     dialogyesno,
     get_setting,
+    log,
     notify,
     translation,
 )
@@ -58,6 +61,28 @@ tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 kodi_lang = getLanguage(ISO_639_1)
 if kodi_lang:
     tmdb.language = kodi_lang
+
+
+def query_arg(name, required=True):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if name not in kwargs:
+                query_list = plugin.args.get(name)
+                if query_list:
+                    if name == "rescrape":
+                        kwargs[name] = bool(query_list[0])
+                    else:
+                        kwargs[name] = query_list[0]
+                elif required:
+                    raise AttributeError(
+                        "Missing {} required query argument".format(name)
+                    )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 @plugin.route("/")
@@ -134,25 +159,25 @@ def main_menu():
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="multi", id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="tv", id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="movie", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="movie", id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", query=None, id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="tv", id=-1, tvdb_id=-1, imdb_id=-1),
         list_item("Anime Search", "search.png"),
         isFolder=True,
     )
@@ -246,20 +271,22 @@ def search_tmdb(mode, genre_id, page):
     )
 
 
-@plugin.route("/search/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>")
-def search(mode, query, id, tvdb_id, imdb_id):
+@plugin.route("/search/<mode>/<id>/<tvdb_id>/<imdb_id>")
+@query_arg("rescrape", required=False)
+@query_arg("query", required=False)
+def search(mode, id, tvdb_id, imdb_id, query="", rescrape=False):
     set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     p_dialog = DialogProgressBG()
     torr_client = get_setting("torrent_client")
 
-    results = search_api(query, imdb_id, mode, p_dialog)
+    results = search_api(query, imdb_id, mode, p_dialog, rescrape)
     if results:
         process_results = process_movie_results(results)
         if process_results:
             if torr_client == "Debrid":
                 deb_cached_results = check_debrid_cached(
-                    query, process_results, mode, p_dialog
+                    query, process_results, mode, p_dialog, rescrape
                 )
                 if deb_cached_results:
                     final_results = deb_cached_results
@@ -294,13 +321,16 @@ def search(mode, query, id, tvdb_id, imdb_id):
 @plugin.route(
     "/search_tv/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>/<episode_name>/<episode>/<season>"
 )
-def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
+@query_arg("rescrape", required=False)
+def search_tv(
+    mode, query, id, tvdb_id, imdb_id, episode_name, episode, season, rescrape=False
+):
     set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
 
-    results = search_api(query, imdb_id, mode, p_dialog, season, episode)
+    results = search_api(query, imdb_id, mode, p_dialog, rescrape, season, episode)
     if results:
         process_results = process_tv_results(
             results,
@@ -315,18 +345,19 @@ def search_tv(mode, query, id, tvdb_id, imdb_id, episode_name, episode, season):
                     process_results,
                     mode,
                     p_dialog,
+                    rescrape,
                     episode,
                 )
                 if deb_cached_results:
-                    final_result = deb_cached_results
+                    final_results = deb_cached_results
                 else:
                     notify("No debrid results")
                     p_dialog.close()
                     return
             elif torr_client == "Torrest":
-                final_result = process_results
+                final_results = process_results
             indexer_show_results(
-                final_result,
+                final_results,
                 mode,
                 query,
                 id,
@@ -375,7 +406,6 @@ def tv_seasons_details(id):
     for i in range(number_of_seasons):
         number = i + 1
         title = f"Season {number}"
-
         list_item = ListItem(label=title)
         list_item.setArt(
             {
@@ -418,10 +448,12 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
     for ep in season_details.episodes:
         ep_name = ep.name
         episode = ep.episode_number
-
         title = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
+
+        query = tv_name.replace("/", "").replace("?", "")
+        ep_name = ep_name.replace("/", "").replace("?", "")
 
         still_path = ep.get("still_path", "")
         if still_path:
@@ -435,7 +467,6 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(title)
@@ -445,22 +476,38 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
         info_tag.setPlot(ep.overview)
 
         list_item.setProperty("IsPlayable", "false")
-
-        query = tv_name.replace("/", "").replace("?", "")
-        ep_name = ep_name.replace("/", "").replace("?", "")
-
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Rescrape item",
+                    container_update(
+                        plugin,
+                        search_tv,
+                        mode="tv",
+                        query=query,
+                        id=id,
+                        tvdb_id=tvdb_id,
+                        imdb_id=imdb_id,
+                        episode_name=ep_name,
+                        episode=episode,
+                        season=season,
+                        rescrape=True,
+                    ),
+                )
+            ]
+        )
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
                 search_tv,
-                "tv",
-                query,
-                id,
-                tvdb_id,
-                imdb_id,
-                ep_name,
-                episode,
-                season,
+                mode="tv",
+                query=query,
+                id=id,
+                tvdb_id=tvdb_id,
+                imdb_id=imdb_id,
+                episode_name=ep_name,
+                episode=episode,
+                season=season,
             ),
             list_item,
             isFolder=True,

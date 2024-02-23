@@ -135,13 +135,18 @@ def close_all_dialog():
     execute_builtin("Dialog.Close(all,true)")
 
 
-def execute_builtin(command, block=False):
-    return executebuiltin(command, block)
+def container_update(plugin, func, *args, **kwargs):
+    """
+    Update the container to the specified path.
+
+    :param path: The path where to update.
+    :type path: str
+    """
+    return "Container.Update({})".format(plugin.url_for(func, *args, **kwargs))
 
 
-""" def run_plugin(func):
-    plugin_url = "plugin://plugin.video.jacktook/" + func
-    xbmc.executebuiltin("RunPlugin({})".format(plugin_url)) """
+def container_refresh():
+    execute_builtin("Container.Refresh")
 
 
 def run_plugin(plugin, func, *args, **kwargs):
@@ -155,7 +160,7 @@ def action(plugin, func, *args, **kwargs):
 
 
 def show_busy_dialog():
-    return execute_builtin("ActivateWindow(busydialognocancel)")
+    execute_builtin("ActivateWindow(busydialognocancel)")
 
 
 def container_refresh():
@@ -169,6 +174,10 @@ def hide_busy_dialog():
 
 def get_cache_expiration():
     return get_int_setting("cache_expiration")
+
+
+def execute_builtin(command, block=False):
+    return executebuiltin(command, block)
 
 
 def bytes_to_human_readable(size, unit="B"):

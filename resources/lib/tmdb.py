@@ -1,6 +1,6 @@
 import os
 
-from resources.lib.kodi import ADDON_PATH, log
+from resources.lib.kodi import ADDON_PATH, container_update
 from resources.lib.utils.utils import tmdb_get
 
 from xbmcgui import ListItem
@@ -114,6 +114,23 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
         query = title.replace("/", "").replace("?", "")
 
         if "movie" in [mode, media_type]:
+            list_item.addContextMenuItems(
+                [
+                    (
+                        "Rescrape item",
+                        container_update(
+                            plugin,
+                            func,
+                            mode=mode,
+                            query=query,
+                            id=id,
+                            tvdb_id=tvdb_id,
+                            imdb_id=imdb_id,
+                            rescrape=True,
+                        ),
+                    )
+                ]
+            )
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(

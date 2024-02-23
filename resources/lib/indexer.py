@@ -1,6 +1,6 @@
 import re
 from resources.lib.anilist import anilist_client
-from resources.lib.kodi import action, bytes_to_human_readable
+from resources.lib.kodi import action, bytes_to_human_readable, log
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
@@ -88,7 +88,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
             download_url = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
             if guid:
-                if Indexer.TORRENTIO:
+                if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                     magnet = info_hash_to_magnet(guid)
                 else:
                     if guid.startswith("magnet:?"):
@@ -105,3 +105,4 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
             add_item(list_item, download_url, magnet, id, title, func, plugin)
 
     endOfDirectory(plugin.handle)
+
