@@ -141,17 +141,11 @@ def main_menu():
 
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(last_titles_history),
-        list_item("Titles History", "history.png"),
+        plugin.url_for(history),
+        list_item("History", "history.png"),
         isFolder=True,
     )
 
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(last_files_history),
-        list_item("Files History", "history.png"),
-        isFolder=True,
-    )
     endOfDirectory(plugin.handle)
 
 
@@ -594,14 +588,32 @@ def clear_history(type):
     clear(type=type)
 
 
-@plugin.route("/files_history")
-def last_files_history():
-    last_files(plugin, clear_history, play_torrent)
+@plugin.route("/history")
+def history():
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(files),
+        list_item("Files History", "history.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(titles),
+        list_item("Titles History", "history.png"),
+        isFolder=True,
+    )
+    endOfDirectory(plugin.handle)
 
 
-@plugin.route("/titles_history")
-def last_titles_history():
+@plugin.route("/history/titles")
+def titles():
     last_titles(plugin, clear_history, tv_seasons_details, search)
+
+
+@plugin.route("/history/files")
+def files():
+    last_files(plugin, clear_history, play_torrent)
 
 
 @plugin.route("/clear_cached_tmdb")
