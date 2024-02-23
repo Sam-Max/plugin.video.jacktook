@@ -17,16 +17,16 @@ def search_simkl_episodes(title, id, mal_id, func, plugin):
     season = s_id[0] if s_id else 1
 
     imdb_id = "tt0000000"
-    title = re.sub(r'Season\s\d' , '', title).strip()
+    title = re.sub(r"Season\s\d", "", title).strip()
     res = tmdb_get("search_tv", title)
     if res["results"]:
         for res in res["results"]:
             ids = res.get("genre_ids")
-            if 16 in ids: # anime category
+            if 16 in ids:  # anime category
                 details = tmdb_get("tv_details", res.get("id"))
                 imdb_id = details.external_ids.get("imdb_id")
                 break
-    
+
     _, res = search_simkl_api(id, mal_id, type="anime_episodes")
 
     simkl_parse_show_results(res, title, id, imdb_id, season, func, plugin)
@@ -36,22 +36,20 @@ def search_simkl_api(id, mal_id, type):
     cached_results = get_cached(type, params=(id))
     if cached_results:
         return "", cached_results
-    
+
     simkl = SIMKLAPI()
     if type == "anime_ids":
         message, ids = simkl.get_mapping_ids("mal", mal_id)
-        log("ids")
-        log(ids)
         if ids:
             data = ids.get("imdb")
         else:
             data = -1
-        
+
     elif type == "anime_episodes":
-       message, data = simkl.get_anilist_episodes(mal_id)
-    
+        message, data = simkl.get_anilist_episodes(mal_id)
+
     set_cached(data, type, params=(id))
-    
+
     return message, data
 
 
@@ -65,6 +63,11 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
                 ep_title = f"Episode {res['episode']}"
 
             description = res.get("description", "")
+
+            date = res.get("date", "")
+            match = re.search(r"\d{4}-\d{2}-\d{2}", date)
+            if match:
+                date = match.group()
 
             coverImage = ""
             if res.get("img"):
@@ -85,6 +88,7 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
             info_tag = list_item.getVideoInfoTag()
             info_tag.setMediaType("video")
             info_tag.setTitle(ep_title)
+            info_tag.setFirstAired(date)
             info_tag.setPlot(description)
 
             title = title.replace("/", "").replace("?", "")
