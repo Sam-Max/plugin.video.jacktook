@@ -1,9 +1,9 @@
 from time import time
-from resources.lib.kodi import sleep as ksleep
+from resources.lib.utils.kodi import sleep as ksleep
 from base64 import b64encode, b64decode
 import requests
 from requests import ConnectionError
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     copy2clip,
     dialog_ok,
     dialogyesno,

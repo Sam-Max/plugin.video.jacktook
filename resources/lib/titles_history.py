@@ -1,14 +1,12 @@
-
 import os
 from resources.lib.db.database import get_db
-from resources.lib.kodi import ADDON_PATH
+from resources.lib.utils.kodi import ADDON_PATH
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
     setPluginCategory,
 )
-
 
 
 def last_titles(plugin, func1, func2, func3):
@@ -44,9 +42,7 @@ def last_titles(plugin, func1, func2, func3):
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(
-                    func3, mode=mode, query=title, id=id, tvdb_id=-1, imdb_id=-1
-                ),
+                plugin.url_for(func3, mode=mode, query=title, ids=f"{id}, {-1}, {-1}"),
                 list_item,
                 isFolder=True,
             )

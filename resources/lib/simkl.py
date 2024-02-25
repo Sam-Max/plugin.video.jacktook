@@ -2,7 +2,7 @@ import os
 import re
 from resources.lib.api.fma import FindMyAnime
 from resources.lib.api.simkl import SIMKLAPI
-from resources.lib.kodi import ADDON_PATH, log
+from resources.lib.utils.kodi import ADDON_PATH, log
 from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -56,12 +56,13 @@ def search_simkl_api(id, mal_id, type):
 def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin):
     for res in response:
         if res["type"] == "episode":
-            ep_title = res.get("title")
-            if ep_title:
-                ep_title = f"{season}x{res['episode']} {ep_title}"
+            ep_name = res.get("title")
+            if ep_name:
+                ep_name = f"{season}x{res['episode']} {ep_name}"
             else:
-                ep_title = f"Episode {res['episode']}"
+                ep_name = f"Episode {res['episode']}"
 
+            episode = res["episode"]
             description = res.get("description", "")
 
             date = res.get("date", "")
@@ -73,7 +74,7 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
             if res.get("img"):
                 coverImage = IMAGE_PATH % res["img"]
 
-            list_item = ListItem(label=ep_title)
+            list_item = ListItem(label=ep_name)
             list_item.setArt(
                 {
                     "poster": coverImage,
@@ -87,7 +88,7 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
 
             info_tag = list_item.getVideoInfoTag()
             info_tag.setMediaType("video")
-            info_tag.setTitle(ep_title)
+            info_tag.setTitle(ep_name)
             info_tag.setFirstAired(date)
             info_tag.setPlot(description)
 
@@ -99,12 +100,8 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
                     func,
                     mode="tv",
                     query=title,
-                    id=id,
-                    tvdb_id=-1,
-                    imdb_id=imdb_id,
-                    episode_name=ep_title,
-                    episode=res["episode"],
-                    season=season,
+                    ids=f"{id}, {-1}, {imdb_id}",
+                    tvdata=f"{ep_name}, {episode}, {season}",
                 ),
                 list_item,
                 isFolder=True,

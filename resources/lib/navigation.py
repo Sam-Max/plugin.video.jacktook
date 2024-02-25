@@ -4,6 +4,7 @@ import os
 from threading import Thread
 from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
+from resources.lib.api.torrest_api import STATUS_PAUSED, STATUS_SEEDING, Torrest
 from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached, get_debrid_pack
 from resources.lib.files_history import last_files
@@ -21,29 +22,38 @@ from resources.lib.tmdb import (
 )
 from resources.lib.anilist import search_anilist
 from resources.lib.utils.utils import (
-    add_item,
+    add_play_item,
     clear,
     clear_all_cache,
     clear_tmdb_cache,
     fanartv_get,
+    get_credentials,
+    get_port,
+    get_service_address,
+    get_state_string,
+    is_video,
     list_item,
     play,
-    process_movie_results,
-    process_tv_results,
+    process_results,
     set_video_item,
     set_watched_title,
+    ssl_enabled,
     tmdb_get,
 )
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     ADDON_PATH,
+    TORREST_ADDON,
     Keyboard,
+    action,
     addon_settings,
     addon_status,
+    buffer_and_play,
     container_update,
     dialogyesno,
     get_setting,
-    log,
     notify,
+    play_info_hash,
+    refresh,
     translation,
 )
 from xbmcgui import ListItem, DialogProgressBG
@@ -55,6 +65,9 @@ from xbmcplugin import (
 )
 
 plugin = Plugin()
+
+if TORREST_ADDON:
+    api = Torrest(get_service_address(), get_port(), get_credentials(), ssl_enabled())
 
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
@@ -127,6 +140,13 @@ def main_menu():
 
     addDirectoryItem(
         plugin.handle,
+        plugin.url_for(torrents),
+        list_item("Torrents", "settings.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        plugin.handle,
         plugin.url_for(settings),
         list_item("Settings", "settings.png"),
         isFolder=True,
@@ -153,25 +173,25 @@ def main_menu():
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi", id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="multi"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="tv"),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="movie", id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="movie"),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv", id=-1, tvdb_id=-1, imdb_id=-1),
+        plugin.url_for(search, mode="tv"),
         list_item("Anime Search", "search.png"),
         isFolder=True,
     )
@@ -265,60 +285,22 @@ def search_tmdb(mode, genre_id, page):
     )
 
 
-@plugin.route("/search/<mode>/<id>/<tvdb_id>/<imdb_id>")
-@query_arg("rescrape", required=False)
+@plugin.route("/search")
+@query_arg("mode", required=True)
 @query_arg("query", required=False)
-def search(mode, id, tvdb_id, imdb_id, query="", rescrape=False):
-    set_watched_title(query, id, tvdb_id, imdb_id, mode)
-
-    p_dialog = DialogProgressBG()
-    torr_client = get_setting("torrent_client")
-
-    results = search_api(query, imdb_id, mode, p_dialog, rescrape)
-    if results:
-        process_results = process_movie_results(results)
-        if process_results:
-            if torr_client == "Debrid":
-                deb_cached_results = check_debrid_cached(
-                    query, process_results, mode, p_dialog, rescrape
-                )
-                if deb_cached_results:
-                    final_results = deb_cached_results
-                else:
-                    notify("No debrid results")
-                    p_dialog.close()
-                    return
-            elif torr_client == "Torrest":
-                final_results = process_results
-            indexer_show_results(
-                final_results,
-                mode,
-                query,
-                id,
-                tvdb_id,
-                plugin,
-                func=play_torrent,
-                func2=show_pack,
-                func3=download,
-            )
-        else:
-            notify("No results")
-    else:
-        notify("No results")
-
-    try:
-        p_dialog.close()
-    except:
-        pass
-
-
-@plugin.route(
-    "/search_tv/<mode>/<query>/<id>/<tvdb_id>/<imdb_id>/<episode_name>/<episode>/<season>"
-)
+@query_arg("ids", required=False)
+@query_arg("tvdata", required=False)
 @query_arg("rescrape", required=False)
-def search_tv(
-    mode, query, id, tvdb_id, imdb_id, episode_name, episode, season, rescrape=False
-):
+def search(mode="", query="", ids="", tvdata="", rescrape=False):
+    if ids:
+        id, tvdb_id, imdb_id = ids.split(", ")
+    else:
+        id = tvdb_id = imdb_id = -1
+    if tvdata:
+        episode_name, episode, season = tvdata.split(", ")
+    else:
+        episode_name = episode = season = 0
+
     set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
     torr_client = get_setting("torrent_client")
@@ -326,17 +308,18 @@ def search_tv(
 
     results = search_api(query, imdb_id, mode, p_dialog, rescrape, season, episode)
     if results:
-        process_results = process_tv_results(
+        proc_results = process_results(
             results,
+            mode,
             episode_name,
             episode,
             season,
         )
-        if process_results:
+        if proc_results:
             if torr_client == "Debrid":
                 deb_cached_results = check_debrid_cached(
                     query,
-                    process_results,
+                    proc_results,
                     mode,
                     p_dialog,
                     rescrape,
@@ -349,7 +332,7 @@ def search_tv(
                     p_dialog.close()
                     return
             elif torr_client == "Torrest":
-                final_results = process_results
+                final_results = proc_results
             indexer_show_results(
                 final_results,
                 mode,
@@ -376,6 +359,164 @@ def search_tv(
 def play_torrent():
     url, magnet, id, title = plugin.args["query"][0].split(" ", 3)
     play(url, magnet, id, title, plugin)
+
+
+@plugin.route("/torrents")
+def torrents():
+    if TORREST_ADDON:
+        for torrent in api.torrents():
+            context_menu_items = [
+                (
+                    "Buffer and play",
+                    play_info_hash(torrent.info_hash),
+                )
+            ]
+
+            if torrent.status.state not in (STATUS_SEEDING, STATUS_PAUSED):
+                context_menu_items.append(
+                    (
+                        "Stop downloading",
+                        action(plugin, torrent_action, torrent.info_hash, "stop"),
+                    )
+                    if torrent.status.total == torrent.status.total_wanted
+                    else (
+                        "Download",
+                        action(plugin, torrent_action, torrent.info_hash, "download"),
+                    )
+                )
+
+            context_menu_items.extend(
+                [
+                    (
+                        (
+                            "Resume",
+                            action(plugin, torrent_action, torrent.info_hash, "resume"),
+                        )
+                        if torrent.status.paused
+                        else (
+                            "Pause",
+                            action(plugin, torrent_action, torrent.info_hash, "pause"),
+                        )
+                    ),
+                    (
+                        "Remove torrent",
+                        action(
+                            plugin, torrent_action, torrent.info_hash, "remove_torrent"
+                        ),
+                    ),
+                    (
+                        "Remove all",
+                        action(
+                            plugin,
+                            torrent_action,
+                            torrent.info_hash,
+                            "remove_torrent_and_files",
+                        ),
+                    ),
+                    (
+                        "Torrent status",
+                        action(
+                            plugin, torrent_action, torrent.info_hash, "torrent_status"
+                        ),
+                    ),
+                ]
+            )
+
+            list_item = ListItem(label=torrent.name)
+            list_item.addContextMenuItems(context_menu_items)
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(torrent_files, torrent.info_hash),
+                list_item,
+                isFolder=True,
+            )
+
+        endOfDirectory(plugin.handle)
+    else:
+        notify("Addon Torrest not found")
+
+
+@plugin.route("/torrents/<info_hash>/<action_str>")
+def torrent_action(info_hash, action_str):
+    needs_refresh = True
+
+    if action_str == "stop":
+        api.stop_torrent(info_hash)
+    elif action_str == "download":
+        api.download_torrent(info_hash)
+    elif action_str == "pause":
+        api.pause_torrent(info_hash)
+    elif action_str == "resume":
+        api.resume_torrent(info_hash)
+    elif action_str == "remove_torrent":
+        api.remove_torrent(info_hash, delete=False)
+    elif action_str == "remove_torrent_and_files":
+        api.remove_torrent(info_hash, delete=True)
+    elif action_str == "torrent_status":
+        torrent_status(info_hash)
+        needs_refresh = False
+    else:
+        logging.error("Unknown action '%s'", action_str)
+        needs_refresh = False
+
+    if needs_refresh:
+        refresh()
+
+
+@plugin.route("/torrents/<info_hash>/files/<file_id>/<action_str>")
+def file_action(info_hash, file_id, action_str):
+    if action_str == "download":
+        api.download_file(info_hash, file_id)
+    elif action_str == "stop":
+        api.stop_file(info_hash, file_id)
+    else:
+        logging.error("Unknown action '%s'", action_str)
+        return
+    refresh()
+
+
+@plugin.route("/torrents/<info_hash>")
+def torrent_files(info_hash):
+    files = api.files(info_hash)
+    for f in files:
+        serve_url = api.serve_url(info_hash, f.id)
+        list_item = ListItem(f.name, "download.png")
+
+        context_menu_items = []
+        info_labels = {"title": f.name}
+
+        if is_video(f.name):
+            info_type = "video"
+        else:
+            info_type = None
+
+        if info_type is not None:
+            list_item.setInfo(info_type, info_labels)
+            list_item.setProperty("IsPlayable", "true")
+            context_menu_items.append(
+                ("Buffer and Play", buffer_and_play(info_hash, f.id))
+            )
+
+        context_menu_items.append(
+            (
+                "Download",
+                action(plugin, file_action, info_hash, f.id, "download"),
+            )
+            if f.status.priority == 0
+            else (
+                "Stop",
+                action(plugin, file_action, info_hash, f.id, "stop"),
+            )
+        )
+
+        list_item.addContextMenuItems(context_menu_items)
+
+        if info_type is not None:
+            add_play_item(
+                list_item, serve_url, info_hash, f.id, f.name, play_torrent, plugin
+            )
+
+    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/tv/details/<id>")
@@ -476,15 +617,11 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
                     "Rescrape item",
                     container_update(
                         plugin,
-                        search_tv,
+                        search,
                         mode="tv",
                         query=query,
-                        id=id,
-                        tvdb_id=tvdb_id,
-                        imdb_id=imdb_id,
-                        episode_name=ep_name,
-                        episode=episode,
-                        season=season,
+                        ids=f"{id}, {tvdb_id}, {imdb_id}",
+                        tvdata=f"{ep_name}, {episode}, {season}",
                         rescrape=True,
                     ),
                 )
@@ -493,15 +630,11 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
-                search_tv,
+                search,
                 mode="tv",
                 query=query,
-                id=id,
-                tvdb_id=tvdb_id,
-                imdb_id=imdb_id,
-                episode_name=ep_name,
-                episode=episode,
-                season=season,
+                ids=f"{id}, {tvdb_id}, {imdb_id}",
+                tvdata=f"{ep_name}, {episode}, {season}",
             ),
             list_item,
             isFolder=True,
@@ -518,7 +651,7 @@ def show_pack():
         for link, title in results:
             list_item = ListItem(label=f"{title}")
             set_video_item(list_item, poster="", overview="")
-            add_item(
+            add_play_item(
                 list_item,
                 link,
                 id="",
@@ -546,7 +679,7 @@ def next_page_anilist(category, page):
 
 @plugin.route("/anilist/episodes/<query>/<id>/<mal_id>")
 def get_anime_episodes(query, id, mal_id):
-    search_simkl_episodes(query, id, mal_id, func=search_tv, plugin=plugin)
+    search_simkl_episodes(query, id, mal_id, func=search, plugin=plugin)
 
 
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
@@ -661,6 +794,15 @@ def menu_genre(mode, page):
             isFolder=True,
         )
     endOfDirectory(plugin.handle)
+
+
+def torrent_status(info_hash):
+    status = api.torrent_status(info_hash)
+    notify(
+        "{:s} ({:.2f}%)".format(get_state_string(status.state), status.progress),
+        api.torrent_info(info_hash).name,
+        sound=False,
+    )
 
 
 def run():

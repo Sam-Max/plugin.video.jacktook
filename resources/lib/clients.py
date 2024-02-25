@@ -2,7 +2,7 @@ import json
 import re
 from urllib.parse import quote
 import requests
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     Keyboard,
     convert_size_to_bytes,
     get_setting,
@@ -64,7 +64,7 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             prowlarr_insecured,
         )
     elif indexer == Indexer.TORRENTIO:
-        if imdb_id == "-1":
+        if imdb_id == -1:
             notify("Direct Search not supported for Torrentio")
             dialog.create("")
             return None
@@ -72,7 +72,7 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
         response = client.search(imdb_id, mode, season, episode)
 
     elif indexer == Indexer.ELHOSTED:
-        if imdb_id == "-1":
+        if imdb_id == -1:
             notify("Direct Search not supported for Elfhosted")
             dialog.create("")
             return None

@@ -3,10 +3,10 @@ import traceback
 import requests
 from requests import RequestException, JSONDecodeError
 from typing import Union, List, Optional, Dict
-from resources.lib.kodi import copy2clip, log
-from resources.lib.kodi import sleep as ksleep
+from resources.lib.utils.kodi import copy2clip, log
+from resources.lib.utils.kodi import sleep as ksleep
 from typing import Any
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     copy2clip,
     dialog_ok,
     set_setting,

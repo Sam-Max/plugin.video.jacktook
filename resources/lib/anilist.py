@@ -3,7 +3,7 @@ from resources.lib.api.anilist import AniList
 from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from resources.lib.kodi import ADDON_PATH, Keyboard, get_setting, log, notify
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_setting, log, notify
 
 
 anilist_client_id = get_setting("anilist_client_id", "14375")
@@ -80,7 +80,7 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
 
         id = res["id"]
         mal_id = res["idMal"]
-        
+
         imdb_id = "tt0000000"
         if format == "MOVIE":
             search_res = tmdb_get("search_movie", title)
@@ -120,7 +120,10 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(
-                    func, mode="movie", query=title, id=id, tvdb_id=-1, imdb_id=imdb_id
+                    func,
+                    mode="movie",
+                    query=title,
+                    ids=f"{id}, {-1}, {imdb_id}",
                 ),
                 list_item,
                 isFolder=True,

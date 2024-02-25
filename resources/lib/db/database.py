@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import pickle
-from resources.lib.kodi import ADDON_ID
+from resources.lib.utils.kodi import ADDON_ID
 import xbmcvfs
 
 

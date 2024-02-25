@@ -1,10 +1,10 @@
 import re
 from resources.lib.anilist import anilist_client
-from resources.lib.kodi import action, bytes_to_human_readable, log
+from resources.lib.utils.kodi import action, bytes_to_human_readable, log
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
-    add_item,
+    add_play_item,
     add_pack_item,
     fanartv_get,
     get_description_length,
@@ -83,7 +83,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
                 set_video_item(list_item, poster, overview)
-                add_item(list_item, url, magnet, id, title, func, plugin)
+                add_play_item(list_item, url, magnet, id, title, func, plugin)
         else:
             download_url = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
@@ -102,7 +102,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 list_item.addContextMenuItems(
                     [("Download to Debrid", action(plugin, func3, query= f"{magnet} {debrid_type}"))]
                 )
-            add_item(list_item, download_url, magnet, id, title, func, plugin)
+            add_play_item(list_item, download_url, magnet, id, title, func, plugin)
 
     endOfDirectory(plugin.handle)
 
