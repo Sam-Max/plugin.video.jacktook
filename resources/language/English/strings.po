@@ -207,7 +207,7 @@ msgctxt "#30251"
 msgid "No sources found to play"
 msgstr ""
 
-msgctxt "#30252
+msgctxt "#30252"
 msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr ""
 
