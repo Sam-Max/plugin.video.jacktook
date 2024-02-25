@@ -78,7 +78,7 @@ def play(url, magnet, id, title, plugin, debrid=False):
             _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
     elif torr_client == "Elementum":
         if not is_elementum_addon():
-            notify(translation(30250))
+            notify(translation(30252))
             return
         if magnet:
             _url = "plugin://plugin.video.elementum/play?uri=" + quote(magnet)

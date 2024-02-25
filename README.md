@@ -42,7 +42,7 @@ You can also install the addon without installing its repository. To do so, get 
 
 2. Add configuration on addon settings to connect with Jackett, Prowlarr or Torrentio. 
 
-3. Install either [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/)
+3. Install either [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
 
 
 **Notes**:
