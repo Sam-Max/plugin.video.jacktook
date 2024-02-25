@@ -2,7 +2,7 @@
 <settings>
     <category label="30000">
         <setting label="30001" type="lsep"/>
-        <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|Debrid" default="Torrest"/>
+        <setting id="torrent_client" type="labelenum" label="30002" values="Torrest|Debrid|Elementum" default="Torrest"/>
         <setting label="Cache" type="lsep"/>
         <setting type="action" label="30106" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_all)" />
         <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)"/>

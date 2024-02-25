@@ -288,7 +288,7 @@ def search(mode, id, tvdb_id, imdb_id, query="", rescrape=False):
                     notify("No debrid results")
                     p_dialog.close()
                     return
-            elif torr_client == "Torrest":
+            elif torr_client == "Torrest" or torr_client == "Elementum":
                 final_results = process_results
             indexer_show_results(
                 final_results,
@@ -348,7 +348,7 @@ def search_tv(
                     notify("No debrid results")
                     p_dialog.close()
                     return
-            elif torr_client == "Torrest":
+            elif torr_client == "Torrest" or torr_client == "Elementum":
                 final_results = process_results
             indexer_show_results(
                 final_results,

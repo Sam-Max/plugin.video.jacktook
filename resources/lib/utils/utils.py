@@ -21,6 +21,7 @@ from resources.lib.kodi import (
     get_int_setting,
     get_setting,
     is_torrest_addon,
+    is_elementum_addon,
     notify,
     translation,
 )
@@ -75,6 +76,15 @@ def play(url, magnet, id, title, plugin, debrid=False):
             _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
         else:
             _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
+    elif torr_client == "Elementum":
+        if not is_elementum_addon():
+            notify(translation(30250))
+            return
+        if magnet:
+            _url = "plugin://plugin.video.elementum/play?uri=" + quote(magnet)
+        else:
+            notify("Not a playable url.")
+            return
     elif torr_client == "Debrid":
         debrid = True
         if url.endswith(".torrent") or magnet:
@@ -258,7 +268,7 @@ def get_random_color(provider_name):
     for i in range(0, 3):
         offset = spec * i
         rounded = round(
-            int(hash[offset : offset + spec], 16) / int("F" * spec, 16) * 255
+            int(hash[offset: offset + spec], 16) / int("F" * spec, 16) * 255
         )
         colors.append(int(max(rounded, PROVIDER_COLOR_MIN_BRIGHTNESS)))
 

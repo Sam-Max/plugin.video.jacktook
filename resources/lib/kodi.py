@@ -10,6 +10,7 @@ from xbmc import executebuiltin
 
 _URL = sys.argv[0]
 TORREST_ADDON_ID = "plugin.video.torrest"
+ELEMENTUM_ADDON_ID = "plugin.video.elementum"
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
@@ -62,6 +63,10 @@ def addon_status():
 
 def is_torrest_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({TORREST_ADDON_ID})")
+
+
+def is_elementum_addon():
+    return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
 
 
 def get_int_setting(setting):
