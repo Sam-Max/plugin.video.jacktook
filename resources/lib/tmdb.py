@@ -1,6 +1,6 @@
 import os
 
-from resources.lib.kodi import ADDON_PATH, container_update
+from resources.lib.utils.kodi import ADDON_PATH, container_update
 from resources.lib.utils.utils import tmdb_get
 
 from xbmcgui import ListItem
@@ -82,11 +82,11 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                 media_type = "tv"
                 release_date = res.get("first_air_date", "")
                 title = f"[B][TV][/B]- {title}"
-        
+
         poster_path = res.get("poster_path", "")
         if poster_path:
             poster_path = TMDB_POSTER_URL + poster_path
-        
+
         backdrop_path = res.get("backdrop_path", "")
         if backdrop_path:
             backdrop_path = TMDB_BACKDROP_URL + backdrop_path
@@ -123,9 +123,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                             func,
                             mode=mode,
                             query=query,
-                            id=id,
-                            tvdb_id=tvdb_id,
-                            imdb_id=imdb_id,
+                            ids=f"{id}, {tvdb_id}, {imdb_id}",
                             rescrape=True,
                         ),
                     )
@@ -137,9 +135,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                     func,
                     mode=mode,
                     query=query,
-                    id=id,
-                    tvdb_id=tvdb_id,
-                    imdb_id=imdb_id,
+                    ids=f"{id}, {tvdb_id}, {imdb_id}",
                 ),
                 list_item,
                 isFolder=True,

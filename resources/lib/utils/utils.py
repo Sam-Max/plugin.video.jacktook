@@ -14,12 +14,13 @@ from resources.lib.tmdbv3api.objs.tv import TV
 
 from resources.lib.torf._magnet import Magnet
 from resources.lib.fanarttv import get_api_fanarttv
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     ADDON_PATH,
     container_refresh,
     get_cache_expiration,
     get_int_setting,
     get_setting,
+    get_torrest_setting,
     is_torrest_addon,
     is_elementum_addon,
     notify,
@@ -46,6 +47,70 @@ PROVIDER_COLOR_MIN_BRIGHTNESS = 50
 
 URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
 
+video_extensions = (
+    ".001",
+    ".3g2",
+    ".3gp",
+    ".asf",
+    ".asx",
+    ".avc",
+    ".avi",
+    ".avs",
+    ".bdm",
+    ".bdmv",
+    ".bin",
+    ".bivx",
+    ".dat",
+    ".divx",
+    ".dv",
+    ".dvr-ms",
+    ".evo",
+    ".f4v",
+    ".fli",
+    ".flv",
+    ".h264",
+    ".img",
+    ".iso",
+    ".m2t",
+    ".m2ts",
+    ".m2v",
+    ".m3u8",
+    ".m4v",
+    ".mk3d",
+    ".mkv",
+    ".mov",
+    ".mp4",
+    ".mpeg",
+    ".mpg",
+    ".mpl",
+    ".mpls",
+    ".mts",
+    ".nrg",
+    ".nuv",
+    ".ogm",
+    ".ogv",
+    ".pva",
+    ".qt",
+    ".rcv",
+    ".rec",
+    ".rmvb",
+    ".sdp",
+    ".svq3",
+    ".tp",
+    ".trp",
+    ".ts",
+    ".ty",
+    ".udf",
+    ".vc1",
+    ".vdr",
+    ".viv",
+    ".vob",
+    ".vp3",
+    ".webm",
+    ".wmv",
+    ".xvid",
+)
+
 
 class Enum:
     @classmethod
@@ -62,7 +127,6 @@ class Indexer(Enum):
 
 def play(url, magnet, id, title, plugin, debrid=False):
     set_watched_file(title, id, magnet, url)
-
     if not magnet and not url:
         notify(translation(30251))
         return
@@ -73,15 +137,15 @@ def play(url, magnet, id, title, plugin, debrid=False):
             notify(translation(30250))
             return
         if magnet:
-            _url = "plugin://plugin.video.torrest/play_magnet?magnet=" + quote(magnet)
+            _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
         else:
-            _url = "plugin://plugin.video.torrest/play_url?url=" + quote(url)
+            _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
     elif torr_client == "Elementum":
         if not is_elementum_addon():
             notify(translation(30252))
             return
         if magnet:
-            _url = "plugin://plugin.video.elementum/play?uri=" + quote(magnet)
+            _url = f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
         else:
             notify("Not a playable url.")
             return
@@ -113,7 +177,7 @@ def list_item(label, icon):
     return item
 
 
-def add_item(list_item, url, magnet, id, title, func, plugin):
+def add_play_item(list_item, url, magnet, id, title, func, plugin):
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(func, query=f"{url} {magnet} {id} {title}"),
@@ -344,19 +408,11 @@ def remove_duplicate(results):
     return result_dict
 
 
-def process_movie_results(results):
+def process_results(results, mode, episode_name, episode, season):
     res = remove_duplicate(results)
     res = limit_results(res)
-    res = filter_by_quality(res)
-    res = sort_results(res)
-    return res
-
-
-def process_tv_results(results, episode_name, episode, season):
-    res = remove_duplicate(results)
-    res = limit_results(res)
-    # res = filter_by_episode(res, episode_name, episode, season)
-    # if res:
+    if mode == "tv":
+        res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     res = sort_results(res)
     return res
@@ -449,6 +505,10 @@ def supported_video_extensions():
     return media_types.split("|")
 
 
+def is_video(s):
+    return s.lower().endswith(video_extensions)
+
+
 def get_info_hash(magnet):
     return Magnet.from_string(magnet).infohash
 
@@ -464,6 +524,32 @@ def is_url(url):
 
 def info_hash_to_magnet(info_hash):
     return f"magnet:?xt=urn:btih:{info_hash}"
+
+
+def get_state_string(state):
+    if 0 <= state <= 9:
+        return translation(30220 + state)
+    return translation(30230)
+
+
+def get_service_address():
+    return (
+        "127.0.0.1"
+        if get_torrest_setting("service_enabled")
+        else get_torrest_setting("service_address")
+    )
+
+
+def get_credentials():
+    return get_torrest_setting("auth_username"), get_torrest_setting("auth_password")
+
+
+def ssl_enabled():
+    return get_torrest_setting("ssl_connection")
+
+
+def get_port():
+    return get_torrest_setting("port")
 
 
 """ def direct_download():

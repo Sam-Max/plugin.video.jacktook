@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 import sys
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 import xbmc
 import xbmcgui
 from xbmcgui import Window
@@ -9,8 +9,15 @@ import xbmcaddon
 from xbmc import executebuiltin
 
 _URL = sys.argv[0]
+
 TORREST_ADDON_ID = "plugin.video.torrest"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
+
+try:
+    TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
+except:
+    TORREST_ADDON = None
+
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
@@ -19,6 +26,19 @@ ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 
 progressDialog = xbmcgui.DialogProgress()
+
+
+def get_torrest_setting(value, default=None):
+    value = TORREST_ADDON.getSetting(value)
+    if not value:
+        return default
+
+    if value == "true":
+        return True
+    elif value == "false":
+        return False
+    else:
+        return value
 
 
 def get_setting(value, default=None):
@@ -110,8 +130,12 @@ def compat(line1, line2, line3):
     return message
 
 
-def notify(message, image=ADDON_ICON):
-    xbmcgui.Dialog().notification(ADDON_NAME, message, icon=image, sound=False)
+def refresh():
+    xbmc.executebuiltin("Container.Refresh")
+
+
+def notify(message, heading=ADDON_NAME, icon=ADDON_ICON, time=5000, sound=True):
+    xbmcgui.Dialog().notification(heading, message, icon, time, sound)
 
 
 def dialog_ok(heading, line1, line2="", line3=""):
@@ -162,6 +186,16 @@ def run_plugin(plugin, func, *args, **kwargs):
 
 def action(plugin, func, *args, **kwargs):
     return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
+
+
+def play_info_hash(info_hash):
+    url = f"plugin://plugin.video.torrest/play_info_hash?info_hash={quote(info_hash)}"
+    return f"PlayMedia({url})"
+
+
+def buffer_and_play(info_hash, file_id):
+    url = f"plugin://plugin.video.torrest/buffer_and_play?info_hash={info_hash}&file_id={file_id}"
+    return f"PlayMedia({url})"
 
 
 def show_busy_dialog():

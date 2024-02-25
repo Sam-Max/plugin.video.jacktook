@@ -1,6 +1,6 @@
 import os
 from resources.lib.db.database import get_db
-from resources.lib.kodi import ADDON_PATH
+from resources.lib.utils.kodi import ADDON_PATH
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,

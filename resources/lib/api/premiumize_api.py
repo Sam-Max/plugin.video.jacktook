@@ -2,10 +2,11 @@ import time
 import traceback
 import requests
 from requests import RequestException, JSONDecodeError
-from resources.lib.kodi import copy2clip, log
-from resources.lib.kodi import sleep as ksleep
+from typing import Union, List, Optional, Dict
+from resources.lib.utils.kodi import copy2clip, log
+from resources.lib.utils.kodi import sleep as ksleep
 from typing import Any
-from resources.lib.kodi import (
+from resources.lib.utils.kodi import (
     copy2clip,
     dialog_ok,
     set_setting,
@@ -82,7 +83,7 @@ class DebridClient:
     def wait_for_status(
         self,
         torrent_id: str,
-        target_status: str | int,
+        target_status: Union[str, int],
         max_retries: int,
         retry_interval: int,
     ):
@@ -275,7 +276,7 @@ class Premiumize(DebridClient):
             "POST", f"{self.BASE_URL}/transfer/delete", data={"id": torrent_id}
         )
 
-    def get_torrent_instant_availability(self, torrent_hashes: list[str]):
+    def get_torrent_instant_availability(self, torrent_hashes: List[str]):
         results = self._make_request(
             "GET", f"{self.BASE_URL}/cache/check", params={"items[]": torrent_hashes}
         )
@@ -288,7 +289,7 @@ class Premiumize(DebridClient):
 
     def get_available_torrent(
         self, info_hash: str, torrent_name
-    ) -> dict[str, Any] | None:
+    ) -> Optional[Dict[str, Any]]:
         torrent_list_response = self.get_transfer_list()
         if torrent_list_response.get("status") != "success":
             if torrent_list_response.get("message") == "Not logged in.":

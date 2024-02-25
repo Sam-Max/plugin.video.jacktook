@@ -6,7 +6,7 @@ from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
-from resources.lib.kodi import get_setting, log
+from resources.lib.utils.kodi import get_setting, log
 
 from resources.lib.torf._torrent import Torrent
 from resources.lib.utils.utils import (
