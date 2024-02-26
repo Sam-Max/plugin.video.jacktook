@@ -191,6 +191,10 @@ msgctxt "#30251"
 msgid "No sources found to play"
 msgstr "No hay fuentes disponibles para reproducir"
 
+msgctxt "#30252"
+msgid "Addon Elementum not found - (plugin.video.elementum)"
+msgstr "El Addon de Elementum no esta instalado - (plugin.video.elementum)"
+
 msgctxt "#30650"
 msgid ""
 msgstr ""
