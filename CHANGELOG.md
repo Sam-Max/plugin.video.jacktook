@@ -1,4 +1,9 @@
 
+## 0.1.8 (2024-02-21)
+ * Add TMDB helper Addon support
+ * Add new torrents menu
+ * Add Elementum as another torrent client
+
 ## 0.1.7 (2024-02-21)
  * Add anime episode search
  * Add Premiumize support
