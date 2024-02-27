@@ -1,4 +1,8 @@
 
+## 0.1.9 (2024-02-21)
+ * Fixed RD torrent stored on cloud
+ * Add sort by quality to torrentio and elfhosted
+
 ## 0.1.8 (2024-02-21)
  * Add TMDB helper Addon support
  * Add new torrents menu
