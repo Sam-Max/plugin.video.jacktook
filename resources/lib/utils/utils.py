@@ -436,7 +436,7 @@ def sort_results(results):
     elif sort_by == "Date":
         sort_results = sorted(results, key=lambda r: r["publishDate"], reverse=True)
     elif sort_by == "Quality":
-        sort_results = sorted(results, key=lambda r: r["Quality"], reverse=False)
+        sort_results = sorted(results, key=lambda r: r["Quality"], reverse=True)
     elif sort_by == "Cached":
         sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
 
