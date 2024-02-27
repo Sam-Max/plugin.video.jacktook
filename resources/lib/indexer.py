@@ -16,7 +16,7 @@ from resources.lib.utils.utils import (
 )
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
-
+from resources.lib.download import download_to_disk
 
 def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2, func3):
     poster = ""
@@ -82,6 +82,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 url = debrid_links[0]
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
+                list_item.addContextMenuItems([("Download to Disk", download_to_disk(quality_title, res))])
                 set_video_item(list_item, poster, overview)
                 add_play_item(list_item, url, magnet, id, title, func, plugin)
         else:
