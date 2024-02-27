@@ -20,7 +20,6 @@ from resources.lib.utils.utils import (
 )
 
 
-
 dialog_update = {"count": -1, "percent": 50}
 
 USER_AGENT_HEADER = {
@@ -146,35 +145,20 @@ def get_rd_link(client, res, cached_results, uncached_result, total, dialog, loc
                     res["debridType"] = "RD"
                     if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                         magnet = info_hash_to_magnet(info_hash)
-                response = client.add_magent_link(magnet)
-                torrent_id = response.get("id")
-                if not torrent_id:
-                    log("Failed to add magnet link to Real-Debrid")
-                    return
-                torr_info = client.get_torrent_info(torrent_id)
-                if "magnet_error" in torr_info["status"]:
-                    log(f"Magnet Error: {magnet}")
-                    return
-                if torr_info["status"] == "waiting_files_selection":
-                    files = torr_info["files"]
-                    extensions = supported_video_extensions()[:-1]
-                    torr_keys = [
-                        str(item["id"])
-                        for item in files
-                        for x in extensions
-                        if item["path"].lower().endswith(x)
-                    ]
-                    torr_keys = ",".join(torr_keys)
-                    client.select_files(torr_info["id"], torr_keys)
-                torr_info = client.get_torrent_info(torrent_id)
-                with lock:
-                    if len(torr_info["links"]) > 1:
-                        res["debridId"] = torrent_id
-                        res["debridLinks"] = []
-                    else:
-                        response = client.create_download_link(torr_info["links"][0])
-                        res["debridLinks"] = [response["download"]]
-                cached_results.append(res)
+                torrent_id = add_rd_magnet(client, magnet)
+                if torrent_id:
+                    torr_info = client.get_torrent_info(torrent_id)
+                    with lock:
+                        if len(torr_info["links"]) > 1:
+                            res["debridId"] = info_hash
+                            res["debridLinks"] = []
+                        else:
+                            response = client.create_download_link(
+                                torr_info["links"][0]
+                            )
+                            res["debridLinks"] = [response["download"]]
+                    client.delete_torrent(torrent_id)
+                    cached_results.append(res)
             else:
                 with lock:
                     res["debridCached"] = False
@@ -183,21 +167,55 @@ def get_rd_link(client, res, cached_results, uncached_result, total, dialog, loc
         log(f"Error: {str(e)}")
 
 
+def add_rd_magnet(client, magnet):
+    response = client.add_magent_link(magnet)
+    torrent_id = response.get("id")
+    if not torrent_id:
+        log("Failed to add magnet link to Real-Debrid")
+        return
+    torr_info = client.get_torrent_info(torrent_id)
+    if "magnet_error" in torr_info["status"]:
+        log(f"Magnet Error: {magnet}")
+        return
+    if torr_info["status"] == "waiting_files_selection":
+        files = torr_info["files"]
+        extensions = supported_video_extensions()[:-1]
+        torr_keys = [
+            str(item["id"])
+            for item in files
+            for x in extensions
+            if item["path"].lower().endswith(x)
+        ]
+        torr_keys = ",".join(torr_keys)
+        client.select_files(torr_info["id"], torr_keys)
+    return torrent_id
+
+
 def get_debrid_pack(torrent_id, debrid_type):
     links = get_cached(torrent_id)
     if links:
         return links
     try:
         links = []
+        extensions = supported_video_extensions()[:-1]
         if get_setting("real_debrid_enabled") and debrid_type == "RD":
             rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-            torr_info = rd_client.get_torrent_info(torrent_id)
-            files = torr_info["files"]
-            torr_names = [item["path"] for item in files if item["selected"] == 1]
-            for i, name in enumerate(torr_names):
-                title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
-                response = rd_client.create_download_link(torr_info["links"][i])
-                links.append((response["download"], title))
+            magnet = info_hash_to_magnet(torrent_id)
+            torrent_id = add_rd_magnet(rd_client, magnet)
+            if torrent_id:
+                torr_info = rd_client.get_torrent_info(torrent_id)
+                files = torr_info["files"]
+                torr_names = [
+                    item["path"]
+                    for item in files
+                    for x in extensions
+                    if item["path"].lower().endswith(x)
+                ]
+                for i, name in enumerate(torr_names):
+                    title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
+                    response = rd_client.create_download_link(torr_info["links"][i])
+                    links.append((response["download"], title))
+                rd_client.delete_torrent(torrent_id)
         elif get_setting("premiumize_enabled") and debrid_type == "PM":
             pm_client = Premiumize(token=get_setting("premiumize_token"))
             magnet = info_hash_to_magnet(torrent_id)
@@ -207,9 +225,8 @@ def get_debrid_pack(torrent_id, debrid_type):
                     f"Failed to get link from Premiumize {response_data.get('message')}"
                 )
                 return
-            extensions = supported_video_extensions()[:-1]
             for item in response_data.get("content"):
-                name = item.get("path").rsplit('/', 1)[-1]
+                name = item.get("path").rsplit("/", 1)[-1]
                 if (
                     any(name.lower().endswith(x) for x in extensions)
                     and not item.get("link", "") == ""
@@ -221,7 +238,7 @@ def get_debrid_pack(torrent_id, debrid_type):
             return links
     except Exception as e:
         log(f"Error: {str(e)}")
-    
+
 
 def get_magnet_and_infohash(results, lock):
     with lock:
