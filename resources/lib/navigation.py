@@ -11,6 +11,7 @@ from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
+from resources.lib.download import download_to_disk
 from routing import Plugin
 
 from resources.lib.tmdbv3api.objs.search import Search
@@ -343,6 +344,7 @@ def search(mode="", query="", ids="", tvdata="", rescrape=False):
                 func=play_torrent,
                 func2=show_pack,
                 func3=download,
+                func4=download_to_file
             )
         else:
             notify("No results")
@@ -772,6 +774,11 @@ def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
 
+
+@plugin.route("/downloadlocal")
+def download_to_file():
+    url = plugin.args["query"][0]
+    download_to_disk(url)
 
 def menu_genre(mode, page):
     if mode == "movie_genres":
