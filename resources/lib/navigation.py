@@ -9,6 +9,7 @@ from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached, get_debrid_pack
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
+from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
 from routing import Plugin
@@ -51,6 +52,7 @@ from resources.lib.utils.kodi import (
     container_update,
     dialogyesno,
     get_setting,
+    log,
     notify,
     play_info_hash,
     refresh,
@@ -62,8 +64,8 @@ from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
     setPluginCategory,
+    setResolvedUrl,
 )
-
 plugin = Plugin()
 
 if TORREST_ADDON:
@@ -361,6 +363,20 @@ def play_torrent():
     play(url, magnet, id, title, plugin)
 
 
+@plugin.route("/play_url")
+def play_url():
+    info_hash, file_id = plugin.args["query"][0].split(" ")
+    serve_url = api.serve_url(info_hash, file_id)
+    name = api.torrent_info(info_hash).name
+
+    list_item = ListItem(name, path=serve_url)
+    setResolvedUrl(plugin.handle, True, list_item)
+
+    player = JacktookPlayer()
+    list_item = player.make_listing(list_item, serve_url, name)
+    player.run(list_item)
+
+
 @plugin.route("/torrents")
 def torrents():
     if TORREST_ADDON:
@@ -481,6 +497,7 @@ def torrent_files(info_hash):
     for f in files:
         serve_url = api.serve_url(info_hash, f.id)
         list_item = ListItem(f.name, "download.png")
+        list_item.setPath(serve_url)
 
         context_menu_items = []
         info_labels = {"title": f.name}
@@ -490,7 +507,7 @@ def torrent_files(info_hash):
         else:
             info_type = None
 
-        if info_type is not None:
+        if info_type:
             list_item.setInfo(info_type, info_labels)
             list_item.setProperty("IsPlayable", "true")
             context_menu_items.append(
@@ -511,9 +528,12 @@ def torrent_files(info_hash):
 
         list_item.addContextMenuItems(context_menu_items)
 
-        if info_type is not None:
-            add_play_item(
-                list_item, serve_url, info_hash, f.id, f.name, play_torrent, plugin
+        if info_type:
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(play_url, query=f"{info_hash} {f.id}"),
+                list_item,
+                isFolder=False,
             )
 
     endOfDirectory(plugin.handle)
