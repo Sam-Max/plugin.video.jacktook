@@ -154,7 +154,7 @@ class Elfhosted:
             return response
         except Exception as e:
             log(str(e))
-            notify(f"{translation(30228)}: {str(e)}")
+            notify(f"{translation(30231)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

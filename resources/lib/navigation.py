@@ -383,7 +383,7 @@ def torrents():
         for torrent in api.torrents():
             context_menu_items = [
                 (
-                    "Buffer and play",
+                    translation(30700),
                     play_info_hash(torrent.info_hash),
                 )
             ]
@@ -391,12 +391,12 @@ def torrents():
             if torrent.status.state not in (STATUS_SEEDING, STATUS_PAUSED):
                 context_menu_items.append(
                     (
-                        "Stop downloading",
+                        translation(30701),
                         action(plugin, torrent_action, torrent.info_hash, "stop"),
                     )
                     if torrent.status.total == torrent.status.total_wanted
                     else (
-                        "Download",
+                        translation(30702),
                         action(plugin, torrent_action, torrent.info_hash, "download"),
                     )
                 )
@@ -405,23 +405,23 @@ def torrents():
                 [
                     (
                         (
-                            "Resume",
+                            translation(30703),
                             action(plugin, torrent_action, torrent.info_hash, "resume"),
                         )
                         if torrent.status.paused
                         else (
-                            "Pause",
+                            translation(30704),
                             action(plugin, torrent_action, torrent.info_hash, "pause"),
                         )
                     ),
                     (
-                        "Remove torrent",
+                        translation(30705),
                         action(
                             plugin, torrent_action, torrent.info_hash, "remove_torrent"
                         ),
                     ),
                     (
-                        "Remove all",
+                        translation(30706),
                         action(
                             plugin,
                             torrent_action,
@@ -430,7 +430,7 @@ def torrents():
                         ),
                     ),
                     (
-                        "Torrent status",
+                        translation(30707),
                         action(
                             plugin, torrent_action, torrent.info_hash, "torrent_status"
                         ),
@@ -511,17 +511,17 @@ def torrent_files(info_hash):
             list_item.setInfo(info_type, info_labels)
             list_item.setProperty("IsPlayable", "true")
             context_menu_items.append(
-                ("Buffer and Play", buffer_and_play(info_hash, f.id))
+                (translation(30700), buffer_and_play(info_hash, f.id))
             )
 
         context_menu_items.append(
             (
-                "Download",
+                translation(30702),
                 action(plugin, file_action, info_hash, f.id, "download"),
             )
             if f.status.priority == 0
             else (
-                "Stop",
+                translation(30708),
                 action(plugin, file_action, info_hash, f.id, "stop"),
             )
         )

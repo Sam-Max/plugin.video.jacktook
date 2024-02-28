@@ -179,6 +179,10 @@ msgctxt "#30230"
 msgid "The request to Prowlarr failed."
 msgstr ""
 
+msgctxt "#30231"
+msgid "The request to Elhosted failed."
+msgstr ""
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr ""
@@ -212,18 +216,87 @@ msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr ""
 
 msgctxt "#30650"
-msgid ""
+msgid "Queued"
 msgstr ""
 
 msgctxt "#30651"
-msgid ""
+msgid "Checking"
 msgstr ""
 
 msgctxt "#30652"
-msgid ""
+msgid "Finding"
 msgstr ""
 
 msgctxt "#30653"
-msgid ""
+msgid "Downloading"
 msgstr ""
+
+msgctxt "#30654"
+msgid "Finished"
+msgstr ""
+
+msgctxt "#30655"
+msgid "Seeding"
+msgstr ""
+
+msgctxt "#30656"
+msgid "Allocating"
+msgstr ""
+
+msgctxt "#30657"
+msgid "Checking resume data"
+msgstr ""
+
+msgctxt "#30658"
+msgid "Paused"
+msgstr ""
+
+msgctxt "#30659"
+msgid "Buffering"
+msgstr ""
+
+msgctxt "#30660"
+msgid "Unknown"
+msgstr ""
+
+msgctxt "#30700"
+msgid "Buffer and play"
+msgstr ""
+
+msgctxt "#30701"
+msgid "Stop downloading"
+msgstr ""
+
+msgctxt "#30702"
+msgid "Download"
+msgstr ""
+
+msgctxt "#30703"
+msgid "Resume"
+msgstr ""
+
+msgctxt "#30704"
+msgid "Pause"
+msgstr ""
+
+msgctxt "#30705"
+msgid "Remove torrent"
+msgstr ""
+
+msgctxt "#30706"
+msgid "Remove torrent and files"
+msgstr ""
+
+msgctxt "#30707"
+msgid "Torrent status"
+msgstr ""
+
+msgctxt "#30708"
+msgid "Stop"
+msgstr ""
+
+
+
+
+
 

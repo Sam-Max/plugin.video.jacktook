@@ -23,6 +23,7 @@ from resources.lib.utils.kodi import (
     get_torrest_setting,
     is_torrest_addon,
     is_elementum_addon,
+    log,
     notify,
     translation,
 )
@@ -528,8 +529,8 @@ def info_hash_to_magnet(info_hash):
 
 def get_state_string(state):
     if 0 <= state <= 9:
-        return translation(30220 + state)
-    return translation(30230)
+        return translation(30650 + state)
+    return translation(30660)
 
 
 def get_service_address():
