@@ -14,11 +14,10 @@ from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
 from routing import Plugin
 
-from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import (
     TMDB_POSTER_URL,
-    add_icon_genre,
+    tmdb_search,
     tmdb_show_results,
 )
 from resources.lib.anilist import search_anilist
@@ -44,7 +43,6 @@ from resources.lib.utils.utils import (
 from resources.lib.utils.kodi import (
     ADDON_PATH,
     TORREST_ADDON,
-    Keyboard,
     action,
     addon_settings,
     addon_status,
@@ -52,7 +50,6 @@ from resources.lib.utils.kodi import (
     container_update,
     dialogyesno,
     get_setting,
-    log,
     notify,
     play_info_hash,
     refresh,
@@ -66,7 +63,9 @@ from xbmcplugin import (
     setPluginCategory,
     setResolvedUrl,
 )
+
 plugin = Plugin()
+
 
 if TORREST_ADDON:
     api = Torrest(get_service_address(), get_port(), get_credentials(), ssl_enabled())
@@ -246,45 +245,18 @@ def genre_menu():
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
     page = int(page)
-    genre_id = int(genre_id)
-
-    if mode == "movie_genres" or mode == "tv_genres":
-        menu_genre(mode, page)
-        return
-
-    if mode == "multi":
-        text = Keyboard(id=30241)
-        if not text:
-            return
-        data = Search().multi(str(text), page=page)
-    elif mode == "movie":
-        if genre_id != -1:
-            data = tmdb_get(
-                "discover_movie",
-                {
-                    "with_genres": genre_id,
-                    "append_to_response": "external_ids",
-                    "page": page,
-                },
-            )
-        else:
-            data = tmdb_get("trending_movie", page)
-    elif mode == "tv":
-        if genre_id != -1:
-            data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
-        else:
-            data = tmdb_get("trending_tv", page)
-
-    tmdb_show_results(
-        data,
-        func=search,
-        func2=tv_seasons_details,
-        next_func=next_page,
-        page=page,
-        plugin=plugin,
-        genre_id=genre_id,
-        mode=mode,
-    )
+    data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
+    if data:
+        tmdb_show_results(
+            data,
+            func=search,
+            func2=tv_seasons_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
 
 
 @plugin.route("/search")
@@ -692,8 +664,9 @@ def anilist(category, page=1):
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
+    page = int(page) + 1
     search_anilist(
-        category, int(page), plugin, search, get_anime_episodes, next_page_anilist
+        category, page, plugin, search, get_anime_episodes, next_page_anilist
     )
 
 
@@ -791,29 +764,6 @@ def rd_auth():
 def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
-
-
-def menu_genre(mode, page):
-    if mode == "movie_genres":
-        data = tmdb_get(mode)
-    elif mode == "tv_genres":
-        data = tmdb_get(mode)
-
-    mode = mode.split("_")[0]
-
-    for d in data.genres:
-        name = d["name"]
-        if name == "TV Movie":
-            continue
-        item = ListItem(label=name)
-        add_icon_genre(item, name)
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(search_tmdb, mode=mode, genre_id=d["id"], page=page),
-            item,
-            isFolder=True,
-        )
-    endOfDirectory(plugin.handle)
 
 
 def torrent_status(info_hash):

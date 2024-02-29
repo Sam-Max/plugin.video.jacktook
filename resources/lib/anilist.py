@@ -1,5 +1,6 @@
 import os
-from resources.lib.api.anilist import AniList
+from resources.lib.api.anilist_api import AniList
+from resources.lib.db.database import get_db
 from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -20,17 +21,18 @@ def anilist_client():
 
 
 def search_anilist(category, page, plugin, func, func2, func3):
-    page += 1
     client = anilist_client()
 
     if category == "search":
-        text = Keyboard(id=30242)
-        if text:
-            message, data = client.search(str(text))
-            log(data)
+        if page == 1:
+            text = Keyboard(id=30242)
+            if text:
+                get_db().set_search_string("text", text)
+            else:
+                return
         else:
-            return
-
+            text = get_db().get_search_string("text")
+        message, data = client.search(str(text), page)
     if category == "Trending":
         message, data = search_anilist_api(type="Trending", client=client, page=page)
     elif category == "Popular":
@@ -69,14 +71,14 @@ def search_anilist_api(type, client, page):
 
 def anilist_show_results(results, func, func2, func3, category, page, plugin):
     for res in results["ANIME"]:
-        format = res["format"]
-        if format not in ["MOVIE", "TV"]:
-            continue
-
         _title = res["title"]
         title = _title.get("english")
         if title is None:
             title = _title.get("romaji")
+
+        format = res["format"]
+        if format not in ["TV", "OVA", "MOVIE"]:
+            continue
 
         id = res["id"]
         mal_id = res["idMal"]
@@ -92,7 +94,7 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         description = res["description"]
         coverImage = res["coverImage"]["large"]
 
-        list_item = ListItem(label=f"[{format}]-{title}")
+        list_item = ListItem(label=f"[B][{format}][/B]-{title}")
         list_item.setArt(
             {
                 "poster": coverImage,
@@ -109,7 +111,7 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
 
         title = title.replace("/", "").replace("?", "")
 
-        if format == "TV":
+        if format in ["TV", "OVA"]:
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(func2, query=title, id=id, mal_id=mal_id),

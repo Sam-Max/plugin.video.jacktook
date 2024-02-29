@@ -324,6 +324,14 @@ def tmdb_get(path, params={}):
     return data
 
 
+def get_movie_data(id):
+    details = tmdb_get("movie_details", id)
+    imdb_id = details.external_ids.get("imdb_id")
+    tvdb_id = details.external_ids.get("tvdb_id")
+    runtime = details.runtime
+    return imdb_id, tvdb_id, runtime
+
+
 # This method was taken from script.elementum.jackett
 def get_random_color(provider_name):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
@@ -333,7 +341,7 @@ def get_random_color(provider_name):
     for i in range(0, 3):
         offset = spec * i
         rounded = round(
-            int(hash[offset: offset + spec], 16) / int("F" * spec, 16) * 255
+            int(hash[offset : offset + spec], 16) / int("F" * spec, 16) * 255
         )
         colors.append(int(max(rounded, PROVIDER_COLOR_MIN_BRIGHTNESS)))
 

@@ -21,8 +21,12 @@ class AniList:
         else:
             return f"Anilist error:{res.text}", {}
 
-    def search(self, query):
-        variables = {"query": query}
+    def search(self, query, page, perPage=15):
+        variables = {
+            "query": query, 
+            "page": page, 
+            "perPage": perPage,
+        }
         return self.make_request(SEARCH, variables)
 
     def get_popular(self, page, perPage):
@@ -117,9 +121,11 @@ BASE_GRAPH = """
 SEARCH = """
     query (
         $query: String, 
+        $page: Int, 
+        $perPage: Int,
         $format:[MediaFormat]
     ) {
-        Page {
+        Page (page: $page, perPage: $perPage) {
             ANIME: media (
                 search: $query, 
                 type: ANIME,

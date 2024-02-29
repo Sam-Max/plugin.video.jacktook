@@ -1,7 +1,7 @@
 import os
 import re
-from resources.lib.api.fma import FindMyAnime
-from resources.lib.api.simkl import SIMKLAPI
+from resources.lib.api.fma_api import FindMyAnime
+from resources.lib.api.simkl_api import SIMKLAPI
 from resources.lib.utils.kodi import ADDON_PATH, log
 from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem

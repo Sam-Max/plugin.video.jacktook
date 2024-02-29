@@ -1,7 +1,9 @@
 import os
+from resources.lib.db.database import get_db
+from resources.lib.tmdbv3api.objs.search import Search
 
-from resources.lib.utils.kodi import ADDON_PATH, container_update
-from resources.lib.utils.utils import tmdb_get
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update
+from resources.lib.utils.utils import get_movie_data, tmdb_get
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -49,6 +51,43 @@ def add_icon_genre(item, name):
         )
 
 
+def tmdb_search(mode, genre_id, page, func, plugin):
+    genre_id = int(genre_id)
+    if mode == "movie_genres" or mode == "tv_genres":
+        menu_genre(mode, page, func, plugin)
+        return {}
+
+    if mode == "multi":
+        if page == 1:
+            text = Keyboard(id=30241)
+            if text:
+                get_db().set_search_string("text", text)
+            else:
+                return
+        else:
+            text = get_db().get_search_string("text")
+        return Search().multi(str(text), page=page)
+    elif mode == "movie":
+        if genre_id != -1:
+            return tmdb_get(
+                "discover_movie",
+                {
+                    "with_genres": genre_id,
+                    "append_to_response": "external_ids",
+                    "page": page,
+                },
+            )
+        else:
+            return tmdb_get("trending_movie", page)
+    elif mode == "tv":
+        if genre_id != -1:
+            return tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
+        else:
+            return tmdb_get("trending_tv", page)
+    else:
+        return {}
+
+
 def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id=0):
     for res in data.results:
         id = res.id
@@ -58,10 +97,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
         if mode == "movie":
             title = res.title
             release_date = res.release_date
-            details = tmdb_get("movie_details", int(id))
-            imdb_id = details.external_ids.get("imdb_id")
-            tvdb_id = details.external_ids.get("tvdb_id")
-            duration = details.runtime
+            imdb_id, tvdb_id, duration = get_movie_data(id)
         elif mode == "tv":
             title = res.name
             release_date = res.get("first_air_date", "")
@@ -73,10 +109,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
             if res["media_type"] == "movie":
                 media_type = "movie"
                 release_date = res.release_date
-                details = tmdb_get("movie_details", int(id))
-                imdb_id = details.external_ids.get("imdb_id")
-                tvdb_id = details.external_ids.get("tvdb_id")
-                duration = details.runtime
+                imdb_id, tvdb_id, duration = get_movie_data(id)
                 title = f"[B][MOVIE][/B]- {title}"
             elif res["media_type"] == "tv":
                 media_type = "tv"
@@ -160,4 +193,25 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
         isFolder=True,
     )
 
+    endOfDirectory(plugin.handle)
+
+
+def menu_genre(mode, page, func, plugin):
+    if mode == "movie_genres":
+        data = tmdb_get(mode)
+    elif mode == "tv_genres":
+        data = tmdb_get(mode)
+
+    for d in data.genres:
+        name = d["name"]
+        if name == "TV Movie":
+            continue
+        item = ListItem(label=name)
+        add_icon_genre(item, name)
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(func, mode=mode.split("_")[0], genre_id=d["id"], page=page),
+            item,
+            isFolder=True,
+        )
     endOfDirectory(plugin.handle)
