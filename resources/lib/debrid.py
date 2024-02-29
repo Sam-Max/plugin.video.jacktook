@@ -176,6 +176,7 @@ def add_rd_magnet(client, magnet):
     torr_info = client.get_torrent_info(torrent_id)
     if "magnet_error" in torr_info["status"]:
         log(f"Magnet Error: {magnet}")
+        client.delete_torrent(torrent_id)
         return
     if torr_info["status"] == "waiting_files_selection":
         files = torr_info["files"]
