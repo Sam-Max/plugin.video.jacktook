@@ -9,16 +9,16 @@ from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached, get_debrid_pack
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
+from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
 from resources.lib.download import download_to_disk
 from routing import Plugin
 
-from resources.lib.tmdbv3api.objs.search import Search
 from resources.lib.tmdbv3api.tmdb import TMDb
 from resources.lib.tmdb import (
     TMDB_POSTER_URL,
-    add_icon_genre,
+    tmdb_search,
     tmdb_show_results,
 )
 from resources.lib.anilist import search_anilist
@@ -44,7 +44,6 @@ from resources.lib.utils.utils import (
 from resources.lib.utils.kodi import (
     ADDON_PATH,
     TORREST_ADDON,
-    Keyboard,
     action,
     addon_settings,
     addon_status,
@@ -63,9 +62,11 @@ from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
     setPluginCategory,
+    setResolvedUrl,
 )
 
 plugin = Plugin()
+
 
 if TORREST_ADDON:
     api = Torrest(get_service_address(), get_port(), get_credentials(), ssl_enabled())
@@ -245,45 +246,18 @@ def genre_menu():
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
     page = int(page)
-    genre_id = int(genre_id)
-
-    if mode == "movie_genres" or mode == "tv_genres":
-        menu_genre(mode, page)
-        return
-
-    if mode == "multi":
-        text = Keyboard(id=30241)
-        if not text:
-            return
-        data = Search().multi(str(text), page=page)
-    elif mode == "movie":
-        if genre_id != -1:
-            data = tmdb_get(
-                "discover_movie",
-                {
-                    "with_genres": genre_id,
-                    "append_to_response": "external_ids",
-                    "page": page,
-                },
-            )
-        else:
-            data = tmdb_get("trending_movie", page)
-    elif mode == "tv":
-        if genre_id != -1:
-            data = tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
-        else:
-            data = tmdb_get("trending_tv", page)
-
-    tmdb_show_results(
-        data,
-        func=search,
-        func2=tv_seasons_details,
-        next_func=next_page,
-        page=page,
-        plugin=plugin,
-        genre_id=genre_id,
-        mode=mode,
-    )
+    data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
+    if data:
+        tmdb_show_results(
+            data,
+            func=search,
+            func2=tv_seasons_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
 
 
 @plugin.route("/search")
@@ -363,13 +337,27 @@ def play_torrent():
     play(url, magnet, id, title, plugin)
 
 
+@plugin.route("/play_url")
+def play_url():
+    info_hash, file_id = plugin.args["query"][0].split(" ")
+    serve_url = api.serve_url(info_hash, file_id)
+    name = api.torrent_info(info_hash).name
+
+    list_item = ListItem(name, path=serve_url)
+    setResolvedUrl(plugin.handle, True, list_item)
+
+    player = JacktookPlayer()
+    list_item = player.make_listing(list_item, serve_url, name)
+    player.run(list_item)
+
+
 @plugin.route("/torrents")
 def torrents():
     if TORREST_ADDON:
         for torrent in api.torrents():
             context_menu_items = [
                 (
-                    "Buffer and play",
+                    translation(30700),
                     play_info_hash(torrent.info_hash),
                 )
             ]
@@ -377,12 +365,12 @@ def torrents():
             if torrent.status.state not in (STATUS_SEEDING, STATUS_PAUSED):
                 context_menu_items.append(
                     (
-                        "Stop downloading",
+                        translation(30701),
                         action(plugin, torrent_action, torrent.info_hash, "stop"),
                     )
                     if torrent.status.total == torrent.status.total_wanted
                     else (
-                        "Download",
+                        translation(30702),
                         action(plugin, torrent_action, torrent.info_hash, "download"),
                     )
                 )
@@ -391,23 +379,23 @@ def torrents():
                 [
                     (
                         (
-                            "Resume",
+                            translation(30703),
                             action(plugin, torrent_action, torrent.info_hash, "resume"),
                         )
                         if torrent.status.paused
                         else (
-                            "Pause",
+                            translation(30704),
                             action(plugin, torrent_action, torrent.info_hash, "pause"),
                         )
                     ),
                     (
-                        "Remove torrent",
+                        translation(30705),
                         action(
                             plugin, torrent_action, torrent.info_hash, "remove_torrent"
                         ),
                     ),
                     (
-                        "Remove all",
+                        translation(30706),
                         action(
                             plugin,
                             torrent_action,
@@ -416,7 +404,7 @@ def torrents():
                         ),
                     ),
                     (
-                        "Torrent status",
+                        translation(30707),
                         action(
                             plugin, torrent_action, torrent.info_hash, "torrent_status"
                         ),
@@ -483,6 +471,7 @@ def torrent_files(info_hash):
     for f in files:
         serve_url = api.serve_url(info_hash, f.id)
         list_item = ListItem(f.name, "download.png")
+        list_item.setPath(serve_url)
 
         context_menu_items = []
         info_labels = {"title": f.name}
@@ -492,30 +481,33 @@ def torrent_files(info_hash):
         else:
             info_type = None
 
-        if info_type is not None:
+        if info_type:
             list_item.setInfo(info_type, info_labels)
             list_item.setProperty("IsPlayable", "true")
             context_menu_items.append(
-                ("Buffer and Play", buffer_and_play(info_hash, f.id))
+                (translation(30700), buffer_and_play(info_hash, f.id))
             )
 
         context_menu_items.append(
             (
-                "Download",
+                translation(30702),
                 action(plugin, file_action, info_hash, f.id, "download"),
             )
             if f.status.priority == 0
             else (
-                "Stop",
+                translation(30708),
                 action(plugin, file_action, info_hash, f.id, "stop"),
             )
         )
 
         list_item.addContextMenuItems(context_menu_items)
 
-        if info_type is not None:
-            add_play_item(
-                list_item, serve_url, info_hash, f.id, f.name, play_torrent, plugin
+        if info_type:
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(play_url, query=f"{info_hash} {f.id}"),
+                list_item,
+                isFolder=False,
             )
 
     endOfDirectory(plugin.handle)
@@ -674,8 +666,9 @@ def anilist(category, page=1):
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
+    page = int(page) + 1
     search_anilist(
-        category, int(page), plugin, search, get_anime_episodes, next_page_anilist
+        category, page, plugin, search, get_anime_episodes, next_page_anilist
     )
 
 
@@ -779,28 +772,6 @@ def pm_auth():
 def download_to_file():
     url = plugin.args["query"][0]
     download_to_disk(url)
-
-def menu_genre(mode, page):
-    if mode == "movie_genres":
-        data = tmdb_get(mode)
-    elif mode == "tv_genres":
-        data = tmdb_get(mode)
-
-    mode = mode.split("_")[0]
-
-    for d in data.genres:
-        name = d["name"]
-        if name == "TV Movie":
-            continue
-        item = ListItem(label=name)
-        add_icon_genre(item, name)
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(search_tmdb, mode=mode, genre_id=d["id"], page=page),
-            item,
-            isFolder=True,
-        )
-    endOfDirectory(plugin.handle)
 
 
 def torrent_status(info_hash):

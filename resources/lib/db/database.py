@@ -59,6 +59,13 @@ class Database:
         self.database[key][identifier] = tmdb_data
         self.commit()
 
+    def set_search_string(self, key, value):
+        self.database[key] = value
+        self.commit()
+
+    def get_search_string(self, key):
+        return self.database[key]
+
     def commit(self):
         with open(self.database_path, "wb") as f:
             pickle.dump(self.database, f)

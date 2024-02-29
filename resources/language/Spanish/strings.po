@@ -163,6 +163,11 @@ msgctxt "#30230"
 msgid "The request to Prowlarr failed."
 msgstr "La peticion a Prowlarr ha fallado"
 
+msgctxt "#30231"
+msgid "The request to Elhosted failed."
+msgstr "La peticion a Elhosted ha fallado"
+
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache de TMDB limpiada"
@@ -196,17 +201,82 @@ msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr "El Addon de Elementum no esta instalado - (plugin.video.elementum)"
 
 msgctxt "#30650"
-msgid ""
-msgstr ""
+msgid "Queued"
+msgstr "Encolado"
 
 msgctxt "#30651"
-msgid ""
-msgstr ""
+msgid "Checking"
+msgstr "Comprobando"
 
 msgctxt "#30652"
-msgid ""
-msgstr ""
+msgid "Finding"
+msgstr "Buscando"
 
 msgctxt "#30653"
-msgid ""
+msgid "Downloading"
+msgstr "Descargando"
+
+msgctxt "#30654"
+msgid "Finished"
+msgstr "Terminado"
+
+msgctxt "#30655"
+msgid "Seeding"
+msgstr "Seeding"
+
+msgctxt "#30656"
+msgid "Asignando"
 msgstr ""
+
+msgctxt "#30657"
+msgid "Checking resume data"
+msgstr "Comprobando datos para resumir"
+
+msgctxt "#30658"
+msgid "Paused"
+msgstr "Pausado"
+
+msgctxt "#30659"
+msgid "Buffering"
+msgstr "Buffering"
+
+msgctxt "#30660"
+msgid "Unknown"
+msgstr "Desconocido"
+
+msgctxt "#30700"
+msgid "Buffer and play"
+msgstr "Buffer y reproducir"
+
+msgctxt "#30701"
+msgid "Stop downloading"
+msgstr "Detener descarga"
+
+msgctxt "#30702"
+msgid "Download"
+msgstr "Descargar"
+
+msgctxt "#30703"
+msgid "Resume"
+msgstr "Resumir"
+
+msgctxt "#30704"
+msgid "Pause"
+msgstr "Pausar"
+
+msgctxt "#30705"
+msgid "Remove torrent"
+msgstr "Remover torrent"
+
+msgctxt "#30706"
+msgid "Remove torrent and files"
+msgstr "Remover torrents y archivos"
+
+msgctxt "#30707"
+msgid "Torrent status"
+msgstr "Estado del torrent"
+
+msgctxt "#30708"
+msgid "Stop"
+msgstr "Detener"
+
