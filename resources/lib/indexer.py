@@ -79,9 +79,11 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 add_pack_item(list_item, func2, debrid_id, debrid_type, plugin)
             else:
                 url = debrid_links[0]
+                filename = title
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
-                list_item.addContextMenuItems([("Download to Disk", action(plugin, func4, query=f"{url}"))])
+                list_item.addContextMenuItems(
+                    [("Download to Disk", action(plugin, func4, query=f"{url}⌘{filename}"))])
                 set_video_item(list_item, poster, overview)
                 add_play_item(list_item, url, magnet, id, title, func, plugin)
         else:

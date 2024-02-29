@@ -770,8 +770,8 @@ def pm_auth():
 
 @plugin.route("/downloadlocal")
 def download_to_file():
-    url = plugin.args["query"][0]
-    download_to_disk(url)
+    url, title = plugin.args["query"][0].split("⌘")
+    download_to_disk(url, title)
 
 
 def torrent_status(info_hash):
