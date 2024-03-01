@@ -12,7 +12,7 @@ from resources.lib.indexer import indexer_show_results
 from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
-from resources.lib.download import download_to_disk
+from resources.lib.download import get_dlm
 from routing import Plugin
 
 from resources.lib.tmdbv3api.tmdb import TMDb
@@ -318,7 +318,7 @@ def search(mode="", query="", ids="", tvdata="", rescrape=False):
                 func=play_torrent,
                 func2=show_pack,
                 func3=download,
-                func4=download_to_file
+                func4=download_from_debrid
             )
         else:
             notify("No results")
@@ -768,10 +768,16 @@ def pm_auth():
     pm_client.auth()
 
 
-@plugin.route("/downloadlocal")
-def download_to_file():
+@plugin.route("/downloads/local")
+def download_from_debrid():
     url, title = plugin.args["query"][0].split("⌘")
-    download_to_disk(url, title)
+    get_dlm().add_to_queue(url, title)
+
+
+@plugin.route("/downloads/cancel")
+def cancel_debrid_download():
+    url = plugin.args["query"][0]
+    get_dlm().cancel_download(url)
 
 
 def torrent_status(info_hash):
