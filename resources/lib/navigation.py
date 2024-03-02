@@ -266,15 +266,16 @@ def search_tmdb(mode, genre_id, page):
 @query_arg("ids", required=False)
 @query_arg("tvdata", required=False)
 @query_arg("rescrape", required=False)
-def search(mode="", query="", ids="", tvdata="", rescrape=False):
+@query_arg("episode_name", required=False)
+def search(mode="", query="", ids="", tvdata="", episode_name="", rescrape=False):
     if ids:
         id, tvdb_id, imdb_id = ids.split(", ")
     else:
         id = tvdb_id = imdb_id = -1
     if tvdata:
-        episode_name, episode, season = tvdata.split(", ")
+        episode, season = tvdata.split(", ")
     else:
-        episode_name = episode = season = 0
+        episode = season = 0
 
     set_watched_title(query, id, tvdb_id, imdb_id, mode)
 
@@ -592,9 +593,6 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
         air_date = ep.air_date
         duration = ep.runtime
 
-        query = tv_name.replace("/", "").replace("?", "")
-        ep_name = ep_name.replace("/", "").replace("?", "")
-
         still_path = ep.get("still_path", "")
         if still_path:
             still_path = TMDB_POSTER_URL + still_path
@@ -624,9 +622,10 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
                         plugin,
                         search,
                         mode="tv",
-                        query=query,
+                        query=tv_name,
+                        episode_name=ep_name,
                         ids=f"{id}, {tvdb_id}, {imdb_id}",
-                        tvdata=f"{ep_name}, {episode}, {season}",
+                        tvdata=f"{episode}, {season}",
                         rescrape=True,
                     ),
                 )
@@ -637,9 +636,10 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
             plugin.url_for(
                 search,
                 mode="tv",
-                query=query,
+                query=tv_name,
+                episode_name=ep_name,
                 ids=f"{id}, {tvdb_id}, {imdb_id}",
-                tvdata=f"{ep_name}, {episode}, {season}",
+                tvdata=f"{episode}, {season}"
             ),
             list_item,
             isFolder=True,

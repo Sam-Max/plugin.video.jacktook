@@ -92,16 +92,15 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
             info_tag.setFirstAired(date)
             info_tag.setPlot(description)
 
-            title = title.replace("/", "").replace("?", "")
-
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(
                     func,
                     mode="tv",
                     query=title,
+                    episode_name=ep_name,
                     ids=f"{id}, {-1}, {imdb_id}",
-                    tvdata=f"{ep_name}, {episode}, {season}",
+                    tvdata=f"{episode}, {season}",
                 ),
                 list_item,
                 isFolder=True,
