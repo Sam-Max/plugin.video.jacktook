@@ -34,7 +34,10 @@ def last_files(plugin, func1, func2):
             plugin.handle,
             plugin.url_for(
                 func2,
-                query=f"{data.get('url', None)} {data.get('magnet', None)} {data.get('id')} {title}",
+                title=title,
+                id= data.get('id'),
+                url=data.get("url"),
+                magnet=data.get("magnet"),
             ),
             list_item,
             False,

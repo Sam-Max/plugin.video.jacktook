@@ -9,6 +9,7 @@ from resources.lib.api.real_debrid_api import RealDebrid
 from resources.lib.utils.kodi import get_setting, log
 
 from resources.lib.torf._torrent import Torrent
+from resources.lib.utils.rd_utils import add_rd_magnet
 from resources.lib.utils.utils import (
     Indexer,
     get_cached,
@@ -55,7 +56,7 @@ def check_debrid_cached(query, results, mode, dialog, rescrape, episode=1):
             rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
             [
                 executor.submit(
-                    get_rd_link,
+                    check_rd_cached,
                     rd_client,
                     res,
                     cached_results,
@@ -70,7 +71,7 @@ def check_debrid_cached(query, results, mode, dialog, rescrape, episode=1):
             pm_client = Premiumize(token=get_setting("premiumize_token"))
             [
                 executor.submit(
-                    get_pm_link,
+                    check_pm_cached,
                     pm_client,
                     res,
                     cached_results,
@@ -96,43 +97,7 @@ def check_debrid_cached(query, results, mode, dialog, rescrape, episode=1):
     return cached_results
 
 
-def get_pm_link(client, res, cached_results, uncached_result, total, dialog, lock):
-    debrid_dialog_update(total, dialog, lock)
-    info_hash = res.get("infoHash")
-    magnet = res.get("magnet")
-    try:
-        if info_hash and magnet:
-            torr_available = client.get_torrent_instant_availability(info_hash)
-            if torr_available.get("response")[0]:
-                with lock:
-                    res["debridCached"] = True
-                    res["debridType"] = "PM"
-                    if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
-                        magnet = info_hash_to_magnet(info_hash)
-                response_data = client.create_download_link(magnet)
-                if "error" in response_data.get("status"):
-                    log(
-                        f"Failed to get link from Premiumize {response_data.get('message')}"
-                    )
-                    return
-                content = response_data.get("content")
-                if len(content) > 1:
-                    with lock:
-                        res["debridId"] = info_hash
-                else:
-                    selected_file = max(content, key=lambda x: x.get("size", 0))
-                    with lock:
-                        res["debridLinks"] = [selected_file["stream_link"]]
-                cached_results.append(res)
-            else:
-                with lock:
-                    res["debridCached"] = False
-                    uncached_result.append(res)
-    except Exception as e:
-        log(f"Error: {str(e)}")
-
-
-def get_rd_link(client, res, cached_results, uncached_result, total, dialog, lock):
+def check_rd_cached(client, res, cached_results, uncached_result, total, dialog, lock):
     debrid_dialog_update(total, dialog, lock)
     info_hash = res.get("infoHash")
     magnet = res.get("magnet")
@@ -150,93 +115,54 @@ def get_rd_link(client, res, cached_results, uncached_result, total, dialog, loc
                     torr_info = client.get_torrent_info(torrent_id)
                     with lock:
                         if len(torr_info["links"]) > 1:
-                            res["debridId"] = info_hash
-                            res["debridLinks"] = []
-                        else:
-                            response = client.create_download_link(
-                                torr_info["links"][0]
-                            )
-                            res["debridLinks"] = [response["download"]]
+                            res["debridPack"] = True
+                        cached_results.append(res)
                     client.delete_torrent(torrent_id)
-                    cached_results.append(res)
             else:
                 with lock:
                     res["debridCached"] = False
                     uncached_result.append(res)
     except Exception as e:
         log(f"Error: {str(e)}")
+        if torrent_id:
+            client.delete_torrent(torrent_id)
 
 
-def add_rd_magnet(client, magnet):
-    response = client.add_magent_link(magnet)
-    torrent_id = response.get("id")
-    if not torrent_id:
-        log("Failed to add magnet link to Real-Debrid")
-        return
-    torr_info = client.get_torrent_info(torrent_id)
-    if "magnet_error" in torr_info["status"]:
-        log(f"Magnet Error: {magnet}")
-        client.delete_torrent(torrent_id)
-        return
-    if torr_info["status"] == "waiting_files_selection":
-        files = torr_info["files"]
-        extensions = supported_video_extensions()[:-1]
-        torr_keys = [
-            str(item["id"])
-            for item in files
-            for x in extensions
-            if item["path"].lower().endswith(x)
-        ]
-        torr_keys = ",".join(torr_keys)
-        client.select_files(torr_info["id"], torr_keys)
-    return torrent_id
-
-
-def get_debrid_pack(torrent_id, debrid_type):
-    links = get_cached(torrent_id)
-    if links:
-        return links
+def check_pm_cached(client, res, cached_results, uncached_result, total, dialog, lock):
+    debrid_dialog_update(total, dialog, lock)
+    info_hash = res.get("infoHash")
+    magnet = res.get("magnet")
+    extensions = supported_video_extensions()[:-1]
     try:
-        links = []
-        extensions = supported_video_extensions()[:-1]
-        if get_setting("real_debrid_enabled") and debrid_type == "RD":
-            rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-            magnet = info_hash_to_magnet(torrent_id)
-            torrent_id = add_rd_magnet(rd_client, magnet)
-            if torrent_id:
-                torr_info = rd_client.get_torrent_info(torrent_id)
-                files = torr_info["files"]
-                torr_names = [
-                    item["path"]
-                    for item in files
+        if info_hash and magnet:
+            torr_available = client.get_torrent_instant_availability(info_hash)
+            if torr_available.get("response")[0]:
+                with lock:
+                    res["debridCached"] = True
+                    res["debridType"] = "PM"
+                    if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
+                        magnet = info_hash_to_magnet(info_hash)
+                response_data = client.create_download_link(magnet)
+                if "error" in response_data.get("status"):
+                    log(
+                        f"Failed to get link from Premiumize {response_data.get('message')}"
+                    )
+                    return
+                content = response_data.get("content")
+                files_names = [
+                    item["path"].rsplit("/", 1)[-1]
+                    for item in content
                     for x in extensions
                     if item["path"].lower().endswith(x)
                 ]
-                for i, name in enumerate(torr_names):
-                    title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
-                    response = rd_client.create_download_link(torr_info["links"][i])
-                    links.append((response["download"], title))
-                rd_client.delete_torrent(torrent_id)
-        elif get_setting("premiumize_enabled") and debrid_type == "PM":
-            pm_client = Premiumize(token=get_setting("premiumize_token"))
-            magnet = info_hash_to_magnet(torrent_id)
-            response_data = pm_client.create_download_link(magnet)
-            if "error" in response_data.get("status"):
-                log(
-                    f"Failed to get link from Premiumize {response_data.get('message')}"
-                )
-                return
-            for item in response_data.get("content"):
-                name = item.get("path").rsplit("/", 1)[-1]
-                if (
-                    any(name.lower().endswith(x) for x in extensions)
-                    and not item.get("link", "") == ""
-                ):
-                    title = f"[B][Cached][/B]-{name}"
-                    links.append((item["link"], title))
-        if links:
-            set_cached(links, torrent_id)
-            return links
+                with lock:
+                    if len(files_names) > 1:
+                        res["debridPack"] = True
+                    cached_results.append(res)
+            else:
+                with lock:
+                    res["debridCached"] = False
+                    uncached_result.append(res)
     except Exception as e:
         log(f"Error: {str(e)}")
 

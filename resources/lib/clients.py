@@ -172,10 +172,9 @@ class Elfhosted:
                     "seeders": 0,
                     "publishDate": "",
                     "peers": 0,
-                    "debridId": "",
                     "debridType": "",
                     "debridCached": False,
-                    "debridLinks": [],
+                    "debridPack":False,
                 }
             )
         return results
@@ -230,10 +229,9 @@ class Torrentio:
                     "seeders": parsed_item["seeders"],
                     "publishDate": "",
                     "peers": 0,
-                    "debridId": "",
                     "debridType": "",
                     "debridCached": False,
-                    "debridLinks": [],
+                    "debridPack":False,
                 }
             )
         return results
@@ -321,10 +319,9 @@ class Jackett:
                         "seeders": seeders,
                         "peers": peers,
                         "infoHash": infohash,
-                        "debridId": "",
                         "debridType": "",
                         "debridCached": False,
-                        "debridLinks": [],
+                        "debridPack":False,
                     }
                 )
             return results
@@ -389,10 +386,9 @@ class Prowlarr:
                 r.update(
                     {
                         "quality_title": "",
-                        "debridId": "",
                         "debridType": "",
                         "debridCached": False,
-                        "debridLinks": [],
+                        "debridPack":False,
                     }
                 )
             return res

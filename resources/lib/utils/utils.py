@@ -23,7 +23,6 @@ from resources.lib.utils.kodi import (
     get_torrest_setting,
     is_torrest_addon,
     is_elementum_addon,
-    log,
     notify,
     translation,
 )
@@ -126,8 +125,8 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
 
 
-def play(url, magnet, id, title, plugin, debrid=False):
-    set_watched_file(title, id, magnet, url)
+def play(url, magnet, id, title, plugin, debrid_type="", debrid=False):
+    set_watched_file(title, debrid_type, id, magnet, url)
     if not magnet and not url:
         notify(translation(30251))
         return
@@ -152,9 +151,6 @@ def play(url, magnet, id, title, plugin, debrid=False):
             return
     elif torr_client == "Debrid":
         debrid = True
-        if url.endswith(".torrent") or magnet:
-            notify("Not a playable url.")
-            return
         _url = url
 
     list_item = ListItem(title, path=_url)
@@ -178,19 +174,37 @@ def list_item(label, icon):
     return item
 
 
-def add_play_item(list_item, url, magnet, id, title, func, plugin):
+def add_play_item(
+    list_item,
+    id,
+    title,
+    url="",
+    magnet="",
+    infoHash="",
+    debrid_type="",
+    func=None,
+    plugin=None,
+):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{url} {magnet} {id} {title}"),
+        plugin.url_for(
+            func,
+            title=title,
+            id=id,
+            url=url,
+            magnet=magnet,
+            info_hash=infoHash,
+            debrid_type=debrid_type,
+        ),
         list_item,
         isFolder=False,
     )
 
 
-def add_pack_item(list_item, func, debrid_id, debrid_type, plugin):
+def add_pack_item(list_item, func, info_hash, debrid_type, plugin):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{debrid_id} {debrid_type}"),
+        plugin.url_for(func, query=f"{info_hash} {debrid_type}"),
         list_item,
         isFolder=True,
     )
@@ -211,7 +225,12 @@ def set_video_item(list_item, poster, overview):
     list_item.setProperty("IsPlayable", "true")
 
 
-def set_watched_file(title, id, magnet, url):
+def set_watched_file(title, debrid_type, id, magnet, url):
+    if debrid_type:
+        title = f"[B][{debrid_type}][/B]-{title}"
+    else:
+        title = f"[B][Uncached][/B]-{title}"
+
     if title not in db.database["jt:watch"]:
         db.database["jt:watch"][title] = True
 

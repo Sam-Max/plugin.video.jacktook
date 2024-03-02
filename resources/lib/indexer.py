@@ -1,11 +1,11 @@
 import re
 from resources.lib.anilist import anilist_client
-from resources.lib.utils.kodi import action, bytes_to_human_readable, log
+from resources.lib.utils.kodi import action, bytes_to_human_readable
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
-    add_play_item,
     add_pack_item,
+    add_play_item,
     fanartv_get,
     get_description_length,
     get_random_color,
@@ -24,9 +24,9 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
     description_length = get_description_length()
 
     # Direct Search if query is None
-    if query is not None:  
+    if query is not None:
         if mode == "tv":
-            if tvdb_id == "-1": # for anime episode
+            if tvdb_id == "-1":  # for anime episode
                 _, result = anilist_client().get_by_id(id)
                 overview = result.get("description", "")
                 poster = result.get("coverImage", {}).get("large", "")
@@ -52,7 +52,6 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
         if len(quality_title) > description_length:
             quality_title = quality_title[:description_length]
 
-        magnet = ""
         date = res.get("publishDate", "")
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
@@ -70,20 +69,30 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
 
         debrid_type = res["debridType"]
         debrid_type_color = get_random_color(debrid_type)
-        format_debrid_type = f"[B][COLOR {debrid_type_color}][{debrid_type}][/COLOR][/B]"
-        
+        format_debrid_type = (
+            f"[B][COLOR {debrid_type_color}][{debrid_type}][/COLOR][/B]"
+        )
+
         if res["debridCached"]:
-            debrid_links = res.get("debridLinks")
-            debrid_id = res.get("debridId")
-            if debrid_id:
+            infoHash = res.get("infoHash")
+            if res["debridPack"]:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
-                add_pack_item(list_item, func2, debrid_id, debrid_type, plugin)
+                add_pack_item(list_item, func2, infoHash, debrid_type, plugin)
             else:
-                url = debrid_links[0]
                 title = f"[B][Cached][/B]-{title}"
-                list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
+                list_item = ListItem(
+                    label=f"[{format_debrid_type}-Cached]-{torr_title}"
+                )
                 set_video_item(list_item, poster, overview)
-                add_play_item(list_item, url, magnet, id, title, func, plugin)
+                add_play_item(
+                    list_item,
+                    id,
+                    title,
+                    debrid_type=debrid_type,
+                    infoHash=infoHash,
+                    func=func,
+                    plugin=plugin,
+                )
         else:
             download_url = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
@@ -100,9 +109,21 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
             set_video_item(list_item, poster, overview)
             if magnet:
                 list_item.addContextMenuItems(
-                    [("Download to Debrid", action(plugin, func3, query= f"{magnet} {debrid_type}"))]
+                    [
+                        (
+                            "Download to Debrid",
+                            action(plugin, func3, query=f"{magnet} {debrid_type}"),
+                        )
+                    ]
                 )
-            add_play_item(list_item, download_url, magnet, id, title, func, plugin)
+            add_play_item(
+                list_item,
+                id,
+                title,
+                url=download_url,
+                magnet=magnet,
+                func=func,
+                plugin=plugin,
+            )
 
     endOfDirectory(plugin.handle)
-

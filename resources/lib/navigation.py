@@ -6,12 +6,14 @@ from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
 from resources.lib.api.torrest_api import STATUS_PAUSED, STATUS_SEEDING, Torrest
 from resources.lib.clients import search_api
-from resources.lib.debrid import check_debrid_cached, get_debrid_pack
+from resources.lib.debrid import check_debrid_cached
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
 from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
+from resources.lib.utils.pm_utils import get_pm_link, get_pm_pack
+from resources.lib.utils.rd_utils import get_rd_link, get_rd_pack, get_rd_pack_link
 from routing import Plugin
 
 from resources.lib.tmdbv3api.tmdb import TMDb
@@ -22,7 +24,6 @@ from resources.lib.tmdb import (
 )
 from resources.lib.anilist import search_anilist
 from resources.lib.utils.utils import (
-    add_play_item,
     clear,
     clear_all_cache,
     clear_tmdb_cache,
@@ -330,9 +331,21 @@ def search(mode="", query="", ids="", tvdata="", rescrape=False):
 
 
 @plugin.route("/play_torrent")
-def play_torrent():
-    url, magnet, id, title = plugin.args["query"][0].split(" ", 3)
-    play(url, magnet, id, title, plugin)
+@query_arg("id", required=False)
+@query_arg("title", required=True)
+@query_arg("url", required=False)
+@query_arg("magnet", required=False)
+@query_arg("info_hash", required=False)
+@query_arg("debrid_type", required=False)
+def play_torrent(title, id="", url="", magnet="", info_hash="", debrid_type=""):
+    if info_hash:
+        if debrid_type == "RD":
+            rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+            url = get_rd_link(rd_client, info_hash)
+        elif debrid_type == "PM":
+            pm_client = Premiumize(token=get_setting("premiumize_token"))
+            url = get_pm_link(pm_client, info_hash)
+    play(url, magnet, id, title, plugin, debrid_type)
 
 
 @plugin.route("/play_url")
@@ -635,24 +648,50 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
     endOfDirectory(plugin.handle)
 
 
+@plugin.route("/get_rd_link_pack")
+def get_rd_link_pack():
+    id, info_hash, title = plugin.args["args"][0].split(" ", 2)
+    url = get_rd_pack_link(id, info_hash)
+    play(url=url, magnet="", id="", title=title, plugin=plugin)
+
+
 @plugin.route("/show_pack")
 def show_pack():
-    torrent_id, debrid_type = plugin.args["query"][0].split(" ")
-    results = get_debrid_pack(torrent_id, debrid_type)
-    if results:
-        for link, title in results:
-            list_item = ListItem(label=f"{title}")
-            set_video_item(list_item, poster="", overview="")
-            add_play_item(
-                list_item,
-                link,
-                id="",
-                magnet="",
-                title=title,
-                func=play_torrent,
-                plugin=plugin,
-            )
-        endOfDirectory(plugin.handle)
+    info_hash, debrid_type = plugin.args["query"][0].split()
+    if debrid_type == "RD":
+        info = get_rd_pack(info_hash)
+        if info:
+            for id, title in info:
+                list_item = ListItem(label=f"{title}")
+                set_video_item(list_item, poster="", overview="")
+                addDirectoryItem(
+                    plugin.handle,
+                    plugin.url_for(
+                        get_rd_link_pack,
+                        args=f"{id} {info_hash} {title}",
+                    ),
+                    list_item,
+                    isFolder=False,
+                )
+            endOfDirectory(plugin.handle)
+    elif debrid_type == "PM":
+        info = get_pm_pack(info_hash)
+        if info:
+            for url, title in info:
+                list_item = ListItem(label=f"{title}")
+                set_video_item(list_item, poster="", overview="")
+                addDirectoryItem(
+                    plugin.handle,
+                    plugin.url_for(
+                        play_torrent,
+                        title=title,
+                        id="",
+                        url=url,
+                    ),
+                    list_item,
+                    isFolder=False,
+                )
+            endOfDirectory(plugin.handle)
 
 
 @plugin.route("/anilist/<category>")
