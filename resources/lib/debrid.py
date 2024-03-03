@@ -112,20 +112,18 @@ def check_rd_cached(client, res, cached_results, uncached_result, total, dialog,
                         magnet = info_hash_to_magnet(info_hash)
                 torrent_id = add_rd_magnet(client, magnet)
                 if torrent_id:
+                    res["debridId"] = torrent_id
                     torr_info = client.get_torrent_info(torrent_id)
                     with lock:
                         if len(torr_info["links"]) > 1:
                             res["debridPack"] = True
                         cached_results.append(res)
-                    client.delete_torrent(torrent_id)
             else:
                 with lock:
                     res["debridCached"] = False
                     uncached_result.append(res)
     except Exception as e:
         log(f"Error: {str(e)}")
-        if torrent_id:
-            client.delete_torrent(torrent_id)
 
 
 def check_pm_cached(client, res, cached_results, uncached_result, total, dialog, lock):

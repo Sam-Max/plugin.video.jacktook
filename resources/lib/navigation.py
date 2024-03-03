@@ -337,15 +337,15 @@ def search(mode="", query="", ids="", tvdata="", episode_name="", rescrape=False
 @query_arg("url", required=False)
 @query_arg("magnet", required=False)
 @query_arg("info_hash", required=False)
+@query_arg("torrent_id", required=False)
 @query_arg("debrid_type", required=False)
-def play_torrent(title, id="", url="", magnet="", info_hash="", debrid_type=""):
-    if info_hash:
-        if debrid_type == "RD":
-            rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-            url = get_rd_link(rd_client, info_hash)
-        elif debrid_type == "PM":
-            pm_client = Premiumize(token=get_setting("premiumize_token"))
-            url = get_pm_link(pm_client, info_hash)
+def play_torrent(title, id="", url="", magnet="", torrent_id="", info_hash="", debrid_type=""):
+    if torrent_id and debrid_type == "RD":
+        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+        url = get_rd_link(rd_client, torrent_id)
+    if info_hash and debrid_type == "PM":
+        pm_client = Premiumize(token=get_setting("premiumize_token"))
+        url = get_pm_link(pm_client, info_hash)
     play(url, magnet, id, title, plugin, debrid_type)
 
 
@@ -650,16 +650,16 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 
 @plugin.route("/get_rd_link_pack")
 def get_rd_link_pack():
-    id, info_hash, title = plugin.args["args"][0].split(" ", 2)
-    url = get_rd_pack_link(id, info_hash)
-    play(url=url, magnet="", id="", title=title, plugin=plugin)
+    id, torrent_id, debrid_type, title = plugin.args["args"][0].split(" ", 3)
+    url = get_rd_pack_link(id, torrent_id)
+    play(url=url, magnet="", id="", title=title, debrid_type=debrid_type, plugin=plugin)
 
 
 @plugin.route("/show_pack")
 def show_pack():
-    info_hash, debrid_type = plugin.args["query"][0].split()
+    info_hash, torrent_id, debrid_type = plugin.args["query"][0].split()
     if debrid_type == "RD":
-        info = get_rd_pack(info_hash)
+        info = get_rd_pack(torrent_id)
         if info:
             for id, title in info:
                 list_item = ListItem(label=f"{title}")
@@ -668,7 +668,7 @@ def show_pack():
                     plugin.handle,
                     plugin.url_for(
                         get_rd_link_pack,
-                        args=f"{id} {info_hash} {title}",
+                        args=f"{id} {torrent_id} {debrid_type} {title}",
                     ),
                     list_item,
                     isFolder=False,
@@ -685,8 +685,8 @@ def show_pack():
                     plugin.url_for(
                         play_torrent,
                         title=title,
-                        id="",
                         url=url,
+                        debrid_type=debrid_type
                     ),
                     list_item,
                     isFolder=False,

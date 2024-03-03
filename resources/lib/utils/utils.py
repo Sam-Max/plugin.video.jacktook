@@ -180,7 +180,8 @@ def add_play_item(
     title,
     url="",
     magnet="",
-    infoHash="",
+    torrent_id="",
+    info_hash="",
     debrid_type="",
     func=None,
     plugin=None,
@@ -193,7 +194,8 @@ def add_play_item(
             id=id,
             url=url,
             magnet=magnet,
-            info_hash=infoHash,
+            torrent_id=torrent_id,
+            info_hash=info_hash,
             debrid_type=debrid_type,
         ),
         list_item,
@@ -201,10 +203,10 @@ def add_play_item(
     )
 
 
-def add_pack_item(list_item, func, info_hash, debrid_type, plugin):
+def add_pack_item(list_item, func, info_hash, torrent_id, debrid_type, plugin):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{info_hash} {debrid_type}"),
+        plugin.url_for(func, query=f"{info_hash} {torrent_id} {debrid_type}"),
         list_item,
         isFolder=True,
     )
@@ -227,7 +229,8 @@ def set_video_item(list_item, poster, overview):
 
 def set_watched_file(title, debrid_type, id, magnet, url):
     if debrid_type:
-        title = f"[B][{debrid_type}][/B]-{title}"
+        debrid_color = get_random_color(debrid_type)
+        title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
     else:
         title = f"[B][Uncached][/B]-{title}"
 

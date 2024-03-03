@@ -68,16 +68,16 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
         torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {quality_title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
 
         debrid_type = res["debridType"]
-        debrid_type_color = get_random_color(debrid_type)
-        format_debrid_type = (
-            f"[B][COLOR {debrid_type_color}][{debrid_type}][/COLOR][/B]"
-        )
-
+        debrid_color = get_random_color(debrid_type)
+        format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
+        
         if res["debridCached"]:
-            infoHash = res.get("infoHash")
-            if res["debridPack"]:
+            debridPack = res["debridPack"]
+            info_hash = res.get("infoHash")
+            torrent_id = res.get("debridId")
+            if debridPack:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
-                add_pack_item(list_item, func2, infoHash, debrid_type, plugin)
+                add_pack_item(list_item, func2, info_hash, torrent_id, debrid_type, plugin)
             else:
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(
@@ -88,8 +88,9 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                     list_item,
                     id,
                     title,
+                    torrent_id=torrent_id,
+                    info_hash=info_hash,
                     debrid_type=debrid_type,
-                    infoHash=infoHash,
                     func=func,
                     plugin=plugin,
                 )
