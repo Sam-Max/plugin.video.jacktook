@@ -51,6 +51,7 @@ from resources.lib.utils.kodi import (
     container_update,
     dialogyesno,
     get_setting,
+    log,
     notify,
     play_info_hash,
     refresh,
@@ -85,8 +86,8 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name == "rescrape":
-                        kwargs[name] = bool(query_list[0])
+                    if name in ["rescrape", "is_torrent", "is_debrid"]:
+                        kwargs[name] = eval(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
                 elif required:
@@ -292,7 +293,7 @@ def search(mode="", query="", ids="", tvdata="", episode_name="", rescrape=False
             season,
         )
         if proc_results:
-            if torr_client == "Debrid":
+            if torr_client == "Debrid" or torr_client == "All":
                 deb_cached_results = check_debrid_cached(
                     query,
                     proc_results,
@@ -338,15 +339,27 @@ def search(mode="", query="", ids="", tvdata="", episode_name="", rescrape=False
 @query_arg("magnet", required=False)
 @query_arg("info_hash", required=False)
 @query_arg("torrent_id", required=False)
+@query_arg("is_torrent", required=False)
+@query_arg("is_debrid", required=False)
 @query_arg("debrid_type", required=False)
-def play_torrent(title, id="", url="", magnet="", torrent_id="", info_hash="", debrid_type=""):
+def play_torrent(
+    title,
+    id="",
+    url="",
+    magnet="",
+    torrent_id="",
+    info_hash="",
+    debrid_type="",
+    is_torrent=False,
+    is_debrid=False,
+):
     if torrent_id and debrid_type == "RD":
         rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
         url = get_rd_link(rd_client, torrent_id)
     if info_hash and debrid_type == "PM":
         pm_client = Premiumize(token=get_setting("premiumize_token"))
         url = get_pm_link(pm_client, info_hash)
-    play(url, magnet, id, title, plugin, debrid_type)
+    play(url, magnet, id, title, plugin, debrid_type, is_debrid, is_torrent)
 
 
 @plugin.route("/play_url")
@@ -639,7 +652,7 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
                 query=tv_name,
                 episode_name=ep_name,
                 ids=f"{id}, {tvdb_id}, {imdb_id}",
-                tvdata=f"{episode}, {season}"
+                tvdata=f"{episode}, {season}",
             ),
             list_item,
             isFolder=True,
@@ -683,10 +696,7 @@ def show_pack():
                 addDirectoryItem(
                     plugin.handle,
                     plugin.url_for(
-                        play_torrent,
-                        title=title,
-                        url=url,
-                        debrid_type=debrid_type
+                        play_torrent, title=title, url=url, debrid_type=debrid_type
                     ),
                     list_item,
                     isFolder=False,

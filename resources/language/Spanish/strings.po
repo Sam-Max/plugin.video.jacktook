@@ -280,3 +280,6 @@ msgctxt "#30708"
 msgid "Stop"
 msgstr "Detener"
 
+msgctxt "#30800"
+msgid "Choose Torrent Client"
+msgstr ""

@@ -23,6 +23,7 @@ from resources.lib.utils.kodi import (
     get_torrest_setting,
     is_torrest_addon,
     is_elementum_addon,
+    log,
     notify,
     translation,
 )
@@ -111,7 +112,7 @@ video_extensions = (
     ".xvid",
 )
 
-
+torrent_clients = ["Torrest", "Elementum"]
 class Enum:
     @classmethod
     def values(cls):
@@ -125,7 +126,9 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
 
 
-def play(url, magnet, id, title, plugin, debrid_type="", debrid=False):
+def play(
+    url, magnet, id, title, plugin, debrid_type="", is_debrid=False, is_torrent=False
+):
     set_watched_file(title, debrid_type, id, magnet, url)
     if not magnet and not url:
         notify(translation(30251))
@@ -150,13 +153,32 @@ def play(url, magnet, id, title, plugin, debrid_type="", debrid=False):
             notify("Not a playable url.")
             return
     elif torr_client == "Debrid":
-        debrid = True
         _url = url
-
+    elif torr_client == "All":
+        if is_debrid:
+            _url = url
+        elif is_torrent:
+            chosen_client = Dialog().select(
+                translation(30800), torrent_clients
+            )
+            if chosen_client < 0:
+                return
+            if torrent_clients[chosen_client] == "Torrest":
+                if magnet:
+                    _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
+                else:
+                    _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
+            elif torrent_clients[chosen_client] == "Elementum":
+                if magnet:
+                    _url = f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
+                else:
+                    notify("Not a playable url.")
+                    return
+                
     list_item = ListItem(title, path=_url)
     setResolvedUrl(plugin.handle, True, list_item)
 
-    if debrid:
+    if is_debrid:
         player = JacktookPlayer()
         list_item = player.make_listing(list_item, _url, title, id)
         player.run(list_item)
@@ -183,6 +205,8 @@ def add_play_item(
     torrent_id="",
     info_hash="",
     debrid_type="",
+    is_torrent=False,
+    is_debrid=False,
     func=None,
     plugin=None,
 ):
@@ -196,6 +220,8 @@ def add_play_item(
             magnet=magnet,
             torrent_id=torrent_id,
             info_hash=info_hash,
+            is_torrent=is_torrent,
+            is_debrid=is_debrid,
             debrid_type=debrid_type,
         ),
         list_item,
