@@ -5,7 +5,6 @@ import re
 
 from resources.lib.db.cached import Cache
 from resources.lib.db.database import get_db
-from resources.lib.player import JacktookPlayer
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
@@ -21,10 +20,6 @@ from resources.lib.utils.kodi import (
     get_int_setting,
     get_setting,
     get_torrest_setting,
-    is_torrest_addon,
-    is_elementum_addon,
-    log,
-    notify,
     translation,
 )
 
@@ -32,12 +27,8 @@ from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.trending import Trending
 
 from xbmcgui import ListItem, Dialog
-from xbmcplugin import (
-    addDirectoryItem,
-    setResolvedUrl,
-)
+from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
-from urllib.parse import quote
 
 
 cache = Cache.get_instance()
@@ -112,7 +103,7 @@ video_extensions = (
     ".xvid",
 )
 
-torrent_clients = ["Torrest", "Elementum"]
+
 class Enum:
     @classmethod
     def values(cls):
@@ -124,64 +115,6 @@ class Indexer(Enum):
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
     ELHOSTED = "Elfhosted"
-
-
-def play(
-    url, magnet, id, title, plugin, debrid_type="", is_debrid=False, is_torrent=False
-):
-    set_watched_file(title, debrid_type, id, magnet, url)
-    if not magnet and not url:
-        notify(translation(30251))
-        return
-
-    torr_client = get_setting("torrent_client")
-    if torr_client == "Torrest":
-        if not is_torrest_addon():
-            notify(translation(30250))
-            return
-        if magnet:
-            _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
-        else:
-            _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
-    elif torr_client == "Elementum":
-        if not is_elementum_addon():
-            notify(translation(30252))
-            return
-        if magnet:
-            _url = f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
-        else:
-            notify("Not a playable url.")
-            return
-    elif torr_client == "Debrid":
-        _url = url
-    elif torr_client == "All":
-        if is_debrid:
-            _url = url
-        elif is_torrent:
-            chosen_client = Dialog().select(
-                translation(30800), torrent_clients
-            )
-            if chosen_client < 0:
-                return
-            if torrent_clients[chosen_client] == "Torrest":
-                if magnet:
-                    _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
-                else:
-                    _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
-            elif torrent_clients[chosen_client] == "Elementum":
-                if magnet:
-                    _url = f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
-                else:
-                    notify("Not a playable url.")
-                    return
-                
-    list_item = ListItem(title, path=_url)
-    setResolvedUrl(plugin.handle, True, list_item)
-
-    if is_debrid:
-        player = JacktookPlayer()
-        list_item = player.make_listing(list_item, _url, title, id)
-        player.run(list_item)
 
 
 def list_item(label, icon):

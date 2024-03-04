@@ -9,6 +9,7 @@ from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
+from resources.lib.play import play
 from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
@@ -34,7 +35,6 @@ from resources.lib.utils.utils import (
     get_state_string,
     is_video,
     list_item,
-    play,
     process_results,
     set_video_item,
     set_watched_title,
@@ -665,7 +665,7 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 def get_rd_link_pack():
     id, torrent_id, debrid_type, title = plugin.args["args"][0].split(" ", 3)
     url = get_rd_pack_link(id, torrent_id)
-    play(url=url, magnet="", id="", title=title, debrid_type=debrid_type, plugin=plugin)
+    play(url=url, magnet="", id="", title=title, is_debrid=True, debrid_type=debrid_type, plugin=plugin)
 
 
 @plugin.route("/show_pack")
