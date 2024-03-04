@@ -665,7 +665,15 @@ def tv_episodes_details(tv_name, id, tvdb_id, imdb_id, season):
 def get_rd_link_pack():
     id, torrent_id, debrid_type, title = plugin.args["args"][0].split(" ", 3)
     url = get_rd_pack_link(id, torrent_id)
-    play(url=url, magnet="", id="", title=title, is_debrid=True, debrid_type=debrid_type, plugin=plugin)
+    play(
+        url=url,
+        magnet="",
+        id="",
+        title=title,
+        is_debrid=True,
+        debrid_type=debrid_type,
+        plugin=plugin,
+    )
 
 
 @plugin.route("/show_pack")
@@ -696,7 +704,11 @@ def show_pack():
                 addDirectoryItem(
                     plugin.handle,
                     plugin.url_for(
-                        play_torrent, title=title, url=url, debrid_type=debrid_type
+                        play_torrent,
+                        title=title,
+                        url=url,
+                        is_debrid=True,
+                        debrid_type=debrid_type,
                     ),
                     list_item,
                     isFolder=False,
