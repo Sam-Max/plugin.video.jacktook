@@ -109,8 +109,6 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         info_tag.setTitle(title)
         info_tag.setPlot(description)
 
-        title = title.replace("/", "").replace("?", "")
-
         if format in ["TV", "OVA"]:
             addDirectoryItem(
                 plugin.handle,

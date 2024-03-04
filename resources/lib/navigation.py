@@ -192,12 +192,6 @@ def direct_menu():
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search, mode="tv"),
-        list_item("Anime Search", "search.png"),
-        isFolder=True,
-    )
     endOfDirectory(plugin.handle)
 
 

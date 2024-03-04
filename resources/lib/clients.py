@@ -50,8 +50,6 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
 
     elif indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
-        anime_inedexers_ids = get_setting("prowlarr_anime_indexer_ids")
-
         dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
         response = client.search(
             query,
@@ -60,7 +58,6 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             season,
             episode,
             indexers_ids,
-            anime_inedexers_ids,
             prowlarr_insecured,
         )
     elif indexer == Indexer.TORRENTIO:
@@ -143,10 +140,8 @@ class Elfhosted:
         try:
             if mode == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-                log(url)
             elif mode in ["movie", "multi"]:
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-                log(url)
             res = requests.get(url, timeout=10)
             if res.status_code != 200:
                 return
@@ -200,10 +195,8 @@ class Torrentio:
         try:
             if mode == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-                log(url)
             elif mode in ["movie", "multi"]:
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-                log(url)
             res = requests.get(url, timeout=10, verify=insecure)
             if res.status_code != 200:
                 return
@@ -275,10 +268,8 @@ class Jackett:
         try:
             if mode == "tv":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
-                log(url)
             elif mode == "movie":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
-                log(url)
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
             res = requests.get(url, timeout=10, verify=insecure)
@@ -340,7 +331,6 @@ class Prowlarr:
         season,
         episode,
         indexers,
-        anime_indexers,
         insecure=False,
     ):
         headers = {
@@ -353,25 +343,12 @@ class Prowlarr:
                 query = (
                     f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
                 )
-                if anime_indexers:
-                    anime_categories = [2000, 5070, 5000, 127720, 140679]
-                    anime_categories_id = "".join(
-                        [f"&categories={cat}" for cat in anime_categories]
-                    )
-                    anime_indexers_id = anime_indexers.split(",")
-                    anime_indexers_id = "".join(
-                        [f"&indexerIds={index}" for index in anime_indexers_id]
-                    )
-                    url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}"
-                else:
-                    url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
-                    log(url)
+                url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
             elif mode == "movie":
                 url = f"{self.host}/api/v1/search?query={query}&categories=2000"
-                log(url)
             elif mode == "multi":
                 url = f"{self.host}/api/v1/search?query={query}"
-            if indexers and not anime_indexers:
+            if indexers:
                 indexers_ids = indexers.split(",")
                 indexers_ids = "".join(
                     [f"&indexerIds={index}" for index in indexers_ids]
@@ -395,3 +372,15 @@ class Prowlarr:
         except Exception as e:
             notify(f"{translation(30230)} {str(e)}")
             return
+
+
+""" if anime_indexers:
+    anime_categories = [2000, 5070, 5000, 127720, 140679]
+    anime_categories_id = "".join(
+        [f"&categories={cat}" for cat in anime_categories]
+    )
+    anime_indexers_id = anime_indexers.split(",")
+    anime_indexers_id = "".join(
+        [f"&indexerIds={index}" for index in anime_indexers_id]
+    )
+    url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}" """

@@ -117,8 +117,6 @@ class Premiumize(DebridClient):
     def initialize_headers(self):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
-            log("initialize_headers")
-            log(self.headers)
 
     def get_token(self, code):
         return self._make_request(
@@ -155,7 +153,6 @@ class Premiumize(DebridClient):
     def auth(self):
         self.token = ""
         response = self.get_device_code()
-        log(response)
         user_code = response["user_code"]
         try:
             copy2clip(user_code)
@@ -179,8 +176,6 @@ class Premiumize(DebridClient):
         ):
             ksleep(1000 * sleep_interval)
             response = self.authorize(device_code)
-            log("Authorize")
-            log(response)
             if "error" in response:
                 time_passed = time.time() - start
                 progress = int(100 * time_passed / float(expires_in))
@@ -280,7 +275,6 @@ class Premiumize(DebridClient):
         results = self._make_request(
             "GET", f"{self.BASE_URL}/cache/check", params={"items[]": torrent_hashes}
         )
-        log(results)
         if results.get("status") != "success":
             raise ProviderException(
                 "Failed to get instant availability from Premiumize",

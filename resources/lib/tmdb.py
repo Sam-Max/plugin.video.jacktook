@@ -144,8 +144,6 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
 
         list_item.setProperty("IsPlayable", "false")
 
-        query = title.replace("/", "").replace("?", "")
-
         if "movie" in [mode, media_type]:
             list_item.addContextMenuItems(
                 [
@@ -155,7 +153,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                             plugin,
                             func,
                             mode=mode,
-                            query=query,
+                            query=title,
                             ids=f"{id}, {tvdb_id}, {imdb_id}",
                             rescrape=True,
                         ),
@@ -167,7 +165,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
                 plugin.url_for(
                     func,
                     mode=mode,
-                    query=query,
+                    query=title,
                     ids=f"{id}, {tvdb_id}, {imdb_id}",
                 ),
                 list_item,

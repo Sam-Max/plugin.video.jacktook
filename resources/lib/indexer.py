@@ -23,8 +23,7 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
     overview = ""
     description_length = get_description_length()
 
-    # Direct Search if query is None
-    if query is not None:
+    if query:
         if mode == "tv":
             if tvdb_id == "-1":  # for anime episode
                 _, result = anilist_client().get_by_id(id)
