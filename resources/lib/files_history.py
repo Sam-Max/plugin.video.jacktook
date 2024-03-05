@@ -35,8 +35,10 @@ def last_files(plugin, func1, func2):
             plugin.url_for(
                 func2,
                 title=title,
-                id= data.get('id'),
+                id=data.get("id"),
                 url=data.get("url"),
+                is_debrid=data.get("is_debrid"),
+                is_torrent=data.get("is_torrent"),
                 magnet=data.get("magnet"),
             ),
             list_item,

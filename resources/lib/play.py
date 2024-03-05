@@ -20,7 +20,7 @@ torrent_clients = ["Torrest", "Elementum"]
 def play(
     url, magnet, id, title, plugin, debrid_type="", is_debrid=False, is_torrent=False
 ):
-    set_watched_file(title, debrid_type, id, magnet, url)
+    set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent)
     if not magnet and not url:
         notify(translation(30251))
         return

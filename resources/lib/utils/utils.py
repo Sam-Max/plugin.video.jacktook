@@ -186,8 +186,11 @@ def set_video_item(list_item, poster, overview):
     list_item.setProperty("IsPlayable", "true")
 
 
-def set_watched_file(title, debrid_type, id, magnet, url):
-    if debrid_type:
+def set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent):
+    if title in db.database["jt:lfh"]:
+        return
+    
+    if is_debrid:
         debrid_color = get_random_color(debrid_type)
         title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
     else:
@@ -200,6 +203,8 @@ def set_watched_file(title, debrid_type, id, magnet, url):
         "timestamp": datetime.now(),
         "id": id,
         "url": url,
+        "is_debrid": is_debrid,
+        "is_torrent": is_torrent,
         "magnet": magnet,
     }
     db.commit()
