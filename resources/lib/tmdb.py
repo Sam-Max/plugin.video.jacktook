@@ -1,4 +1,5 @@
 import os
+from concurrent.futures import ThreadPoolExecutor
 from resources.lib.db.database import get_db
 from resources.lib.tmdbv3api.objs.search import Search
 
@@ -89,95 +90,12 @@ def tmdb_search(mode, genre_id, page, func, plugin):
 
 
 def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id=0):
-    for res in data.results:
-        id = res.id
-        duration = ""
-        media_type = ""
-
-        if mode == "movie":
-            title = res.title
-            release_date = res.release_date
-            imdb_id, tvdb_id, duration = get_movie_data(id)
-        elif mode == "tv":
-            title = res.name
-            release_date = res.get("first_air_date", "")
-        elif mode == "multi":
-            if "name" in res:
-                title = res.name
-            elif "title" in res:
-                title = res.title
-            if res["media_type"] == "movie":
-                media_type = "movie"
-                release_date = res.release_date
-                imdb_id, tvdb_id, duration = get_movie_data(id)
-                title = f"[B][MOVIE][/B]- {title}"
-            elif res["media_type"] == "tv":
-                media_type = "tv"
-                release_date = res.get("first_air_date", "")
-                title = f"[B][TV][/B]- {title}"
-
-        poster_path = res.get("poster_path", "")
-        if poster_path:
-            poster_path = TMDB_POSTER_URL + poster_path
-
-        backdrop_path = res.get("backdrop_path", "")
-        if backdrop_path:
-            backdrop_path = TMDB_BACKDROP_URL + backdrop_path
-
-        overview = res.get("overview", "")
-
-        list_item = ListItem(label=title)
-        list_item.setArt(
-            {
-                "poster": poster_path,
-                "fanart": backdrop_path,
-                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-            }
-        )
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType("video")
-        info_tag.setTitle(title)
-        info_tag.setPlot(overview)
-        info_tag.setFirstAired(release_date)
-        if duration:
-            info_tag.setDuration(int(duration))
-
-        list_item.setProperty("IsPlayable", "false")
-
-        if "movie" in [mode, media_type]:
-            list_item.addContextMenuItems(
-                [
-                    (
-                        "Rescrape item",
-                        container_update(
-                            plugin,
-                            func,
-                            mode=mode,
-                            query=title,
-                            ids=f"{id}, {tvdb_id}, {imdb_id}",
-                            rescrape=True,
-                        ),
-                    )
-                ]
-            )
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(
-                    func,
-                    mode=mode,
-                    query=title,
-                    ids=f"{id}, {tvdb_id}, {imdb_id}",
-                ),
-                list_item,
-                isFolder=True,
-            )
-        else:
-            addDirectoryItem(
-                plugin.handle,
-                plugin.url_for(func2, id=id),
-                list_item,
-                isFolder=True,
-            )
+    with ThreadPoolExecutor(max_workers=len(data.results)) as executor:
+        [
+            executor.submit(tmdb_show_items, res, func, func2, plugin, mode)
+            for res in data.results
+        ]
+        executor.shutdown(wait=True)
 
     list_item = ListItem(label="Next")
     list_item.setArt(
@@ -192,6 +110,97 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
     )
 
     endOfDirectory(plugin.handle)
+
+
+def tmdb_show_items(res, func, func2, plugin, mode):
+    id = res.id
+    duration = ""
+    media_type = ""
+
+    if mode == "movie":
+        title = res.title
+        release_date = res.release_date
+        imdb_id, tvdb_id, duration = get_movie_data(id)
+    elif mode == "tv":
+        title = res.name
+        release_date = res.get("first_air_date", "")
+    elif mode == "multi":
+        if "name" in res:
+            title = res.name
+        elif "title" in res:
+            title = res.title
+        if res["media_type"] == "movie":
+            media_type = "movie"
+            release_date = res.release_date
+            imdb_id, tvdb_id, duration = get_movie_data(id)
+            title = f"[B][MOVIE][/B]- {title}"
+        elif res["media_type"] == "tv":
+            media_type = "tv"
+            release_date = res.get("first_air_date", "")
+            title = f"[B][TV][/B]- {title}"
+
+    poster_path = res.get("poster_path", "")
+    if poster_path:
+        poster_path = TMDB_POSTER_URL + poster_path
+
+    backdrop_path = res.get("backdrop_path", "")
+    if backdrop_path:
+        backdrop_path = TMDB_BACKDROP_URL + backdrop_path
+
+    overview = res.get("overview", "")
+
+    list_item = ListItem(label=title)
+    list_item.setArt(
+        {
+            "poster": poster_path,
+            "fanart": backdrop_path,
+            "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
+        }
+    )
+    info_tag = list_item.getVideoInfoTag()
+    info_tag.setMediaType("video")
+    info_tag.setTitle(title)
+    info_tag.setPlot(overview)
+    info_tag.setFirstAired(release_date)
+    if duration:
+        info_tag.setDuration(int(duration))
+
+    list_item.setProperty("IsPlayable", "false")
+
+    if "movie" in [mode, media_type]:
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Rescrape item",
+                    container_update(
+                        plugin,
+                        func,
+                        mode=mode,
+                        query=title,
+                        ids=f"{id}, {tvdb_id}, {imdb_id}",
+                        rescrape=True,
+                    ),
+                )
+            ]
+        )
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                func,
+                mode=mode,
+                query=title,
+                ids=f"{id}, {tvdb_id}, {imdb_id}",
+            ),
+            list_item,
+            isFolder=True,
+        )
+    else:
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(func2, id=id),
+            list_item,
+            isFolder=True,
+        )
 
 
 def menu_genre(mode, page, func, plugin):
