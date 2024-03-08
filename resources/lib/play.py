@@ -1,10 +1,13 @@
+import json
 from urllib.parse import quote
 from resources.lib.player import JacktookPlayer
 from resources.lib.utils.kodi import (
     get_setting,
     is_elementum_addon,
     is_torrest_addon,
+    log,
     notify,
+    set_property,
     translation,
 )
 from resources.lib.utils.utils import set_watched_file
@@ -18,9 +21,28 @@ torrent_clients = ["Torrest", "Elementum"]
 
 
 def play(
-    url, magnet, id, title, plugin, debrid_type="", is_debrid=False, is_torrent=False
+    url,
+    magnet,
+    ids,
+    tvdata,
+    title,
+    plugin,
+    debrid_type="",
+    mode="",
+    is_debrid=False,
+    is_torrent=False,
 ):
-    set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent)
+    set_watched_file(
+        title,
+        ids,
+        tvdata,
+        magnet,
+        url,
+        debrid_type,
+        is_debrid,
+        is_torrent,
+    )
+
     if not magnet and not url:
         notify(translation(30251))
         return
@@ -29,7 +51,7 @@ def play(
     if torr_client == "Torrest":
         _url = get_torrest_url(magnet, url)
     elif torr_client == "Elementum":
-        _url = get_elementum_url(magnet)
+        _url = get_elementum_url(magnet, mode, ids)
     elif torr_client == "Debrid":
         _url = url
     elif torr_client == "All":
@@ -46,20 +68,61 @@ def play(
 
     if _url:
         list_item = ListItem(title, path=_url)
+        make_listing(list_item, mode, _url, title, ids, tvdata)
         setResolvedUrl(plugin.handle, True, list_item)
 
         if is_debrid:
             player = JacktookPlayer()
-            list_item = player.make_listing(list_item, _url, title, id)
+            player.set_constants(_url)
             player.run(list_item)
 
 
-def get_elementum_url(magnet):
+def make_listing(listitem, mode, url, title, ids, tvdata):
+    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+    listitem.setPath(url)
+    listitem.setContentLookup(False)
+    listitem.setLabel(title)
+    info_tag = listitem.getVideoInfoTag()
+    if mode == "movie":
+        info_tag.setMediaType("movie")
+        info_tag.setTitle(title)
+        info_tag.setOriginalTitle(title) 
+    else:
+        ep_name, episode, season = tvdata.split(", ")
+        info_tag.setMediaType("episode")
+        info_tag.setTvShowTitle(title)
+        info_tag.setTitle(ep_name)
+        info_tag.setFilenameAndPath(url)
+        info_tag.setSeason(int(season)),
+        info_tag.setEpisode(int(episode))
+    info_tag.setIMDBNumber(imdb_id)
+    info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+    set_windows_property(mode, tmdb_id, imdb_id, tvdb_id)
+
+
+def set_windows_property(mode, tmdb_id, imdb_id, tvdb_id):
+    if mode == "movie":
+        ids = {
+            "tmdb": tmdb_id,
+            "imdb": imdb_id,
+        }
+    else:
+        ids = {
+            "tvdb": tvdb_id,
+        }
+    set_property(
+        "script.trakt.ids",
+        json.dumps(ids),
+    )
+
+
+def get_elementum_url(magnet, mode, ids):
+    tmdb_id, _, _ = ids.split(", ")
     if not is_elementum_addon():
         notify(translation(30252))
         return
     if magnet:
-        return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
+        return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
     else:
         notify("Not a playable url.")
 

@@ -18,15 +18,16 @@ from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 
 
-def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2, func3):
+def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2, func3):
     poster = ""
     overview = ""
+    tmdb_id, tvdb_id, _ = ids.split(", ")
     description_length = get_description_length()
 
     if query:
         if mode == "tv":
             if tvdb_id == "-1":  # for anime episode
-                _, result = anilist_client().get_by_id(id)
+                _, result = anilist_client().get_by_id(tmdb_id)
                 overview = result.get("description", "")
                 poster = result.get("coverImage", {}).get("large", "")
             else:
@@ -36,11 +37,8 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 if data:
                     poster = data["clearlogo2"]
         elif mode == "movie":
-            details = tmdb_get("movie_details", id)
+            details = tmdb_get("movie_details", tmdb_id)
             overview = details.get("overview", "")
-            data = fanartv_get(tvdb_id, mode)
-            if data:
-                poster = data["clearlogo2"]
 
     for res in results:
         title = res["title"]
@@ -69,14 +67,24 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
         debrid_type = res["debridType"]
         debrid_color = get_random_color(debrid_type)
         format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
-        
+
         if res["debridCached"]:
             debridPack = res["debridPack"]
             info_hash = res.get("infoHash")
             torrent_id = res.get("debridId")
             if debridPack:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
-                add_pack_item(list_item, func2, info_hash, torrent_id, debrid_type, plugin)
+                add_pack_item(
+                    list_item,
+                    func2,
+                    tvdata,
+                    ids,
+                    info_hash,
+                    torrent_id,
+                    debrid_type,
+                    mode,
+                    plugin,
+                )
             else:
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(
@@ -85,12 +93,14 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 set_video_item(list_item, poster, overview)
                 add_play_item(
                     list_item,
-                    id,
+                    ids,
+                    tvdata,
                     title,
                     torrent_id=torrent_id,
                     info_hash=info_hash,
                     is_debrid=True,
                     debrid_type=debrid_type,
+                    mode=mode,
                     func=func,
                     plugin=plugin,
                 )
@@ -119,11 +129,13 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                 )
             add_play_item(
                 list_item,
-                id,
+                ids,
+                tvdata,
                 title,
                 url=download_url,
                 magnet=magnet,
                 is_torrent=True,
+                mode=mode,
                 func=func,
                 plugin=plugin,
             )

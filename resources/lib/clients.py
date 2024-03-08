@@ -272,7 +272,7 @@ class Jackett:
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
-            res = requests.get(url, timeout=10, verify=insecure)
+            res = requests.get(url, timeout=25, verify=insecure)
             if res.status_code != 200:
                 notify(f"{translation(30229)} ({res.status_code})")
                 return
@@ -354,7 +354,7 @@ class Prowlarr:
                     [f"&indexerIds={index}" for index in indexers_ids]
                 )
                 url = url + indexers_ids
-            res = requests.get(url, timeout=10, verify=insecure, headers=headers)
+            res = requests.get(url, timeout=25, verify=insecure, headers=headers)
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
                 return

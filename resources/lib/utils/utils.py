@@ -20,6 +20,7 @@ from resources.lib.utils.kodi import (
     get_int_setting,
     get_setting,
     get_torrest_setting,
+    log,
     translation,
 )
 
@@ -131,13 +132,15 @@ def list_item(label, icon):
 
 def add_play_item(
     list_item,
-    id,
+    ids,
+    tvdata,
     title,
     url="",
     magnet="",
     torrent_id="",
     info_hash="",
     debrid_type="",
+    mode="",
     is_torrent=False,
     is_debrid=False,
     func=None,
@@ -148,13 +151,15 @@ def add_play_item(
         plugin.url_for(
             func,
             title=title,
-            id=id,
+            ids=ids,
+            tvdata=tvdata,
             url=url,
             magnet=magnet,
             torrent_id=torrent_id,
             info_hash=info_hash,
             is_torrent=is_torrent,
             is_debrid=is_debrid,
+            mode=mode,
             debrid_type=debrid_type,
         ),
         list_item,
@@ -162,10 +167,18 @@ def add_play_item(
     )
 
 
-def add_pack_item(list_item, func, info_hash, torrent_id, debrid_type, plugin):
+def add_pack_item(
+    list_item, func, tvdata, ids, info_hash, torrent_id, debrid_type, mode, plugin
+):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{info_hash} {torrent_id} {debrid_type}"),
+        plugin.url_for(
+            func,
+            query=f"{info_hash} {torrent_id} {debrid_type}",
+            tvdata=tvdata,
+            mode=mode,
+            ids=ids,
+        ),
         list_item,
         isFolder=True,
     )
@@ -186,10 +199,12 @@ def set_video_item(list_item, poster, overview):
     list_item.setProperty("IsPlayable", "true")
 
 
-def set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent):
+def set_watched_file(
+    title, ids, tvdata, magnet, url, debrid_type, is_debrid, is_torrent
+):
     if title in db.database["jt:lfh"]:
         return
-    
+
     if is_debrid:
         debrid_color = get_random_color(debrid_type)
         title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
@@ -201,7 +216,8 @@ def set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent)
 
     db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
-        "id": id,
+        "ids": ids,
+        "tvdata": tvdata,
         "url": url,
         "is_debrid": is_debrid,
         "is_torrent": is_torrent,
@@ -210,13 +226,11 @@ def set_watched_file(title, id, magnet, url, debrid_type, is_debrid, is_torrent)
     db.commit()
 
 
-def set_watched_title(title, id, tvdb_id=-1, imdb_id=-1, mode=""):
+def set_watched_title(title, ids, mode=""):
     if title != "None":
         db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
-            "id": id,
-            "tvdb_id": tvdb_id,
-            "imdb_id": imdb_id,
+            "ids":ids,
             "mode": mode,
         }
         db.commit()
@@ -226,10 +240,10 @@ def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
 
 
-def fanartv_get(id, mode="tv"):
-    fanart_data = db.get_fanarttv("jt:fanarttv", id)
+def fanartv_get(tvdb_id, mode="tv"):
+    fanart_data = db.get_fanarttv("jt:fanarttv", tvdb_id)
     if not fanart_data:
-        fanart_data = get_api_fanarttv(mode, "en", id)
+        fanart_data = get_api_fanarttv(mode, "en", tvdb_id)
         if fanart_data:
             db.set_fanarttv(
                 "jt:fanarttv",
@@ -313,9 +327,15 @@ def tmdb_get(path, params={}):
 def get_movie_data(id):
     details = tmdb_get("movie_details", id)
     imdb_id = details.external_ids.get("imdb_id")
-    tvdb_id = details.external_ids.get("tvdb_id")
     runtime = details.runtime
-    return imdb_id, tvdb_id, runtime
+    return imdb_id, "", runtime
+
+
+def get_tv_data(id):
+    details = tmdb_get("tv_details", id)
+    imdb_id = details.external_ids.get("imdb_id")
+    tvdb_id = details.external_ids.get("tvdb_id")
+    return imdb_id, tvdb_id
 
 
 # This method was taken from script.elementum.jackett

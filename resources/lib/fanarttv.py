@@ -24,7 +24,7 @@ def get_api_fanarttv(media_type, language, media_id):
     query = base_url % (media_type, media_id)
     headers = {"client-key": CLIENT_KEY, "api-key": API_KEY}
     try:
-        art = session.get(query, headers=headers, timeout=20.0).json()
+        art = session.get(query, headers=headers, timeout=20).json()
     except:
         art = None
     if art == None or "error_message" in art:

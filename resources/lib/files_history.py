@@ -30,12 +30,14 @@ def last_files(plugin, func1, func2):
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
         )
         list_item.setProperty("IsPlayable", "true")
+        
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(
                 func2,
                 title=title,
-                id=data.get("id"),
+                ids=data.get("ids"),
+                tvdata=data.get("tvdata"),
                 url=data.get("url"),
                 is_debrid=data.get("is_debrid"),
                 is_torrent=data.get("is_torrent"),

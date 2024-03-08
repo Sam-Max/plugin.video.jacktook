@@ -34,8 +34,11 @@ def add_rd_magnet(client, magnet):
 
 def get_rd_link(client, torrent_id):
     torr_info = client.get_torrent_info(torrent_id)
-    response = client.create_download_link(torr_info["links"][0])
-    return response["download"]
+    links = torr_info["links"]
+    if links:
+        response = client.create_download_link(links[0])
+        return response["download"]
+    raise LinkNotFoundError("File still not available")
 
 
 def get_rd_pack(torrent_id):
@@ -60,3 +63,7 @@ def get_rd_pack_link(id, torrent_id):
     torr_info = rd_client.get_torrent_info(torrent_id)
     response = rd_client.create_download_link(torr_info["links"][int(id)])
     return response["download"]
+
+
+class LinkNotFoundError(Exception):
+    pass
