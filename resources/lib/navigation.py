@@ -686,7 +686,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
 @query_arg("ids", required=False)
 @query_arg("tvdata", required=False)
 @query_arg("mode", required=False)
-def get_rd_link_pack(args, ids, tvdata, mode):
+def get_rd_link_pack(args, ids, mode, tvdata=""):
     id, torrent_id, debrid_type, title = args.split(" ", 3)
     url = get_rd_pack_link(id, torrent_id)
     play(
@@ -707,7 +707,7 @@ def get_rd_link_pack(args, ids, tvdata, mode):
 @query_arg("query", required=False)
 @query_arg("mode", required=False)
 @query_arg("tvdata", required=False)
-def show_pack(ids, tvdata, query, mode):
+def show_pack(ids, query, mode, tvdata=""):
     info_hash, torrent_id, debrid_type = query.split()
     if debrid_type == "RD":
         info = get_rd_pack(torrent_id)
