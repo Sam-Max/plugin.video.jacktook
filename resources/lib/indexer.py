@@ -115,6 +115,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                     if guid.startswith("magnet:?"):
                         magnet = guid
                     else:
+                        magnet = ""
                         # For some indexers, the guid is a torrent file url
                         download_url = res.get("guid")
             list_item = ListItem(label=torr_title)
