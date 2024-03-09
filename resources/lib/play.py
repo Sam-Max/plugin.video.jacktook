@@ -119,15 +119,17 @@ def set_windows_property(mode, tmdb_id, imdb_id, tvdb_id):
 
 
 def get_elementum_url(magnet, mode, ids):
-    tmdb_id, _, _ = ids.split(", ")
     if not is_elementum_addon():
         notify(translation(30252))
         return
+    if ids:
+        tmdb_id, _, _ = ids.split(", ")
+    else:
+        tmdb_id = ""
     if magnet:
         return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
     else:
         notify("Not a playable url.")
-
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():
