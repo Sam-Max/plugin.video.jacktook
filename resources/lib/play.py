@@ -78,26 +78,28 @@ def play(
 
 
 def make_listing(listitem, mode, url, title, ids, tvdata):
-    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
     listitem.setPath(url)
     listitem.setContentLookup(False)
     listitem.setLabel(title)
     info_tag = listitem.getVideoInfoTag()
-    if mode == "movie":
+    if mode in ["movie", "multi"]:
         info_tag.setMediaType("movie")
         info_tag.setTitle(title)
-        info_tag.setOriginalTitle(title) 
+        info_tag.setOriginalTitle(title)
     else:
-        ep_name, episode, season = tvdata.split(", ")
         info_tag.setMediaType("episode")
         info_tag.setTvShowTitle(title)
-        info_tag.setTitle(ep_name)
         info_tag.setFilenameAndPath(url)
-        info_tag.setSeason(int(season)),
-        info_tag.setEpisode(int(episode))
-    info_tag.setIMDBNumber(imdb_id)
-    info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
-    set_windows_property(mode, tmdb_id, imdb_id, tvdb_id)
+        if tvdata:
+            ep_name, episode, season = tvdata.split(", ")
+            info_tag.setTitle(ep_name)
+            info_tag.setSeason(int(season)),
+            info_tag.setEpisode(int(episode))
+    if ids:
+        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        info_tag.setIMDBNumber(imdb_id)
+        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+        set_windows_property(mode, tmdb_id, imdb_id, tvdb_id)
 
 
 def set_windows_property(mode, tmdb_id, imdb_id, tvdb_id):

@@ -21,8 +21,9 @@ from xbmcplugin import endOfDirectory
 def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2, func3):
     poster = ""
     overview = ""
-    tmdb_id, tvdb_id, _ = ids.split(", ")
     description_length = get_description_length()
+    if ids:
+        tmdb_id, tvdb_id, _ =  ids.split(", ") 
 
     if query:
         if mode == "tv":
