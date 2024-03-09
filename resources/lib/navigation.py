@@ -263,9 +263,9 @@ def search_tmdb(mode, genre_id, page):
 @query_arg("rescrape", required=False)
 def search(mode="", query="", ids="", tvdata="", rescrape=False):
     if ids:
-        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        _, _, imdb_id = ids.split(", ")
     else:
-        tmdb_id = tvdb_id = imdb_id = -1
+        imdb_id = -1
 
     if tvdata:
         episode_name, episode, season = tvdata.split(", ")
@@ -550,20 +550,23 @@ def torrent_files(info_hash):
 
 @plugin.route("/tv/details")
 @query_arg("ids", required=False)
-def tv_seasons_details(ids):
-    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+@query_arg("mode", required=False)
+def tv_seasons_details(ids, mode):
+    tmdb_id, tvdb_id, _ = ids.split(", ")
+
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
     number_of_seasons = details.number_of_seasons
+    poster_path = details.get("poster_path", "")
+    overview = details.overview
 
-    set_watched_title(name, ids, mode="tv")
+    set_watched_title(name, ids, mode=mode)
 
     fanart_data = fanartv_get(tvdb_id)
     if fanart_data:
         poster = fanart_data["clearlogo2"]
         fanart = fanart_data["fanart2"]
     else:
-        poster_path = details.get("poster_path", "")
         poster = TMDB_POSTER_URL + poster_path
         fanart = poster
 
@@ -582,7 +585,7 @@ def tv_seasons_details(ids):
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(title)
-        info_tag.setPlot(details.overview)
+        info_tag.setPlot(overview)
 
         list_item.setProperty("IsPlayable", "false")
 
@@ -592,6 +595,7 @@ def tv_seasons_details(ids):
                 tv_episodes_details,
                 tv_name=name,
                 ids=ids,
+                mode=mode,
                 season=season,
             ),
             list_item,
@@ -603,11 +607,12 @@ def tv_seasons_details(ids):
 
 @plugin.route("/tv/details/season/<tv_name>/<season>")
 @query_arg("ids", required=False)
-def tv_episodes_details(tv_name, season, ids):
+@query_arg("mode", required=False)
+def tv_episodes_details(tv_name, season, ids, mode):
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = fanartv_get(tvdb_id)
-    fanart = fanart_data.get("fanart2") if fanart_data else ""
+    fanart = fanart_data.get("fanart2", "") if fanart_data else ""
 
     for ep in season_details.episodes:
         ep_name = ep.name
@@ -618,12 +623,14 @@ def tv_episodes_details(tv_name, season, ids):
 
         still_path = ep.get("still_path", "")
         if still_path:
-            still_path = TMDB_POSTER_URL + still_path
+            poster = TMDB_POSTER_URL + still_path
+        else:
+            poster = ""
 
         list_item = ListItem(label=title)
         list_item.setArt(
             {
-                "poster": still_path,
+                "poster": poster,
                 "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
@@ -648,7 +655,7 @@ def tv_episodes_details(tv_name, season, ids):
                     container_update(
                         plugin,
                         search,
-                        mode="tv",
+                        mode=mode,
                         query=tv_name,
                         ids=ids,
                         tvdata=tvdata,
@@ -661,7 +668,7 @@ def tv_episodes_details(tv_name, season, ids):
             plugin.handle,
             plugin.url_for(
                 search,
-                mode="tv",
+                mode=mode,
                 query=tv_name,
                 episode_name=ep_name,
                 ids=ids,

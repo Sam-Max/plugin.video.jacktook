@@ -35,6 +35,7 @@ def last_titles(plugin, func1, func2, func3):
                 plugin.url_for(
                     func2,
                     ids=ids,
+                    mode=mode,
                 ),
                 list_item,
                 isFolder=True,

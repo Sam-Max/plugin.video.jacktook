@@ -247,7 +247,7 @@ def fanartv_get(tvdb_id, mode="tv"):
         if fanart_data:
             db.set_fanarttv(
                 "jt:fanarttv",
-                id,
+                tvdb_id,
                 fanart_data["poster2"],
                 fanart_data["fanart2"],
                 fanart_data["clearlogo2"],

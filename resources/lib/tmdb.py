@@ -134,7 +134,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
             media_type = "movie"
             release_date = res.release_date
             imdb_id, tvdb_id, duration = get_movie_data(tmdb_id)
-           
+
             title = f"[B][MOVIE][/B]- {title}"
         elif res["media_type"] == "tv":
             media_type = "tv"
@@ -169,7 +169,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
         info_tag.setDuration(int(duration))
 
     list_item.setProperty("IsPlayable", "false")
-    
+
     ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
     if "movie" in [mode, media_type]:
@@ -202,7 +202,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
     else:
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(func2, ids=ids),
+            plugin.url_for(func2, ids=ids, mode=mode),
             list_item,
             isFolder=True,
         )
