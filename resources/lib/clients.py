@@ -16,6 +16,14 @@ from resources.lib import xmltodict
 
 
 def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1):
+    if not query:
+        text = Keyboard(id=30243)
+        if text:
+            query = quote(text)
+        else:
+            dialog.create("")
+            return None
+        
     if not rescrape:
         if mode in ["tv"]:
             cached_results = get_cached(query, params=(episode, "index"))
@@ -35,14 +43,6 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
     if not client:
         dialog.create("")
         return None
-
-    if not query:
-        text = Keyboard(id=30243)
-        if text:
-            query = quote(text)
-        else:
-            dialog.create("")
-            return None
 
     if indexer == Indexer.JACKETT:
         dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
