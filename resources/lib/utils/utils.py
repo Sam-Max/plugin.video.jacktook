@@ -371,6 +371,10 @@ def get_colored_languages(languages):
             colored_languages.append(colored_lang)
         return colored_languages
 
+def get_full_languages(languages):
+    if languages:
+        return ', ' + ', '.join(languages)
+    return ''
 
 def clear_tmdb_cache():
     db.database["jt:tmdb"] = {}

@@ -11,6 +11,7 @@ from resources.lib.utils.kodi import (
     translation,
 )
 from resources.lib.utils.utils import Indexer, get_cached, set_cached, unicode_flag_to_country_code
+from resources.lib.utils.countries import find_language_by_unicode
 from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
@@ -221,6 +222,7 @@ class Torrentio:
                     "size": parsed_item["size"],
                     "seeders": parsed_item["seeders"],
                     "languages": parsed_item["languages"],
+                    "full_languages": parsed_item["full_languages"],
                     "publishDate": "",
                     "peers": 0,
                     "debridType": "",
@@ -240,21 +242,28 @@ class Torrentio:
         seeders_match = re.search(r"👤 (\d+)", title)
         seeders = int(seeders_match.group(1)) if seeders_match else None
 
+        languages, full_languages = self.extract_languages(title)
+
         return {
             "title": name,
             "size": size,
             "seeders": seeders,
-            "languages": self.extract_languages(title),
+            "languages": languages,
+            "full_languages": full_languages,
         }
 
     def extract_languages(self, title):
         languages = []
+        full_languages = []
         # Regex to match unicode country flag emojis 
         flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
         if flag_emojis:
             for flag in flag_emojis:
                 languages.append(unicode_flag_to_country_code(flag).upper())
-        return languages
+                full_lang = find_language_by_unicode(flag)
+                if full_lang != None:
+                	full_languages.append(full_lang)
+        return languages, full_languages
 
 
 class Jackett:
