@@ -64,7 +64,7 @@ def play(
             if torrent_clients[chosen_client] == "Torrest":
                 _url = get_torrest_url(magnet, url)
             elif torrent_clients[chosen_client] == "Elementum":
-                _url = get_elementum_url(magnet)
+                _url = get_elementum_url(magnet, mode, ids)
 
     if _url:
         list_item = ListItem(title, path=_url)
@@ -126,10 +126,8 @@ def get_elementum_url(magnet, mode, ids):
         tmdb_id, _, _ = ids.split(", ")
     else:
         tmdb_id = ""
-    if magnet:
-        return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
-    else:
-        notify("Not a playable url.")
+    return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}" 
+   
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():

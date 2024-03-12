@@ -13,7 +13,7 @@ from resources.lib.utils.rd_utils import add_rd_magnet
 from resources.lib.utils.utils import (
     Indexer,
     get_cached,
-    get_info_hash,
+    get_info_hash_from_magnet,
     info_hash_to_magnet,
     is_url,
     set_cached,
@@ -176,21 +176,24 @@ def get_magnet_and_infohash(results, lock):
                     info_hash = (
                         res["infoHash"].lower()
                         if res.get("infoHash")
-                        else get_info_hash(guid).lower()
+                        else get_info_hash_from_magnet(guid).lower()
                     )
                 else:
-                    # In some indexers, the guid is a torrent file url
-                    downloadUrl = res.get("guid")
-                    guid, info_hash = get_magnet_from_uri(downloadUrl)
+                    # For some indexers, the guid is a torrent file url
+                    download_url = res.get("guid")
+                    guid, info_hash = get_magnet_from_uri(download_url)
             else:
-                downloadUrl = res.get("magnetUrl") or res.get("downloadUrl")
-                guid, info_hash = get_magnet_from_uri(downloadUrl)
+                download_url = res.get("magnetUrl") or res.get("downloadUrl")
+                guid, info_hash = get_magnet_from_uri(download_url)
 
             res["magnet"] = guid
             res["infoHash"] = info_hash
 
 
 def get_magnet_from_uri(uri):
+    magnet_link = ""
+    info_hash = ""
+
     if is_url(uri):
         res = requests.get(
             uri, allow_redirects=False, timeout=20, headers=USER_AGENT_HEADER
@@ -198,16 +201,19 @@ def get_magnet_from_uri(uri):
         if res.is_redirect:
             uri = res.headers.get("Location")
             if uri.startswith("magnet:"):
-                return uri, get_info_hash(uri)
+                magnet_link = uri
+                info_hash = get_info_hash_from_magnet(uri)
         elif (
             res.status_code == 200
             and res.headers.get("Content-Type") == "application/x-bittorrent"
         ):
             torrent = Torrent.read_stream(io.BytesIO(res.content))
-            return str(torrent.magnet()), torrent.magnet().infohash
+            magnet_link = str(torrent.magnet())
+            info_hash = torrent.magnet().infohash
         else:
             log(f"Could not get torrent data from: {uri}")
-            return None, None
+            
+    return magnet_link, info_hash
 
 
 def debrid_dialog_update(total, dialog, lock):
