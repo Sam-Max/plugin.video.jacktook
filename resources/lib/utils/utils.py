@@ -450,10 +450,12 @@ def process_results(res, mode, episode_name, episode, season):
 
 def sort_by_priority_language(results):
     priority_lang = get_setting("torrentio_priority_lang")
+    counter = 0
     for res in results:
-        if priority_lang in res["languages"]:
+        if "languages" in res and priority_lang in res["languages"]:
             results.remove(res)
-            results.insert(0, res)
+            results.insert(counter, res)
+            counter += 1
     return results
 
 
