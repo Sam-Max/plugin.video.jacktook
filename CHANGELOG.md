@@ -1,4 +1,10 @@
 
+## 0.2.1 (2024-03-12)
+* torrentio improvements (priority language, sort by language, etc)
+* added portugese translation
+* added trakt scrobbling support
+* others improvements and fixes
+
 ## 0.2.0 (2024-03-04)
 * Add option to select and use all torrents clients at the same time.
 * Add pagination to tmdb and anilist search

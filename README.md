@@ -35,7 +35,7 @@ Others:
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jacktook/releases/download/v0.1.4/plugin.video.jacktook-0.2.0.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jacktook/releases/download/v0.1.4/plugin.video.jacktook-0.2.1.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## Steps.
 
