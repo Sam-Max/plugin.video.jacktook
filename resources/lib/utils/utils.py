@@ -454,6 +454,8 @@ def sort_results(results):
         sort_results = sorted(results, key=lambda r: r["Quality"], reverse=True)
     elif sort_by == "Cached":
         sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
+    elif sort_by == "Original order":
+        sort_results = results
 
     return sort_results
 
