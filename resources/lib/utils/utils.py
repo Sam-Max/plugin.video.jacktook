@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import hashlib
 import os
 import re
+import unicodedata
 
 from resources.lib.db.cached import Cache
 from resources.lib.db.database import get_db
@@ -230,7 +231,7 @@ def set_watched_title(title, ids, mode=""):
     if title != "None":
         db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
-            "ids":ids,
+            "ids": ids,
             "mode": mode,
         }
         db.commit()
@@ -361,6 +362,16 @@ def get_random_color(provider_name):
     return "FF" + "".join(colors).upper()
 
 
+def get_colored_languages(languages):
+    if languages:
+        colored_languages = []
+        for lang in languages:
+            lang_color = get_random_color(lang)
+            colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
+            colored_languages.append(colored_lang)
+        return colored_languages
+
+
 def clear_tmdb_cache():
     db.database["jt:tmdb"] = {}
     db.commit()
@@ -423,14 +434,34 @@ def remove_duplicate(results):
     return result_dict
 
 
-def process_results(results, mode, episode_name, episode, season):
-    res = remove_duplicate(results)
+def process_results(res, mode, episode_name, episode, season):
+    res = remove_duplicate(res)
     res = limit_results(res)
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     res = sort_results(res)
     return res
+
+
+def sort_by_priority_language(results):
+    priority_lang = get_setting("torrentio_priority_lang")
+    for res in results:
+        if priority_lang in res["languages"]:
+            results.remove(res)
+            results.insert(0, res)
+    return results
+
+
+def filter_by_priority_language(results):
+    indexer = get_setting("indexer")
+    if indexer == Indexer.TORRENTIO:
+        filtered_results = []
+        priority_lang = get_setting("torrentio_priority_lang")
+        for res in results:
+            if priority_lang in res["languages"]:
+                filtered_results.append(res)
+        return filtered_results
 
 
 def sort_results(results):
@@ -456,6 +487,8 @@ def sort_results(results):
         sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
     elif sort_by == "None":
         sort_results = results
+    elif sort_by == "Language":
+        sort_results = sort_by_priority_language(results)
 
     return sort_results
 
@@ -526,7 +559,7 @@ def is_video(s):
     return s.lower().endswith(video_extensions)
 
 
-def get_info_hash(magnet):
+def get_info_hash_from_magnet(magnet):
     return Magnet.from_string(magnet).infohash
 
 
@@ -569,35 +602,16 @@ def get_port():
     return get_torrest_setting("port")
 
 
-""" def direct_download():
-    import urllib.request
+def unicode_flag_to_country_code(unicode_flag):
+    if len(unicode_flag) != 2:
+        return "Invalid flag Unicode"
 
-    url = 'your_file_url'
-    file_name = 'your_file_name'
+    first_letter = unicodedata.name(unicode_flag[0]).replace(
+        "REGIONAL INDICATOR SYMBOL LETTER ", ""
+    )
+    second_letter = unicodedata.name(unicode_flag[1]).replace(
+        "REGIONAL INDICATOR SYMBOL LETTER ", ""
+    )
 
-    def reporthook(block_num, block_size, total_size):
-        downloaded = block_num * block_size
-        if total_size > 0:
-            percent = min(int(downloaded * 100 / total_size), 100)
-            print(f'Downloading: {percent}%', end='\r')
-
-    urllib.request.urlretrieve(url, file_name, reporthook)
-    print('Download complete') """
-
-
-""" def direct_download(url, file_name):
-    progressDialog.create("Download Manager")
-
-    response = requests.get(url, stream=True)
-    total_size = int(response.headers.get("content-length", 0))
-
-    with open(file_name, "wb") as file:
-        for data in response.iter_content(chunk_size=1024):
-            file.write(data)
-            content = f"Downloaded: {int(file.tell() / total_size * 100)}%"
-            progressDialog.update(-1, content)
-            if progressDialog.iscanceled():
-                progressDialog.close()
-                return
-
-    progressDialog.update(-1, "Download complete.") """
+    country_code = first_letter.lower() + second_letter.lower()
+    return country_code

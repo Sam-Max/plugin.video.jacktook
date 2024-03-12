@@ -1,12 +1,14 @@
 import re
 from resources.lib.anilist import anilist_client
-from resources.lib.utils.kodi import action, bytes_to_human_readable
+from resources.lib.debrid import get_magnet_from_uri
+from resources.lib.utils.kodi import action, bytes_to_human_readable, log
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
     add_pack_item,
     add_play_item,
     fanartv_get,
+    get_colored_languages,
     get_description_length,
     get_random_color,
     info_hash_to_magnet,
@@ -23,7 +25,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
     overview = ""
     description_length = get_description_length()
     if ids:
-        tmdb_id, tvdb_id, _ =  ids.split(", ") 
+        tmdb_id, tvdb_id, _ = ids.split(", ")
 
     if query:
         if mode == "tv":
@@ -62,8 +64,15 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
         if watched:
             quality_title = f"[COLOR palevioletred]{quality_title}[/COLOR]"
 
+        languages = get_colored_languages(res.get("languages"))
+        languages = languages if languages else ""
         tracker_color = get_random_color(tracker)
-        torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {quality_title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+
+        torr_title = (
+            f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] /{quality_title}[CR]"
+            f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I] "
+            f"{languages}"
+        )
 
         debrid_type = res["debridType"]
         debrid_color = get_random_color(debrid_type)
@@ -106,7 +115,6 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                     plugin=plugin,
                 )
         else:
-            download_url = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
             if guid:
                 if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
@@ -115,9 +123,20 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                     if guid.startswith("magnet:?"):
                         magnet = guid
                     else:
-                        magnet = ""
                         # For some indexers, the guid is a torrent file url
-                        download_url = res.get("guid")
+                        guid = res.get("guid")
+                        magnet, _ = get_magnet_from_uri(guid)
+
+            if not magnet:
+                url = res.get("magnetUrl") or res.get("downloadUrl")
+                if url.startswith("magnet:?"):
+                    magnet = url
+                else:
+                    magnet, _ = get_magnet_from_uri(url)
+
+            if not magnet:
+                continue
+
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, poster, overview)
             if magnet:
@@ -134,7 +153,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 ids,
                 tvdata,
                 title,
-                url=download_url,
+                url="",
                 magnet=magnet,
                 is_torrent=True,
                 mode=mode,

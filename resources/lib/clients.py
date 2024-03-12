@@ -10,7 +10,7 @@ from resources.lib.utils.kodi import (
     notify,
     translation,
 )
-from resources.lib.utils.utils import Indexer, get_cached, set_cached
+from resources.lib.utils.utils import Indexer, get_cached, set_cached, unicode_flag_to_country_code
 from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
@@ -220,6 +220,7 @@ class Torrentio:
                     "infoHash": item["infoHash"],
                     "size": parsed_item["size"],
                     "seeders": parsed_item["seeders"],
+                    "languages": parsed_item["languages"],
                     "publishDate": "",
                     "peers": 0,
                     "debridType": "",
@@ -248,14 +249,11 @@ class Torrentio:
 
     def extract_languages(self, title):
         languages = []
-        if "Multi Audio" in title or "Multi Language" in title:
-            languages.append("Multi Language")
-        elif "Dual Audio" in title or "Dual Language" in title:
-            languages.append("Dual Language")
-        # Regex to match country flag emojis
+        # Regex to match unicode country flag emojis 
         flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
         if flag_emojis:
-            languages.extend(flag_emojis)
+            for flag in flag_emojis:
+                languages.append(unicode_flag_to_country_code(flag).upper())
         return languages
 
 

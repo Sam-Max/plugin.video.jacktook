@@ -1,0 +1,302 @@
+# Kodi Media Center language file
+# Addon Name: Jacktook
+# Addon id: plugin.video.jacktook
+# Addon Provider: Sam-Max
+#
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-19 19:53+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Settings
+msgctxt "#30000"
+msgid "Torrents"
+msgstr "Torrents"
+
+msgctxt "#30001"
+msgid "Torrent Clients:"
+msgstr "Clientes torrent:"
+
+msgctxt "#30002"
+msgid "Client"
+msgstr "Cliente"
+
+msgctxt "#30020"
+msgid "Indexers"
+msgstr "Indexadores"
+
+msgctxt "#30021"
+msgid "Indexer"
+msgstr "Indexador"
+
+msgctxt "#30022"
+msgid "Jackett Configuration:"
+msgstr "Configuração do Jackett:"
+
+msgctxt "#30023"
+msgid "Jackett Api Key"
+msgstr "Chave de API do Jackett"
+
+msgctxt "#30025"
+msgid "Jackett Host"
+msgstr "Host do Jackett"
+
+msgctxt "#30026"
+msgid "Description length"
+msgstr "Tamanho da descrição"
+
+msgctxt "#30027"
+msgid "Insecured connection"
+msgstr "Conexão insegura"
+
+msgctxt "#30028"
+msgid "Sort by"
+msgstr "Ordenar por"
+
+msgctxt "#30029"
+msgid "Total Results"
+msgstr "Total de Resultados"
+
+msgctxt "#30050"
+msgid "Prowlarr Configuration:"
+msgstr "Configuração do Prowlarr:"
+
+msgctxt "#30051"
+msgid "Prowlarr Api Key"
+msgstr "Chave de API do Prowlarr"
+
+msgctxt "#30052"
+msgid "Prowlarr Host"
+msgstr "Host do Prowlarr"
+
+msgctxt "#30053"
+msgid "IndexersIds "
+msgstr "IDs dos Indexadores "
+
+msgctxt "#30054"
+msgid "Anime IndexersIds"
+msgstr "IDs dos Indexadores para Anime"
+
+msgctxt "#30100"
+msgid "TMDB"
+msgstr "TMDB"
+
+msgctxt "#30102"
+msgid "TMDB Configuration:"
+msgstr "Configuração do TMDB:"
+
+msgctxt "#30103"
+msgid "TMDB Api Key"
+msgstr "Chave de API do TMDB"
+
+msgctxt "#30104"
+msgid "Clear tmdb cache"
+msgstr "Limpar cache do TMDB"
+
+msgctxt "#30105"
+msgid "Cache expiration hours"
+msgstr "Expiração do cache (Horas)"
+
+msgctxt "#30106"
+msgid "Clear all cache"
+msgstr "Limpar todo o cache"
+
+msgctxt "#30140"
+msgid "AniList"
+msgstr "AniList"
+
+msgctxt "#30142"
+msgid "AniList Configuration:"
+msgstr "Configuração do AniList:"
+
+msgctxt "#30143"
+msgid "Client ID"
+msgstr "ID do cliente"
+
+msgctxt "#30144"
+msgid "Client Secret"
+msgstr "Segredo do cliente"
+
+msgctxt "#30150"
+msgid "Debrid"
+msgstr "Debrid"
+
+msgctxt "#30152"
+msgid "Real Debrid Configuration"
+msgstr "Configuração do Real Debrid"
+
+msgctxt "#30154"
+msgid "Token:"
+msgstr "Token:"
+
+msgctxt "#30200"
+msgid "Fanart.TV"
+msgstr "Fanart.TV"
+
+msgctxt "#30202"
+msgid "Fanart.TV Configuration:"
+msgstr "Configuração do Fanart.TV:"
+
+msgctxt "#30203"
+msgid "Client ID"
+msgstr "ID do cliente"
+
+msgctxt "#30220"
+msgid "You need to configure Jackett first"
+msgstr "Você precisa configurar o Jackett primeiro"
+
+msgctxt "#30221"
+msgid "Jackett API key is invalid"
+msgstr "Chave de API do Jackett é inválida"
+
+msgctxt "#30223"
+msgid "You need to configure Prowlarr first"
+msgstr "Você precisa configurar o Prowlarr primeiro"
+
+msgctxt "#30224"
+msgid "Prowlarr API key is invalid"
+msgstr "Chave de API do Prowlarr é inválida"
+
+msgctxt "#30227"
+msgid "You need to configure Torrentio first"
+msgstr "Você precisa configurar o Torrentio primeiro"
+
+msgctxt "#30228"
+msgid "The request to Torrentio failed."
+msgstr "A requisição para o Torrentio falhou."
+
+msgctxt "#30229"
+msgid "The request to Jackett failed."
+msgstr "A requisição para o Jackett falhou."
+
+msgctxt "#30230"
+msgid "The request to Prowlarr failed."
+msgstr "A requisição para o Prowlarr falhou."
+
+msgctxt "#30231"
+msgid "The request to Elhosted failed."
+msgstr "A requisição para o Elhosted falhou."
+
+msgctxt "#30240"
+msgid "TMDB cache cleared"
+msgstr "Cache do TMDB limpo"
+
+msgctxt "#30241"
+msgid "Search on TMDB:"
+msgstr "Pesquisar no TMDB:"
+
+msgctxt "#30242"
+msgid "Search on AniList:"
+msgstr "Pesquisar no AniList:"
+
+msgctxt "#30243"
+msgid "Search for torrents:"
+msgstr "Pesquisar por torrents:"
+
+msgctxt "#30244"
+msgid "Cache cleared"
+msgstr "Cache limpo"
+
+msgctxt "#30250"
+msgid "Addon Torrest not found - (plugin.video.torrest)"
+msgstr "Addon Torrest não encontrado - (plugin.video.torrest)"
+
+msgctxt "#30251"
+msgid "No sources found to play"
+msgstr "Nenhuma fonte encontrada para reproduzir"
+
+msgctxt "#30252"
+msgid "Addon Elementum not found - (plugin.video.elementum)"
+msgstr "Addon Elementum não encontrado - (plugin.video.elementum)"
+
+msgctxt "#30650"
+msgid "Queued"
+msgstr "Adicionado à fila"
+
+msgctxt "#30651"
+msgid "Checking"
+msgstr "Verificando"
+
+msgctxt "#30652"
+msgid "Finding"
+msgstr "Encontrando"
+
+msgctxt "#30653"
+msgid "Downloading"
+msgstr "Baixando"
+
+msgctxt "#30654"
+msgid "Finished"
+msgstr "Finalizado"
+
+msgctxt "#30655"
+msgid "Seeding"
+msgstr "Semeando"
+
+msgctxt "#30656"
+msgid "Allocating"
+msgstr "Alocando"
+
+msgctxt "#30657"
+msgid "Checking resume data"
+msgstr "Verificando dados para reproduzir"
+
+msgctxt "#30658"
+msgid "Paused"
+msgstr "Pausado"
+
+msgctxt "#30659"
+msgid "Buffering"
+msgstr "Bufferizando"
+
+msgctxt "#30660"
+msgid "Unknown"
+msgstr "Desconhecido"
+
+msgctxt "#30700"
+msgid "Buffer and play"
+msgstr "Bufferizar e reproduzir"
+
+msgctxt "#30701"
+msgid "Stop downloading"
+msgstr "Parar o download"
+
+msgctxt "#30702"
+msgid "Download"
+msgstr "Download"
+
+msgctxt "#30703"
+msgid "Resume"
+msgstr "Retomar"
+
+msgctxt "#30704"
+msgid "Pause"
+msgstr "Pausar"
+
+msgctxt "#30705"
+msgid "Remove torrent"
+msgstr "Remover torrent"
+
+msgctxt "#30706"
+msgid "Remove torrent and files"
+msgstr "Remover torrent e arquivos"
+
+msgctxt "#30707"
+msgid "Torrent status"
+msgstr "Status do Torrent"
+
+msgctxt "#30708"
+msgid "Stop"
+msgstr "Parar"
+
+
+
+
+
+
