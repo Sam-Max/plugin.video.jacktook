@@ -566,41 +566,45 @@ def torrent_files(info_hash):
 @query_arg("mode", required=False)
 def tv_seasons_details(ids, mode):
     setContent(plugin.handle, SHOWS_TYPE)
-    tmdb_id, tvdb_id, _ = ids.split(", ")
+    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
 
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
-    number_of_seasons = details.number_of_seasons
-    poster_path = details.get("poster_path", "")
+    seasons = details.seasons
     overview = details.overview
 
     set_watched_title(name, ids, mode=mode)
 
+    show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
     fanart_data = fanartv_get(tvdb_id)
-    if fanart_data:
-        poster = fanart_data["clearlogo2"]
-        fanart = fanart_data["fanart2"]
-    else:
-        poster = TMDB_POSTER_URL + poster_path
-        fanart = poster
+    fanart = fanart_data["fanart2"] if fanart_data else ""
 
-    for i in range(number_of_seasons):
-        season = i + 1
-        title = f"Season {season}"
-        list_item = ListItem(label=title)
+    for s in seasons:
+        season_name = s.name
+        season_number = s.season_number
+        if s.poster_path:
+            poster = TMDB_POSTER_URL + s.poster_path
+        else:
+            poster = show_poster
+            
+        list_item = ListItem(label=season_name)
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setMediaType("season")
+        info_tag.setTitle(name)
+        info_tag.setTvShowTitle(name)
+        info_tag.setSeason(int(season_number))
+        info_tag.setPlot(overview)
+        info_tag.setIMDBNumber(imdb_id)
+        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+
         list_item.setArt(
             {
                 "poster": poster,
+                'tvshow.poster': poster,
                 "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType("video")
-        info_tag.setTitle(title)
-        info_tag.setPlot(overview)
-
         list_item.setProperty("IsPlayable", "false")
 
         addDirectoryItem(
@@ -610,7 +614,7 @@ def tv_seasons_details(ids, mode):
                 tv_name=name,
                 ids=ids,
                 mode=mode,
-                season=season,
+                season=season_number,
             ),
             list_item,
             isFolder=True,
@@ -624,7 +628,7 @@ def tv_seasons_details(ids, mode):
 @query_arg("mode", required=False)
 def tv_episodes_details(tv_name, season, ids, mode):
     setContent(plugin.handle, EPISODES_TYPE)
-    tmdb_id, tvdb_id, _ = ids.split(", ")
+    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = fanartv_get(tvdb_id)
     fanart = fanart_data.get("fanart2", "") if fanart_data else ""
@@ -632,9 +636,9 @@ def tv_episodes_details(tv_name, season, ids, mode):
     for ep in season_details.episodes:
         ep_name = ep.name
         episode = ep.episode_number
-        title = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
+        tvdata = f"{ep_name}, {episode}, {season}"
 
         still_path = ep.get("still_path", "")
         if still_path:
@@ -642,26 +646,26 @@ def tv_episodes_details(tv_name, season, ids, mode):
         else:
             poster = ""
 
-        list_item = ListItem(label=title)
-        list_item.setArt(
-            {
-                "poster": poster,
-                "fanart": fanart,
-                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-            }
-        )
+        list_item = ListItem(label=ep_name)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("episode")
-        info_tag.setTitle(title)
-        info_tag.setSeason(int(season))
+        info_tag.setTitle(tv_name)
         info_tag.setEpisode(int(episode))
         if duration:
             info_tag.setDuration(int(duration))
         info_tag.setFirstAired(air_date)
         info_tag.setPlot(ep.overview)
-
-        tvdata = f"{ep_name}, {episode}, {season}"
-
+        info_tag.setIMDBNumber(imdb_id)
+        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+        
+        list_item.setArt(
+            {
+                "poster": fanart,
+                'tvshow.poster': poster,
+                "fanart": poster,
+                "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
+            }
+        )
         list_item.setProperty("IsPlayable", "false")
         list_item.addContextMenuItems(
             [
@@ -679,6 +683,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
                 )
             ]
         )
+
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(

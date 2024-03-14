@@ -254,6 +254,14 @@ def Keyboard(id, default="", hidden=False):
         return keyboard.getText()
 
 
+def get_current_view_id():
+    return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()
+
+
+def set_view_mode(view_id):
+    execute_builtin(f"Container.SetViewMode({view_id}")
+
+
 def copy2clip(txt):
     import subprocess
 
