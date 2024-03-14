@@ -1,7 +1,7 @@
 import re
 from resources.lib.anilist import anilist_client
 from resources.lib.debrid import get_magnet_from_uri
-from resources.lib.utils.kodi import action, bytes_to_human_readable, log
+from resources.lib.utils.kodi import action, bytes_to_human_readable, log, set_view_mode
 from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
@@ -161,4 +161,5 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 plugin=plugin,
             )
 
-    endOfDirectory(plugin.handle)
+    endOfDirectory(plugin.handle, cacheToDisc=False)
+    set_view_mode(55)

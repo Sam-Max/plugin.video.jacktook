@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from resources.lib.db.database import get_db
 from resources.lib.tmdbv3api.objs.search import Search
 
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update, log
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update
 from resources.lib.utils.utils import get_movie_data, get_tv_data, tmdb_get
 
 from xbmcgui import ListItem
