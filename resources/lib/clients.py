@@ -261,7 +261,7 @@ class Torrentio:
             for flag in flag_emojis:
                 languages.append(unicode_flag_to_country_code(flag).upper())
                 full_lang = find_language_by_unicode(flag)
-                if full_lang != None:
+                if (full_lang != None) and (full_lang not in full_languages):
                 	full_languages.append(full_lang)
         return languages, full_languages
 
