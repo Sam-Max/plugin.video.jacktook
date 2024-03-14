@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from resources.lib.db.database import get_db
 from resources.lib.tmdbv3api.objs.search import Search
 
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update, log
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update
 from resources.lib.utils.utils import get_movie_data, get_tv_data, tmdb_get
 
 from xbmcgui import ListItem
@@ -89,11 +89,11 @@ def tmdb_search(mode, genre_id, page, func, plugin):
         return {}
 
 
-def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id=0):
-    with ThreadPoolExecutor(max_workers=len(data.results)) as executor:
+def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre_id=0):
+    with ThreadPoolExecutor(max_workers=len(results)) as executor:
         [
             executor.submit(tmdb_show_items, res, func, func2, plugin, mode)
-            for res in data.results
+            for res in results
         ]
         executor.shutdown(wait=True)
 
@@ -115,7 +115,7 @@ def tmdb_show_results(data, func, func2, next_func, page, plugin, mode, genre_id
 def tmdb_show_items(res, func, func2, plugin, mode):
     tmdb_id = res.id
     duration = ""
-    media_type = ""
+    media_type = res.get("media_type", "")
 
     if mode == "movie":
         title = res.title
@@ -130,14 +130,11 @@ def tmdb_show_items(res, func, func2, plugin, mode):
             title = res.name
         elif "title" in res:
             title = res.title
-        if res["media_type"] == "movie":
-            media_type = "movie"
+        if media_type == "movie":
             release_date = res.release_date
             imdb_id, tvdb_id, duration = get_movie_data(tmdb_id)
-
             title = f"[B][MOVIE][/B]- {title}"
-        elif res["media_type"] == "tv":
-            media_type = "tv"
+        elif media_type == "tv":
             release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tv_data(tmdb_id)
             title = f"[B][TV][/B]- {title}"
@@ -202,7 +199,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
     else:
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(func2, ids=ids, mode=mode),
+            plugin.url_for(func2, ids=ids, mode=mode, media_type=media_type),
             list_item,
             isFolder=True,
         )

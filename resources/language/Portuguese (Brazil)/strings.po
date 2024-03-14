@@ -41,7 +41,7 @@ msgstr "Configuração do Jackett:"
 
 msgctxt "#30023"
 msgid "Jackett Api Key"
-msgstr "Chave de API do Jackett"
+msgstr "Chave da API do Jackett"
 
 msgctxt "#30025"
 msgid "Jackett Host"
@@ -61,7 +61,7 @@ msgstr "Ordenar por"
 
 msgctxt "#30029"
 msgid "Total Results"
-msgstr "Total de Resultados"
+msgstr "Total de resultados"
 
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
@@ -69,7 +69,7 @@ msgstr "Configuração do Prowlarr:"
 
 msgctxt "#30051"
 msgid "Prowlarr Api Key"
-msgstr "Chave de API do Prowlarr"
+msgstr "Chave da API do Prowlarr"
 
 msgctxt "#30052"
 msgid "Prowlarr Host"
@@ -93,7 +93,7 @@ msgstr "Configuração do TMDB:"
 
 msgctxt "#30103"
 msgid "TMDB Api Key"
-msgstr "Chave de API do TMDB"
+msgstr "Chave da API do TMDB"
 
 msgctxt "#30104"
 msgid "Clear tmdb cache"
@@ -153,7 +153,7 @@ msgstr "Você precisa configurar o Jackett primeiro"
 
 msgctxt "#30221"
 msgid "Jackett API key is invalid"
-msgstr "Chave de API do Jackett é inválida"
+msgstr "Chave da API do Jackett é inválida"
 
 msgctxt "#30223"
 msgid "You need to configure Prowlarr first"
@@ -161,7 +161,7 @@ msgstr "Você precisa configurar o Prowlarr primeiro"
 
 msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
-msgstr "Chave de API do Prowlarr é inválida"
+msgstr "Chave da API do Prowlarr é inválida"
 
 msgctxt "#30227"
 msgid "You need to configure Torrentio first"
@@ -169,19 +169,19 @@ msgstr "Você precisa configurar o Torrentio primeiro"
 
 msgctxt "#30228"
 msgid "The request to Torrentio failed."
-msgstr "A requisição para o Torrentio falhou."
+msgstr "A solicitação para o Torrentio falhou."
 
 msgctxt "#30229"
 msgid "The request to Jackett failed."
-msgstr "A requisição para o Jackett falhou."
+msgstr "A solicitação para o Jackett falhou."
 
 msgctxt "#30230"
 msgid "The request to Prowlarr failed."
-msgstr "A requisição para o Prowlarr falhou."
+msgstr "A solicitação para o Prowlarr falhou."
 
 msgctxt "#30231"
 msgid "The request to Elhosted failed."
-msgstr "A requisição para o Elhosted falhou."
+msgstr "A solicitação para o Elhosted falhou."
 
 msgctxt "#30240"
 msgid "TMDB cache cleared"
@@ -253,7 +253,7 @@ msgstr "Pausado"
 
 msgctxt "#30659"
 msgid "Buffering"
-msgstr "Bufferizando"
+msgstr "Carregando"
 
 msgctxt "#30660"
 msgid "Unknown"
@@ -261,7 +261,7 @@ msgstr "Desconhecido"
 
 msgctxt "#30700"
 msgid "Buffer and play"
-msgstr "Bufferizar e reproduzir"
+msgstr "Carregar e reproduzir"
 
 msgctxt "#30701"
 msgid "Stop downloading"
@@ -294,9 +294,3 @@ msgstr "Status do Torrent"
 msgctxt "#30708"
 msgid "Stop"
 msgstr "Parar"
-
-
-
-
-
-

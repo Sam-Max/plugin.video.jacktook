@@ -6,9 +6,12 @@ import xbmc
 import xbmcgui
 from xbmcgui import Window
 import xbmcaddon
-from xbmc import executebuiltin
 
 _URL = sys.argv[0]
+
+MOVIES_TYPE = "movies"
+SHOWS_TYPE = "tvshows"
+EPISODES_TYPE = "episodes"
 
 TORREST_ADDON_ID = "plugin.video.torrest"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
@@ -216,7 +219,7 @@ def get_cache_expiration():
 
 
 def execute_builtin(command, block=False):
-    return executebuiltin(command, block)
+    return xbmc.executebuiltin(command, block)
 
 
 def bytes_to_human_readable(size, unit="B"):
@@ -248,6 +251,18 @@ def Keyboard(id, default="", hidden=False):
     keyboard.doModal()
     if keyboard.isConfirmed():
         return keyboard.getText()
+
+
+def get_current_view_id():
+    return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()
+
+
+def set_view_mode(view_id):
+    xbmc.executebuiltin("Container.SetViewMode({})".format(view_id))
+
+
+def container_content():
+    return xbmc.getInfoLabel("Container.Content")
 
 
 def copy2clip(txt):
