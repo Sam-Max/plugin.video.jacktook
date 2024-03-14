@@ -251,29 +251,32 @@ def search_tmdb(mode, genre_id, page):
 
     page = int(page)
     data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
-    if data:
-        tmdb_show_results(
-            data,
-            func=search,
-            func2=tv_seasons_details,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            genre_id=genre_id,
-            mode=mode,
-        )
+    if data.total_results == 0:
+        notify("No results found")
+        return
+    tmdb_show_results(
+        data.results,
+        func=search,
+        func2=tv_seasons_details,
+        next_func=next_page,
+        page=page,
+        plugin=plugin,
+        genre_id=genre_id,
+        mode=mode,
+    )
 
 
 @plugin.route("/search")
 @query_arg("mode", required=True)
+@query_arg("media_type", required=False)
 @query_arg("query", required=False)
 @query_arg("ids", required=False)
 @query_arg("tvdata", required=False)
 @query_arg("rescrape", required=False)
-def search(mode="", query="", ids="", tvdata="", rescrape=False):
-    if mode == ["movie", "multi"]:
+def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
+    if mode == "movie" or media_type == "movie":
         setContent(plugin.handle, MOVIES_TYPE)
-    elif mode == "tv":
+    elif mode == "tv" or media_type == "tv":
         setContent(plugin.handle, SHOWS_TYPE)
 
     if ids:
@@ -282,22 +285,24 @@ def search(mode="", query="", ids="", tvdata="", rescrape=False):
         imdb_id = -1
 
     if tvdata:
-        episode_name, episode, season = tvdata.split(", ")
+        ep_name, episode, season = tvdata.split(", ")
     else:
         episode = season = 0
-        episode_name = ""
+        ep_name = ""
 
     set_watched_title(query, ids, mode)
 
     torr_client = get_setting("torrent_client")
     p_dialog = DialogProgressBG()
 
-    results = search_api(query, imdb_id, mode, p_dialog, rescrape, season, episode)
+    results = search_api(
+        query, imdb_id, mode, media_type, p_dialog, rescrape, season, episode
+    )
     if results:
         proc_results = process_results(
             results,
             mode,
-            episode_name,
+            ep_name,
             episode,
             season,
         )
@@ -307,6 +312,7 @@ def search(mode="", query="", ids="", tvdata="", rescrape=False):
                     query,
                     proc_results,
                     mode,
+                    media_type,
                     p_dialog,
                     rescrape,
                     episode,
@@ -565,7 +571,8 @@ def torrent_files(info_hash):
 @plugin.route("/tv/details")
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
-def tv_seasons_details(ids, mode):
+@query_arg("media_type", required=False)
+def tv_seasons_details(ids, mode, media_type):
     setContent(plugin.handle, SHOWS_TYPE)
     tmdb_id, tvdb_id, imdb_id = ids.split(", ")
 
@@ -587,7 +594,7 @@ def tv_seasons_details(ids, mode):
             poster = TMDB_POSTER_URL + s.poster_path
         else:
             poster = show_poster
-            
+
         list_item = ListItem(label=season_name)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("season")
@@ -601,7 +608,7 @@ def tv_seasons_details(ids, mode):
         list_item.setArt(
             {
                 "poster": poster,
-                'tvshow.poster': poster,
+                "tvshow.poster": poster,
                 "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
@@ -615,6 +622,7 @@ def tv_seasons_details(ids, mode):
                 tv_name=name,
                 ids=ids,
                 mode=mode,
+                media_type=media_type,
                 season=season_number,
             ),
             list_item,
@@ -623,10 +631,12 @@ def tv_seasons_details(ids, mode):
 
     endOfDirectory(plugin.handle)
 
+
 @plugin.route("/tv/details/season/<tv_name>/<season>")
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
-def tv_episodes_details(tv_name, season, ids, mode):
+@query_arg("media_type", required=False)
+def tv_episodes_details(tv_name, season, ids, mode, media_type):
     setContent(plugin.handle, EPISODES_TYPE)
     tmdb_id, tvdb_id, imdb_id = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
@@ -636,6 +646,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
     for ep in season_details.episodes:
         ep_name = ep.name
         episode = ep.episode_number
+        label = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
         tvdata = f"{ep_name}, {episode}, {season}"
@@ -646,7 +657,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
         else:
             poster = ""
 
-        list_item = ListItem(label=ep_name)
+        list_item = ListItem(label=label)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setMediaType("episode")
         info_tag.setTitle(tv_name)
@@ -657,11 +668,11 @@ def tv_episodes_details(tv_name, season, ids, mode):
         info_tag.setPlot(ep.overview)
         info_tag.setIMDBNumber(imdb_id)
         info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
-        
+
         list_item.setArt(
             {
                 "poster": fanart,
-                'tvshow.poster': poster,
+                "tvshow.poster": poster,
                 "fanart": poster,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
@@ -689,6 +700,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
             plugin.url_for(
                 search,
                 mode=mode,
+                media_type=media_type,
                 query=tv_name,
                 episode_name=ep_name,
                 ids=ids,
@@ -700,6 +712,7 @@ def tv_episodes_details(tv_name, season, ids, mode):
 
     endOfDirectory(plugin.handle, cacheToDisc=False)
     set_view_mode(55)
+
 
 @plugin.route("/get_rd_link_pack")
 @query_arg("args", required=False)

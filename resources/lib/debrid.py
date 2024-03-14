@@ -28,13 +28,14 @@ USER_AGENT_HEADER = {
 }
 
 
-def check_debrid_cached(query, results, mode, dialog, rescrape, episode=1):
+def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
         if query:
-            if mode == "tv":
+            if mode == "tv" or media_type == "tv":
                 cached_results = get_cached(query, params=(episode, "deb"))
             else:
                 cached_results = get_cached(query, params=("deb"))
+            
             if cached_results:
                 return cached_results
 
@@ -91,7 +92,7 @@ def check_debrid_cached(query, results, mode, dialog, rescrape, episode=1):
         cached_results.extend(uncached_results)
 
     if query:
-        if mode == "tv":
+        if mode == "tv" or media_type == "tv":
             set_cached(cached_results, query, params=(episode, "deb"))
         else:
             set_cached(cached_results, query, params=("deb"))

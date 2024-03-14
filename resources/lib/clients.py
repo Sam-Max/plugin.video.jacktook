@@ -10,12 +10,19 @@ from resources.lib.utils.kodi import (
     notify,
     translation,
 )
-from resources.lib.utils.utils import Indexer, get_cached, set_cached, unicode_flag_to_country_code
+from resources.lib.utils.utils import (
+    Indexer,
+    get_cached,
+    set_cached,
+    unicode_flag_to_country_code,
+)
 from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
 
-def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1):
+def search_api(
+    query, imdb_id, mode, media_type, dialog, rescrape=False, season=1, episode=1
+):
     if not query:
         text = Keyboard(id=30243)
         if text:
@@ -23,12 +30,13 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
         else:
             dialog.create("")
             return None
-        
+
     if not rescrape:
-        if mode in ["tv"]:
+        if mode == "tv" or media_type == "tv":
             cached_results = get_cached(query, params=(episode, "index"))
         else:
             cached_results = get_cached(query, params=("index"))
+        
         if cached_results:
             dialog.create("")
             return cached_results
@@ -66,7 +74,7 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             dialog.create("")
             return None
         dialog.create("Jacktook [COLOR FFFF6B00]Torrentio[/COLOR]", "Searching...")
-        response = client.search(imdb_id, mode, season, episode)
+        response = client.search(imdb_id, mode, media_type, season, episode)
 
     elif indexer == Indexer.ELHOSTED:
         if imdb_id == -1:
@@ -74,9 +82,9 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             dialog.create("")
             return None
         dialog.create("Jacktook [COLOR FFFF6B00]Elfhosted[/COLOR]", "Searching...")
-        response = client.search(imdb_id, mode, season, episode)
+        response = client.search(imdb_id, mode, media_type, season, episode)
 
-    if mode in ["tv"]:
+    if mode == "tv" or media_type == "tv":
         set_cached(response, query, params=(episode, "index"))
     else:
         set_cached(response, query, params=("index"))
@@ -136,11 +144,11 @@ class Elfhosted:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
 
-    def search(self, imdb_id, mode, season, episode):
+    def search(self, imdb_id, mode, media_type, season, episode):
         try:
-            if mode == "tv":
+            if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-            elif mode in ["movie", "multi"]:
+            elif mode == "movie" or media_type == "movie":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
             res = requests.get(url, timeout=10)
             if res.status_code != 200:
@@ -169,7 +177,7 @@ class Elfhosted:
                     "peers": 0,
                     "debridType": "",
                     "debridCached": False,
-                    "debridPack":False,
+                    "debridPack": False,
                 }
             )
         return results
@@ -191,11 +199,11 @@ class Torrentio:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
 
-    def search(self, imdb_id, mode, season, episode, insecure=False):
+    def search(self, imdb_id, mode, media_type, season, episode, insecure=False):
         try:
-            if mode == "tv":
+            if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-            elif mode in ["movie", "multi"]:
+            elif mode == "movie" or media_type == "movie":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
             res = requests.get(url, timeout=10, verify=insecure)
             if res.status_code != 200:
@@ -225,7 +233,7 @@ class Torrentio:
                     "peers": 0,
                     "debridType": "",
                     "debridCached": False,
-                    "debridPack":False,
+                    "debridPack": False,
                 }
             )
         return results
@@ -249,7 +257,7 @@ class Torrentio:
 
     def extract_languages(self, title):
         languages = []
-        # Regex to match unicode country flag emojis 
+        # Regex to match unicode country flag emojis
         flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
         if flag_emojis:
             for flag in flag_emojis:
@@ -310,7 +318,7 @@ class Jackett:
                         "infoHash": infohash,
                         "debridType": "",
                         "debridCached": False,
-                        "debridPack":False,
+                        "debridPack": False,
                     }
                 )
             return results
@@ -363,7 +371,7 @@ class Prowlarr:
                         "quality_title": "",
                         "debridType": "",
                         "debridCached": False,
-                        "debridPack":False,
+                        "debridPack": False,
                     }
                 )
             return res
