@@ -10,6 +10,10 @@ from xbmc import executebuiltin
 
 _URL = sys.argv[0]
 
+MOVIES_TYPE = "movies"
+SHOWS_TYPE = "tvshows"
+EPISODES_TYPE = "episodes"
+
 TORREST_ADDON_ID = "plugin.video.torrest"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
 

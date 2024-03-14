@@ -43,6 +43,9 @@ from resources.lib.utils.utils import (
 )
 from resources.lib.utils.kodi import (
     ADDON_PATH,
+    EPISODES_TYPE,
+    MOVIES_TYPE,
+    SHOWS_TYPE,
     TORREST_ADDON,
     action,
     addon_settings,
@@ -64,10 +67,10 @@ from xbmcplugin import (
     endOfDirectory,
     setPluginCategory,
     setResolvedUrl,
+    setContent,
 )
 
 plugin = Plugin()
-
 
 if TORREST_ADDON:
     api = Torrest(get_service_address(), get_port(), get_credentials(), ssl_enabled())
@@ -240,6 +243,11 @@ def genre_menu():
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
+    if mode in ["multi", "movie", "movie_genres"]:
+        setContent(plugin.handle, MOVIES_TYPE)
+    elif mode in ["tv", "tv_genres"]:
+        setContent(plugin.handle, SHOWS_TYPE)
+
     page = int(page)
     data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
     if data:
@@ -262,6 +270,11 @@ def search_tmdb(mode, genre_id, page):
 @query_arg("tvdata", required=False)
 @query_arg("rescrape", required=False)
 def search(mode="", query="", ids="", tvdata="", rescrape=False):
+    if mode == ["movie", "multi"]:
+        setContent(plugin.handle, MOVIES_TYPE)
+    elif mode == "tv":
+        setContent(plugin.handle, SHOWS_TYPE)
+
     if ids:
         _, _, imdb_id = ids.split(", ")
     else:
@@ -552,6 +565,7 @@ def torrent_files(info_hash):
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
 def tv_seasons_details(ids, mode):
+    setContent(plugin.handle, SHOWS_TYPE)
     tmdb_id, tvdb_id, _ = ids.split(", ")
 
     details = tmdb_get("tv_details", tmdb_id)
@@ -609,6 +623,7 @@ def tv_seasons_details(ids, mode):
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
 def tv_episodes_details(tv_name, season, ids, mode):
+    setContent(plugin.handle, EPISODES_TYPE)
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = fanartv_get(tvdb_id)
@@ -754,6 +769,7 @@ def show_pack(ids, query, mode, tvdata=""):
 
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
+    setContent(plugin.handle, MOVIES_TYPE)
     search_anilist(
         category, page, plugin, search, get_anime_episodes, next_page_anilist
     )
@@ -761,6 +777,7 @@ def anilist(category, page=1):
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
+    setContent(plugin.handle, MOVIES_TYPE)
     page = int(page) + 1
     search_anilist(
         category, page, plugin, search, get_anime_episodes, next_page_anilist
