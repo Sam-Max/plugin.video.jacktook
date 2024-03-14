@@ -9,6 +9,7 @@ from resources.lib.utils.utils import (
     add_play_item,
     fanartv_get,
     get_colored_languages,
+    get_full_languages,
     get_description_length,
     get_random_color,
     info_hash_to_magnet,
@@ -68,10 +69,12 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
         languages = languages if languages else ""
         tracker_color = get_random_color(tracker)
 
+        full_languages = get_full_languages(res.get("full_languages"))
+
         torr_title = (
             f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] /{quality_title}[CR]"
-            f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I] "
-            f"{languages}"
+            f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+            f"[I][LIGHT][COLOR lightgray]{full_languages}[/COLOR][/LIGHT][/I]"
         )
 
         debrid_type = res["debridType"]
