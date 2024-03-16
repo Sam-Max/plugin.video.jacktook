@@ -63,6 +63,14 @@ msgctxt "#30029"
 msgid "Total Results"
 msgstr ""
 
+msgctxt "#30030"
+msgid "Timeout"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Timeout"
+msgstr ""
+
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
 msgstr ""
@@ -105,6 +113,10 @@ msgstr ""
 
 msgctxt "#30106"
 msgid "Clear all cache"
+msgstr ""
+
+msgctxt "#30107"
+msgid "Enable cache"
 msgstr ""
 
 msgctxt "#30140"

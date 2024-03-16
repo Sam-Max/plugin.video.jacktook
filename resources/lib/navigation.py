@@ -28,7 +28,7 @@ from resources.lib.utils.utils import (
     clear,
     clear_all_cache,
     clear_tmdb_cache,
-    fanartv_get,
+    search_fanart_tv,
     get_credentials,
     get_port,
     get_service_address,
@@ -251,19 +251,20 @@ def search_tmdb(mode, genre_id, page):
 
     page = int(page)
     data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
-    if data.total_results == 0:
-        notify("No results found")
-        return
-    tmdb_show_results(
-        data.results,
-        func=search,
-        func2=tv_seasons_details,
-        next_func=next_page,
-        page=page,
-        plugin=plugin,
-        genre_id=genre_id,
-        mode=mode,
-    )
+    if data:
+        if data.total_results == 0:
+            notify("No results found")
+            return
+        tmdb_show_results(
+            data.results,
+            func=search,
+            func2=tv_seasons_details,
+            next_func=next_page,
+            page=page,
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
 
 
 @plugin.route("/search")
@@ -584,7 +585,7 @@ def tv_seasons_details(ids, mode, media_type):
     set_watched_title(name, ids, mode=mode)
 
     show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
-    fanart_data = fanartv_get(tvdb_id)
+    fanart_data = search_fanart_tv(tvdb_id)
     fanart = fanart_data["fanart2"] if fanart_data else ""
 
     for s in seasons:
@@ -640,7 +641,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
     setContent(plugin.handle, EPISODES_TYPE)
     tmdb_id, tvdb_id, imdb_id = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-    fanart_data = fanartv_get(tvdb_id)
+    fanart_data = search_fanart_tv(tvdb_id)
     fanart = fanart_data.get("fanart2", "") if fanart_data else ""
 
     for ep in season_details.episodes:

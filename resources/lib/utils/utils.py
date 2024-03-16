@@ -6,6 +6,7 @@ import unicodedata
 
 from resources.lib.db.cached import Cache
 from resources.lib.db.database import get_db
+from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
@@ -13,7 +14,7 @@ from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
 from resources.lib.torf._magnet import Magnet
-from resources.lib.fanarttv import get_api_fanarttv
+from resources.lib.fanarttv import search_api_fanart_tv
 from resources.lib.utils.kodi import (
     ADDON_PATH,
     container_refresh,
@@ -21,6 +22,7 @@ from resources.lib.utils.kodi import (
     get_int_setting,
     get_setting,
     get_torrest_setting,
+    is_cache_enabled,
     log,
     translation,
 )
@@ -33,7 +35,7 @@ from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
 
 
-cache = Cache.get_instance()
+cache = Cache()
 
 db = get_db()
 
@@ -241,19 +243,19 @@ def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
 
 
-def fanartv_get(tvdb_id, mode="tv"):
-    fanart_data = db.get_fanarttv("jt:fanarttv", tvdb_id)
-    if not fanart_data:
-        fanart_data = get_api_fanarttv(mode, "en", tvdb_id)
+def search_fanart_tv(tvdb_id, mode="tv"):
+    identifier = "{}|{}".format("fanarttv", tvdb_id)
+    data = cache.get(identifier, hashed_key=True)
+    if not data:
+        fanart_data = search_api_fanart_tv(mode, "en", tvdb_id)
         if fanart_data:
-            db.set_fanarttv(
-                "jt:fanarttv",
-                tvdb_id,
-                fanart_data["poster2"],
-                fanart_data["fanart2"],
-                fanart_data["clearlogo2"],
+            cache.set(
+                identifier,
+                data,
+                timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+                hashed_key=True,
             )
-    return fanart_data
+    return data
 
 
 def get_cached(path, params={}):
@@ -266,7 +268,7 @@ def set_cached(results, path, params={}):
     cache.set(
         identifier,
         results,
-        timedelta(hours=get_cache_expiration()),
+        timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         hashed_key=True,
     )
 
@@ -280,7 +282,7 @@ def db_get(name, func, path, params):
         cache.set(
             identifier,
             data,
-            timedelta(hours=get_cache_expiration()),
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
     return data
@@ -316,10 +318,12 @@ def tmdb_get(path, params={}):
         elif path == "trending_tv":
             trending = Trending()
             data = trending.tv_day(page=params)
+        elif path == "find":
+            data = Find().find_by_tvdb_id(params)
         cache.set(
             identifier,
             data,
-            timedelta(hours=get_cache_expiration()),
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
     return data
@@ -371,10 +375,12 @@ def get_colored_languages(languages):
             colored_languages.append(colored_lang)
         return colored_languages
 
+
 def get_full_languages(languages):
     if languages:
-        return ', ' + ', '.join(languages)
-    return ''
+        return ", " + ", ".join(languages)
+    return ""
+
 
 def clear_tmdb_cache():
     db.database["jt:tmdb"] = {}

@@ -59,6 +59,14 @@ msgctxt "#30028"
 msgid "Sort by"
 msgstr "Ordenar por"
 
+msgctxt "#30030"
+msgid "Timeout"
+msgstr "Tiempo de espera"
+
+msgctxt "#30031"
+msgid "Timeout"
+msgstr "Tiempo de espera"
+
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
 msgstr "Configuracion de Prowlarr"
@@ -102,6 +110,10 @@ msgstr "Expiracion de Cache"
 msgctxt "#30106"
 msgid "Clear all cache"
 msgstr "Borrar toda la cache"
+
+msgctxt "#30107"
+msgid "Enable cache"
+msgstr "Habilitar cache"
 
 msgctxt "#30140"
 msgid "AniList"

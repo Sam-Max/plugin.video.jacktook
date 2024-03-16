@@ -1,10 +1,10 @@
 import os
 from resources.lib.api.anilist_api import AniList
 from resources.lib.db.database import get_db
-from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
+from resources.lib.utils.utils import search_fanart_tv, get_cached, set_cached, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_setting, log, notify
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_setting, notify
 
 
 anilist_client_id = get_setting("anilist_client_id", "14375")
@@ -56,7 +56,6 @@ def search_anilist(category, page, plugin, func, func2, func3):
 def search_anilist_api(type, client, page):
     cached_results = get_cached(type, params=(page))
     if cached_results:
-        log("cached search_anilist_api")
         return "", cached_results
 
     if type == "Trending":
@@ -80,26 +79,40 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         if format not in ["TV", "OVA", "MOVIE"]:
             continue
 
+        if format in ["TV", "OVA"]:
+            mode = "tv"
+        else:
+            mode = "movie"
+
         id = res["id"]
         mal_id = res["idMal"]
 
         imdb_id = "tt0000000"
-        if format == "MOVIE":
+        if mode == "movie":
             search_res = tmdb_get("search_movie", title)
             if search_res["results"]:
-                id = search_res["results"][0].get("id")
-                details = tmdb_get("movie_details", id)
+                tmdb_id = search_res["results"][0].get("id")
+                details = tmdb_get("movie_details", tmdb_id)
                 imdb_id = details.external_ids.get("imdb_id")
 
-        description = res["description"]
-        coverImage = res["coverImage"]["large"]
+        description = res.get("description", "")
+
+        fanart_data = search_fanart_tv(imdb_id, mode)
+        if fanart_data:
+            poster = fanart_data.get("poster")
+            fanart = fanart_data.get("fanart")
+            clearlogo = fanart_data.get("clearlogo") 
+        else:
+            fanart = poster = res["coverImage"]["large"]
+            clearlogo = ""
 
         list_item = ListItem(label=f"[B][{format}][/B]-{title}")
         list_item.setArt(
             {
-                "poster": coverImage,
+                "poster": poster,
+                "clearlogo": clearlogo,
+                "fanart": fanart,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-                "fanart": coverImage,
             }
         )
         list_item.setProperty("IsPlayable", "false")

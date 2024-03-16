@@ -2,12 +2,11 @@ import re
 from resources.lib.anilist import anilist_client
 from resources.lib.debrid import get_magnet_from_uri
 from resources.lib.utils.kodi import action, bytes_to_human_readable, log, set_view_mode
-from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.utils.utils import (
     Indexer,
     add_pack_item,
     add_play_item,
-    fanartv_get,
+    search_fanart_tv,
     get_colored_languages,
     get_full_languages,
     get_description_length,
@@ -35,11 +34,10 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 overview = result.get("description", "")
                 poster = result.get("coverImage", {}).get("large", "")
             else:
-                result = Find().find_by_tvdb_id(tvdb_id)
+                result = tmdb_get("find", tvdb_id)
                 overview = result["tv_results"][0].get("overview", "")
-                data = fanartv_get(tvdb_id, mode)
-                if data:
-                    poster = data["clearlogo2"]
+                fanart_data = search_fanart_tv(tvdb_id, mode)
+                poster = fanart_data["clearlogo2"] if fanart_data else ""
         elif mode == "movie":
             details = tmdb_get("movie_details", tmdb_id)
             overview = details.get("overview", "")

@@ -214,8 +214,20 @@ def hide_busy_dialog():
     execute_builtin("Dialog.Close(busydialog)")
 
 
+def is_cache_enabled():
+    return get_setting("cache_enabled")
+
+
 def get_cache_expiration():
     return get_int_setting("cache_expiration")
+
+
+def get_jackett_timeout():
+    return get_int_setting("jackett_timeout")
+
+
+def get_prowlarr_timeout():
+    return get_int_setting("prowlarr_timeout")
 
 
 def execute_builtin(command, block=False):

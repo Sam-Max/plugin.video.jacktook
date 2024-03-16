@@ -1,7 +1,6 @@
 import json
 import requests
 
-
 class SIMKLAPI:
     def __init__(self):
         self.ClientID = (
