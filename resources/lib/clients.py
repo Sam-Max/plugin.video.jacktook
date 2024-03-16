@@ -39,17 +39,12 @@ def search_api(
             cached_results = get_cached(query, params=(episode, "index"))
         else:
             cached_results = get_cached(query, params=("index"))
-        
+
         if cached_results:
             dialog.create("")
             return cached_results
 
     indexer = get_setting("indexer")
-    jackett_insecured = get_setting("jackett_insecured")
-    prowlarr_insecured = get_setting("prowlarr_insecured")
-    if prowlarr_insecured or jackett_insecured:
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
     client = get_client(indexer)
     if not client:
         dialog.create("")
@@ -57,7 +52,7 @@ def search_api(
 
     if indexer == Indexer.JACKETT:
         dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
-        response = client.search(query, mode, season, episode, jackett_insecured)
+        response = client.search(query, mode, season, episode)
 
     elif indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
@@ -69,7 +64,6 @@ def search_api(
             season,
             episode,
             indexers_ids,
-            prowlarr_insecured,
         )
     elif indexer == Indexer.TORRENTIO:
         if imdb_id == -1:
@@ -264,7 +258,7 @@ class Torrentio:
 
     def extract_languages(self, title):
         languages = []
-        full_languages = [] 
+        full_languages = []
         # Regex to match unicode country flag emojis
         flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
         if flag_emojis:
@@ -272,7 +266,7 @@ class Torrentio:
                 languages.append(unicode_flag_to_country_code(flag).upper())
                 full_lang = find_language_by_unicode(flag)
                 if (full_lang != None) and (full_lang not in full_languages):
-                	full_languages.append(full_lang)
+                    full_languages.append(full_lang)
         return languages, full_languages
 
 
@@ -281,7 +275,7 @@ class Jackett:
         self.host = host.rstrip("/")
         self.apikey = apikey
 
-    def search(self, query, mode, season, episode, insecure=False):
+    def search(self, query, mode, season, episode):
         try:
             if mode == "tv":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
@@ -289,7 +283,7 @@ class Jackett:
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
-            res = requests.get(url, timeout=get_jackett_timeout(), verify=insecure)
+            res = requests.get(url, timeout=get_jackett_timeout())
             if res.status_code != 200:
                 notify(f"{translation(30229)} ({res.status_code})")
                 return
@@ -348,7 +342,6 @@ class Prowlarr:
         season,
         episode,
         indexers,
-        insecure=False,
     ):
         headers = {
             "Accept": "application/json",
@@ -371,7 +364,7 @@ class Prowlarr:
                     [f"&indexerIds={index}" for index in indexers_ids]
                 )
                 url = url + indexers_ids
-            res = requests.get(url, timeout=get_prowlarr_timeout(), verify=insecure, headers=headers)
+            res = requests.get(url, timeout=get_prowlarr_timeout(), headers=headers)
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
                 return

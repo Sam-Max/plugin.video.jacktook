@@ -40,12 +40,12 @@ msgid "Jackett Configuration:"
 msgstr "Configuracion de Jackett"
 
 msgctxt "#30023"
-msgid "Jackett Api Key"
-msgstr "Jackett Api Key"
+msgid "Api Key"
+msgstr "Clave Api"
 
 msgctxt "#30025"
-msgid "Jackett Host"
-msgstr "Jackett Host"
+msgid "Host"
+msgstr "Host"
 
 msgctxt "#30026"
 msgid "Description length"
@@ -72,12 +72,12 @@ msgid "Prowlarr Configuration:"
 msgstr "Configuracion de Prowlarr"
 
 msgctxt "#30051"
-msgid "Prowlarr Api Key"
-msgstr "Prowlarr Api Key"
+msgid "Api Key"
+msgstr "Clave Api"
 
 msgctxt "#30052"
-msgid "Prowlarr Host"
-msgstr "Prowlarr Host"
+msgid "Host"
+msgstr "Host"
 
 msgctxt "#30053"
 msgid "IndexersIds"

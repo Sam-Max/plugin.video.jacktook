@@ -40,11 +40,11 @@ msgid "Jackett Configuration:"
 msgstr "Configuração do Jackett:"
 
 msgctxt "#30023"
-msgid "Jackett Api Key"
+msgid "Api Key"
 msgstr "Chave da API do Jackett"
 
 msgctxt "#30025"
-msgid "Jackett Host"
+msgid "Host"
 msgstr "Host do Jackett"
 
 msgctxt "#30026"
@@ -68,11 +68,11 @@ msgid "Prowlarr Configuration:"
 msgstr "Configuração do Prowlarr:"
 
 msgctxt "#30051"
-msgid "Prowlarr Api Key"
+msgid "Api Key"
 msgstr "Chave da API do Prowlarr"
 
 msgctxt "#30052"
-msgid "Prowlarr Host"
+msgid "Host"
 msgstr "Host do Prowlarr"
 
 msgctxt "#30053"
