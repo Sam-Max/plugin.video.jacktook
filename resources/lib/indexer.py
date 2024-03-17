@@ -5,8 +5,7 @@ from resources.lib.tmdb import TMDB_POSTER_URL
 from resources.lib.utils.kodi import (
     action,
     bytes_to_human_readable,
-    log,
-    set_view_mode,
+    set_view,
 )
 from resources.lib.utils.utils import (
     Indexer,
@@ -170,5 +169,6 @@ def indexer_show_results(
                 plugin=plugin,
             )
 
-    endOfDirectory(plugin.handle, cacheToDisc=False)
-    set_view_mode(55)
+    set_view("widelist")
+    endOfDirectory(plugin.handle, cacheToDisc=True)
+    

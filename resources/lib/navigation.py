@@ -62,7 +62,7 @@ from resources.lib.utils.kodi import (
     notify,
     play_info_hash,
     refresh,
-    set_view_mode,
+    set_view,
     translation,
 )
 from xbmcgui import ListItem, DialogProgressBG
@@ -727,8 +727,8 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
             isFolder=True,
         )
 
-    endOfDirectory(plugin.handle, cacheToDisc=False)
-    set_view_mode(55)
+    set_view("widelist")
+    endOfDirectory(plugin.handle, cacheToDisc=True)
 
 
 @plugin.route("/get_rd_link_pack")

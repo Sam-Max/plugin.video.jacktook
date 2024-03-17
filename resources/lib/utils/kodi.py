@@ -279,6 +279,21 @@ def set_view_mode(view_id):
     xbmc.executebuiltin("Container.SetViewMode({})".format(view_id))
 
 
+def set_view(name):
+    views_dict = {
+        "list": 50,
+        "poster": 51,
+        "iconwall": 52,
+        "shift": 53,
+        "infowall": 54,
+        "widelist": 55,
+        "wall": 500,
+        "banner": 501,
+        "fanart": 502,
+    }
+    execute_builtin("Container.SetViewMode({})".format(views_dict[name]))
+
+
 def container_content():
     return xbmc.getInfoLabel("Container.Content")
 
