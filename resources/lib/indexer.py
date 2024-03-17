@@ -1,12 +1,14 @@
 import re
 from resources.lib.anilist import anilist_client
-from resources.lib.utils.kodi import action, bytes_to_human_readable, log
-from resources.lib.tmdbv3api.objs.find import Find
+from resources.lib.debrid import get_magnet_from_uri
+from resources.lib.utils.kodi import action, bytes_to_human_readable, log, set_view_mode
 from resources.lib.utils.utils import (
     Indexer,
-    add_play_item,
     add_pack_item,
-    fanartv_get,
+    add_play_item,
+    search_fanart_tv,
+    get_colored_languages,
+    get_full_languages,
     get_description_length,
     get_random_color,
     info_hash_to_magnet,
@@ -17,30 +19,28 @@ from resources.lib.utils.utils import (
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 
-def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2, func3, func4):
+def indexer_show_results(results, mode, query, ids, tvdb_id, plugin, func, func2, func3, func4):
+
     poster = ""
     overview = ""
     description_length = get_description_length()
+    if ids:
+        tmdb_id, tvdb_id, _ = ids.split(", ")
 
-    # Direct Search if query is None
-    if query is not None:  
+    if query:
         if mode == "tv":
-            if tvdb_id == "-1": # for anime episode
-                _, result = anilist_client().get_by_id(id)
+            if tvdb_id == "-1":  # for anime episode
+                _, result = anilist_client().get_by_id(tmdb_id)
                 overview = result.get("description", "")
                 poster = result.get("coverImage", {}).get("large", "")
             else:
-                result = Find().find_by_tvdb_id(tvdb_id)
+                result = tmdb_get("find", tvdb_id)
                 overview = result["tv_results"][0].get("overview", "")
-                data = fanartv_get(tvdb_id, mode)
-                if data:
-                    poster = data["clearlogo2"]
+                fanart_data = search_fanart_tv(tvdb_id, mode)
+                poster = fanart_data["clearlogo2"] if fanart_data else ""
         elif mode == "movie":
-            details = tmdb_get("movie_details", id)
+            details = tmdb_get("movie_details", tmdb_id)
             overview = details.get("overview", "")
-            data = fanartv_get(tvdb_id, mode)
-            if data:
-                poster = data["clearlogo2"]
 
     for res in results:
         title = res["title"]
@@ -51,7 +51,6 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
         if len(quality_title) > description_length:
             quality_title = quality_title[:description_length]
 
-        magnet = ""
         date = res.get("publishDate", "")
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
@@ -64,30 +63,61 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
         if watched:
             quality_title = f"[COLOR palevioletred]{quality_title}[/COLOR]"
 
+        languages = get_colored_languages(res.get("languages"))
+        languages = languages if languages else ""
         tracker_color = get_random_color(tracker)
-        torr_title = f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] {quality_title}[CR][I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+
+        full_languages = get_full_languages(res.get("full_languages"))
+
+        torr_title = (
+            f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] /{quality_title}[CR]"
+            f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
+            f"[I][LIGHT][COLOR lightgray]{full_languages}[/COLOR][/LIGHT][/I]"
+        )
 
         debrid_type = res["debridType"]
-        debrid_type_color = get_random_color(debrid_type)
-        format_debrid_type = f"[B][COLOR {debrid_type_color}][{debrid_type}][/COLOR][/B]"
-        
+        debrid_color = get_random_color(debrid_type)
+        format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
+
         if res["debridCached"]:
-            debrid_links = res.get("debridLinks")
-            debrid_id = res.get("debridId")
-            if debrid_id:
+            debridPack = res["debridPack"]
+            info_hash = res.get("infoHash")
+            torrent_id = res.get("debridId")
+            if debridPack:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
-                add_pack_item(list_item, func2, debrid_id, debrid_type, plugin)
+                add_pack_item(
+                    list_item,
+                    func2,
+                    tvdata,
+                    ids,
+                    info_hash,
+                    torrent_id,
+                    debrid_type,
+                    mode,
+                    plugin,
+                )
             else:
-                url = debrid_links[0]
-                filename = title
                 title = f"[B][Cached][/B]-{title}"
-                list_item = ListItem(label=f"[{format_debrid_type}-Cached]-{torr_title}")
+                list_item = ListItem(
+                    label=f"[{format_debrid_type}-Cached]-{torr_title}"
+                )
                 list_item.addContextMenuItems(
-                    [("Download to Disk", action(plugin, func4, query=f"{url}⌘{filename}"))])
+                    [("Download to Disk", action(plugin, func4, query=f"{res.get("debridLinks")[0}⌘{title}"))])
                 set_video_item(list_item, poster, overview)
-                add_play_item(list_item, url, magnet, id, title, func, plugin)
+                add_play_item(
+                    list_item,
+                    ids,
+                    tvdata,
+                    title,
+                    torrent_id=torrent_id,
+                    info_hash=info_hash,
+                    is_debrid=True,
+                    debrid_type=debrid_type,
+                    mode=mode,
+                    func=func,
+                    plugin=plugin,
+                )
         else:
-            download_url = res.get("downloadUrl") or res.get("magnetUrl")
             guid = res.get("guid")
             if guid:
                 if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
@@ -97,14 +127,42 @@ def indexer_show_results(results, mode, query, id, tvdb_id, plugin, func, func2,
                         magnet = guid
                     else:
                         # For some indexers, the guid is a torrent file url
-                        download_url = res.get("guid")
+                        guid = res.get("guid")
+                        magnet, _ = get_magnet_from_uri(guid)
+
+            if not magnet:
+                url = res.get("magnetUrl") or res.get("downloadUrl")
+                if url.startswith("magnet:?"):
+                    magnet = url
+                else:
+                    magnet, _ = get_magnet_from_uri(url)
+
+            if not magnet:
+                continue
+
             list_item = ListItem(label=torr_title)
             set_video_item(list_item, poster, overview)
             if magnet:
                 list_item.addContextMenuItems(
-                    [("Download to Debrid", action(plugin, func3, query= f"{magnet} {debrid_type}"))]
+                    [
+                        (
+                            "Download to Debrid",
+                            action(plugin, func3, query=f"{magnet} {debrid_type}"),
+                        )
+                    ]
                 )
-            add_play_item(list_item, download_url, magnet, id, title, func, plugin)
+            add_play_item(
+                list_item,
+                ids,
+                tvdata,
+                title,
+                url="",
+                magnet=magnet,
+                is_torrent=True,
+                mode=mode,
+                func=func,
+                plugin=plugin,
+            )
 
-    endOfDirectory(plugin.handle)
-
+    endOfDirectory(plugin.handle, cacheToDisc=False)
+    set_view_mode(55)

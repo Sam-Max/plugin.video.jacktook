@@ -48,11 +48,11 @@ msgid "Jackett Configuration:"
 msgstr ""
 
 msgctxt "#30023"
-msgid "Jackett Api Key"
+msgid "Api Key"
 msgstr ""
 
 msgctxt "#30025"
-msgid "Jackett Host"
+msgid "Host"
 msgstr ""
 
 msgctxt "#30026"
@@ -71,16 +71,24 @@ msgctxt "#30029"
 msgid "Total Results"
 msgstr ""
 
+msgctxt "#30030"
+msgid "Timeout"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Timeout"
+msgstr ""
+
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
 msgstr ""
 
 msgctxt "#30051"
-msgid "Prowlarr Api Key"
+msgid "Api Key"
 msgstr ""
 
 msgctxt "#30052"
-msgid "Prowlarr Host"
+msgid "Host"
 msgstr ""
 
 msgctxt "#30053"
@@ -113,6 +121,10 @@ msgstr ""
 
 msgctxt "#30106"
 msgid "Clear all cache"
+msgstr ""
+
+msgctxt "#30107"
+msgid "Enable cache"
 msgstr ""
 
 msgctxt "#30140"

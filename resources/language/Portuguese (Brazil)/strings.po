@@ -8,7 +8,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-19 19:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Language: es_ES\n"
+"Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,19 +21,11 @@ msgstr "Torrents"
 
 msgctxt "#30001"
 msgid "Torrent Clients:"
-msgstr "Clientes Torrents"
+msgstr "Clientes torrent:"
 
 msgctxt "#30002"
 msgid "Client"
 msgstr "Cliente"
-
-msgctxt "#30003"
-msgid "Debrid Downloads"
-msgstr ""
-
-msgctxt "#30004"
-msgid "Debrid Download Location"
-msgstr ""
 
 msgctxt "#30020"
 msgid "Indexers"
@@ -45,83 +37,75 @@ msgstr "Indexador"
 
 msgctxt "#30022"
 msgid "Jackett Configuration:"
-msgstr "Configuracion de Jackett"
+msgstr "Configuração do Jackett:"
 
 msgctxt "#30023"
 msgid "Api Key"
-msgstr "Clave Api"
+msgstr "Chave da API do Jackett"
 
 msgctxt "#30025"
 msgid "Host"
-msgstr "Host"
+msgstr "Host do Jackett"
 
 msgctxt "#30026"
 msgid "Description length"
-msgstr "Longitud de Descripcion"
+msgstr "Tamanho da descrição"
 
 msgctxt "#30027"
 msgid "Insecured connection"
-msgstr "Conexion insegura"
+msgstr "Conexão insegura"
 
 msgctxt "#30028"
 msgid "Sort by"
 msgstr "Ordenar por"
 
-msgctxt "#30030"
-msgid "Timeout"
-msgstr "Tiempo de espera"
-
-msgctxt "#30031"
-msgid "Timeout"
-msgstr "Tiempo de espera"
+msgctxt "#30029"
+msgid "Total Results"
+msgstr "Total de resultados"
 
 msgctxt "#30050"
 msgid "Prowlarr Configuration:"
-msgstr "Configuracion de Prowlarr"
+msgstr "Configuração do Prowlarr:"
 
 msgctxt "#30051"
 msgid "Api Key"
-msgstr "Clave Api"
+msgstr "Chave da API do Prowlarr"
 
 msgctxt "#30052"
 msgid "Host"
-msgstr "Host"
+msgstr "Host do Prowlarr"
 
 msgctxt "#30053"
-msgid "IndexersIds"
-msgstr "Ids Indexadores"
+msgid "IndexersIds "
+msgstr "IDs dos Indexadores "
 
 msgctxt "#30054"
 msgid "Anime IndexersIds"
-msgstr "Ids Indexadores de Anime"
+msgstr "IDs dos Indexadores para Anime"
 
 msgctxt "#30100"
 msgid "TMDB"
 msgstr "TMDB"
 
 msgctxt "#30102"
-msgid "TMDB Configuracion:"
-msgstr "Configuracion de TMDB"
+msgid "TMDB Configuration:"
+msgstr "Configuração do TMDB:"
 
 msgctxt "#30103"
 msgid "TMDB Api Key"
-msgstr "TMDB Api Key"
+msgstr "Chave da API do TMDB"
 
 msgctxt "#30104"
 msgid "Clear tmdb cache"
-msgstr "Borrar la cache de tmdb"
+msgstr "Limpar cache do TMDB"
 
 msgctxt "#30105"
 msgid "Cache expiration hours"
-msgstr "Expiracion de Cache"
+msgstr "Expiração do cache (Horas)"
 
 msgctxt "#30106"
 msgid "Clear all cache"
-msgstr "Borrar toda la cache"
-
-msgctxt "#30107"
-msgid "Enable cache"
-msgstr "Habilitar cache"
+msgstr "Limpar todo o cache"
 
 msgctxt "#30140"
 msgid "AniList"
@@ -129,15 +113,27 @@ msgstr "AniList"
 
 msgctxt "#30142"
 msgid "AniList Configuration:"
-msgstr "Configuracion de AniList"
+msgstr "Configuração do AniList:"
 
 msgctxt "#30143"
 msgid "Client ID"
-msgstr "Client ID"
+msgstr "ID do cliente"
 
 msgctxt "#30144"
 msgid "Client Secret"
-msgstr "Client Secret"
+msgstr "Segredo do cliente"
+
+msgctxt "#30150"
+msgid "Debrid"
+msgstr "Debrid"
+
+msgctxt "#30152"
+msgid "Real Debrid Configuration"
+msgstr "Configuração do Real Debrid"
+
+msgctxt "#30154"
+msgid "Token:"
+msgstr "Token:"
 
 msgctxt "#30200"
 msgid "Fanart.TV"
@@ -145,112 +141,111 @@ msgstr "Fanart.TV"
 
 msgctxt "#30202"
 msgid "Fanart.TV Configuration:"
-msgstr "Configuracion de Fanart.TV:"
+msgstr "Configuração do Fanart.TV:"
 
 msgctxt "#30203"
 msgid "Client ID"
-msgstr "Client ID"
+msgstr "ID do cliente"
 
 msgctxt "#30220"
-msgid "You need to configure Jackett"
-msgstr "Necesitas configuar Jackett"
+msgid "You need to configure Jackett first"
+msgstr "Você precisa configurar o Jackett primeiro"
 
 msgctxt "#30221"
 msgid "Jackett API key is invalid"
-msgstr "API de Jackett incorrecta"
+msgstr "Chave da API do Jackett é inválida"
 
 msgctxt "#30223"
 msgid "You need to configure Prowlarr first"
-msgstr "Necesitas configuar Prowlarr primero"
+msgstr "Você precisa configurar o Prowlarr primeiro"
 
 msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
-msgstr "API de Prowlarr incorrecta"
+msgstr "Chave da API do Prowlarr é inválida"
 
 msgctxt "#30227"
 msgid "You need to configure Torrentio first"
-msgstr "Necesitas configurar Torrentio primero"
+msgstr "Você precisa configurar o Torrentio primeiro"
 
 msgctxt "#30228"
 msgid "The request to Torrentio failed."
-msgstr "La peticion a Torrentio ha fallado"
+msgstr "A solicitação para o Torrentio falhou."
 
 msgctxt "#30229"
 msgid "The request to Jackett failed."
-msgstr "La peticion a Jackett ha fallado"
+msgstr "A solicitação para o Jackett falhou."
 
 msgctxt "#30230"
 msgid "The request to Prowlarr failed."
-msgstr "La peticion a Prowlarr ha fallado"
+msgstr "A solicitação para o Prowlarr falhou."
 
 msgctxt "#30231"
 msgid "The request to Elhosted failed."
-msgstr "La peticion a Elhosted ha fallado"
-
+msgstr "A solicitação para o Elhosted falhou."
 
 msgctxt "#30240"
 msgid "TMDB cache cleared"
-msgstr "Cache de TMDB limpiada"
+msgstr "Cache do TMDB limpo"
 
 msgctxt "#30241"
 msgid "Search on TMDB:"
-msgstr "Buscar en TMDB"
+msgstr "Pesquisar no TMDB:"
 
 msgctxt "#30242"
 msgid "Search on AniList:"
-msgstr "Buscar en AniList"
+msgstr "Pesquisar no AniList:"
 
 msgctxt "#30243"
 msgid "Search for torrents:"
-msgstr "Buscar torrents"
+msgstr "Pesquisar por torrents:"
 
 msgctxt "#30244"
-msgid "Cache limpiada"
-msgstr ""
+msgid "Cache cleared"
+msgstr "Cache limpo"
 
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"
-msgstr "El Addon de Torrest no esta instalado - (plugin.video.torrest)"
+msgstr "Addon Torrest não encontrado - (plugin.video.torrest)"
 
 msgctxt "#30251"
 msgid "No sources found to play"
-msgstr "No hay fuentes disponibles para reproducir"
+msgstr "Nenhuma fonte encontrada para reproduzir"
 
 msgctxt "#30252"
 msgid "Addon Elementum not found - (plugin.video.elementum)"
-msgstr "El Addon de Elementum no esta instalado - (plugin.video.elementum)"
+msgstr "Addon Elementum não encontrado - (plugin.video.elementum)"
 
 msgctxt "#30650"
 msgid "Queued"
-msgstr "Encolado"
+msgstr "Adicionado à fila"
 
 msgctxt "#30651"
 msgid "Checking"
-msgstr "Comprobando"
+msgstr "Verificando"
 
 msgctxt "#30652"
 msgid "Finding"
-msgstr "Buscando"
+msgstr "Encontrando"
 
 msgctxt "#30653"
 msgid "Downloading"
-msgstr "Descargando"
+msgstr "Baixando"
 
 msgctxt "#30654"
 msgid "Finished"
-msgstr "Terminado"
+msgstr "Finalizado"
 
 msgctxt "#30655"
 msgid "Seeding"
-msgstr "Seeding"
+msgstr "Semeando"
 
 msgctxt "#30656"
-msgid "Asignando"
-msgstr ""
+msgid "Allocating"
+msgstr "Alocando"
 
 msgctxt "#30657"
 msgid "Checking resume data"
-msgstr "Comprobando datos para resumir"
+msgstr "Verificando dados para reproduzir"
 
 msgctxt "#30658"
 msgid "Paused"
@@ -258,27 +253,27 @@ msgstr "Pausado"
 
 msgctxt "#30659"
 msgid "Buffering"
-msgstr "Buffering"
+msgstr "Carregando"
 
 msgctxt "#30660"
 msgid "Unknown"
-msgstr "Desconocido"
+msgstr "Desconhecido"
 
 msgctxt "#30700"
 msgid "Buffer and play"
-msgstr "Buffer y reproducir"
+msgstr "Carregar e reproduzir"
 
 msgctxt "#30701"
 msgid "Stop downloading"
-msgstr "Detener descarga"
+msgstr "Parar o download"
 
 msgctxt "#30702"
 msgid "Download"
-msgstr "Descargar"
+msgstr "Download"
 
 msgctxt "#30703"
 msgid "Resume"
-msgstr "Resumir"
+msgstr "Retomar"
 
 msgctxt "#30704"
 msgid "Pause"
@@ -290,16 +285,12 @@ msgstr "Remover torrent"
 
 msgctxt "#30706"
 msgid "Remove torrent and files"
-msgstr "Remover torrents y archivos"
+msgstr "Remover torrent e arquivos"
 
 msgctxt "#30707"
 msgid "Torrent status"
-msgstr "Estado del torrent"
+msgstr "Status do Torrent"
 
 msgctxt "#30708"
 msgid "Stop"
-msgstr "Detener"
-
-msgctxt "#30800"
-msgid "Choose Torrent Client"
-msgstr ""
+msgstr "Parar"

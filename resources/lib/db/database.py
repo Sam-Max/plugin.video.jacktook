@@ -38,31 +38,7 @@ class Database:
             os.path.join("special://home/addons/", ADDON_ID, "addon.xml")
         )
 
-    def get_fanarttv(self, key, id):
-        if id in self.database[key]:
-            return self.database[key][id]
-        return None
 
-    def set_fanarttv(self, key, id, poster, fanart, clear):
-        self.database[key][id] = {
-            "poster2": poster,
-            "fanart2": fanart,
-            "clearlogo2": clear,
-        }
-        self.commit()
-    
-    def get_tmdb(self, key, identifier):
-        if identifier in self.database[key]:
-            return self.database[key][identifier]
-        return None
-
-    def set_tmdb(self, key, identifier, tmdb_data):
-        self.database[key][identifier] = tmdb_data
-        self.commit()
-
-    def get_search_string(self, key):
-        return self.database[key]
-    
     def set_search_string(self, key, value):
         self.database[key] = value
         self.commit()
@@ -80,7 +56,6 @@ class Database:
         with open(self.database_path, "wb") as f:
             pickle.dump(self.database, f)
 
-db_instance = Database()
 
 def get_db():
-    return db_instance
+    return Database()

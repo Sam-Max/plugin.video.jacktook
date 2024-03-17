@@ -2,10 +2,11 @@ from datetime import datetime, timedelta
 import hashlib
 import os
 import re
+import unicodedata
 
 from resources.lib.db.cached import Cache
 from resources.lib.db.database import get_db
-from resources.lib.player import JacktookPlayer
+from resources.lib.tmdbv3api.objs.find import Find
 from resources.lib.tmdbv3api.objs.genre import Genre
 from resources.lib.tmdbv3api.objs.movie import Movie
 from resources.lib.tmdbv3api.objs.search import Search
@@ -13,7 +14,7 @@ from resources.lib.tmdbv3api.objs.season import Season
 from resources.lib.tmdbv3api.objs.tv import TV
 
 from resources.lib.torf._magnet import Magnet
-from resources.lib.fanarttv import get_api_fanarttv
+from resources.lib.fanarttv import search_api_fanart_tv
 from resources.lib.utils.kodi import (
     ADDON_PATH,
     container_refresh,
@@ -21,10 +22,8 @@ from resources.lib.utils.kodi import (
     get_int_setting,
     get_setting,
     get_torrest_setting,
-    is_torrest_addon,
-    is_elementum_addon,
+    is_cache_enabled,
     log,
-    notify,
     translation,
 )
 
@@ -32,15 +31,11 @@ from resources.lib.tmdbv3api.objs.discover import Discover
 from resources.lib.tmdbv3api.objs.trending import Trending
 
 from xbmcgui import ListItem, Dialog
-from xbmcplugin import (
-    addDirectoryItem,
-    setResolvedUrl,
-)
+from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
-from urllib.parse import quote
 
 
-cache = Cache.get_instance()
+cache = Cache()
 
 db = get_db()
 
@@ -126,46 +121,6 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
 
 
-def play(url, magnet, id, title, plugin, debrid=False):
-    set_watched_file(title, id, magnet, url)
-    if not magnet and not url:
-        notify(translation(30251))
-        return
-
-    torr_client = get_setting("torrent_client")
-    if torr_client == "Torrest":
-        if not is_torrest_addon():
-            notify(translation(30250))
-            return
-        if magnet:
-            _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
-        else:
-            _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
-    elif torr_client == "Elementum":
-        if not is_elementum_addon():
-            notify(translation(30252))
-            return
-        if magnet:
-            _url = f"plugin://plugin.video.elementum/play?uri={quote(magnet)}"
-        else:
-            notify("Not a playable url.")
-            return
-    elif torr_client == "Debrid":
-        debrid = True
-        if url.endswith(".torrent") or magnet:
-            notify("Not a playable url.")
-            return
-        _url = url
-
-    list_item = ListItem(title, path=_url)
-    setResolvedUrl(plugin.handle, True, list_item)
-
-    if debrid:
-        player = JacktookPlayer()
-        list_item = player.make_listing(list_item, _url, title, id)
-        player.run(list_item)
-
-
 def list_item(label, icon):
     item = ListItem(label)
     item.setArt(
@@ -178,19 +133,55 @@ def list_item(label, icon):
     return item
 
 
-def add_play_item(list_item, url, magnet, id, title, func, plugin):
+def add_play_item(
+    list_item,
+    ids,
+    tvdata,
+    title,
+    url="",
+    magnet="",
+    torrent_id="",
+    info_hash="",
+    debrid_type="",
+    mode="",
+    is_torrent=False,
+    is_debrid=False,
+    func=None,
+    plugin=None,
+):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{url} {magnet} {id} {title}"),
+        plugin.url_for(
+            func,
+            title=title,
+            ids=ids,
+            tvdata=tvdata,
+            url=url,
+            magnet=magnet,
+            torrent_id=torrent_id,
+            info_hash=info_hash,
+            is_torrent=is_torrent,
+            is_debrid=is_debrid,
+            mode=mode,
+            debrid_type=debrid_type,
+        ),
         list_item,
         isFolder=False,
     )
 
 
-def add_pack_item(list_item, func, debrid_id, debrid_type, plugin):
+def add_pack_item(
+    list_item, func, tvdata, ids, info_hash, torrent_id, debrid_type, mode, plugin
+):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func, query=f"{debrid_id} {debrid_type}"),
+        plugin.url_for(
+            func,
+            query=f"{info_hash} {torrent_id} {debrid_type}",
+            tvdata=tvdata,
+            mode=mode,
+            ids=ids,
+        ),
         list_item,
         isFolder=True,
     )
@@ -211,26 +202,38 @@ def set_video_item(list_item, poster, overview):
     list_item.setProperty("IsPlayable", "true")
 
 
-def set_watched_file(title, id, magnet, url):
+def set_watched_file(
+    title, ids, tvdata, magnet, url, debrid_type, is_debrid, is_torrent
+):
+    if title in db.database["jt:lfh"]:
+        return
+
+    if is_debrid:
+        debrid_color = get_random_color(debrid_type)
+        title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
+    else:
+        title = f"[B][Uncached][/B]-{title}"
+
     if title not in db.database["jt:watch"]:
         db.database["jt:watch"][title] = True
 
     db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
-        "id": id,
+        "ids": ids,
+        "tvdata": tvdata,
         "url": url,
+        "is_debrid": is_debrid,
+        "is_torrent": is_torrent,
         "magnet": magnet,
     }
     db.commit()
 
 
-def set_watched_title(title, id, tvdb_id=-1, imdb_id=-1, mode=""):
+def set_watched_title(title, ids, mode=""):
     if title != "None":
         db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
-            "id": id,
-            "tvdb_id": tvdb_id,
-            "imdb_id": imdb_id,
+            "ids": ids,
             "mode": mode,
         }
         db.commit()
@@ -240,19 +243,19 @@ def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
 
 
-def fanartv_get(id, mode="tv"):
-    fanart_data = db.get_fanarttv("jt:fanarttv", id)
-    if not fanart_data:
-        fanart_data = get_api_fanarttv(mode, "en", id)
+def search_fanart_tv(tvdb_id, mode="tv"):
+    identifier = "{}|{}".format("fanarttv", tvdb_id)
+    data = cache.get(identifier, hashed_key=True)
+    if not data:
+        fanart_data = search_api_fanart_tv(mode, "en", tvdb_id)
         if fanart_data:
-            db.set_fanarttv(
-                "jt:fanarttv",
-                id,
-                fanart_data["poster2"],
-                fanart_data["fanart2"],
-                fanart_data["clearlogo2"],
+            cache.set(
+                identifier,
+                data,
+                timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+                hashed_key=True,
             )
-    return fanart_data
+    return data
 
 
 def get_cached(path, params={}):
@@ -265,7 +268,7 @@ def set_cached(results, path, params={}):
     cache.set(
         identifier,
         results,
-        timedelta(hours=get_cache_expiration()),
+        timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         hashed_key=True,
     )
 
@@ -279,7 +282,7 @@ def db_get(name, func, path, params):
         cache.set(
             identifier,
             data,
-            timedelta(hours=get_cache_expiration()),
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
     return data
@@ -315,10 +318,12 @@ def tmdb_get(path, params={}):
         elif path == "trending_tv":
             trending = Trending()
             data = trending.tv_day(page=params)
+        elif path == "find":
+            data = Find().find_by_tvdb_id(params)
         cache.set(
             identifier,
             data,
-            timedelta(hours=get_cache_expiration()),
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
     return data
@@ -327,9 +332,15 @@ def tmdb_get(path, params={}):
 def get_movie_data(id):
     details = tmdb_get("movie_details", id)
     imdb_id = details.external_ids.get("imdb_id")
-    tvdb_id = details.external_ids.get("tvdb_id")
     runtime = details.runtime
-    return imdb_id, tvdb_id, runtime
+    return imdb_id, "", runtime
+
+
+def get_tv_data(id):
+    details = tmdb_get("tv_details", id)
+    imdb_id = details.external_ids.get("imdb_id")
+    tvdb_id = details.external_ids.get("tvdb_id")
+    return imdb_id, tvdb_id
 
 
 # This method was taken from script.elementum.jackett
@@ -353,6 +364,22 @@ def get_random_color(provider_name):
         colors[i] = f"{colors[i]:02x}"
 
     return "FF" + "".join(colors).upper()
+
+
+def get_colored_languages(languages):
+    if languages:
+        colored_languages = []
+        for lang in languages:
+            lang_color = get_random_color(lang)
+            colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
+            colored_languages.append(colored_lang)
+        return colored_languages
+
+
+def get_full_languages(languages):
+    if languages:
+        return ", " + ", ".join(languages)
+    return ""
 
 
 def clear_tmdb_cache():
@@ -417,14 +444,36 @@ def remove_duplicate(results):
     return result_dict
 
 
-def process_results(results, mode, episode_name, episode, season):
-    res = remove_duplicate(results)
+def process_results(res, mode, episode_name, episode, season):
+    res = remove_duplicate(res)
     res = limit_results(res)
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     res = sort_results(res)
     return res
+
+
+def sort_by_priority_language(results):
+    priority_lang = get_setting("torrentio_priority_lang")
+    counter = 0
+    for res in results:
+        if "languages" in res and priority_lang in res["languages"]:
+            results.remove(res)
+            results.insert(counter, res)
+            counter += 1
+    return results
+
+
+def filter_by_priority_language(results):
+    indexer = get_setting("indexer")
+    if indexer == Indexer.TORRENTIO:
+        filtered_results = []
+        priority_lang = get_setting("torrentio_priority_lang")
+        for res in results:
+            if priority_lang in res["languages"]:
+                filtered_results.append(res)
+        return filtered_results
 
 
 def sort_results(results):
@@ -448,6 +497,10 @@ def sort_results(results):
         sort_results = sorted(results, key=lambda r: r["Quality"], reverse=True)
     elif sort_by == "Cached":
         sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
+    elif sort_by == "None":
+        sort_results = results
+    elif sort_by == "Language":
+        sort_results = sort_by_priority_language(results)
 
     return sort_results
 
@@ -518,7 +571,7 @@ def is_video(s):
     return s.lower().endswith(video_extensions)
 
 
-def get_info_hash(magnet):
+def get_info_hash_from_magnet(magnet):
     return Magnet.from_string(magnet).infohash
 
 
@@ -561,35 +614,16 @@ def get_port():
     return get_torrest_setting("port")
 
 
-""" def direct_download():
-    import urllib.request
+def unicode_flag_to_country_code(unicode_flag):
+    if len(unicode_flag) != 2:
+        return "Invalid flag Unicode"
 
-    url = 'your_file_url'
-    file_name = 'your_file_name'
+    first_letter = unicodedata.name(unicode_flag[0]).replace(
+        "REGIONAL INDICATOR SYMBOL LETTER ", ""
+    )
+    second_letter = unicodedata.name(unicode_flag[1]).replace(
+        "REGIONAL INDICATOR SYMBOL LETTER ", ""
+    )
 
-    def reporthook(block_num, block_size, total_size):
-        downloaded = block_num * block_size
-        if total_size > 0:
-            percent = min(int(downloaded * 100 / total_size), 100)
-            print(f'Downloading: {percent}%', end='\r')
-
-    urllib.request.urlretrieve(url, file_name, reporthook)
-    print('Download complete') """
-
-
-""" def direct_download(url, file_name):
-    progressDialog.create("Download Manager")
-
-    response = requests.get(url, stream=True)
-    total_size = int(response.headers.get("content-length", 0))
-
-    with open(file_name, "wb") as file:
-        for data in response.iter_content(chunk_size=1024):
-            file.write(data)
-            content = f"Downloaded: {int(file.tell() / total_size * 100)}%"
-            progressDialog.update(-1, content)
-            if progressDialog.iscanceled():
-                progressDialog.close()
-                return
-
-    progressDialog.update(-1, "Download complete.") """
+    country_code = first_letter.lower() + second_letter.lower()
+    return country_code

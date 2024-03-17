@@ -16,7 +16,9 @@ if PY3:
 else:
     from xbmc import translatePath
 
-ADDON_DATA = translatePath(xbmcaddon.Addon("plugin.video.jacktook").getAddonInfo("profile"))
+ADDON_DATA = translatePath(
+    xbmcaddon.Addon("plugin.video.jacktook").getAddonInfo("profile")
+)
 ADDON_ID = xbmcaddon.Addon().getAddonInfo("id")
 
 if not PY3:
@@ -65,7 +67,11 @@ class _BaseCache(object):
         return ret
 
     def set(self, key, data, expiry_time, hashed_key=False, identifier=""):
-        self._set(self._generate_key(key, hashed_key, identifier), self._prepare(data), datetime.utcnow() + expiry_time)
+        self._set(
+            self._generate_key(key, hashed_key, identifier),
+            self._prepare(data),
+            datetime.utcnow() + expiry_time,
+        )
 
     def close(self):
         pass
@@ -100,20 +106,30 @@ class MemoryCache(_BaseCache):
         return self._load_func(b64decode(data)) if data else None
 
     def _set(self, key, data, expires):
-        self._window.setProperty(self._database + key, b64encode(self._dump_func((data, expires))).decode())
+        self._window.setProperty(
+            self._database + key, b64encode(self._dump_func((data, expires))).decode()
+        )
 
 
 class Cache(_BaseCache):
-    def __init__(self, database=os.path.join(ADDON_DATA, ADDON_ID + ".cached.sqlite"),
-                 cleanup_interval=timedelta(minutes=15)):
+    def __init__(
+        self,
+        database=os.path.join(ADDON_DATA, ADDON_ID + ".cached.sqlite"),
+        cleanup_interval=timedelta(minutes=15),
+    ):
         self._conn = sqlite3.connect(
-            database, detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None, check_same_thread=False)
+            database,
+            detect_types=sqlite3.PARSE_DECLTYPES,
+            isolation_level=None,
+            check_same_thread=False,
+        )
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS `cached` ("
             "key TEXT PRIMARY KEY NOT NULL, "
             "data BLOB NOT NULL, "
             "expires TIMESTAMP NOT NULL"
-            ")")
+            ")"
+        )
         for k, v in SQLITE_SETTINGS.items():
             self._conn.execute("PRAGMA {}={}".format(k, v))
         self._cleanup_interval = cleanup_interval
@@ -129,13 +145,15 @@ class Cache(_BaseCache):
     def _get(self, key):
         self.check_clean_up()
         return self._conn.execute(
-            "SELECT data, expires FROM `cached` WHERE key = ?", (key,)).fetchone()
+            "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
+        ).fetchone()
 
     def _set(self, key, data, expires):
         self.check_clean_up()
         self._conn.execute(
             "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
-            (key, sqlite3.Binary(data), expires))
+            (key, sqlite3.Binary(data), expires),
+        )
 
     def _set_version(self, version):
         self._conn.execute("PRAGMA user_version={}".format(version))
@@ -150,7 +168,8 @@ class Cache(_BaseCache):
 
     def clean_up(self):
         self._conn.execute(
-            "DELETE FROM `cached` WHERE expires <= STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')")
+            "DELETE FROM `cached` WHERE expires <= STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')"
+        )
         self._last_cleanup = datetime.utcnow()
 
     def clean_all(self):
@@ -176,10 +195,21 @@ class LoadingCache(object):
         self._sentinel = object()
 
     def get(self, key):
-        data = self._cache.get(key, default=self._sentinel, hashed_key=self._hashed_key, identifier=self._identifier)
+        data = self._cache.get(
+            key,
+            default=self._sentinel,
+            hashed_key=self._hashed_key,
+            identifier=self._identifier,
+        )
         if data is self._sentinel:
             data = self._loader(key)
-            self._cache.set(key, data, self._expiry_time, hashed_key=self._hashed_key, identifier=self._identifier)
+            self._cache.set(
+                key,
+                data,
+                self._expiry_time,
+                hashed_key=self._hashed_key,
+                identifier=self._identifier,
+            )
         return data
 
     def close(self):

@@ -27,14 +27,15 @@ def last_titles(plugin, func1, func2, func3):
         list_item.setProperty("IsPlayable", "false")
 
         mode = data["mode"]
-        id = data.get("id")
+        ids = data.get("ids")
 
         if mode == "tv":
             addDirectoryItem(
                 plugin.handle,
                 plugin.url_for(
                     func2,
-                    id=id,
+                    ids=ids,
+                    mode=mode,
                 ),
                 list_item,
                 isFolder=True,
@@ -42,7 +43,12 @@ def last_titles(plugin, func1, func2, func3):
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func3, mode=mode, query=title, ids=f"{id}, {-1}, {-1}"),
+                plugin.url_for(
+                    func3,
+                    mode=mode,
+                    query=title,
+                    ids=ids,
+                ),
                 list_item,
                 isFolder=True,
             )

@@ -5,37 +5,27 @@ import requests
 from resources.lib.utils.kodi import (
     Keyboard,
     convert_size_to_bytes,
+    get_jackett_timeout,
+    get_prowlarr_timeout,
     get_setting,
     log,
     notify,
     translation,
 )
-from resources.lib.utils.utils import Indexer, get_cached, set_cached
+from resources.lib.utils.countries import find_language_by_unicode
+from resources.lib.utils.utils import (
+    Indexer,
+    get_cached,
+    set_cached,
+    unicode_flag_to_country_code,
+)
 from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
 
-def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1):
-    if not rescrape:
-        if mode in ["tv"]:
-            cached_results = get_cached(query, params=(episode, "index"))
-        else:
-            cached_results = get_cached(query, params=("index"))
-        if cached_results:
-            dialog.create("")
-            return cached_results
-
-    indexer = get_setting("indexer")
-    jackett_insecured = get_setting("jackett_insecured")
-    prowlarr_insecured = get_setting("prowlarr_insecured")
-    if prowlarr_insecured or jackett_insecured:
-        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-
-    client = get_client(indexer)
-    if not client:
-        dialog.create("")
-        return None
-
+def search_api(
+    query, imdb_id, mode, media_type, dialog, rescrape=False, season=1, episode=1
+):
     if not query:
         text = Keyboard(id=30243)
         if text:
@@ -44,14 +34,28 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             dialog.create("")
             return None
 
+    if not rescrape:
+        if mode == "tv" or media_type == "tv":
+            cached_results = get_cached(query, params=(episode, "index"))
+        else:
+            cached_results = get_cached(query, params=("index"))
+
+        if cached_results:
+            dialog.create("")
+            return cached_results
+
+    indexer = get_setting("indexer")
+    client = get_client(indexer)
+    if not client:
+        dialog.create("")
+        return None
+
     if indexer == Indexer.JACKETT:
         dialog.create("Jacktook [COLOR FFFF6B00]Jackett[/COLOR]", "Searching...")
-        response = client.search(query, mode, season, episode, jackett_insecured)
+        response = client.search(query, mode, season, episode)
 
     elif indexer == Indexer.PROWLARR:
         indexers_ids = get_setting("prowlarr_indexer_ids")
-        anime_inedexers_ids = get_setting("prowlarr_anime_indexer_ids")
-
         dialog.create("Jacktook [COLOR FFFF6B00]Prowlarr[/COLOR]", "Searching...")
         response = client.search(
             query,
@@ -60,8 +64,6 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             season,
             episode,
             indexers_ids,
-            anime_inedexers_ids,
-            prowlarr_insecured,
         )
     elif indexer == Indexer.TORRENTIO:
         if imdb_id == -1:
@@ -69,7 +71,7 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             dialog.create("")
             return None
         dialog.create("Jacktook [COLOR FFFF6B00]Torrentio[/COLOR]", "Searching...")
-        response = client.search(imdb_id, mode, season, episode)
+        response = client.search(imdb_id, mode, media_type, season, episode)
 
     elif indexer == Indexer.ELHOSTED:
         if imdb_id == -1:
@@ -77,9 +79,9 @@ def search_api(query, imdb_id, mode, dialog, rescrape=False, season=1, episode=1
             dialog.create("")
             return None
         dialog.create("Jacktook [COLOR FFFF6B00]Elfhosted[/COLOR]", "Searching...")
-        response = client.search(imdb_id, mode, season, episode)
+        response = client.search(imdb_id, mode, media_type, season, episode)
 
-    if mode in ["tv"]:
+    if mode == "tv" or media_type == "tv":
         set_cached(response, query, params=(episode, "index"))
     else:
         set_cached(response, query, params=("index"))
@@ -139,14 +141,12 @@ class Elfhosted:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
 
-    def search(self, imdb_id, mode, season, episode):
+    def search(self, imdb_id, mode, media_type, season, episode):
         try:
-            if mode == "tv":
+            if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-                log(url)
-            elif mode in ["movie", "multi"]:
+            elif mode == "movie" or media_type == "movie":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-                log(url)
             res = requests.get(url, timeout=10)
             if res.status_code != 200:
                 return
@@ -172,10 +172,9 @@ class Elfhosted:
                     "seeders": 0,
                     "publishDate": "",
                     "peers": 0,
-                    "debridId": "",
                     "debridType": "",
                     "debridCached": False,
-                    "debridLinks": [],
+                    "debridPack": False,
                 }
             )
         return results
@@ -197,14 +196,12 @@ class Torrentio:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
 
-    def search(self, imdb_id, mode, season, episode, insecure=False):
+    def search(self, imdb_id, mode, media_type, season, episode, insecure=False):
         try:
-            if mode == "tv":
+            if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-                log(url)
-            elif mode in ["movie", "multi"]:
+            elif mode == "movie" or media_type == "movie":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-                log(url)
             res = requests.get(url, timeout=10, verify=insecure)
             if res.status_code != 200:
                 return
@@ -228,12 +225,13 @@ class Torrentio:
                     "infoHash": item["infoHash"],
                     "size": parsed_item["size"],
                     "seeders": parsed_item["seeders"],
+                    "languages": parsed_item["languages"],
+                    "full_languages": parsed_item["full_languages"],
                     "publishDate": "",
                     "peers": 0,
-                    "debridId": "",
                     "debridType": "",
                     "debridCached": False,
-                    "debridLinks": [],
+                    "debridPack": False,
                 }
             )
         return results
@@ -248,24 +246,28 @@ class Torrentio:
         seeders_match = re.search(r"👤 (\d+)", title)
         seeders = int(seeders_match.group(1)) if seeders_match else None
 
+        languages, full_languages = self.extract_languages(title)
+
         return {
             "title": name,
             "size": size,
             "seeders": seeders,
-            "languages": self.extract_languages(title),
+            "languages": languages,
+            "full_languages": full_languages,
         }
 
     def extract_languages(self, title):
         languages = []
-        if "Multi Audio" in title or "Multi Language" in title:
-            languages.append("Multi Language")
-        elif "Dual Audio" in title or "Dual Language" in title:
-            languages.append("Dual Language")
-        # Regex to match country flag emojis
+        full_languages = []
+        # Regex to match unicode country flag emojis
         flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
         if flag_emojis:
-            languages.extend(flag_emojis)
-        return languages
+            for flag in flag_emojis:
+                languages.append(unicode_flag_to_country_code(flag).upper())
+                full_lang = find_language_by_unicode(flag)
+                if (full_lang != None) and (full_lang not in full_languages):
+                    full_languages.append(full_lang)
+        return languages, full_languages
 
 
 class Jackett:
@@ -273,17 +275,15 @@ class Jackett:
         self.host = host.rstrip("/")
         self.apikey = apikey
 
-    def search(self, query, mode, season, episode, insecure=False):
+    def search(self, query, mode, season, episode):
         try:
             if mode == "tv":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
-                log(url)
             elif mode == "movie":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
-                log(url)
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
-            res = requests.get(url, timeout=10, verify=insecure)
+            res = requests.get(url, timeout=get_jackett_timeout())
             if res.status_code != 200:
                 notify(f"{translation(30229)} ({res.status_code})")
                 return
@@ -321,10 +321,9 @@ class Jackett:
                         "seeders": seeders,
                         "peers": peers,
                         "infoHash": infohash,
-                        "debridId": "",
                         "debridType": "",
                         "debridCached": False,
-                        "debridLinks": [],
+                        "debridPack": False,
                     }
                 )
             return results
@@ -343,8 +342,6 @@ class Prowlarr:
         season,
         episode,
         indexers,
-        anime_indexers,
-        insecure=False,
     ):
         headers = {
             "Accept": "application/json",
@@ -356,31 +353,18 @@ class Prowlarr:
                 query = (
                     f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
                 )
-                if anime_indexers:
-                    anime_categories = [2000, 5070, 5000, 127720, 140679]
-                    anime_categories_id = "".join(
-                        [f"&categories={cat}" for cat in anime_categories]
-                    )
-                    anime_indexers_id = anime_indexers.split(",")
-                    anime_indexers_id = "".join(
-                        [f"&indexerIds={index}" for index in anime_indexers_id]
-                    )
-                    url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}"
-                else:
-                    url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
-                    log(url)
+                url = f"{self.host}/api/v1/search?query={query}&categories=5000&type=tvsearch"
             elif mode == "movie":
                 url = f"{self.host}/api/v1/search?query={query}&categories=2000"
-                log(url)
             elif mode == "multi":
                 url = f"{self.host}/api/v1/search?query={query}"
-            if indexers and not anime_indexers:
+            if indexers:
                 indexers_ids = indexers.split(",")
                 indexers_ids = "".join(
                     [f"&indexerIds={index}" for index in indexers_ids]
                 )
                 url = url + indexers_ids
-            res = requests.get(url, timeout=10, verify=insecure, headers=headers)
+            res = requests.get(url, timeout=get_prowlarr_timeout(), headers=headers)
             if res.status_code != 200:
                 notify(f"{translation(30230)} {res.status_code}")
                 return
@@ -389,13 +373,24 @@ class Prowlarr:
                 r.update(
                     {
                         "quality_title": "",
-                        "debridId": "",
                         "debridType": "",
                         "debridCached": False,
-                        "debridLinks": [],
+                        "debridPack": False,
                     }
                 )
             return res
         except Exception as e:
             notify(f"{translation(30230)} {str(e)}")
             return
+
+
+""" if anime_indexers:
+    anime_categories = [2000, 5070, 5000, 127720, 140679]
+    anime_categories_id = "".join(
+        [f"&categories={cat}" for cat in anime_categories]
+    )
+    anime_indexers_id = anime_indexers.split(",")
+    anime_indexers_id = "".join(
+        [f"&indexerIds={index}" for index in anime_indexers_id]
+    )
+    url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}" """
