@@ -2,6 +2,7 @@ import json
 from urllib.parse import quote
 from resources.lib.player import JacktookPlayer
 from resources.lib.utils.kodi import (
+    get_kodi_version,
     get_setting,
     is_elementum_addon,
     is_torrest_addon,
@@ -10,7 +11,11 @@ from resources.lib.utils.kodi import (
     set_property,
     translation,
 )
-from resources.lib.utils.utils import set_watched_file
+from resources.lib.utils.utils import (
+    set_video_info,
+    set_video_infotag,
+    set_watched_file,
+)
 from xbmcplugin import (
     setResolvedUrl,
 )
@@ -24,7 +29,7 @@ def play(
     url,
     magnet,
     ids,
-    tvdata,
+    tv_data,
     title,
     plugin,
     debrid_type="",
@@ -35,7 +40,7 @@ def play(
     set_watched_file(
         title,
         ids,
-        tvdata,
+        tv_data,
         magnet,
         url,
         debrid_type,
@@ -68,7 +73,7 @@ def play(
 
     if _url:
         list_item = ListItem(title, path=_url)
-        make_listing(list_item, mode, _url, title, ids, tvdata)
+        make_listing(list_item, mode, _url, title, ids, tv_data)
         setResolvedUrl(plugin.handle, True, list_item)
 
         if is_debrid:
@@ -77,45 +82,56 @@ def play(
             player.run(list_item)
 
 
-def make_listing(listitem, mode, url, title, ids, tvdata):
-    listitem.setPath(url)
-    listitem.setContentLookup(False)
-    listitem.setLabel(title)
-    info_tag = listitem.getVideoInfoTag()
-    if mode in ["movie", "multi"]:
-        info_tag.setMediaType("movie")
-        info_tag.setTitle(title)
-        info_tag.setOriginalTitle(title)
+def make_listing(list_item, mode, url, title, ids, tv_data):
+    list_item.setPath(url)
+    list_item.setContentLookup(False)
+    list_item.setLabel(title)
+
+    if tv_data:
+        ep_name, episode, season = tv_data.split("(^)")
     else:
-        info_tag.setMediaType("episode")
-        info_tag.setTvShowTitle(title)
-        info_tag.setFilenameAndPath(url)
-        if tvdata:
-            ep_name, episode, season = tvdata.split(", ")
-            info_tag.setTitle(ep_name)
-            info_tag.setSeason(int(season)),
-            info_tag.setEpisode(int(episode))
+        ep_name, episode, season = ""
+
+    if get_kodi_version() >= 20:
+        set_video_infotag(
+            list_item,
+            mode,
+            title,
+            season_number=season,
+            episode=episode,
+            ep_name=ep_name,
+            ids=ids,
+        )
+    else:
+        set_video_info(
+            list_item,
+            mode,
+            title,
+            season_number=season,
+            episode=episode,
+            ep_name=ep_name,
+            ids=ids,
+        )
+
+    set_windows_property(mode, ids)
+
+
+def set_windows_property(mode, ids):
     if ids:
         tmdb_id, tvdb_id, imdb_id = ids.split(", ")
-        info_tag.setIMDBNumber(imdb_id)
-        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
-        set_windows_property(mode, tmdb_id, imdb_id, tvdb_id)
-
-
-def set_windows_property(mode, tmdb_id, imdb_id, tvdb_id):
-    if mode == "movie":
-        ids = {
-            "tmdb": tmdb_id,
-            "imdb": imdb_id,
-        }
-    else:
-        ids = {
-            "tvdb": tvdb_id,
-        }
-    set_property(
-        "script.trakt.ids",
-        json.dumps(ids),
-    )
+        if mode == "movie":
+            ids = {
+                "tmdb": tmdb_id,
+                "imdb": imdb_id,
+            }
+        else:
+            ids = {
+                "tvdb": tvdb_id,
+            }
+        set_property(
+            "script.trakt.ids",
+            json.dumps(ids),
+        )
 
 
 def get_elementum_url(magnet, mode, ids):
@@ -126,8 +142,8 @@ def get_elementum_url(magnet, mode, ids):
         tmdb_id, _, _ = ids.split(", ")
     else:
         tmdb_id = ""
-    return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}" 
-   
+    return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
+
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():

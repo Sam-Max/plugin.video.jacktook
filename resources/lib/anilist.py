@@ -1,10 +1,10 @@
 import os
 from resources.lib.api.anilist_api import AniList
 from resources.lib.db.database import get_db
-from resources.lib.utils.utils import search_fanart_tv, get_cached, set_cached, tmdb_get
+from resources.lib.utils.utils import search_fanart_tv, get_cached, set_cached, set_video_info, set_video_infotag, tmdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_setting, notify
+from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_kodi_version, get_setting, notify
 
 
 anilist_client_id = get_setting("anilist_client_id", "14375")
@@ -117,10 +117,20 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         )
         list_item.setProperty("IsPlayable", "false")
 
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType("video")
-        info_tag.setTitle(title)
-        info_tag.setPlot(description)
+        if get_kodi_version() >= 20:
+            set_video_infotag(
+                list_item,
+                mode,
+                title,
+                description,
+            )
+        else:
+            set_video_info(
+                list_item,
+                mode,
+                title,
+                description,
+            )
 
         if format in ["TV", "OVA"]:
             addDirectoryItem(

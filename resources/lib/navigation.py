@@ -36,7 +36,11 @@ from resources.lib.utils.utils import (
     is_video,
     list_item,
     process_results,
-    set_video_item,
+    set_pack_art,
+    set_pack_item_pm,
+    set_pack_item_rd,
+    set_video_info,
+    set_video_infotag,
     set_watched_title,
     ssl_enabled,
     tmdb_get,
@@ -53,8 +57,8 @@ from resources.lib.utils.kodi import (
     buffer_and_play,
     container_update,
     dialogyesno,
+    get_kodi_version,
     get_setting,
-    log,
     notify,
     play_info_hash,
     refresh,
@@ -272,9 +276,9 @@ def search_tmdb(mode, genre_id, page):
 @query_arg("media_type", required=False)
 @query_arg("query", required=False)
 @query_arg("ids", required=False)
-@query_arg("tvdata", required=False)
+@query_arg("tv_data", required=False)
 @query_arg("rescrape", required=False)
-def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
+def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False):
     if mode == "movie" or media_type == "movie":
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode == "tv" or media_type == "tv":
@@ -285,8 +289,8 @@ def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
     else:
         imdb_id = -1
 
-    if tvdata:
-        ep_name, episode, season = tvdata.split(", ")
+    if tv_data:
+        ep_name, episode, season = tv_data.split("(^)")
     else:
         episode = season = 0
         ep_name = ""
@@ -331,7 +335,7 @@ def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
                 mode,
                 query,
                 ids,
-                tvdata,
+                tv_data,
                 plugin,
                 func=play_torrent,
                 func2=show_pack,
@@ -353,7 +357,7 @@ def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
 @query_arg("url", required=False)
 @query_arg("magnet", required=False)
 @query_arg("ids", required=False)
-@query_arg("tvdata", required=False)
+@query_arg("tv_data", required=False)
 @query_arg("info_hash", required=False)
 @query_arg("torrent_id", required=False)
 @query_arg("is_torrent", required=False)
@@ -365,7 +369,7 @@ def play_torrent(
     url="",
     magnet="",
     ids="",
-    tvdata="",
+    tv_data="",
     torrent_id="",
     info_hash="",
     mode="",
@@ -383,7 +387,7 @@ def play_torrent(
         url,
         magnet,
         ids,
-        tvdata,
+        tv_data,
         title,
         plugin,
         debrid_type,
@@ -573,7 +577,7 @@ def torrent_files(info_hash):
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
 @query_arg("media_type", required=False)
-def tv_seasons_details(ids, mode, media_type):
+def tv_seasons_details(ids, mode, media_type=None):
     setContent(plugin.handle, SHOWS_TYPE)
     tmdb_id, tvdb_id, imdb_id = ids.split(", ")
 
@@ -586,7 +590,7 @@ def tv_seasons_details(ids, mode, media_type):
 
     show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
     fanart_data = search_fanart_tv(tvdb_id)
-    fanart = fanart_data["fanart2"] if fanart_data else ""
+    fanart = fanart_data["fanart"] if fanart_data else ""
 
     for s in seasons:
         season_name = s.name
@@ -597,14 +601,15 @@ def tv_seasons_details(ids, mode, media_type):
             poster = show_poster
 
         list_item = ListItem(label=season_name)
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType("season")
-        info_tag.setTitle(name)
-        info_tag.setTvShowTitle(name)
-        info_tag.setSeason(int(season_number))
-        info_tag.setPlot(overview)
-        info_tag.setIMDBNumber(imdb_id)
-        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+
+        if get_kodi_version() >= 20:
+            set_video_infotag(
+                list_item, mode, name, overview, season_number=season_number, ids=ids
+            )
+        else:
+            set_video_info(
+                list_item, mode, name, overview, season_number=season_number, ids=ids
+            )
 
         list_item.setArt(
             {
@@ -639,10 +644,9 @@ def tv_seasons_details(ids, mode, media_type):
 @query_arg("media_type", required=False)
 def tv_episodes_details(tv_name, season, ids, mode, media_type):
     setContent(plugin.handle, EPISODES_TYPE)
-    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+    tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = search_fanart_tv(tvdb_id)
-    fanart = fanart_data.get("fanart2", "") if fanart_data else ""
 
     for ep in season_details.episodes:
         ep_name = ep.name
@@ -650,29 +654,42 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
         label = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
-        tvdata = f"{ep_name}, {episode}, {season}"
+        tv_data = f"{ep_name}(^){episode}(^){season}"
 
         still_path = ep.get("still_path", "")
         if still_path:
             poster = TMDB_POSTER_URL + still_path
         else:
-            poster = ""
+            poster = fanart_data.get("fanart", "") if fanart_data else ""
 
         list_item = ListItem(label=label)
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setMediaType("episode")
-        info_tag.setTitle(tv_name)
-        info_tag.setEpisode(int(episode))
-        if duration:
-            info_tag.setDuration(int(duration))
-        info_tag.setFirstAired(air_date)
-        info_tag.setPlot(ep.overview)
-        info_tag.setIMDBNumber(imdb_id)
-        info_tag.setUniqueIDs({"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id})
+
+        if get_kodi_version() >= 20:
+            set_video_infotag(
+                list_item,
+                mode,
+                tv_name,
+                ep.overview,
+                episode=episode,
+                duration=duration,
+                air_date=air_date,
+                ids=ids,
+            )
+        else:
+            set_video_info(
+                list_item,
+                mode,
+                tv_name,
+                ep.overview,
+                episode=episode,
+                duration=duration,
+                air_date=air_date,
+                ids=ids,
+            )
 
         list_item.setArt(
             {
-                "poster": fanart,
+                "poster": poster,
                 "tvshow.poster": poster,
                 "fanart": poster,
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
@@ -689,7 +706,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
                         mode=mode,
                         query=tv_name,
                         ids=ids,
-                        tvdata=tvdata,
+                        tv_data=tv_data,
                         rescrape=True,
                     ),
                 )
@@ -703,9 +720,8 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
                 mode=mode,
                 media_type=media_type,
                 query=tv_name,
-                episode_name=ep_name,
                 ids=ids,
-                tvdata=tvdata,
+                tv_data=tv_data,
             ),
             list_item,
             isFolder=True,
@@ -718,16 +734,16 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
 @plugin.route("/get_rd_link_pack")
 @query_arg("args", required=False)
 @query_arg("ids", required=False)
-@query_arg("tvdata", required=False)
+@query_arg("tv_data", required=False)
 @query_arg("mode", required=False)
-def get_rd_link_pack(args, ids, mode, tvdata=""):
+def get_rd_link_pack(args, ids, mode, tv_data=""):
     id, torrent_id, debrid_type, title = args.split(" ", 3)
     url = get_rd_pack_link(id, torrent_id)
     play(
         url=url,
         magnet="",
         ids=ids,
-        tvdata=tvdata,
+        tv_data=tv_data,
         mode=mode,
         title=title,
         is_debrid=True,
@@ -740,49 +756,45 @@ def get_rd_link_pack(args, ids, mode, tvdata=""):
 @query_arg("ids", required=False)
 @query_arg("query", required=False)
 @query_arg("mode", required=False)
-@query_arg("tvdata", required=False)
-def show_pack(ids, query, mode, tvdata=""):
+@query_arg("tv_data", required=False)
+def show_pack(ids, query, mode, tv_data=""):
     info_hash, torrent_id, debrid_type = query.split()
     if debrid_type == "RD":
         info = get_rd_pack(torrent_id)
         if info:
             for id, title in info:
                 list_item = ListItem(label=f"{title}")
-                set_video_item(list_item, poster="", overview="")
-                addDirectoryItem(
-                    plugin.handle,
-                    plugin.url_for(
-                        get_rd_link_pack,
-                        args=f"{id} {torrent_id} {debrid_type} {title}",
-                        mode=mode,
-                        ids=ids,
-                        tvdata=tvdata,
-                    ),
+                set_pack_item_rd(
                     list_item,
-                    isFolder=False,
+                    mode,
+                    id,
+                    torrent_id,
+                    title,
+                    ids,
+                    tv_data,
+                    debrid_type,
+                    func=get_rd_link_pack,
+                    plugin=plugin,
                 )
+                set_pack_art(list_item)
             endOfDirectory(plugin.handle)
     elif debrid_type == "PM":
         info = get_pm_pack(info_hash)
         if info:
             for url, title in info:
                 list_item = ListItem(label=f"{title}")
-                set_video_item(list_item, poster="", overview="")
-                addDirectoryItem(
-                    plugin.handle,
-                    plugin.url_for(
-                        play_torrent,
-                        title=title,
-                        url=url,
-                        ids=ids,
-                        tvdata=tvdata,
-                        mode=mode,
-                        is_debrid=True,
-                        debrid_type=debrid_type,
-                    ),
+                set_pack_item_pm(
                     list_item,
-                    isFolder=False,
+                    mode,
+                    url,
+                    title,
+                    ids,
+                    tv_data,
+                    debrid_type,
+                    func=play_torrent,
+                    plugin=plugin,
                 )
+                set_pack_art(list_item)
             endOfDirectory(plugin.handle)
 
 

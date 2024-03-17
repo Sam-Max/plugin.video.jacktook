@@ -37,7 +37,7 @@ def last_files(plugin, func1, func2):
                 func2,
                 title=title,
                 ids=data.get("ids"),
-                tvdata=data.get("tvdata"),
+                tv_data=data.get("tv_data"),
                 url=data.get("url"),
                 is_debrid=data.get("is_debrid"),
                 is_torrent=data.get("is_torrent"),

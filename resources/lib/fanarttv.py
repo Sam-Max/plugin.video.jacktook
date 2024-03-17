@@ -1,6 +1,6 @@
 import requests
 
-from resources.lib.utils.kodi import get_setting
+from resources.lib.utils.kodi import get_setting, log
 
 
 def make_session(url="https://"):

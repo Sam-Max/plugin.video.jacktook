@@ -1,29 +1,37 @@
 import re
 from resources.lib.anilist import anilist_client
 from resources.lib.debrid import get_magnet_from_uri
-from resources.lib.utils.kodi import action, bytes_to_human_readable, log, set_view_mode
+from resources.lib.tmdb import TMDB_POSTER_URL
+from resources.lib.utils.kodi import (
+    action,
+    bytes_to_human_readable,
+    log,
+    set_view_mode,
+)
 from resources.lib.utils.utils import (
     Indexer,
     add_pack_item,
     add_play_item,
-    search_fanart_tv,
     get_colored_languages,
     get_full_languages,
     get_description_length,
     get_random_color,
     info_hash_to_magnet,
     is_torrent_watched,
-    set_video_item,
+    set_video_properties,
     tmdb_get,
 )
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 
 
-def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2, func3):
+def indexer_show_results(
+    results, mode, query, ids, tv_data, plugin, func, func2, func3
+):
     poster = ""
     overview = ""
     description_length = get_description_length()
+
     if ids:
         tmdb_id, tvdb_id, _ = ids.split(", ")
 
@@ -34,13 +42,13 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 overview = result.get("description", "")
                 poster = result.get("coverImage", {}).get("large", "")
             else:
-                result = tmdb_get("find", tvdb_id)
-                overview = result["tv_results"][0].get("overview", "")
-                fanart_data = search_fanart_tv(tvdb_id, mode)
-                poster = fanart_data["clearlogo2"] if fanart_data else ""
+                find = tmdb_get("find", tvdb_id)
+                overview = find["tv_results"][0].get("overview", "")
+                poster = TMDB_POSTER_URL + find["tv_results"][0].get("poster_path", "")
         elif mode == "movie":
             details = tmdb_get("movie_details", tmdb_id)
             overview = details.get("overview", "")
+            poster = TMDB_POSTER_URL + details.get("poster_path", "")
 
     for res in results:
         title = res["title"]
@@ -88,7 +96,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 add_pack_item(
                     list_item,
                     func2,
-                    tvdata,
+                    tv_data,
                     ids,
                     info_hash,
                     torrent_id,
@@ -101,11 +109,11 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 list_item = ListItem(
                     label=f"[{format_debrid_type}-Cached]-{torr_title}"
                 )
-                set_video_item(list_item, poster, overview)
+                set_video_properties(list_item, poster, mode, title, overview, ids)
                 add_play_item(
                     list_item,
                     ids,
-                    tvdata,
+                    tv_data,
                     title,
                     torrent_id=torrent_id,
                     info_hash=info_hash,
@@ -139,7 +147,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 continue
 
             list_item = ListItem(label=torr_title)
-            set_video_item(list_item, poster, overview)
+            set_video_properties(list_item, poster, mode, title, overview, ids)
             if magnet:
                 list_item.addContextMenuItems(
                     [
@@ -152,7 +160,7 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
             add_play_item(
                 list_item,
                 ids,
-                tvdata,
+                tv_data,
                 title,
                 url="",
                 magnet=magnet,

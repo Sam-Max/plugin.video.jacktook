@@ -3,13 +3,25 @@ from concurrent.futures import ThreadPoolExecutor
 from resources.lib.db.database import get_db
 from resources.lib.tmdbv3api.objs.search import Search
 
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, container_update
-from resources.lib.utils.utils import get_movie_data, get_tv_data, tmdb_get
+from resources.lib.utils.kodi import (
+    ADDON_PATH,
+    Keyboard,
+    container_update,
+    get_kodi_version,
+    log,
+)
+from resources.lib.utils.utils import (
+    get_movie_data,
+    get_tv_data,
+    set_video_info,
+    set_video_infotag,
+    tmdb_get,
+)
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
-TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w500"
+TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 
@@ -148,8 +160,31 @@ def tmdb_show_items(res, func, func2, plugin, mode):
         backdrop_path = TMDB_BACKDROP_URL + backdrop_path
 
     overview = res.get("overview", "")
+    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
     list_item = ListItem(label=title)
+
+    if get_kodi_version() >= 20:
+        set_video_infotag(
+            list_item,
+            mode,
+            title,
+            overview,
+            air_date=release_date,
+            duration=duration,
+            ids=ids
+        )
+    else:
+        set_video_info(
+            list_item,
+            mode,
+            title,
+            overview,
+            air_date=release_date,
+            duration=duration,
+            ids=ids
+        )
+
     list_item.setArt(
         {
             "poster": poster_path,
@@ -157,17 +192,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
         }
     )
-    info_tag = list_item.getVideoInfoTag()
-    info_tag.setMediaType("video")
-    info_tag.setTitle(title)
-    info_tag.setPlot(overview)
-    info_tag.setFirstAired(release_date)
-    if duration:
-        info_tag.setDuration(int(duration))
-
     list_item.setProperty("IsPlayable", "false")
-
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
     if "movie" in [mode, media_type]:
         list_item.addContextMenuItems(

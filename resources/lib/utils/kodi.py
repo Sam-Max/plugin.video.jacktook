@@ -73,6 +73,12 @@ def addon_settings():
     return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ADDON_ID)
 
 
+def get_kodi_version():
+    build = xbmc.getInfoLabel("System.BuildVersion")
+    kodi_version = int(build.split()[0][:2])
+    return kodi_version
+
+
 def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
     try:

@@ -20,6 +20,7 @@ def last_titles(plugin, func1, func2, func3):
 
     for title, data in reversed(get_db().database["jt:lth"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
+        
         list_item = ListItem(label=f"{title}— {formatted_time}")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}

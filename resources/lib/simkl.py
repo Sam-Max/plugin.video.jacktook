@@ -2,8 +2,14 @@ import os
 import re
 from resources.lib.api.fma_api import FindMyAnime
 from resources.lib.api.simkl_api import SIMKLAPI
-from resources.lib.utils.kodi import ADDON_PATH, log
-from resources.lib.utils.utils import get_cached, set_cached, tmdb_get
+from resources.lib.utils.kodi import ADDON_PATH, get_kodi_version, log
+from resources.lib.utils.utils import (
+    get_cached,
+    set_cached,
+    set_video_info,
+    set_video_infotag,
+    tmdb_get,
+)
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
@@ -70,27 +76,38 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
             if match:
                 date = match.group()
 
-            coverImage = ""
-            if res.get("img"):
-                coverImage = IMAGE_PATH % res["img"]
+            poster = IMAGE_PATH % res.get("img", "")
 
             list_item = ListItem(label=ep_name)
             list_item.setArt(
                 {
-                    "poster": coverImage,
+                    "poster": poster,
                     "icon": os.path.join(
                         ADDON_PATH, "resources", "img", "trending.png"
                     ),
-                    "fanart": coverImage,
+                    "fanart": poster,
                 }
             )
             list_item.setProperty("IsPlayable", "false")
 
-            info_tag = list_item.getVideoInfoTag()
-            info_tag.setMediaType("video")
-            info_tag.setTitle(ep_name)
-            info_tag.setFirstAired(date)
-            info_tag.setPlot(description)
+            if get_kodi_version() >= 20:
+                set_video_infotag(
+                    list_item,
+                    mode="tv",
+                    name=ep_name,
+                    overview=description,
+                    ep_name=ep_name,
+                    air_date=date,
+                )
+            else:
+                set_video_info(
+                    list_item,
+                    mode="tv",
+                    name=ep_name,
+                    overview=description,
+                    ep_name=ep_name,
+                    air_date=date,
+                )
 
             addDirectoryItem(
                 plugin.handle,
@@ -99,7 +116,7 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
                     mode="tv",
                     query=title,
                     ids=f"{id}, {-1}, {imdb_id}",
-                    tvdata=f"{ep_name}, {episode}, {season}",
+                    tv_data=f"{ep_name}(^){episode}(^){season}",
                 ),
                 list_item,
                 isFolder=True,

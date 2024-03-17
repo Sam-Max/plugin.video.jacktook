@@ -196,13 +196,13 @@ class Torrentio:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
 
-    def search(self, imdb_id, mode, media_type, season, episode, insecure=False):
+    def search(self, imdb_id, mode, media_type, season, episode):
         try:
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movie" or media_type == "movie":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-            res = requests.get(url, timeout=10, verify=insecure)
+            res = requests.get(url, timeout=10)
             if res.status_code != 200:
                 return
             response = self.parse_response(res)

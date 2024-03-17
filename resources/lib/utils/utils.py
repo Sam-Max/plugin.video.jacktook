@@ -20,6 +20,7 @@ from resources.lib.utils.kodi import (
     container_refresh,
     get_cache_expiration,
     get_int_setting,
+    get_kodi_version,
     get_setting,
     get_torrest_setting,
     is_cache_enabled,
@@ -136,7 +137,7 @@ def list_item(label, icon):
 def add_play_item(
     list_item,
     ids,
-    tvdata,
+    tv_data,
     title,
     url="",
     magnet="",
@@ -155,7 +156,7 @@ def add_play_item(
             func,
             title=title,
             ids=ids,
-            tvdata=tvdata,
+            tv_data=tv_data,
             url=url,
             magnet=magnet,
             torrent_id=torrent_id,
@@ -171,14 +172,14 @@ def add_play_item(
 
 
 def add_pack_item(
-    list_item, func, tvdata, ids, info_hash, torrent_id, debrid_type, mode, plugin
+    list_item, func, tv_data, ids, info_hash, torrent_id, debrid_type, mode, plugin
 ):
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(
             func,
             query=f"{info_hash} {torrent_id} {debrid_type}",
-            tvdata=tvdata,
+            tv_data=tv_data,
             mode=mode,
             ids=ids,
         ),
@@ -187,23 +188,158 @@ def add_pack_item(
     )
 
 
-def set_video_item(list_item, poster, overview):
+def set_pack_item_rd(
+    list_item, mode, id, torrent_id, title, ids, tv_data, debrid_type, func, plugin
+):
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(
+            func,
+            args=f"{id} {torrent_id} {debrid_type} {title}",
+            mode=mode,
+            ids=ids,
+            tv_data=tv_data,
+        ),
+        list_item,
+        isFolder=False,
+    )
+
+
+def set_pack_item_pm(
+    list_item, mode, url, title, ids, tv_data, debrid_type, func, plugin
+):
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(
+            func,
+            title=title,
+            url=url,
+            ids=ids,
+            tv_data=tv_data,
+            mode=mode,
+            is_debrid=True,
+            debrid_type=debrid_type,
+        ),
+        list_item,
+        isFolder=False,
+    )
+
+
+def set_pack_art(list_item):
     list_item.setArt(
         {
-            "poster": poster,
+            "poster": "",
             "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
             "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
         }
     )
-    info_tag = list_item.getVideoInfoTag()
-    info_tag.setMediaType("video")
-    info_tag.setPlot(overview)
 
+
+def set_video_properties(list_item, poster, mode, title, overview, ids):
+    if get_kodi_version() >= 20:
+        set_video_infotag(list_item, mode, title, overview, ids=ids)
+    else:
+        set_video_info(list_item, mode, title, overview, ids=ids)
     list_item.setProperty("IsPlayable", "true")
+    list_item.setArt(
+        {
+            "poster": poster,
+            "fanart": poster,
+            "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
+        }
+    )
+
+
+def set_video_info(
+    list_item,
+    mode,
+    name,
+    overview="",
+    ids="",
+    season_number="",
+    episode="",
+    ep_name="",
+    duration="",
+    air_date="",
+    url="",
+):
+    info["plot"] = overview
+
+    if ids:
+        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        info = {
+            "imdbnumber": imdb_id,
+            "uniqueid": {"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id},
+        }
+
+    if duration:
+        info["duration"] = int(duration)
+
+    if mode in ["movie", "multi"]:
+        info.update({"mediatype": "movie", "title": name, "originaltitle": name})
+    else:
+        info.update({"mediatype": "season", "tvshowtitle": name})
+        if ep_name:
+            info["title"] = name
+        if url:
+            info["filenameandpath"] = url
+        if air_date:
+            info["firstaired"] = air_date
+        if season_number:
+            info["season"] = int(season_number)
+        if episode:
+            info["episode"] = int(episode)
+
+    list_item.setInfo("video", info)
+
+
+def set_video_infotag(
+    list_item,
+    mode,
+    name,
+    overview="",
+    ids="",
+    season_number="",
+    episode="",
+    ep_name="",
+    duration="",
+    air_date="",
+    url="",
+):
+    info_tag = list_item.getVideoInfoTag()
+    if mode == "movie":
+        info_tag.setMediaType("movie")
+        info_tag.setTitle(name)
+        info_tag.setOriginalTitle(name)
+    elif mode == "multi":
+        info_tag.setMediaType("video")
+        info_tag.setTitle(name)
+    else:
+        info_tag.setMediaType("season")
+        if ep_name:
+            info_tag.setTitle(name)
+        info_tag.setTvShowTitle(name)
+        if url:
+            info_tag.setFilenameAndPath(url)
+        if air_date:
+            info_tag.setFirstAired(air_date)
+        if season_number:
+            info_tag.setSeason(int(season_number))
+        if episode:
+            info_tag.setEpisode(int(episode))
+    info_tag.setPlot(overview)
+    if duration:
+        info_tag.setDuration(int(duration))
+    if ids:
+        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        info_tag.setIMDBNumber(imdb_id)
+        info_tag.setUniqueIDs(
+            {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
+        )
 
 
 def set_watched_file(
-    title, ids, tvdata, magnet, url, debrid_type, is_debrid, is_torrent
+    title, ids, tv_data, magnet, url, debrid_type, is_debrid, is_torrent
 ):
     if title in db.database["jt:lfh"]:
         return
@@ -220,7 +356,7 @@ def set_watched_file(
     db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
         "ids": ids,
-        "tvdata": tvdata,
+        "tv_data": tv_data,
         "url": url,
         "is_debrid": is_debrid,
         "is_torrent": is_torrent,
