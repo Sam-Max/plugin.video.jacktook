@@ -27,6 +27,14 @@ msgctxt "#30002"
 msgid "Client"
 msgstr ""
 
+msgctxt "#30003"
+msgid "Debrid Downloads"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Debrid Download Location"
+msgstr ""
+
 msgctxt "#30020"
 msgid "Indexers"
 msgstr ""

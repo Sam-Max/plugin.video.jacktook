@@ -13,6 +13,7 @@ from resources.lib.play import play
 from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
+from resources.lib.download import get_dlm
 from resources.lib.utils.pm_utils import get_pm_link, get_pm_pack
 from resources.lib.utils.rd_utils import get_rd_link, get_rd_pack, get_rd_pack_link
 from routing import Plugin
@@ -336,6 +337,7 @@ def search(mode="", media_type="", query="", ids="", tvdata="", rescrape=False):
                 func=play_torrent,
                 func2=show_pack,
                 func3=download,
+                func4=download_from_debrid
             )
         else:
             notify("No results")
@@ -897,6 +899,18 @@ def rd_auth():
 def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
+
+
+@plugin.route("/downloads/local")
+def download_from_debrid():
+    url, title = plugin.args["query"][0].split("⌘")
+    get_dlm().add_to_queue(url, title)
+
+
+@plugin.route("/downloads/cancel")
+def cancel_debrid_download():
+    url = plugin.args["query"][0]
+    get_dlm().cancel_download(url)
 
 
 def torrent_status(info_hash):

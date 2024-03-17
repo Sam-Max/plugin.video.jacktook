@@ -13,8 +13,9 @@ class Database:
             "jt:watch": {},
             "jt:fanarttv": {},
             "jt:tmdb": {},
-            "jt:lth": {},
+            "jt:lth":{},
             "jt:lfh": {},
+            "jt:dlm": {}
         }
 
         data_dir = xbmcvfs.translatePath(
@@ -37,12 +38,19 @@ class Database:
             os.path.join("special://home/addons/", ADDON_ID, "addon.xml")
         )
 
+
     def set_search_string(self, key, value):
         self.database[key] = value
         self.commit()
-
-    def get_search_string(self, key):
-        return self.database[key]
+    
+    def get_dm(self, key, id):
+        for id in self.database[key]:
+            return self.database[key][id]
+        return None
+    
+    def set_dm(self, key, id, dlm_data):
+        self.database[key][id] = dlm_data
+        self.commit()
 
     def commit(self):
         with open(self.database_path, "wb") as f:

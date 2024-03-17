@@ -19,8 +19,8 @@ from resources.lib.utils.utils import (
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 
+def indexer_show_results(results, mode, query, ids, tvdb_id, plugin, func, func2, func3, func4):
 
-def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2, func3):
     poster = ""
     overview = ""
     description_length = get_description_length()
@@ -101,6 +101,8 @@ def indexer_show_results(results, mode, query, ids, tvdata, plugin, func, func2,
                 list_item = ListItem(
                     label=f"[{format_debrid_type}-Cached]-{torr_title}"
                 )
+                list_item.addContextMenuItems(
+                    [("Download to Disk", action(plugin, func4, query=f"{res.get("debridLinks")[0}⌘{title}"))])
                 set_video_item(list_item, poster, overview)
                 add_play_item(
                     list_item,
