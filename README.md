@@ -23,7 +23,7 @@ Torrent Engines:
 
 Metadata:
 - TMDB  
-- AniList, Simkl (Anime)
+- AniList, Simkl
 - Fanart.tv
 - TMDB helper
 
@@ -52,6 +52,7 @@ You can also install the addon without installing its repository. To do so, get 
 2. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
 3. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to improve search speed and results.
 4. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp) (torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
+5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
 ## How to run Jackett service using Docker:
 
