@@ -263,14 +263,11 @@ def set_video_info(
     air_date="",
     url="",
 ):
-    info["plot"] = overview
+    info = {"plot": overview}
 
     if ids:
-        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
-        info = {
-            "imdbnumber": imdb_id,
-            "uniqueid": {"imdb": imdb_id, "tmdb": tmdb_id, "tvdb": tvdb_id},
-        }
+        _, _, imdb_id = ids.split(", ")
+        info["imdbnumber"] = imdb_id
 
     if duration:
         info["duration"] = int(duration)
@@ -278,13 +275,13 @@ def set_video_info(
     if mode in ["movie", "multi"]:
         info.update({"mediatype": "movie", "title": name, "originaltitle": name})
     else:
-        info.update({"mediatype": "season", "tvshowtitle": name})
+        info.update({"mediatype": "tvshow", "tvshowtitle": name})
         if ep_name:
             info["title"] = name
         if url:
             info["filenameandpath"] = url
         if air_date:
-            info["firstaired"] = air_date
+            info["aired"] = air_date
         if season_number:
             info["season"] = int(season_number)
         if episode:

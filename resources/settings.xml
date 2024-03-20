@@ -3,6 +3,8 @@
     <category label="30000">
         <setting label="30001" type="lsep"/>
         <setting id="torrent_client" type="labelenum" label="30002" values="All|Torrest|Debrid|Elementum" default="Torrest"/>
+        <setting label="Playback" type="lsep"/>
+        <setting id="auto_play" type="bool" label="Auto Play" default="false"/>
         <setting label="Cache" type="lsep"/>
         <setting id="cache_enabled" type="bool" label="30107" default="true"/>
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>

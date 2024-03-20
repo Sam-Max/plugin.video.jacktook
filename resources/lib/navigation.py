@@ -54,13 +54,16 @@ from resources.lib.utils.kodi import (
     action,
     addon_settings,
     addon_status,
+    auto_play,
     buffer_and_play,
+    close_all_dialog,
     container_update,
     dialogyesno,
     get_kodi_version,
     get_setting,
     notify,
     play_info_hash,
+    play_media,
     refresh,
     set_view,
     translation,
@@ -248,7 +251,7 @@ def genre_menu():
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
 def search_tmdb(mode, genre_id, page):
-    if mode in ["multi", "movie", "movie_genres"]:
+    if mode in ["movie", "movie_genres"]:
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode in ["tv", "tv_genres"]:
         setContent(plugin.handle, SHOWS_TYPE)
@@ -324,6 +327,11 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 )
                 if deb_cached_results:
                     final_results = deb_cached_results
+                    if auto_play():
+                        close_all_dialog()
+                        p_dialog.close()
+                        play_first_result(deb_cached_results, ids, tv_data, mode)
+                        return
                 else:
                     notify("No debrid results")
                     p_dialog.close()
@@ -352,6 +360,25 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
         pass
 
 
+def play_first_result(results, ids, tv_data, mode):
+    for res in results:
+        if res["debridPack"]:
+            continue
+        play_media(
+            plugin,
+            play_torrent,
+            title=results[0]["title"],
+            ids=ids,
+            tv_data=tv_data,
+            info_hash=results[0]["infoHash"],
+            torrent_id=results[0]["debridId"],
+            debrid_type=results[0]["debridType"],
+            is_debrid=True,
+            mode=mode,
+        )
+        break
+
+
 @plugin.route("/play_torrent")
 @query_arg("title", required=True)
 @query_arg("url", required=False)
@@ -377,6 +404,7 @@ def play_torrent(
     is_torrent=False,
     is_debrid=False,
 ):
+
     if torrent_id and debrid_type == "RD":
         rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
         url = get_rd_link(rd_client, torrent_id)
@@ -579,7 +607,7 @@ def torrent_files(info_hash):
 @query_arg("media_type", required=False)
 def tv_seasons_details(ids, mode, media_type=None):
     setContent(plugin.handle, SHOWS_TYPE)
-    tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+    tmdb_id, tvdb_id, _ = ids.split(", ")
 
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
@@ -594,7 +622,11 @@ def tv_seasons_details(ids, mode, media_type=None):
 
     for s in seasons:
         season_name = s.name
+        if "Specials" in season_name:
+            continue
         season_number = s.season_number
+        if season_number == 0:
+            continue
         if s.poster_path:
             poster = TMDB_POSTER_URL + s.poster_path
         else:
@@ -635,6 +667,7 @@ def tv_seasons_details(ids, mode, media_type=None):
             isFolder=True,
         )
 
+    set_view("widelist")
     endOfDirectory(plugin.handle)
 
 
@@ -728,7 +761,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
         )
 
     set_view("widelist")
-    endOfDirectory(plugin.handle, cacheToDisc=True)
+    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/get_rd_link_pack")

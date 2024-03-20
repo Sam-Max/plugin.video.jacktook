@@ -161,7 +161,6 @@ def indexer_show_results(
                 ids,
                 tv_data,
                 title,
-                url="",
                 magnet=magnet,
                 is_torrent=True,
                 mode=mode,
@@ -170,5 +169,5 @@ def indexer_show_results(
             )
 
     set_view("widelist")
-    endOfDirectory(plugin.handle, cacheToDisc=True)
+    endOfDirectory(plugin.handle)
     

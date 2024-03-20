@@ -98,6 +98,10 @@ def is_elementum_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
 
 
+def auto_play():
+    return get_setting("auto_play")
+
+
 def get_int_setting(setting):
     return int(get_setting(setting))
 
@@ -205,6 +209,10 @@ def play_info_hash(info_hash):
 def buffer_and_play(info_hash, file_id):
     url = f"plugin://plugin.video.torrest/buffer_and_play?info_hash={info_hash}&file_id={file_id}"
     return f"PlayMedia({url})"
+
+
+def play_media(plugin, func, *args, **kwargs):
+    execute_builtin("PlayMedia({})".format(plugin.url_for(func, *args, **kwargs)))
 
 
 def show_busy_dialog():
