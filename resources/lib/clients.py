@@ -289,6 +289,7 @@ class Jackett:
                 return
             return self.parse_response(res)
         except Exception as e:
+            log(str(e))
             notify(f"{translation(30229)} {str(e)}")
 
     def parse_response(self, res):
@@ -380,8 +381,8 @@ class Prowlarr:
                 )
             return res
         except Exception as e:
+            log(str(e))
             notify(f"{translation(30230)} {str(e)}")
-            return
 
 
 """ if anime_indexers:

@@ -500,19 +500,14 @@ def get_random_color(provider_name):
 
 
 def get_colored_languages(languages):
-    if languages:
+    if len(languages) > 0:
         colored_languages = []
         for lang in languages:
             lang_color = get_random_color(lang)
             colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
             colored_languages.append(colored_lang)
+        colored_languages = ", " + ", ".join(colored_languages)
         return colored_languages
-
-
-def get_full_languages(languages):
-    if languages:
-        return ", " + ", ".join(languages)
-    return ""
 
 
 def clear_tmdb_cache():
@@ -577,25 +572,36 @@ def remove_duplicate(results):
     return result_dict
 
 
-def process_results(res, mode, episode_name, episode, season):
+def post_process(res):
+    if (
+        get_setting("indexer") == Indexer.TORRENTIO
+        and get_setting("torrentio_priority_lang") != "None"
+    ):
+        res = sort_by_priority_language(res)
+    else:
+        res = sort_results(res)
+    return res
+
+
+def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
     res = limit_results(res)
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
-    res = sort_results(res)
     return res
 
 
 def sort_by_priority_language(results):
     priority_lang = get_setting("torrentio_priority_lang")
-    counter = 0
+    priority_lang_list = []
+    non_priority_lang_list = []
     for res in results:
         if "languages" in res and priority_lang in res["languages"]:
-            results.remove(res)
-            results.insert(counter, res)
-            counter += 1
-    return results
+            priority_lang_list.append(res)
+        else:
+            non_priority_lang_list.append(res)
+    return sort_results(priority_lang_list, non_priority_lang_list)
 
 
 def filter_by_priority_language(results):
@@ -609,7 +615,7 @@ def filter_by_priority_language(results):
         return filtered_results
 
 
-def sort_results(results):
+def sort_results(first_res, second_res=None):
     indexer = get_setting("indexer")
     if indexer == Indexer.JACKETT:
         sort_by = get_setting("jackett_sort_by")
@@ -620,22 +626,36 @@ def sort_results(results):
     elif indexer == Indexer.ELHOSTED:
         sort_by = get_setting("elfhosted_sort_by")
 
-    if sort_by == "Seeds":
-        sort_results = sorted(results, key=lambda r: int(r["seeders"]), reverse=True)
+    if sort_by == "None":
+        return first_res
+    elif sort_by == "Seeds":
+        first_sorted = sorted(first_res, key=lambda r: r["seeders"], reverse=True)
+        if second_res:
+            return sort_second_result(first_sorted, second_res, type="seeders")
     elif sort_by == "Size":
-        sort_results = sorted(results, key=lambda r: r["size"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r["size"], reverse=True)
+        if second_res:
+            return sort_second_result(first_sorted, second_res, type="size")
     elif sort_by == "Date":
-        sort_results = sorted(results, key=lambda r: r["publishDate"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r["publishDate"], reverse=True)
+        if second_res:
+            return sort_second_result(first_sorted, second_res, type="publishDate")
     elif sort_by == "Quality":
-        sort_results = sorted(results, key=lambda r: r["Quality"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r["Quality"], reverse=True)
+        if second_res:
+            return sort_second_result(first_sorted, second_res, type="Quality")
     elif sort_by == "Cached":
-        sort_results = sorted(results, key=lambda r: r["debridCached"], reverse=True)
-    elif sort_by == "None":
-        sort_results = results
-    elif sort_by == "Language":
-        sort_results = sort_by_priority_language(results)
+        first_sorted = sorted(first_res, key=lambda r: r["debridCached"], reverse=True)
+        if second_res:
+            return sort_second_result(first_sorted, second_res, type="debridCached")
 
-    return sort_results
+    return first_sorted
+
+
+def sort_second_result(first_sorted, second_res, type):
+    second_sorted = sorted(second_res, key=lambda r: r[type], reverse=True)
+    first_sorted.extend(second_sorted)
+    return first_sorted
 
 
 def filter_by_episode(results, episode_name, episode_num, season_num):

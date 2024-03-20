@@ -90,7 +90,7 @@ def make_listing(list_item, mode, url, title, ids, tv_data):
     if tv_data:
         ep_name, episode, season = tv_data.split("(^)")
     else:
-        ep_name, episode, season = ""
+        ep_name = episode = season = ""
 
     if get_kodi_version() >= 20:
         set_video_infotag(

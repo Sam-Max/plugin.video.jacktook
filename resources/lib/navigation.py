@@ -28,6 +28,8 @@ from resources.lib.utils.utils import (
     clear,
     clear_all_cache,
     clear_tmdb_cache,
+    post_process,
+    pre_process,
     search_fanart_tv,
     get_credentials,
     get_port,
@@ -35,7 +37,6 @@ from resources.lib.utils.utils import (
     get_state_string,
     is_video,
     list_item,
-    process_results,
     set_pack_art,
     set_pack_item_pm,
     set_pack_item_rd,
@@ -307,7 +308,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
         query, imdb_id, mode, media_type, p_dialog, rescrape, season, episode
     )
     if results:
-        proc_results = process_results(
+        proc_results = pre_process(
             results,
             mode,
             ep_name,
@@ -326,7 +327,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     episode,
                 )
                 if deb_cached_results:
-                    final_results = deb_cached_results
+                    final_results = post_process(deb_cached_results)
                     if auto_play():
                         close_all_dialog()
                         p_dialog.close()
@@ -337,7 +338,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     p_dialog.close()
                     return
             elif torr_client == "Torrest" or torr_client == "Elementum":
-                final_results = proc_results
+                final_results = post_process(proc_results)
             indexer_show_results(
                 final_results,
                 mode,
