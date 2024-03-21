@@ -71,7 +71,7 @@ def indexer_show_results(
 
         tracker_color = get_random_color(tracker)
 
-        languages = get_colored_languages(res.get("full_languages"))
+        languages = get_colored_languages(res.get("full_languages", []))
         languages = languages if languages else ""
 
         torr_title = (
