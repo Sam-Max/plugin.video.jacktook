@@ -19,7 +19,6 @@ from resources.lib.utils.utils import (
     set_cached,
     unicode_flag_to_country_code,
 )
-from urllib3.exceptions import InsecureRequestWarning
 from resources.lib import xmltodict
 
 
@@ -295,39 +294,35 @@ class Jackett:
     def parse_response(self, res):
         res = xmltodict.parse(res.content)
         if "item" in res["rss"]["channel"]:
-            items = res["rss"]["channel"]["item"]
-            magnetUrl = ""
-            infohash = ""
+            item = res["rss"]["channel"]["item"]
             results = []
-            for item in items:
-                for sub_item in item["torznab:attr"]:
-                    if sub_item["@name"] == "seeders":
-                        seeders = sub_item["@value"]
-                    elif sub_item["@name"] == "peers":
-                        peers = sub_item["@value"]
-                    elif sub_item["@name"] == "magneturl":
-                        magnetUrl = sub_item["@value"]
-                    elif sub_item["@name"] == "infohash":
-                        infohash = sub_item["@value"]
-                results.append(
-                    {
-                        "quality_title": "",
-                        "title": item["title"],
-                        "indexer": item["jackettindexer"]["#text"],
-                        "publishDate": item["pubDate"],
-                        "guid": item["guid"],
-                        "downloadUrl": item["link"],
-                        "size": item["size"],
-                        "magnetUrl": magnetUrl,
-                        "seeders": seeders,
-                        "peers": peers,
-                        "infoHash": infohash,
-                        "debridType": "",
-                        "debridCached": False,
-                        "debridPack": False,
-                    }
-                )
+            for i in item if isinstance(item, list) else [item]:
+                extract_result(results, i)
             return results
+
+
+def extract_result(results, item):
+    attributes = {
+        attr["@name"]: attr["@value"] for attr in item.get("torznab:attr", [])
+    }
+    results.append(
+        {
+            "quality_title": "",
+            "title": item.get("title", ""),
+            "indexer": item.get("jackettindexer", {}).get("#text", ""),
+            "publishDate": item.get("pubDate", ""),
+            "guid": item.get("guid", ""),
+            "downloadUrl": item.get("link", ""),
+            "size": item.get("size", ""),
+            "magnetUrl": attributes.get("magneturl", ""),
+            "seeders": attributes.get("seeders", ""),
+            "peers": attributes.get("peers", ""),
+            "infoHash": attributes.get("infohash", ""),
+            "debridType": "",
+            "debridCached": False,
+            "debridPack": False,
+        }
+    )
 
 
 class Prowlarr:
