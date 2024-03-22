@@ -1,4 +1,12 @@
 
+## 0.2.2 (2024-03-22)
+* Added autoplay feature
+* Added clients timeouts and cache activation settings
+* Added new Tmdb helper addon json
+* Torrentio language improvements
+* Fixed kodi 19 compatibility
+* Other minor improvements and fixes
+
 ## 0.2.1 (2024-03-12)
 * torrentio improvements (priority language, sort by language, etc)
 * added portugese translation
