@@ -281,9 +281,9 @@ class RealDebrid:
             "PUT", f"{self.BASE_URL}/torrents/addTorrent", file=file
         )
 
-    def get_user_torrent_list(self, page, limit):
+    def get_user_torrent_list(self, limit):
         return self._make_request(
-            "GET", f"{self.BASE_URL}/torrents", params={"page": page, "limit": limit}
+            "GET", f"{self.BASE_URL}/torrents", params={"limit": limit}
         )
 
     def get_user_downloads_list(self, page, limit):

@@ -22,7 +22,7 @@ from xbmcplugin import (
 from xbmcgui import ListItem, Dialog
 
 
-torrent_clients = ["Torrest", "Elementum"]
+torrent_clients = ["JackTorr", "Torrest", "Elementum"]
 
 
 def play(
@@ -57,6 +57,8 @@ def play(
         _url = get_torrest_url(magnet, url)
     elif torr_client == "Elementum":
         _url = get_elementum_url(magnet, mode, ids)
+    elif torr_client == "JackTorr":
+        _url = get_jacktorr_url(magnet, mode)
     elif torr_client == "Debrid":
         _url = url
     elif torr_client == "All":
@@ -70,6 +72,8 @@ def play(
                 _url = get_torrest_url(magnet, url)
             elif torrent_clients[chosen_client] == "Elementum":
                 _url = get_elementum_url(magnet, mode, ids)
+            elif torrent_clients[chosen_client] == "JackTorr":
+                _url = get_jacktorr_url(magnet, mode)
 
     if _url:
         list_item = ListItem(title, path=_url)
@@ -144,6 +148,13 @@ def get_elementum_url(magnet, mode, ids):
         tmdb_id = ""
     return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
 
+
+def get_jacktorr_url(magnet, url):
+    if magnet:
+        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
+    else:
+        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
+    return _url
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():

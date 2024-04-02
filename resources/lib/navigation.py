@@ -337,7 +337,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     notify("No debrid results")
                     p_dialog.close()
                     return
-            elif torr_client == "Torrest" or torr_client == "Elementum":
+            elif torr_client in ["Torrest", "Elementum", "JackTorr"]:
                 final_results = post_process(proc_results)
             indexer_show_results(
                 final_results,
