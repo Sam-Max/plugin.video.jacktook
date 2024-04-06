@@ -600,7 +600,7 @@ def tv_seasons_details(ids, mode, media_type=None):
     seasons = details.seasons
     overview = details.overview
 
-    set_watched_title(name, ids, mode=mode)
+    set_watched_title(name, ids, mode=mode, media_type=media_type)
 
     show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
     fanart_data = search_fanart_tv(tvdb_id)

@@ -361,7 +361,9 @@ def set_watched_file(
     db.commit()
 
 
-def set_watched_title(title, ids, mode=""):
+def set_watched_title(title, ids, mode="", media_type=""):
+    if mode == "multi":
+        mode = media_type
     if title != "None":
         db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
