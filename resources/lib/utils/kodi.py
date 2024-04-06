@@ -83,9 +83,8 @@ def get_kodi_version():
 def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
     try:
-        JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
-        msg += f"[B]Torrest Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_address')}\n"
-        msg += f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('port')}"
+        msg += f"[B]Torrest Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_host')}\n"
+        msg += f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
     except:
         pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
