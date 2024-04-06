@@ -1,4 +1,9 @@
 
+## 0.2.3 (2024-04-06)
+* Added jacktorr torrent client support
+* Added jacktorr managment from addon instead of torrest
+* Other minor improvements and fixes
+
 ## 0.2.2 (2024-03-22)
 * Added autoplay feature
 * Added clients timeouts and cache activation settings
