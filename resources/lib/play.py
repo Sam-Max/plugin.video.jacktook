@@ -5,8 +5,8 @@ from resources.lib.utils.kodi import (
     get_kodi_version,
     get_setting,
     is_elementum_addon,
+    is_jacktorr_addon,
     is_torrest_addon,
-    log,
     notify,
     set_property,
     translation,
@@ -86,7 +86,7 @@ def play(
             player.run(list_item)
 
 
-def make_listing(list_item, mode, url, title, ids, tv_data):
+def make_listing(list_item, mode, url="", title="", ids="", tv_data=""):
     list_item.setPath(url)
     list_item.setContentLookup(False)
     list_item.setLabel(title)
@@ -150,11 +150,15 @@ def get_elementum_url(magnet, mode, ids):
 
 
 def get_jacktorr_url(magnet, url):
+    if not is_jacktorr_addon():
+        notify(translation(30253))
+        return
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
     else:
         _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
     return _url
+
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():

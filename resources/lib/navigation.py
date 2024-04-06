@@ -2,17 +2,22 @@ from functools import wraps
 import logging
 import os
 from threading import Thread
+
+import requests
 from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
-from resources.lib.api.torrest_api import STATUS_PAUSED, STATUS_SEEDING, Torrest
+from resources.lib.api.jacktorr_api import (
+    TorrServer,
+)
 from resources.lib.clients import search_api
 from resources.lib.debrid import check_debrid_cached
 from resources.lib.files_history import last_files
 from resources.lib.indexer import indexer_show_results
-from resources.lib.play import play
+from resources.lib.play import make_listing, play
 from resources.lib.player import JacktookPlayer
 from resources.lib.simkl import search_simkl_episodes
 from resources.lib.titles_history import last_titles
+from resources.lib.utils.kodi_formats import is_music, is_picture, is_text
 from resources.lib.utils.pm_utils import get_pm_link, get_pm_pack
 from resources.lib.utils.rd_utils import get_rd_link, get_rd_pack, get_rd_pack_link
 from routing import Plugin
@@ -28,13 +33,13 @@ from resources.lib.utils.utils import (
     clear,
     clear_all_cache,
     clear_tmdb_cache,
+    get_password,
+    get_service_host,
+    get_username,
     post_process,
     pre_process,
     search_fanart_tv,
-    get_credentials,
     get_port,
-    get_service_address,
-    get_state_string,
     is_video,
     list_item,
     set_pack_art,
@@ -51,7 +56,7 @@ from resources.lib.utils.kodi import (
     EPISODES_TYPE,
     MOVIES_TYPE,
     SHOWS_TYPE,
-    TORREST_ADDON,
+    JACKTORR_ADDON,
     action,
     addon_settings,
     addon_status,
@@ -67,22 +72,25 @@ from resources.lib.utils.kodi import (
     play_media,
     refresh,
     set_view,
+    show_picture,
     translation,
 )
-from xbmcgui import ListItem, DialogProgressBG
+from xbmcgui import ListItem, DialogProgressBG, Dialog
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
-    setPluginCategory,
     setResolvedUrl,
+    setPluginCategory,
     setContent,
 )
 
 plugin = Plugin()
 
-if TORREST_ADDON:
-    api = Torrest(get_service_address(), get_port(), get_credentials(), ssl_enabled())
+if JACKTORR_ADDON:
+    api = TorrServer(
+        get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
+    )
 
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
@@ -113,7 +121,21 @@ def query_arg(name, required=True):
     return decorator
 
 
+def check_directory(func):
+    def wrapper(*args, **kwargs):
+        succeeded = False
+        try:
+            ret = func(*args, **kwargs)
+            succeeded = True
+            return ret
+        finally:
+            endOfDirectory(plugin.handle, succeeded=succeeded)
+
+    return wrapper
+
+
 @plugin.route("/")
+@check_directory
 def main_menu():
     setPluginCategory(plugin.handle, "Main Menu")
     addDirectoryItem(
@@ -181,10 +203,9 @@ def main_menu():
         isFolder=True,
     )
 
-    endOfDirectory(plugin.handle)
-
 
 @plugin.route("/direct")
+@check_directory
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
@@ -204,10 +225,10 @@ def direct_menu():
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
-    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/anime")
+@check_directory
 def anime_menu():
     addDirectoryItem(
         plugin.handle,
@@ -230,10 +251,10 @@ def anime_menu():
         list_item("Trending", "movies.png"),
         isFolder=True,
     )
-    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/genre")
+@check_directory
 def genre_menu():
     addDirectoryItem(
         plugin.handle,
@@ -247,7 +268,6 @@ def genre_menu():
         list_item("Movies", "movies.png"),
         isFolder=True,
     )
-    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
@@ -426,111 +446,56 @@ def play_torrent(
     )
 
 
-@plugin.route("/play_url")
-def play_url():
-    info_hash, file_id = plugin.args["query"][0].split(" ")
-    serve_url = api.serve_url(info_hash, file_id)
-    name = api.torrent_info(info_hash).name
-
-    list_item = ListItem(name, path=serve_url)
-    setResolvedUrl(plugin.handle, True, list_item)
-
-    player = JacktookPlayer()
-    list_item = player.make_listing(list_item, serve_url, name)
-    player.run(list_item)
-
-
 @plugin.route("/torrents")
+@check_directory
 def torrents():
-    if TORREST_ADDON:
+    if JACKTORR_ADDON:
         for torrent in api.torrents():
-            context_menu_items = [
-                (
-                    translation(30700),
-                    play_info_hash(torrent.info_hash),
-                )
-            ]
+            info_hash = torrent.get("hash")
 
-            if torrent.status.state not in (STATUS_SEEDING, STATUS_PAUSED):
+            context_menu_items = [(translation(30700), play_info_hash(info_hash))]
+
+            if torrent.get("stat") in [2, 3]:
                 context_menu_items.append(
                     (
-                        translation(30701),
-                        action(plugin, torrent_action, torrent.info_hash, "stop"),
-                    )
-                    if torrent.status.total == torrent.status.total_wanted
-                    else (
-                        translation(30702),
-                        action(plugin, torrent_action, torrent.info_hash, "download"),
+                        translation(30709),
+                        action(plugin, torrent_action, info_hash, "drop"),
                     )
                 )
 
             context_menu_items.extend(
                 [
                     (
-                        (
-                            translation(30703),
-                            action(plugin, torrent_action, torrent.info_hash, "resume"),
-                        )
-                        if torrent.status.paused
-                        else (
-                            translation(30704),
-                            action(plugin, torrent_action, torrent.info_hash, "pause"),
-                        )
-                    ),
-                    (
                         translation(30705),
-                        action(
-                            plugin, torrent_action, torrent.info_hash, "remove_torrent"
-                        ),
-                    ),
-                    (
-                        translation(30706),
-                        action(
-                            plugin,
-                            torrent_action,
-                            torrent.info_hash,
-                            "remove_torrent_and_files",
-                        ),
+                        action(plugin, torrent_action, info_hash, "remove_torrent"),
                     ),
                     (
                         translation(30707),
-                        action(
-                            plugin, torrent_action, torrent.info_hash, "torrent_status"
-                        ),
+                        action(plugin, torrent_action, info_hash, "torrent_status"),
                     ),
                 ]
             )
 
-            list_item = ListItem(label=torrent.name)
-            list_item.addContextMenuItems(context_menu_items)
+            torrent_li = list_item(torrent.get("title", ""), "download.png")
+            torrent_li.addContextMenuItems(context_menu_items)
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(torrent_files, torrent.info_hash),
-                list_item,
+                plugin.url_for(torrent_files, info_hash),
+                torrent_li,
                 isFolder=True,
             )
-
-        endOfDirectory(plugin.handle)
     else:
-        notify("Addon Torrest not found")
+        notify("Addon JackTorr not found")
 
 
 @plugin.route("/torrents/<info_hash>/<action_str>")
 def torrent_action(info_hash, action_str):
     needs_refresh = True
 
-    if action_str == "stop":
-        api.stop_torrent(info_hash)
-    elif action_str == "download":
-        api.download_torrent(info_hash)
-    elif action_str == "pause":
-        api.pause_torrent(info_hash)
-    elif action_str == "resume":
-        api.resume_torrent(info_hash)
+    if action_str == "drop":
+        api.drop_torrent(info_hash)
     elif action_str == "remove_torrent":
-        api.remove_torrent(info_hash, delete=False)
-    elif action_str == "remove_torrent_and_files":
-        api.remove_torrent(info_hash, delete=True)
+        api.remove_torrent(info_hash)
     elif action_str == "torrent_status":
         torrent_status(info_hash)
         needs_refresh = False
@@ -542,70 +507,90 @@ def torrent_action(info_hash, action_str):
         refresh()
 
 
-@plugin.route("/torrents/<info_hash>/files/<file_id>/<action_str>")
-def file_action(info_hash, file_id, action_str):
-    if action_str == "download":
-        api.download_file(info_hash, file_id)
-    elif action_str == "stop":
-        api.stop_file(info_hash, file_id)
-    else:
-        logging.error("Unknown action '%s'", action_str)
-        return
-    refresh()
-
-
 @plugin.route("/torrents/<info_hash>")
+@check_directory
 def torrent_files(info_hash):
-    files = api.files(info_hash)
-    for f in files:
-        serve_url = api.serve_url(info_hash, f.id)
-        list_item = ListItem(f.name, "download.png")
-        list_item.setPath(serve_url)
+    info = api.get_torrent_info(link=info_hash)
+    file_stats = info.get("file_stats")
+
+    for f in file_stats:
+        name = f.get("path")
+        id = f.get("id")
+        serve_url = api.get_stream_url(link=info_hash, path=f.get("path"), file_id=id)
+        file_li = list_item(name, "download.png")
+        file_li.setPath(serve_url)
 
         context_menu_items = []
-        info_labels = {"title": f.name}
+        info_type = None
+        info_labels = {"title": info.get("title")}
+        kwargs = dict(info_hash=info_hash, file_id=id, path=name)
 
-        if is_video(f.name):
-            info_type = "video"
+        if is_picture(name):
+            url = plugin.url_for(display_picture, **kwargs)
+            file_li.setInfo("pictures", info_labels)
+        elif is_text(name):
+            url = plugin.url_for(display_text, **kwargs)
         else:
-            info_type = None
+            url = serve_url
+            if is_video(name):
+                info_type = "video"
+            elif is_music(name):
+                info_type = "music"
 
-        if info_type:
-            list_item.setInfo(info_type, info_labels)
-            list_item.setProperty("IsPlayable", "true")
-            context_menu_items.append(
-                (translation(30700), buffer_and_play(info_hash, f.id))
-            )
+            if info_type is not None:
+                file_li.setInfo(info_type, info_labels)
+                file_li.setProperty("IsPlayable", "true")
 
-        context_menu_items.append(
-            (
-                translation(30702),
-                action(plugin, file_action, info_hash, f.id, "download"),
-            )
-            if f.status.priority == 0
-            else (
-                translation(30708),
-                action(plugin, file_action, info_hash, f.id, "stop"),
-            )
-        )
+                context_menu_items.append(
+                    (
+                        translation(30700),
+                        buffer_and_play(**kwargs),
+                    )
+                )
 
-        list_item.addContextMenuItems(context_menu_items)
+                file_li.addContextMenuItems(context_menu_items)
 
-        if info_type:
+        if info_type is not None:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(play_url, query=f"{info_hash} {f.id}"),
-                list_item,
-                isFolder=False,
+                plugin.url_for(play_url, url=serve_url, name=name),
+                file_li,
             )
+        else:
+            addDirectoryItem(plugin.handle, url, file_li)
 
-    endOfDirectory(plugin.handle)
+
+@plugin.route("/play_url")
+@query_arg("url")
+@query_arg("name")
+def play_url(url, name):
+    list_item = ListItem(name, path=url)
+    make_listing(list_item, mode="multi", title=name)
+
+    setResolvedUrl(plugin.handle, True, list_item)
+    player = JacktookPlayer()
+    player.set_constants(url)
+    player.run(list_item)
+
+
+@plugin.route("/display_picture/<info_hash>/<file_id>")
+@query_arg("path")
+def display_picture(info_hash, file_id, path):
+    show_picture(api.get_stream_url(link=info_hash, path=path, file_id=file_id))
+
+
+@plugin.route("/display_text/<info_hash>/<file_id>")
+@query_arg("path")
+def display_text(info_hash, file_id, path):
+    r = requests.get(api.get_stream_url(link=info_hash, path=path, file_id=file_id))
+    Dialog().textviewer(path, r.text)
 
 
 @plugin.route("/tv/details")
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
 @query_arg("media_type", required=False)
+@check_directory
 def tv_seasons_details(ids, mode, media_type=None):
     setContent(plugin.handle, SHOWS_TYPE)
     tmdb_id, tvdb_id, _ = ids.split(", ")
@@ -669,13 +654,13 @@ def tv_seasons_details(ids, mode, media_type=None):
         )
 
     set_view("widelist")
-    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/tv/details/season/<tv_name>/<season>")
 @query_arg("ids", required=False)
 @query_arg("mode", required=False)
 @query_arg("media_type", required=False)
+@check_directory
 def tv_episodes_details(tv_name, season, ids, mode, media_type):
     setContent(plugin.handle, EPISODES_TYPE)
     tmdb_id, tvdb_id, _ = ids.split(", ")
@@ -762,7 +747,6 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
         )
 
     set_view("widelist")
-    endOfDirectory(plugin.handle)
 
 
 @plugin.route("/get_rd_link_pack")
@@ -946,10 +930,10 @@ def pm_auth():
 
 
 def torrent_status(info_hash):
-    status = api.torrent_status(info_hash)
+    status = api.get_torrent_info(link=info_hash)
     notify(
-        "{:s} ({:.2f}%)".format(get_state_string(status.state), status.progress),
-        api.torrent_info(info_hash).name,
+        "{}".format(status.get("stat_string")),
+        status.get("name"),
         sound=False,
     )
 

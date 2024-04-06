@@ -20,11 +20,10 @@ from resources.lib.utils.kodi import (
     container_refresh,
     get_cache_expiration,
     get_int_setting,
+    get_jacktorr_setting,
     get_kodi_version,
     get_setting,
-    get_torrest_setting,
     is_cache_enabled,
-    log,
     translation,
 )
 
@@ -747,24 +746,24 @@ def get_state_string(state):
     return translation(30660)
 
 
-def get_service_address():
-    return (
-        "127.0.0.1"
-        if get_torrest_setting("service_enabled")
-        else get_torrest_setting("service_address")
-    )
+def get_service_host():
+    return get_jacktorr_setting("service_host")
 
 
-def get_credentials():
-    return get_torrest_setting("auth_username"), get_torrest_setting("auth_password")
+def get_username():
+    return get_jacktorr_setting("service_login")
+
+
+def get_password():
+    return get_jacktorr_setting("service_password")
 
 
 def ssl_enabled():
-    return get_torrest_setting("ssl_connection")
+    return get_jacktorr_setting("ssl_connection")
 
 
 def get_port():
-    return get_torrest_setting("port")
+    return get_jacktorr_setting("service_port")
 
 
 def unicode_flag_to_country_code(unicode_flag):

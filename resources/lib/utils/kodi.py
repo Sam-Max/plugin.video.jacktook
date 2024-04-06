@@ -14,12 +14,13 @@ SHOWS_TYPE = "tvshows"
 EPISODES_TYPE = "episodes"
 
 TORREST_ADDON_ID = "plugin.video.torrest"
+JACKTORR_ADDON_ID = "plugin.video.jacktorr"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
 
 try:
-    TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
+    JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
 except:
-    TORREST_ADDON = None
+    JACKTORR_ADDON = None
 
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
@@ -31,8 +32,8 @@ ADDON_NAME = ADDON.getAddonInfo("name")
 progressDialog = xbmcgui.DialogProgress()
 
 
-def get_torrest_setting(value, default=None):
-    value = TORREST_ADDON.getSetting(value)
+def get_jacktorr_setting(value, default=None):
+    value = JACKTORR_ADDON.getSetting(value)
     if not value:
         return default
 
@@ -82,9 +83,9 @@ def get_kodi_version():
 def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
     try:
-        TORREST_ADDON = xbmcaddon.Addon("plugin.video.torrest")
-        msg += f"[B]Torrest Server IP/Address[/B]: {TORREST_ADDON.getSetting('service_address')}\n"
-        msg += f"[B]Torrest Server Port[/B]: {TORREST_ADDON.getSetting('port')}"
+        JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
+        msg += f"[B]Torrest Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_address')}\n"
+        msg += f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('port')}"
     except:
         pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
@@ -92,6 +93,10 @@ def addon_status():
 
 def is_torrest_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({TORREST_ADDON_ID})")
+
+
+def is_jacktorr_addon():
+    return xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})")
 
 
 def is_elementum_addon():
@@ -191,23 +196,17 @@ def container_refresh():
     execute_builtin("Container.Refresh")
 
 
-def run_plugin(plugin, func, *args, **kwargs):
-    return xbmc.executebuiltin(
-        "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
-    )
-
-
 def action(plugin, func, *args, **kwargs):
     return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
 
 
 def play_info_hash(info_hash):
-    url = f"plugin://plugin.video.torrest/play_info_hash?info_hash={quote(info_hash)}"
+    url = f"plugin://{JACKTORR_ADDON_ID}/play_info_hash?info_hash={quote(info_hash)}"
     return f"PlayMedia({url})"
 
 
-def buffer_and_play(info_hash, file_id):
-    url = f"plugin://plugin.video.torrest/buffer_and_play?info_hash={info_hash}&file_id={file_id}"
+def buffer_and_play(info_hash, file_id, path):
+    url = f"plugin://{JACKTORR_ADDON_ID}/buffer_and_play?info_hash={info_hash}&file_id={file_id}&path={quote(path)}"
     return f"PlayMedia({url})"
 
 
@@ -217,6 +216,10 @@ def play_media(plugin, func, *args, **kwargs):
 
 def show_busy_dialog():
     execute_builtin("ActivateWindow(busydialognocancel)")
+
+
+def show_picture(url):
+    xbmc.executebuiltin('ShowPicture("{}")'.format(url))
 
 
 def container_refresh():

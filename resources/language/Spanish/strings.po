@@ -212,6 +212,10 @@ msgctxt "#30252"
 msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr "El Addon de Elementum no esta instalado - (plugin.video.elementum)"
 
+msgctxt "#30253"
+msgid "Addon JackTorr not found - (plugin.video.jacktorr)"
+msgstr "El Addon JackTorr no esta instalado - (plugin.video.jacktorr)"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "Encolado"
@@ -295,3 +299,7 @@ msgstr "Detener"
 msgctxt "#30800"
 msgid "Choose Torrent Client"
 msgstr ""
+
+msgctxt "#30709"
+msgid "Drop torrent"
+msgstr "Drop torrent"
