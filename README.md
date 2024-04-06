@@ -16,6 +16,7 @@ Torrent Search:
 - Elhosted 
 
 Torrent Engines:
+- JackTorr
 - Torrest
 - Elementum
 - Real Debrid 
@@ -35,23 +36,23 @@ Others:
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), so that any updates will be automatically installed.
 
-You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jacktook/releases/download/v0.1.4/plugin.video.jacktook-0.2.2.zip) from github. Please note that, if there are any additional dependencies, they won't be resolved unless the repository is installed.
+You can also install the addon without installing its repository. To do so, get the [latest release](https://github.com/Sam-Max/plugin.video.jacktook/releases/download/v0.1.4/plugin.video.jacktook-0.2.2.zip) from github. Please note that,  if there are any additional dependencies, they won't be resolved unless the repository is installed.
 
 ## Steps.
 
 1. Install this addon (recommended way of installing the addon is through its repository)
 
-2. Add configuration on addon settings to connect with Jackett, Prowlarr or Torrentio. 
+2. Add configuration on addon settings to connect with Jackett or Prowlarr (optional if using Torrentio or Elfhosted)
 
-3. Install either [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
+3. Install either [JackTorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
 
 
 **Notes**:
-1. Jackett and Prowlarr are optional if using Torrentio/Elfhosted.
-1. Torrest/Elementum is optional if using Debrid service.
+1. JackTorr/Torrest/Elementum are optional if using debrid services (Real Debrid or Premiumize)
 2. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
 3. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to improve search speed and results.
-4. You can deploy/install on a remote server (instructions more below) the [Torrest Service](https://github.com/i96751414/torrest-cpp) (torrent client that comes built-in on Torrest Addon that provides an API specially made for streaming). After that, you need to configure Torrest Addon with the Torrest Service IP/Domain and Port.
+4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses JackTorr Addon). After that, you need to configure JackTorr Addon with the TorrServer Engine IP/Domain and Port.
+5. You can deploy/install on a remote server (instructions more below) the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
 5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
 ## How to run Jackett service using Docker:
@@ -62,7 +63,31 @@ Detailed instructions are available at [LinuxServer.io Jackett Docker](https://h
 
 Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
 
-## How to run Torrest service using Docker (optional):
+
+## How to run JackTorr Engine using Docker Compose (optional):
+
+```
+version: '3.3'
+services:
+    torrserver:
+        image: ghcr.io/yourok/torrserver
+        container_name: torrserver
+        environment:
+            - TS_PORT=5665
+            - TS_DONTKILL=1
+            - TS_HTTPAUTH=0
+            - TS_CONF_PATH=/opt/ts/config
+            - TS_TORR_DIR=/opt/ts/torrents
+        volumes:
+            - './CACHE:/opt/ts/torrents'
+            - './CONFIG:/opt/ts/config'
+        ports:
+            - '5665:5665'
+        restart: unless-stopped
+```
+
+
+## How to run Torrest Engine using Docker (optional):
 
 1. Create a Dockerfile with the following content (make sure to check before the latest `VERSION` of the binary and your `OS` and `ARCH` and update accordingly).
 
