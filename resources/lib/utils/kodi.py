@@ -116,8 +116,8 @@ def translation(id_value):
     return ADDON.getLocalizedString(id_value)
 
 
-def log(x):
-    xbmc.log("[JACKTOOK] " + str(x), xbmc.LOGINFO)
+def log(message, level=xbmc.LOGINFO):
+    xbmc.log("[JACKTOOK] " + str(message), level)
 
 
 def get_url(**kwargs):
@@ -350,3 +350,4 @@ def copy2clip(txt):
             p.communicate(input=txt)
         except:
             pass
+

@@ -2,6 +2,7 @@ import json
 import re
 from urllib.parse import quote
 import requests
+from resources.lib.providers import burst_search_episode, burst_search_movie
 from resources.lib.utils.kodi import (
     Keyboard,
     convert_size_to_bytes,
@@ -80,6 +81,9 @@ def search_api(
         dialog.create("Jacktook [COLOR FFFF6B00]Elfhosted[/COLOR]", "Searching...")
         response = client.search(imdb_id, mode, media_type, season, episode)
 
+    elif indexer == Indexer.BURST:
+        response = client.search(imdb_id, query, mode, media_type, season, episode)
+
     if mode == "tv" or media_type == "tv":
         set_cached(response, query, params=(episode, "index"))
     else:
@@ -135,7 +139,46 @@ def get_client(indexer):
 
         return Elfhosted(host)
 
+    elif indexer == Indexer.BURST:
+        return Burst()
 
+
+class Burst:
+    def __init__(self) -> None:
+        pass
+
+    def search(self, imdb_id, query, mode, media_type, season, episode):
+        try:
+            if mode == "tv" or media_type == "tv":
+                results = burst_search_episode(imdb_id, query, season, episode)
+            elif mode == "movie" or media_type == "movie":
+                results = burst_search_movie(imdb_id, query)
+            if results:
+                results = self.parse_response(results)
+            return results
+        except Exception as e:
+            log(f"Burst error: {str(e)}")
+            notify(f"Burst error: {str(e)}")
+
+    def parse_response(self, res):
+        results = []
+        for p, r in res:
+            results.append(
+                {
+                    "title":r.title,
+                    "indexer": r.indexer,
+                    "guid": r.guid,
+                    "infoHash": r.guid,
+                    "size": r.size,
+                    "seeders": r.seeders,
+                    "peers": r.peers,
+                    "debridType": "",
+                    "debridCached": False,
+                    "debridPack": False,
+                }
+            )
+        return results
+    
 class Elfhosted:
     def __init__(self, host) -> None:
         self.host = host.rstrip("/")
