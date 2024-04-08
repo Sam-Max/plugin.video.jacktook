@@ -8,7 +8,7 @@ from resources.lib.utils.kodi import (
     Keyboard,
     container_update,
     get_kodi_version,
-    log,
+    url_for,
 )
 from resources.lib.utils.utils import (
     get_movie_data,
@@ -101,12 +101,9 @@ def tmdb_search(mode, genre_id, page, func, plugin):
         return {}
 
 
-def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre_id=0):
+def tmdb_show_results(results, next_func, page, plugin, mode, genre_id=0):
     with ThreadPoolExecutor(max_workers=len(results)) as executor:
-        [
-            executor.submit(tmdb_show_items, res, func, func2, plugin, mode)
-            for res in results
-        ]
+        [executor.submit(tmdb_show_items, res, plugin, mode) for res in results]
         executor.shutdown(wait=True)
 
     list_item = ListItem(label="Next")
@@ -124,7 +121,7 @@ def tmdb_show_results(results, func, func2, next_func, page, plugin, mode, genre
     endOfDirectory(plugin.handle)
 
 
-def tmdb_show_items(res, func, func2, plugin, mode):
+def tmdb_show_items(res, plugin, mode):
     tmdb_id = res.id
     duration = ""
     media_type = res.get("media_type", "")
@@ -172,7 +169,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
             overview,
             air_date=release_date,
             duration=duration,
-            ids=ids
+            ids=ids,
         )
     else:
         set_video_info(
@@ -182,7 +179,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
             overview,
             air_date=release_date,
             duration=duration,
-            ids=ids
+            ids=ids,
         )
 
     list_item.setArt(
@@ -200,8 +197,7 @@ def tmdb_show_items(res, func, func2, plugin, mode):
                 (
                     "Rescrape item",
                     container_update(
-                        plugin,
-                        func,
+                        name="search",
                         mode=mode,
                         query=title,
                         ids=ids,
@@ -212,8 +208,8 @@ def tmdb_show_items(res, func, func2, plugin, mode):
         )
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(
-                func,
+            url_for(
+                name="search",
                 mode=mode,
                 query=title,
                 ids=ids,
@@ -224,7 +220,12 @@ def tmdb_show_items(res, func, func2, plugin, mode):
     else:
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(func2, ids=ids, mode=mode, media_type=media_type),
+            url_for(
+                name="tv/details",
+                ids=ids,
+                mode=mode,
+                media_type=media_type,
+            ),
             list_item,
             isFolder=True,
         )

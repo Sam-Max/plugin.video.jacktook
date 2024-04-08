@@ -285,8 +285,6 @@ def search_tmdb(mode, genre_id, page):
             return
         tmdb_show_results(
             data.results,
-            func=search,
-            func2=tv_seasons_details,
             next_func=next_page,
             page=page,
             plugin=plugin,
@@ -366,9 +364,6 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 ids,
                 tv_data,
                 plugin,
-                func=play_torrent,
-                func2=show_pack,
-                func3=download,
             )
         else:
             notify("No results")
@@ -720,8 +715,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
                 (
                     "Rescrape item",
                     container_update(
-                        plugin,
-                        search,
+                        name="search",
                         mode=mode,
                         query=tv_name,
                         ids=ids,
@@ -791,7 +785,6 @@ def show_pack(ids, query, mode, tv_data=""):
                     ids,
                     tv_data,
                     debrid_type,
-                    func=get_rd_link_pack,
                     plugin=plugin,
                 )
                 set_pack_art(list_item)
@@ -809,7 +802,6 @@ def show_pack(ids, query, mode, tv_data=""):
                     ids,
                     tv_data,
                     debrid_type,
-                    func=play_torrent,
                     plugin=plugin,
                 )
                 set_pack_art(list_item)
@@ -819,23 +811,19 @@ def show_pack(ids, query, mode, tv_data=""):
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
     setContent(plugin.handle, MOVIES_TYPE)
-    search_anilist(
-        category, page, plugin, search, get_anime_episodes, next_page_anilist
-    )
+    search_anilist(category, page, plugin)
 
 
 @plugin.route("/next_page/anilist/<category>/<page>")
 def next_page_anilist(category, page):
     setContent(plugin.handle, MOVIES_TYPE)
     page = int(page) + 1
-    search_anilist(
-        category, page, plugin, search, get_anime_episodes, next_page_anilist
-    )
+    search_anilist(category, page, plugin)
 
 
 @plugin.route("/anilist/episodes/<query>/<id>/<mal_id>")
 def get_anime_episodes(query, id, mal_id):
-    search_simkl_episodes(query, id, mal_id, func=search, plugin=plugin)
+    search_simkl_episodes(query, id, mal_id, plugin=plugin)
 
 
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
@@ -844,8 +832,9 @@ def next_page(mode, page, genre_id):
 
 
 @plugin.route("/download")
-def download():
-    magnet, debrid_type = plugin.args["query"][0].split(" ")
+@query_arg("query", required=True)
+def download(query):
+    magnet, debrid_type = query.split(" ")
     response = dialogyesno(
         "Kodi", "Do you want to transfer this file to your Debrid Cloud?"
     )
@@ -897,12 +886,12 @@ def history():
 
 @plugin.route("/history/titles")
 def titles():
-    last_titles(plugin, clear_history, tv_seasons_details, search)
+    last_titles(plugin)
 
 
 @plugin.route("/history/files")
 def files():
-    last_files(plugin, clear_history, play_torrent)
+    last_files(plugin)
 
 
 @plugin.route("/clear_cached_tmdb")

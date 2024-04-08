@@ -3,7 +3,7 @@ from resources.lib.anilist import anilist_client
 from resources.lib.debrid import get_magnet_from_uri
 from resources.lib.tmdb import TMDB_POSTER_URL
 from resources.lib.utils.kodi import (
-    action,
+    action2,
     bytes_to_human_readable,
     set_view,
 )
@@ -23,9 +23,7 @@ from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 
 
-def indexer_show_results(
-    results, mode, query, ids, tv_data, plugin, func, func2, func3
-):
+def indexer_show_results(results, mode, query, ids, tv_data, plugin):
     poster = ""
     overview = ""
     description_length = get_description_length()
@@ -92,7 +90,6 @@ def indexer_show_results(
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
                 add_pack_item(
                     list_item,
-                    func2,
                     tv_data,
                     ids,
                     info_hash,
@@ -117,7 +114,6 @@ def indexer_show_results(
                     is_debrid=True,
                     debrid_type=debrid_type,
                     mode=mode,
-                    func=func,
                     plugin=plugin,
                 )
         else:
@@ -150,7 +146,7 @@ def indexer_show_results(
                     [
                         (
                             "Download to Debrid",
-                            action(plugin, func3, query=f"{magnet} {debrid_type}"),
+                            action2(name="download", query=f"{magnet} {debrid_type}"),
                         )
                     ]
                 )
@@ -162,10 +158,8 @@ def indexer_show_results(
                 magnet=magnet,
                 is_torrent=True,
                 mode=mode,
-                func=func,
                 plugin=plugin,
             )
 
     set_view("widelist")
     endOfDirectory(plugin.handle)
-    

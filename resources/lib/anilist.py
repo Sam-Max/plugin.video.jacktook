@@ -1,10 +1,25 @@
 import os
 from resources.lib.api.anilist_api import AniList
 from resources.lib.db.database import get_db
-from resources.lib.utils.utils import search_fanart_tv, get_cached, set_cached, set_video_info, set_video_infotag, tmdb_get
+from resources.lib.utils.utils import (
+    search_fanart_tv,
+    get_cached,
+    set_cached,
+    set_video_info,
+    set_video_infotag,
+    tmdb_get,
+)
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from resources.lib.utils.kodi import ADDON_PATH, Keyboard, get_kodi_version, get_setting, notify
+from resources.lib.utils.kodi import (
+    ADDON_PATH,
+    Keyboard,
+    get_kodi_version,
+    get_setting,
+    notify,
+    url_for,
+    url_for_path,
+)
 
 
 anilist_client_id = get_setting("anilist_client_id", "14375")
@@ -20,7 +35,7 @@ def anilist_client():
     )
 
 
-def search_anilist(category, page, plugin, func, func2, func3):
+def search_anilist(category, page, plugin):
     client = anilist_client()
 
     if category == "search":
@@ -44,9 +59,6 @@ def search_anilist(category, page, plugin, func, func2, func3):
 
     anilist_show_results(
         data,
-        func=func,
-        func2=func2,
-        func3=func3,
         category=category,
         page=page,
         plugin=plugin,
@@ -68,7 +80,7 @@ def search_anilist_api(type, client, page):
     return message, data
 
 
-def anilist_show_results(results, func, func2, func3, category, page, plugin):
+def anilist_show_results(results, category, page, plugin):
     for res in results["ANIME"]:
         _title = res["title"]
         title = _title.get("english")
@@ -101,7 +113,7 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         if fanart_data:
             poster = fanart_data.get("poster")
             fanart = fanart_data.get("fanart")
-            clearlogo = fanart_data.get("clearlogo") 
+            clearlogo = fanart_data.get("clearlogo")
         else:
             fanart = poster = res["coverImage"]["large"]
             clearlogo = ""
@@ -135,15 +147,15 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
         if format in ["TV", "OVA"]:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(func2, query=title, id=id, mal_id=mal_id),
+                url_for_path(name="anilist/episodes", path=f"{title}/{id}/{mal_id}"),
                 list_item,
                 isFolder=True,
             )
         else:
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(
-                    func,
+                url_for(
+                    name="search",
                     mode="movie",
                     query=title,
                     ids=f"{id}, {-1}, {imdb_id}",
@@ -158,7 +170,7 @@ def anilist_show_results(results, func, func2, func3, category, page, plugin):
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func3, category=category, page=page),
+        url_for_path(name="next_page/anilist", path=f"{category}/{page}"),
         list_item,
         isFolder=True,
     )

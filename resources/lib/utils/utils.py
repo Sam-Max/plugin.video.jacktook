@@ -25,6 +25,7 @@ from resources.lib.utils.kodi import (
     get_setting,
     is_cache_enabled,
     translation,
+    url_for,
 )
 
 from resources.lib.tmdbv3api.objs.discover import Discover
@@ -146,13 +147,12 @@ def add_play_item(
     mode="",
     is_torrent=False,
     is_debrid=False,
-    func=None,
     plugin=None,
 ):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(
-            func,
+        url_for(
+            name="play_torrent",
             title=title,
             ids=ids,
             tv_data=tv_data,
@@ -171,12 +171,12 @@ def add_play_item(
 
 
 def add_pack_item(
-    list_item, func, tv_data, ids, info_hash, torrent_id, debrid_type, mode, plugin
+    list_item, tv_data, ids, info_hash, torrent_id, debrid_type, mode, plugin
 ):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(
-            func,
+        url_for(
+            name="show_pack",
             query=f"{info_hash} {torrent_id} {debrid_type}",
             tv_data=tv_data,
             mode=mode,
@@ -188,12 +188,12 @@ def add_pack_item(
 
 
 def set_pack_item_rd(
-    list_item, mode, id, torrent_id, title, ids, tv_data, debrid_type, func, plugin
+    list_item, mode, id, torrent_id, title, ids, tv_data, debrid_type, plugin
 ):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(
-            func,
+        url_for(
+            name="get_rd_link_pack",
             args=f"{id} {torrent_id} {debrid_type} {title}",
             mode=mode,
             ids=ids,
@@ -204,13 +204,11 @@ def set_pack_item_rd(
     )
 
 
-def set_pack_item_pm(
-    list_item, mode, url, title, ids, tv_data, debrid_type, func, plugin
-):
+def set_pack_item_pm(list_item, mode, url, title, ids, tv_data, debrid_type, plugin):
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(
-            func,
+        url_for(
+            name="play_torrent",
             title=title,
             url=url,
             ids=ids,

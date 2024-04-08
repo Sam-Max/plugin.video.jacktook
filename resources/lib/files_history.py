@@ -1,6 +1,6 @@
 import os
 from resources.lib.db.database import get_db
-from resources.lib.utils.kodi import ADDON_PATH
+from resources.lib.utils.kodi import ADDON_PATH, url_for, url_for_path
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -9,7 +9,7 @@ from xbmcplugin import (
 )
 
 
-def last_files(plugin, func1, func2):
+def last_files(plugin):
     setPluginCategory(plugin.handle, f"Last Files - History")
 
     list_item = ListItem(label="Clear Files")
@@ -18,7 +18,7 @@ def last_files(plugin, func1, func2):
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(func1, type="lfh"),
+        url_for_path(name="history/clear", path="lfh"),
         list_item,
     )
 
@@ -30,11 +30,11 @@ def last_files(plugin, func1, func2):
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
         )
         list_item.setProperty("IsPlayable", "true")
-        
+
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(
-                func2,
+            url_for(
+                name="play_torrent",
                 title=title,
                 ids=data.get("ids"),
                 tv_data=data.get("tv_data"),

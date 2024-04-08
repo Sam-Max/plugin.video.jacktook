@@ -2,7 +2,7 @@ import os
 import re
 from resources.lib.api.fma_api import FindMyAnime
 from resources.lib.api.simkl_api import SIMKLAPI
-from resources.lib.utils.kodi import ADDON_PATH, get_kodi_version, log
+from resources.lib.utils.kodi import ADDON_PATH, get_kodi_version, log, url_for
 from resources.lib.utils.utils import (
     get_cached,
     set_cached,
@@ -16,7 +16,7 @@ from xbmcplugin import addDirectoryItem, endOfDirectory
 IMAGE_PATH = "https://wsrv.nl/?url=https://simkl.in/episodes/%s_w.webp"
 
 
-def search_simkl_episodes(title, id, mal_id, func, plugin):
+def search_simkl_episodes(title, id, mal_id, plugin):
     fma = FindMyAnime()
     data = fma.get_anime_data(id, "Anilist")
     s_id = extract_season(data[0]) if data else ""
@@ -35,7 +35,7 @@ def search_simkl_episodes(title, id, mal_id, func, plugin):
 
     _, res = search_simkl_api(id, mal_id, type="anime_episodes")
 
-    simkl_parse_show_results(res, title, id, imdb_id, season, func, plugin)
+    simkl_parse_show_results(res, title, id, imdb_id, season, plugin)
 
 
 def search_simkl_api(id, mal_id, type):
@@ -59,7 +59,7 @@ def search_simkl_api(id, mal_id, type):
     return message, data
 
 
-def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin):
+def simkl_parse_show_results(response, title, id, imdb_id, season, plugin):
     for res in response:
         if res["type"] == "episode":
             ep_name = res.get("title")
@@ -111,8 +111,8 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, func, plugin)
 
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(
-                    func,
+                url_for(
+                    name="search",
                     mode="tv",
                     query=title,
                     ids=f"{id}, {-1}, {imdb_id}",

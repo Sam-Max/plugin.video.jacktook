@@ -84,7 +84,9 @@ def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
     try:
         msg += f"[B]Torrest Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_host')}\n"
-        msg += f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
+        msg += (
+            f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
+        )
     except:
         pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
@@ -181,14 +183,14 @@ def close_all_dialog():
     execute_builtin("Dialog.Close(all,true)")
 
 
-def container_update(plugin, func, *args, **kwargs):
+def container_update(name, **kwargs):
     """
     Update the container to the specified path.
 
     :param path: The path where to update.
     :type path: str
     """
-    return "Container.Update({})".format(plugin.url_for(func, *args, **kwargs))
+    return "Container.Update({})".format(url_for2(name, kwargs))
 
 
 def container_refresh():
@@ -197,6 +199,27 @@ def container_refresh():
 
 def action(plugin, func, *args, **kwargs):
     return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
+
+
+def action2(name, **kwargs):
+    return "RunPlugin({})".format(url_for2(name, kwargs))
+
+
+def url_for2(name, obj):
+    qs_kwargs = dict(((k, v) for k, v in list(obj.items())))
+    query = "?" + urlencode(qs_kwargs) if qs_kwargs else ""
+    return f"plugin://{ADDON_ID}/{name}" + query
+
+
+def url_for(name, **kwargs):
+    qs_kwargs = dict(((k, v) for k, v in list(kwargs.items())))
+    query = "?" + urlencode(qs_kwargs) if qs_kwargs else ""
+    return f"plugin://{ADDON_ID}/{name}" + query
+
+
+def url_for_path(name, path):
+    path = path if path.startswith("/") else "/" + path
+    return f"plugin://{ADDON_ID}/{name}" + path
 
 
 def play_info_hash(info_hash):
