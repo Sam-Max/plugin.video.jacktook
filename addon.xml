@@ -8,6 +8,7 @@
   <extension point="xbmc.python.pluginsource" library="jacktook.py">
     <provides>video</provides>
   </extension>
+  <extension point="xbmc.python.module" library="resources/lib/api"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">jacktook</summary>
     <description lang="en">Kodi addon for torrent streaming</description>

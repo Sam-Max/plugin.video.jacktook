@@ -12,7 +12,7 @@
         <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted" default="Torrentio"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst" default="Torrentio"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="30025" default=""/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>

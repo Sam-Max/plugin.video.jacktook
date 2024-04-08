@@ -120,6 +120,7 @@ class Indexer(Enum):
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
     ELHOSTED = "Elfhosted"
+    BURST = "Burst"
 
 
 def list_item(label, icon):
@@ -545,6 +546,8 @@ def limit_results(results):
         limit = get_int_setting("torrentio_results_per_page")
     elif indexer == Indexer.ELHOSTED:
         limit = get_int_setting("elfhosted_results_per_page")
+    else:
+        limit = 20
     return results[:limit]
 
 
@@ -558,6 +561,9 @@ def get_description_length():
         desc_length = "torrentio_desc_length"
     elif indexer == Indexer.ELHOSTED:
         desc_length = "elfhosted_desc_length"
+    else:
+        desc_length = 150
+        return desc_length
     return int(get_setting(desc_length))
 
 
@@ -624,6 +630,8 @@ def sort_results(first_res, second_res=None):
         sort_by = get_setting("torrentio_sort_by")
     elif indexer == Indexer.ELHOSTED:
         sort_by = get_setting("elfhosted_sort_by")
+    else:
+        sort_by = "None"
 
     if sort_by == "None":
         return first_res
@@ -779,3 +787,7 @@ def unicode_flag_to_country_code(unicode_flag):
 
     country_code = first_letter.lower() + second_letter.lower()
     return country_code
+
+
+
+
