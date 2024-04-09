@@ -1,15 +1,13 @@
 import copy
 import requests
-import io
-
+import requests
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
 from resources.lib.api.premiumize_api import Premiumize
 from resources.lib.api.real_debrid_api import RealDebrid
 from resources.lib.utils.kodi import get_setting, log
-
-from resources.lib.torf._torrent import Torrent
 from resources.lib.utils.rd_utils import add_rd_magnet
+from resources.lib.utils.torrent_utils import extract_magnet_from_url
 from resources.lib.utils.utils import (
     Indexer,
     get_cached,
@@ -35,7 +33,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                 cached_results = get_cached(query, params=(episode, "deb"))
             else:
                 cached_results = get_cached(query, params=("deb"))
-            
+
             if cached_results:
                 return cached_results
 
@@ -192,7 +190,7 @@ def get_magnet_and_infohash(results, lock):
 
 
 def get_magnet_from_uri(uri):
-    magnet_link = ""
+    magnet = ""
     info_hash = ""
 
     if is_url(uri):
@@ -202,19 +200,18 @@ def get_magnet_from_uri(uri):
         if res.is_redirect:
             uri = res.headers.get("Location")
             if uri.startswith("magnet:"):
-                magnet_link = uri
+                magnet = uri
                 info_hash = get_info_hash_from_magnet(uri)
         elif (
             res.status_code == 200
-            and res.headers.get("Content-Type") == "application/x-bittorrent"
+            and res.headers.get("Content-Type") == "application/octet-stream"
         ):
-            torrent = Torrent.read_stream(io.BytesIO(res.content))
-            magnet_link = str(torrent.magnet())
-            info_hash = torrent.magnet().infohash
+            magnet = extract_magnet_from_url(uri)
+            log(magnet)
         else:
-            log(f"Could not get torrent data from: {uri}")
-            
-    return magnet_link, info_hash
+            log(f"Failed to extract torrent data from: {uri}")
+
+    return magnet, info_hash
 
 
 def debrid_dialog_update(total, dialog, lock):
@@ -227,3 +224,6 @@ def debrid_dialog_update(total, dialog, lock):
             f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
             f"Checking: {dialog_update.get('count')}/{total}",
         )
+
+
+

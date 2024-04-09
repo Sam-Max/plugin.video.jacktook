@@ -5,6 +5,7 @@ from resources.lib.tmdb import TMDB_POSTER_URL
 from resources.lib.utils.kodi import (
     action2,
     bytes_to_human_readable,
+    get_setting,
     set_view,
 )
 from resources.lib.utils.utils import (
@@ -26,6 +27,7 @@ from xbmcplugin import endOfDirectory
 def indexer_show_results(results, mode, query, ids, tv_data, plugin):
     poster = ""
     overview = ""
+    indexer = get_setting("indexer")
     description_length = get_description_length()
 
     if ids:
@@ -59,7 +61,11 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
             date = match.group()
-        size = bytes_to_human_readable(int(res.get("size")))
+        size = (
+            bytes_to_human_readable(int(res.get("size")))
+            if indexer != Indexer.BURST
+            else res.get("size")
+        )
         seeders = res["seeders"]
         tracker = res["indexer"]
 
@@ -130,7 +136,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                         magnet, _ = get_magnet_from_uri(guid)
 
             if not magnet:
-                url = res.get("magnetUrl") or res.get("downloadUrl")
+                url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
                 if url.startswith("magnet:?"):
                     magnet = url
                 else:

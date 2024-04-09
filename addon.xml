@@ -9,6 +9,7 @@
     <provides>video</provides>
   </extension>
   <extension point="xbmc.python.module" library="resources/lib/api"/>
+  <extension point="xbmc.python.module" library="resources/lib/bencodepy"/>
   <extension point="xbmc.addon.metadata">
     <summary lang="en">jacktook</summary>
     <description lang="en">Kodi addon for torrent streaming</description>
