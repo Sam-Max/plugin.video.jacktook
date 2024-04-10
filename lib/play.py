@@ -22,7 +22,7 @@ from xbmcplugin import (
 from xbmcgui import ListItem, Dialog
 
 
-torrent_clients = ["JackTorr", "Torrest", "Elementum"]
+torrent_clients = ["Jacktorr", "Torrest", "Elementum"]
 
 
 def play(
@@ -57,8 +57,8 @@ def play(
         _url = get_torrest_url(magnet, url)
     elif torr_client == "Elementum":
         _url = get_elementum_url(magnet, mode, ids)
-    elif torr_client == "JackTorr":
-        _url = get_jacktorr_url(magnet, mode)
+    elif torr_client == "Jacktorr":
+        _url = get_jacktorr_url(magnet, url)
     elif torr_client == "Debrid":
         _url = url
     elif torr_client == "All":
@@ -72,8 +72,8 @@ def play(
                 _url = get_torrest_url(magnet, url)
             elif torrent_clients[chosen_client] == "Elementum":
                 _url = get_elementum_url(magnet, mode, ids)
-            elif torrent_clients[chosen_client] == "JackTorr":
-                _url = get_jacktorr_url(magnet, mode)
+            elif torrent_clients[chosen_client] == "Jacktorr":
+                _url = get_jacktorr_url(magnet, url)
 
     if _url:
         list_item = ListItem(title, path=_url)

@@ -69,6 +69,7 @@ from lib.utils.kodi import (
     dialogyesno,
     get_kodi_version,
     get_setting,
+    log,
     notify,
     play_info_hash,
     play_media,
@@ -356,9 +357,8 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                             return
                     else:
                         notify("No debrid results")
-                        p_dialog.close()
                         return
-                elif torr_client in ["Torrest", "Elementum", "JackTorr"]:
+                elif torr_client in ["Torrest", "Elementum", "Jacktorr"]:
                     final_results = post_process(proc_results)
                 indexer_show_results(
                     final_results,
@@ -477,7 +477,7 @@ def torrents():
                 isFolder=True,
             )
     else:
-        notify("Addon JackTorr not found")
+        notify("Addon Jacktorr not found")
 
 
 @plugin.route("/torrents/<info_hash>/<action_str>")

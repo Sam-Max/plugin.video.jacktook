@@ -72,6 +72,7 @@ def search_client(
 
     elif indexer == Indexer.BURST:
         response = client.search(imdb_id, query, mode, media_type, season, episode)
+        dialog.create("")
 
     if mode == "tv" or media_type == "tv":
         set_cached(response, query, params=(episode, "index"))

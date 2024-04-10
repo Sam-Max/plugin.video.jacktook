@@ -228,7 +228,7 @@ msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr ""
 
 msgctxt "#30253"
-msgid "Addon JackTorr not found - (plugin.video.jacktorr)"
+msgid "Addon Jacktorr not found - (plugin.video.jacktorr)"
 msgstr ""
 
 msgctxt "#30650"

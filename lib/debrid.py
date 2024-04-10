@@ -9,6 +9,7 @@ from lib.utils.kodi import get_setting, log
 from lib.utils.rd_utils import add_rd_magnet
 from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
+    USER_AGENT_HEADER,
     Indexer,
     get_cached,
     get_info_hash_from_magnet,
@@ -20,11 +21,6 @@ from lib.utils.utils import (
 
 
 dialog_update = {"count": -1, "percent": 50}
-
-USER_AGENT_HEADER = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
-}
-
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
@@ -124,7 +120,7 @@ def check_rd_cached(client, res, cached_results, uncached_result, total, dialog,
                     res["debridCached"] = False
                     uncached_result.append(res)
     except Exception as e:
-        kodilog(f"Error: {str(e)}")
+        log(f"Error: {str(e)}")
 
 
 def check_pm_cached(client, res, cached_results, uncached_result, total, dialog, lock):
@@ -169,9 +165,12 @@ def check_pm_cached(client, res, cached_results, uncached_result, total, dialog,
 def get_magnet_and_infohash(results, lock):
     with lock:
         for res in results:
-            guid = res.get("guid")
-            if guid:
+            magnet = ""
+            info_hash = ""
+
+            if guid := res.get("guid"):
                 if guid.startswith("magnet:?") or len(guid) == 40:
+                    magnet = guid
                     info_hash = (
                         res["infoHash"].lower()
                         if res.get("infoHash")
@@ -179,13 +178,17 @@ def get_magnet_and_infohash(results, lock):
                     )
                 else:
                     # For some indexers, the guid is a torrent file url
-                    download_url = res.get("guid")
-                    guid, info_hash = get_magnet_from_uri(download_url)
-            else:
-                download_url = res.get("magnetUrl") or res.get("downloadUrl")
-                guid, info_hash = get_magnet_from_uri(download_url)
+                    magnet, info_hash = get_magnet_from_uri(res.get("guid"))
 
-            res["magnet"] = guid
+            if not (magnet and info_hash):
+                url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
+                if url.startswith("magnet:?"):
+                    magnet = url
+                    info_hash = get_info_hash_from_magnet(url).lower()
+                else:
+                    magnet, info_hash = get_magnet_from_uri(url)
+
+            res["magnet"] = magnet
             res["infoHash"] = info_hash
 
 
@@ -201,13 +204,12 @@ def get_magnet_from_uri(uri):
             uri = res.headers.get("Location")
             if uri.startswith("magnet:"):
                 magnet = uri
-                info_hash = get_info_hash_from_magnet(uri)
+                info_hash = get_info_hash_from_magnet(uri).lower()
         elif (
             res.status_code == 200
             and res.headers.get("Content-Type") == "application/octet-stream"
         ):
             magnet = extract_magnet_from_url(uri)
-            log(magnet)
         else:
             log(f"Failed to extract torrent data from: {uri}")
 

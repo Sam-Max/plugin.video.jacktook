@@ -17,7 +17,7 @@ Torrent Search:
 - Elhosted 
 
 Torrent Engines:
-- JackTorr
+- Jacktorr
 - Torrest
 - Elementum
 - Real Debrid 
@@ -45,14 +45,14 @@ You can also install the addon without installing its repository. To do so, get 
 
 2. Add configuration on addon settings to connect with Jackett, Prowlarr or Jacktook Burst (optional if using Torrentio or Elfhosted)
 
-3. Install either [JackTorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
+3. Install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
 
 
 **Notes**:
-1. JackTorr/Torrest/Elementum are optional if using Debrid services (Real Debrid or Premiumize)
+1. Jacktorr/Torrest/Elementum are optional if using Debrid services (Real Debrid or Premiumize)
 2. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
 3. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to improve search speed and results.
-4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses JackTorr Addon). After that, you need to configure JackTorr Addon with the TorrServer Engine IP/Domain and Port.
+4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses Jacktorr Addon). After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
 5. You can deploy/install on a remote server (instructions more below) the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
 5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
@@ -69,7 +69,7 @@ Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#
 See [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
 
 
-## How to run JackTorr Engine using Docker Compose (optional):
+## How to run Jacktorr Engine using Docker Compose (optional):
 
 ```
 version: '3.3'

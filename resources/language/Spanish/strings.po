@@ -213,8 +213,8 @@ msgid "Addon Elementum not found - (plugin.video.elementum)"
 msgstr "El Addon de Elementum no esta instalado - (plugin.video.elementum)"
 
 msgctxt "#30253"
-msgid "Addon JackTorr not found - (plugin.video.jacktorr)"
-msgstr "El Addon JackTorr no esta instalado - (plugin.video.jacktorr)"
+msgid "Addon Jacktorr not found - (plugin.video.jacktorr)"
+msgstr "El Addon Jacktorr no esta instalado - (plugin.video.jacktorr)"
 
 msgctxt "#30650"
 msgid "Queued"

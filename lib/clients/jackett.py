@@ -1,5 +1,5 @@
 import requests
-from lib.utils.kodi import get_jackett_timeout, notify, translation
+from lib.utils.kodi import get_jackett_timeout, notify, translation, log
 from lib import xmltodict
 
 

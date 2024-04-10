@@ -3,6 +3,7 @@ import hashlib
 import os
 import re
 import unicodedata
+import requests
 
 from lib.db.cached import Cache
 from lib.db.database import get_db
@@ -44,6 +45,11 @@ db = get_db()
 PROVIDER_COLOR_MIN_BRIGHTNESS = 50
 
 URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
+
+USER_AGENT_HEADER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
+}
+
 
 video_extensions = (
     ".001",
@@ -131,7 +137,7 @@ class DialogListener:
     @property
     def dialog(self):
         return self._dialog
-    
+
     def __enter__(self):
         return self
 
@@ -739,6 +745,19 @@ def filter_by_quality(results):
 
     combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
     return combined_list
+
+
+def is_torrent_url(uri):
+    res = requests.get(
+        uri, allow_redirects=False, timeout=20, headers=USER_AGENT_HEADER
+    )
+    if (
+        res.status_code == 200
+        and res.headers.get("Content-Type") == "application/octet-stream"
+    ):
+        return True
+    else:
+        return False
 
 
 def supported_video_extensions():

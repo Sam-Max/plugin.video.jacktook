@@ -1,6 +1,5 @@
 import re
 from lib.anilist import anilist_client
-from lib.debrid import get_magnet_from_uri
 from lib.tmdb import TMDB_POSTER_URL
 from lib.utils.kodi import (
     action2,
@@ -16,6 +15,7 @@ from lib.utils.utils import (
     get_description_length,
     get_random_color,
     info_hash_to_magnet,
+    is_torrent_url,
     is_torrent_watched,
     set_video_properties,
     tmdb_get,
@@ -123,8 +123,10 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     plugin=plugin,
                 )
         else:
-            guid = res.get("guid")
-            if guid:
+            magnet = ""
+            url = ""
+
+            if guid := res.get("guid"):
                 if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                     magnet = info_hash_to_magnet(guid)
                 else:
@@ -132,18 +134,15 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                         magnet = guid
                     else:
                         # For some indexers, the guid is a torrent file url
-                        guid = res.get("guid")
-                        magnet, _ = get_magnet_from_uri(guid)
+                        if is_torrent_url(guid):
+                            url = guid
 
-            if not magnet:
-                url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
-                if url.startswith("magnet:?"):
-                    magnet = url
+            if not url:
+                _url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
+                if _url.startswith("magnet:?"):
+                    magnet = _url
                 else:
-                    magnet, _ = get_magnet_from_uri(url)
-
-            if not magnet:
-                continue
+                    url = _url
 
             list_item = ListItem(label=torr_title)
             set_video_properties(list_item, poster, mode, title, overview, ids)
@@ -162,6 +161,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                 tv_data,
                 title,
                 magnet=magnet,
+                url=url,
                 is_torrent=True,
                 mode=mode,
                 plugin=plugin,
