@@ -30,6 +30,7 @@ from lib.tmdb import (
 )
 from lib.anilist import search_anilist
 from lib.utils.utils import (
+    DialogListener,
     clear,
     clear_all_cache,
     clear_tmdb_cache,
@@ -62,6 +63,7 @@ from lib.utils.kodi import (
     addon_status,
     auto_play,
     buffer_and_play,
+    burst_addon_settings,
     close_all_dialog,
     container_update,
     dialogyesno,
@@ -75,7 +77,7 @@ from lib.utils.kodi import (
     show_picture,
     translation,
 )
-from xbmcgui import ListItem, DialogProgressBG, Dialog
+from xbmcgui import ListItem, Dialog
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
     addDirectoryItem,
@@ -306,6 +308,8 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
     elif mode == "tv" or media_type == "tv":
         setContent(plugin.handle, SHOWS_TYPE)
 
+    set_watched_title(query, ids, mode)
+
     if ids:
         _, _, imdb_id = ids.split(", ")
     else:
@@ -316,65 +320,58 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
     else:
         episode = season = 0
         ep_name = ""
-
-    set_watched_title(query, ids, mode)
-
+    
     torr_client = get_setting("torrent_client")
-    p_dialog = DialogProgressBG()
 
-    results = search_client(
-        query, imdb_id, mode, media_type, p_dialog, rescrape, season, episode
-    )
-    if results:
-        proc_results = pre_process(
-            results,
-            mode,
-            ep_name,
-            episode,
-            season,
+    with DialogListener() as listener:
+        p_dialog = listener.dialog
+        results = search_client(
+            query, imdb_id, mode, media_type, p_dialog, rescrape, season, episode
         )
-        if proc_results:
-            if torr_client == "Debrid" or torr_client == "All":
-                deb_cached_results = check_debrid_cached(
-                    query,
-                    proc_results,
-                    mode,
-                    media_type,
-                    p_dialog,
-                    rescrape,
-                    episode,
-                )
-                if deb_cached_results:
-                    final_results = post_process(deb_cached_results)
-                    if auto_play():
-                        close_all_dialog()
-                        p_dialog.close()
-                        play_first_result(deb_cached_results, ids, tv_data, mode)
-                        return
-                else:
-                    notify("No debrid results")
-                    p_dialog.close()
-                    return
-            elif torr_client in ["Torrest", "Elementum", "JackTorr"]:
-                final_results = post_process(proc_results)
-            indexer_show_results(
-                final_results,
+        if results:
+            proc_results = pre_process(
+                results,
                 mode,
-                query,
-                ids,
-                tv_data,
-                plugin,
+                ep_name,
+                episode,
+                season,
             )
+            if proc_results:
+                if torr_client == "Debrid" or torr_client == "All":
+                    deb_cached_results = check_debrid_cached(
+                        query,
+                        proc_results,
+                        mode,
+                        media_type,
+                        p_dialog,
+                        rescrape,
+                        episode,
+                    )
+                    if deb_cached_results:
+                        final_results = post_process(deb_cached_results)
+                        if auto_play():
+                            close_all_dialog()
+                            p_dialog.close()
+                            play_first_result(deb_cached_results, ids, tv_data, mode)
+                            return
+                    else:
+                        notify("No debrid results")
+                        p_dialog.close()
+                        return
+                elif torr_client in ["Torrest", "Elementum", "JackTorr"]:
+                    final_results = post_process(proc_results)
+                indexer_show_results(
+                    final_results,
+                    mode,
+                    query,
+                    ids,
+                    tv_data,
+                    plugin,
+                )
+            else:
+                notify("No results")
         else:
             notify("No results")
-    else:
-        notify("No results")
-
-    try:
-        p_dialog.close()
-    except:
-        pass
-
 
 def play_first_result(results, ids, tv_data, mode):
     for res in results:
@@ -916,6 +913,11 @@ def rd_auth():
 def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
+
+
+@plugin.route("/open_burst_config")
+def open_burst_config():
+    burst_addon_settings()
 
 
 def torrent_status(info_hash):

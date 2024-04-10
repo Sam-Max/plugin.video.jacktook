@@ -39,6 +39,8 @@
         <setting id="prowlarr_results_per_page" type="number" label="30029" default="25"/>
         <setting id="prowlarr_timeout" type="slider" label="30031" option="int" range="1,1,30" default="25"/>
         <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
+        <setting label="Jacktook Burst Configuration" type="lsep"/>
+        <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/open_burst_config)" />
     </category>
     <category label="30150">
         <setting label="30152" type="lsep"/>

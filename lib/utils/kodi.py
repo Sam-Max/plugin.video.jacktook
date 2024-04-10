@@ -16,6 +16,7 @@ EPISODES_TYPE = "episodes"
 TORREST_ADDON_ID = "plugin.video.torrest"
 JACKTORR_ADDON_ID = "plugin.video.jacktorr"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
+JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
 
 try:
     JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
@@ -72,6 +73,11 @@ def set_property(prop, value):
 
 def addon_settings():
     return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ADDON_ID)
+
+
+def burst_addon_settings():
+    close_all_dialog()
+    xbmc.executebuiltin("Addon.OpenSettings(%s)" % JACKTOOK_BURST_ADOON_ID)
 
 
 def get_kodi_version():
@@ -350,4 +356,3 @@ def copy2clip(txt):
             p.communicate(input=txt)
         except:
             pass
-

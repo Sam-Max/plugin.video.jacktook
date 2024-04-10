@@ -32,6 +32,7 @@ from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.trending import Trending
 
 from xbmcgui import ListItem, Dialog
+from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
 
@@ -121,6 +122,24 @@ class Indexer(Enum):
     TORRENTIO = "Torrentio"
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
+
+
+class DialogListener:
+    def __init__(self):
+        self._dialog = DialogProgressBG()
+
+    @property
+    def dialog(self):
+        return self._dialog
+    
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self._dialog.close()
+        except:
+            pass
 
 
 def list_item(label, icon):
@@ -787,7 +806,3 @@ def unicode_flag_to_country_code(unicode_flag):
 
     country_code = first_letter.lower() + second_letter.lower()
     return country_code
-
-
-
-
