@@ -310,12 +310,6 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
         setContent(plugin.handle, SHOWS_TYPE)
 
     set_watched_title(query, ids, mode)
-
-    if ids:
-        _, _, imdb_id = ids.split(", ")
-    else:
-        imdb_id = -1
-
     if tv_data:
         ep_name, episode, season = tv_data.split("(^)")
     else:
@@ -327,7 +321,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
     with DialogListener() as listener:
         p_dialog = listener.dialog
         results = search_client(
-            query, imdb_id, mode, media_type, p_dialog, rescrape, season, episode
+            query, ids, mode, media_type, p_dialog, rescrape, season, episode
         )
         if results:
             proc_results = pre_process(

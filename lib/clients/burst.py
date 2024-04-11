@@ -6,12 +6,12 @@ class Burst:
     def __init__(self, notification) -> None:
         self._notification = notification
 
-    def search(self, imdb_id, query, mode, media_type, season, episode):
+    def search(self, tmdb_id, query, mode, media_type, season, episode):
         try:
             if mode == "tv" or media_type == "tv":
-                results = burst_search_episode(imdb_id, query, season, episode)
+                results = burst_search_episode(tmdb_id, query, season, episode)
             elif mode == "movie" or media_type == "movie":
-                results = burst_search_movie(imdb_id, query)
+                results = burst_search_movie(tmdb_id, query)
             else:
                 results = burst_search(query)
             if results:
@@ -28,7 +28,7 @@ class Burst:
                     "title":r.title,
                     "indexer": r.indexer,
                     "guid": r.guid,
-                    "infoHash": r.guid,
+                    "infoHash": None,
                     "size": r.size,
                     "seeders": r.seeders,
                     "peers": r.peers,

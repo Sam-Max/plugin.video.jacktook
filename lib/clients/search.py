@@ -13,7 +13,7 @@ from lib.utils.utils import (
 
 
 def search_client(
-    query, imdb_id, mode, media_type, dialog, rescrape=False, season=1, episode=1
+    query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
 ):
     if not query:
         text = Keyboard(id=30243)
@@ -33,6 +33,11 @@ def search_client(
             dialog.create("")
             return cached_results
 
+    if ids:
+        tmdb_id, _, imdb_id = ids.split(", ")
+    else:
+        tmdb_id = imdb_id = -1
+    
     indexer = get_setting("indexer")
     client = get_client(indexer)
     if not client:
@@ -71,7 +76,7 @@ def search_client(
         response = client.search(imdb_id, mode, media_type, season, episode)
 
     elif indexer == Indexer.BURST:
-        response = client.search(imdb_id, query, mode, media_type, season, episode)
+        response = client.search(tmdb_id, query, mode, media_type, season, episode)
         dialog.create("")
 
     if mode == "tv" or media_type == "tv":
