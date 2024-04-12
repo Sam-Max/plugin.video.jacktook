@@ -1,3 +1,8 @@
+## 0.2.4 (2024-04-12)
+* Added jacktorr burst upport
+* Improvements on torrent fetch (faster resolve)
+* Other minor improvements and fixes
+
 
 ## 0.2.3 (2024-04-06)
 * Added jacktorr torrent client support
