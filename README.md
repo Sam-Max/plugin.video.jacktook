@@ -124,11 +124,6 @@ CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
 
 ![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
 
-## Donations
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/sammax09)
-
------
 
 ## Disclaimer:
 
