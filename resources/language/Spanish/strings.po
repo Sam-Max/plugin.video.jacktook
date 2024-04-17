@@ -159,6 +159,10 @@ msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
 msgstr "API de Prowlarr incorrecta"
 
+msgctxt "#30226"
+msgid "You need to configure Plex first"
+msgstr "Necesitas configuar Plex primero"
+
 msgctxt "#30227"
 msgid "You need to configure Torrentio first"
 msgstr "Necesitas configurar Torrentio primero"

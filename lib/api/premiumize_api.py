@@ -96,7 +96,7 @@ class DebridClient:
             time.sleep(retry_interval)
             retries += 1
         raise ProviderException(
-            f"Torrent debrid_id not reach {target_status} status.",
+            f"Torrent not reach {target_status} status.",
         )
 
     def get_torrent_info(self, torrent_id):

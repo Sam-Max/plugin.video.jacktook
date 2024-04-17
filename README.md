@@ -23,6 +23,9 @@ Torrent Engines:
 - Real Debrid 
 - Premiumize 
 
+Non-Torrent Search and Play
+- Plex
+
 Metadata:
 - TMDB  
 - AniList, Simkl

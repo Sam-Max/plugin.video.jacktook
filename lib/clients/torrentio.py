@@ -33,7 +33,7 @@ class Elfhosted:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "quality_title": "",
+                    "qualityTitle": "",
                     "indexer": "Elfhosted",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
@@ -88,14 +88,14 @@ class Torrentio:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "quality_title": "",
+                    "qualityTitle": "",
                     "indexer": "Torrentio",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
                     "size": parsed_item["size"],
                     "seeders": parsed_item["seeders"],
                     "languages": parsed_item["languages"],
-                    "full_languages": parsed_item["full_languages"],
+                    "fullLanguages": parsed_item["full_languages"],
                     "publishDate": "",
                     "peers": 0,
                     "debridType": "",

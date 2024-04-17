@@ -53,7 +53,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         if len(title) > description_length:
             title = title[:description_length]
 
-        quality_title = res["quality_title"]
+        quality_title = res.get("qualityTitle", "")
         if len(quality_title) > description_length:
             quality_title = quality_title[:description_length]
 
@@ -62,11 +62,11 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         if match:
             date = match.group()
         size = (
-            bytes_to_human_readable(int(res.get("size")))
+            bytes_to_human_readable(int(res.get("size", 0)))
             if indexer != Indexer.BURST
             else res.get("size")
         )
-        seeders = res["seeders"]
+        seeders = res.get("seeders", "")
         tracker = res["indexer"]
 
         watched = is_torrent_watched(quality_title)
@@ -75,7 +75,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
 
         tracker_color = get_random_color(tracker)
 
-        languages = get_colored_languages(res.get("full_languages", []))
+        languages = get_colored_languages(res.get("fullLanguages", []))
         languages = languages if languages else ""
 
         torr_title = (
@@ -87,12 +87,12 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         debrid_type = res["debridType"]
         debrid_color = get_random_color(debrid_type)
         format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
-
+        
         if res["debridCached"]:
-            debridPack = res["debridPack"]
             info_hash = res.get("infoHash")
             torrent_id = res.get("debridId")
-            if debridPack:
+
+            if res["debridPack"]:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
                 add_pack_item(
                     list_item,
@@ -125,7 +125,6 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         else:
             magnet = ""
             url = ""
-
             if guid := res.get("guid"):
                 if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                     magnet = info_hash_to_magnet(guid)
@@ -136,7 +135,6 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                         # For some indexers, the guid is a torrent file url
                         if is_torrent_url(guid):
                             url = guid
-
             if not url:
                 _url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
                 if _url.startswith("magnet:?"):

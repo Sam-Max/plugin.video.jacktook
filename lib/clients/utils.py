@@ -1,5 +1,6 @@
 from lib.clients.burst import Burst
 from lib.clients.jackett import Jackett
+from lib.clients.plex_client import Plex
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.torrentio import Elfhosted, Torrentio
 from lib.utils.kodi import get_setting, notify, translation
@@ -45,3 +46,12 @@ def get_client(indexer):
 
     elif indexer == Indexer.BURST:
         return Burst(notify)
+
+    elif indexer == Indexer.PLEX:
+        discovery_url = get_setting("plex_discovery_url")
+        access_token = get_setting("plex_server_token")
+        auth_token = get_setting("plex_token")
+        if not discovery_url or not access_token:
+            notify(translation(30226))
+            return
+        return Plex(discovery_url, auth_token, access_token, notify)

@@ -47,7 +47,7 @@ class Prowlarr:
             for r in res:
                 r.update(
                     {
-                        "quality_title": "",
+                        "qualityTitle": "",
                         "debridType": "",
                         "debridCached": False,
                         "debridPack": False,

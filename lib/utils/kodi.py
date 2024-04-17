@@ -110,7 +110,7 @@ def is_elementum_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
 
 
-def auto_play():
+def is_auto_play():
     return get_setting("auto_play")
 
 

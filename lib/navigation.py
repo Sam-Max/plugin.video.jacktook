@@ -15,6 +15,7 @@ from lib.files_history import last_files
 from lib.indexer import indexer_show_results
 from lib.play import make_listing, play
 from lib.player import JacktookPlayer
+from lib.plex import plex_login, plex_logout, validate_server
 from lib.simkl import search_simkl_episodes
 from lib.titles_history import last_titles
 from lib.utils.kodi_formats import is_music, is_picture, is_text
@@ -37,6 +38,7 @@ from lib.utils.utils import (
     get_password,
     get_service_host,
     get_username,
+    is_debrid_activated,
     post_process,
     pre_process,
     search_fanart_tv,
@@ -61,7 +63,6 @@ from lib.utils.kodi import (
     action,
     addon_settings,
     addon_status,
-    auto_play,
     buffer_and_play,
     burst_addon_settings,
     close_all_dialog,
@@ -69,7 +70,7 @@ from lib.utils.kodi import (
     dialogyesno,
     get_kodi_version,
     get_setting,
-    log,
+    is_auto_play,
     notify,
     play_info_hash,
     play_media,
@@ -315,8 +316,9 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
     else:
         episode = season = 0
         ep_name = ""
-    
+
     torr_client = get_setting("torrent_client")
+    indexer = get_setting("indexer")
 
     with DialogListener() as listener:
         p_dialog = listener.dialog
@@ -332,27 +334,26 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 season,
             )
             if proc_results:
-                if torr_client == "Debrid" or torr_client == "All":
-                    deb_cached_results = check_debrid_cached(
-                        query,
-                        proc_results,
-                        mode,
-                        media_type,
-                        p_dialog,
-                        rescrape,
-                        episode,
-                    )
-                    if deb_cached_results:
-                        final_results = post_process(deb_cached_results)
-                        if auto_play():
-                            close_all_dialog()
-                            p_dialog.close()
-                            play_first_result(deb_cached_results, ids, tv_data, mode)
+                if torr_client == "All":
+                    if is_debrid_activated() and indexer in ["Torrest", "Elementum", "Jacktorr", "Burst"]:
+                        final_results = get_debrid_results()
+                        if final_results:
+                            if is_auto_play():
+                                auto_play(final_results, ids, tv_data, mode, p_dialog)
+                        else:
+                            notify("No debrid results")
                             return
+                    else:
+                        final_results = post_process(proc_results)
+                elif torr_client == "Debrid":
+                    results = get_debrid_results()
+                    if final_results:
+                        if is_auto_play():
+                            auto_play(final_results, ids, tv_data, mode, p_dialog)
                     else:
                         notify("No debrid results")
                         return
-                elif torr_client in ["Torrest", "Elementum", "Jacktorr"]:
+                elif torr_client in ["Torrest", "Elementum", "Jacktorr", "Plex"]:
                     final_results = post_process(proc_results)
                 indexer_show_results(
                     final_results,
@@ -366,6 +367,36 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 notify("No results")
         else:
             notify("No results")
+
+
+def auto_play(results, ids, tv_data, mode, p_dialog):
+    close_all_dialog()
+    p_dialog.close()
+    play_first_result(results, ids, tv_data, mode)
+    return
+
+
+def get_debrid_results(
+    query,
+    proc_results,
+    mode,
+    media_type,
+    p_dialog,
+    rescrape,
+    episode,
+):
+    cached_results = check_debrid_cached(
+        query,
+        proc_results,
+        mode,
+        media_type,
+        p_dialog,
+        rescrape,
+        episode,
+    )
+    if cached_results:
+        return post_process(cached_results)
+
 
 def play_first_result(results, ids, tv_data, mode):
     for res in results:
@@ -907,6 +938,21 @@ def rd_auth():
 def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
+
+
+@plugin.route("/plex_auth")
+def plex_auth():
+    plex_login()
+
+
+@plugin.route("/plex_logout")
+def logout():
+    plex_logout()
+
+
+@plugin.route("/plex_validate")
+def plex_validate():
+    validate_server()
 
 
 @plugin.route("/open_burst_config")

@@ -128,6 +128,7 @@ class Indexer(Enum):
     TORRENTIO = "Torrentio"
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
+    PLEX = "Plex"
 
 
 class DialogListener:
@@ -146,6 +147,10 @@ class DialogListener:
             self._dialog.close()
         except:
             pass
+
+
+def is_debrid_activated():
+    return get_setting("real_debrid_enabled") or get_setting("real_debrid_token")
 
 
 def list_item(label, icon):
@@ -723,23 +728,23 @@ def filter_by_quality(results):
     for res in results:
         title = res["title"]
         if "480p" in title:
-            res["quality_title"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
+            res["qualityTitle"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "480p"
             quality_720p.append(res)
         elif "720p" in title:
-            res["quality_title"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
+            res["qualityTitle"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "720p"
             quality_720p.append(res)
         elif "1080p" in title:
-            res["quality_title"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
+            res["qualityTitle"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
             res["Quality"] = "1080p"
             quality_1080p.append(res)
         elif "2160" in title:
-            res["quality_title"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
+            res["qualityTitle"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
             res["Quality"] = "4k"
             quality_4k.append(res)
         else:
-            res["quality_title"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
+            res["qualityTitle"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
             res["Quality"] = "N/A"
             no_quarlity.append(res)
 

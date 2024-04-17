@@ -41,7 +41,7 @@ def extract_result(results, item):
     }
     results.append(
         {
-            "quality_title": "",
+            "qualityTitle": "",
             "title": item.get("title", ""),
             "indexer": item.get("jackettindexer", {}).get("#text", ""),
             "publishDate": item.get("pubDate", ""),
