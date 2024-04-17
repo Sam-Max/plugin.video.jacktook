@@ -1,12 +1,11 @@
 from http import HTTPStatus
-from http.client import HTTPException
 import json
 from time import sleep, time
 from urllib.parse import urlencode
 import requests
 from lib.api.plex.settings import settings
 from lib.api.plex.models.plex_models import AuthPin, PlexUser
-from lib.api.plex.utils import PlexUnauthorizedError
+from lib.api.plex.utils import HTTPException, PlexUnauthorizedError
 from lib.utils.kodi import copy2clip, dialog_ok, progressDialog, log, set_setting
 
 
@@ -20,18 +19,10 @@ class PlexApi:
 
     def login(self):
         auth_pin = self.create_auth_pin()
-        encoded_params = urlencode(
-            {
-                "clientID": settings.identifier,
-                "code": auth_pin.code,
-            }
-        )
-        auth_url = f"{self.PLEX_AUTH_URL}{encoded_params}"
-        log(f"Auth url: {auth_url}")
-        copy2clip(auth_url)
+        copy2clip(auth_pin.code)
         content = "%s[CR]%s" % (
-            f"Navigate to: [B]{auth_url}[/B]",
-            "and login to your PlexTv account"
+            f"Navigate to: [B]https://www.plex.tv/link[/B]",
+            f"and enter the code: [COLOR seagreen][B]{auth_pin.code}[/B][/COLOR] "
         )
         progressDialog.create("Plex Auth")
         progressDialog.update(-1, content)
@@ -58,7 +49,7 @@ class PlexApi:
         response = self.client.post(
             f"{self.PLEX_API_URL}/pins",
             data={
-                "strong": "true",
+                "strong": "false",
                 "X-Plex-Product": settings.product_name,
                 "X-Plex-Client-Identifier": settings.identifier,
             },
@@ -66,7 +57,6 @@ class PlexApi:
             timeout=settings.plex_requests_timeout,
         )
         json = response.json()
-        print(json)
         return AuthPin(**json)
 
     def get_auth_token(self, auth_pin):
