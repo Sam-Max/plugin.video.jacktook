@@ -32,6 +32,8 @@ from lib.tmdb import (
 from lib.anilist import search_anilist
 from lib.utils.utils import (
     DialogListener,
+    Indexer,
+    Players,
     clear,
     clear_all_cache,
     clear_tmdb_cache,
@@ -53,6 +55,8 @@ from lib.utils.utils import (
     set_watched_title,
     ssl_enabled,
     tmdb_get,
+    torrent_clients,
+    torrent_indexers,
 )
 from lib.utils.kodi import (
     ADDON_PATH,
@@ -334,13 +338,8 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 season,
             )
             if proc_results:
-                if torr_client == "All":
-                    if is_debrid_activated() and indexer in [
-                        "Torrest",
-                        "Elementum",
-                        "Jacktorr",
-                        "Burst",
-                    ]:
+                if torr_client == Players.ALL:
+                    if is_debrid_activated() and indexer in torrent_indexers:
                         final_results = get_debrid_results(
                             query,
                             proc_results,
@@ -358,7 +357,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                             return
                     else:
                         final_results = post_process(proc_results)
-                elif torr_client == "Debrid":
+                elif torr_client == Players.DEBRID:
                     results = get_debrid_results(
                         query,
                         proc_results,
@@ -374,7 +373,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     else:
                         notify("No debrid results")
                         return
-                elif torr_client in ["Torrest", "Elementum", "Jacktorr", "Plex"]:
+                elif torr_client in torrent_clients or torr_client == Players.PLEX:
                     final_results = post_process(proc_results)
                 indexer_show_results(
                     final_results,

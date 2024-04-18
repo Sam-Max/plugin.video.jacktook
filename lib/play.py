@@ -13,17 +13,16 @@ from lib.utils.kodi import (
 )
 from lib.utils.utils import (
     Indexer,
+    Players,
     set_video_info,
     set_video_infotag,
     set_watched_file,
+    torrent_clients
 )
 from xbmcplugin import (
     setResolvedUrl,
 )
 from xbmcgui import ListItem, Dialog
-
-
-torrent_clients = ["Jacktorr", "Torrest", "Elementum", "Plex"]
 
 
 def play(
@@ -54,15 +53,15 @@ def play(
         return
 
     torr_client = get_setting("torrent_client")
-    if torr_client == "Torrest":
+    if torr_client == Players.TORREST:
         _url = get_torrest_url(magnet, url)
-    elif torr_client == "Elementum":
+    elif torr_client == Players.ELEMENTUM:
         _url = get_elementum_url(magnet, mode, ids)
-    elif torr_client == "Jacktorr":
+    elif torr_client == Players.JACKTORR:
         _url = get_jacktorr_url(magnet, url)
-    elif torr_client == "Debrid" or torr_client == "Plex":
+    elif torr_client == Players.DEBRID or torr_client == Players.PLEX :
         _url = url
-    elif torr_client == "All":
+    elif torr_client == Players.ALL:
         if is_debrid:
             _url = url
         elif is_torrent:

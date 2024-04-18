@@ -122,6 +122,11 @@ class Enum:
         return [value for name, value in vars(cls).items() if not name.startswith("_")]
 
 
+torrent_clients = ["Jacktorr", "Torrest", "Elementum"]
+
+torrent_indexers = ["Prowlarr", "Jackett", "Torrentio", "Elfhosted", "Burst"]
+
+
 class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
@@ -129,6 +134,15 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
     PLEX = "Plex"
+
+
+class Players(Enum):
+    ALL = "All"
+    JACKTORR = "Jacktorr"
+    TORREST = "Torrest"
+    ELEMENTUM = "Elementum"
+    PLEX = "Plex"
+    DEBRID = "Debrid"
 
 
 class DialogListener:
