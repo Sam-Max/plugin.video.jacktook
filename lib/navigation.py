@@ -335,8 +335,21 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
             )
             if proc_results:
                 if torr_client == "All":
-                    if is_debrid_activated() and indexer in ["Torrest", "Elementum", "Jacktorr", "Burst"]:
-                        final_results = get_debrid_results()
+                    if is_debrid_activated() and indexer in [
+                        "Torrest",
+                        "Elementum",
+                        "Jacktorr",
+                        "Burst",
+                    ]:
+                        final_results = get_debrid_results(
+                            query,
+                            proc_results,
+                            mode,
+                            media_type,
+                            p_dialog,
+                            rescrape,
+                            episode,
+                        )
                         if final_results:
                             if is_auto_play():
                                 auto_play(final_results, ids, tv_data, mode, p_dialog)
@@ -346,7 +359,15 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     else:
                         final_results = post_process(proc_results)
                 elif torr_client == "Debrid":
-                    results = get_debrid_results()
+                    results = get_debrid_results(
+                        query,
+                        proc_results,
+                        mode,
+                        media_type,
+                        p_dialog,
+                        rescrape,
+                        episode,
+                    )
                     if final_results:
                         if is_auto_play():
                             auto_play(final_results, ids, tv_data, mode, p_dialog)
