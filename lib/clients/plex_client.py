@@ -42,9 +42,7 @@ class Plex:
                         "indexer": item["indexer"],
                         "downloadUrl": item["url"],
                         "publishDate": "",
-                        "debridType": "",
-                        "debridCached": False,
-                        "debridPack": False,
+                        "isPlex": True,
                     }
                 )
         return results

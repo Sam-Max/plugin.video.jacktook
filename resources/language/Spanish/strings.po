@@ -16,12 +16,12 @@ msgstr ""
 
 # Settings
 msgctxt "#30000"
-msgid "Torrents"
-msgstr "Torrents"
+msgid "Players"
+msgstr "Players"
 
 msgctxt "#30001"
-msgid "Torrent Clients:"
-msgstr "Clientes Torrents"
+msgid "Clients:"
+msgstr "Clientes"
 
 msgctxt "#30002"
 msgid "Client"

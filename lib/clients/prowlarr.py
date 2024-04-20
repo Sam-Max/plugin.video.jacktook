@@ -49,8 +49,8 @@ class Prowlarr:
                     {
                         "qualityTitle": "",
                         "debridType": "",
-                        "debridCached": False,
-                        "debridPack": False,
+                        "isDebrid": False,
+                        "isDebridPack": False,
                     }
                 )
             return res

@@ -104,7 +104,7 @@ def check_rd_cached(client, res, cached_results, uncached_result, total, dialog,
             torr_available = client.get_torrent_instant_availability(info_hash)
             if info_hash in torr_available:
                 with lock:
-                    res["debridCached"] = True
+                    res["isDebrid"] = True
                     res["debridType"] = "RD"
                     if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                         magnet = info_hash_to_magnet(info_hash)
@@ -114,11 +114,11 @@ def check_rd_cached(client, res, cached_results, uncached_result, total, dialog,
                     torr_info = client.get_torrent_info(torrent_id)
                     with lock:
                         if len(torr_info["links"]) > 1:
-                            res["debridPack"] = True
+                            res["isDebridPack"] = True
                         cached_results.append(res)
             else:
                 with lock:
-                    res["debridCached"] = False
+                    res["isDebrid"] = False
                     uncached_result.append(res)
     except Exception as e:
         log(f"Error: {str(e)}")
@@ -134,7 +134,7 @@ def check_pm_cached(client, res, cached_results, uncached_result, total, dialog,
             torr_available = client.get_torrent_instant_availability(info_hash)
             if torr_available.get("response")[0]:
                 with lock:
-                    res["debridCached"] = True
+                    res["isDebrid"] = True
                     res["debridType"] = "PM"
                     if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
                         magnet = info_hash_to_magnet(info_hash)
@@ -153,11 +153,11 @@ def check_pm_cached(client, res, cached_results, uncached_result, total, dialog,
                 ]
                 with lock:
                     if len(files_names) > 1:
-                        res["debridPack"] = True
+                        res["isDebridPack"] = True
                     cached_results.append(res)
             else:
                 with lock:
-                    res["debridCached"] = False
+                    res["isDebrid"] = False
                     uncached_result.append(res)
     except Exception as e:
         log(f"Error: {str(e)}")

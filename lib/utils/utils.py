@@ -137,7 +137,6 @@ class Indexer(Enum):
 
 
 class Players(Enum):
-    ALL = "All"
     JACKTORR = "Jacktorr"
     TORREST = "Torrest"
     ELEMENTUM = "Elementum"
@@ -191,7 +190,6 @@ def add_play_item(
     debrid_type="",
     mode="",
     is_torrent=False,
-    is_debrid=False,
     plugin=None,
 ):
     addDirectoryItem(
@@ -206,7 +204,6 @@ def add_play_item(
             torrent_id=torrent_id,
             info_hash=info_hash,
             is_torrent=is_torrent,
-            is_debrid=is_debrid,
             mode=mode,
             debrid_type=debrid_type,
         ),
@@ -259,7 +256,7 @@ def set_pack_item_pm(list_item, mode, url, title, ids, tv_data, debrid_type, plu
             ids=ids,
             tv_data=tv_data,
             mode=mode,
-            is_debrid=True,
+            is_torrent=False,
             debrid_type=debrid_type,
         ),
         list_item,
@@ -378,16 +375,16 @@ def set_video_infotag(
 
 
 def set_watched_file(
-    title, ids, tv_data, magnet, url, debrid_type, is_debrid, is_torrent
+    title, ids, tv_data, magnet, url, debrid_type, is_torrent
 ):
     if title in db.database["jt:lfh"]:
         return
 
-    if is_debrid:
+    if is_torrent:
+        title = f"[B][Uncached][/B]-{title}"
+    else:
         debrid_color = get_random_color(debrid_type)
         title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
-    else:
-        title = f"[B][Uncached][/B]-{title}"
 
     if title not in db.database["jt:watch"]:
         db.database["jt:watch"][title] = True
@@ -397,7 +394,6 @@ def set_watched_file(
         "ids": ids,
         "tv_data": tv_data,
         "url": url,
-        "is_debrid": is_debrid,
         "is_torrent": is_torrent,
         "magnet": magnet,
     }
@@ -696,9 +692,9 @@ def sort_results(first_res, second_res=None):
         if second_res:
             return sort_second_result(first_sorted, second_res, type="Quality")
     elif sort_by == "Cached":
-        first_sorted = sorted(first_res, key=lambda r: r["debridCached"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r["isDebrid"], reverse=True)
         if second_res:
-            return sort_second_result(first_sorted, second_res, type="debridCached")
+            return sort_second_result(first_sorted, second_res, type="isDebrid")
 
     return first_sorted
 

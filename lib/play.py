@@ -12,7 +12,6 @@ from lib.utils.kodi import (
     translation,
 )
 from lib.utils.utils import (
-    Indexer,
     Players,
     set_video_info,
     set_video_infotag,
@@ -32,9 +31,8 @@ def play(
     tv_data,
     title,
     plugin,
-    debrid_type="",
     mode="",
-    is_debrid=False,
+    debrid_type="",
     is_torrent=False,
 ):
     set_watched_file(
@@ -44,7 +42,6 @@ def play(
         magnet,
         url,
         debrid_type,
-        is_debrid,
         is_torrent,
     )
 
@@ -52,38 +49,36 @@ def play(
         notify(translation(30251))
         return
 
-    torr_client = get_setting("torrent_client")
-    if torr_client == Players.TORREST:
-        _url = get_torrest_url(magnet, url)
-    elif torr_client == Players.ELEMENTUM:
-        _url = get_elementum_url(magnet, mode, ids)
-    elif torr_client == Players.JACKTORR:
-        _url = get_jacktorr_url(magnet, url)
-    elif torr_client == Players.DEBRID or torr_client == Players.PLEX :
+    client = get_setting("client_player")
+
+    if client == Players.PLEX:
         _url = url
-    elif torr_client == Players.ALL:
-        if is_debrid:
+    if client == Players.TORREST:
+        _url = get_torrest_url(magnet, url)
+    elif client == Players.ELEMENTUM :
+        _url = get_elementum_url(magnet, mode, ids)
+    elif client == Players.JACKTORR:
+        _url = get_jacktorr_url(magnet, url)
+    elif client == Players.DEBRID:
+        if is_torrent:
+            chosen_client = Dialog().select(translation(30800), torrent_clients)
+            if chosen_client < 0:
+                return
+            if torrent_clients[chosen_client] == "Torrest":
+                _url = get_torrest_url(magnet, url)
+            elif torrent_clients[chosen_client] == "Elementum":
+                _url = get_elementum_url(magnet, mode, ids)
+            elif torrent_clients[chosen_client] == "Jacktorr":
+                _url = get_jacktorr_url(magnet, url)
+        else:
             _url = url
-        elif is_torrent:
-            if get_setting("indexer") == Indexer.PLEX:
-               _url = url     
-            else:
-                chosen_client = Dialog().select(translation(30800), torrent_clients)
-                if chosen_client < 0:
-                    return
-                if torrent_clients[chosen_client] == "Torrest":
-                    _url = get_torrest_url(magnet, url)
-                elif torrent_clients[chosen_client] == "Elementum":
-                    _url = get_elementum_url(magnet, mode, ids)
-                elif torrent_clients[chosen_client] == "Jacktorr":
-                    _url = get_jacktorr_url(magnet, url)
 
     if _url:
         list_item = ListItem(title, path=_url)
         make_listing(list_item, mode, _url, title, ids, tv_data)
         setResolvedUrl(plugin.handle, True, list_item)
 
-        if is_debrid:
+        if not is_torrent:
             player = JacktookPlayer()
             player.set_constants(_url)
             player.run(list_item)

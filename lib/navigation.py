@@ -32,7 +32,6 @@ from lib.tmdb import (
 from lib.anilist import search_anilist
 from lib.utils.utils import (
     DialogListener,
-    Indexer,
     Players,
     clear,
     clear_all_cache,
@@ -55,8 +54,6 @@ from lib.utils.utils import (
     set_watched_title,
     ssl_enabled,
     tmdb_get,
-    torrent_clients,
-    torrent_indexers,
 )
 from lib.utils.kodi import (
     ADDON_PATH,
@@ -114,7 +111,7 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name in ["rescrape", "is_torrent", "is_debrid"]:
+                    if name in ["rescrape", "is_torrent"]:
                         kwargs[name] = eval(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
@@ -321,8 +318,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
         episode = season = 0
         ep_name = ""
 
-    torr_client = get_setting("torrent_client")
-    indexer = get_setting("indexer")
+    client = get_setting("client_player")
 
     with DialogListener() as listener:
         p_dialog = listener.dialog
@@ -337,28 +333,9 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 episode,
                 season,
             )
-            if proc_results:
-                if torr_client == Players.ALL:
-                    if is_debrid_activated() and indexer in torrent_indexers:
-                        final_results = get_debrid_results(
-                            query,
-                            proc_results,
-                            mode,
-                            media_type,
-                            p_dialog,
-                            rescrape,
-                            episode,
-                        )
-                        if final_results:
-                            if is_auto_play():
-                                auto_play(final_results, ids, tv_data, mode, p_dialog)
-                        else:
-                            notify("No debrid results")
-                            return
-                    else:
-                        final_results = post_process(proc_results)
-                elif torr_client == Players.DEBRID:
-                    results = get_debrid_results(
+            if client == Players.DEBRID:
+                if is_debrid_activated():
+                    debrid_cached = check_debrid_cached(
                         query,
                         proc_results,
                         mode,
@@ -367,14 +344,17 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                         rescrape,
                         episode,
                     )
-                    if final_results:
-                        if is_auto_play():
-                            auto_play(final_results, ids, tv_data, mode, p_dialog)
-                    else:
-                        notify("No debrid results")
+                    final_results = post_process(debrid_cached)
+                    if is_auto_play():
+                        auto_play(final_results, ids, tv_data, mode, p_dialog)
                         return
-                elif torr_client in torrent_clients or torr_client == Players.PLEX:
-                    final_results = post_process(proc_results)
+                else:
+                    notify("No debrid client enabled")
+                    return
+            else:
+                final_results = post_process(proc_results)
+
+            if final_results:
                 indexer_show_results(
                     final_results,
                     mode,
@@ -383,44 +363,18 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     tv_data,
                     plugin,
                 )
-            else:
-                notify("No results")
         else:
-            notify("No results")
-
+            notify("No results found")
 
 def auto_play(results, ids, tv_data, mode, p_dialog):
     close_all_dialog()
     p_dialog.close()
     play_first_result(results, ids, tv_data, mode)
-    return
-
-
-def get_debrid_results(
-    query,
-    proc_results,
-    mode,
-    media_type,
-    p_dialog,
-    rescrape,
-    episode,
-):
-    cached_results = check_debrid_cached(
-        query,
-        proc_results,
-        mode,
-        media_type,
-        p_dialog,
-        rescrape,
-        episode,
-    )
-    if cached_results:
-        return post_process(cached_results)
 
 
 def play_first_result(results, ids, tv_data, mode):
     for res in results:
-        if res["debridPack"]:
+        if res["isDebridPack"]:
             continue
         play_media(
             plugin,
@@ -431,7 +385,7 @@ def play_first_result(results, ids, tv_data, mode):
             info_hash=results[0]["infoHash"],
             torrent_id=results[0]["debridId"],
             debrid_type=results[0]["debridType"],
-            is_debrid=True,
+            is_torrent=False,
             mode=mode,
         )
         break
@@ -446,7 +400,6 @@ def play_first_result(results, ids, tv_data, mode):
 @query_arg("info_hash", required=False)
 @query_arg("torrent_id", required=False)
 @query_arg("is_torrent", required=False)
-@query_arg("is_debrid", required=False)
 @query_arg("debrid_type", required=False)
 @query_arg("mode", required=False)
 def play_torrent(
@@ -460,7 +413,6 @@ def play_torrent(
     mode="",
     debrid_type="",
     is_torrent=False,
-    is_debrid=False,
 ):
 
     if torrent_id and debrid_type == "RD":
@@ -478,7 +430,6 @@ def play_torrent(
         plugin,
         debrid_type,
         mode,
-        is_debrid,
         is_torrent,
     )
 
@@ -522,7 +473,7 @@ def torrents():
                 isFolder=True,
             )
     else:
-        notify("Addon Jacktorr not found")
+        notify(translation(30253))
 
 
 @plugin.route("/torrents/<info_hash>/<action_str>")
@@ -800,7 +751,7 @@ def get_rd_link_pack(args, ids, mode, tv_data=""):
         tv_data=tv_data,
         mode=mode,
         title=title,
-        is_debrid=True,
+        is_torrent=False,
         debrid_type=debrid_type,
         plugin=plugin,
     )

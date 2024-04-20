@@ -33,8 +33,8 @@ class Burst:
                     "seeders": r.seeders,
                     "peers": r.peers,
                     "debridType": "",
-                    "debridCached": False,
-                    "debridPack": False,
+                    "isDebrid": False,
+                    "isDebridPack": False,
                 }
             )
         return results

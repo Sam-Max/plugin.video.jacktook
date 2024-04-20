@@ -2,7 +2,7 @@
 <settings>
     <category label="30000">
         <setting label="30001" type="lsep"/>
-        <setting id="torrent_client" type="labelenum" label="30002" values="All|Jacktorr|Torrest|Debrid|Elementum|Plex" default="Jacktorr"/>
+        <setting id="client_player" type="labelenum" label="30002" values="Jacktorr|Torrest|Elementum|Debrid|Plex" default="Jacktorr"/>
         <setting label="Playback" type="lsep"/>
         <setting id="auto_play" type="bool" label="Auto Play" default="false"/>
         <setting label="Cache" type="lsep"/>

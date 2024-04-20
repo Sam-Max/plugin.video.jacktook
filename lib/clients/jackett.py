@@ -53,7 +53,7 @@ def extract_result(results, item):
             "peers": attributes.get("peers", ""),
             "infoHash": attributes.get("infohash", ""),
             "debridType": "",
-            "debridCached": False,
-            "debridPack": False,
+            "isDebrid": False,
+            "isDebridPack": False,
         }
     )

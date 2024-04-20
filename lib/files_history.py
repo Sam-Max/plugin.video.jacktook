@@ -39,7 +39,6 @@ def last_files(plugin):
                 ids=data.get("ids"),
                 tv_data=data.get("tv_data"),
                 url=data.get("url"),
-                is_debrid=data.get("is_debrid"),
                 is_torrent=data.get("is_torrent"),
                 magnet=data.get("magnet"),
             ),

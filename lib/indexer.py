@@ -84,15 +84,15 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
             f"[I][LIGHT][COLOR lightgray]{languages}[/COLOR][/LIGHT][/I]"
         )
 
-        debrid_type = res["debridType"]
+        debrid_type = res.get("debridType", "")
         debrid_color = get_random_color(debrid_type)
         format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
-        
-        if res["debridCached"]:
+
+        if res.get("isDebrid"):
             info_hash = res.get("infoHash")
             torrent_id = res.get("debridId")
-
-            if res["debridPack"]:
+            
+            if res["isDebridPack"]:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
                 add_pack_item(
                     list_item,
@@ -117,11 +117,25 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     title,
                     torrent_id=torrent_id,
                     info_hash=info_hash,
-                    is_debrid=True,
+                    is_torrent=False,
                     debrid_type=debrid_type,
                     mode=mode,
                     plugin=plugin,
                 )
+        elif res.get("isPlex"):
+            url = res.get("downloadUrl")
+            list_item = ListItem(label=torr_title)
+            set_video_properties(list_item, poster, mode, title, overview, ids)
+            add_play_item(
+                list_item,
+                ids,
+                tv_data,
+                title,
+                url=url,
+                is_torrent=False,
+                mode=mode,
+                plugin=plugin,
+            )
         else:
             magnet = ""
             url = ""

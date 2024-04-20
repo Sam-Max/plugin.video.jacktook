@@ -42,8 +42,8 @@ class Elfhosted:
                     "publishDate": "",
                     "peers": 0,
                     "debridType": "",
-                    "debridCached": False,
-                    "debridPack": False,
+                    "isDebrid": False,
+                    "isDebridPack": False,
                 }
             )
         return results
@@ -99,8 +99,8 @@ class Torrentio:
                     "publishDate": "",
                     "peers": 0,
                     "debridType": "",
-                    "debridCached": False,
-                    "debridPack": False,
+                    "isDebrid": False,
+                    "isDebridPack": False,
                 }
             )
         return results
