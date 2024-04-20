@@ -23,7 +23,7 @@ Torrent Engines:
 - Real Debrid 
 - Premiumize 
 
-Non-Torrent Search and Play
+Other Clients:
 - Plex
 
 Metadata:
