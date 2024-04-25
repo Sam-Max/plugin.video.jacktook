@@ -41,8 +41,13 @@ def search_client(
         tmdb_id = imdb_id = -1
 
     indexer = get_setting("indexer")
+    
     client_player = get_setting("client_player")
+
     client = get_client(indexer)
+    if not client:
+        dialog.create("")
+        return
 
     if client_player in torrent_clients or client_player == Players.DEBRID:
         if indexer == Indexer.JACKETT:

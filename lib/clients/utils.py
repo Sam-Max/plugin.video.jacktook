@@ -40,7 +40,7 @@ def get_client(indexer):
     elif indexer == Indexer.ELHOSTED:
         host = get_setting("elfhosted_host")
         if not host:
-            notify(translation(30227))
+            notify(translation(30225))
             return
         return Elfhosted(host, notify)
 

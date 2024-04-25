@@ -175,6 +175,10 @@ msgctxt "#30224"
 msgid "Prowlarr API key is invalid"
 msgstr ""
 
+msgctxt "#30225"
+msgid "You need to configure Elhosted/KnighCrawlerr first"
+msgstr ""
+
 msgctxt "#30226"
 msgid "You need to configure Plex first"
 msgstr ""
