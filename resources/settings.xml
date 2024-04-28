@@ -54,7 +54,6 @@
         <setting label="TorBox Configuration" type="lsep"/>
         <setting id="torbox_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="torbox_token" type="text" label="Token:" default=""/>
-        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/torbox_auth)"/>
         <setting label="" type="lsep"/>
         <setting id="show_uncached" type="bool" label="Show uncached torrents" default="true"/>
     </category>
