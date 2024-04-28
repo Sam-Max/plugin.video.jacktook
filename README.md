@@ -14,14 +14,17 @@ Torrent Search:
 - Prowlarr 
 - Jacktook Burst
 - Torrentio 
-- Elhosted 
+- Elhosted/KnightCrawlerr 
 
 Torrent Engines:
 - Jacktorr
 - Torrest
 - Elementum
+
+Debrid Services:
 - Real Debrid 
 - Premiumize 
+- Torbox
 
 Other Clients:
 - Plex
@@ -46,13 +49,13 @@ You can also install the addon without installing its repository. To do so, get 
 
 1. Install this addon (recommended way of installing the addon is through its repository)
 
-2. Add configuration on addon settings to connect with Jackett, Prowlarr or Jacktook Burst (optional if using Torrentio or Elfhosted)
+2. Add configuration on addon settings to connect with Jackett, Prowlarr or Jacktook Burst (optional if using Torrentio/Elfhosted)
 
 3. Install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
 
 
 **Notes**:
-1. Jacktorr/Torrest/Elementum are optional if using Debrid services (Real Debrid or Premiumize)
+1. Jacktorr/Torrest/Elementum are optional if using Debrid services.
 2. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
 3. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to improve search speed and results.
 4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses Jacktorr Addon). After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
