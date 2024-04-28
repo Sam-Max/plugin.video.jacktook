@@ -163,7 +163,11 @@ class DialogListener:
 
 
 def is_debrid_activated():
-    return get_setting("real_debrid_enabled") or get_setting("real_debrid_token")
+    return (
+        get_setting("real_debrid_enabled")
+        or get_setting("real_debrid_token")
+        or get_setting("torbox_enabled")
+    )
 
 
 def list_item(label, icon):
@@ -184,10 +188,10 @@ def add_play_item(
     tv_data,
     title,
     url="",
-    magnet="",
     torrent_id="",
     info_hash="",
     debrid_type="",
+    magnet="",
     mode="",
     is_torrent=False,
     plugin=None,
@@ -200,12 +204,12 @@ def add_play_item(
             ids=ids,
             tv_data=tv_data,
             url=url,
-            magnet=magnet,
             torrent_id=torrent_id,
             info_hash=info_hash,
+            debrid_type=debrid_type,
+            magnet=magnet,
             is_torrent=is_torrent,
             mode=mode,
-            debrid_type=debrid_type,
         ),
         list_item,
         isFolder=False,
@@ -218,59 +222,16 @@ def add_pack_item(
     addDirectoryItem(
         plugin.handle,
         url_for(
-            name="show_pack",
-            query=f"{info_hash} {torrent_id} {debrid_type}",
+            name="show_pack_info",
+            info_hash=info_hash,
+            torrent_id=torrent_id,
+            debrid_type=debrid_type,
             tv_data=tv_data,
             mode=mode,
             ids=ids,
         ),
         list_item,
         isFolder=True,
-    )
-
-
-def set_pack_item_rd(
-    list_item, mode, id, torrent_id, title, ids, tv_data, debrid_type, plugin
-):
-    addDirectoryItem(
-        plugin.handle,
-        url_for(
-            name="get_rd_link_pack",
-            args=f"{id} {torrent_id} {debrid_type} {title}",
-            mode=mode,
-            ids=ids,
-            tv_data=tv_data,
-        ),
-        list_item,
-        isFolder=False,
-    )
-
-
-def set_pack_item_pm(list_item, mode, url, title, ids, tv_data, debrid_type, plugin):
-    addDirectoryItem(
-        plugin.handle,
-        url_for(
-            name="play_torrent",
-            title=title,
-            url=url,
-            ids=ids,
-            tv_data=tv_data,
-            mode=mode,
-            is_torrent=False,
-            debrid_type=debrid_type,
-        ),
-        list_item,
-        isFolder=False,
-    )
-
-
-def set_pack_art(list_item):
-    list_item.setArt(
-        {
-            "poster": "",
-            "thumb": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-            "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-        }
     )
 
 
@@ -374,9 +335,7 @@ def set_video_infotag(
         )
 
 
-def set_watched_file(
-    title, ids, tv_data, magnet, url, debrid_type, is_torrent
-):
+def set_watched_file(title, ids, tv_data, magnet, url, debrid_type, is_torrent):
     if title in db.database["jt:lfh"]:
         return
 

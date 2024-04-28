@@ -1,4 +1,4 @@
-from lib.api.real_debrid_api import RealDebrid
+from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.utils.kodi import get_setting, log
 from lib.utils.utils import (
     get_cached,
@@ -41,7 +41,7 @@ def get_rd_link(client, torrent_id):
     raise LinkNotFoundError("File still not available")
 
 
-def get_rd_pack(torrent_id):
+def get_rd_pack_info(torrent_id):
     info = get_cached(torrent_id)
     if info:
         return info

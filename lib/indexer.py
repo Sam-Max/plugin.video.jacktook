@@ -89,9 +89,9 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
 
         if res.get("isDebrid"):
+            torrent_id = res.get("torrentId")
             info_hash = res.get("infoHash")
-            torrent_id = res.get("debridId")
-            
+
             if res["isDebridPack"]:
                 list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
                 add_pack_item(
@@ -117,8 +117,8 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     title,
                     torrent_id=torrent_id,
                     info_hash=info_hash,
-                    is_torrent=False,
                     debrid_type=debrid_type,
+                    is_torrent=False,
                     mode=mode,
                     plugin=plugin,
                 )
@@ -131,7 +131,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                 ids,
                 tv_data,
                 title,
-                url=url,
+                url,
                 is_torrent=False,
                 mode=mode,
                 plugin=plugin,
@@ -163,7 +163,11 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     [
                         (
                             "Download to Debrid",
-                            action2(name="download", query=f"{magnet} {debrid_type}"),
+                            action2(
+                                name="download_to_debrid",
+                                magnet=magnet,
+                                debrid_type=debrid_type,
+                            ),
                         )
                     ]
                 )

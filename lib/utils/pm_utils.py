@@ -1,9 +1,9 @@
-from lib.api.premiumize_api import Premiumize
+from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.utils.kodi import get_setting, log
 from lib.utils.utils import get_cached, info_hash_to_magnet, set_cached, supported_video_extensions
 
 
-def get_pm_pack(info_hash):
+def get_pm_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
         return info
