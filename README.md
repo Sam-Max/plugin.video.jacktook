@@ -49,7 +49,7 @@ You can also install the addon without installing its repository. To do so, get 
 
 1. Install this addon (recommended way of installing the addon is through its repository)
 
-2. Add configuration on addon settings to connect with Jackett, Prowlarr or Jacktook Burst (optional if using Torrentio/Elfhosted)
+2. Add configuration on addon settings to connect with an indexer like: Torrentio, Elfhosted, Jackett, Prowlarr or Jacktook Burst.
 
 3. Install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
 
@@ -61,6 +61,10 @@ You can also install the addon without installing its repository. To do so, get 
 4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses Jacktorr Addon). After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
 5. You can deploy/install on a remote server (instructions more below) the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
 5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
+
+
+## How to configure Torrentio/Elfhosted:
+The host url for Torrentio is: `https://torrentio.strem.fun/` and for Elfhosted: `https://torrentio.elfhosted.com/`
 
 ## How to run Jackett service using Docker:
 
