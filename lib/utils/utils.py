@@ -25,6 +25,7 @@ from lib.utils.kodi import (
     get_kodi_version,
     get_setting,
     is_cache_enabled,
+    log,
     translation,
     url_for,
 )
@@ -188,7 +189,6 @@ def add_play_item(
     tv_data,
     title,
     url="",
-    torrent_id="",
     info_hash="",
     debrid_type="",
     magnet="",
@@ -204,7 +204,6 @@ def add_play_item(
             ids=ids,
             tv_data=tv_data,
             url=url,
-            torrent_id=torrent_id,
             info_hash=info_hash,
             debrid_type=debrid_type,
             magnet=magnet,
@@ -216,19 +215,16 @@ def add_play_item(
     )
 
 
-def add_pack_item(
-    list_item, tv_data, ids, info_hash, torrent_id, debrid_type, mode, plugin
-):
+def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode, plugin):
     addDirectoryItem(
         plugin.handle,
         url_for(
             name="show_pack_info",
-            info_hash=info_hash,
-            torrent_id=torrent_id,
-            debrid_type=debrid_type,
-            tv_data=tv_data,
-            mode=mode,
             ids=ids,
+            debrid_type=debrid_type,
+            info_hash=info_hash,
+            mode=mode,
+            tv_data=tv_data,
         ),
         list_item,
         isFolder=True,
@@ -576,7 +572,9 @@ def remove_duplicate(results):
     return result_dict
 
 
-def post_process(res):
+def post_process(res, season=None):
+    if season:
+        check_pack(res, season)
     if (
         get_setting("indexer") == Indexer.TORRENTIO
         and get_setting("torrentio_priority_lang") != "None"
@@ -584,7 +582,47 @@ def post_process(res):
         res = sort_by_priority_language(res)
     else:
         res = sort_results(res)
+
     return res
+
+
+def check_pack(results, season_num):
+    season_fill = f"{int(season_num):02}"
+    pattern1 = r"\.S%s\." % (season_num)
+    pattern2 = r"\.S%s\." % (season_fill)
+    pattern3 = r"\sS%s\s" % (season_num)
+    pattern4 = r"\.%s\.season" % (season_num)
+    pattern5 = r"total\.season"
+    pattern6 = r"season"
+    pattern7 = r"the\.complete"
+    pattern8 = r"complete"
+    pattern9 = r"\.season\.%s\." % season_num
+    pattern10 = r"\.season%s\." % season_num
+    pattern11 = r"\.season\.%s\." % season_fill
+
+    patterns = "|".join(
+        [
+            pattern1,
+            pattern2,
+            pattern3,
+            pattern4,
+            pattern5,
+            pattern6,
+            pattern7,
+            pattern8,
+            pattern9,
+            pattern10,
+            pattern11,
+        ]
+    )
+
+    for res in results:
+        title = res["title"]
+        match = re.search(f"{patterns}", title)
+        if match:
+            res["isDebridPack"] = True
+        else:
+            res["isDebridPack"] = False
 
 
 def pre_process(res, mode, episode_name, episode, season):
@@ -651,7 +689,7 @@ def sort_results(first_res, second_res=None):
         if second_res:
             return sort_second_result(first_sorted, second_res, type="Quality")
     elif sort_by == "Cached":
-        first_sorted = sorted(first_res, key=lambda r: r["isDebrid"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r.get("isDebrid", ""), reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="isDebrid")
 
@@ -665,24 +703,23 @@ def sort_second_result(first_sorted, second_res, type):
 
 
 def filter_by_episode(results, episode_name, episode_num, season_num):
-    episode_num = f"{int(episode_num):02}"
-    season_num = f"{int(season_num):02}"
+    episode_fill = f"{int(episode_num):02}"
+    season_fill = f"{int(season_num):02}"
+    pattern1 = r"S%sE%s" % (season_fill, episode_fill)
+    pattern2 = r"%sx%s" % (season_fill, episode_fill)
+    pattern3 = r"\s%s\s" % (season_fill)
+    pattern4 = r"\.S%s" % (season_fill)
+    pattern5 = r"\.S%sE%s" % (season_fill, episode_fill)
+    pattern6 = r"\sS%sE%s\s" % (season_fill, episode_fill)
 
-    filtered_episodes = []
-    pattern1 = "S%sE%s" % (season_num, episode_num)
-    pattern2 = "%sx%s" % (season_num, episode_num)
-    pattern3 = "\s%s\s" % (episode_num)
-    pattern4 = "\.S%s" % (season_num)
-    pattern5 = "\.S%sE%s" % (season_num, episode_num)
-    pattern6 = "\sS%sE%s\s" % (season_num, episode_num)
-
-    pattern = "|".join(
+    patterns = "|".join(
         [pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, episode_name]
     )
 
+    filtered_episodes = []
     for res in results:
         title = res["title"]
-        match = re.search(f"r{pattern}", title)
+        match = re.search(f"{patterns}", title)
         if match:
             filtered_episodes.append(res)
     return filtered_episodes

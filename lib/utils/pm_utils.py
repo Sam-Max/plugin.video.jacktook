@@ -1,6 +1,13 @@
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.utils.kodi import get_setting, log
-from lib.utils.utils import get_cached, info_hash_to_magnet, set_cached, supported_video_extensions
+from lib.utils.utils import (
+    get_cached,
+    info_hash_to_magnet,
+    set_cached,
+    supported_video_extensions,
+)
+
+pm_client = Premiumize(token=get_setting("premiumize_token"))
 
 
 def get_pm_pack_info(info_hash):
@@ -8,7 +15,6 @@ def get_pm_pack_info(info_hash):
     if info:
         return info
     extensions = supported_video_extensions()[:-1]
-    pm_client = Premiumize(token=get_setting("premiumize_token"))
     magnet = info_hash_to_magnet(info_hash)
     response_data = pm_client.create_download_link(magnet)
     if "error" in response_data.get("status"):
@@ -28,9 +34,9 @@ def get_pm_pack_info(info_hash):
         return info
 
 
-def get_pm_link(client, infoHash):
+def get_pm_link(infoHash):
     magnet = info_hash_to_magnet(infoHash)
-    response_data = client.create_download_link(magnet)
+    response_data = pm_client.create_download_link(magnet)
     if "error" in response_data.get("status"):
         log(f"Failed to get link from Premiumize {response_data.get('message')}")
         return

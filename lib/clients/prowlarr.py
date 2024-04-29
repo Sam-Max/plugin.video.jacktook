@@ -48,9 +48,6 @@ class Prowlarr:
                 r.update(
                     {
                         "qualityTitle": "",
-                        "debridType": "",
-                        "isDebrid": False,
-                        "isDebridPack": False,
                     }
                 )
             return res

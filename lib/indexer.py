@@ -5,6 +5,7 @@ from lib.utils.kodi import (
     action2,
     bytes_to_human_readable,
     get_setting,
+    log,
     set_view,
 )
 from lib.utils.utils import (
@@ -89,17 +90,16 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
         format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
 
         if res.get("isDebrid"):
-            torrent_id = res.get("torrentId")
             info_hash = res.get("infoHash")
-
-            if res["isDebridPack"]:
-                list_item = ListItem(label=f"[{format_debrid_type}-Pack]-{torr_title}")
+            if res.get("isDebridPack"):
+                list_item = ListItem(
+                    label=f"[{format_debrid_type}-Cached-Pack]-{torr_title}"
+                )
                 add_pack_item(
                     list_item,
                     tv_data,
                     ids,
                     info_hash,
-                    torrent_id,
                     debrid_type,
                     mode,
                     plugin,
@@ -115,7 +115,6 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     ids,
                     tv_data,
                     title,
-                    torrent_id=torrent_id,
                     info_hash=info_hash,
                     debrid_type=debrid_type,
                     is_torrent=False,

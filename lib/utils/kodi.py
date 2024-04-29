@@ -203,6 +203,10 @@ def container_refresh():
     execute_builtin("Container.Refresh")
 
 
+def run_action(name, **kwargs):
+    execute_builtin("RunPlugin({})".format(url_for2(name, kwargs)))
+
+
 def action(plugin, func, *args, **kwargs):
     return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
 

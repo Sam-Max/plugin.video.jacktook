@@ -22,7 +22,10 @@ from lib.titles_history import last_titles
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 from lib.utils.pm_utils import get_pm_pack_info
 from lib.utils.rd_utils import get_rd_pack_info, get_rd_pack_link
-from lib.utils.torbox_utils import get_tb_pack_link, get_torbox_pack_info
+from lib.utils.torbox_utils import (
+    get_torbox_pack_info,
+    get_torbox_pack_link,
+)
 from routing import Plugin
 
 from lib.api.tmdbv3api.tmdb import TMDb
@@ -344,12 +347,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                         episode,
                     )
                     if debrid_cached:
-                        p_dialog.update(
-                            50,
-                            f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-                            f"Preparing results",
-                        )
-                        final_results = post_process(debrid_cached)
+                        final_results = post_process(debrid_cached, season)
                         if is_auto_play():
                             auto_play(final_results, ids, tv_data, mode, p_dialog)
                             return
@@ -404,10 +402,9 @@ def play_first_result(results, ids, tv_data, mode):
 @query_arg("title", required=True)
 @query_arg("url", required=False)
 @query_arg("magnet", required=False)
+@query_arg("info_hash", required=False)
 @query_arg("ids", required=False)
 @query_arg("tv_data", required=False)
-@query_arg("info_hash", required=False)
-@query_arg("torrent_id", required=False)
 @query_arg("is_torrent", required=False)
 @query_arg("debrid_type", required=False)
 @query_arg("mode", required=False)
@@ -415,16 +412,15 @@ def play_torrent(
     title,
     url="",
     magnet="",
+    info_hash="",
     ids="",
     tv_data="",
     mode="",
-    torrent_id="",
-    info_hash="",
     debrid_type="",
     is_torrent=False,
-):  
-    if is_torrent is False:
-        url = get_debrid_direct_url(torrent_id, info_hash, debrid_type)
+):
+    if not is_torrent:
+        url = get_debrid_direct_url(info_hash, debrid_type)
     play(
         url,
         magnet,
@@ -741,19 +737,21 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
 
 
 @plugin.route("/get_file_link_from_pack")
-@query_arg("args", required=False)
+@query_arg("title", required=False)
 @query_arg("ids", required=False)
 @query_arg("tv_data", required=False)
 @query_arg("mode", required=False)
 @query_arg("debrid_type", required=False)
-@query_arg("title", required=False)
 @query_arg("mode", required=False)
-def get_file_link_from_pack(args, ids, mode, debrid_type, title, tv_data):
-    file_id, torrent_id = args.split()
+@query_arg("file_id", required=False)
+@query_arg("torrent_id", required=False)
+def get_file_link_from_pack(
+    ids, mode, debrid_type, title, tv_data, file_id, torrent_id
+):
     if debrid_type == "RD":
         url = get_rd_pack_link(file_id, torrent_id)
     elif debrid_type == "TB":
-        url = get_tb_pack_link(file_id, torrent_id)
+        url = get_torbox_pack_link(file_id, torrent_id)
     play(
         url=url,
         magnet="",
@@ -768,37 +766,25 @@ def get_file_link_from_pack(args, ids, mode, debrid_type, title, tv_data):
 
 
 @plugin.route("/show_pack_info")
+@check_directory
 @query_arg("ids", required=False)
 @query_arg("info_hash", required=False)
-@query_arg("torrent_id", required=False)
 @query_arg("debrid_type", required=False)
 @query_arg("mode", required=False)
 @query_arg("tv_data", required=False)
-def show_pack_info(ids, info_hash, torrent_id, debrid_type, mode, tv_data):
-    if debrid_type == "RD":
-        info = get_rd_pack_info(torrent_id)
-        if info:
-            for file_id, title in info:
-                list_item = ListItem(label=f"{title}")
-                addDirectoryItem(
-                    plugin.handle,
-                    url_for(
-                        name="get_file_link_from_pack",
-                        args=f"{file_id} {torrent_id}",
-                        debrid_type=debrid_type,
-                        title=title,
-                        mode=mode,
-                        ids=ids,
-                        tv_data=tv_data,
-                    ),
-                    list_item,
-                    isFolder=False,
-                )
-    elif debrid_type == "PM":
+def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
+    if debrid_type == "PM":
         info = get_pm_pack_info(info_hash)
         if info:
             for url, title in info:
                 list_item = ListItem(label=f"{title}")
+                list_item.setArt(
+                    {
+                        "icon": os.path.join(
+                            ADDON_PATH, "resources", "img", "trending.png"
+                        )
+                    }
+                )
                 addDirectoryItem(
                     plugin.handle,
                     url_for(
@@ -814,26 +800,34 @@ def show_pack_info(ids, info_hash, torrent_id, debrid_type, mode, tv_data):
                     list_item,
                     isFolder=False,
                 )
+        return
+
+    elif debrid_type == "RD":
+        info = get_rd_pack_info(info_hash)
     elif debrid_type == "TB":
         info = get_torbox_pack_info(info_hash)
-        if info:
-            for file_id, title in info:
-                list_item = ListItem(label=f"{title}")
-                addDirectoryItem(
-                    plugin.handle,
-                    url_for(
-                        name="get_file_link_from_pack",
-                        args=f"{file_id} {torrent_id}",
-                        debrid_type=debrid_type,
-                        title=title,
-                        mode=mode,
-                        ids=ids,
-                        tv_data=tv_data,
-                    ),
-                    list_item,
-                    isFolder=False,
-                )
-    endOfDirectory(plugin.handle)
+
+    if info:
+        for file_id, title in info["files"]:
+            list_item = ListItem(label=title)
+            list_item.setArt(
+                {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
+            )
+            addDirectoryItem(
+                plugin.handle,
+                url_for(
+                    name="get_file_link_from_pack",
+                    file_id=file_id,
+                    torrent_id=info["id"],
+                    debrid_type=debrid_type,
+                    title=title,
+                    mode=mode,
+                    ids=ids,
+                    tv_data=tv_data,
+                ),
+                list_item,
+                isFolder=False,
+            )
 
 
 @plugin.route("/anilist/<category>")

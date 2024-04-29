@@ -1,32 +1,58 @@
 from lib.api.debrid_apis.tor_box_api import Torbox
-from lib.utils.kodi import get_setting
-from lib.utils.utils import get_cached, set_cached
+from lib.utils.kodi import get_setting, log, notify
+from lib.utils.utils import (
+    get_cached,
+    info_hash_to_magnet,
+    set_cached,
+    supported_video_extensions,
+)
 
 
-def get_torbox_link(client, info_hash):
-    torr_info = client.get_available_torrent(info_hash)
-    file = max(torr_info["files"], key=lambda x: x.get("size", 0))
-    response_data = client.create_download_link(torr_info.get("id"), file.get("id"))
-    return response_data.get("data")
+EXTENSIONS = supported_video_extensions()[:-1]
+
+client = Torbox(token=get_setting("torbox_token"))
+
+
+def add_torbox_torrent(info_hash):
+    magnet = info_hash_to_magnet(info_hash)
+    response_data = client.add_magnet_link(magnet)
+    if response_data.get("detail") is False:
+        notify(f"Failed to add magnet link to Torbox {response_data}")
 
 
 def get_torbox_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
         return info
-    client = Torbox(token=get_setting("torbox_token"))
-    info = []
+    add_torbox_torrent(info_hash)
     torr_info = client.get_available_torrent(info_hash)
-    torr_names = [item["name"] for item in torr_info["files"]]
-    for id, name in enumerate(torr_names):
-        title = f"[B][Cached][/B]-{name}"
-        info.append((id, title))
-    if info:
-        set_cached(info, info_hash)
-        return info
+    info = {}
+    if torr_info:
+        info["id"] = torr_info["id"]
+        files_names = [
+            item["name"]
+            for item in torr_info["files"]
+            for x in EXTENSIONS
+            if item["short_name"].lower().endswith(x)
+        ]
+        files = []
+        for id, name in enumerate(files_names):
+            title = f"[B][Cached][/B]-{name}"
+            files.append((id, title))
+        if files:
+            info["files"] = files
+            set_cached(info, info_hash)
+            return info
 
 
-def get_tb_pack_link(file_id, torrent_id):
-    client = Torbox(token=get_setting("torbox_token"))
+def get_torbox_link(info_hash):
+    add_torbox_torrent(info_hash)
+    torr_info = client.get_available_torrent(info_hash)
+    file = max(torr_info["files"], key=lambda x: x.get("size", 0))
+    response_data = client.create_download_link(torr_info.get("id"), file.get("id"))
+    return response_data.get("data")
+
+
+def get_torbox_pack_link(file_id, torrent_id):
     response = client.create_download_link(torrent_id, file_id)
     return response.get("data")

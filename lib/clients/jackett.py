@@ -52,8 +52,5 @@ def extract_result(results, item):
             "seeders": attributes.get("seeders", ""),
             "peers": attributes.get("peers", ""),
             "infoHash": attributes.get("infohash", ""),
-            "debridType": "",
-            "isDebrid": False,
-            "isDebridPack": False,
         }
     )

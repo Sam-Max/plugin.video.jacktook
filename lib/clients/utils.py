@@ -1,8 +1,9 @@
 from lib.clients.burst import Burst
+from lib.clients.elhosted import Elfhosted
 from lib.clients.jackett import Jackett
 from lib.clients.plex_client import Plex
 from lib.clients.prowlarr import Prowlarr
-from lib.clients.torrentio import Elfhosted, Torrentio
+from lib.clients.torrentio import Torrentio
 from lib.utils.kodi import get_setting, notify, translation
 from lib.utils.utils import Indexer
 

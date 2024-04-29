@@ -1,12 +1,10 @@
 import json
 import re
 import requests
-from lib.utils.countries import find_language_by_unicode
 from lib.utils.kodi import convert_size_to_bytes, translation
-from lib.utils.utils import unicode_flag_to_country_code
 
 
-class Torrentio:
+class Elfhosted:
     def __init__(self, host, notification) -> None:
         self.host = host.rstrip("/")
         self._notification = notification
@@ -23,7 +21,7 @@ class Torrentio:
             response = self.parse_response(res)
             return response
         except Exception as e:
-            self._notification(f"{translation(30228)}: {str(e)}")
+            self._notification(f"{translation(30231)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)
@@ -34,13 +32,11 @@ class Torrentio:
                 {
                     "title": parsed_item["title"],
                     "qualityTitle": "",
-                    "indexer": "Torrentio",
+                    "indexer": "Elfhosted",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
                     "size": parsed_item["size"],
-                    "seeders": parsed_item["seeders"],
-                    "languages": parsed_item["languages"],
-                    "fullLanguages": parsed_item["full_languages"],
+                    "seeders": 0,
                     "publishDate": "",
                     "peers": 0,
                 }
@@ -54,28 +50,7 @@ class Torrentio:
         size = size_match.group(1) if size_match else ""
         size = convert_size_to_bytes(size)
 
-        seeders_match = re.search(r"👤 (\d+)", title)
-        seeders = int(seeders_match.group(1)) if seeders_match else None
-
-        languages, full_languages = self.extract_languages(title)
-
         return {
             "title": name,
             "size": size,
-            "seeders": seeders,
-            "languages": languages,
-            "full_languages": full_languages,
         }
-
-    def extract_languages(self, title):
-        languages = []
-        full_languages = []
-        # Regex to match unicode country flag emojis
-        flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
-        if flag_emojis:
-            for flag in flag_emojis:
-                languages.append(unicode_flag_to_country_code(flag).upper())
-                full_lang = find_language_by_unicode(flag)
-                if (full_lang != None) and (full_lang not in full_languages):
-                    full_languages.append(full_lang)
-        return languages, full_languages
