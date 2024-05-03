@@ -1,5 +1,12 @@
+## 0.2.5
+* Added Plex support (beta)
+* Added support for torbox debrid
+* Major anime improvements
+* Faster debrid fetch
+
+
 ## 0.2.4 (2024-04-12)
-* Added jacktorr burst upport
+* Added jacktorr burst support
 * Improvements on torrent fetch (faster resolve)
 * Other minor improvements and fixes
 
