@@ -3,7 +3,7 @@ from lib.clients.utils import get_client
 from lib.utils.kodi import (
     Keyboard,
     get_setting,
-    notify,
+    notification,
 )
 from lib.utils.utils import (
     Indexer,
@@ -26,7 +26,7 @@ def search_client(
             return
 
     if not rescrape:
-        if mode == "tv" or media_type == "tv":
+        if mode == "tv" or media_type == "tv" or mode == "anime":
             cached_results = get_cached(query, params=(episode, "index"))
         else:
             cached_results = get_cached(query, params=("index"))
@@ -41,7 +41,6 @@ def search_client(
         tmdb_id = imdb_id = -1
 
     indexer = get_setting("indexer")
-    
     client_player = get_setting("client_player")
 
     client = get_client(indexer)
@@ -66,14 +65,14 @@ def search_client(
             )
         elif indexer == Indexer.TORRENTIO:
             if imdb_id == -1:
-                notify("Direct Search not supported for Torrentio")
+                notification("Direct Search not supported for Torrentio")
                 dialog.create("")
                 return
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
             response = client.search(imdb_id, mode, media_type, season, episode)
         elif indexer == Indexer.ELHOSTED:
             if imdb_id == -1:
-                notify("Direct Search not supported for Elfhosted")
+                notification("Direct Search not supported for Elfhosted")
                 dialog.create("")
                 return
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
@@ -82,17 +81,17 @@ def search_client(
             response = client.search(tmdb_id, query, mode, media_type, season, episode)
             dialog.create("")
         else:
-            notify(f"Select the correct indexer for the {client_player} client")
+            notification(f"Select the correct indexer for the {client_player} client")
             return
     elif client_player == Players.PLEX:
         if indexer == Indexer.PLEX:
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
             response = client.search(imdb_id, mode, media_type, season, episode)
         else:
-            notify(f"Select the correct indexer for the {client_player} client")
+            notification(f"Select the correct indexer for the {client_player} client")
             return
         
-    if mode == "tv" or media_type == "tv":
+    if mode == "tv" or media_type == "tv" or mode == "anime":
         set_cached(response, query, params=(episode, "index"))
     else:
         set_cached(response, query, params=("index"))

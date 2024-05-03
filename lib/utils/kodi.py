@@ -122,7 +122,7 @@ def translation(id_value):
     return ADDON.getLocalizedString(id_value)
 
 
-def log(message, level=xbmc.LOGINFO):
+def logger(message, level=xbmc.LOGINFO):
     xbmc.log("[JACKTOOK] " + str(message), level)
 
 
@@ -159,7 +159,7 @@ def refresh():
     xbmc.executebuiltin("Container.Refresh")
 
 
-def notify(message, heading=ADDON_NAME, icon=ADDON_ICON, time=5000, sound=True):
+def notification(message, heading=ADDON_NAME, icon=ADDON_ICON, time=5000, sound=True):
     xbmcgui.Dialog().notification(heading, message, icon, time, sound)
 
 

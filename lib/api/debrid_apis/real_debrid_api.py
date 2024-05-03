@@ -7,7 +7,7 @@ from lib.utils.kodi import (
     copy2clip,
     dialog_ok,
     dialogyesno,
-    notify,
+    notification,
     set_setting,
     progressDialog,
 )
@@ -52,13 +52,13 @@ class RealDebrid:
                 response = requests.put(url, data=file, headers=self.headers)
 
             if response.status_code == 401:
-                notify("Invalid token")
+                notification("Invalid token")
                 return
             elif (
                 response.status_code == 403
                 and response.json().get("error_code") == 9
             ):
-                notify("Real-Debrid Permission denied for free account")
+                notification("Real-Debrid Permission denied for free account")
                 return
 
             if is_return_none:
@@ -66,9 +66,9 @@ class RealDebrid:
 
             return response.json()
         except ConnectionError:
-            notify("No network connection")
+            notification("No network connection")
         except Exception as err:
-            notify(f"Error: {str(err)}")
+            notification(f"Error: {str(err)}")
 
     def initialize_headers(self):
         if self.encoded_token:
@@ -195,10 +195,10 @@ class RealDebrid:
                         torrent_info = self.get_torrent_info(torrent_id)
                         status = torrent_info["status"]
                         if any(x in status for x in DEBRID_ERROR_STATUS):
-                            notify("Real Debrid Error.")
+                            notification("Real Debrid Error.")
                             break
         elif status == "downloaded":
-            notify("File already cached")
+            notification("File already cached")
             return
         elif status == "waiting_files_selection":
             files = torrent_info["files"]
@@ -213,7 +213,7 @@ class RealDebrid:
                 video = max(items, key=lambda x: x["bytes"])
                 file_id = video["id"]
             except ValueError as e:
-                notify(e)
+                notification(e)
                 return
             self.select_files(torrent_id, str(file_id))
             ksleep(2000)
@@ -221,7 +221,7 @@ class RealDebrid:
             if torrent_info: 
                 status = torrent_info["status"]
                 if status == "downloaded":
-                    notify("File cached")
+                    notification("File cached")
                     return
                 file_size = round(float(video["bytes"]) / (1000**3), 2)
                 msg = "Saving File to the Real Debrid Cloud...\n"
@@ -252,7 +252,7 @@ class RealDebrid:
                     except Exception:
                         pass
                     if any(x in status for x in DEBRID_ERROR_STATUS):
-                        notify("Real Debrid Error.")
+                        notification("Real Debrid Error.")
                         break
         try:
             progressDialog.close()
@@ -264,7 +264,7 @@ class RealDebrid:
                 "Kodi", "Do you want to continue transfer in background?"
             )
             if response:
-                notify("Saving file to the Real Debrid Cloud")
+                notification("Saving file to the Real Debrid Cloud")
             else:
                 self.delete_torrent(torrent_id)
 

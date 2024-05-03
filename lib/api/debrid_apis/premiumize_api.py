@@ -1,7 +1,8 @@
 import time
 from typing import List, Optional, Dict
 from lib.api.debrid_apis.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi import copy2clip, log
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi import copy2clip
 from lib.utils.kodi import sleep as ksleep
 from typing import Any
 from lib.utils.kodi import (
@@ -108,7 +109,7 @@ class Premiumize(DebridClient):
         folder_id = self.create_or_get_folder_id(info_hash)
         response_data = self.add_magent_link(magnet, folder_id)
         if "error" in response_data.get("status"):
-            log(f"Failed to add magnet to Premiumize {response_data.get('message')}")
+            kodilog(f"Failed to add magnet to Premiumize {response_data.get('message')}")
             return
         torrent_id = response_data["id"]
         torr_info = self.get_torrent_info(torrent_id)
@@ -128,7 +129,7 @@ class Premiumize(DebridClient):
 
         folder_data = self.create_folder(info_hash)
         if folder_data.get("status") != "success":
-            log("Folder already created in meanwhile")
+            kodilog("Folder already created in meanwhile")
             return
         return folder_data.get("id")
 

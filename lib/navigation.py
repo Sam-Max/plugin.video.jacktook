@@ -17,7 +17,6 @@ from lib.indexer import indexer_show_results
 from lib.play import make_listing, play
 from lib.player import JacktookPlayer
 from lib.plex import plex_login, plex_logout, validate_server
-from lib.simkl import search_simkl_episodes
 from lib.titles_history import last_titles
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 from lib.utils.pm_utils import get_pm_pack_info
@@ -27,14 +26,13 @@ from lib.utils.torbox_utils import (
     get_torbox_pack_link,
 )
 from routing import Plugin
-
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.tmdb import (
     TMDB_POSTER_URL,
     tmdb_search,
     tmdb_show_results,
 )
-from lib.anilist import search_anilist
+from lib.anilist import search_anilist, search_episodes
 from lib.utils.utils import (
     DialogListener,
     Players,
@@ -47,7 +45,7 @@ from lib.utils.utils import (
     is_debrid_activated,
     post_process,
     pre_process,
-    search_fanart_tv,
+    get_fanart,
     get_port,
     is_video,
     list_item,
@@ -73,7 +71,7 @@ from lib.utils.kodi import (
     get_kodi_version,
     get_setting,
     is_auto_play,
-    notify,
+    notification,
     play_info_hash,
     play_media,
     refresh,
@@ -101,6 +99,7 @@ if JACKTORR_ADDON:
 
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
+
 kodi_lang = getLanguage(ISO_639_1)
 if kodi_lang:
     tmdb.language = kodi_lang
@@ -288,7 +287,7 @@ def search_tmdb(mode, genre_id, page):
     data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
     if data:
         if data.total_results == 0:
-            notify("No results found")
+            notification("No results found")
             return
         tmdb_show_results(
             data.results,
@@ -310,7 +309,7 @@ def search_tmdb(mode, genre_id, page):
 def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False):
     if mode == "movie" or media_type == "movie":
         setContent(plugin.handle, MOVIES_TYPE)
-    elif mode == "tv" or media_type == "tv":
+    elif mode == "tv" or media_type == "tv" or mode == "anime":
         setContent(plugin.handle, SHOWS_TYPE)
 
     set_watched_title(query, ids, mode)
@@ -352,10 +351,10 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                             auto_play(final_results, ids, tv_data, mode, p_dialog)
                             return
                     else:
-                        notify("No cached results")
+                        notification("No cached results")
                         return
                 else:
-                    notify("No debrid client enabled")
+                    notification("No debrid client enabled")
                     return
             else:
                 final_results = post_process(proc_results)
@@ -370,7 +369,7 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                     plugin,
                 )
         else:
-            notify("No results found")
+            notification("No results found")
 
 
 def auto_play(results, ids, tv_data, mode, p_dialog):
@@ -473,7 +472,7 @@ def torrents():
                 isFolder=True,
             )
     else:
-        notify(translation(30253))
+        notification(translation(30253))
 
 
 @plugin.route("/torrents/<info_hash>/<action_str>")
@@ -591,7 +590,7 @@ def tv_seasons_details(ids, mode, media_type=None):
     set_watched_title(name, ids, mode=mode, media_type=media_type)
 
     show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
-    fanart_data = search_fanart_tv(tvdb_id)
+    fanart_data = get_fanart(tvdb_id)
     fanart = fanart_data["fanart"] if fanart_data else ""
 
     for s in seasons:
@@ -653,7 +652,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
     setContent(plugin.handle, EPISODES_TYPE)
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-    fanart_data = search_fanart_tv(tvdb_id)
+    fanart_data = get_fanart(tvdb_id)
 
     for ep in season_details.episodes:
         ep_name = ep.name
@@ -836,16 +835,16 @@ def anilist(category, page=1):
     search_anilist(category, page, plugin)
 
 
-@plugin.route("/next_page/anilist/<category>/<page>")
+@plugin.route("/anilist/next_page/<category>/<page>")
 def next_page_anilist(category, page):
     setContent(plugin.handle, MOVIES_TYPE)
     page = int(page) + 1
     search_anilist(category, page, plugin)
 
 
-@plugin.route("/anilist/episodes/<query>/<id>/<mal_id>")
-def get_anime_episodes(query, id, mal_id):
-    search_simkl_episodes(query, id, mal_id, plugin=plugin)
+@plugin.route("/anilist/episodes/<query>/<anilist_id>/<mal_id>")
+def search_anime_episodes(query, anilist_id, mal_id):
+    search_episodes(query, anilist_id, mal_id, plugin)
 
 
 @plugin.route("/next_page/<mode>/<page>/<genre_id>")
@@ -919,13 +918,13 @@ def files():
 @plugin.route("/clear_cached_tmdb")
 def clear_cached_tmdb():
     clear_tmdb_cache()
-    notify(translation(30240))
+    notification(translation(30240))
 
 
 @plugin.route("/clear_cached_all")
 def clear_cached_all():
     clear_all_cache()
-    notify(translation(30244))
+    notification(translation(30244))
 
 
 @plugin.route("/rd_auth")
@@ -962,7 +961,7 @@ def open_burst_config():
 
 def torrent_status(info_hash):
     status = api.get_torrent_info(link=info_hash)
-    notify(
+    notification(
         "{}".format(status.get("stat_string")),
         status.get("name"),
         sound=False,
@@ -974,4 +973,4 @@ def run():
         plugin.run()
     except Exception as e:
         logging.error("Caught exception:", exc_info=True)
-        notify(str(e))
+        notification(str(e))

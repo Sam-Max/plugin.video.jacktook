@@ -1,5 +1,5 @@
 import logging
-from lib.utils.kodi import ADDON_NAME, log, notify
+from lib.utils.kodi import ADDON_NAME, notification
 from xbmcgui import DialogProgressBG
 from lib.api.jacktook.provider import (
     get_providers,
@@ -92,9 +92,9 @@ def search(method, *args, **kwargs):
     if results:
         return results
     elif results is None:
-        notify("No providers available")
+        notification("No providers available")
     else:
-        notify("No results found!")
+        notification("No results found!")
 
 
 def burst_search(query):

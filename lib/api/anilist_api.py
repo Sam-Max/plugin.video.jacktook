@@ -1,11 +1,12 @@
 import requests
+from lib.utils.kodi import get_setting
 
 
 class AniList:
     def __init__(self, client_id, client_secret):
         self.base_url = "https://graphql.anilist.co"
         self.auth_url = "https://anilist.co/api/v2/oauth/token"
-        _, self.token = self.get_token(client_id, client_secret)
+        self.token = self.get_token(client_id, client_secret)
         self.auth = {"Authorization": f"Bearer {self.token}"}
 
     def make_request(self, query, variables):
@@ -17,14 +18,14 @@ class AniList:
 
         if res.status_code == 200:
             media = res.json()["data"]["Page"]
-            return "sucess", media
+            return media
         else:
-            return f"Anilist error:{res.text}", {}
+            raise Exception(f"Anilist error:{res.text}")
 
     def search(self, query, page, perPage=15):
         variables = {
-            "query": query, 
-            "page": page, 
+            "query": query,
+            "page": page,
             "perPage": perPage,
         }
         return self.make_request(SEARCH, variables)
@@ -58,10 +59,9 @@ class AniList:
 
         if res.status_code == 200:
             media = res.json()["data"]["Media"]
-            return res.status_code, media
+            return media
         else:
-            error_message = f"Anilist Error:{res.text}"
-            return error_message, {}
+            raise Exception(f"Anilist Error:{res.text}")
 
     def get_token(self, client_id, client_secret):
         data = {
@@ -71,10 +71,9 @@ class AniList:
         }
         res = requests.post(self.auth_url, data=data)
         if res.status_code == 200:
-            return res.status_code, res.json()["access_token"]
+            return res.json()["access_token"]
         else:
-            error_message = f"Anilist Error:{res.text}"
-            return error_message, ""
+            raise Exception(f"Anilist Error:{res.text}")
 
 
 # GraphQL Anilist
@@ -169,3 +168,12 @@ SEARCH_ID = """
         }
     }
     """
+
+
+def anilist_client():
+    return AniList(
+        get_setting("anilist_client_id", "14375"),
+        get_setting(
+            "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
+        ),
+    )

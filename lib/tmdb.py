@@ -11,8 +11,8 @@ from lib.utils.kodi import (
     url_for,
 )
 from lib.utils.utils import (
-    get_movie_data,
-    get_tv_data,
+    get_tmdb_movie_data,
+    get_tmdb_tv_data,
     set_video_info,
     set_video_infotag,
     tmdb_get,
@@ -129,10 +129,10 @@ def tmdb_show_items(res, plugin, mode):
     if mode == "movie":
         title = res.title
         release_date = res.release_date
-        imdb_id, tvdb_id, duration = get_movie_data(tmdb_id)
+        imdb_id, tvdb_id, duration = get_tmdb_movie_data(tmdb_id)
     elif mode == "tv":
         title = res.name
-        imdb_id, tvdb_id = get_tv_data(tmdb_id)
+        imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
         release_date = res.get("first_air_date", "")
     elif mode == "multi":
         if "name" in res:
@@ -141,11 +141,11 @@ def tmdb_show_items(res, plugin, mode):
             title = res.title
         if media_type == "movie":
             release_date = res.release_date
-            imdb_id, tvdb_id, duration = get_movie_data(tmdb_id)
+            imdb_id, tvdb_id, duration = get_tmdb_movie_data(tmdb_id)
             title = f"[B][MOVIE][/B]- {title}"
         elif media_type == "tv":
             release_date = res.get("first_air_date", "")
-            imdb_id, tvdb_id = get_tv_data(tmdb_id)
+            imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
             title = f"[B][TV][/B]- {title}"
 
     poster_path = res.get("poster_path", "")

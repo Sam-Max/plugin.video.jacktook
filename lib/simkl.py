@@ -1,74 +1,56 @@
 import os
 import re
-from lib.api.fma_api import FindMyAnime
+from lib.api.fma_api import FindMyAnime, extract_season
+from lib.api.jacktook.kodi import kodilog
 from lib.api.simkl_api import SIMKLAPI
-from lib.utils.kodi import ADDON_PATH, get_kodi_version, log, url_for
+from lib.utils.kodi import ADDON_PATH, get_kodi_version, url_for
 from lib.utils.utils import (
     get_cached,
     set_cached,
     set_video_info,
     set_video_infotag,
-    tmdb_get,
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
+
 IMAGE_PATH = "https://wsrv.nl/?url=https://simkl.in/episodes/%s_w.webp"
 
 
-def search_simkl_episodes(title, id, mal_id, plugin):
+def search_simkl_episodes(title, anilist_id, mal_id, plugin):
     fma = FindMyAnime()
-    data = fma.get_anime_data(id, "Anilist")
+    data = fma.get_anime_data(anilist_id, "Anilist")
     s_id = extract_season(data[0]) if data else ""
     season = s_id[0] if s_id else 1
-
-    imdb_id = "tt0000000"
-    title = re.sub(r"Season\s\d", "", title).strip()
-    res = tmdb_get("search_tv", title)
-    if res["results"]:
-        for res in res["results"]:
-            ids = res.get("genre_ids")
-            if 16 in ids:  # anime category
-                details = tmdb_get("tv_details", res.get("id"))
-                imdb_id = details.external_ids.get("imdb_id")
-                break
-
-    _, res = search_simkl_api(id, mal_id, type="anime_episodes")
-
-    simkl_parse_show_results(res, title, id, imdb_id, season, plugin)
+    try:
+        res = search_simkl_api(mal_id)
+        simkl_parse_show_results(res, title, season, plugin)
+    except Exception as e:
+        kodilog(e)
 
 
-def search_simkl_api(id, mal_id, type):
-    cached_results = get_cached(type, params=(id))
+def search_simkl_api(mal_id):
+    cached_results = get_cached(type, params=(mal_id))
     if cached_results:
-        return "", cached_results
+        return cached_results
 
     simkl = SIMKLAPI()
-    if type == "anime_ids":
-        message, ids = simkl.get_mapping_ids("mal", mal_id)
-        if ids:
-            data = ids.get("imdb")
-        else:
-            data = -1
+    res = simkl.get_anilist_episodes(mal_id)
 
-    elif type == "anime_episodes":
-        message, data = simkl.get_anilist_episodes(mal_id)
-
-    set_cached(data, type, params=(id))
-
-    return message, data
+    set_cached(res, type, params=(mal_id))
+    return res
 
 
-def simkl_parse_show_results(response, title, id, imdb_id, season, plugin):
+def simkl_parse_show_results(response, title, season, plugin):
     for res in response:
         if res["type"] == "episode":
+            episode = res["episode"]
             ep_name = res.get("title")
             if ep_name:
-                ep_name = f"{season}x{res['episode']} {ep_name}"
+                ep_name = f"{season}x{episode} {ep_name}"
             else:
-                ep_name = f"Episode {res['episode']}"
-
-            episode = res["episode"]
+                ep_name = f"Episode {episode}"
+            
             description = res.get("description", "")
 
             date = res.get("date", "")
@@ -113,9 +95,9 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, plugin):
                 plugin.handle,
                 url_for(
                     name="search",
-                    mode="tv",
+                    mode="anime",
                     query=title,
-                    ids=f"{id}, {-1}, {imdb_id}",
+                    ids=f"{-1}, {-1}, {-1}",
                     tv_data=f"{ep_name}(^){episode}(^){season}",
                 ),
                 list_item,
@@ -123,68 +105,3 @@ def simkl_parse_show_results(response, title, id, imdb_id, season, plugin):
             )
 
     endOfDirectory(plugin.handle)
-
-
-def extract_season(res):
-    regexes = [
-        r"season\s(\d+)",
-        r"\s(\d+)st\sseason(?:\s|$)",
-        r"\s(\d+)nd\sseason(?:\s|$)",
-        r"\s(\d+)rd\sseason(?:\s|$)",
-        r"\s(\d+)th\sseason(?:\s|$)",
-    ]
-    s_ids = []
-    for regex in regexes:
-        if isinstance(res.get("title"), dict):
-            s_ids += [
-                re.findall(regex, name, re.IGNORECASE)
-                for lang, name in res.get("title").items()
-                if name is not None
-            ]
-        else:
-            s_ids += [
-                re.findall(regex, name, re.IGNORECASE) for name in res.get("title")
-            ]
-
-        s_ids += [
-            re.findall(regex, name, re.IGNORECASE) for name in res.get("synonyms")
-        ]
-
-    s_ids = [s[0] for s in s_ids if s]
-
-    if not s_ids:
-        regex = r"\s(\d+)$"
-        cour = False
-        if isinstance(res.get("title"), dict):
-            for lang, name in res.get("title").items():
-                if name is not None and (
-                    " part " in name.lower() or " cour " in name.lower()
-                ):
-                    cour = True
-                    break
-            if not cour:
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE)
-                    for lang, name in res.get("title").items()
-                    if name is not None
-                ]
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE)
-                    for name in res.get("synonyms")
-                ]
-        else:
-            for name in res.get("title"):
-                if " part " in name.lower() or " cour " in name.lower():
-                    cour = True
-                    break
-            if not cour:
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE) for name in res.get("title")
-                ]
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE)
-                    for name in res.get("synonyms")
-                ]
-        s_ids = [s[0] for s in s_ids if s and int(s[0]) < 20]
-
-    return s_ids

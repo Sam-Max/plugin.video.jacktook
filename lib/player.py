@@ -1,4 +1,4 @@
-from lib.utils.kodi import hide_busy_dialog, notify
+from lib.utils.kodi import hide_busy_dialog, notification
 from xbmc import Player as xbmc_player
 
 
@@ -22,6 +22,6 @@ class JacktookPlayer(xbmc_player):
         self.url = url
 
     def run_error(self):
-        notify("Playback Failed")
+        notification("Playback Failed")
         return False
 

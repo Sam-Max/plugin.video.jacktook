@@ -3,6 +3,7 @@ from http.client import HTTPException
 import json
 import requests
 from requests.exceptions import ConnectionError, Timeout
+from lib.api.jacktook.kodi import kodilog
 from lib.api.plex.settings import settings
 from lib.api.plex.models.plex_models import (
     PlexEpisodeMeta,
@@ -12,7 +13,6 @@ from lib.api.plex.models.plex_models import (
     PlexServer,
 )
 from lib.api.plex.utils import PlexUnauthorizedError
-from lib.utils.kodi import log
 
 
 def check_server_connection(url, access_token):
@@ -93,7 +93,7 @@ def get_media(url, token, guid, get_only_first=False) -> list[PlexMediaMeta]:
             "X-Plex-Token": token,
         },
     )
-    log(f"get_media/library/all: {json}")
+    kodilog(f"get_media/library/all: {json}")
     media_sections = json["MediaContainer"].get("Metadata", [])
     media_metas = []
     for section in media_sections:
@@ -105,7 +105,7 @@ def get_media(url, token, guid, get_only_first=False) -> list[PlexMediaMeta]:
             },
         )
         metadata = json["MediaContainer"]["Metadata"][0]
-        log(f"get_media/library/metadata/: {json}")
+        kodilog(f"get_media/library/metadata/: {json}")
         media_metas.append(PlexMediaMeta(**metadata))
         if get_only_first:
             break
@@ -133,7 +133,6 @@ def imdb_to_plex_id(imdb_id, token, mode, media_type):
             "guid": f"com.plexapp.agents.imdb://{imdb_id}?lang=en",
         },
     )
-    log(json)
     media_container = json["MediaContainer"]
     if media_container["totalSize"]:
         return media_container["Metadata"][0]["guid"]

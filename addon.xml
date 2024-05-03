@@ -4,6 +4,7 @@
     <import addon="xbmc.python" version="3.00.0"/>
     <import addon="script.module.requests" version="2.25.1"/>
     <import addon="script.module.routing" version="0.2.3"/>
+    <import addon="script.otaku.mappings"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="jacktook.py">
     <provides>video</provides>

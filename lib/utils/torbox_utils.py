@@ -1,5 +1,5 @@
 from lib.api.debrid_apis.tor_box_api import Torbox
-from lib.utils.kodi import get_setting, log, notify
+from lib.utils.kodi import get_setting, notification
 from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
@@ -17,7 +17,7 @@ def add_torbox_torrent(info_hash):
     magnet = info_hash_to_magnet(info_hash)
     response_data = client.add_magnet_link(magnet)
     if response_data.get("detail") is False:
-        notify(f"Failed to add magnet link to Torbox {response_data}")
+        notification(f"Failed to add magnet link to Torbox {response_data}")
 
 
 def get_torbox_pack_info(info_hash):

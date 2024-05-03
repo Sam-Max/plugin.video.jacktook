@@ -5,7 +5,8 @@ import re
 import unicodedata
 import requests
 
-from lib.db.cached import Cache
+from lib.api.tvdbapi.tvdbapi import TVDBAPI
+from lib.db.cached import cache
 from lib.db.database import get_db
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
@@ -15,7 +16,7 @@ from lib.api.tmdbv3api.objs.season import Season
 from lib.api.tmdbv3api.objs.tv import TV
 
 from lib.torf._magnet import Magnet
-from lib.fanarttv import search_api_fanart_tv
+from lib.fanart import search_api_fanart
 from lib.utils.kodi import (
     ADDON_PATH,
     container_refresh,
@@ -25,7 +26,6 @@ from lib.utils.kodi import (
     get_kodi_version,
     get_setting,
     is_cache_enabled,
-    log,
     translation,
     url_for,
 )
@@ -38,8 +38,6 @@ from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
 
-
-cache = Cache()
 
 db = get_db()
 
@@ -371,12 +369,13 @@ def is_torrent_watched(title):
     return db.database["jt:watch"].get(title, False)
 
 
-def search_fanart_tv(tvdb_id, mode="tv"):
-    identifier = "{}|{}".format("fanarttv", tvdb_id)
+def get_fanart(tvdb_id, mode="tv"):
+    identifier = "{}|{}".format("fanart.tv", tvdb_id)
     data = cache.get(identifier, hashed_key=True)
-    if not data:
-        fanart_data = search_api_fanart_tv(mode, "en", tvdb_id)
-        if fanart_data:
+    if data: return data
+    else:
+        data = search_api_fanart(mode, language="en", media_id=tvdb_id)
+        if data:
             cache.set(
                 identifier,
                 data,
@@ -416,62 +415,79 @@ def db_get(name, func, path, params):
     return data
 
 
-def tmdb_get(path, params={}):
+def tvdb_get(path, params={}):
     identifier = "{}|{}".format(path, params)
     data = cache.get(identifier, hashed_key=True)
-    if not data:
-        if path == "search_tv":
-            data = Search().tv_shows(params)
-        elif path == "search_movie":
-            data = Search().movies(params)
-        elif path == "movie_details":
-            data = Movie().details(params)
-        elif path == "tv_details":
-            data = TV().details(params)
-        elif path == "season_details":
-            data = Season().details(params["id"], params["season"])
-        elif path == "movie_genres":
-            data = Genre().movie_list()
-        elif path == "tv_genres":
-            data = Genre().tv_list()
-        elif path == "discover_movie":
-            discover = Discover()
-            data = discover.discover_movies(params)
-        elif path == "discover_tv":
-            discover = Discover()
-            data = discover.discover_tv_shows(params)
-        elif path == "trending_movie":
-            trending = Trending()
-            data = trending.movie_week(page=params)
-        elif path == "trending_tv":
-            trending = Trending()
-            data = trending.tv_day(page=params)
-        elif path == "find":
-            data = Find().find_by_tvdb_id(params)
-        cache.set(
-            identifier,
-            data,
-            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            hashed_key=True,
-        )
+    if data:
+        return data
+    if path == "get_imdb_id":
+        data = TVDBAPI().get_imdb_id(params)
+    cache.set(
+        identifier,
+        data,
+        timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+        hashed_key=True,
+    )
     return data
 
 
-def get_movie_data(id):
+def tmdb_get(path, params={}):
+    identifier = "{}|{}".format(path, params)
+    data = cache.get(identifier, hashed_key=True)
+    if data:
+        return data
+    if path == "search_tv":
+        data = Search().tv_shows(params)
+    elif path == "search_movie":
+        data = Search().movies(params)
+    elif path == "movie_details":
+        data = Movie().details(params)
+    elif path == "tv_details":
+        data = TV().details(params)
+    elif path == "season_details":
+        data = Season().details(params["id"], params["season"])
+    elif path == "movie_genres":
+        data = Genre().movie_list()
+    elif path == "tv_genres":
+        data = Genre().tv_list()
+    elif path == "discover_movie":
+        discover = Discover()
+        data = discover.discover_movies(params)
+    elif path == "discover_tv":
+        discover = Discover()
+        data = discover.discover_tv_shows(params)
+    elif path == "trending_movie":
+        trending = Trending()
+        data = trending.movie_week(page=params)
+    elif path == "trending_tv":
+        trending = Trending()
+        data = trending.tv_day(page=params)
+    elif path == "find_by_tvdb":
+        data = Find().find_by_tvdb_id(params)
+    cache.set(
+        identifier,
+        data,
+        timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+        hashed_key=True,
+    )
+    return data
+
+
+def get_tmdb_movie_data(id):
     details = tmdb_get("movie_details", id)
     imdb_id = details.external_ids.get("imdb_id")
     runtime = details.runtime
     return imdb_id, "", runtime
 
 
-def get_tv_data(id):
+def get_tmdb_tv_data(id):
     details = tmdb_get("tv_details", id)
     imdb_id = details.external_ids.get("imdb_id")
     tvdb_id = details.external_ids.get("tvdb_id")
     return imdb_id, tvdb_id
 
 
-# This method was taken from script.elementum.jackett
+# This method was taken from script.elementum.jackett addon
 def get_random_color(provider_name):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
     colors = []
@@ -628,7 +644,7 @@ def check_pack(results, season_num):
 def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
     res = limit_results(res)
-    if mode == "tv":
+    if mode == "tv": 
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     return res
@@ -689,7 +705,9 @@ def sort_results(first_res, second_res=None):
         if second_res:
             return sort_second_result(first_sorted, second_res, type="Quality")
     elif sort_by == "Cached":
-        first_sorted = sorted(first_res, key=lambda r: r.get("isDebrid", ""), reverse=True)
+        first_sorted = sorted(
+            first_res, key=lambda r: r.get("isDebrid", ""), reverse=True
+        )
         if second_res:
             return sort_second_result(first_sorted, second_res, type="isDebrid")
 

@@ -1,5 +1,6 @@
 from lib.api.debrid_apis.premiumize_api import Premiumize
-from lib.utils.kodi import get_setting, log
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi import get_setting
 from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
@@ -18,7 +19,7 @@ def get_pm_pack_info(info_hash):
     magnet = info_hash_to_magnet(info_hash)
     response_data = pm_client.create_download_link(magnet)
     if "error" in response_data.get("status"):
-        log(f"Failed to get link from Premiumize {response_data.get('message')}")
+        kodilog(f"Failed to get link from Premiumize {response_data.get('message')}")
         return
     info = []
     for item in response_data.get("content"):
@@ -38,7 +39,7 @@ def get_pm_link(infoHash):
     magnet = info_hash_to_magnet(infoHash)
     response_data = pm_client.create_download_link(magnet)
     if "error" in response_data.get("status"):
-        log(f"Failed to get link from Premiumize {response_data.get('message')}")
+        kodilog(f"Failed to get link from Premiumize {response_data.get('message')}")
         return
     content = response_data.get("content")
     selected_file = max(content, key=lambda x: x.get("size", 0))

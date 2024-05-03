@@ -1,12 +1,12 @@
 from http import HTTPStatus
 import json
 from time import sleep, time
-from urllib.parse import urlencode
 import requests
+from lib.api.jacktook.kodi import kodilog
 from lib.api.plex.settings import settings
 from lib.api.plex.models.plex_models import AuthPin, PlexUser
 from lib.api.plex.utils import HTTPException, PlexUnauthorizedError
-from lib.utils.kodi import copy2clip, dialog_ok, progressDialog, log, set_setting
+from lib.utils.kodi import copy2clip, dialog_ok, progressDialog, set_setting
 
 
 class PlexApi:
@@ -26,7 +26,7 @@ class PlexApi:
         )
         progressDialog.create("Plex Auth")
         progressDialog.update(-1, content)
-        log("Start polling plex.tv for token")
+        kodilog("Start polling plex.tv for token")
         start_time = time()
         while time() - start_time < 300:
             auth_token = self.get_auth_token(auth_pin)

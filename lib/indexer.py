@@ -1,11 +1,9 @@
 import re
-from lib.anilist import anilist_client
 from lib.tmdb import TMDB_POSTER_URL
 from lib.utils.kodi import (
     action2,
     bytes_to_human_readable,
     get_setting,
-    log,
     set_view,
 )
 from lib.utils.utils import (
@@ -26,24 +24,17 @@ from xbmcplugin import endOfDirectory
 
 
 def indexer_show_results(results, mode, query, ids, tv_data, plugin):
-    poster = ""
-    overview = ""
     indexer = get_setting("indexer")
     description_length = get_description_length()
-
     if ids:
         tmdb_id, tvdb_id, _ = ids.split(", ")
 
+    poster = overview = ""
     if query:
-        if mode == "tv":
-            if tvdb_id == "-1":  # for anime episode
-                _, result = anilist_client().get_by_id(tmdb_id)
-                overview = result.get("description", "")
-                poster = result.get("coverImage", {}).get("large", "")
-            else:
-                find = tmdb_get("find", tvdb_id)
-                overview = find["tv_results"][0].get("overview", "")
-                poster = TMDB_POSTER_URL + find["tv_results"][0].get("poster_path", "")
+        if mode in ["tv", "anime"]:
+            find = tmdb_get("find_by_tvdb", tvdb_id)
+            overview = find["tv_results"][0].get("overview", "")
+            poster = TMDB_POSTER_URL + find["tv_results"][0].get("poster_path", "")
         elif mode == "movie":
             details = tmdb_get("movie_details", tmdb_id)
             overview = details.get("overview", "")

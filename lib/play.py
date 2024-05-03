@@ -7,7 +7,7 @@ from lib.utils.kodi import (
     is_elementum_addon,
     is_jacktorr_addon,
     is_torrest_addon,
-    notify,
+    notification,
     set_property,
     translation,
 )
@@ -46,7 +46,7 @@ def play(
     )
 
     if not magnet and not url:
-        notify(translation(30251))
+        notification(translation(30251))
         return
 
     client = get_setting("client_player")
@@ -138,7 +138,7 @@ def set_windows_property(mode, ids):
 
 def get_elementum_url(magnet, mode, ids):
     if not is_elementum_addon():
-        notify(translation(30252))
+        notification(translation(30252))
         return
     if ids:
         tmdb_id, _, _ = ids.split(", ")
@@ -149,7 +149,7 @@ def get_elementum_url(magnet, mode, ids):
 
 def get_jacktorr_url(magnet, url):
     if not is_jacktorr_addon():
-        notify(translation(30253))
+        notification(translation(30253))
         return
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
@@ -160,7 +160,7 @@ def get_jacktorr_url(magnet, url):
 
 def get_torrest_url(magnet, url):
     if not is_torrest_addon():
-        notify(translation(30250))
+        notification(translation(30250))
         return
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"

@@ -241,3 +241,7 @@ def cached(expiry_time, ignore_self=False, identifier="", cache_type=Cache):
 # noinspection PyTypeChecker
 def memory_cached(expiry_time, instance_method=False, identifier=""):
     return cached(expiry_time, instance_method, identifier, MemoryCache)
+
+
+
+cache = Cache()

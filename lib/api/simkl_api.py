@@ -20,36 +20,33 @@ class SIMKLAPI:
             params=params,
         )
         if res.status_code == 200:
-            return "", json.loads(res.text)
+            return json.loads(res.text)
         else:
-            error_message = f"Simkl Error::{res.text}"
-            return error_message, {}
+            raise Exception(f"Simkl Error::{res.text}")
 
     def get_anime_info(self, anilist_id):
         _, simkl_id = self.get_simkl_id("anilist", anilist_id)
         params = {"extended": "full", "client_id": self.ClientID}
-        message, res = self.make_request("anime/" + str(simkl_id), params=params)
-        return message, res
+        return self.make_request("anime/" + str(simkl_id), params=params)
 
     def get_anilist_episodes(self, mal_id):
         _, simkl_id = self.get_simkl_id("mal", mal_id)
         params = {
             "extended": "full",
         }
-        message, res = self.make_request("anime/episodes/" + str(simkl_id), params=params)
-        return message, res
+        return self.make_request("anime/episodes/" + str(simkl_id), params=params)
 
     def get_simkl_id(self, send_id, anime_id):
         params = {
             send_id: anime_id,
             "client_id": self.ClientID,
         }
-        message, res = self.make_request("search/id", params=params)
-        anime_id = res[0]["ids"]["simkl"]
-        return message, anime_id
+        res = self.make_request("search/id", params=params)
+        simkl = res[0]["ids"]["simkl"]
+        return simkl
 
     def get_mapping_ids(self, send_id, anime_id):
-        _, simkl_id = self.get_simkl_id(send_id, anime_id)
+        simkl_id = self.get_simkl_id(send_id, anime_id)
         params = {"extended": "full", "client_id": self.ClientID}
-        message, res = self.make_request("anime/" + str(simkl_id), params=params)
-        return message, res["ids"]
+        res = self.make_request("anime/" + str(simkl_id), params=params)
+        return res["ids"]

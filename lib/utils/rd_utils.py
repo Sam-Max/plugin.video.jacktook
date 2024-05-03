@@ -1,5 +1,6 @@
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
-from lib.utils.kodi import get_setting, log
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi import get_setting
 from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
@@ -14,11 +15,11 @@ def add_rd_magnet(magnet):
     response = client.add_magent_link(magnet)
     torrent_id = response.get("id")
     if not torrent_id:
-        log("Failed to add magnet link to Real-Debrid")
+        kodilog("Failed to add magnet link to Real-Debrid")
         return
     torr_info = client.get_torrent_info(torrent_id)
     if "magnet_error" in torr_info["status"]:
-        log(f"Magnet Error: {magnet}")
+        kodilog(f"Magnet Error: {magnet}")
         client.delete_torrent(torrent_id)
         return
     if torr_info["status"] == "waiting_files_selection":

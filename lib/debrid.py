@@ -6,7 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
-from lib.utils.kodi import get_setting, log
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi import get_setting
 from lib.utils.pm_utils import get_pm_link
 from lib.utils.rd_utils import get_rd_link
 from lib.utils.torbox_utils import get_torbox_link
@@ -210,7 +211,7 @@ def get_magnet_from_uri(uri, dialog, count, results):
                 elif res.headers.get("Content-Type") == "application/octet-stream":
                     magnet = extract_magnet_from_url(uri)
         except Exception as e:
-            log(f"Failed to extract torrent data from: {str(e)}")
+            kodilog(f"Failed to extract torrent data from: {str(e)}")
     return magnet, info_hash
 
 

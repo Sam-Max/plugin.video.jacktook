@@ -1,6 +1,7 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.api.plex.media_server_api import check_server_connection, get_servers
 from lib.api.plex.plex_api import PlexApi
-from lib.utils.kodi import get_setting, log, set_setting
+from lib.utils.kodi import get_setting, set_setting
 from xbmcgui import Dialog
 
 plex = PlexApi()
@@ -36,8 +37,8 @@ def validate_server():
 
 
 def discovery_test(urls, access_token):
-    log("Making discovery test")
-    log(urls)
+    kodilog("Making discovery test...")
+    kodilog(urls)
     for url in urls:
         success = check_server_connection(url, access_token)
         if success:
@@ -46,8 +47,8 @@ def discovery_test(urls, access_token):
 
 
 def streaming_test(urls, access_token):
-    log("Making streaming test")
-    log(urls)
+    kodilog("Making streaming test...")
+    kodilog(urls)
     for url in urls:
         success = check_server_connection(url, access_token)
         if success:

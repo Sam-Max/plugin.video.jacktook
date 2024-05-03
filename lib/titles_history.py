@@ -1,6 +1,6 @@
 import os
 from lib.db.database import get_db
-from lib.utils.kodi import ADDON_PATH, url_for, log, url_for_path
+from lib.utils.kodi import ADDON_PATH, url_for, url_for_path
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,

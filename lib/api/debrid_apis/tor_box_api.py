@@ -1,5 +1,5 @@
 from lib.api.debrid_apis.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi import notify
+from lib.utils.kodi import notification
 from xbmcgui import DialogProgress
 from lib.utils.kodi import sleep as ksleep, dialogyesno
 
@@ -78,9 +78,9 @@ class Torbox(DebridClient):
     def download(self, magnet):
         response_data = self.add_magnet_link(magnet)
         if response_data.get("detail") is False:
-            notify(f"Failed to add magnet link to Torbox {response_data}")
+            notification(f"Failed to add magnet link to Torbox {response_data}")
         else:
-            notify(f"Magnet sent to cloud")
+            notification(f"Magnet sent to cloud")
 
     def download2(self, magnet, pack=False):
         cancelled = False
@@ -114,7 +114,7 @@ class Torbox(DebridClient):
                         print(torrent_info)
                         status = torrent_info["download_state"]
                         if any(x in status for x in TORBOX_ERROR_STATUS):
-                            notify(f"Torbox Error. Status {status}")
+                            notification(f"Torbox Error. Status {status}")
                             break
                 elif status == "completed" or cancelled is True:
                     break

@@ -1,7 +1,7 @@
 import hashlib
 import requests
+from lib.api.jacktook.kodi import kodilog
 from lib.bencodepy import bencodepy
-from lib.utils.kodi import log
 
 
 def extract_magnet_from_url(url: str) -> dict:
@@ -11,10 +11,10 @@ def extract_magnet_from_url(url: str) -> dict:
             content = response.content
             return extract_torrent_metadata(content)
         else:
-            log.error(f"Failed to fetch content from URL: {url}")
+            kodilog.error(f"Failed to fetch content from URL: {url}")
             return {}
     except Exception as e:
-        log.error(f"Error occurred: {e}")
+        kodilog.error(f"Error occurred: {e}")
         return {}
 
 
@@ -28,7 +28,7 @@ def extract_torrent_metadata(content: bytes) -> dict:
         info_hash = m.hexdigest()
         return convert_info_hash_to_magnet(info_hash)
     except Exception as e:
-        log.error(f"Error occurred: {e}")
+        kodilog.error(f"Error occurred: {e}")
         return {}
 
 

@@ -9,7 +9,7 @@ ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_NAME = ADDON.getAddonInfo("name")
 
 
-def log(message, level=xbmc.LOGINFO):
+def kodilog(message, level=xbmc.LOGINFO):
     xbmc.log("[JACKTOOKAPI] " + str(message), level)
 
 

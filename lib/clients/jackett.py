@@ -1,5 +1,5 @@
 import requests
-from lib.utils.kodi import get_jackett_timeout, notify, translation, log
+from lib.utils.kodi import get_jackett_timeout, notification, translation
 from lib import xmltodict
 
 
@@ -19,7 +19,7 @@ class Jackett:
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
             res = requests.get(url, timeout=get_jackett_timeout())
             if res.status_code != 200:
-                notify(f"{translation(30229)} ({res.status_code})")
+                notification(f"{translation(30229)} ({res.status_code})")
                 return
             return self.parse_response(res)
         except Exception as e:
