@@ -16,6 +16,9 @@ from lib.utils.utils import (
     USER_AGENT_HEADER,
     get_cached,
     get_info_hash_from_magnet,
+    is_pm_enabled,
+    is_rd_enabled,
+    is_tb_enabled,
     is_url,
     set_cached,
 )
@@ -39,15 +42,11 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     cached_results = []
     uncached_results = []
 
-    rd_enabled = get_setting("real_debrid_enabled")
-    pm_enabled = get_setting("premiumize_enabled")
-    torbox_enabled = get_setting("torbox_enabled")
-
     total = len(results)
     get_magnet_and_infohash(results, lock, dialog)
 
     with ThreadPoolExecutor(max_workers=total) as executor:
-        if rd_enabled:
+        if is_rd_enabled():
             rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
             [
                 executor.submit(
@@ -62,7 +61,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                 )
                 for res in copy.deepcopy(results)
             ]
-        if pm_enabled:
+        if is_pm_enabled():
             pm_client = Premiumize(token=get_setting("premiumize_token"))
             [
                 executor.submit(
@@ -77,7 +76,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                 )
                 for res in copy.deepcopy(results)
             ]
-        if torbox_enabled:
+        if is_tb_enabled():
             tor_box_client = Torbox(token=get_setting("torbox_token"))
             [
                 executor.submit(

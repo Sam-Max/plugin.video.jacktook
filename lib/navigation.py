@@ -40,9 +40,11 @@ from lib.utils.utils import (
     clear_all_cache,
     clear_tmdb_cache,
     get_password,
+    get_random_color,
     get_service_host,
     get_username,
     is_debrid_activated,
+    is_rd_enabled,
     post_process,
     pre_process,
     get_fanart,
@@ -185,6 +187,13 @@ def main_menu():
         plugin.handle,
         plugin.url_for(torrents),
         list_item("Torrents", "settings.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(cloud),
+        list_item("Cloud", "settings.png"),
         isFolder=True,
     )
 
@@ -431,6 +440,45 @@ def play_torrent(
         mode,
         is_torrent,
     )
+
+
+@plugin.route("/cloud")
+@check_directory
+@query_arg("page", required=False)
+def cloud(page=1):
+    if is_rd_enabled():
+        debrid_type = "RD"
+        debrid_color = get_random_color(debrid_type)
+        format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
+
+        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+        downloads = rd_client.get_user_downloads_list(page=page)
+        for d in downloads:
+            torrent_li = list_item(
+                f"{format_debrid_type}-{d['filename']}", "download.png"
+            )
+            torrent_li.setArt(
+                {
+                    "icon": d["host_icon"],
+                }
+            )
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(play_url, url=d.get("download"), name=d["filename"]),
+                torrent_li,
+                isFolder=False,
+            )
+
+        next_page = int(page) + 1
+        next_item = list_item("Next", icon="nextpage.png")
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(cloud, page=next_page),
+            next_item,
+            isFolder=True,
+        )
+    else:
+        notification("real debrid not activated")
 
 
 @plugin.route("/torrents")

@@ -164,9 +164,21 @@ class DialogListener:
 def is_debrid_activated():
     return (
         get_setting("real_debrid_enabled")
-        or get_setting("real_debrid_token")
+        or get_setting("premiumize_enabled")
         or get_setting("torbox_enabled")
     )
+
+
+def is_rd_enabled():
+    return get_setting("real_debrid_enabled")
+
+
+def is_pm_enabled():
+    return get_setting("premiumize_enabled")
+
+
+def is_tb_enabled():
+    return get_setting("torbox_enabled")
 
 
 def list_item(label, icon):
@@ -372,7 +384,8 @@ def is_torrent_watched(title):
 def get_fanart(tvdb_id, mode="tv"):
     identifier = "{}|{}".format("fanart.tv", tvdb_id)
     data = cache.get(identifier, hashed_key=True)
-    if data: return data
+    if data:
+        return data
     else:
         data = search_api_fanart(mode, language="en", media_id=tvdb_id)
         if data:
@@ -644,7 +657,7 @@ def check_pack(results, season_num):
 def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
     res = limit_results(res)
-    if mode == "tv": 
+    if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     return res
