@@ -31,7 +31,7 @@ def check_server_connection(url, access_token):
         return False
 
 
-def get_servers(url, token) -> list[PlexServer]:
+def get_servers(url, token):
     json = get_json(
         url=f"{url}/resources",
         params={
@@ -48,7 +48,7 @@ def get_servers(url, token) -> list[PlexServer]:
     ]
 
 
-def get_sections(url, token) -> list[PlexLibrarySection]:
+def get_sections(url, token):
     json = get_json(
         url=f"{url}/library/sections",
         params={
@@ -68,7 +68,7 @@ def get_section_media(
     section_id: str,
     skip: int,
     search: str,
-) -> list[PlexMediaMeta]:
+):
     params = {
         "includeGuids": 1,
         "X-Plex-Container-Start": skip,
@@ -85,7 +85,7 @@ def get_section_media(
     return [PlexMediaMeta(**meta) for meta in metadata]
 
 
-def get_media(url, token, guid, get_only_first=False) -> list[PlexMediaMeta]:
+def get_media(url, token, guid, get_only_first=False):
     json = get_json(
         url=f"{url}/library/all",
         params={
@@ -112,7 +112,7 @@ def get_media(url, token, guid, get_only_first=False) -> list[PlexMediaMeta]:
     return media_metas
 
 
-def get_all_episodes(url, token, key) -> list[PlexEpisodeMeta]:
+def get_all_episodes(url, token, key):
     json = get_json(
         url=str(f"{url}/{key[1:]}").replace("/children", "/allLeaves"),
         params={

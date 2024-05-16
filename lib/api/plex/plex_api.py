@@ -93,7 +93,7 @@ class PlexApi:
                 detail="Plex server timeout error",
             )
 
-    def get_plex_user(self) -> PlexUser | None:
+    def get_plex_user(self):
         response = self.client.get(
             f"{self.PLEX_API_URL}/user",
             params={
