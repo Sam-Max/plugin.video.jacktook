@@ -126,6 +126,12 @@ torrent_clients = ["Jacktorr", "Torrest", "Elementum"]
 torrent_indexers = ["Prowlarr", "Jackett", "Torrentio", "Elfhosted", "Burst"]
 
 
+class Debrids(Enum):
+    RD = "Real-Debrid"
+    PM = "Premiumize"
+    TB = "Torbox"
+
+
 class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
@@ -167,6 +173,15 @@ def is_debrid_activated():
         or get_setting("premiumize_enabled")
         or get_setting("torbox_enabled")
     )
+
+
+def check_debrid_enabled(debrid_type):
+    if debrid_type == Debrids.RD:
+        return is_rd_enabled()
+    elif debrid_type == Debrids.PM:
+        return is_pm_enabled()
+    elif debrid_type == Debrids.TB:
+        return is_tb_enabled()
 
 
 def is_rd_enabled():

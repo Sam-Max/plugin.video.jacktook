@@ -1,6 +1,8 @@
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
+import time
+from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi import get_setting
+from lib.utils.kodi import get_setting, dialog_text
 from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
@@ -71,6 +73,26 @@ def get_rd_pack_link(file_id, torrent_id):
     torr_info = client.get_torrent_info(torrent_id)
     response = client.create_download_link(torr_info["links"][int(file_id)])
     return response["download"]
+
+
+def get_rd_info():
+    user = client.get_user()
+    expiration = user["expiration"]
+    kodilog(expiration)
+    try:
+        expires = datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
+    except:
+        expires = datetime(*(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6]))
+    days_remaining = (expires - datetime.today()).days
+    body = []
+    append = body.append
+    append("[B]Account:[/B] %s" % user["email"])
+    append("[B]Username:[/B] %s" % user["username"])
+    append("[B]Status:[/B] %s" % user["type"].capitalize())
+    append("[B]Expires:[/B] %s" % expires)
+    append("[B]Days Remaining:[/B] %s" % days_remaining)
+    append("[B]Fidelity Points:[/B] %s" % user["points"])
+    dialog_text("Real-Debrid", "\n".join(body))
 
 
 class LinkNotFoundError(Exception):

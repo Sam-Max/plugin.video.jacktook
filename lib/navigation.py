@@ -4,6 +4,7 @@ import os
 from threading import Thread
 import requests
 
+from lib.api.jacktook.kodi import kodilog
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
@@ -20,7 +21,7 @@ from lib.plex import plex_login, plex_logout, validate_server
 from lib.titles_history import last_titles
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 from lib.utils.pm_utils import get_pm_pack_info
-from lib.utils.rd_utils import get_rd_pack_info, get_rd_pack_link
+from lib.utils.rd_utils import get_rd_pack_info, get_rd_pack_link, get_rd_info
 from lib.utils.torbox_utils import (
     get_torbox_pack_info,
     get_torbox_pack_link,
@@ -56,6 +57,8 @@ from lib.utils.utils import (
     set_watched_title,
     ssl_enabled,
     tmdb_get,
+    check_debrid_enabled,
+    Debrids,
 )
 from lib.utils.kodi import (
     ADDON_PATH,
@@ -442,43 +445,94 @@ def play_torrent(
     )
 
 
+@plugin.route("/cloud/details")
+@check_directory
+@query_arg("debrid_type", required=False)
+def cloud_details(debrid_type=""):
+    if debrid_type == Debrids.TB:
+        notification("Not yet implemented")
+        return
+
+    if debrid_type == Debrids.RD:
+        downloads_method = get_rd_downloads
+        info_method = rd_info
+    elif debrid_type == Debrids.PM:
+        downloads_method = get_pm_downloads
+        info_method = pm_info
+
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(downloads_method),
+        list_item("Downloads", "download.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(info_method),
+        list_item("Account Info", "download.png"),
+        isFolder=True,
+    )
+
+
 @plugin.route("/cloud")
 @check_directory
-@query_arg("page", required=False)
-def cloud(page=1):
-    if is_rd_enabled():
-        debrid_type = "RD"
-        debrid_color = get_random_color(debrid_type)
-        format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
-
-        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-        downloads = rd_client.get_user_downloads_list(page=page)
-        for d in downloads:
-            torrent_li = list_item(
-                f"{format_debrid_type}-{d['filename']}", "download.png"
-            )
-            torrent_li.setArt(
-                {
-                    "icon": d["host_icon"],
-                }
-            )
+def cloud():
+    activated_debrids = [
+        debrid for debrid in Debrids.values() if check_debrid_enabled(debrid)
+    ]
+    if activated_debrids:
+        for debrid_name in activated_debrids:
+            torrent_li = list_item(debrid_name, "download.png")
             addDirectoryItem(
                 plugin.handle,
-                plugin.url_for(play_url, url=d.get("download"), name=d["filename"]),
+                plugin.url_for(
+                    cloud_details,
+                    debrid_type=debrid_name,
+                ),
                 torrent_li,
-                isFolder=False,
+                isFolder=True,
             )
+    else:
+        notification("No debrid services activated")
 
-        next_page = int(page) + 1
-        next_item = list_item("Next", icon="nextpage.png")
+
+@plugin.route("/rd_info")
+def rd_info():
+    get_rd_info()
+
+
+@plugin.route("/rd_downloads")
+@query_arg("page", required=False)
+@check_directory
+def get_rd_downloads(page=1):
+    debrid_type = "RD"
+    debrid_color = get_random_color(debrid_type)
+    format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
+
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    downloads = rd_client.get_user_downloads_list(page=page)
+    for d in downloads:
+        torrent_li = list_item(f"{format_debrid_type}-{d['filename']}", "download.png")
+        torrent_li.setArt(
+            {
+                "icon": d["host_icon"],
+            }
+        )
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(cloud, page=next_page),
-            next_item,
-            isFolder=True,
+            plugin.url_for(play_url, url=d.get("download"), name=d["filename"]),
+            torrent_li,
+            isFolder=False,
         )
-    else:
-        notification("real debrid not activated")
+
+    next_page = int(page) + 1
+    next_item = list_item("Next", icon="nextpage.png")
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(get_rd_downloads, page=next_page),
+        next_item,
+        isFolder=True,
+    )
 
 
 @plugin.route("/torrents")
