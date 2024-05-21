@@ -3,14 +3,14 @@ from concurrent.futures import ThreadPoolExecutor
 from lib.db.database import get_db
 from lib.api.tmdbv3api.objs.search import Search
 
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     ADDON_PATH,
     Keyboard,
     container_update,
     get_kodi_version,
     url_for,
 )
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     get_tmdb_movie_data,
     get_tmdb_tv_data,
     set_video_info,

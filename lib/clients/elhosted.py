@@ -1,7 +1,7 @@
 import json
 import re
 import requests
-from lib.utils.kodi import convert_size_to_bytes, translation
+from lib.utils.kodi_utils import convert_size_to_bytes, translation
 
 
 class Elfhosted:

@@ -10,7 +10,7 @@ ADDON_NAME = ADDON.getAddonInfo("name")
 
 
 def kodilog(message, level=xbmc.LOGINFO):
-    xbmc.log("[JACKTOOKAPI] " + str(message), level)
+    xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
 
 
 def get_installed_addons(addon_type="", content="unknown", enabled="all"):

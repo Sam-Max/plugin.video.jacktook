@@ -17,27 +17,28 @@ from lib.api.tmdbv3api.objs.tv import TV
 
 from lib.torf._magnet import Magnet
 from lib.fanart import search_api_fanart
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     ADDON_PATH,
     container_refresh,
-    get_cache_expiration,
-    get_int_setting,
     get_jacktorr_setting,
     get_kodi_version,
     get_setting,
-    is_cache_enabled,
     translation,
     url_for,
 )
+from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
 from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.trending import Trending
+
+from lib.utils.settings import get_int_setting
 
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem
 from xbmc import getSupportedMedia
 
+from zipfile import ZipFile
 
 db = get_db()
 
@@ -614,6 +615,19 @@ def remove_duplicate(results):
             result_dict.append(res)
             seen_values.append(res)
     return result_dict
+
+
+def unzip(zip_location, destination_location, destination_check):
+    try:
+        zipfile = ZipFile(zip_location)
+        zipfile.extractall(path=destination_location)
+        if os.path.exists(destination_check):
+            status = True
+        else:
+            status = False
+    except:
+        status = False
+    return status
 
 
 def post_process(res, season=None):

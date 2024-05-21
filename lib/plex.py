@@ -1,7 +1,7 @@
 from lib.api.jacktook.kodi import kodilog
 from lib.api.plex.media_server_api import check_server_connection, get_servers
 from lib.api.plex.plex_api import PlexApi
-from lib.utils.kodi import get_setting, set_setting
+from lib.utils.kodi_utils import get_setting, set_setting
 from xbmcgui import Dialog
 
 plex = PlexApi()

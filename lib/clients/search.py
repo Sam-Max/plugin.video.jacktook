@@ -1,11 +1,11 @@
 from urllib.parse import quote
 from lib.clients.utils import get_client
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     Keyboard,
     get_setting,
     notification,
 )
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     Indexer,
     Players,
     get_cached,

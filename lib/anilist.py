@@ -6,7 +6,7 @@ from lib.api.anilist_api import anilist_client
 from lib.api.jacktook.kodi import kodilog
 from lib.db.database import get_db
 from lib.simkl import search_simkl_episodes
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     get_cached,
     get_fanart,
     set_cached,
@@ -15,7 +15,7 @@ from lib.utils.utils import (
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     ADDON_PATH,
     Keyboard,
     get_kodi_version,

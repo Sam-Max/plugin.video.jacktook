@@ -1,8 +1,8 @@
 import os
 from lib.api.anizip_api import AniZipApi
 from lib.db.anime_db import get_all_ids
-from lib.utils.kodi import ADDON_PATH, get_kodi_version, url_for
-from lib.utils.utils import get_cached, set_cached, set_video_info, set_video_infotag, tvdb_get
+from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
+from lib.utils.general_utils import get_cached, set_cached, set_video_info, set_video_infotag, tvdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 

@@ -1,5 +1,5 @@
 import requests
-from lib.utils.kodi import get_setting
+from lib.utils.kodi_utils import get_setting
 
 
 class AniList:

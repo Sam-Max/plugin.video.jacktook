@@ -34,7 +34,7 @@ from lib.tmdb import (
     tmdb_show_results,
 )
 from lib.anilist import search_anilist, search_episodes
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     DialogListener,
     Players,
     clear,
@@ -60,14 +60,13 @@ from lib.utils.utils import (
     check_debrid_enabled,
     Debrids,
 )
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     ADDON_PATH,
     EPISODES_TYPE,
     MOVIES_TYPE,
     SHOWS_TYPE,
     JACKTORR_ADDON,
     action,
-    addon_settings,
     addon_status,
     buffer_and_play,
     burst_addon_settings,
@@ -75,7 +74,6 @@ from lib.utils.kodi import (
     container_update,
     get_kodi_version,
     get_setting,
-    is_auto_play,
     notification,
     play_info_hash,
     play_media,
@@ -85,6 +83,10 @@ from lib.utils.kodi import (
     translation,
     url_for,
 )
+
+from lib.utils.settings import is_auto_play
+from lib.utils.settings import addon_settings
+from lib.updater import updates_check_addon
 from xbmcgui import ListItem, Dialog
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
@@ -457,8 +459,8 @@ def cloud_details(debrid_type=""):
         downloads_method = get_rd_downloads
         info_method = rd_info
     elif debrid_type == Debrids.PM:
-        downloads_method = get_pm_downloads
-        info_method = pm_info
+        downloads_method = None
+        info_method = None
 
     addDirectoryItem(
         plugin.handle,
@@ -972,6 +974,11 @@ def download(magnet, debrid_type):
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
         )
     thread.start()
+
+
+@plugin.route("/addon_update")
+def addon_update():
+    updates_check_addon()
 
 
 @plugin.route("/status")

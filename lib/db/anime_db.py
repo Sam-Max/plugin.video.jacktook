@@ -1,7 +1,7 @@
 import os
 import threading
 from sqlite3 import dbapi2 as db
-from lib.utils.kodi import notification
+from lib.utils.kodi_utils import notification
 import xbmcaddon
 from xbmcvfs import translatePath
 

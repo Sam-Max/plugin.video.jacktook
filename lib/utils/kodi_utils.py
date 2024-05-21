@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import re
 import sys
 from urllib.parse import quote, urlencode
@@ -6,6 +7,10 @@ import xbmc
 import xbmcgui
 from xbmcgui import Window
 import xbmcaddon
+import time
+import sqlite3 as database
+from xbmcvfs import translatePath as translate_path, delete as xbmc_delete
+from xbmc import executeJSONRPC
 
 _URL = sys.argv[0]
 
@@ -71,8 +76,8 @@ def set_property(prop, value):
     return Window(10000).setProperty(prop, value)
 
 
-def addon_settings():
-    return xbmc.executebuiltin("Addon.OpenSettings(%s)" % ADDON_ID)
+def clear_property(prop):
+	return Window(10000).clearProperty(prop)
 
 
 def burst_addon_settings():
@@ -108,14 +113,6 @@ def is_jacktorr_addon():
 
 def is_elementum_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
-
-
-def is_auto_play():
-    return get_setting("auto_play")
-
-
-def get_int_setting(setting):
-    return int(get_setting(setting))
 
 
 def translation(id_value):
@@ -167,8 +164,11 @@ def dialog_ok(heading, line1, line2="", line3=""):
     return xbmcgui.Dialog().ok(heading, compat(line1=line1, line2=line2, line3=line3))
 
 
-def dialog_text(heading, content):
+def dialog_text(heading, content="", file=None):
     dialog = xbmcgui.Dialog()
+    if file:
+        with open(file, encoding="utf-8") as r:
+            content = r.readlines()
     dialog.textviewer(heading, content, False)
     return dialog
 
@@ -263,24 +263,57 @@ def hide_busy_dialog():
     execute_builtin("Dialog.Close(busydialog)")
 
 
-def is_cache_enabled():
-    return get_setting("cache_enabled")
-
-
-def get_cache_expiration():
-    return get_int_setting("cache_expiration")
-
-
-def get_jackett_timeout():
-    return get_int_setting("jackett_timeout")
-
-
-def get_prowlarr_timeout():
-    return get_int_setting("prowlarr_timeout")
-
-
 def execute_builtin(command, block=False):
     return xbmc.executebuiltin(command, block)
+
+
+def delete_file(file):
+    xbmc_delete(file)
+
+
+def update_local_addons():
+    execute_builtin("UpdateLocalAddons", True)
+    sleep(2500)
+
+def disable_enable_addon(addon_name=ADDON_NAME):
+    try:
+        executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Addons.SetAddonEnabled",
+                    "params": {"addonid": addon_name, "enabled": False},
+                }
+            )
+        )
+        executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Addons.SetAddonEnabled",
+                    "params": {"addonid": addon_name, "enabled": True},
+                }
+            )
+        )
+    except:
+        pass
+
+
+def update_kodi_addons_db(addon_name=ADDON_NAME):
+    try:
+        date = time.strftime("%Y-%m-%d %H:%M:%S")
+        dbcon = database.connect(
+            translate_path("special://database/Addons33.db"), timeout=40.0
+        )
+        dbcon.execute(
+            "INSERT OR REPLACE INTO installed (addonID, enabled, lastUpdated) VALUES (?, ?, ?)",
+            (addon_name, 1, date),
+        )
+        dbcon.close()
+    except:
+        pass
 
 
 def bytes_to_human_readable(size, unit="B"):

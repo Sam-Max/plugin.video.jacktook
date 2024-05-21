@@ -1,7 +1,7 @@
 import json
 import requests
-from lib.utils.kodi import get_prowlarr_timeout, notification, translation
-
+from lib.utils.kodi_utils import notification, translation
+from lib.utils.settings import get_prowlarr_timeout
 
 class Prowlarr:
     def __init__(self, host, apikey, notification) -> None:

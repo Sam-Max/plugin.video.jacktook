@@ -3,8 +3,8 @@ import re
 import requests
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.countries import find_language_by_unicode
-from lib.utils.kodi import convert_size_to_bytes, translation
-from lib.utils.utils import unicode_flag_to_country_code
+from lib.utils.kodi_utils import convert_size_to_bytes, translation
+from lib.utils.general_utils import unicode_flag_to_country_code
 
 
 class Torrentio:

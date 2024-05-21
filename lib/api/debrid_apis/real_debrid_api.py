@@ -1,9 +1,9 @@
 from time import time
-from lib.utils.kodi import sleep as ksleep
+from lib.utils.kodi_utils import sleep as ksleep
 from base64 import b64encode, b64decode
 import requests
 from requests import ConnectionError
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     copy2clip,
     dialog_ok,
     dialogyesno,
@@ -11,7 +11,7 @@ from lib.utils.kodi import (
     set_setting,
     progressDialog,
 )
-from lib.utils.utils import supported_video_extensions
+from lib.utils.general_utils import supported_video_extensions
 from xbmcgui import DialogProgress
 
 # Source: https://github.com/mhdzumair/MediaFusion/blob/main/streaming_providers/realdebrid/client.py

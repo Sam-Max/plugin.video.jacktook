@@ -6,7 +6,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.api.plex.settings import settings
 from lib.api.plex.models.plex_models import AuthPin, PlexUser
 from lib.api.plex.utils import HTTPException, PlexUnauthorizedError
-from lib.utils.kodi import copy2clip, dialog_ok, progressDialog, set_setting
+from lib.utils.kodi_utils import copy2clip, dialog_ok, progressDialog, set_setting
 
 
 class PlexApi:

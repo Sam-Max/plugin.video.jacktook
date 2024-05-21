@@ -10,6 +10,7 @@
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>
         <setting type="action" label="30106" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_all)" />
         <setting type="action" label="30104" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_tmdb)"/>
+        <setting type="action" label="Update addon" action="RunPlugin(plugin://plugin.video.jacktook/addon_update)"/>
     </category>
     <category label="30020">
         <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst|Plex" default="Torrentio"/>

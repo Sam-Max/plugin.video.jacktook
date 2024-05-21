@@ -2,8 +2,8 @@ from lib.api.debrid_apis.real_debrid_api import RealDebrid
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi import get_setting, dialog_text
-from lib.utils.utils import (
+from lib.utils.kodi_utils import get_setting, dialog_text
+from lib.utils.general_utils import (
     get_cached,
     info_hash_to_magnet,
     set_cached,

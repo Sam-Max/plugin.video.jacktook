@@ -3,8 +3,8 @@ import re
 from lib.api.fma_api import FindMyAnime, extract_season
 from lib.api.jacktook.kodi import kodilog
 from lib.api.simkl_api import SIMKLAPI
-from lib.utils.kodi import ADDON_PATH, get_kodi_version, url_for
-from lib.utils.utils import (
+from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
+from lib.utils.general_utils import (
     get_cached,
     set_cached,
     set_video_info,

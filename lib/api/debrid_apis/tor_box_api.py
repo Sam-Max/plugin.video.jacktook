@@ -1,7 +1,7 @@
 from lib.api.debrid_apis.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi import notification
+from lib.utils.kodi_utils import notification
 from xbmcgui import DialogProgress
-from lib.utils.kodi import sleep as ksleep, dialogyesno
+from lib.utils.kodi_utils import sleep as ksleep, dialogyesno
 
 
 class Torbox(DebridClient):

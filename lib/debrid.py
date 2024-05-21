@@ -7,12 +7,12 @@ from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi import get_setting
+from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import get_pm_link
 from lib.utils.rd_utils import get_rd_link
 from lib.utils.torbox_utils import get_torbox_link
 from lib.utils.torrent_utils import extract_magnet_from_url
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     USER_AGENT_HEADER,
     get_cached,
     get_info_hash_from_magnet,

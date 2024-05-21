@@ -1,4 +1,4 @@
-from lib.utils.kodi import hide_busy_dialog, notification
+from lib.utils.kodi_utils import hide_busy_dialog, notification
 from xbmc import Player as xbmc_player
 
 

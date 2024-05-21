@@ -1,12 +1,12 @@
 import re
 from lib.tmdb import TMDB_POSTER_URL
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     action2,
     bytes_to_human_readable,
     get_setting,
     set_view,
 )
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     Indexer,
     add_pack_item,
     add_play_item,

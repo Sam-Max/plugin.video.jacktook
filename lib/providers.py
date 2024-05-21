@@ -1,5 +1,5 @@
 import logging
-from lib.utils.kodi import ADDON_NAME, notification
+from lib.utils.kodi_utils import ADDON_NAME, notification
 from xbmcgui import DialogProgressBG
 from lib.api.jacktook.provider import (
     get_providers,

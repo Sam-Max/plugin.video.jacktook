@@ -1,7 +1,7 @@
 import json
 from urllib.parse import quote
 from lib.player import JacktookPlayer
-from lib.utils.kodi import (
+from lib.utils.kodi_utils import (
     get_kodi_version,
     get_setting,
     is_elementum_addon,
@@ -11,7 +11,7 @@ from lib.utils.kodi import (
     set_property,
     translation,
 )
-from lib.utils.utils import (
+from lib.utils.general_utils import (
     Players,
     set_video_info,
     set_video_infotag,

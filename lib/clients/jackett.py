@@ -1,7 +1,7 @@
 import requests
-from lib.utils.kodi import get_jackett_timeout, notification, translation
+from lib.utils.kodi_utils import notification, translation
 from lib import xmltodict
-
+from lib.utils.settings import get_jackett_timeout
 
 class Jackett:
     def __init__(self, host, apikey, notification) -> None:

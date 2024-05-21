@@ -1,7 +1,7 @@
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi import get_setting
-from lib.utils.utils import (
+from lib.utils.kodi_utils import get_setting
+from lib.utils.general_utils import (
     get_cached,
     info_hash_to_magnet,
     set_cached,

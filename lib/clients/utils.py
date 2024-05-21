@@ -4,8 +4,8 @@ from lib.clients.jackett import Jackett
 from lib.clients.plex_client import Plex
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.torrentio import Torrentio
-from lib.utils.kodi import get_setting, notification, translation
-from lib.utils.utils import Indexer
+from lib.utils.kodi_utils import get_setting, notification, translation
+from lib.utils.general_utils import Indexer
 
 
 def get_client(indexer):
