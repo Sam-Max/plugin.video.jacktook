@@ -39,13 +39,11 @@ from lib.utils.general_utils import (
     Players,
     clear,
     clear_all_cache,
-    clear_tmdb_cache,
     get_password,
     get_random_color,
     get_service_host,
     get_username,
     is_debrid_activated,
-    is_rd_enabled,
     post_process,
     pre_process,
     get_fanart,
@@ -1022,12 +1020,6 @@ def titles():
 @plugin.route("/history/files")
 def files():
     last_files(plugin)
-
-
-@plugin.route("/clear_cached_tmdb")
-def clear_cached_tmdb():
-    clear_tmdb_cache()
-    notification(translation(30240))
 
 
 @plugin.route("/clear_cached_all")

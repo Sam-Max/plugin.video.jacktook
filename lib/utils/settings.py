@@ -26,6 +26,10 @@ def is_cache_enabled():
     return get_setting("cache_enabled")
 
 
+def cache_clear_update():
+    return get_setting("clear_cache_update")
+
+
 def get_cache_expiration():
     return get_int_setting("cache_expiration")
 

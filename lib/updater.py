@@ -16,7 +16,8 @@ from lib.utils.kodi_utils import (
     update_kodi_addons_db,
     dialog_text,
 )
-from lib.utils.general_utils import unzip
+from lib.utils.general_utils import clear_all_cache, unzip
+from lib.utils.settings import cache_clear_update
 from xbmcvfs import translatePath as translate_path
 
 packages_dir = translate_path("special://home/addons/packages/")
@@ -26,7 +27,7 @@ changelog_location = translate_path(
     "special://home/addons/plugin.video.jacktook/CHANGELOG.md"
 )
 repo_url = "https://github.com/Sam-Max/repository.jacktook/raw/main/packages"
-jacktook_url ="https://raw.githubusercontent.com/Sam-Max/repository.jacktook/main/repo/zips/plugin.video.jacktook"
+jacktook_url = "https://raw.githubusercontent.com/Sam-Max/repository.jacktook/main/repo/zips/plugin.video.jacktook"
 heading = "Jacktook Updater"
 
 
@@ -77,7 +78,9 @@ def get_changes(online_version=False):
             if result.status_code != 200:
                 notification(f"Error: {result.status_code}")
                 return
-            dialog_text(f"New Online Release (v{online_version}) Changelog", result.text)
+            dialog_text(
+                f"New Online Release (v{online_version}) Changelog", result.text
+            )
         except Exception as err:
             return notification(f"Error:{err}")
     else:
@@ -85,6 +88,8 @@ def get_changes(online_version=False):
 
 
 def update_addon(new_version, action):
+    if cache_clear_update(): 
+        clear_all_cache()
     close_all_dialog()
     execute_builtin("ActivateWindow(Home)", True)
     zip_name = f"plugin.video.jacktook-{new_version}.zip"
@@ -118,3 +123,4 @@ def update_addon(new_version, action):
     update_local_addons()
     disable_enable_addon()
     update_kodi_addons_db()
+    

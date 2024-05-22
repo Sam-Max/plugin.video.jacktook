@@ -112,7 +112,7 @@ msgid "Cache expiration hours"
 msgstr ""
 
 msgctxt "#30106"
-msgid "Clear all cache"
+msgid "Clear cache"
 msgstr ""
 
 msgctxt "#30107"

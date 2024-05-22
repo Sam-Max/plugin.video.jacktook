@@ -104,8 +104,8 @@ msgid "Cache expiration hours"
 msgstr "Expiração do cache (Horas)"
 
 msgctxt "#30106"
-msgid "Clear all cache"
-msgstr "Limpar todo o cache"
+msgid "Clear cache"
+msgstr "Limpar o cache"
 
 msgctxt "#30140"
 msgid "AniList"

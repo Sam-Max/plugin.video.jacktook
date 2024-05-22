@@ -550,16 +550,8 @@ def get_colored_languages(languages):
         return colored_languages
 
 
-def clear_tmdb_cache():
-    db.database["jt:tmdb"] = {}
-    db.commit()
-
-
 def clear_all_cache():
     cache.clean_all()
-    db.database["jt:tmdb"] = {}
-    db.commit()
-
 
 def clear(type=""):
     dialog = Dialog()

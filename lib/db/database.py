@@ -11,8 +11,6 @@ class Database:
     def __init__(self):
         BASE_DATABASE = {
             "jt:watch": {},
-            "jt:fanarttv": {},
-            "jt:tmdb": {},
             "jt:lth": {},
             "jt:lfh": {},
         }
