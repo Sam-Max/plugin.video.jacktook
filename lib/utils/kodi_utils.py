@@ -169,7 +169,8 @@ def dialog_text(heading, content="", file=None):
     if file:
         with open(file, encoding="utf-8") as r:
             content = r.readlines()
-    dialog.textviewer(heading, content, False)
+            content = ''.join(content)
+    dialog.textviewer(heading, str(content), False)
     return dialog
 
 

@@ -23,10 +23,10 @@ packages_dir = translate_path("special://home/addons/packages/")
 home_addons_dir = translate_path("special://home/addons/")
 destination_check = translate_path("special://home/addons/plugin.video.jacktook/")
 changelog_location = translate_path(
-    "special://home/addons/plugin.video.jacktook/resources/text/changelog.txt"
+    "special://home/addons/plugin.video.jacktook/CHANGELOG.md"
 )
 repo_url = "https://github.com/Sam-Max/repository.jacktook/raw/main/packages"
-jacktook_url ="https://github.com/Sam-Max/repository.jacktook/blob/main/repo/zips/plugin.video.jacktook"
+jacktook_url ="https://raw.githubusercontent.com/Sam-Max/repository.jacktook/main/repo/zips/plugin.video.jacktook"
 heading = "Jacktook Updater"
 
 
@@ -104,17 +104,17 @@ def update_addon(new_version, action):
     if not success:
         return dialog_ok(
             heading=heading,
-            text="Error Updating.[CR]Please install new update manually",
+            line1="Error Updating.[CR]Please install new update manually",
         )
     if (
         action in (0, 4)
         and dialog_ok(
             heading=heading,
-            text=f"Success.[CR]Jacktook updated to version [B]{new_version}[/B]",
+            line1=f"Success.[CR]Jacktook updated to version [B]{new_version}[/B]",
         )
         != False
     ):
-        get_changes(online_version=False)
+        get_changes()
     update_local_addons()
     disable_enable_addon()
     update_kodi_addons_db()
