@@ -73,7 +73,7 @@ class JacktookMOnitor(xbmc.Monitor):
         Thread(target=UpdateCheck().run).start()
 
     def onNotification(self, sender, method, data):
-        OnNotificationActions.run(sender, method, data)
+        OnNotificationActions().run(sender, method, data)
 
 
 JacktookMOnitor().waitForAbort()
