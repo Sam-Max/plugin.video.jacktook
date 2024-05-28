@@ -9,8 +9,8 @@ from lib.api.debrid_apis.tor_box_api import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import get_pm_link
-from lib.utils.rd_utils import get_rd_link
-from lib.utils.torbox_utils import get_torbox_link
+from lib.utils.rd_utils import get_rd_link, get_rd_pack_link
+from lib.utils.torbox_utils import get_torbox_link, get_torbox_pack_link
 from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.general_utils import (
     USER_AGENT_HEADER,
@@ -227,10 +227,18 @@ def debrid_dialog_update(total, dialog, lock):
 
 
 def get_debrid_direct_url(info_hash, debrid_type):
-    if info_hash and debrid_type == "RD":
+    if debrid_type == "RD":
         url = get_rd_link(info_hash)
-    elif info_hash and debrid_type == "PM":
+    elif debrid_type == "PM":
         url = get_pm_link(info_hash)
-    elif info_hash and debrid_type == "TB":
+    elif debrid_type == "TB":
         url = get_torbox_link(info_hash)
+    return url
+
+
+def get_debrid_pack_direct_url(file_id, torrent_id, debrid_type):
+    if debrid_type == "RD":
+        url = get_rd_pack_link(file_id, torrent_id)
+    elif debrid_type == "TB":
+        url = get_torbox_pack_link(file_id, torrent_id)
     return url

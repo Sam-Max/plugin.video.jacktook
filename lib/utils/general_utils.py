@@ -219,6 +219,7 @@ def add_play_item(
     debrid_type="",
     magnet="",
     mode="",
+    is_plex=False,
     is_torrent=False,
     plugin=None,
 ):
@@ -233,6 +234,7 @@ def add_play_item(
             info_hash=info_hash,
             debrid_type=debrid_type,
             magnet=magnet,
+            is_plex=is_plex,
             is_torrent=is_torrent,
             mode=mode,
         ),
@@ -357,7 +359,9 @@ def set_video_infotag(
         )
 
 
-def set_watched_file(title, ids, tv_data, magnet, url, debrid_type, is_torrent):
+def set_watched_file(
+    title, ids, tv_data, magnet, url, info_hash, debrid_type, is_torrent, is_debrid_pack
+):
     if title in db.database["jt:lfh"]:
         return
 
@@ -377,6 +381,9 @@ def set_watched_file(title, ids, tv_data, magnet, url, debrid_type, is_torrent):
         "url": url,
         "is_torrent": is_torrent,
         "magnet": magnet,
+        "info_hash": info_hash,
+        "debrid_type": debrid_type,
+        "is_debrid_pack": is_debrid_pack,
     }
     db.commit()
 
@@ -552,6 +559,7 @@ def get_colored_languages(languages):
 
 def clear_all_cache():
     cache.clean_all()
+
 
 def clear(type=""):
     dialog = Dialog()

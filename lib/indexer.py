@@ -108,7 +108,6 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     title,
                     info_hash=info_hash,
                     debrid_type=debrid_type,
-                    is_torrent=False,
                     mode=mode,
                     plugin=plugin,
                 )
@@ -122,7 +121,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                 tv_data,
                 title,
                 url,
-                is_torrent=False,
+                is_plex=True,
                 mode=mode,
                 plugin=plugin,
             )

@@ -1,5 +1,7 @@
 import json
 from urllib.parse import quote
+from lib.api.jacktook.kodi import kodilog
+from lib.debrid import get_debrid_direct_url
 from lib.player import JacktookPlayer
 from lib.utils.kodi_utils import (
     get_kodi_version,
@@ -16,7 +18,7 @@ from lib.utils.general_utils import (
     set_video_info,
     set_video_infotag,
     set_watched_file,
-    torrent_clients
+    torrent_clients,
 )
 from xbmcplugin import (
     setResolvedUrl,
@@ -26,23 +28,31 @@ from xbmcgui import ListItem, Dialog
 
 def play(
     url,
-    magnet,
     ids,
     tv_data,
     title,
     plugin,
+    magnet="",
+    info_hash="",
     mode="",
     debrid_type="",
     is_torrent=False,
+    is_plex=False,
+    is_debrid_pack=False,
 ):
+    if not is_torrent and not (is_plex or is_debrid_pack):
+        url = get_debrid_direct_url(info_hash, debrid_type)
+
     set_watched_file(
         title,
         ids,
         tv_data,
         magnet,
         url,
+        info_hash,
         debrid_type,
         is_torrent,
+        is_debrid_pack,
     )
 
     if not magnet and not url:
@@ -55,7 +65,7 @@ def play(
         _url = url
     if client == Players.TORREST:
         _url = get_torrest_url(magnet, url)
-    elif client == Players.ELEMENTUM :
+    elif client == Players.ELEMENTUM:
         _url = get_elementum_url(magnet, mode, ids)
     elif client == Players.JACKTORR:
         _url = get_jacktorr_url(magnet, url)

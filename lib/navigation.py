@@ -12,7 +12,7 @@ from lib.api.jacktorr_api import (
     TorrServer,
 )
 from lib.clients.search import search_client
-from lib.debrid import check_debrid_cached, get_debrid_direct_url
+from lib.debrid import check_debrid_cached, get_debrid_pack_direct_url
 from lib.files_history import last_files
 from lib.indexer import indexer_show_results
 from lib.play import make_listing, play
@@ -117,7 +117,7 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name in ["rescrape", "is_torrent"]:
+                    if name in ["rescrape", "is_torrent", "is_plex"]:
                         kwargs[name] = eval(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
@@ -417,7 +417,9 @@ def play_first_result(results, ids, tv_data, mode):
 @query_arg("ids", required=False)
 @query_arg("tv_data", required=False)
 @query_arg("is_torrent", required=False)
+@query_arg("is_plex", required=False)
 @query_arg("debrid_type", required=False)
+@query_arg("is_debrid_pack", required=False)
 @query_arg("mode", required=False)
 def play_torrent(
     title,
@@ -428,20 +430,23 @@ def play_torrent(
     tv_data="",
     mode="",
     debrid_type="",
+    is_debrid_pack=False,
     is_torrent=False,
+    is_plex=False,
 ):
-    if not is_torrent:
-        url = get_debrid_direct_url(info_hash, debrid_type)
     play(
         url,
-        magnet,
         ids,
         tv_data,
         title,
         plugin,
-        debrid_type,
-        mode,
-        is_torrent,
+        magnet=magnet,
+        info_hash=info_hash,
+        debrid_type=debrid_type,
+        mode=mode,
+        is_torrent=is_torrent,
+        is_plex=is_plex,
+        is_debrid_pack=is_debrid_pack,
     )
 
 
@@ -837,7 +842,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
     set_view("widelist")
 
 
-@plugin.route("/get_file_link_from_pack")
+@plugin.route("/play_file_from_pack")
 @query_arg("title", required=False)
 @query_arg("ids", required=False)
 @query_arg("tv_data", required=False)
@@ -846,23 +851,17 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
 @query_arg("mode", required=False)
 @query_arg("file_id", required=False)
 @query_arg("torrent_id", required=False)
-def get_file_link_from_pack(
-    ids, mode, debrid_type, title, tv_data, file_id, torrent_id
-):
-    if debrid_type == "RD":
-        url = get_rd_pack_link(file_id, torrent_id)
-    elif debrid_type == "TB":
-        url = get_torbox_pack_link(file_id, torrent_id)
+def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent_id):
+    url = get_debrid_pack_direct_url(file_id, torrent_id, debrid_type)
     play(
-        url=url,
-        magnet="",
-        ids=ids,
-        tv_data=tv_data,
+        url,
+        ids,
+        tv_data,
+        title,
+        plugin,
         mode=mode,
-        title=title,
-        is_torrent=False,
+        is_debrid_pack=True,
         debrid_type=debrid_type,
-        plugin=plugin,
     )
 
 
@@ -917,7 +916,7 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
             addDirectoryItem(
                 plugin.handle,
                 url_for(
-                    name="get_file_link_from_pack",
+                    name="play_file_from_pack",
                     file_id=file_id,
                     torrent_id=info["id"],
                     debrid_type=debrid_type,

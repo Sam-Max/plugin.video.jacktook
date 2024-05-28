@@ -41,12 +41,11 @@ def add_rd_magnet(magnet):
 def get_rd_link(info_hash):
     magnet = info_hash_to_magnet(info_hash)
     torrent_id = add_rd_magnet(magnet)
-    torr_info = client.get_torrent_info(torrent_id)
-    links = torr_info["links"]
-    if links:
-        response = client.create_download_link(links[0])
-        return response["download"]
-    raise LinkNotFoundError("Error: File not available")
+    if torrent_id:
+        torr_info = client.get_torrent_info(torrent_id)
+        if torr_info["links"]:
+            response = client.create_download_link(torr_info["links"][0])
+            return response["download"]
 
 
 def get_rd_pack_info(info_hash):
