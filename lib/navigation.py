@@ -2,9 +2,9 @@ from functools import wraps
 import logging
 import os
 from threading import Thread
+from urllib.parse import quote
 import requests
 
-from lib.api.jacktook.kodi import kodilog
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
@@ -21,10 +21,9 @@ from lib.plex import plex_login, plex_logout, validate_server
 from lib.titles_history import last_titles
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 from lib.utils.pm_utils import get_pm_pack_info
-from lib.utils.rd_utils import get_rd_pack_info, get_rd_pack_link, get_rd_info
+from lib.utils.rd_utils import get_rd_pack_info, get_rd_info
 from lib.utils.torbox_utils import (
     get_torbox_pack_info,
-    get_torbox_pack_link,
 )
 from routing import Plugin
 from lib.api.tmdbv3api.tmdb import TMDb
@@ -64,6 +63,7 @@ from lib.utils.kodi_utils import (
     MOVIES_TYPE,
     SHOWS_TYPE,
     JACKTORR_ADDON,
+    Keyboard,
     action,
     addon_status,
     buffer_and_play,
@@ -94,6 +94,7 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
+from xbmcplugin import endOfDirectory
 
 plugin = Plugin()
 
@@ -117,7 +118,7 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name in ["rescrape", "is_torrent", "is_plex"]:
+                    if name in ["direct", "rescrape", "is_torrent", "is_plex"]:
                         kwargs[name] = eval(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
@@ -227,19 +228,19 @@ def main_menu():
 def direct_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="multi"),
+        plugin.url_for(search_direct, mode="multi"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="tv"),
+        plugin.url_for(search_direct, mode="tv"),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search, mode="movie"),
+        plugin.url_for(search_direct, mode="movie"),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
@@ -311,14 +312,39 @@ def search_tmdb(mode, genre_id, page):
         )
 
 
+@plugin.route("/search_direct/<mode>")
+def search_direct(mode):
+    text = Keyboard(id=30243)
+    if text:
+        text = quote(text)
+        list_item = ListItem(label=f"Search [I]{text}[/I]")
+        list_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
+        )
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                search,
+                mode=mode,
+                query=text,
+            ),
+            list_item,
+            isFolder=True,
+        )
+        endOfDirectory(plugin.handle)
+
+
 @plugin.route("/search")
+@query_arg("query", required=False)
 @query_arg("mode", required=True)
 @query_arg("media_type", required=False)
-@query_arg("query", required=False)
 @query_arg("ids", required=False)
 @query_arg("tv_data", required=False)
+@query_arg("direct", required=False)
 @query_arg("rescrape", required=False)
-def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False):
+def search(
+    query="", mode="", media_type="", ids="", tv_data="", direct=False, rescrape=False
+):
     if mode == "movie" or media_type == "movie":
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode == "tv" or media_type == "tv" or mode == "anime":
@@ -375,11 +401,14 @@ def search(mode="", media_type="", query="", ids="", tv_data="", rescrape=False)
                 indexer_show_results(
                     final_results,
                     mode,
-                    query,
                     ids,
                     tv_data,
+                    direct,
                     plugin,
                 )
+                set_view("widelist")
+                endOfDirectory(plugin.handle)
+
         else:
             notification("No results found")
 

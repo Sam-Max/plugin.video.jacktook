@@ -3,6 +3,7 @@ import json
 import re
 import sys
 from urllib.parse import quote, urlencode
+from lib.api.jacktook.kodi import kodilog
 import xbmc
 import xbmcgui
 from xbmcgui import Window
@@ -77,7 +78,7 @@ def set_property(prop, value):
 
 
 def clear_property(prop):
-	return Window(10000).clearProperty(prop)
+    return Window(10000).clearProperty(prop)
 
 
 def burst_addon_settings():
@@ -169,7 +170,7 @@ def dialog_text(heading, content="", file=None):
     if file:
         with open(file, encoding="utf-8") as r:
             content = r.readlines()
-            content = ''.join(content)
+            content = "".join(content)
     dialog.textviewer(heading, str(content), False)
     return dialog
 
@@ -197,27 +198,23 @@ def container_update(name, **kwargs):
     :param path: The path where to update.
     :type path: str
     """
-    return "Container.Update({})".format(url_for2(name, kwargs))
+    return "Container.Update({})".format(url_for_args(name, kwargs))
 
 
 def container_refresh():
     execute_builtin("Container.Refresh")
 
 
-def run_action(name, **kwargs):
-    execute_builtin("RunPlugin({})".format(url_for2(name, kwargs)))
-
-
 def action(plugin, func, *args, **kwargs):
     return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
 
 
-def action2(name, **kwargs):
-    return "RunPlugin({})".format(url_for2(name, kwargs))
+def action_url_run(name, **kwargs):
+    return "RunPlugin({})".format(url_for_args(name, kwargs))
 
 
-def url_for2(name, obj):
-    qs_kwargs = dict(((k, v) for k, v in list(obj.items())))
+def url_for_args(name, kwargs):
+    qs_kwargs = dict(((k, v) for k, v in list(kwargs.items())))
     query = "?" + urlencode(qs_kwargs) if qs_kwargs else ""
     return f"plugin://{ADDON_ID}/{name}" + query
 
@@ -275,6 +272,7 @@ def delete_file(file):
 def update_local_addons():
     execute_builtin("UpdateLocalAddons", True)
     sleep(2500)
+
 
 def disable_enable_addon(addon_name=ADDON_NAME):
     try:

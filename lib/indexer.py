@@ -1,10 +1,9 @@
 import re
 from lib.tmdb import TMDB_POSTER_URL
 from lib.utils.kodi_utils import (
-    action2,
+    action_url_run,
     bytes_to_human_readable,
     get_setting,
-    set_view,
 )
 from lib.utils.general_utils import (
     Indexer,
@@ -20,17 +19,16 @@ from lib.utils.general_utils import (
     tmdb_get,
 )
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
-def indexer_show_results(results, mode, query, ids, tv_data, plugin):
+def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
     indexer = get_setting("indexer")
     description_length = get_description_length()
     if ids:
         tmdb_id, tvdb_id, _ = ids.split(", ")
 
     poster = overview = ""
-    if query:
+    if not direct:
         if mode in ["tv", "anime"]:
             find = tmdb_get("find_by_tvdb", tvdb_id)
             overview = find["tv_results"][0].get("overview", "")
@@ -41,6 +39,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
             poster = TMDB_POSTER_URL + details.get("poster_path", "")
 
     for res in results:
+       
         title = res["title"]
         if len(title) > description_length:
             title = title[:description_length]
@@ -144,7 +143,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     magnet = _url
                 else:
                     url = _url
-
+            
             list_item = ListItem(label=torr_title)
             set_video_properties(list_item, poster, mode, title, overview, ids)
             if magnet:
@@ -152,7 +151,7 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                     [
                         (
                             "Download to Debrid",
-                            action2(
+                            action_url_run(
                                 name="download_to_debrid",
                                 magnet=magnet,
                                 debrid_type=debrid_type,
@@ -172,5 +171,3 @@ def indexer_show_results(results, mode, query, ids, tv_data, plugin):
                 plugin=plugin,
             )
 
-    set_view("widelist")
-    endOfDirectory(plugin.handle)

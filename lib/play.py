@@ -1,6 +1,5 @@
 import json
 from urllib.parse import quote
-from lib.api.jacktook.kodi import kodilog
 from lib.debrid import get_debrid_direct_url
 from lib.player import JacktookPlayer
 from lib.utils.kodi_utils import (
@@ -24,7 +23,6 @@ from xbmcplugin import (
     setResolvedUrl,
 )
 from xbmcgui import ListItem, Dialog
-
 
 def play(
     url,

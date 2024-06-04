@@ -1,7 +1,5 @@
-from urllib.parse import quote
 from lib.clients.utils import get_client
 from lib.utils.kodi_utils import (
-    Keyboard,
     get_setting,
     notification,
 )
@@ -17,14 +15,6 @@ from lib.utils.general_utils import (
 def search_client(
     query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
 ):
-    if not query:
-        text = Keyboard(id=30243)
-        if text:
-            query = quote(text)
-        else:
-            dialog.create("")
-            return
-
     if not rescrape:
         if mode == "tv" or media_type == "tv" or mode == "anime":
             cached_results = get_cached(query, params=(episode, "index"))
