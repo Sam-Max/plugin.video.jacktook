@@ -3,6 +3,7 @@ from lib.tmdb import TMDB_POSTER_URL
 from lib.utils.kodi_utils import (
     action_url_run,
     bytes_to_human_readable,
+    container_update,
     get_setting,
 )
 from lib.utils.general_utils import (
@@ -39,7 +40,6 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
             poster = TMDB_POSTER_URL + details.get("poster_path", "")
 
     for res in results:
-       
         title = res["title"]
         if len(title) > description_length:
             title = title[:description_length]
@@ -100,6 +100,21 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
                     label=f"[{format_debrid_type}-Cached]-{torr_title}"
                 )
                 set_video_properties(list_item, poster, mode, title, overview, ids)
+                list_item.addContextMenuItems(
+                    [
+                        (
+                            "Check if Pack",
+                            container_update(
+                                name="show_pack_info",
+                                ids=ids,
+                                debrid_type=debrid_type,
+                                info_hash=info_hash,
+                                mode=mode,
+                                tv_data=tv_data,
+                            ),
+                        )
+                    ]
+                )
                 add_play_item(
                     list_item,
                     ids,
@@ -110,6 +125,7 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
                     mode=mode,
                     plugin=plugin,
                 )
+
         elif res.get("isPlex"):
             url = res.get("downloadUrl")
             list_item = ListItem(label=torr_title)
@@ -143,7 +159,7 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
                     magnet = _url
                 else:
                     url = _url
-            
+
             list_item = ListItem(label=torr_title)
             set_video_properties(list_item, poster, mode, title, overview, ids)
             if magnet:
@@ -170,4 +186,3 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
                 mode=mode,
                 plugin=plugin,
             )
-

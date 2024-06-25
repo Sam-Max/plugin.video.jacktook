@@ -94,7 +94,6 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
-from xbmcplugin import endOfDirectory
 
 plugin = Plugin()
 
@@ -895,17 +894,17 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
 
 
 @plugin.route("/show_pack_info")
-@check_directory
 @query_arg("ids", required=False)
 @query_arg("info_hash", required=False)
 @query_arg("debrid_type", required=False)
 @query_arg("mode", required=False)
 @query_arg("tv_data", required=False)
+@check_directory
 def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
     if debrid_type == "PM":
         info = get_pm_pack_info(info_hash)
         if info:
-            for url, title in info:
+            for url, title in info["files"]:
                 list_item = ListItem(label=f"{title}")
                 list_item.setArt(
                     {
@@ -929,8 +928,7 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
                     list_item,
                     isFolder=False,
                 )
-        return
-
+        return 
     elif debrid_type == "RD":
         info = get_rd_pack_info(info_hash)
     elif debrid_type == "TB":
@@ -957,7 +955,6 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
                 list_item,
                 isFolder=False,
             )
-
 
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):

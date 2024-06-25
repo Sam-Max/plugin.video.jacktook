@@ -95,9 +95,9 @@ def get_kodi_version():
 def addon_status():
     msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
     try:
-        msg += f"[B]Torrest Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_host')}\n"
+        msg += f"[B]Jacktorr Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_host')}\n"
         msg += (
-            f"[B]Torrest Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
+            f"[B]Jacktorr Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
         )
     except:
         pass

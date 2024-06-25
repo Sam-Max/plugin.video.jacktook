@@ -29,20 +29,22 @@ def get_torbox_pack_info(info_hash):
     info = {}
     if torr_info:
         info["id"] = torr_info["id"]
-        files_names = [
-            item["name"]
-            for item in torr_info["files"]
-            for x in EXTENSIONS
-            if item["short_name"].lower().endswith(x)
-        ]
-        files = []
-        for id, name in enumerate(files_names):
-            title = f"[B][Cached][/B]-{name}"
-            files.append((id, title))
-        if files:
+        if len(torr_info["files"]) > 0:
+            files_names = [
+                item["name"]
+                for item in torr_info["files"]
+                for x in EXTENSIONS
+                if item["short_name"].lower().endswith(x)
+            ]
+            files = []
+            for id, name in enumerate(files_names):
+                title = f"[B][Cached][/B]-{name}"
+                files.append((id, title))
             info["files"] = files
             set_cached(info, info_hash)
             return info
+        else:
+            notification("Not a torrent pack")
 
 
 def get_torbox_link(info_hash):

@@ -657,6 +657,7 @@ def check_pack(results, season_num):
     pattern9 = r"\.season\.%s\." % season_num
     pattern10 = r"\.season%s\." % season_num
     pattern11 = r"\.season\.%s\." % season_fill
+    pattern12 = r"\sS%s\s" % (season_fill)
 
     patterns = "|".join(
         [
@@ -671,6 +672,7 @@ def check_pack(results, season_num):
             pattern9,
             pattern10,
             pattern11,
+            pattern12
         ]
     )
 

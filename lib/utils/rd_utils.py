@@ -2,7 +2,7 @@ from lib.api.debrid_apis.real_debrid_api import RealDebrid
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import get_setting, dialog_text
+from lib.utils.kodi_utils import get_setting, dialog_text, notification
 from lib.utils.general_utils import (
     get_cached,
     info_hash_to_magnet,
@@ -57,15 +57,18 @@ def get_rd_pack_info(info_hash):
     torr_info = client.get_torrent_info(torrent_id)
     info = {}
     info["id"] = torr_info["id"]
-    torr_names = [item["path"] for item in torr_info["files"] if item["selected"] == 1]
-    files = []
-    for id, name in enumerate(torr_names):
-        title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
-        files.append((id, title))
-    if info:
+    if len(torr_info["files"]) > 0:
+        torr_names = [item["path"] for item in torr_info["files"] if item["selected"] == 1]
+        files = []
+        for id, name in enumerate(torr_names):
+            title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
+            files.append((id, title))
         info["files"] = files
         set_cached(info, info_hash)
         return info
+    else:
+        notification("Not a torrent pack")
+        return
 
 
 def get_rd_pack_link(file_id, torrent_id):
