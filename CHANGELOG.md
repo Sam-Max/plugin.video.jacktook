@@ -1,4 +1,8 @@
 
+## 0.2.7
+add "check if pack" context menu item
+several fixes and improvements
+
 ## 0.2.6
 * Added service for auto-update addon 
 * Added update addon setting action
