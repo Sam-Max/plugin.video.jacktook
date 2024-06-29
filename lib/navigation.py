@@ -33,6 +33,7 @@ from lib.tmdb import (
     tmdb_show_results,
 )
 from lib.anilist import search_anilist, search_episodes
+from lib.db.bookmark_db import bookmark_db
 from lib.utils.general_utils import (
     DialogListener,
     Players,
@@ -690,7 +691,7 @@ def play_url(url, name):
     make_listing(list_item, mode="multi", title=name)
 
     setResolvedUrl(plugin.handle, True, list_item)
-    player = JacktookPlayer()
+    player = JacktookPlayer(bookmark_db)
     player.set_constants(url)
     player.run(list_item)
 
@@ -888,8 +889,8 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
         title,
         plugin,
         mode=mode,
-        is_debrid_pack=True,
         debrid_type=debrid_type,
+        is_debrid_pack=True
     )
 
 
@@ -901,6 +902,11 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
 @query_arg("tv_data", required=False)
 @check_directory
 def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
+    if mode == "movie":
+        setContent(plugin.handle, MOVIES_TYPE)
+    elif mode == "tv" or mode == "anime":
+        setContent(plugin.handle, SHOWS_TYPE)
+
     if debrid_type == "PM":
         info = get_pm_pack_info(info_hash)
         if info:

@@ -1,5 +1,5 @@
 import os
-from lib.db.database import get_db
+from lib.db.pickle_db import pickle_db
 from lib.utils.kodi_utils import ADDON_PATH, url_for, url_for_path
 from xbmcgui import ListItem
 from xbmcplugin import (
@@ -21,7 +21,7 @@ def last_titles(plugin):
         plugin.handle, url_for_path(name="history/clear", path="lth"), list_item
     )
 
-    for title, data in reversed(get_db().database["jt:lth"].items()):
+    for title, data in reversed(pickle_db.database["jt:lth"].items()):
         formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
 
         list_item = ListItem(label=f"{title}— {formatted_time}")

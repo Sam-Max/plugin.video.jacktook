@@ -39,6 +39,7 @@ ADDON_NAME = ADDON.getAddonInfo("name")
 progressDialog = xbmcgui.DialogProgress()
 
 
+
 def get_jacktorr_setting(value, default=None):
     value = JACKTORR_ADDON.getSetting(value)
     if not value:

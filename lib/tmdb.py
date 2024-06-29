@@ -1,6 +1,6 @@
 import os
 from concurrent.futures import ThreadPoolExecutor
-from lib.db.database import get_db
+from lib.db.pickle_db import pickle_db
 from lib.api.tmdbv3api.objs.search import Search
 
 from lib.utils.kodi_utils import (
@@ -74,11 +74,11 @@ def tmdb_search(mode, genre_id, page, func, plugin):
         if page == 1:
             text = Keyboard(id=30241)
             if text:
-                get_db().set_search_string("text", text)
+                pickle_db.set_search_string("text", text)
             else:
                 return
         else:
-            text = get_db().get_search_string("text")
+            text = pickle_db.get_search_string("text")
         return Search().multi(str(text), page=page)
     elif mode == "movie":
         if genre_id != -1:

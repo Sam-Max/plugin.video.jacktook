@@ -3,8 +3,6 @@ import os
 from lib.db.anime_db import get_all_ids
 from lib.anizip import search_anizip_episodes
 from lib.api.anilist_api import anilist_client
-from lib.api.jacktook.kodi import kodilog
-from lib.db.database import get_db
 from lib.simkl import search_simkl_episodes
 from lib.utils.general_utils import (
     get_cached,
@@ -15,6 +13,7 @@ from lib.utils.general_utils import (
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
+from lib.db.pickle_db import pickle_db
 from lib.utils.kodi_utils import (
     ADDON_PATH,
     Keyboard,
@@ -30,11 +29,11 @@ def search_anilist(category, page, plugin):
         if page == 1:
             text = Keyboard(id=30242)
             if text:
-                get_db().set_search_string("query", text)
+                pickle_db.set_search_string("query", text)
             else:
                 return
         else:
-            text = get_db().get_search_string("query")
+            text = pickle_db.get_search_string("query")
         data = client.search(str(text), page)
     if category == "Trending":
         data = search_anilist_api(type="Trending", client=client, page=page)

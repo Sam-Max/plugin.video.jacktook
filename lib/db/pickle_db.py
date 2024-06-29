@@ -47,5 +47,4 @@ class Database:
             pickle.dump(self.database, f)
 
 
-def get_db():
-    return Database()
+pickle_db = Database()

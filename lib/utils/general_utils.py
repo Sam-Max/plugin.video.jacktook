@@ -5,9 +5,10 @@ import re
 import unicodedata
 import requests
 
+from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
-from lib.db.database import get_db
+from lib.db.pickle_db import pickle_db
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
 from lib.api.tmdbv3api.objs.movie import Movie
@@ -40,7 +41,6 @@ from xbmc import getSupportedMedia
 
 from zipfile import ZipFile
 
-db = get_db()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 50
 
@@ -362,7 +362,7 @@ def set_video_infotag(
 def set_watched_file(
     title, ids, tv_data, magnet, url, info_hash, debrid_type, is_torrent, is_debrid_pack
 ):
-    if title in db.database["jt:lfh"]:
+    if title in pickle_db.database["jt:lfh"]:
         return
 
     if is_torrent:
@@ -371,10 +371,10 @@ def set_watched_file(
         debrid_color = get_random_color(debrid_type)
         title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
 
-    if title not in db.database["jt:watch"]:
-        db.database["jt:watch"][title] = True
+    if title not in pickle_db.database["jt:watch"]:
+        pickle_db.database["jt:watch"][title] = True
 
-    db.database["jt:lfh"][title] = {
+    pickle_db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
         "ids": ids,
         "tv_data": tv_data,
@@ -385,23 +385,23 @@ def set_watched_file(
         "debrid_type": debrid_type,
         "is_debrid_pack": is_debrid_pack,
     }
-    db.commit()
+    pickle_db.commit()
 
 
 def set_watched_title(title, ids, mode="", media_type=""):
     if mode == "multi":
         mode = media_type
     if title != "None":
-        db.database["jt:lth"][title] = {
+        pickle_db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
             "ids": ids,
             "mode": mode,
         }
-        db.commit()
+        pickle_db.commit()
 
 
 def is_torrent_watched(title):
-    return db.database["jt:watch"].get(title, False)
+    return pickle_db.database["jt:watch"].get(title, False)
 
 
 def get_fanart(tvdb_id, mode="tv"):
@@ -559,6 +559,7 @@ def get_colored_languages(languages):
 
 def clear_all_cache():
     cache.clean_all()
+    bookmark_db.clear_bookmarks()
 
 
 def clear(type=""):
@@ -569,10 +570,10 @@ def clear(type=""):
     )
     if confirmed:
         if type == "lth":
-            db.database["jt:lth"] = {}
+            pickle_db.database["jt:lth"] = {}
         else:
-            db.database["jt:lfh"] = {}
-        db.commit()
+            pickle_db.database["jt:lfh"] = {}
+        pickle_db.commit()
         container_refresh()
 
 

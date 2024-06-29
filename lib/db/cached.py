@@ -23,6 +23,7 @@ ADDON_ID = xbmcaddon.Addon().getAddonInfo("id")
 
 if not PY3:
     ADDON_DATA = ADDON_DATA.decode("utf-8")
+    
 if not os.path.exists(ADDON_DATA):
     os.makedirs(ADDON_DATA)
 

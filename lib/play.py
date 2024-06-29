@@ -1,7 +1,9 @@
 import json
 from urllib.parse import quote
+from lib.api.jacktook.kodi import kodilog
 from lib.debrid import get_debrid_direct_url
 from lib.player import JacktookPlayer
+from lib.db.bookmark_db import bookmark_db
 from lib.utils.kodi_utils import (
     get_kodi_version,
     get_setting,
@@ -87,8 +89,8 @@ def play(
         setResolvedUrl(plugin.handle, True, list_item)
 
         if not is_torrent:
-            player = JacktookPlayer()
-            player.set_constants(_url)
+            player = JacktookPlayer(bookmark_db)
+            player.set_constants(_url, list_item)
             player.run(list_item)
 
 
