@@ -1,7 +1,11 @@
 
+## 0.2.8
+* Add resume playback for videos
+* Add new icons for main menu
+
 ## 0.2.7
-add "check if pack" context menu item
-several fixes and improvements
+* add "check if pack" context menu item
+* several fixes and improvements
 
 ## 0.2.6
 * Added service for auto-update addon 
