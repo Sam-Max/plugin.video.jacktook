@@ -190,14 +190,14 @@ def main_menu():
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(torrents),
-        list_item("Torrents", "settings.png"),
+        list_item("Torrents", "magnet2.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(cloud),
-        list_item("Cloud", "settings.png"),
+        list_item("Cloud", "cloud.png"),
         isFolder=True,
     )
 
