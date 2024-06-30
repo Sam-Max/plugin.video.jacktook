@@ -327,6 +327,7 @@ def search_direct(mode):
                 search,
                 mode=mode,
                 query=text,
+                direct=True
             ),
             list_item,
             isFolder=True,
