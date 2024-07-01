@@ -3,39 +3,21 @@
 
 A Kodi addon for torrent finding and streaming. 
 
-## Requirements.
-
-- Kodi 19+
-
 ## Features.
 
-Torrent Search:
-- Jackett 
-- Prowlarr 
-- Jacktook Burst
-- Torrentio 
-- Elhosted/KnightCrawlerr 
+**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett and Prowlarr. 
 
-Torrent Engines:
-- Jacktorr
-- Torrest
-- Elementum
+**Torrent Engines**: Jacktorr, Torrest and Elementum.
 
-Debrid Services:
-- Real Debrid 
-- Premiumize 
-- Torbox
+**Debrid Services**: Real Debrid, Premiumize and Torbox
 
-Other Clients:
-- Plex
+**Other Clients**: Plex (Beta)
 
-Metadata:
-- TMDB  
-- AniList 
-- Simkl
-- Fanart.tv
-- TMDB helper
+**Metadata**: TMDB, TMDB helper, AniList, Simkl and Fanart.tv. 
 
+## Requirements.
+
+- Kodi 20+
 
 ## Installation of this addon (Jacktook)
 
@@ -76,7 +58,7 @@ Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#
 
 ## How to use Jacktook Burst:
 
-See [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
+Only needed to install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
 
 
 ## How to run Jacktorr Engine using Docker Compose (optional):
