@@ -35,7 +35,8 @@ class Zilean:
             return {}
 
         try:
-            return self.scrape(query)
+            data = self.scrape(query)
+            return self.parse_response(data)
         except RateLimitExceeded:
             logging.warning(f"Zilean ratelimit exceeded for query: {query}")
         except ConnectTimeout:
@@ -54,15 +55,12 @@ class Zilean:
             logging.info(
                 "SCRAPER", f"Found {len(data)} entries out of {item_count} for {query}"
             )
-            res = self.parse_response(data)
-            # self.logger(res)
-            return res
         else:
             logging.info("NOT_FOUND", f"No entries found for {query}")
-
+        return data 
+    
     def api_scrape(self, query) -> tuple[Dict[str, str], int]:
         query_text = query
-
         if not query_text:
             return {}, 0
 
@@ -70,7 +68,6 @@ class Zilean:
         payload = {"queryText": query_text}
 
         response = self.session.post(url, json=payload, timeout=self.timeout)
-
         if response.status_code != 200:
             return {}, 0
         response = json.loads(
