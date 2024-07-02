@@ -140,6 +140,7 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
     PLEX = "Plex"
+    ZILEAN = "Zilean"
 
 
 class Players(Enum):
@@ -899,3 +900,5 @@ def unicode_flag_to_country_code(unicode_flag):
 
     country_code = first_letter.lower() + second_letter.lower()
     return country_code
+
+

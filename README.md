@@ -5,7 +5,7 @@ A Kodi addon for torrent finding and streaming.
 
 ## Features.
 
-**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett and Prowlarr. 
+**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr and Zilean 
 
 **Torrent Engines**: Jacktorr, Torrest and Elementum.
 
@@ -48,6 +48,10 @@ You can also install the addon without installing its repository. To do so, get 
 ## How to configure Torrentio/Elfhosted:
 The host url for Torrentio is: `https://torrentio.strem.fun/` and for Elfhosted: `https://torrentio.elfhosted.com/`
 
+## How to use Jacktook Burst:
+
+Only needed to install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
+
 ## How to run Jackett service using Docker:
 
 Detailed instructions are available at [LinuxServer.io Jackett Docker](https://hub.docker.com/r/linuxserver/jackett/) 
@@ -56,10 +60,9 @@ Detailed instructions are available at [LinuxServer.io Jackett Docker](https://h
 
 Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
 
-## How to use Jacktook Burst:
+## How to run Zilean service using Docker:
 
-Only needed to install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
-
+Detailed instructions are available at [Zilean](https://github.com/iPromKnight/zilean) 
 
 ## How to run Jacktorr Engine using Docker Compose (optional):
 

@@ -4,9 +4,13 @@ from lib.clients.jackett import Jackett
 from lib.clients.plex_client import Plex
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.torrentio import Torrentio
+from lib.clients.zilean import Zilean
+
 from lib.utils.kodi_utils import get_setting, notification, translation
 from lib.utils.general_utils import Indexer
+from lib.utils.settings import get_int_setting
 
+from lib.api.jacktook.kodi import kodilog
 
 def get_client(indexer):
     if indexer == Indexer.JACKETT:
@@ -44,6 +48,14 @@ def get_client(indexer):
             notification(translation(30225))
             return
         return Elfhosted(host, notification)
+    
+    elif indexer == Indexer.ZILEAN:
+        timeout = get_int_setting("zilean_timeout")
+        host = get_setting("zilean_host")
+        if not host:
+            notification(translation(30225))
+            return
+        return Zilean(host, timeout, notification, kodilog)
 
     elif indexer == Indexer.BURST:
         return Burst(notification)

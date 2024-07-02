@@ -373,43 +373,45 @@ def search(
                 episode,
                 season,
             )
-            if client == Players.DEBRID:
-                if is_debrid_activated():
-                    debrid_cached = check_debrid_cached(
-                        query,
-                        proc_results,
-                        mode,
-                        media_type,
-                        p_dialog,
-                        rescrape,
-                        episode,
-                    )
-                    if debrid_cached:
-                        final_results = post_process(debrid_cached, season)
-                        if is_auto_play():
-                            auto_play(final_results, ids, tv_data, mode, p_dialog)
+            if proc_results:
+                if client == Players.DEBRID:
+                    if is_debrid_activated():
+                        debrid_cached = check_debrid_cached(
+                            query,
+                            proc_results,
+                            mode,
+                            media_type,
+                            p_dialog,
+                            rescrape,
+                            episode,
+                        )
+                        if debrid_cached:
+                            final_results = post_process(debrid_cached, season)
+                            if is_auto_play():
+                                auto_play(final_results, ids, tv_data, mode, p_dialog)
+                                return
+                        else:
+                            notification("No cached results")
                             return
                     else:
-                        notification("No cached results")
+                        notification("No debrid client enabled")
                         return
                 else:
-                    notification("No debrid client enabled")
-                    return
+                    final_results = post_process(proc_results)
+
+                if final_results:
+                    indexer_show_results(
+                        final_results,
+                        mode,
+                        ids,
+                        tv_data,
+                        direct,
+                        plugin,
+                    )
+                    set_view("widelist")
+                    endOfDirectory(plugin.handle)
             else:
-                final_results = post_process(proc_results)
-
-            if final_results:
-                indexer_show_results(
-                    final_results,
-                    mode,
-                    ids,
-                    tv_data,
-                    direct,
-                    plugin,
-                )
-                set_view("widelist")
-                endOfDirectory(plugin.handle)
-
+                notification("No results found for episode")
         else:
             notification("No results found")
 

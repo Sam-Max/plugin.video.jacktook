@@ -42,6 +42,7 @@ def search_client(
         if indexer == Indexer.JACKETT:
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
             response = client.search(query, mode, season, episode)
+        
         elif indexer == Indexer.PROWLARR:
             indexers_ids = get_setting("prowlarr_indexer_ids")
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
@@ -53,6 +54,7 @@ def search_client(
                 episode,
                 indexers_ids,
             )
+        
         elif indexer == Indexer.TORRENTIO:
             if imdb_id == -1:
                 notification("Direct Search not supported for Torrentio")
@@ -60,6 +62,7 @@ def search_client(
                 return
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
             response = client.search(imdb_id, mode, media_type, season, episode)
+        
         elif indexer == Indexer.ELHOSTED:
             if imdb_id == -1:
                 notification("Direct Search not supported for Elfhosted")
@@ -67,9 +70,15 @@ def search_client(
                 return
             dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
             response = client.search(imdb_id, mode, media_type, season, episode)
+        
+        elif indexer == Indexer.ZILEAN:
+            dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
+            response = client.search(query)
+       
         elif indexer == Indexer.BURST:
             response = client.search(tmdb_id, query, mode, media_type, season, episode)
             dialog.create("")
+       
         else:
             notification(f"Select the correct indexer for the {client_player} client")
             return

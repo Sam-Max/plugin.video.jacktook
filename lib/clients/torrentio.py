@@ -1,25 +1,23 @@
 import json
 import re
-import requests
-from lib.api.jacktook.kodi import kodilog
 from lib.utils.countries import find_language_by_unicode
 from lib.utils.kodi_utils import convert_size_to_bytes, translation
 from lib.utils.general_utils import unicode_flag_to_country_code
-
+from requests import Session
 
 class Torrentio:
     def __init__(self, host, notification) -> None:
         self.host = host.rstrip("/")
         self._notification = notification
+        self.session = Session()
 
     def search(self, imdb_id, mode, media_type, season, episode):
         try:
             if mode == "tv" or media_type == "tv" or mode == "anime":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-                kodilog(url)
             elif mode == "movie" or media_type == "movie" or mode == "multi":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-            res = requests.get(url, timeout=10)
+            res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res)

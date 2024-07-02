@@ -144,7 +144,11 @@ def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
             magnet = ""
             url = ""
             if guid := res.get("guid"):
-                if res.get("indexer") in [Indexer.TORRENTIO, Indexer.ELHOSTED]:
+                if res.get("indexer") in [
+                    Indexer.TORRENTIO,
+                    Indexer.ELHOSTED,
+                    Indexer.ZILEAN,
+                ]:
                     magnet = info_hash_to_magnet(guid)
                 else:
                     if guid.startswith("magnet:?"):
