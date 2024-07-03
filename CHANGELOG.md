@@ -1,4 +1,8 @@
 
+## 0.2.9
+* Add Zilean indexer support
+* Minor bug fixes
+
 ## 0.2.8
 * Add resume playback for videos
 * Add new icons for main menu
