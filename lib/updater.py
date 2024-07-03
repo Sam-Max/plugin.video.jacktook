@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import shutil
 import requests
-import os
+from os import path as ospath
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
     ADDON_VERSION,
@@ -100,10 +100,12 @@ def update_addon(new_version, action):
             heading=heading,
             line1="Error Updating. Please install new update manually",
         )
-    zip_location = os.path.join(packages_dir, zip_name)
+    zip_location = ospath.join(packages_dir, zip_name)
     with open(zip_location, "wb") as f:
         shutil.copyfileobj(result.raw, f)
-    shutil.rmtree(os.path.join(home_addons_dir, "plugin.video.jacktook"))
+    local_repo_path = ospath.join(home_addons_dir, "plugin.video.jacktook")
+    if ospath.exists(local_repo_path):
+        shutil.rmtree(local_repo_path)
     success = unzip(zip_location, home_addons_dir, destination_check)
     delete_file(zip_location)
     if not success:
