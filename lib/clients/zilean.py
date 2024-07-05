@@ -1,7 +1,6 @@
 import json
 import logging
 from types import SimpleNamespace
-from typing import Dict, List, Any
 from requests import ConnectTimeout, ReadTimeout, Session
 from requests.exceptions import RequestException
 
@@ -30,7 +29,7 @@ class Zilean:
             self._notification(f"Zilean failed to initialize: {e}")
             return False
 
-    def search(self, query) -> Dict[str, str]:
+    def search(self, query):
         if not query:
             return {}
 
@@ -49,7 +48,7 @@ class Zilean:
             logging.error(f"Zilean exception thrown: {e}")
         return {}
 
-    def scrape(self, query) -> List[Dict[str, Any]]:
+    def scrape(self, query):
         data, item_count = self.api_scrape(query)
         if data:
             logging.info(
@@ -59,7 +58,7 @@ class Zilean:
             logging.info("NOT_FOUND", f"No entries found for {query}")
         return data 
     
-    def api_scrape(self, query) -> tuple[Dict[str, str], int]:
+    def api_scrape(self, query):
         query_text = query
         if not query_text:
             return {}, 0
