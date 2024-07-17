@@ -25,6 +25,15 @@ TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 
+def add_icon_genre_single(item, icon_path="genre.png"):
+    item.setArt(
+        {
+            "icon": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+            "thumb": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+        }
+    )
+
+
 def add_icon_genre(item, name):
     genre_icons = {
         "Action": "genre_action.png",
@@ -141,7 +150,7 @@ def tmdb_show_items(res, plugin, mode):
             title = res.name
         elif "title" in res:
             title = res.title
-        
+
         if media_type == "movie":
             release_date = res.release_date
             imdb_id, tvdb_id, duration = get_tmdb_movie_data(tmdb_id)
@@ -150,7 +159,6 @@ def tmdb_show_items(res, plugin, mode):
             release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
             label_title = f"[B][TV][/B]- {title}"
-            
 
     poster_path = res.get("poster_path", "")
     if poster_path:
@@ -246,7 +254,7 @@ def menu_genre(mode, page, func, plugin):
         if name == "TV Movie":
             continue
         item = ListItem(label=name)
-        add_icon_genre(item, name)
+        add_icon_genre_single(item)
         addDirectoryItem(
             plugin.handle,
             plugin.url_for(func, mode=mode.split("_")[0], genre_id=d["id"], page=page),

@@ -177,7 +177,7 @@ def main_menu():
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(genre_menu),
-        list_item("By Genre", "movies.png"),
+        list_item("Genres", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
