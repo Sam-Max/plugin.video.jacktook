@@ -90,7 +90,7 @@ def play(
 
         if not is_torrent:
             player = JacktookPlayer(bookmark_db)
-            player.set_constants(_url, list_item)
+            player.set_constants(_url)
             player.run(list_item)
 
 

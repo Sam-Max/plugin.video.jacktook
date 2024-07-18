@@ -64,7 +64,7 @@ class JacktookPlayer(Player):
         if self.current_point >= set_resume:
             self.set_bookmark()
 
-    def set_constants(self, url, list_item):
+    def set_constants(self, url):
         self.url = url
         self.resume_time = self.get_bookmark()
         # if self.resume_time > 0.0:
