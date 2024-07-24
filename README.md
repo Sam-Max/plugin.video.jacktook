@@ -5,15 +5,15 @@ A Kodi addon for torrent finding and streaming.
 
 ## Features.
 
-**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr and Zilean 
+**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr and Zilean. 
 
 **Torrent Engines**: Jacktorr, Torrest and Elementum.
 
-**Debrid Services**: Real Debrid, Premiumize and Torbox
+**Debrid Services**: Real Debrid, Premiumize and Torbox.
 
-**Other Clients**: Plex (Beta)
+**Other Clients**: Plex (Beta).
 
-**Metadata**: TMDB, TMDB helper, AniList, Simkl and Fanart.tv. 
+**Metadata**: TMDB, Trakt.tv, AniList, Simkl and Fanart.tv. 
 
 ## Requirements.
 
