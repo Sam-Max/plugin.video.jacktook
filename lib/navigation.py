@@ -8,32 +8,40 @@ import requests
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
-from lib.api.jacktorr_api import (
-    TorrServer,
+from lib.api.jacktook.kodi import kodilog
+from lib.api.jacktorr_api import TorrServer
+from lib.api.tmdbv3api.tmdb import TMDb
+
+from lib.api.trakt.trakt_api import (
+    trakt_authenticate,
+    trakt_revoke_authentication,
 )
 from lib.clients.search import search_client
 from lib.debrid import check_debrid_cached, get_debrid_pack_direct_url
 from lib.files_history import last_files
-from lib.indexer import indexer_show_results
+from lib.indexer import show_indexers_results
 from lib.play import make_listing, play
 from lib.player import JacktookPlayer
 from lib.plex import plex_login, plex_logout, validate_server
 from lib.titles_history import last_titles
+
+from lib.trakt import handle_trakt_query, show_trakt_list_content, show_trakt_list_page
 from lib.utils.kodi_formats import is_music, is_picture, is_text
+
 from lib.utils.pm_utils import get_pm_pack_info
 from lib.utils.rd_utils import get_rd_pack_info, get_rd_info
-from lib.utils.torbox_utils import (
-    get_torbox_pack_info,
-)
-from routing import Plugin
-from lib.api.tmdbv3api.tmdb import TMDb
+from lib.utils.items_menus import tv_items, movie_items
+from lib.utils.torbox_utils import get_torbox_pack_info
+
 from lib.tmdb import (
     TMDB_POSTER_URL,
-    tmdb_search,
-    tmdb_show_results,
+    handle_tmdb_query,
+    search as tmdb_search,
+    show_results,
 )
 from lib.anilist import search_anilist, search_episodes
 from lib.db.bookmark_db import bookmark_db
+
 from lib.utils.general_utils import (
     DialogListener,
     Players,
@@ -50,14 +58,16 @@ from lib.utils.general_utils import (
     get_port,
     is_video,
     list_item,
+    set_content_type,
     set_video_info,
-    set_video_infotag,
+    set_media_infotag,
     set_watched_title,
     ssl_enabled,
     tmdb_get,
     check_debrid_enabled,
     Debrids,
 )
+
 from lib.utils.kodi_utils import (
     ADDON_PATH,
     EPISODES_TYPE,
@@ -71,6 +81,7 @@ from lib.utils.kodi_utils import (
     burst_addon_settings,
     close_all_dialog,
     container_update,
+    donate_message,
     get_kodi_version,
     get_setting,
     notification,
@@ -86,6 +97,7 @@ from lib.utils.kodi_utils import (
 from lib.utils.settings import is_auto_play
 from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
+
 from xbmcgui import ListItem, Dialog
 from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
@@ -95,8 +107,11 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
+from routing import Plugin
 
 plugin = Plugin()
+
+paginator = None
 
 if JACKTORR_ADDON:
     api = TorrServer(
@@ -148,7 +163,7 @@ def check_directory(func):
 
 @plugin.route("/")
 @check_directory
-def main_menu():
+def root_menu():
     setPluginCategory(plugin.handle, "Main Menu")
     addDirectoryItem(
         plugin.handle,
@@ -158,13 +173,13 @@ def main_menu():
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search_tmdb, mode="tv", genre_id=-1, page=1),
+        plugin.url_for(tv_shows_items),
         list_item("TV Shows", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search_tmdb, mode="movie", genre_id=-1, page=1),
+        plugin.url_for(movies_items),
         list_item("Movies", "movies.png"),
         isFolder=True,
     )
@@ -172,12 +187,6 @@ def main_menu():
         plugin.handle,
         plugin.url_for(anime_menu),
         list_item("Anime", "anime.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(genre_menu),
-        list_item("Genres", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
@@ -222,6 +231,96 @@ def main_menu():
         isFolder=True,
     )
 
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(donate),
+        list_item("Donate", "donate.png"),
+        isFolder=True,
+    )
+
+
+@plugin.route("/search_tmdb")
+@query_arg("mode", required=True)
+@query_arg("genre_id", required=True)
+@query_arg("page", required=True)
+def search_tmdb(mode, genre_id, page):
+    if mode in ["movie", "movie_genres"]:
+        setContent(plugin.handle, MOVIES_TYPE)
+    elif mode in ["tv", "tv_genres"]:
+        setContent(plugin.handle, SHOWS_TYPE)
+    data = tmdb_search(mode, genre_id, int(page))
+    if data:
+        if data.total_results == 0:
+            notification("No results found")
+            return
+        show_results(
+            data.results,
+            page=int(page),
+            plugin=plugin,
+            genre_id=genre_id,
+            mode=mode,
+        )
+
+
+@plugin.route("/tv_items")
+@check_directory
+def tv_shows_items():
+    for item in tv_items:
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                search_item, mode=item["mode"], query=item["query"], api=item["api"]
+            ),
+            list_item(item["name"], item["icon"]),
+            isFolder=True,
+        )
+
+
+@plugin.route("/movies_items")
+@check_directory
+def movies_items():
+    for item in movie_items:
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                search_item, mode=item["mode"], query=item["query"], api=item["api"]
+            ),
+            list_item(item["name"], item["icon"]),
+            isFolder=True,
+        )
+
+
+@plugin.route("/search_item")
+@query_arg("query", required=True)
+@query_arg("mode", required=True)
+@query_arg("api", required=True)
+@query_arg("page", required=False)
+def search_item(query="", mode="", api="", page=1):
+    set_content_type(mode, plugin=plugin)
+    if api == "trakt":
+        handle_trakt_query(query, mode, api, page, plugin)
+    elif api == "tmdb":
+        handle_tmdb_query(query, mode, page, plugin)
+
+
+@plugin.route("/trakt/list/content")
+@query_arg("list_type", required=False)
+@query_arg("mode", required=False)
+@query_arg("user", required=False)
+@query_arg("slug", required=False)
+@query_arg("with_auth", required=False)
+def trakt_list_content(list_type, mode, user, slug, with_auth="", page=1):
+    set_content_type(mode, plugin=plugin)
+    show_trakt_list_content(list_type, mode, user, slug, with_auth, page, plugin)
+
+
+@plugin.route("/trakt/paginator")
+@query_arg("page", required=False)
+@query_arg("mode", required=False)
+def trakt_list_page(mode, page=""):
+    set_content_type(mode, plugin=plugin)
+    show_trakt_list_page(int(page), mode, plugin)
+
 
 @plugin.route("/direct")
 @check_directory
@@ -251,7 +350,7 @@ def direct_menu():
 def anime_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anilist, category="search"),
+        plugin.url_for(anilist, category="SearchAnime"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
@@ -272,46 +371,6 @@ def anime_menu():
     )
 
 
-@plugin.route("/genre")
-@check_directory
-def genre_menu():
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search_tmdb, mode="tv_genres", genre_id=-1, page=1),
-        list_item("TV Shows", "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(search_tmdb, mode="movie_genres", genre_id=-1, page=1),
-        list_item("Movies", "movies.png"),
-        isFolder=True,
-    )
-
-
-@plugin.route("/search_tmdb/<mode>/<genre_id>/<page>")
-def search_tmdb(mode, genre_id, page):
-    if mode in ["movie", "movie_genres"]:
-        setContent(plugin.handle, MOVIES_TYPE)
-    elif mode in ["tv", "tv_genres"]:
-        setContent(plugin.handle, SHOWS_TYPE)
-
-    page = int(page)
-    data = tmdb_search(mode, genre_id, page, search_tmdb, plugin)
-    if data:
-        if data.total_results == 0:
-            notification("No results found")
-            return
-        tmdb_show_results(
-            data.results,
-            next_func=next_page,
-            page=page,
-            plugin=plugin,
-            genre_id=genre_id,
-            mode=mode,
-        )
-
-
 @plugin.route("/search_direct/<mode>")
 def search_direct(mode):
     text = Keyboard(id=30243)
@@ -323,12 +382,7 @@ def search_direct(mode):
         )
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(
-                search,
-                mode=mode,
-                query=text,
-                direct=True
-            ),
+            plugin.url_for(search, mode=mode, query=text, direct=True),
             list_item,
             isFolder=True,
         )
@@ -346,12 +400,9 @@ def search_direct(mode):
 def search(
     query="", mode="", media_type="", ids="", tv_data="", direct=False, rescrape=False
 ):
-    if mode == "movie" or media_type == "movie":
-        setContent(plugin.handle, MOVIES_TYPE)
-    elif mode == "tv" or media_type == "tv" or mode == "anime":
-        setContent(plugin.handle, SHOWS_TYPE)
+    set_content_type(mode, media_type, plugin)
+    set_watched_title(query, ids, mode, media_type)
 
-    set_watched_title(query, ids, mode)
     if tv_data:
         ep_name, episode, season = tv_data.split("(^)")
     else:
@@ -400,7 +451,7 @@ def search(
                     final_results = post_process(proc_results)
 
                 if final_results:
-                    indexer_show_results(
+                    show_indexers_results(
                         final_results,
                         mode,
                         ids,
@@ -562,12 +613,12 @@ def get_rd_downloads(page=1):
             isFolder=False,
         )
 
-    next_page = int(page) + 1
-    next_item = list_item("Next", icon="nextpage.png")
+    page = int(page) + 1
+    list_item = list_item("Next", icon="nextpage.png")
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(get_rd_downloads, page=next_page),
-        next_item,
+        plugin.url_for(get_rd_downloads, page=page),
+        list_item,
         isFolder=True,
     )
 
@@ -728,7 +779,7 @@ def tv_seasons_details(ids, mode, media_type=None):
 
     set_watched_title(name, ids, mode=mode, media_type=media_type)
 
-    show_poster = TMDB_POSTER_URL + details.get("poster_path", "")
+    show_poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
     fanart_data = get_fanart(tvdb_id)
     fanart = fanart_data["fanart"] if fanart_data else ""
 
@@ -736,9 +787,11 @@ def tv_seasons_details(ids, mode, media_type=None):
         season_name = s.name
         if "Specials" in season_name:
             continue
+
         season_number = s.season_number
         if season_number == 0:
             continue
+
         if s.poster_path:
             poster = TMDB_POSTER_URL + s.poster_path
         else:
@@ -747,7 +800,7 @@ def tv_seasons_details(ids, mode, media_type=None):
         list_item = ListItem(label=season_name)
 
         if get_kodi_version() >= 20:
-            set_video_infotag(
+            set_media_infotag(
                 list_item, mode, name, overview, season_number=season_number, ids=ids
             )
         else:
@@ -810,7 +863,7 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
         list_item = ListItem(label=label)
 
         if get_kodi_version() >= 20:
-            set_video_infotag(
+            set_media_infotag(
                 list_item,
                 mode,
                 tv_name,
@@ -893,7 +946,7 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
         plugin,
         mode=mode,
         debrid_type=debrid_type,
-        is_debrid_pack=True
+        is_debrid_pack=True,
     )
 
 
@@ -937,7 +990,7 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
                     list_item,
                     isFolder=False,
                 )
-        return 
+        return
     elif debrid_type == "RD":
         info = get_rd_pack_info(info_hash)
     elif debrid_type == "TB":
@@ -965,16 +1018,10 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
                 isFolder=False,
             )
 
+
 @plugin.route("/anilist/<category>")
 def anilist(category, page=1):
     setContent(plugin.handle, MOVIES_TYPE)
-    search_anilist(category, page, plugin)
-
-
-@plugin.route("/anilist/next_page/<category>/<page>")
-def next_page_anilist(category, page):
-    setContent(plugin.handle, MOVIES_TYPE)
-    page = int(page) + 1
     search_anilist(category, page, plugin)
 
 
@@ -983,9 +1030,29 @@ def search_anime_episodes(query, anilist_id, mal_id):
     search_episodes(query, anilist_id, mal_id, plugin)
 
 
-@plugin.route("/next_page/<mode>/<page>/<genre_id>")
-def next_page(mode, page, genre_id):
+@plugin.route("/anilist_next_page")
+@query_arg("category", required=True)
+@query_arg("page", required=True)
+def next_page_anilist(category="", page=""):
+    setContent(plugin.handle, MOVIES_TYPE)
+    search_anilist(category, int(page) + 1, plugin)
+
+
+@plugin.route("/next_page_tmdb")
+@query_arg("mode", required=True)
+@query_arg("page", required=True)
+@query_arg("genre_id", required=True)
+def next_page_tmdb(mode, page, genre_id):
     search_tmdb(mode=mode, genre_id=int(genre_id), page=int(page))
+
+
+@plugin.route("/next_page_trakt")
+@query_arg("query", required=True)
+@query_arg("mode", required=True)
+@query_arg("api", required=True)
+@query_arg("page", required=True)
+def next_page_trakt(query, mode, api, page):
+    search_item(query=query, mode=mode, api=api, page=int(page))
 
 
 @plugin.route("/download_to_debrid")
@@ -1016,6 +1083,11 @@ def addon_update():
 @plugin.route("/status")
 def status():
     addon_status()
+
+
+@plugin.route("/donate")
+def donate():
+    donate_message()
 
 
 @plugin.route("/settings")
@@ -1087,6 +1159,16 @@ def logout():
 @plugin.route("/plex_validate")
 def plex_validate():
     validate_server()
+
+
+@plugin.route("/trakt_auth")
+def trakt_auth():
+    trakt_authenticate()
+
+
+@plugin.route("/trakt_logout")
+def trakt_auth():
+    trakt_revoke_authentication()
 
 
 @plugin.route("/open_burst_config")

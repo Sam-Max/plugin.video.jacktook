@@ -81,6 +81,17 @@
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
     </category>
+    <category label="Trakt">
+        <setting label="Trakt Configuration" type="lsep"/>
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/trakt_auth)" />
+        <setting id="trakt.expires" type="text" default="0" visible="false"/>
+        <setting id="trakt.refresh" type="text" default="0" visible="false"/>
+        <setting id="trakt.token" type="text" default="0" visible="false"/>
+        <setting id="trakt.user" type="text" default="0" visible="false"/>
+        <setting id="jacktook.trakt.client" type="text" label="Trakt Client" default="1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb"/>
+        <setting id="jacktook.trakt.secret" type="text" label="Trakt Secret" default="8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"/>
+        <setting type="action" label="Log out" action="RunPlugin(plugin://plugin.video.jacktook/trakt_logout)" />
+    </category>
     <category label="30140">
         <setting label="30142" type="lsep"/>
         <setting id="anilist_client_id" type="text" label="30143" default=""/>

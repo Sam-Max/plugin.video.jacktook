@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 import hashlib
 import os
@@ -5,10 +6,11 @@ import re
 import unicodedata
 import requests
 
+from lib.api.trakt.trakt_api import clear_cache
 from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
-from lib.db.pickle_db import pickle_db
+from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
 from lib.api.tmdbv3api.objs.movie import Movie
@@ -20,6 +22,8 @@ from lib.torf._magnet import Magnet
 from lib.fanart import search_api_fanart
 from lib.utils.kodi_utils import (
     ADDON_PATH,
+    MOVIES_TYPE,
+    SHOWS_TYPE,
     container_refresh,
     get_jacktorr_setting,
     get_kodi_version,
@@ -36,9 +40,8 @@ from lib.utils.settings import get_int_setting
 
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
-from xbmcplugin import addDirectoryItem
+from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
 from xbmc import getSupportedMedia
-
 from zipfile import ZipFile
 
 
@@ -262,7 +265,7 @@ def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode, plugin)
 
 def set_video_properties(list_item, poster, mode, title, overview, ids):
     if get_kodi_version() >= 20:
-        set_video_infotag(list_item, mode, title, overview, ids=ids)
+        set_media_infotag(list_item, mode, title, overview, ids=ids)
     else:
         set_video_info(list_item, mode, title, overview, ids=ids)
     list_item.setProperty("IsPlayable", "true")
@@ -315,7 +318,7 @@ def set_video_info(
     list_item.setInfo("video", info)
 
 
-def set_video_infotag(
+def set_media_infotag(
     list_item,
     mode,
     name,
@@ -363,7 +366,7 @@ def set_video_infotag(
 def set_watched_file(
     title, ids, tv_data, magnet, url, info_hash, debrid_type, is_torrent, is_debrid_pack
 ):
-    if title in pickle_db.database["jt:lfh"]:
+    if title in main_db.database["jt:lfh"]:
         return
 
     if is_torrent:
@@ -372,10 +375,10 @@ def set_watched_file(
         debrid_color = get_random_color(debrid_type)
         title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
 
-    if title not in pickle_db.database["jt:watch"]:
-        pickle_db.database["jt:watch"][title] = True
+    if title not in main_db.database["jt:watch"]:
+        main_db.database["jt:watch"][title] = True
 
-    pickle_db.database["jt:lfh"][title] = {
+    main_db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
         "ids": ids,
         "tv_data": tv_data,
@@ -386,23 +389,23 @@ def set_watched_file(
         "debrid_type": debrid_type,
         "is_debrid_pack": is_debrid_pack,
     }
-    pickle_db.commit()
+    main_db.commit()
 
 
 def set_watched_title(title, ids, mode="", media_type=""):
     if mode == "multi":
         mode = media_type
     if title != "None":
-        pickle_db.database["jt:lth"][title] = {
+        main_db.database["jt:lth"][title] = {
             "timestamp": datetime.now(),
             "ids": ids,
             "mode": mode,
         }
-        pickle_db.commit()
+        main_db.commit()
 
 
 def is_torrent_watched(title):
-    return pickle_db.database["jt:watch"].get(title, False)
+    return main_db.database["jt:watch"].get(title, False)
 
 
 def get_fanart(tvdb_id, mode="tv"):
@@ -524,6 +527,13 @@ def get_tmdb_tv_data(id):
     return imdb_id, tvdb_id
 
 
+def set_content_type(mode, media_type="movie", plugin=None):
+    if mode == "movie" or media_type == "movie":
+        setContent(plugin.handle, MOVIES_TYPE)
+    elif mode == "tv" or media_type == "tv" or mode == "anime":
+        setContent(plugin.handle, SHOWS_TYPE)
+
+
 # This method was taken from script.elementum.jackett addon
 def get_random_color(provider_name):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
@@ -558,9 +568,22 @@ def get_colored_languages(languages):
         return colored_languages
 
 
+def execute_thread_pool(results, func, *args, **kwargs):
+    with ThreadPoolExecutor(max_workers=len(results)) as executor:
+        [executor.submit(func, res, *args, **kwargs) for res in results]
+        executor.shutdown(wait=True)
+
+
+def paginate_list(data, page_size=10):
+    for i in range(0, len(data), page_size):
+        yield data[i : i + page_size]
+
+
 def clear_all_cache():
     cache.clean_all()
     bookmark_db.clear_bookmarks()
+    clear_cache(cache_type="trakt")
+    clear_cache(cache_type="list")
 
 
 def clear(type=""):
@@ -571,10 +594,10 @@ def clear(type=""):
     )
     if confirmed:
         if type == "lth":
-            pickle_db.database["jt:lth"] = {}
+            main_db.database["jt:lth"] = {}
         else:
-            pickle_db.database["jt:lfh"] = {}
-        pickle_db.commit()
+            main_db.database["jt:lfh"] = {}
+        main_db.commit()
         container_refresh()
 
 
@@ -674,7 +697,7 @@ def check_pack(results, season_num):
             pattern9,
             pattern10,
             pattern11,
-            pattern12
+            pattern12,
         ]
     )
 
@@ -840,6 +863,22 @@ def supported_video_extensions():
     return media_types.split("|")
 
 
+def add_next_button(func_name, plugin, page, **kwargs):
+    list_item = ListItem(label="Next")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
+    )
+
+    page += 1
+    addDirectoryItem(
+        plugin.handle,
+        url_for(name=func_name, page=page, **kwargs),
+        list_item,
+        isFolder=True,
+    )
+    endOfDirectory(plugin.handle)
+
+
 def is_video(s):
     return s.lower().endswith(video_extensions)
 
@@ -900,5 +939,3 @@ def unicode_flag_to_country_code(unicode_flag):
 
     country_code = first_letter.lower() + second_letter.lower()
     return country_code
-
-

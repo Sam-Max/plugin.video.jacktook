@@ -8,7 +8,7 @@ from lib.utils.general_utils import (
     get_cached,
     set_cached,
     set_video_info,
-    set_video_infotag,
+    set_media_infotag,
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -73,7 +73,7 @@ def simkl_parse_show_results(response, title, season, plugin):
             list_item.setProperty("IsPlayable", "false")
 
             if get_kodi_version() >= 20:
-                set_video_infotag(
+                set_media_infotag(
                     list_item,
                     mode="tv",
                     name=ep_name,

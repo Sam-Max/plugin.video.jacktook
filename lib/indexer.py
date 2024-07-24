@@ -1,4 +1,5 @@
 import re
+from lib.api.jacktook.kodi import kodilog
 from lib.tmdb import TMDB_POSTER_URL
 from lib.utils.kodi_utils import (
     action_url_run,
@@ -22,22 +23,24 @@ from lib.utils.general_utils import (
 from xbmcgui import ListItem
 
 
-def indexer_show_results(results, mode, ids, tv_data, direct, plugin):
+def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
     indexer = get_setting("indexer")
     description_length = get_description_length()
     if ids:
-        tmdb_id, tvdb_id, _ = ids.split(", ")
+        tmdb_id, _, _ = ids.split(", ")
 
     poster = overview = ""
     if not direct:
         if mode in ["tv", "anime"]:
-            find = tmdb_get("find_by_tvdb", tvdb_id)
-            overview = find["tv_results"][0].get("overview", "")
-            poster = TMDB_POSTER_URL + find["tv_results"][0].get("poster_path", "")
+            details = tmdb_get("tv_details", tmdb_id)
+            poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
+            overview = details.overview if details.overview else ""  
         elif mode == "movie":
             details = tmdb_get("movie_details", tmdb_id)
-            overview = details.get("overview", "")
-            poster = TMDB_POSTER_URL + details.get("poster_path", "")
+            poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
+            overview = details.overview if details.overview else ""  
+        elif mode == "multi":
+            pass
 
     for res in results:
         title = res["title"]

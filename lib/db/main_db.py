@@ -5,9 +5,7 @@ from lib.utils.kodi_utils import ADDON_ID
 import xbmcvfs
 
 
-# Source with some modifications
-# https://github.com/pikdum/plugin.video.haru/blob/master/resources/lib/database.py
-class Database:
+class MainDatabase:
     def __init__(self):
         BASE_DATABASE = {
             "jt:watch": {},
@@ -35,11 +33,11 @@ class Database:
             os.path.join("special://home/addons/", ADDON_ID, "addon.xml")
         )
 
-    def set_search_string(self, key, value):
+    def set_query(self, key, value):
         self.database[key] = value
         self.commit()
 
-    def get_search_string(self, key):
+    def get_query(self, key):
         return self.database[key]
 
     def commit(self):
@@ -47,4 +45,4 @@ class Database:
             pickle.dump(self.database, f)
 
 
-pickle_db = Database()
+main_db = MainDatabase()

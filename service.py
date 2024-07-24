@@ -1,3 +1,4 @@
+from lib.api.trakt.base_cache import setup_databases
 import xbmc
 from threading import Thread
 from lib.utils.kodi_utils import (
@@ -70,6 +71,7 @@ class JacktookMOnitor(xbmc.Monitor):
 
     def start(self):
         CheckKodiVersion().run()
+        setup_databases()
         Thread(target=UpdateCheck().run).start()
 
     def onNotification(self, sender, method, data):

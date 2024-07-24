@@ -20,7 +20,7 @@ class AniList:
             media = res.json()["data"]["Page"]
             return media
         else:
-            raise Exception(f"Anilist error:{res.text}")
+            raise Exception(f"Error:{res.text}")
 
     def search(self, query, page, perPage=15):
         variables = {

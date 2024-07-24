@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+from datetime import datetime
 import json
 import re
 import sys
 from urllib.parse import quote, urlencode
-from lib.api.jacktook.kodi import kodilog
+from lib.utils.custom_dialogs import CustomDialog
 import xbmc
 import xbmcgui
 from xbmcgui import Window
@@ -18,6 +19,7 @@ _URL = sys.argv[0]
 MOVIES_TYPE = "movies"
 SHOWS_TYPE = "tvshows"
 EPISODES_TYPE = "episodes"
+TITLES_TYPE = "titles"
 
 TORREST_ADDON_ID = "plugin.video.torrest"
 JACKTORR_ADDON_ID = "plugin.video.jacktorr"
@@ -37,7 +39,6 @@ ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 
 progressDialog = xbmcgui.DialogProgress()
-
 
 
 def get_jacktorr_setting(value, default=None):
@@ -103,6 +104,14 @@ def addon_status():
     except:
         pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
+
+
+def donate_message():
+    msg = "If you like Jacktook you can support \n"
+    msg += "its development by making a small donation to:\n\n"
+    msg += "[COLOR snow]https://ko-fi.com/sammax09[/COLOR]"
+    dialog = CustomDialog("customdialog.xml", ADDON_PATH, "Default", heading="", text=msg)
+    dialog.doModal()
 
 
 def is_torrest_addon():
@@ -378,7 +387,6 @@ def copy2clip(txt):
     import subprocess
 
     platform = sys.platform
-
     if platform == "win32":
         try:
             cmd = "echo %s|clip" % txt.strip()
@@ -393,3 +401,12 @@ def copy2clip(txt):
             p.communicate(input=txt)
         except:
             pass
+
+
+def get_datetime(string=False, dt=False):
+    d = datetime.now()
+    if dt:
+        return d
+    if string:
+        return d.strftime("%Y-%m-%d")
+    return datetime.date(d)

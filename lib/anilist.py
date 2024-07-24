@@ -1,19 +1,20 @@
 import os
-
+from lib.api.jacktook.kodi import kodilog
 from lib.db.anime_db import get_all_ids
 from lib.anizip import search_anizip_episodes
 from lib.api.anilist_api import anilist_client
 from lib.simkl import search_simkl_episodes
 from lib.utils.general_utils import (
+    add_next_button,
     get_cached,
     get_fanart,
     set_cached,
     set_video_info,
-    set_video_infotag,
+    set_media_infotag,
 )
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory
-from lib.db.pickle_db import pickle_db
+from xbmcplugin import addDirectoryItem
+from lib.db.main_db import main_db
 from lib.utils.kodi_utils import (
     ADDON_PATH,
     Keyboard,
@@ -25,26 +26,27 @@ from lib.utils.kodi_utils import (
 
 def search_anilist(category, page, plugin):
     client = anilist_client()
-    if category == "search":
+    if category == "SearchAnime":
         if page == 1:
             text = Keyboard(id=30242)
-            if text:
-                pickle_db.set_search_string("query", text)
-            else:
+            if not text:
                 return
+            main_db.set_query("query", text)
         else:
-            text = pickle_db.get_search_string("query")
+            text = main_db.get_query("query")
         data = client.search(str(text), page)
-    if category == "Trending":
+    elif category == "Trending":
         data = search_anilist_api(type="Trending", client=client, page=page)
     elif category == "Popular":
         data = search_anilist_api(type="Popular", client=client, page=page)
 
+    kodilog(category)
+
     anilist_show_results(
         data,
-        category=category,
-        page=page,
-        plugin=plugin,
+        category,
+        page,
+        plugin,
     )
 
 
@@ -105,7 +107,7 @@ def anilist_show_results(results, category, page, plugin):
         list_item.setProperty("IsPlayable", "false")
 
         if get_kodi_version() >= 20:
-            set_video_infotag(
+            set_media_infotag(
                 list_item,
                 mode,
                 title,
@@ -141,18 +143,7 @@ def anilist_show_results(results, category, page, plugin):
                 isFolder=True,
             )
 
-    list_item = ListItem(label="Next")
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
-    )
-    addDirectoryItem(
-        plugin.handle,
-        url_for_path(name="anilist/next_page", path=f"{category}/{page}"),
-        list_item,
-        isFolder=True,
-    )
-
-    endOfDirectory(plugin.handle)
+    add_next_button("/anilist_next_page", plugin, page, category=category)
 
 
 def search_episodes(query, anilist_id, mal_id, plugin, symkl=False):

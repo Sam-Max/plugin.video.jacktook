@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol always="true">32503</defaultcontrol>
+    <animation type="WindowOpen" reversible="false">
+        <effect type="zoom" start="80" end="100" center="50%,50%" delay="160" tween="back" time="240"/>
+        <effect type="fade" delay="160" end="100" time="240"/>
+    </animation>
+    <animation type="WindowClose" reversible="false">
+        <effect type="zoom" start="100" end="80" center="50%,50%" easing="in" tween="back" time="240"/>
+        <effect type="fade" start="100" end="0" time="240"/>
+    </animation>
+    <depth>0.40</depth>
+    <controls>
+        <control type="group">
+            <!-- Background -->
+            <control type="image">
+                <left>400</left>
+                <top>200</top>
+                <width>500</width>
+                <height>250</height>
+                <texture colordiffuse="F0F0F0F0">AddonWindow/black.png</texture>
+            </control>
+            <!-- Window title -->
+            <control type="label" id="32500">
+                <left>400</left>
+                <top>220</top>
+                <width>500</width>
+                <height>30</height>
+                <font>font14</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+            </control>
+            <!-- Additional Label -->
+            <control type="label" id="32501">
+                <left>400</left>
+                <top>260</top>
+                <width>500</width>
+                <height>100</height>
+                <font>font14</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+                <wrap>true</wrap> 
+            </control>
+            <!-- Close button -->
+            <control type="button" id="32503">
+                <left>850</left>
+                <top>218</top>
+                <width>32</width>
+                <height>32</height>
+                <texturefocus colordiffuse="FF12A0C7">Button/close.png</texturefocus>
+                <texturenofocus colordiffuse="EEFFFFFF">Button/close.png</texturenofocus>
+            </control>
+        </control>
+    </controls>
+</window>
+

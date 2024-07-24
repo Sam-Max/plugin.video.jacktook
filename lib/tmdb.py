@@ -1,20 +1,20 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
-from lib.db.pickle_db import pickle_db
+from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.search import Search
 
 from lib.utils.kodi_utils import (
     ADDON_PATH,
     Keyboard,
     container_update,
-    get_kodi_version,
+    notification,
     url_for,
 )
 from lib.utils.general_utils import (
+    add_next_button,
+    execute_thread_pool,
     get_tmdb_movie_data,
     get_tmdb_tv_data,
-    set_video_info,
-    set_video_infotag,
+    set_media_infotag,
     tmdb_get,
 )
 
@@ -25,7 +25,7 @@ TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 
-def add_icon_genre_single(item, icon_path="genre.png"):
+def add_icon_genre_single(item, icon_path="tmdb.png"):
     item.setArt(
         {
             "icon": os.path.join(ADDON_PATH, "resources", "img", icon_path),
@@ -73,21 +73,16 @@ def add_icon_genre(item, name):
         )
 
 
-def tmdb_search(mode, genre_id, page, func, plugin):
-    genre_id = int(genre_id)
-    if mode == "movie_genres" or mode == "tv_genres":
-        menu_genre(mode, page, func, plugin)
-        return {}
-
+def search(mode, genre_id, page):
     if mode == "multi":
         if page == 1:
             text = Keyboard(id=30241)
             if text:
-                pickle_db.set_search_string("text", text)
+                main_db.set_query("query", text)
             else:
                 return
         else:
-            text = pickle_db.get_search_string("text")
+            text = main_db.get_query("query")
         return Search().multi(str(text), page=page)
     elif mode == "movie":
         if genre_id != -1:
@@ -106,31 +101,14 @@ def tmdb_search(mode, genre_id, page, func, plugin):
             return tmdb_get("discover_tv", {"with_genres": genre_id, "page": page})
         else:
             return tmdb_get("trending_tv", page)
-    else:
-        return {}
 
 
-def tmdb_show_results(results, next_func, page, plugin, mode, genre_id=0):
-    with ThreadPoolExecutor(max_workers=len(results)) as executor:
-        [executor.submit(tmdb_show_items, res, plugin, mode) for res in results]
-        executor.shutdown(wait=True)
-
-    list_item = ListItem(label="Next")
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
-    )
-    page += 1
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(next_func, mode=mode, page=page, genre_id=genre_id),
-        list_item,
-        isFolder=True,
-    )
-
-    endOfDirectory(plugin.handle)
+def show_results(results, page, plugin, mode, genre_id=0):
+    execute_thread_pool(results, show_items, plugin, mode)
+    add_next_button("next_page_tmdb", plugin, page, mode=mode, genre_id=genre_id)
 
 
-def tmdb_show_items(res, plugin, mode):
+def show_items(res, plugin, mode):
     tmdb_id = res.id
     duration = ""
     media_type = res.get("media_type", "")
@@ -173,26 +151,15 @@ def tmdb_show_items(res, plugin, mode):
 
     list_item = ListItem(label=label_title)
 
-    if get_kodi_version() >= 20:
-        set_video_infotag(
-            list_item,
-            mode,
-            title,
-            overview,
-            air_date=release_date,
-            duration=duration,
-            ids=ids,
-        )
-    else:
-        set_video_info(
-            list_item,
-            mode,
-            title,
-            overview,
-            air_date=release_date,
-            duration=duration,
-            ids=ids,
-        )
+    set_media_infotag(
+        list_item,
+        mode,
+        title,
+        overview,
+        air_date=release_date,
+        duration=duration,
+        ids=ids,
+    )
 
     list_item.setArt(
         {
@@ -243,22 +210,69 @@ def tmdb_show_items(res, plugin, mode):
         )
 
 
-def menu_genre(mode, page, func, plugin):
+def get_genre_items(mode):
     if mode == "movie_genres":
-        data = tmdb_get(mode)
-    elif mode == "tv_genres":
-        data = tmdb_get(mode)
+        return tmdb_get(mode)
+    else:
+        return tmdb_get(mode)
 
-    for d in data.genres:
-        name = d["name"]
+
+####################################################
+
+
+def handle_tmdb_query(query, mode, page, plugin):
+    if mode == "movie":
+        handle_tmdb_movie_query(query, page, mode, plugin)
+    else:
+        handle_tmdb_tv_query(query, page, mode, plugin)
+
+
+def handle_tmdb_movie_query(query, page, mode, plugin):
+    if query == "tmdb_trending":
+        result = search("movie", genre_id=-1, page=page)
+        process_tmdb_result(result, mode, page, plugin)
+    elif query == "tmdb_genres":
+        result = get_genre_items(mode="movie_genres")
+        process_genres_results(result, mode, page, plugin)
+
+
+def handle_tmdb_tv_query(query, page, mode, plugin):
+    if query == "tmdb_trending":
+        result = search(mode="tv", genre_id=-1, page=page)
+        process_tmdb_result(result, mode, page, plugin)
+    elif query == "tmdb_genres":
+        result = get_genre_items(mode="tv_genres")
+        process_genres_results(result, mode, page, plugin)
+
+
+def process_tmdb_result(data, mode, page, plugin):
+    if data:
+        if data.total_results == 0:
+            notification("No results found")
+            return
+        show_results(
+            data.results,
+            page=page,
+            plugin=plugin,
+            genre_id=-1,
+            mode=mode,
+        )
+
+
+def process_genres_results(data, mode, page, plugin):
+    for g in data.genres:
+        name = g["name"]
         if name == "TV Movie":
             continue
-        item = ListItem(label=name)
-        add_icon_genre_single(item)
+        list_item = ListItem(label=name)
+        list_item.setProperty("IsPlayable", "false")
+        add_icon_genre_single(list_item)
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(func, mode=mode.split("_")[0], genre_id=d["id"], page=page),
-            item,
+            url_for(
+                name="search_tmdb", mode=mode.split("_")[0], genre_id=g["id"], page=page
+            ),
+            list_item,
             isFolder=True,
         )
     endOfDirectory(plugin.handle)

@@ -40,3 +40,15 @@ def get_jackett_timeout():
 
 def get_prowlarr_timeout():
     return get_int_setting("prowlarr_timeout")
+
+
+def trakt_client():
+    return get_setting("jacktook.trakt.client", "")
+
+
+def trakt_secret():
+    return get_setting("jacktook.trakt.secret", "")
+
+
+def lists_sort_order(setting):
+	return int(get_setting('jacktook.sort.%s' % setting, '0'))

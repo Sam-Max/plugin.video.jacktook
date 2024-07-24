@@ -17,7 +17,7 @@ from lib.utils.kodi_utils import (
 from lib.utils.general_utils import (
     Players,
     set_video_info,
-    set_video_infotag,
+    set_media_infotag,
     set_watched_file,
     torrent_clients,
 )
@@ -105,7 +105,7 @@ def make_listing(list_item, mode, url="", title="", ids="", tv_data=""):
         ep_name = episode = season = ""
 
     if get_kodi_version() >= 20:
-        set_video_infotag(
+        set_media_infotag(
             list_item,
             mode,
             title,

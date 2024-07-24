@@ -2,7 +2,7 @@ import os
 from lib.api.anizip_api import AniZipApi
 from lib.db.anime_db import get_all_ids
 from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
-from lib.utils.general_utils import get_cached, set_cached, set_video_info, set_video_infotag, tvdb_get
+from lib.utils.general_utils import get_cached, set_cached, set_video_info, set_media_infotag, tvdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
@@ -59,7 +59,7 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
         list_item.setProperty("IsPlayable", "false")
 
         if get_kodi_version() >= 20:
-            set_video_infotag(
+            set_media_infotag(
                 list_item,
                 mode="tv",
                 name=ep_name,
