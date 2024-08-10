@@ -846,9 +846,7 @@ def filter_by_quality(results):
 
 
 def is_torrent_url(uri):
-    res = requests.get(
-        uri, allow_redirects=False, timeout=20, headers=USER_AGENT_HEADER
-    )
+    res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
     if (
         res.status_code == 200
         and res.headers.get("Content-Type") == "application/octet-stream"
