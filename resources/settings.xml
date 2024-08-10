@@ -46,6 +46,7 @@
         <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
         <setting label="Jacktook Burst Configuration" type="lsep"/>
         <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/open_burst_config)" />
+        <setting id="burst_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached" default="Seeds"/>
     </category>
     <category label="30150">
         <setting label="30152" type="lsep"/>

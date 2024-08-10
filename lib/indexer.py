@@ -55,11 +55,8 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
         match = re.search(r"\d{4}-\d{2}-\d{2}", date)
         if match:
             date = match.group()
-        size = (
-            bytes_to_human_readable(int(res.get("size", 0)))
-            if indexer != Indexer.BURST
-            else res.get("size")
-        )
+        
+        size = bytes_to_human_readable(int(res.get("size", 0)))
         seeders = res.get("seeders", "")
         tracker = res["indexer"]
 

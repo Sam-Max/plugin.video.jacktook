@@ -48,6 +48,8 @@ class Prowlarr:
                 r.update(
                     {
                         "qualityTitle": "",
+                        "peers": int(r.get("peers", 0)),
+                        "seeders": int(r.get("seeders", 0)),
                     }
                 )
             return res

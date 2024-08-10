@@ -49,8 +49,8 @@ def extract_result(results, item):
             "downloadUrl": item.get("link", ""),
             "size": item.get("size", ""),
             "magnetUrl": attributes.get("magneturl", ""),
-            "seeders": attributes.get("seeders", ""),
-            "peers": attributes.get("peers", ""),
+            "seeders": int(attributes.get("seeders", 0)),
+            "peers": int(attributes.get("peers", 0)),
             "infoHash": attributes.get("infohash", ""),
         }
     )

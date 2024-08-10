@@ -752,12 +752,12 @@ def sort_results(first_res, second_res=None):
         sort_by = get_setting("torrentio_sort_by")
     elif indexer == Indexer.ELHOSTED:
         sort_by = get_setting("elfhosted_sort_by")
+    elif indexer == Indexer.BURST:
+        sort_by = get_setting("burst_sort_by")
     else:
         sort_by = "None"
 
-    if sort_by == "None":
-        return first_res
-    elif sort_by == "Seeds":
+    if sort_by == "Seeds":
         first_sorted = sorted(first_res, key=lambda r: r["seeders"], reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="seeders")
@@ -779,6 +779,8 @@ def sort_results(first_res, second_res=None):
         )
         if second_res:
             return sort_second_result(first_sorted, second_res, type="isDebrid")
+    else:
+        return first_res
 
     return first_sorted
 

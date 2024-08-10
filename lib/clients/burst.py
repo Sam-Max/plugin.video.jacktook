@@ -1,5 +1,5 @@
-
 from lib.providers import burst_search, burst_search_episode, burst_search_movie
+from lib.utils.kodi_utils import convert_size_to_bytes
 
 
 class Burst:
@@ -25,13 +25,13 @@ class Burst:
         for _, r in res:
             results.append(
                 {
-                    "title":r.title,
+                    "title": r.title,
                     "indexer": r.indexer,
                     "guid": r.guid,
                     "infoHash": None,
-                    "size": r.size,
-                    "seeders": r.seeders,
-                    "peers": r.peers,
+                    "size": convert_size_to_bytes(r.size),
+                    "seeders": int(r.seeders),
+                    "peers": int(r.peers),
                 }
             )
         return results
