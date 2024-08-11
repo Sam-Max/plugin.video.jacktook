@@ -614,11 +614,11 @@ def get_rd_downloads(page=1):
         )
 
     page = int(page) + 1
-    list_item = list_item("Next", icon="nextpage.png")
+    next_li = list_item("Next", icon="nextpage.png")
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(get_rd_downloads, page=page),
-        list_item,
+        next_li,
         isFolder=True,
     )
 
