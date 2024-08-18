@@ -1,7 +1,7 @@
 import os
 from lib.api.anizip_api import AniZipApi
 from lib.db.anime_db import get_all_ids
-from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
+from lib.utils.kodi_utils import ADDON_PATH, container_update, get_kodi_version, url_for
 from lib.utils.general_utils import get_cached, set_cached, set_video_info, set_media_infotag, tvdb_get
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -37,6 +37,8 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
         else:
             ep_name = f"Episode {episode}"
 
+        tv_data = f"{ep_name}(^){episode}(^){season}"
+
         description = res.get("overview", "")
         date = res["airdate"]
         poster = res.get("image", "")
@@ -47,6 +49,8 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
         imdb_id = ids.get("imdb", -1)
         tvdb_id = ids.get("tvdb", -1)
         tmdb_id = ids.get("tmdb", -1)
+
+        ids=f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
         list_item = ListItem(label=ep_name)
         list_item.setArt(
@@ -77,14 +81,30 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
                 air_date=date,
             )
 
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Rescrape item",
+                    container_update(
+                        name="search",
+                        mode="anime",
+                        query=title,
+                        ids=ids,
+                        tv_data=tv_data,
+                        rescrape=True,
+                    ),
+                )
+            ]
+        )
+        
         addDirectoryItem(
             plugin.handle,
             url_for(
                 name="search",
                 mode="anime",
                 query=title,
-                ids=f"{tmdb_id}, {tvdb_id}, {imdb_id}",
-                tv_data=f"{ep_name}(^){episode}(^){season}",
+                ids=ids,
+                tv_data=tv_data,
             ),
             list_item,
             isFolder=True,

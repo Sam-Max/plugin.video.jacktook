@@ -30,7 +30,7 @@ dialog_update = {"count": -1, "percent": 50}
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
         if query:
-            if mode == "tv" or media_type == "tv":
+            if mode == "tv" or media_type == "tv" or mode == "anime":
                 cached_results = get_cached(query, params=(episode, "deb"))
             else:
                 cached_results = get_cached(query, params=("deb"))
@@ -99,7 +99,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
         cached_results.extend(uncached_results)
 
     if query:
-        if mode == "tv" or media_type == "tv":
+        if mode == "tv" or media_type == "tv" or mode == "anime":
             set_cached(cached_results, query, params=(episode, "deb"))
         else:
             set_cached(cached_results, query, params=("deb"))
