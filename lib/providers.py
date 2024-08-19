@@ -101,42 +101,36 @@ def burst_search(query):
     return search("search", query)
 
 
-def burst_search_movie(movie_id, query, titles="", year=None):
+def burst_search_movie(movie_id, query):
     return search(
         "search_movie",
         movie_id,
         query,
-        titles,
-        year=year,
     )
 
 
-def burst_search_show(show_id, query, titles="", year=None):
+def burst_search_show(show_id, query):
     return search(
         "search_show",
         show_id,
         query,
-        titles,
-        year=year,
     )
 
 
-def burst_search_season(show_id, show_title, season_number, titles):
+def burst_search_season(show_id, show_title, season_number):
     return search(
         "search_season",
         show_id,
         show_title,
         int(season_number),
-        titles
     )
 
 
-def burst_search_episode(show_id, query, season_number, episode_number, titles=""):
+def burst_search_episode(show_id, query, season_number, episode_number):
     return search(
         "search_episode",
         show_id,
         query,
         int(season_number),
         int(episode_number),
-        titles,
     )
