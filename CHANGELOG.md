@@ -1,3 +1,10 @@
+## 0.3.1
+* Add "rescrape item" context menu item to anime shows results
+* Several bug fixes and some improvements
+
+## 0.3.0
+* Add Trakt support with several categories
+* Update on genres menu and zilean indexer
 
 ## 0.2.9
 * Add Zilean indexer support
