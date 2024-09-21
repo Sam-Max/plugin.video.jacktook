@@ -1,6 +1,5 @@
 
 ## 🛑 The development of this addon is stopped-🛑. 
-No longer develop of new features or updates for the addon.
 
 # Jacktook
 
