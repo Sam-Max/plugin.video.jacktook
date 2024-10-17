@@ -4,7 +4,7 @@ from lib.db.anime_db import get_all_ids
 from lib.anizip import search_anizip_episodes
 from lib.api.anilist_api import anilist_client
 from lib.simkl import search_simkl_episodes
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     add_next_button,
     get_cached,
     get_fanart,

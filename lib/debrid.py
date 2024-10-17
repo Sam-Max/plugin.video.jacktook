@@ -12,7 +12,7 @@ from lib.utils.pm_utils import get_pm_link
 from lib.utils.rd_utils import get_rd_link, get_rd_pack_link
 from lib.utils.torbox_utils import get_torbox_link, get_torbox_pack_link
 from lib.utils.torrent_utils import extract_magnet_from_url
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     USER_AGENT_HEADER,
     get_cached,
     get_info_hash_from_magnet,

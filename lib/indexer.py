@@ -7,7 +7,7 @@ from lib.utils.kodi_utils import (
     container_update,
     get_setting,
 )
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     Indexer,
     add_pack_item,
     add_play_item,
@@ -69,10 +69,14 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
         languages = get_colored_languages(res.get("fullLanguages", []))
         languages = languages if languages else ""
 
+        providers = res["provider"]
+        providers_color = get_random_color(providers)
+
         torr_title = (
             f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] - {quality_title}[CR]"
             f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
-            f"[I][LIGHT][COLOR lightgray]{languages}[/COLOR][/LIGHT][/I]"
+            f"[I][LIGHT][COLOR lightgray]{languages}[/COLOR][/LIGHT][/I] -"
+            f"[I][B][COLOR {providers_color}][{providers}][/COLOR][/B][/I]"
         )
 
         debrid_type = res.get("debridType", "")
@@ -83,7 +87,7 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
             info_hash = res.get("infoHash")
             if res.get("isDebridPack"):
                 list_item = ListItem(
-                    label=f"[{format_debrid_type}-Cached-Pack]-{torr_title}"
+                    label=f"{format_debrid_type}-Cached-Pack-{torr_title}"
                 )
                 add_pack_item(
                     list_item,
@@ -97,7 +101,7 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
             else:
                 title = f"[B][Cached][/B]-{title}"
                 list_item = ListItem(
-                    label=f"[{format_debrid_type}-Cached]-{torr_title}"
+                    label=f"{format_debrid_type}-Cached-{torr_title}"
                 )
                 set_video_properties(list_item, poster, mode, title, overview, ids)
                 list_item.addContextMenuItems(

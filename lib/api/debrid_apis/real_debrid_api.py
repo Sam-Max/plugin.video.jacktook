@@ -11,7 +11,7 @@ from lib.utils.kodi_utils import (
     set_setting,
     progressDialog,
 )
-from lib.utils.general_utils import supported_video_extensions
+from lib.utils.utils import supported_video_extensions
 from xbmcgui import DialogProgress
 
 # Source: https://github.com/mhdzumair/MediaFusion/blob/main/streaming_providers/realdebrid/client.py

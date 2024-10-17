@@ -9,7 +9,7 @@ from lib.utils.kodi_utils import (
     notification,
     url_for,
 )
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     add_next_button,
     execute_thread_pool,
     get_tmdb_movie_data,

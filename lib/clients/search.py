@@ -3,7 +3,7 @@ from lib.utils.kodi_utils import (
     get_setting,
     notification,
 )
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     Indexer,
     Players,
     get_cached,

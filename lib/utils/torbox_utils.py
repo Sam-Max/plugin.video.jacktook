@@ -1,6 +1,6 @@
 from lib.api.debrid_apis.tor_box_api import Torbox
 from lib.utils.kodi_utils import get_setting, notification
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
     set_cached,

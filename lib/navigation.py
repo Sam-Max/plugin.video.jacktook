@@ -8,10 +8,10 @@ import requests
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
-from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 
+from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
     trakt_authenticate,
     trakt_revoke_authentication,
@@ -42,7 +42,7 @@ from lib.tmdb import (
 from lib.anilist import search_anilist, search_episodes
 from lib.db.bookmark_db import bookmark_db
 
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     DialogListener,
     Players,
     clear,
@@ -1174,6 +1174,11 @@ def trakt_auth():
 @plugin.route("/open_burst_config")
 def open_burst_config():
     burst_addon_settings()
+
+
+@plugin.route("/open_torr_providers_select")
+def open_torrentio_provider_selection():
+    open_providers_selection()
 
 
 def torrent_status(info_hash):

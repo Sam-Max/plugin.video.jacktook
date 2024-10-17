@@ -16,7 +16,7 @@ from lib.utils.kodi_utils import (
     update_kodi_addons_db,
     dialog_text,
 )
-from lib.utils.general_utils import clear_all_cache, unzip
+from lib.utils.utils import clear_all_cache, unzip
 from lib.utils.settings import cache_clear_update
 from xbmcvfs import translatePath as translate_path
 

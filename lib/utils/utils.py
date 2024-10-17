@@ -38,6 +38,7 @@ from lib.api.tmdbv3api.objs.trending import Trending
 
 from lib.utils.settings import get_int_setting
 
+from lib.utils.torrentio_utils import filter_by_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
@@ -713,9 +714,15 @@ def check_pack(results, season_num):
 def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
     res = limit_results(res)
+
+    if get_setting("indexer") == Indexer.TORRENTIO:
+        res = filter_by_torrentio_provider(res)
+    
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
+
     res = filter_by_quality(res)
+
     return res
 
 

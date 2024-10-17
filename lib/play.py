@@ -14,7 +14,7 @@ from lib.utils.kodi_utils import (
     set_property,
     translation,
 )
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     Players,
     set_video_info,
     set_media_infotag,

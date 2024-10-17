@@ -13,7 +13,7 @@ from lib.api.trakt.trakt_api import (
     trakt_watchlist,
 )
 from lib.tmdb import TMDB_BACKDROP_URL, TMDB_POSTER_URL
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     Enum,
     add_next_button,
     execute_thread_pool,

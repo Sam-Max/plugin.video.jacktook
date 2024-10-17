@@ -7,7 +7,7 @@ from lib.clients.torrentio import Torrentio
 from lib.clients.zilean import Zilean
 
 from lib.utils.kodi_utils import get_setting, notification, translation
-from lib.utils.general_utils import Indexer
+from lib.utils.utils import Indexer
 from lib.utils.settings import get_int_setting
 
 from lib.api.jacktook.kodi import kodilog

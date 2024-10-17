@@ -16,7 +16,8 @@ class TVDBAPI:
     def get_token(self):
         identifier = "tvdb_token"
         token = cache.get(identifier, hashed_key=True)
-        if token: return token
+        if token: 
+            return token
         else:
             res = requests.post(self.baseUrl + "login", json=self.apiKey, headers=self.headers)
             data = res.json()

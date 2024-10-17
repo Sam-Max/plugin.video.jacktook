@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting, dialog_text, notification
-from lib.utils.general_utils import (
+from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
     set_cached,

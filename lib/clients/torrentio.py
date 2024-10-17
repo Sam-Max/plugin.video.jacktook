@@ -2,8 +2,9 @@ import json
 import re
 from lib.utils.countries import find_language_by_unicode
 from lib.utils.kodi_utils import convert_size_to_bytes, translation
-from lib.utils.general_utils import unicode_flag_to_country_code
+from lib.utils.utils import unicode_flag_to_country_code
 from requests import Session
+
 
 class Torrentio:
     def __init__(self, host, notification) -> None:
@@ -40,6 +41,7 @@ class Torrentio:
                     "seeders": parsed_item["seeders"],
                     "languages": parsed_item["languages"],
                     "fullLanguages": parsed_item["full_languages"],
+                    "provider": parsed_item["provider"],
                     "publishDate": "",
                     "peers": 0,
                 }
@@ -58,12 +60,15 @@ class Torrentio:
 
         languages, full_languages = self.extract_languages(title)
 
+        provider = self.extract_provider(title)
+
         return {
             "title": name,
             "size": size,
             "seeders": seeders,
             "languages": languages,
             "full_languages": full_languages,
+            "provider": provider,
         }
 
     def extract_languages(self, title):
@@ -78,3 +83,7 @@ class Torrentio:
                 if (full_lang != None) and (full_lang not in full_languages):
                     full_languages.append(full_lang)
         return languages, full_languages
+
+    def extract_provider(self, title):
+        match = re.search(r"⚙.* ([^ \n]+)", title)
+        return match.group(1) if match else ""
