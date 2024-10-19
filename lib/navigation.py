@@ -475,17 +475,17 @@ def auto_play(results, ids, tv_data, mode, p_dialog):
 
 def play_first_result(results, ids, tv_data, mode):
     for res in results:
-        if res["isDebridPack"]:
+        if res.get("isDebridPack"):
             continue
+        
         play_media(
             plugin,
             play_torrent,
-            title=results[0]["title"],
+            title=res["title"],
             ids=ids,
             tv_data=tv_data,
-            info_hash=results[0]["infoHash"],
-            torrent_id=results[0]["torrentId"],
-            debrid_type=results[0]["debridType"],
+            info_hash=res["infoHash"],
+            debrid_type=res["debridType"],
             is_torrent=False,
             mode=mode,
         )
