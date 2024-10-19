@@ -5,6 +5,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting, dialog_text, notification
 from lib.utils.utils import (
     get_cached,
+    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -13,7 +14,7 @@ from lib.utils.utils import (
 client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
 
 
-def add_rd_magnet(magnet):
+def add_rd_magnet(magnet, is_pack=False):
     response = client.add_magent_link(magnet)
     torrent_id = response.get("id")
     if not torrent_id:
@@ -27,14 +28,21 @@ def add_rd_magnet(magnet):
     if torr_info["status"] == "waiting_files_selection":
         files = torr_info["files"]
         extensions = supported_video_extensions()[:-1]
-        torr_keys = [
-            str(item["id"])
+        video_files = [
+            item
             for item in files
             for x in extensions
             if item["path"].lower().endswith(x)
         ]
-        torr_keys = ",".join(torr_keys)
-        client.select_files(torr_info["id"], torr_keys)
+        if is_pack:
+            torr_keys = [str(i['id']) for i in video_files]
+            if torr_keys:
+                torr_keys = ','.join(torr_keys)
+                client.select_files(torr_info["id"], torr_keys)
+        else:
+            if video_files:
+                video = max(video_files, key=lambda x: x['bytes'])
+                client.select_files(torr_info["id"], video['id'])
     return torrent_id
 
 
@@ -50,10 +58,9 @@ def get_rd_link(info_hash):
 
 def get_rd_pack_info(info_hash):
     info = get_cached(info_hash)
-    if info:
-        return info
+    if info: return info
     magnet = info_hash_to_magnet(info_hash)
-    torrent_id = add_rd_magnet(magnet)
+    torrent_id = add_rd_magnet(magnet, is_pack=True)
     torr_info = client.get_torrent_info(torrent_id)
     info = {}
     info["id"] = torr_info["id"]
@@ -61,7 +68,8 @@ def get_rd_pack_info(info_hash):
         torr_names = [item["path"] for item in torr_info["files"] if item["selected"] == 1]
         files = []
         for id, name in enumerate(torr_names):
-            title = f"[B][Cached][/B]-{name.split('/', 1)[1]}"
+            tracker_color = get_random_color("RD")
+            title = f"[B][COLOR {tracker_color}][Cached][/COLOR][/B]-{name.split('/', 1)[1]}"
             files.append((id, title))
         info["files"] = files
         set_cached(info, info_hash)

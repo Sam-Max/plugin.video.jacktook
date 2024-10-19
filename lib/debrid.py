@@ -228,17 +228,15 @@ def debrid_dialog_update(total, dialog, lock):
 
 def get_debrid_direct_url(info_hash, debrid_type):
     if debrid_type == "RD":
-        url = get_rd_link(info_hash)
+        return get_rd_link(info_hash)
     elif debrid_type == "PM":
-        url = get_pm_link(info_hash)
+        return get_pm_link(info_hash)
     elif debrid_type == "TB":
-        url = get_torbox_link(info_hash)
-    return url
+        return get_torbox_link(info_hash)
 
 
 def get_debrid_pack_direct_url(file_id, torrent_id, debrid_type):
     if debrid_type == "RD":
-        url = get_rd_pack_link(file_id, torrent_id)
+        return get_rd_pack_link(file_id, torrent_id)
     elif debrid_type == "TB":
-        url = get_torbox_pack_link(file_id, torrent_id)
-    return url
+        return get_torbox_pack_link(file_id, torrent_id)
