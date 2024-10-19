@@ -58,7 +58,7 @@ def providers_selection():
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
-        xbmcgui.Dialog().ok("Selected Providers", ", ".join(providers))
+        xbmcgui.Dialog().ok("Selection Dialog", f"Successfully selected: {',' .join(providers)}")
     else:
         xbmcgui.Dialog().notification(
             "Selection", "No providers selected", xbmcgui.NOTIFICATION_INFO

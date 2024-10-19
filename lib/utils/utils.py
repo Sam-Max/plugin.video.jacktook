@@ -703,8 +703,7 @@ def check_pack(results, season_num):
     )
 
     for res in results:
-        title = res["title"]
-        match = re.search(f"{patterns}", title)
+        match = re.search(f"{patterns}", res["title"])
         if match:
             res["isDebridPack"] = True
         else:
@@ -713,16 +712,16 @@ def check_pack(results, season_num):
 
 def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
-    res = limit_results(res)
-
+    
     if get_setting("indexer") == Indexer.TORRENTIO:
         res = filter_by_torrentio_provider(res)
     
+    res = limit_results(res)
+    
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
-
+    
     res = filter_by_quality(res)
-
     return res
 
 
@@ -814,8 +813,7 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
 
     filtered_episodes = []
     for res in results:
-        title = res["title"]
-        match = re.search(f"{patterns}", title)
+        match = re.search(f"{patterns}", res["title"])
         if match:
             filtered_episodes.append(res)
     return filtered_episodes
