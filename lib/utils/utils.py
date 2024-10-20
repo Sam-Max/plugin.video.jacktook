@@ -502,7 +502,7 @@ def tmdb_get(path, params={}):
         data = trending.movie_week(page=params)
     elif path == "trending_tv":
         trending = Trending()
-        data = trending.tv_day(page=params)
+        data = trending.tv_week(page=params)
     elif path == "find_by_tvdb":
         data = Find().find_by_tvdb_id(params)
     cache.set(
