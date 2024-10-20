@@ -24,7 +24,6 @@ from xbmcgui import ListItem
 
 
 def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
-    indexer = get_setting("indexer")
     description_length = get_description_length()
     if ids:
         tmdb_id, _, _ = ids.split(", ")
@@ -69,14 +68,14 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
         languages = get_colored_languages(res.get("fullLanguages", []))
         languages = languages if languages else ""
 
-        providers = res["provider"]
+        providers = res.get("provider", "")
         providers_color = get_random_color(providers)
 
         torr_title = (
             f"[B][COLOR {tracker_color}][{tracker}][/COLOR][/B] - {quality_title}[CR]"
             f"[I][LIGHT][COLOR lightgray]{date}, {size}, {seeders} seeds[/COLOR][/LIGHT][/I]"
-            f"[I][LIGHT][COLOR lightgray]{languages}[/COLOR][/LIGHT][/I] -"
-            f"[I][B][COLOR {providers_color}][{providers}][/COLOR][/B][/I]"
+            f"{f'[I][LIGHT][COLOR lightgray]{languages}[/COLOR][/LIGHT][/I]' if languages else ''}"
+            f"{f'[I][B][COLOR {providers_color}]-{providers}[/COLOR][/B][/I]'  if providers else ''}"
         )
 
         debrid_type = res.get("debridType", "")
