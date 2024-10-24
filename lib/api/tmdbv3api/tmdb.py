@@ -138,13 +138,12 @@ class TMDb(object):
         if self.api_key is None or self.api_key == "":
             raise TMDbException("No API key found.")
 
-        url = "%s%s?api_key=%s&%s&language=%s&with_original_language=%s" % (
+        url = "%s%s?api_key=%s&%s&language=%s" % (
             self._base,
             action,
             self.api_key,
             params,
             self.language,
-            self.language
         )
 
         if self.cache and self.obj_cached and call_cached and method != "POST":

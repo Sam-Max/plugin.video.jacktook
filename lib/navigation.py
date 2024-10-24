@@ -11,6 +11,7 @@ from lib.api.debrid_apis.tor_box_api import Torbox
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 
+from lib.tmdb_anime import search_anime
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
     trakt_authenticate,
@@ -39,7 +40,6 @@ from lib.tmdb import (
     search as tmdb_search,
     show_results,
 )
-from lib.anilist import search_anilist, search_episodes
 from lib.db.bookmark_db import bookmark_db
 
 from lib.utils.utils import (
@@ -350,23 +350,41 @@ def direct_menu():
 def anime_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anilist, category="SearchAnime"),
+        plugin.url_for(anime_sub_menu, mode="tv"),
+        list_item("Tv Shows", "tv.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(anime_sub_menu, mode="movie"),
+        list_item("Movies", "movies.png"),
+        isFolder=True,
+    )
+
+
+@plugin.route("/anime/<mode>")
+@check_directory
+def anime_sub_menu(mode):
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(anime_search, mode=mode, category="Anime_Search"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(
-            anilist,
-            category="Popular",
+            anime_popular,
+            mode=mode,
+            category="Anime_Popular",
         ),
         list_item("Popular", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anilist, category="Trending"),
-        list_item("Trending", "movies.png"),
+        plugin.url_for(anime_airing, mode=mode, category="Anime_On_The_Air"),
+        list_item("Airing", "movies.png"),
         isFolder=True,
     )
 
@@ -477,7 +495,7 @@ def play_first_result(results, ids, tv_data, mode):
     for res in results:
         if res.get("isDebridPack"):
             continue
-        
+
         play_media(
             plugin,
             play_torrent,
@@ -1019,23 +1037,27 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
             )
 
 
-@plugin.route("/anilist/<category>")
-def anilist(category, page=1):
-    setContent(plugin.handle, MOVIES_TYPE)
-    search_anilist(category, page, plugin)
+@plugin.route("/anime/search/<mode>/<category>")
+def anime_search(mode, category, page=1):
+    search_anime(mode, category, page, plugin=plugin)
 
 
-@plugin.route("/anilist/episodes/<query>/<anilist_id>/<mal_id>")
-def search_anime_episodes(query, anilist_id, mal_id):
-    search_episodes(query, anilist_id, mal_id, plugin)
+@plugin.route("/anime/popular/<mode>/<category>")
+def anime_popular(mode, category, page=1):
+    search_anime(mode, category, page, plugin=plugin)
 
 
-@plugin.route("/anilist_next_page")
+@plugin.route("/anime/airing/<mode>/<category>")
+def anime_airing(mode, category, page=1):
+    search_anime(mode, category, page, plugin=plugin)
+
+
+@plugin.route("/anime_next_page")
+@query_arg("mode", required=True)
 @query_arg("category", required=True)
 @query_arg("page", required=True)
-def next_page_anilist(category="", page=""):
-    setContent(plugin.handle, MOVIES_TYPE)
-    search_anilist(category, int(page) + 1, plugin)
+def anime_next_page(mode="", category="", page=""):
+    search_anime(mode, category, page=int(page) + 1, plugin=plugin)
 
 
 @plugin.route("/next_page_tmdb")

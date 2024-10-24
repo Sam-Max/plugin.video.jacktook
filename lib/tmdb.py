@@ -117,7 +117,8 @@ def show_items(res, plugin, mode):
         title = res.title
         label_title = title
         release_date = res.release_date
-        imdb_id, tvdb_id, duration = get_tmdb_movie_data(tmdb_id)
+        imdb_id, duration = get_tmdb_movie_data(tmdb_id)
+        tvdb_id = -1
     elif mode == "tv":
         title = res.name
         label_title = title
@@ -131,7 +132,8 @@ def show_items(res, plugin, mode):
 
         if media_type == "movie":
             release_date = res.release_date
-            imdb_id, tvdb_id, duration = get_tmdb_movie_data(tmdb_id)
+            imdb_id, duration = get_tmdb_movie_data(tmdb_id)
+            tvdb_id = -1
             label_title = f"[B][MOVIE][/B]- {title}"
         elif media_type == "tv":
             release_date = res.get("first_air_date", "")

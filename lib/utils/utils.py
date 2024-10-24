@@ -518,7 +518,7 @@ def get_tmdb_movie_data(id):
     details = tmdb_get("movie_details", id)
     imdb_id = details.external_ids.get("imdb_id")
     runtime = details.runtime
-    return imdb_id, "", runtime
+    return imdb_id, runtime
 
 
 def get_tmdb_tv_data(id):
@@ -572,6 +572,12 @@ def get_colored_languages(languages):
 def execute_thread_pool(results, func, *args, **kwargs):
     with ThreadPoolExecutor(max_workers=len(results)) as executor:
         [executor.submit(func, res, *args, **kwargs) for res in results]
+        executor.shutdown(wait=True)
+
+
+def run_task(func, results, *args, **kwargs):
+    with ThreadPoolExecutor(max_workers=len(results)) as executor:
+        [executor.submit(func, results, *args, **kwargs)]
         executor.shutdown(wait=True)
 
 
@@ -712,15 +718,15 @@ def check_pack(results, season_num):
 
 def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
-    
+
     if get_setting("indexer") == Indexer.TORRENTIO:
         res = filter_by_torrentio_provider(res)
-    
+
     res = limit_results(res)
-    
+
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
-    
+
     res = filter_by_quality(res)
     return res
 
@@ -868,7 +874,7 @@ def supported_video_extensions():
     return media_types.split("|")
 
 
-def add_next_button(func_name, plugin, page, **kwargs):
+def add_next_button(func_name, plugin, page=None, **kwargs):
     list_item = ListItem(label="Next")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
