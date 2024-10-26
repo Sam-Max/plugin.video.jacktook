@@ -29,7 +29,7 @@ class Prowlarr:
                     f"{query}{{Season:{int(season):02}}}{{Episode:{int(episode):02}}}"
                 )
                 url = f"{self.host}/api/v1/search?query={query}&categories=5000&categories=8000&type=tvsearch"
-            elif mode == "movie":
+            elif mode == "movies":
                 url = f"{self.host}/api/v1/search?query={query}&categories=2000&categories=8000"
             elif mode == "multi":
                 url = f"{self.host}/api/v1/search?query={query}"

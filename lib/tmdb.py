@@ -84,7 +84,7 @@ def search(mode, genre_id, page):
         else:
             text = main_db.get_query("query")
         return Search().multi(str(text), page=page)
-    elif mode == "movie":
+    elif mode == "movies":
         if genre_id != -1:
             return tmdb_get(
                 "discover_movie",
@@ -113,7 +113,7 @@ def show_items(res, plugin, mode):
     duration = ""
     media_type = res.get("media_type", "")
 
-    if mode == "movie":
+    if mode == "movies":
         title = res.title
         label_title = title
         release_date = res.release_date
@@ -130,7 +130,7 @@ def show_items(res, plugin, mode):
         elif "title" in res:
             title = res.title
 
-        if media_type == "movie":
+        if media_type == "movies":
             release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
             tvdb_id = -1
@@ -172,7 +172,7 @@ def show_items(res, plugin, mode):
     )
     list_item.setProperty("IsPlayable", "false")
 
-    if "movie" in [mode, media_type]:
+    if "movies" in [mode, media_type]:
         list_item.addContextMenuItems(
             [
                 (
@@ -223,7 +223,7 @@ def get_genre_items(mode):
 
 
 def handle_tmdb_query(query, mode, page, plugin):
-    if mode == "movie":
+    if mode == "movies":
         handle_tmdb_movie_query(query, page, mode, plugin)
     else:
         handle_tmdb_tv_query(query, page, mode, plugin)
@@ -231,7 +231,7 @@ def handle_tmdb_query(query, mode, page, plugin):
 
 def handle_tmdb_movie_query(query, page, mode, plugin):
     if query == "tmdb_trending":
-        result = search("movie", genre_id=-1, page=page)
+        result = search("movies", genre_id=-1, page=page)
         process_tmdb_result(result, mode, page, plugin)
     elif query == "tmdb_genres":
         result = get_genre_items(mode="movie_genres")

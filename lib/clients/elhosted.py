@@ -13,7 +13,7 @@ class Elfhosted:
         try:
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
-            elif mode == "movie" or media_type == "movie" or mode == "multi":
+            elif mode == "movies" or media_type == "movies" or mode == "multi":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
             res = requests.get(url, timeout=10)
             if res.status_code != 200:

@@ -78,7 +78,7 @@ def anilist_show_results(results, category, page, plugin):
         if format in ["TV", "OVA"]:
             mode = "tv"
         else:
-            mode = "movie"
+            mode = "movies"
 
         description = res.get("description", "")
         anilist_id = res["id"]
@@ -135,7 +135,7 @@ def anilist_show_results(results, category, page, plugin):
                 plugin.handle,
                 url_for(
                     name="search",
-                    mode="movie",
+                    mode=mode,
                     query=title,
                     ids=f"{tmdb_id}, {tvdb_id}, {imdb_id}",
                 ),

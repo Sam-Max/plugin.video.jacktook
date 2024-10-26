@@ -44,7 +44,7 @@ def last_titles(plugin):
                 list_item,
                 isFolder=True,
             )
-        elif mode == "movie":
+        elif mode == "movies":
             addDirectoryItem(
                 plugin.handle,
                 url_for(

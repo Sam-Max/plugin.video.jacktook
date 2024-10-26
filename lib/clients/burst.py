@@ -10,7 +10,7 @@ class Burst:
         try:
             if mode == "tv" or media_type == "tv":
                 results = burst_search_episode(tmdb_id, query, season, episode)
-            elif mode == "movie" or media_type == "movie":
+            elif mode == "movies" or media_type == "movies":
                 results = burst_search_movie(tmdb_id, query)
             else:
                 results = burst_search(query)

@@ -301,7 +301,7 @@ def set_video_info(
     if duration:
         info["duration"] = int(duration)
 
-    if mode in ["movie", "multi"]:
+    if mode in ["movies", "multi"]:
         info.update({"mediatype": "movie", "title": name, "originaltitle": name})
     else:
         info.update({"mediatype": "tvshow", "tvshowtitle": name})
@@ -333,7 +333,7 @@ def set_media_infotag(
     url="",
 ):
     info_tag = list_item.getVideoInfoTag()
-    if mode == "movie":
+    if mode in ["movies"]:
         info_tag.setMediaType("movie")
         info_tag.setTitle(name)
         info_tag.setOriginalTitle(name)
@@ -528,10 +528,10 @@ def get_tmdb_tv_data(id):
     return imdb_id, tvdb_id
 
 
-def set_content_type(mode, media_type="movie", plugin=None):
-    if mode == "movie" or media_type == "movie":
+def set_content_type(mode, media_type="movies", plugin=None):
+    if mode == "tv" or media_type == "tv" or mode == "anime": 
         setContent(plugin.handle, MOVIES_TYPE)
-    elif mode == "tv" or media_type == "tv" or mode == "anime":
+    elif mode == "movies" or media_type == "movies":
         setContent(plugin.handle, SHOWS_TYPE)
 
 

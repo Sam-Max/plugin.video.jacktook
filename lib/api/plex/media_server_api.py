@@ -128,7 +128,7 @@ def imdb_to_plex_id(imdb_id, token, mode, media_type):
         url="https://metadata.provider.plex.tv/library/metadata/matches",
         params={
             "X-Plex-Token": token,
-            "type": 1 if (media_type == "movie" or mode =="movie") else 2,
+            "type": 1 if (media_type == "movies" or mode =="movies") else 2,
             "title": f"imdb-{imdb_id}",
             "guid": f"com.plexapp.agents.imdb://{imdb_id}?lang=en",
         },

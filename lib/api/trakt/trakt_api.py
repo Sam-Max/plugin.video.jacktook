@@ -9,9 +9,28 @@ from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
 from lib.api.trakt.main_cache import cache_object
-from lib.api.trakt.trakt_cache import cache_trakt_object, clear_trakt_calendar, clear_trakt_collection_watchlist_data, clear_trakt_favorites, clear_trakt_hidden_data, clear_trakt_list_contents_data, clear_trakt_list_data, clear_trakt_recommendations, reset_activity
+from lib.api.trakt.trakt_cache import (
+    cache_trakt_object,
+    clear_trakt_calendar,
+    clear_trakt_collection_watchlist_data,
+    clear_trakt_favorites,
+    clear_trakt_hidden_data,
+    clear_trakt_list_contents_data,
+    clear_trakt_list_data,
+    clear_trakt_recommendations,
+    reset_activity,
+)
 from lib.api.trakt.utils import sort_for_article, sort_list
-from lib.utils.kodi_utils import clear_property, copy2clip, dialog_ok, get_datetime, get_setting, notification, set_setting, sleep
+from lib.utils.kodi_utils import (
+    clear_property,
+    copy2clip,
+    dialog_ok,
+    get_datetime,
+    get_setting,
+    notification,
+    set_setting,
+    sleep,
+)
 from lib.utils.settings import lists_sort_order, trakt_client, trakt_secret
 from xbmc import Player as player
 from lib.api.trakt.utils import jsondate_to_datetime as js2date
@@ -24,6 +43,7 @@ res_format = "%Y-%m-%dT%H:%M:%S.%fZ"
 timeout = 20
 
 API_ENDPOINT = "https://api.trakt.tv/%s"
+
 
 def no_client_key():
     notification("Please set a valid Trakt Client ID Key")
@@ -186,9 +206,9 @@ def trakt_get_device_token(device_codes):
         copy2clip(user_code)
     except:
         pass
-    content = (
-        "[CR]Navigate to: [B]%s[/B][CR]Enter the following code: [B]%s[/B]"
-        % (str(device_codes["verification_url"]), user_code)
+    content = "[CR]Navigate to: [B]%s[/B][CR]Enter the following code: [B]%s[/B]" % (
+        str(device_codes["verification_url"]),
+        user_code,
     )
     progressDialog.create("Trakt Authorize")
     progressDialog.update(0, content)
@@ -383,6 +403,38 @@ def trakt_tv_most_favorited(page_no):
     return lists_cache_object(get_trakt, string, params)
 
 
+def trakt_anime_trending(page_no):
+    string = "trakt_anime_trending_%s" % page_no
+    params = {
+        "path": "shows/trending/%s",
+        "params": {"genres": "anime", "limit": 20},
+        "page_no": page_no,
+    }
+    return lists_cache_object(get_trakt, string, params)
+
+
+def trakt_anime_trending_recent(page_no):
+    current_year = get_datetime().year
+    years = "%s-%s" % (str(current_year - 1), str(current_year))
+    string = "trakt_anime_trending_recent_%s" % page_no
+    params = {
+        "path": "shows/trending/%s",
+        "params": {"genres": "anime", "limit": 20, "years": years},
+        "page_no": page_no,
+    }
+    return lists_cache_object(get_trakt, string, params)
+
+
+def trakt_anime_most_watched(page_no):
+    string = "trakt_anime_most_watched_%s" % page_no
+    params = {
+        "path": "shows/watched/daily/%s",
+        "params": {"genres": "anime", "limit": 20},
+        "page_no": page_no,
+    }
+    return lists_cache_object(get_trakt, string, params)
+
+
 def trakt_collection_lists(media_type, list_type):
     limit = 20
     data = trakt_fetch_collection_watchlist("collection", media_type)
@@ -529,7 +581,6 @@ def get_trakt_list_contents(list_type, user, slug, with_auth):
             "path_insert": slug,
             "params": {"extended": "full"},
             "method": "sort_by_headers",
-            
         }
     else:
         params = {

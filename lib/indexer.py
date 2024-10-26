@@ -34,7 +34,7 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
             details = tmdb_get("tv_details", tmdb_id)
             poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
             overview = details.overview if details.overview else ""  
-        elif mode == "movie":
+        elif mode == "movies":
             details = tmdb_get("movie_details", tmdb_id)
             poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
             overview = details.overview if details.overview else ""  

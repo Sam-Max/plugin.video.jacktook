@@ -57,7 +57,7 @@ def anime_show_results(res, mode, plugin):
     poster_path = res.get("poster_path", "")
 
     tmdb_id = res.get("id", -1)
-    if mode == "movie":
+    if mode == "movies":
         title = res.title
         imdb_id, _ = get_tmdb_movie_data(tmdb_id)
         tvdb_id = -1

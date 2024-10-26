@@ -131,7 +131,7 @@ def make_listing(list_item, mode, url="", title="", ids="", tv_data=""):
 def set_windows_property(mode, ids):
     if ids:
         tmdb_id, tvdb_id, imdb_id = ids.split(", ")
-        if mode == "movie":
+        if mode == "movies":
             ids = {
                 "tmdb": tmdb_id,
                 "imdb": imdb_id,

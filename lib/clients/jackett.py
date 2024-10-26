@@ -13,7 +13,7 @@ class Jackett:
         try:
             if mode == "tv":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
-            elif mode == "movie":
+            elif mode == "movies":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"

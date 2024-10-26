@@ -19,7 +19,6 @@ session = make_session("https://webservice.fanart.tv")
 
 
 def search_api_fanart(media_type, language, media_id):
-    media_type = "movies" if media_type == "movie" else media_type
     query = base_url % (media_type, media_id)
     headers = {"client-key": CLIENT_KEY, "api-key": API_KEY}
     try:

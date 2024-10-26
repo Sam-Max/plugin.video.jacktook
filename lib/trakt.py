@@ -1,6 +1,8 @@
 import os
 from lib.api.trakt.trakt_api import (
     get_trakt_list_contents,
+    trakt_anime_most_watched,
+    trakt_anime_trending,
     trakt_movies_most_favorited,
     trakt_movies_most_watched,
     trakt_movies_top10_boxoffice,
@@ -24,7 +26,6 @@ from lib.utils.kodi_utils import ADDON_PATH, url_for
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
-    endOfDirectory,
 )
 from lib.utils.paginator import paginator_db
 
@@ -32,6 +33,8 @@ from lib.utils.paginator import paginator_db
 class Trakt(Enum):
     TRENDING = "trakt_trending"
     TRENDING_RECENT = "trakt_trending_recent"
+    ANIME_TRENDING = "Anime_Trending"
+    ANIME_MOST_WATCHED = "Anime_Most_Watched"
     TOP10 = "trakt_top10"
     WATCHED = "trakt_watched"
     FAVORITED = "trakt_favorited"
@@ -40,13 +43,13 @@ class Trakt(Enum):
     WATCHLIST = "trakt_watchlist"
 
 
-def handle_trakt_query(query, mode, api, page, plugin):
-    if mode == "movie":
-        result = handle_trakt_movie_query(query, mode, page)
+def handle_trakt_query(query, mode, page):
+    if mode == "movies":
+        return handle_trakt_movie_query(query, mode, page)
     elif mode == "tv":
-        result = handle_trakt_tv_query(query, mode, page)
-    if result:
-        process_trakt_result(result, query, mode, api, page, plugin)
+        return handle_trakt_tv_query(query, mode, page)
+    elif mode == "anime":
+        return handle_trakt_anime_query(query, page)
 
 
 def handle_trakt_movie_query(query, mode, page):
@@ -64,7 +67,6 @@ def handle_trakt_movie_query(query, mode, page):
         return trakt_trending_popular_lists(list_type="trending", page_no=page)
     elif query in Trakt.WATCHLIST:
         return trakt_watchlist(mode)
-    return None
 
 
 def handle_trakt_tv_query(query, mode, page):
@@ -80,10 +82,16 @@ def handle_trakt_tv_query(query, mode, page):
         return trakt_trending_popular_lists(list_type="trending", page_no=page)
     elif query in Trakt.WATCHLIST:
         return trakt_watchlist(mode)
-    return None
 
 
-def process_trakt_result(results, query, mode, api, page, plugin):
+def handle_trakt_anime_query(query, page):
+    if query == Trakt.ANIME_TRENDING:
+        return trakt_anime_trending(page)
+    elif query == Trakt.ANIME_MOST_WATCHED:
+        return trakt_anime_most_watched(page)
+
+
+def process_trakt_result(results, query, mode, submode, api, page, plugin):
     if (
         query == Trakt.TRENDING
         or query == Trakt.WATCHED
@@ -97,32 +105,72 @@ def process_trakt_result(results, query, mode, api, page, plugin):
         execute_thread_pool(results, show_trending_lists, mode, plugin)
     elif query == Trakt.WATCHLIST:
         execute_thread_pool(results, show_watchlist, mode, plugin)
+    elif query == Trakt.ANIME_TRENDING or query == Trakt.ANIME_MOST_WATCHED:
+        execute_thread_pool(results, show_anime_common, submode, plugin)
 
-    add_next_button("next_page_trakt", plugin, page, query=query, mode=mode, api=api)
+    add_next_button(
+        "next_page_trakt",
+        plugin,
+        page,
+        query=query,
+        mode=mode,
+        submode=submode,
+        api=api,
+    )
+
+
+def show_anime_common(res, submode, plugin):
+    ids = extract_ids(res)
+    title = res["show"]["title"]
+
+    tmdb_id = ids.split(",")[0]
+    if submode == "tv":
+        details = tmdb_get("tv_details", tmdb_id)
+    else:
+        details = tmdb_get("movie_details", tmdb_id)
+
+    poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
+    backdrop_path = (
+        TMDB_BACKDROP_URL + details.backdrop_path if details.backdrop_path else ""
+    )
+
+    list_item = ListItem(title)
+    list_item.setArt(
+        {
+            "poster": poster_path,
+            "fanart": backdrop_path,
+        }
+    )
+    list_item.setProperty("IsPlayable", "false")
+    overview = details.get("overview", "")
+
+    set_media_infotag(
+        list_item,
+        submode,
+        title,
+        overview,
+        air_date="",
+        duration="",
+        ids=ids,
+    )
+
+    add_dir_item(submode, list_item, ids, title, plugin)
 
 
 def show_common_categories(res, mode, plugin):
     if mode == "tv":
         title = res["show"]["title"]
-
-        tmdb_id = res["show"]["ids"]["tmdb"]
-        tvdb_id = res["show"]["ids"]["tvdb"]
-        imdb_id = res["show"]["ids"]["imdb"]
-
+        ids = extract_ids(res, mode)
+        tmdb_id = ids.split(",")[0]
         details = tmdb_get("tv_details", tmdb_id)
     else:
         title = res["movie"]["title"]
-
-        tmdb_id = res["movie"]["ids"]["tmdb"]
-        tvdb_id = -1
-        imdb_id = res["movie"]["ids"]["imdb"]
-
+        ids = extract_ids(res, mode)
+        tmdb_id = ids.split(",")[0]
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = TMDB_POSTER_URL + details.get("poster_path", "")
     backdrop_path = TMDB_BACKDROP_URL + details.get("backdrop_path", "")
-
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
     list_item = ListItem(label=title)
     list_item.setArt(
@@ -145,29 +193,7 @@ def show_common_categories(res, mode, plugin):
         ids=ids,
     )
 
-    if mode == "tv":
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details",
-                ids=ids,
-                mode=mode,
-            ),
-            list_item,
-            isFolder=True,
-        )
-    else:
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="search",
-                query=title,
-                mode=mode,
-                ids=ids,
-            ),
-            list_item,
-            isFolder=True,
-        )
+    add_dir_item(mode, list_item, ids, title, plugin)
 
 
 def show_watchlist(res, mode, plugin):
@@ -195,29 +221,7 @@ def show_watchlist(res, mode, plugin):
         }
     )
 
-    if mode == "tv":
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details",
-                ids=ids,
-                mode="tv",
-            ),
-            list_item,
-            isFolder=True,
-        )
-    else:
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="search",
-                query=title,
-                mode="movie",
-                ids=ids,
-            ),
-            list_item,
-            isFolder=False,
-        )
+    add_dir_item(mode, list_item, ids, title, plugin)
 
 
 def show_trending_lists(res, mode, plugin):
@@ -283,29 +287,7 @@ def show_recommendations(res, mode, plugin):
 
     list_item.setProperty("IsPlayable", "false")
 
-    if mode == "tv":
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details",
-                ids=ids,
-                mode=mode,
-            ),
-            list_item,
-            isFolder=True,
-        )
-    else:
-        addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="search",
-                query=title,
-                mode=mode,
-                ids=ids,
-            ),
-            list_item,
-            isFolder=True,
-        )
+    add_dir_item(mode, list_item, ids, title, plugin)
 
 
 def show_lists_content_items(res, plugin):
@@ -319,7 +301,7 @@ def show_lists_content_items(res, plugin):
         mode = "tv"
         details = tmdb_get("tv_details", tmdb_id)
     else:
-        mode = "movie"
+        mode = "movies"
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
@@ -364,7 +346,7 @@ def show_lists_content_items(res, plugin):
             url_for(
                 name="search",
                 query=title,
-                mode="movie",
+                mode="movies",
                 ids=ids,
             ),
             list_item,
@@ -384,3 +366,42 @@ def show_trakt_list_page(page, mode, plugin):
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items, plugin)
     add_next_button("/trakt/paginator", plugin, page, mode=mode)
+
+
+def extract_ids(res, mode="tv"):
+    if mode == "tv":
+        tmdb_id = res["show"]["ids"]["tmdb"]
+        tvdb_id = res["show"]["ids"]["tvdb"]
+        imdb_id = res["show"]["ids"]["imdb"]
+    else:
+        tmdb_id = res["movie"]["ids"]["tmdb"]
+        tvdb_id = -1
+        imdb_id = res["movie"]["ids"]["imdb"]
+
+    return f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+
+
+def add_dir_item(mode, list_item, ids, title, plugin):
+    if mode == "tv":
+        addDirectoryItem(
+            plugin.handle,
+            url_for(
+                name="tv/details",
+                ids=ids,
+                mode="tv",
+            ),
+            list_item,
+            isFolder=True,
+        )
+    else:
+        addDirectoryItem(
+            plugin.handle,
+            url_for(
+                name="search",
+                query=title,
+                mode="movies",
+                ids=ids,
+            ),
+            list_item,
+            isFolder=False,
+        )

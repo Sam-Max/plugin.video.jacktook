@@ -26,7 +26,12 @@ from lib.player import JacktookPlayer
 from lib.plex import plex_login, plex_logout, validate_server
 from lib.titles_history import last_titles
 
-from lib.trakt import handle_trakt_query, show_trakt_list_content, show_trakt_list_page
+from lib.trakt import (
+    handle_trakt_query,
+    process_trakt_result,
+    show_trakt_list_content,
+    show_trakt_list_page,
+)
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 
 from lib.utils.pm_utils import get_pm_pack_info
@@ -244,7 +249,7 @@ def root_menu():
 @query_arg("genre_id", required=True)
 @query_arg("page", required=True)
 def search_tmdb(mode, genre_id, page):
-    if mode in ["movie", "movie_genres"]:
+    if mode in ["movies", "movie_genres"]:
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode in ["tv", "tv_genres"]:
         setContent(plugin.handle, SHOWS_TYPE)
@@ -294,13 +299,16 @@ def movies_items():
 @query_arg("query", required=True)
 @query_arg("mode", required=True)
 @query_arg("api", required=True)
+@query_arg("submode", required=False)
 @query_arg("page", required=False)
-def search_item(query="", mode="", api="", page=1):
+def search_item(query="", mode="", submode="", api="", page=1):
     set_content_type(mode, plugin=plugin)
     if api == "trakt":
-        handle_trakt_query(query, mode, api, page, plugin)
+        result = handle_trakt_query(query, mode, page)
     elif api == "tmdb":
-        handle_tmdb_query(query, mode, page, plugin)
+        result = handle_tmdb_query(query, mode, page, plugin)
+    if result:
+        process_trakt_result(result, query, mode, submode, api, page, plugin)
 
 
 @plugin.route("/trakt/list/content")
@@ -339,7 +347,7 @@ def direct_menu():
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(search_direct, mode="movie"),
+        plugin.url_for(search_direct, mode="movies"),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
@@ -356,7 +364,7 @@ def anime_menu():
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anime_sub_menu, mode="movie"),
+        plugin.url_for(anime_sub_menu, mode="movies"),
         list_item("Movies", "movies.png"),
         isFolder=True,
     )
@@ -378,15 +386,37 @@ def anime_sub_menu(mode):
             mode=mode,
             category="Anime_Popular",
         ),
-        list_item("Popular", "tv.png"),
+        list_item("Popular", f"{mode}.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(anime_airing, mode=mode, category="Anime_On_The_Air"),
-        list_item("Airing", "movies.png"),
+        list_item("Airing", f"{mode}.png"),
         isFolder=True,
     )
+
+    if mode == "tv":
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                search_item, query="Anime_Trending", mode="anime", submode=mode, api="trakt"
+            ),
+            list_item("Trending", f"{mode}.png"),
+            isFolder=True,
+        )
+        addDirectoryItem(
+            plugin.handle,
+            plugin.url_for(
+                search_item,
+                query="Anime_Most_Watched",
+                mode="anime",
+                submode=mode,
+                api="trakt",
+            ),
+            list_item("Most Watched", f"{mode}.png"),
+            isFolder=True,
+        )
 
 
 @plugin.route("/search_direct/<mode>")
@@ -976,7 +1006,7 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
 @query_arg("tv_data", required=False)
 @check_directory
 def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
-    if mode == "movie":
+    if mode == "movies":
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode == "tv" or mode == "anime":
         setContent(plugin.handle, SHOWS_TYPE)
@@ -1071,10 +1101,11 @@ def next_page_tmdb(mode, page, genre_id):
 @plugin.route("/next_page_trakt")
 @query_arg("query", required=True)
 @query_arg("mode", required=True)
+@query_arg("submode", required=True)
 @query_arg("api", required=True)
 @query_arg("page", required=True)
-def next_page_trakt(query, mode, api, page):
-    search_item(query=query, mode=mode, api=api, page=int(page))
+def next_page_trakt(query, mode, submode, api, page):
+    search_item(query=query, mode=mode, submode=submode, api=api, page=int(page))
 
 
 @plugin.route("/download_to_debrid")
