@@ -575,12 +575,6 @@ def execute_thread_pool(results, func, *args, **kwargs):
         executor.shutdown(wait=True)
 
 
-def run_task(func, results, *args, **kwargs):
-    with ThreadPoolExecutor(max_workers=len(results)) as executor:
-        [executor.submit(func, results, *args, **kwargs)]
-        executor.shutdown(wait=True)
-
-
 def paginate_list(data, page_size=10):
     for i in range(0, len(data), page_size):
         yield data[i : i + page_size]

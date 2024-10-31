@@ -17,7 +17,6 @@ from lib.utils.utils import (
     execute_thread_pool,
     get_tmdb_movie_data,
     get_tmdb_tv_data,
-    run_task,
     set_media_infotag,
     set_video_info,
 )
@@ -98,7 +97,7 @@ def anime_show_results(res, mode, plugin):
             url_for(
                 name="tv/details",
                 ids=ids,
-                mode=mode,
+                mode="anime",
                 media_type="anime",
             ),
             list_item,
@@ -122,18 +121,17 @@ def anime_checker(results, mode):
     anime_results = []
     anime = Anime()
     list_lock = threading.Lock()
-    def task(results, anime_results, list_lock):
-        for item in results["results"]:
-            results = anime.tmdb_keywords(mode, item["id"])
-            if mode == "tv":
-                keywords = results["results"]
-            else:
-                keywords = results["keywords"]
-            for i in keywords:
-                if i["id"] == 210024:
-                    with list_lock:
-                        anime_results.append(item)
-    run_task(task, results, anime_results, list_lock)            
+    def task(res, anime_results, list_lock):
+        results = anime.tmdb_keywords(mode, res["id"])
+        if mode == "tv":
+            keywords = results["results"]
+        else:
+            keywords = results["keywords"]
+        for i in keywords:
+            if i["id"] == 210024:
+                with list_lock:
+                    anime_results.append(res)
+    execute_thread_pool(results, task, anime_results, list_lock)            
     results["results"] = anime_results
     results["total_results"] = len(anime_results)
     return results
