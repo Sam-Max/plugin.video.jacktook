@@ -106,7 +106,7 @@ def show_indexers_results(results, mode, ids, tv_data, direct, plugin):
                 list_item.addContextMenuItems(
                     [
                         (
-                            "Check if Pack",
+                            "Browse into",
                             container_update(
                                 name="show_pack_info",
                                 ids=ids,
