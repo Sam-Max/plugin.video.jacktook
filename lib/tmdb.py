@@ -1,28 +1,37 @@
 import os
+import threading
 from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.search import Search
-
-from lib.utils.kodi_utils import (
-    ADDON_PATH,
-    Keyboard,
-    container_update,
-    notification,
-    url_for,
-)
 from lib.utils.utils import (
+    TMDB_BACKDROP_URL,
+    TMDB_POSTER_URL,
     add_next_button,
     execute_thread_pool,
     get_tmdb_movie_data,
     get_tmdb_tv_data,
     set_media_infotag,
     tmdb_get,
+    set_video_info,
 )
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
-TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
-TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
+from lib.api.jacktook.kodi import kodilog
+from lib.api.tmdbv3api.objs.anime import Anime
+from lib.db.main_db import main_db
+from lib.utils.kodi_utils import (
+    ADDON_PATH,
+    MOVIES_TYPE,
+    SHOWS_TYPE,
+    Keyboard,
+    get_kodi_version,
+    notification,
+    url_for,
+    container_update,
+)
+from xbmcgui import ListItem
+from xbmcplugin import addDirectoryItem, setContent
 
 
 def add_icon_genre_single(item, icon_path="tmdb.png"):
@@ -76,14 +85,13 @@ def add_icon_genre(item, name):
 def search(mode, genre_id, page):
     if mode == "multi":
         if page == 1:
-            text = Keyboard(id=30241)
-            if text:
-                main_db.set_query("query", text)
-            else:
+            query = Keyboard(id=30241)
+            if not query:
                 return
+            main_db.set_query("search_query", query)
         else:
-            text = main_db.get_query("query")
-        return Search().multi(str(text), page=page)
+            query = main_db.get_query("search_query")
+        return Search().multi(str(query), page=page)
     elif mode == "movies":
         if genre_id != -1:
             return tmdb_get(
@@ -131,11 +139,13 @@ def show_items(res, plugin, mode):
             title = res.title
 
         if media_type == "movies":
+            mode = media_type
             release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
             tvdb_id = -1
             label_title = f"[B][MOVIE][/B]- {title}"
         elif media_type == "tv":
+            mode = media_type
             release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
             label_title = f"[B][TV][/B]- {title}"
@@ -172,7 +182,7 @@ def show_items(res, plugin, mode):
     )
     list_item.setProperty("IsPlayable", "false")
 
-    if "movies" in [mode, media_type]:
+    if mode == "movies":
         list_item.addContextMenuItems(
             [
                 (
@@ -219,14 +229,41 @@ def get_genre_items(mode):
         return tmdb_get(mode)
 
 
-####################################################
-
-
-def handle_tmdb_query(query, mode, page, plugin):
+def handle_tmdb_query(query, category, mode, submode, page, plugin):
     if mode == "movies":
         handle_tmdb_movie_query(query, page, mode, plugin)
-    else:
+    elif mode == "tv":
         handle_tmdb_tv_query(query, page, mode, plugin)
+    elif mode == "anime":
+        handle_tmdb_anime_query(category, submode, page, plugin)
+
+
+def handle_tmdb_anime_query(category, mode, page, plugin):
+    kodilog("tmdb_anime::search_anime")
+    setContent(plugin.handle, SHOWS_TYPE if mode == "tv" else MOVIES_TYPE)
+    anime = Anime()
+    if category == "Anime_Search":
+        if page == 1:
+            query = Keyboard(id=30242)
+            if not query:
+                return
+            main_db.set_query("anime_query", query)
+        else:
+            query = main_db.get_query("anime_query")
+        data = anime.anime_search(query, mode, page)
+        data = anime_checker(data, mode)
+    elif category == "Anime_On_The_Air":
+        data = anime.anime_on_the_air(mode, page)
+    elif category == "Anime_Popular":
+        data = anime.anime_popular(mode, page)
+
+    if data:
+        if data.total_results == 0:
+            notification("No results found")
+            return
+
+        execute_thread_pool(data.results, anime_show_results, mode, plugin)
+        add_next_button("anime_next_page", plugin, page, mode=mode, category=category)
 
 
 def handle_tmdb_movie_query(query, page, mode, plugin):
@@ -278,3 +315,90 @@ def process_genres_results(data, mode, page, plugin):
             isFolder=True,
         )
     endOfDirectory(plugin.handle)
+
+
+def anime_show_results(res, mode, plugin):
+    description = res.get("overview", "")
+    poster_path = res.get("poster_path", "")
+
+    tmdb_id = res.get("id", -1)
+    if mode == "movies":
+        title = res.title
+        imdb_id, _ = get_tmdb_movie_data(tmdb_id)
+        tvdb_id = -1
+    elif mode == "tv":
+        title = res.name
+        title = res["name"]
+        imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
+
+    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+
+    list_item = ListItem(label=title)
+    list_item.setArt(
+        {
+            "poster": TMDB_POSTER_URL + poster_path if poster_path else "",
+            "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
+        }
+    )
+    list_item.setProperty("IsPlayable", "false")
+
+    if get_kodi_version() >= 20:
+        set_media_infotag(
+            list_item,
+            mode,
+            title,
+            description,
+        )
+    else:
+        set_video_info(
+            list_item,
+            mode,
+            title,
+            description,
+        )
+
+    if mode == "tv":
+        addDirectoryItem(
+            plugin.handle,
+            url_for(
+                name="tv/details",
+                ids=ids,
+                mode=mode,
+            ),
+            list_item,
+            isFolder=True,
+        )
+    else:
+        addDirectoryItem(
+            plugin.handle,
+            url_for(
+                name="search",
+                mode=mode,
+                query=title,
+                ids=ids,
+            ),
+            list_item,
+            isFolder=True,
+        )
+
+
+def anime_checker(results, mode):
+    anime_results = []
+    anime = Anime()
+    list_lock = threading.Lock()
+
+    def task(res, anime_results, list_lock):
+        results = anime.tmdb_keywords(mode, res["id"])
+        if mode == "tv":
+            keywords = results["results"]
+        else:
+            keywords = results["keywords"]
+        for i in keywords:
+            if i["id"] == 210024:
+                with list_lock:
+                    anime_results.append(res)
+
+    execute_thread_pool(results, task, anime_results, list_lock)
+    results["results"] = anime_results
+    results["total_results"] = len(anime_results)
+    return results

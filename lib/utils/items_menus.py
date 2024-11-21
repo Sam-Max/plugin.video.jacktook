@@ -122,3 +122,35 @@ movie_items = [
         "icon": "trakt.png",
     },
 ]
+
+
+anime_items = [
+    {
+        "name": "Anime Popular",
+        "mode": "anime",
+        "category": "Anime_Popular",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Anime Airing",
+        "mode": "anime",
+        "category": "Anime_On_The_Air",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Trakt - Anime Trending",
+        "mode": "anime",
+        "category": "Anime_Trending",
+        "api": "trakt",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Trakt - Anime Most Watched",
+        "mode": "anime",
+        "category": "Anime_Most_Watched",
+        "api": "trakt",
+        "icon": "trakt.png",
+    },
+]

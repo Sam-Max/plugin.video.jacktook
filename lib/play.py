@@ -1,7 +1,7 @@
 import json
 from urllib.parse import quote
 from lib.api.jacktook.kodi import kodilog
-from lib.debrid import get_debrid_direct_url
+from lib.debrid import get_debrid_direct_url, get_debrid_pack_direct_url
 from lib.player import JacktookPlayer
 from lib.db.bookmark_db import bookmark_db
 from lib.utils.kodi_utils import (
@@ -26,44 +26,32 @@ from xbmcplugin import (
 )
 from xbmcgui import ListItem, Dialog
 
+
 def play(
-    url,
-    ids,
-    tv_data,
     title,
-    plugin,
-    magnet="",
-    info_hash="",
-    mode="",
-    debrid_type="",
+    mode,
     is_torrent=False,
-    is_plex=False,
-    is_debrid_pack=False,
+    plugin=None,
+    extra_data={},
 ):
-    if not is_torrent and not (is_plex or is_debrid_pack):
-        url = get_debrid_direct_url(info_hash, debrid_type)
+    kodilog("play::play")
+
+    url = extra_data.get("url", "")
+    magnet = extra_data.get("magnet", "")
+    ids = extra_data.get("ids", [])
+    debrid_type = extra_data["debrid_info"].get("debrid_type", "")
+    is_debrid_pack = extra_data["debrid_info"].get("is_debrid_pack", False)
 
     set_watched_file(
         title,
-        ids,
-        tv_data,
-        magnet,
-        url,
-        info_hash,
-        debrid_type,
         is_torrent,
-        is_debrid_pack,
+        extra_data=extra_data,
     )
 
-    if not magnet and not url:
-        notification(translation(30251))
-        return
-
     client = get_setting("client_player")
-
-    if client == Players.PLEX:
+    if client == Players.JACKGRAM:
         _url = url
-    if client == Players.TORREST:
+    elif client == Players.TORREST:
         _url = get_torrest_url(magnet, url)
     elif client == Players.ELEMENTUM:
         _url = get_elementum_url(magnet, mode, ids)
@@ -81,11 +69,21 @@ def play(
             elif torrent_clients[chosen_client] == "Jacktorr":
                 _url = get_jacktorr_url(magnet, url)
         else:
-            _url = url
+            if is_debrid_pack:
+                if debrid_type in ["RD", "TB"] :
+                    file_id = extra_data["debrid_info"].get("file_id", "")
+                    torrent_id = extra_data["debrid_info"].get("torrent_id", "")
+                    _url = get_debrid_pack_direct_url(file_id, torrent_id, debrid_type)
+                else:
+                   _url = url     
+            else:
+                _url = get_debrid_direct_url(extra_data.get("info_hash", ""), debrid_type)
+    else:
+        return
 
     if _url:
         list_item = ListItem(title, path=_url)
-        make_listing(list_item, mode, _url, title, ids, tv_data)
+        make_listing(list_item, mode, _url, title, ids, tv_data=extra_data.get("tv_data", {}))
         setResolvedUrl(plugin.handle, True, list_item)
 
         if not is_torrent:

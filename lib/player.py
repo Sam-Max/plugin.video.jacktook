@@ -61,8 +61,8 @@ class JacktookPlayer(Player):
                 continue
             sleep(500)
         hide_busy_dialog()
-        if self.current_point >= set_resume:
-            self.set_bookmark()
+        # if self.current_point >= set_resume:
+        #     self.set_bookmark()
 
     def set_constants(self, url):
         self.url = url

@@ -1,4 +1,5 @@
 import os
+from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import (
     get_trakt_list_contents,
     trakt_anime_most_watched,
@@ -43,13 +44,13 @@ class Trakt(Enum):
     WATCHLIST = "trakt_watchlist"
 
 
-def handle_trakt_query(query, mode, page):
+def handle_trakt_query(query, category, mode, page):
     if mode == "movies":
         return handle_trakt_movie_query(query, mode, page)
     elif mode == "tv":
         return handle_trakt_tv_query(query, mode, page)
     elif mode == "anime":
-        return handle_trakt_anime_query(query, page)
+        return handle_trakt_anime_query(category, page)
 
 
 def handle_trakt_movie_query(query, mode, page):
@@ -85,13 +86,14 @@ def handle_trakt_tv_query(query, mode, page):
 
 
 def handle_trakt_anime_query(query, page):
+    kodilog("trakt::handle_trakt_anime_query")
     if query == Trakt.ANIME_TRENDING:
         return trakt_anime_trending(page)
     elif query == Trakt.ANIME_MOST_WATCHED:
         return trakt_anime_most_watched(page)
 
 
-def process_trakt_result(results, query, mode, submode, api, page, plugin):
+def process_trakt_result(results, query, category, mode, submode, api, page, plugin):
     if (
         query == Trakt.TRENDING
         or query == Trakt.WATCHED
@@ -105,7 +107,9 @@ def process_trakt_result(results, query, mode, submode, api, page, plugin):
         execute_thread_pool(results, show_trending_lists, mode, plugin)
     elif query == Trakt.WATCHLIST:
         execute_thread_pool(results, show_watchlist, mode, plugin)
-    elif query == Trakt.ANIME_TRENDING or query == Trakt.ANIME_MOST_WATCHED:
+    
+    if category == Trakt.ANIME_TRENDING or category == Trakt.ANIME_MOST_WATCHED:
+        kodilog("trakt::process_trakt_result")
         execute_thread_pool(results, show_anime_common, submode, plugin)
 
     add_next_button(
@@ -113,18 +117,21 @@ def process_trakt_result(results, query, mode, submode, api, page, plugin):
         plugin,
         page,
         query=query,
+        category=category,
         mode=mode,
         submode=submode,
         api=api,
     )
 
 
-def show_anime_common(res, submode, plugin):
+def show_anime_common(res, mode, plugin):
+    kodilog("trakt::show_anime_common")
+    kodilog(mode)
     ids = extract_ids(res)
     title = res["show"]["title"]
 
     tmdb_id = ids.split(",")[0]
-    if submode == "tv":
+    if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
     else:
         details = tmdb_get("movie_details", tmdb_id)
@@ -146,7 +153,7 @@ def show_anime_common(res, submode, plugin):
 
     set_media_infotag(
         list_item,
-        submode,
+        mode,
         title,
         overview,
         air_date="",
@@ -154,7 +161,7 @@ def show_anime_common(res, submode, plugin):
         ids=ids,
     )
 
-    add_dir_item(submode, list_item, ids, title, plugin)
+    add_dir_item(mode, list_item, ids, title, plugin)
 
 
 def show_common_categories(res, mode, plugin):

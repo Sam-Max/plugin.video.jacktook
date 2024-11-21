@@ -8,22 +8,21 @@ import requests
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.debrid_apis.real_debrid_api import RealDebrid
 from lib.api.debrid_apis.tor_box_api import Torbox
+from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 
-from lib.tmdb_anime import search_anime
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
     trakt_authenticate,
     trakt_revoke_authentication,
 )
 from lib.clients.search import search_client
-from lib.debrid import check_debrid_cached, get_debrid_pack_direct_url
+from lib.debrid import check_debrid_cached
 from lib.files_history import last_files
 from lib.indexer import show_indexers_results
 from lib.play import make_listing, play
 from lib.player import JacktookPlayer
-from lib.plex import plex_login, plex_logout, validate_server
 from lib.titles_history import last_titles
 
 from lib.trakt import (
@@ -36,11 +35,12 @@ from lib.utils.kodi_formats import is_music, is_picture, is_text
 
 from lib.utils.pm_utils import get_pm_pack_info
 from lib.utils.rd_utils import get_rd_pack_info, get_rd_info
-from lib.utils.items_menus import tv_items, movie_items
+from lib.utils.items_menus import tv_items, movie_items, anime_items
 from lib.utils.torbox_utils import get_torbox_pack_info
 
 from lib.tmdb import (
     TMDB_POSTER_URL,
+    handle_tmdb_anime_query,
     handle_tmdb_query,
     search as tmdb_search,
     show_results,
@@ -52,6 +52,7 @@ from lib.utils.utils import (
     Players,
     clear,
     clear_all_cache,
+    execute_thread_pool,
     get_password,
     get_random_color,
     get_service_host,
@@ -138,7 +139,7 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name in ["direct", "rescrape", "is_torrent", "is_plex"]:
+                    if name in ["direct", "rescrape", "is_torrent", "data"]:
                         kwargs[name] = eval(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
@@ -295,41 +296,6 @@ def movies_items():
         )
 
 
-@plugin.route("/search_item")
-@query_arg("query", required=True)
-@query_arg("mode", required=True)
-@query_arg("api", required=True)
-@query_arg("submode", required=False)
-@query_arg("page", required=False)
-def search_item(query="", mode="", submode="", api="", page=1):
-    set_content_type(mode, plugin=plugin)
-    if api == "trakt":
-        result = handle_trakt_query(query, mode, page)
-    elif api == "tmdb":
-        result = handle_tmdb_query(query, mode, page, plugin)
-    if result:
-        process_trakt_result(result, query, mode, submode, api, page, plugin)
-
-
-@plugin.route("/trakt/list/content")
-@query_arg("list_type", required=False)
-@query_arg("mode", required=False)
-@query_arg("user", required=False)
-@query_arg("slug", required=False)
-@query_arg("with_auth", required=False)
-def trakt_list_content(list_type, mode, user, slug, with_auth="", page=1):
-    set_content_type(mode, plugin=plugin)
-    show_trakt_list_content(list_type, mode, user, slug, with_auth, page, plugin)
-
-
-@plugin.route("/trakt/paginator")
-@query_arg("page", required=False)
-@query_arg("mode", required=False)
-def trakt_list_page(mode, page=""):
-    set_content_type(mode, plugin=plugin)
-    show_trakt_list_page(int(page), mode, plugin)
-
-
 @plugin.route("/direct")
 @check_directory
 def direct_menu():
@@ -358,13 +324,13 @@ def direct_menu():
 def anime_menu():
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anime_sub_menu, mode="tv"),
+        plugin.url_for(anime_item, mode="tv"),
         list_item("Tv Shows", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         plugin.handle,
-        plugin.url_for(anime_sub_menu, mode="movies"),
+        plugin.url_for(anime_item, mode="movies"),
         list_item("Movies", "movies.png"),
         isFolder=True,
     )
@@ -372,51 +338,43 @@ def anime_menu():
 
 @plugin.route("/anime/<mode>")
 @check_directory
-def anime_sub_menu(mode):
+def anime_item(mode):
     addDirectoryItem(
         plugin.handle,
         plugin.url_for(anime_search, mode=mode, category="Anime_Search"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(
-            anime_popular,
-            mode=mode,
-            category="Anime_Popular",
-        ),
-        list_item("Popular", f"{mode}.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        plugin.handle,
-        plugin.url_for(anime_airing, mode=mode, category="Anime_On_The_Air"),
-        list_item("Airing", f"{mode}.png"),
-        isFolder=True,
-    )
 
     if mode == "tv":
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(
-                search_item, query="Anime_Trending", mode="anime", submode=mode, api="trakt"
-            ),
-            list_item("Trending", f"{mode}.png"),
-            isFolder=True,
-        )
-        addDirectoryItem(
-            plugin.handle,
-            plugin.url_for(
-                search_item,
-                query="Anime_Most_Watched",
-                mode="anime",
-                submode=mode,
-                api="trakt",
-            ),
-            list_item("Most Watched", f"{mode}.png"),
-            isFolder=True,
-        )
+        for item in anime_items:
+            addDirectoryItem(
+                plugin.handle,
+                plugin.url_for(
+                    search_item,
+                    category=item["category"],
+                    mode=item["mode"],
+                    submode=mode,
+                    api=item["api"],
+                ),
+                list_item(item["name"], item["icon"]),
+                isFolder=True,
+            )
+    if mode == "movies":
+        for item in anime_items:
+            if item["api"] == "tmdb":
+                addDirectoryItem(
+                    plugin.handle,
+                    plugin.url_for(
+                        search_item,
+                        category=item["category"],
+                        mode=item["mode"],
+                        submode=mode,
+                        api=item["api"],
+                    ),
+                    list_item(item["name"], item["icon"]),
+                    isFolder=True,
+                )
 
 
 @plugin.route("/search_direct/<mode>")
@@ -499,8 +457,9 @@ def search(
                     final_results = post_process(proc_results)
 
                 if final_results:
-                    show_indexers_results(
+                    execute_thread_pool(
                         final_results,
+                        show_indexers_results,
                         mode,
                         ids,
                         tv_data,
@@ -529,55 +488,39 @@ def play_first_result(results, ids, tv_data, mode):
         play_media(
             plugin,
             play_torrent,
-            title=res["title"],
-            ids=ids,
-            tv_data=tv_data,
-            info_hash=res["infoHash"],
-            debrid_type=res["debridType"],
-            is_torrent=False,
+            title=res.get("title", ""),
             mode=mode,
+            data={
+                "ids": ids,
+                "info_hash": res.get("infoHash", ""),
+                "tv_data": tv_data,
+                "debrid_info": {
+                    "debrid_type": res.get("debridType", ""),
+                },
+            },
         )
         break
 
 
 @plugin.route("/play_torrent")
 @query_arg("title", required=True)
-@query_arg("url", required=False)
-@query_arg("magnet", required=False)
-@query_arg("info_hash", required=False)
-@query_arg("ids", required=False)
-@query_arg("tv_data", required=False)
-@query_arg("is_torrent", required=False)
-@query_arg("is_plex", required=False)
-@query_arg("debrid_type", required=False)
-@query_arg("is_debrid_pack", required=False)
 @query_arg("mode", required=False)
+@query_arg("is_torrent", required=False)
+@query_arg("data", required=False)
 def play_torrent(
-    title,
-    url="",
-    magnet="",
-    info_hash="",
-    ids="",
-    tv_data="",
+    title="",
     mode="",
-    debrid_type="",
-    is_debrid_pack=False,
     is_torrent=False,
-    is_plex=False,
+    data="",
 ):
+    kodilog("navigation::play_torrent")
+    kodilog(is_torrent)
     play(
-        url,
-        ids,
-        tv_data,
         title,
-        plugin,
-        magnet=magnet,
-        info_hash=info_hash,
-        debrid_type=debrid_type,
-        mode=mode,
+        mode,
         is_torrent=is_torrent,
-        is_plex=is_plex,
-        is_debrid_pack=is_debrid_pack,
+        plugin=plugin,
+        extra_data=data,
     )
 
 
@@ -836,6 +779,9 @@ def tv_seasons_details(ids, mode, media_type=None):
         if "Specials" in season_name:
             continue
 
+        if "Miniseries" in season_name:
+            season_name = "Season 1"
+
         season_number = s.season_number
         if season_number == 0:
             continue
@@ -975,27 +921,12 @@ def tv_episodes_details(tv_name, season, ids, mode, media_type):
     set_view("widelist")
 
 
-@plugin.route("/play_file_from_pack")
+@plugin.route("/play_from_pack")
 @query_arg("title", required=False)
-@query_arg("ids", required=False)
-@query_arg("tv_data", required=False)
 @query_arg("mode", required=False)
-@query_arg("debrid_type", required=False)
-@query_arg("mode", required=False)
-@query_arg("file_id", required=False)
-@query_arg("torrent_id", required=False)
-def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent_id):
-    url = get_debrid_pack_direct_url(file_id, torrent_id, debrid_type)
-    play(
-        url,
-        ids,
-        tv_data,
-        title,
-        plugin,
-        mode=mode,
-        debrid_type=debrid_type,
-        is_debrid_pack=True,
-    )
+@query_arg("data", required=False)
+def play_from_pack(title, mode, data):
+    play(title, mode, plugin=plugin, extra_data=data)
 
 
 @plugin.route("/show_pack_info")
@@ -1008,7 +939,7 @@ def play_file_from_pack(ids, mode, debrid_type, title, tv_data, file_id, torrent
 def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
     if mode == "movies":
         setContent(plugin.handle, MOVIES_TYPE)
-    elif mode == "tv" or mode == "anime":
+    elif mode == "tv":
         setContent(plugin.handle, SHOWS_TYPE)
 
     if debrid_type == "PM":
@@ -1028,12 +959,16 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
                     url_for(
                         name="play_torrent",
                         title=title,
-                        url=url,
-                        ids=ids,
-                        tv_data=tv_data,
                         mode=mode,
                         is_torrent=False,
-                        debrid_type=debrid_type,
+                        data={
+                            "ids": ids,
+                            "url": url,
+                            "tv_data": tv_data,
+                            "debrid_info": {
+                                "is_debrid_pack": True,
+                            },
+                        },
                     ),
                     list_item,
                     isFolder=False,
@@ -1053,33 +988,66 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
             addDirectoryItem(
                 plugin.handle,
                 url_for(
-                    name="play_file_from_pack",
-                    file_id=file_id,
-                    torrent_id=info["id"],
-                    debrid_type=debrid_type,
+                    name="play_from_pack",
                     title=title,
                     mode=mode,
-                    ids=ids,
-                    tv_data=tv_data,
+                    data={
+                        "ids": ids,
+                        "tv_data": tv_data,
+                        "debrid_info": {
+                            "file_id": file_id,
+                            "torrent_id": info["id"],
+                            "debrid_type": debrid_type,
+                            "is_debrid_pack": True,
+                        },
+                    },
                 ),
                 list_item,
                 isFolder=False,
             )
 
 
+@plugin.route("/search_item")
+@query_arg("query", required=False)
+@query_arg("category", required=False)
+@query_arg("mode", required=True)
+@query_arg("submode", required=False)
+@query_arg("api", required=True)
+@query_arg("page", required=False)
+def search_item(query="", category="", api="", mode="", submode=None, page=1):
+    set_content_type(mode, plugin=plugin)
+    if api == "trakt":
+        result = handle_trakt_query(query, category, mode, page)
+        if result:
+            process_trakt_result(
+                result, query, category, mode, submode, api, page, plugin
+            )
+    elif api == "tmdb":
+        handle_tmdb_query(query, category, mode, submode, page, plugin)
+
+
+@plugin.route("/trakt/list/content")
+@query_arg("list_type", required=False)
+@query_arg("mode", required=False)
+@query_arg("user", required=False)
+@query_arg("slug", required=False)
+@query_arg("with_auth", required=False)
+def trakt_list_content(list_type, mode, user, slug, with_auth="", page=1):
+    set_content_type(mode, plugin=plugin)
+    show_trakt_list_content(list_type, mode, user, slug, with_auth, page, plugin)
+
+
+@plugin.route("/trakt/paginator")
+@query_arg("page", required=False)
+@query_arg("mode", required=False)
+def trakt_list_page(mode, page=""):
+    set_content_type(mode, plugin=plugin)
+    show_trakt_list_page(int(page), mode, plugin)
+
+
 @plugin.route("/anime/search/<mode>/<category>")
 def anime_search(mode, category, page=1):
-    search_anime(mode, category, page, plugin=plugin)
-
-
-@plugin.route("/anime/popular/<mode>/<category>")
-def anime_popular(mode, category, page=1):
-    search_anime(mode, category, page, plugin=plugin)
-
-
-@plugin.route("/anime/airing/<mode>/<category>")
-def anime_airing(mode, category, page=1):
-    search_anime(mode, category, page, plugin=plugin)
+    handle_tmdb_anime_query(category, mode, page, plugin=plugin)
 
 
 @plugin.route("/anime_next_page")
@@ -1087,7 +1055,7 @@ def anime_airing(mode, category, page=1):
 @query_arg("category", required=True)
 @query_arg("page", required=True)
 def anime_next_page(mode="", category="", page=""):
-    search_anime(mode, category, page=int(page) + 1, plugin=plugin)
+    handle_tmdb_anime_query(category, mode, page=int(page) + 1, plugin=plugin)
 
 
 @plugin.route("/next_page_tmdb")
@@ -1099,13 +1067,21 @@ def next_page_tmdb(mode, page, genre_id):
 
 
 @plugin.route("/next_page_trakt")
-@query_arg("query", required=True)
+@query_arg("query", required=False)
+@query_arg("category", required=False)
 @query_arg("mode", required=True)
 @query_arg("submode", required=True)
 @query_arg("api", required=True)
 @query_arg("page", required=True)
-def next_page_trakt(query, mode, submode, api, page):
-    search_item(query=query, mode=mode, submode=submode, api=api, page=int(page))
+def next_page_trakt(query="", category="", mode="", submode="", api="", page=1):
+    search_item(
+        query=query,
+        category=category,
+        mode=mode,
+        submode=submode,
+        api=api,
+        page=int(page),
+    )
 
 
 @plugin.route("/download_to_debrid")
@@ -1197,21 +1173,6 @@ def rd_auth():
 def pm_auth():
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     pm_client.auth()
-
-
-@plugin.route("/plex_auth")
-def plex_auth():
-    plex_login()
-
-
-@plugin.route("/plex_logout")
-def logout():
-    plex_logout()
-
-
-@plugin.route("/plex_validate")
-def plex_validate():
-    validate_server()
 
 
 @plugin.route("/trakt_auth")

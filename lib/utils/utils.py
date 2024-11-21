@@ -6,6 +6,7 @@ import re
 import unicodedata
 import requests
 
+from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import clear_cache
 from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
@@ -54,6 +55,8 @@ USER_AGENT_HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
 }
 
+TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
+TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 video_extensions = (
     ".001",
@@ -141,9 +144,9 @@ class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
+    JACKGRAM = "Jackgram"
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
-    PLEX = "Plex"
     ZILEAN = "Zilean"
 
 
@@ -151,8 +154,8 @@ class Players(Enum):
     JACKTORR = "Jacktorr"
     TORREST = "Torrest"
     ELEMENTUM = "Elementum"
-    PLEX = "Plex"
     DEBRID = "Debrid"
+    JACKGRAM = "Jackgram"
 
 
 class DialogListener:
@@ -221,11 +224,10 @@ def add_play_item(
     title,
     url="",
     info_hash="",
-    debrid_type="",
     magnet="",
     mode="",
-    is_plex=False,
     is_torrent=False,
+    debrid_type="",
     plugin=None,
 ):
     addDirectoryItem(
@@ -233,15 +235,18 @@ def add_play_item(
         url_for(
             name="play_torrent",
             title=title,
-            ids=ids,
-            tv_data=tv_data,
-            url=url,
-            info_hash=info_hash,
-            debrid_type=debrid_type,
-            magnet=magnet,
-            is_plex=is_plex,
-            is_torrent=is_torrent,
             mode=mode,
+            is_torrent=is_torrent,
+            data={
+                "ids": ids,
+                "url": url,
+                "info_hash": info_hash,
+                "magnet": magnet,
+                "tv_data": tv_data,
+                "debrid_info": {
+                    "debrid_type": debrid_type,
+                },
+            },
         ),
         list_item,
         isFolder=False,
@@ -364,31 +369,29 @@ def set_media_infotag(
         )
 
 
-def set_watched_file(
-    title, ids, tv_data, magnet, url, info_hash, debrid_type, is_torrent, is_debrid_pack
-):
+def set_watched_file(title, is_torrent, extra_data):
     if title in main_db.database["jt:lfh"]:
         return
 
     if is_torrent:
         title = f"[B][Uncached][/B]-{title}"
-    else:
-        debrid_color = get_random_color(debrid_type)
-        title = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]-{title}"
 
     if title not in main_db.database["jt:watch"]:
         main_db.database["jt:watch"][title] = True
 
     main_db.database["jt:lfh"][title] = {
         "timestamp": datetime.now(),
-        "ids": ids,
-        "tv_data": tv_data,
-        "url": url,
+        "ids": extra_data.get("ids", []),
+        "tv_data": extra_data.get("tv_data", {}),
+        "url": extra_data.get("url", ""),
         "is_torrent": is_torrent,
-        "magnet": magnet,
-        "info_hash": info_hash,
-        "debrid_type": debrid_type,
-        "is_debrid_pack": is_debrid_pack,
+        "magnet": extra_data.get("magnet", ""),
+        "info_hash": extra_data.get("info_hash", ""),
+        "debrid_type": extra_data["debrid_info"].get("debrid_type", ""),
+        "is_debrid_pack": extra_data["debrid_info"].get("is_debrid_pack", False),
+        "file_id": extra_data["debrid_info"].get("file_id", ""),
+        "torrent_id": extra_data["debrid_info"].get("torrent_id", "")
+
     }
     main_db.commit()
 
@@ -529,7 +532,7 @@ def get_tmdb_tv_data(id):
 
 
 def set_content_type(mode, media_type="movies", plugin=None):
-    if mode == "tv" or media_type == "tv" or mode == "anime": 
+    if mode == "tv" or media_type == "tv" or mode == "anime":
         setContent(plugin.handle, MOVIES_TYPE)
     elif mode == "movies" or media_type == "movies":
         setContent(plugin.handle, SHOWS_TYPE)
@@ -627,6 +630,8 @@ def get_description_length():
         desc_length = "torrentio_desc_length"
     elif indexer == Indexer.ELHOSTED:
         desc_length = "elfhosted_desc_length"
+    elif indexer == Indexer.JACKGRAM:
+        desc_length = "jackgram_desc_length"
     else:
         desc_length = 150
         return desc_length
@@ -657,6 +662,8 @@ def unzip(zip_location, destination_location, destination_check):
 
 
 def post_process(res, season=None):
+    kodilog("utils::post_process")
+    kodilog(res)
     if season:
         check_pack(res, season)
     if (
@@ -666,7 +673,7 @@ def post_process(res, season=None):
         res = sort_by_priority_language(res)
     else:
         res = sort_results(res)
-
+    kodilog(res)
     return res
 
 
@@ -711,17 +718,15 @@ def check_pack(results, season_num):
 
 
 def pre_process(res, mode, episode_name, episode, season):
+    kodilog("utils::pre_process")
     res = remove_duplicate(res)
-
     if get_setting("indexer") == Indexer.TORRENTIO:
         res = filter_by_torrentio_provider(res)
-
     res = limit_results(res)
-
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
-
     res = filter_by_quality(res)
+    kodilog(res)
     return res
 
 
@@ -760,6 +765,8 @@ def sort_results(first_res, second_res=None):
         sort_by = get_setting("elfhosted_sort_by")
     elif indexer == Indexer.BURST:
         sort_by = get_setting("burst_sort_by")
+    elif indexer == Indexer.JACKGRAM:
+        sort_by = get_setting("jackgram_sort_by")
     else:
         sort_by = "None"
 
