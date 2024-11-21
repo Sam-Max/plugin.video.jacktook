@@ -9,3 +9,13 @@ build
 htmlcov
 venv/
 __pycache__
+test2/test2.py
+test2/test3.py
+test2/test4.py
+test2/test5.py
+test2/test6.py
+test2/test7.py
+test2/test8.py
+test2/test9.py
+test2/tests.py
+jacktook.select.zip
