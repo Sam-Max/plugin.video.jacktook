@@ -1,3 +1,9 @@
+## 0.3.2
+* Switch to tmdb and trakt for Anime section
+* Add Jackgram Support
+* Remove Plex Support 
+* Bug fixes and improvements
+
 ## 0.3.1
 * Add "rescrape item" context menu item to anime shows results
 * Several bug fixes and some improvements
