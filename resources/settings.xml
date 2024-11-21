@@ -2,7 +2,7 @@
 <settings>
     <category label="30000">
         <setting label="30001" type="lsep"/>
-        <setting id="client_player" type="labelenum" label="30002" values="Jacktorr|Torrest|Elementum|Debrid|Plex" default="Jacktorr"/>
+        <setting id="client_player" type="labelenum" label="30002" values="Jacktorr|Jackgram|Torrest|Elementum|Debrid|" default="Jacktorr"/>
         <setting label="Playback" type="lsep"/>
         <setting id="auto_play" type="bool" label="Auto Play" default="false"/>
         <setting label="Cache" type="lsep"/>
@@ -14,7 +14,7 @@
         <setting id="clear_cache_update" type="bool" label="Clear cache when update" default="true"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst|Plex|Zilean" default="Torrentio"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst|Zilean|Jackgram" default="Torrentio"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="30025" default=""/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
@@ -23,6 +23,10 @@
         <setting id="torrentio_priority_lang" type="labelenum" label="Priority Language" values="GB|JP|RU|IT|PT|ES|MX|KR|CN|TW|FR|DE|NL|IN|PL|LT|CZ|SK|SI|HU|RO|HR|UA|GR|DK|FI|SE|NO|TR|None" default="None"/>
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
         <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/open_torr_providers_select)"/>
+        <setting label="Jackgram Configuration" type="lsep"/>
+        <setting id="jackgram_host" type="text" label="Jackgram Host" default=""/>
+        <setting id="jackgram_desc_length" type="number" label="30026" default="100"/>
+        <setting id="jackgram_sort_by" type="labelenum" label="Sort" values="Size|Quality|None" default="Quality"/>
         <setting label="Elfhosted/KnightCrawler Configuration" type="lsep"/>
         <setting id="elfhosted_host" type="text" label="30025" default=""/>
         <setting id="elfhosted_desc_length" type="number" label="30026" default="100"/>
@@ -65,7 +69,7 @@
         <setting label="" type="lsep"/>
         <setting id="show_uncached" type="bool" label="Show uncached torrents" default="true"/>
     </category>
-    <category label="Plex">
+    <!-- <category label="Plex">
         <setting label="Plex Configuration" type="lsep"/>
         <setting type="text" label="Login to your Plextv account to get your servers" enable="false" visible="true" />
         <setting type="action" label="Login" action="RunPlugin(plugin://plugin.video.jacktook/plex_auth)" />
@@ -79,7 +83,7 @@
         <setting id="plex_discovery_url" type="text" label="Server Discovery URL"  default=""/>
         <setting id="plex_streaming_url" type="text" label="Server Streaming URL" default=""/>
         <setting id="plex_server_token" type="text" label="Server Token" default=""/>
-    </category>
+    </category> -->
     <category label="30100">
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
@@ -95,11 +99,11 @@
         <setting id="jacktook.trakt.secret" type="text" label="Trakt Secret" default="8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"/>
         <setting type="action" label="Log out" action="RunPlugin(plugin://plugin.video.jacktook/trakt_logout)" />
     </category>
-    <category label="30140">
+    <!-- <category label="30140">
         <setting label="30142" type="lsep"/>
         <setting id="anilist_client_id" type="text" label="30143" default=""/>
         <setting id="anilist_client_secret" type="text" label="30144" default=""/>
-    </category>
+    </category> -->
     <category label="30200">
         <setting label="30202" type="lsep"/>
         <setting id="fanarttv_client_id" type="text" label="30203" default=""/>

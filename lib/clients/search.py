@@ -82,10 +82,10 @@ def search_client(
         else:
             notification(f"Select the correct indexer for the {client_player} client")
             return
-    elif client_player == Players.PLEX:
-        if indexer == Indexer.PLEX:
-            dialog.create(f"Jacktook [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
-            response = client.search(imdb_id, mode, media_type, season, episode)
+    elif client_player == Players.JACKGRAM:
+        if indexer == Indexer.JACKGRAM:
+            dialog.create(f"Jackgram [COLOR FFFF6B00]{indexer}[/COLOR]", "Searching...")
+            response = client.search(tmdb_id, query, mode, media_type, season, episode)
         else:
             notification(f"Select the correct indexer for the {client_player} client")
             return

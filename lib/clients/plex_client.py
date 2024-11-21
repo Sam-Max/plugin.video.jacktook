@@ -42,7 +42,6 @@ class Plex:
                         "indexer": item["indexer"],
                         "downloadUrl": item["url"],
                         "publishDate": "",
-                        "isPlex": True,
                     }
                 )
         return results
