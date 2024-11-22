@@ -7,6 +7,12 @@ from lib.utils.utils import unicode_flag_to_country_code
 from requests import Session
 
 
+# Custom User-Agent
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
+}
+
+
 class Torrentio:
     def __init__(self, host, notification) -> None:
         self.host = host.rstrip("/")
@@ -20,7 +26,7 @@ class Torrentio:
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
             kodilog(url)
-            res = self.session.get(url, timeout=10)
+            res = self.session.get(url, headers=headers, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res)
@@ -29,6 +35,7 @@ class Torrentio:
 
     def parse_response(self, res):
         res = json.loads(res.text)
+        kodilog("torrentio::parse_response")
         kodilog(res)
         results = []
         for item in res["streams"]:
