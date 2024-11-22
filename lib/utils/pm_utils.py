@@ -1,12 +1,16 @@
+import os
 from lib.api.debrid_apis.premiumize_api import Premiumize
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import get_setting, notification
+from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (
     get_cached,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
 )
+from xbmcgui import ListItem
+from xbmcplugin import addDirectoryItem
+
 
 pm_client = Premiumize(token=get_setting("premiumize_token"))
 
@@ -37,6 +41,39 @@ def get_pm_pack_info(info_hash):
     else:
         notification("Not a torrent pack")
         return
+
+
+def show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+    for url, title in info["files"]:
+        list_item = ListItem(label=f"{title}")
+        list_item.setArt(
+            {
+                "icon": os.path.join(
+                    ADDON_PATH, "resources", "img", "trending.png"
+                )
+            }
+        )
+        addDirectoryItem(
+            plugin.handle,
+            url_for(
+                name="play_torrent",
+                title=title,
+                mode=mode,
+                is_torrent=False,
+                data={
+                    "ids": ids,
+                    "url": url,
+                    "tv_data": tv_data,
+                    "debrid_info": {
+                        "debrid_type": debrid_type,
+                        "is_debrid_pack": True,
+                    },
+                },
+            ),
+            list_item,
+            isFolder=False,
+        )
+
 
 
 def get_pm_link(infoHash):
