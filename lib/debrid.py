@@ -28,6 +28,7 @@ dialog_update = {"count": -1, "percent": 50}
 
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
+    kodilog("debrid::check_debrid_cached")
     if not rescrape:
         if query:
             if mode == "tv" or media_type == "tv":
@@ -45,23 +46,23 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     total = len(results)
     get_magnet_and_infohash(results, lock, dialog)
 
-    with ThreadPoolExecutor(max_workers=total) as executor:
-        if is_rd_enabled():
-            rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-            [
-                executor.submit(
-                    check_rd_cached,
-                    rd_client,
-                    res,
-                    cached_results,
-                    uncached_results,
-                    total,
-                    dialog,
-                    lock=lock,
-                )
-                for res in copy.deepcopy(results)
-            ]
-        if is_pm_enabled():
+    if is_rd_enabled():
+        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+        torr_available = rd_client.get_user_torrent_list()
+        results_dict = {torr["hash"] for torr in torr_available}
+        for res in results:
+            debrid_dialog_update(total, dialog, lock)
+            res["debridType"] = "RD"
+            res["isDebrid"] = True 
+            if res["infoHash"] in results_dict: 
+                res["isCached"] = True 
+                cached_results.append(res)
+            else:
+                uncached_results.append(res)
+        # Add cause of RD removed cache check endpoint        
+        cached_results.extend(uncached_results)
+    elif is_pm_enabled():
+        with ThreadPoolExecutor() as executor:
             pm_client = Premiumize(token=get_setting("premiumize_token"))
             [
                 executor.submit(
@@ -76,7 +77,9 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                 )
                 for res in copy.deepcopy(results)
             ]
-        if is_tb_enabled():
+            executor.shutdown(wait=True)
+    elif is_tb_enabled():
+        with ThreadPoolExecutor() as executor:
             tor_box_client = Torbox(token=get_setting("torbox_token"))
             [
                 executor.submit(
@@ -91,12 +94,14 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                 )
                 for res in copy.deepcopy(results)
             ]
-        executor.shutdown(wait=True)
+            executor.shutdown(wait=True)
+
+    if is_tb_enabled() or is_pm_enabled(): 
+        if get_setting("show_uncached"):
+            cached_results.extend(uncached_results)
+
     dialog_update["count"] = -1
     dialog_update["percent"] = 50
-
-    if get_setting("show_uncached"):
-        cached_results.extend(uncached_results)
 
     if query:
         if mode == "tv" or media_type == "tv":
@@ -105,22 +110,6 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
             set_cached(cached_results, query, params=("deb"))
 
     return cached_results
-
-
-def check_rd_cached(client, res, cached_results, uncached_result, total, dialog, lock):
-    debrid_dialog_update(total, dialog, lock)
-    info_hash = res.get("infoHash")
-    if info_hash:
-        res["debridType"] = "RD"
-        torr_available = client.get_torrent_instant_availability(info_hash)
-        if info_hash in torr_available:
-            with lock:
-                res["isDebrid"] = True
-                cached_results.append(res)
-        else:
-            with lock:
-                res["isDebrid"] = False
-                uncached_result.append(res)
 
 
 def check_pm_cached(client, res, cached_results, uncached_result, total, dialog, lock):

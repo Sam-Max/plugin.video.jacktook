@@ -35,7 +35,7 @@ from lib.trakt import (
 from lib.utils.kodi_formats import is_music, is_picture, is_text
 
 from lib.utils.pm_utils import get_pm_pack_info, show_pm_pack_info
-from lib.utils.rd_utils import get_rd_info
+from lib.utils.rd_utils import get_rd_info, get_rd_pack_info, show_rd_pack_info
 from lib.utils.items_menus import tv_items, movie_items, anime_items
 from lib.utils.torbox_utils import get_torbox_pack_info, show_tb_pack_info
 
@@ -475,7 +475,7 @@ def auto_play(results, ids, tv_data, mode, p_dialog):
 
 def play_first_result(results, ids, tv_data, mode):
     for res in results:
-        if res.get("isDebridPack"):
+        if res.get("isPack"):
             continue
 
         play_media(
@@ -507,7 +507,6 @@ def play_torrent(
     data="",
 ):
     kodilog("navigation::play_torrent")
-    kodilog(is_torrent)
     play(
         title,
         mode,
@@ -793,13 +792,14 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
         setContent(plugin.handle, SHOWS_TYPE)
 
     if debrid_type == "PM":
-        info = get_pm_pack_info(info_hash)
-        if info:
+        if info := get_pm_pack_info(info_hash):
             show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin)
     elif debrid_type == "TB":
-        info = get_torbox_pack_info(info_hash)
-        if info:
-            show_tb_pack_info(info, ids, debrid_type, tv_data, mode,  plugin)
+        if info := get_torbox_pack_info(info_hash):
+            show_tb_pack_info(info, ids, debrid_type, tv_data, mode, plugin)
+    elif debrid_type == "RD":
+        if info := get_rd_pack_info(info_hash):
+            show_rd_pack_info(info, ids, debrid_type, tv_data, mode, plugin)
 
 
 @plugin.route("/search_item")

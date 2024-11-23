@@ -228,6 +228,7 @@ def add_play_item(
     mode="",
     is_torrent=False,
     debrid_type="",
+    is_cached=False,
     plugin=None,
 ):
     addDirectoryItem(
@@ -245,6 +246,7 @@ def add_play_item(
                 "tv_data": tv_data,
                 "debrid_info": {
                     "debrid_type": debrid_type,
+                    "is_cached": is_cached,
                 },
             },
         ),
@@ -663,7 +665,6 @@ def unzip(zip_location, destination_location, destination_check):
 
 def post_process(res, season=None):
     kodilog("utils::post_process")
-    kodilog(res)
     if season:
         check_pack(res, season)
     if (
@@ -673,7 +674,6 @@ def post_process(res, season=None):
         res = sort_by_priority_language(res)
     else:
         res = sort_results(res)
-    kodilog(res)
     return res
 
 
@@ -712,9 +712,9 @@ def check_pack(results, season_num):
     for res in results:
         match = re.search(f"{patterns}", res["title"])
         if match:
-            res["isDebridPack"] = True
+            res["isPack"] = True
         else:
-            res["isDebridPack"] = False
+            res["isPack"] = False
 
 
 def pre_process(res, mode, episode_name, episode, season):
@@ -726,7 +726,6 @@ def pre_process(res, mode, episode_name, episode, season):
     if mode == "tv":
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
-    kodilog(res)
     return res
 
 

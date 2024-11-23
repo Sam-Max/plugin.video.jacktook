@@ -54,10 +54,7 @@ class RealDebrid:
             if response.status_code == 401:
                 notification("Invalid token")
                 return
-            elif (
-                response.status_code == 403
-                and response.json().get("error_code") == 9
-            ):
+            elif response.status_code == 403 and response.json().get("error_code") == 9:
                 notification("Real-Debrid Permission denied for free account")
                 return
 
@@ -147,7 +144,8 @@ class RealDebrid:
             content = "%s[CR]%s[CR]%s" % (
                 "Authorize Debrid Services",
                 "Navigate to: [B]%s[/B]" % "https://real-debrid.com/device",
-                "Enter the following code: [COLOR seagreen][B]%s[/B][/COLOR]" % user_code,
+                "Enter the following code: [COLOR seagreen][B]%s[/B][/COLOR]"
+                % user_code,
             )
             progressDialog.create("Real-Debrid Auth")
             progressDialog.update(-1, content)
@@ -218,7 +216,7 @@ class RealDebrid:
             self.select_files(torrent_id, str(file_id))
             ksleep(2000)
             torrent_info = self.get_torrent_info(torrent_id)
-            if torrent_info: 
+            if torrent_info:
                 status = torrent_info["status"]
                 if status == "downloaded":
                     notification("File cached")
@@ -244,7 +242,9 @@ class RealDebrid:
                         )
                     else:
                         msg2 = status
-                    progressDialog.update(int(float(torrent_info["progress"])), msg + msg2)
+                    progressDialog.update(
+                        int(float(torrent_info["progress"])), msg + msg2
+                    )
                     try:
                         if progressDialog.iscanceled():
                             cancelled = True
@@ -281,10 +281,8 @@ class RealDebrid:
             "PUT", f"{self.BASE_URL}/torrents/addTorrent", file=file
         )
 
-    def get_user_torrent_list(self, limit):
-        return self._make_request(
-            "GET", f"{self.BASE_URL}/torrents", params={"limit": limit}
-        )
+    def get_user_torrent_list(self):
+        return self._make_request("GET", f"{self.BASE_URL}/torrents")
 
     def get_user_downloads_list(self, page=1):
         return self._make_request(

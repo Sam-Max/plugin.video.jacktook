@@ -35,7 +35,6 @@ def play(
     extra_data={},
 ):
     kodilog("play::play")
-
     url = extra_data.get("url", "")
     magnet = extra_data.get("magnet", "")
     ids = extra_data.get("ids", [])
@@ -74,12 +73,16 @@ def play(
                     file_id = extra_data["debrid_info"].get("file_id", "")
                     torrent_id = extra_data["debrid_info"].get("torrent_id", "")
                     _url = get_debrid_pack_direct_url(file_id, torrent_id, debrid_type)
+                    if _url is None:
+                        notification("File not cached")
+                        return 
                 else:
                    _url = url     
             else:
                 _url = get_debrid_direct_url(extra_data.get("info_hash", ""), debrid_type)
-    else:
-        return
+                if _url is None:
+                    notification("File not cached")
+                    return 
 
     if _url:
         list_item = ListItem(title, path=_url)

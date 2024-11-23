@@ -93,15 +93,24 @@ def handle_debrid_items(
     info_hash = res.get("infoHash")
     debrid_type = res.get("debridType")
 
-    if res.get("isDebridPack"):
-        list_item = ListItem(label=f"{format_debrid_type}-CachedPack-{formated_title}")
+    if res.get("isPack"):
+        if get_setting("real_debrid_enabled"):
+            label_title = get_debrid_label_pack(res, format_debrid_type, formated_title)
+        else:
+            label_title = f"{format_debrid_type}-Cached-Pack-{formated_title}"
+
+        list_item = ListItem(label=label_title)
         add_pack_item(
             list_item, tv_data, ids, info_hash, res["debridType"], mode, plugin
         )
     else:
-        cached_title = f"[B][Cached][/B]-{title}"
-        list_item = ListItem(label=f"{format_debrid_type}-Cached-{formated_title}")
-        set_video_properties(list_item, poster, mode, cached_title, overview, ids)
+        if get_setting("real_debrid_enabled"):
+            label_title = get_debrid_label(res, format_debrid_type, formated_title)
+        else:
+            label_title = f"{format_debrid_type}-Cached-{formated_title}"
+
+        list_item = ListItem(label=label_title)
+        set_video_properties(list_item, poster, mode, title, overview, ids)
         list_item.addContextMenuItems(
             [
                 (
@@ -121,7 +130,7 @@ def handle_debrid_items(
             list_item,
             ids,
             tv_data,
-            cached_title,
+            title,
             debrid_type=debrid_type,
             info_hash=info_hash,
             mode=mode,
@@ -210,3 +219,19 @@ def extract_publish_date(date):
         return ""
     match = re.search(r"\d{4}-\d{2}-\d{2}", date)
     return match.group() if match else ""
+
+
+def get_debrid_label_pack(res, format_debrid_type, formated_title):
+    if res.get("isCached"):
+        label_title = f"{format_debrid_type}-[B]Pack-Cached[/B]-{formated_title}"
+    else:
+        label_title = f"{format_debrid_type}-[B]Pack-Download[/B]-{formated_title}"
+    return label_title
+
+
+def get_debrid_label(res, format_debrid_type, formated_title):
+    if res.get("isCached"):
+        label_title = f"{format_debrid_type}-[B]Cached[/B]-{formated_title}"
+    else:
+        label_title = f"{format_debrid_type}-[B]Download[/B]-{formated_title}"
+    return label_title
