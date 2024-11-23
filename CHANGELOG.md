@@ -1,3 +1,9 @@
+## 0.3.3
+* Refactor Real Debrid due to recent API changes
+* Fixed Torrentio not getting results
+* Improvements on Torbox
+* Other minor improvements and fixes
+
 ## 0.3.2
 * Switch to tmdb and trakt for Anime section
 * Add Jackgram Support
