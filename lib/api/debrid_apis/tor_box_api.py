@@ -15,6 +15,18 @@ class Torbox(DebridClient):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
 
+    def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+        error_code = error_data.get("error")
+        match error_code:
+            case "BAD_TOKEN" | "AUTH_ERROR" | "OAUTH_VERIFICATION_ERROR":
+                raise ProviderException("Invalid Torbox token")
+            case "DOWNLOAD_TOO_LARGE":
+                raise ProviderException("Download size too large for the user plan")
+            case "ACTIVE_LIMIT" | "MONTHLY_LIMIT":
+                raise ProviderException("Download limit exceeded")
+            case "DOWNLOAD_SERVER_ERROR" | "DATABASE_ERROR":
+                raise ProviderException("Torbox server error")
+
     def _make_request(
         self,
         method,

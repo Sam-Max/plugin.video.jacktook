@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from time import sleep
 import traceback
 import requests
@@ -24,7 +25,7 @@ class DebridClient:
 
     def _perform_request(self, method, url, data, params):
         try:
-            return requests.request(
+            return requests.Session().request(
                 method,
                 url,
                 params=params,
@@ -44,12 +45,18 @@ class DebridClient:
             if is_expected_to_fail:
                 return
 
+            if response.headers.get("Content-Type") == "application/json":
+                error_content = response.json()
+                self._handle_service_specific_errors(error_content, error.response.status_code)
+            else:
+                error_content = response.text()
+
             if error.response.status_code == 401:
                 raise ProviderException("Invalid token")
 
             formatted_traceback = "".join(traceback.format_exception(error))
             raise ProviderException(
-                f"API Error {error.response.text} \n{formatted_traceback}",
+                f"API Error {error_content} \n{formatted_traceback}",
             )
 
     @staticmethod
@@ -88,6 +95,13 @@ class DebridClient:
             f"Torrent not reach {target_status} status.",
         )
 
+    @abstractmethod
+    async def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+        """
+        Service specific errors on api requests.
+        """
+        raise NotImplementedError
+    
     def get_torrent_info(self, torrent_id):
         raise NotImplementedError
 

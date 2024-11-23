@@ -4,6 +4,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (
     get_cached,
+    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -34,7 +35,8 @@ def get_torbox_pack_info(info_hash):
             ]
             files = []
             for id, name in enumerate(files_names):
-                title = f"[B][Cached][/B]-{name}"
+                tracker_color = get_random_color("TB")
+                title = f"[B][COLOR {tracker_color}][TB-Cached][/COLOR][/B]-{name}"
                 files.append((id, title))
             info["files"] = files
             set_cached(info, info_hash)
@@ -45,27 +47,26 @@ def get_torbox_pack_info(info_hash):
 
 def get_torbox_link(info_hash):
     kodilog("torbox::get_torbox_link")
-    response = add_torbox_torrent(info_hash)
-    kodilog(response)
+    add_torbox_torrent(info_hash)
     torr_info = client.get_available_torrent(info_hash)
-    kodilog(torr_info)
-    file = max(torr_info["files"], key=lambda x: x.get("size", 0))
-    response_data = client.create_download_link(torr_info.get("id"), file.get("id"))
-    return response_data.get("data")
+    if torr_info:
+        file = max(torr_info["files"], key=lambda x: x.get("size", 0))
+        response_data = client.create_download_link(torr_info.get("id"), file.get("id"))
+        return response_data.get("data")
 
 
 def add_torbox_torrent(info_hash):
     kodilog("torbox::add_torbox_torrent")
     magnet = info_hash_to_magnet(info_hash)
-    kodilog(magnet)
     response_data = client.add_magnet_link(magnet)
-    kodilog(response_data)
     if response_data.get("success") is False:
         raise TorboxException(f"Failed to add magnet link to Torbox {response_data}")
 
 
 def get_torbox_pack_link(file_id, torrent_id):
+    kodilog("torbox_utils::get_torbox_pack_link")
     response = client.create_download_link(torrent_id, file_id)
+    kodilog(response)
     return response.get("data")
 
 

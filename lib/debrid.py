@@ -47,56 +47,15 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     get_magnet_and_infohash(results, lock, dialog)
 
     if is_rd_enabled():
-        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-        torr_available = rd_client.get_user_torrent_list()
-        results_dict = {torr["hash"] for torr in torr_available}
-        for res in results:
-            debrid_dialog_update(total, dialog, lock)
-            res["debridType"] = "RD"
-            res["isDebrid"] = True 
-            if res["infoHash"] in results_dict: 
-                res["isCached"] = True 
-                cached_results.append(res)
-            else:
-                uncached_results.append(res)
-        # Add cause of RD removed cache check endpoint        
-        cached_results.extend(uncached_results)
-    elif is_pm_enabled():
-        with ThreadPoolExecutor() as executor:
-            pm_client = Premiumize(token=get_setting("premiumize_token"))
-            [
-                executor.submit(
-                    check_pm_cached,
-                    pm_client,
-                    res,
-                    cached_results,
-                    uncached_results,
-                    total,
-                    dialog,
-                    lock=lock,
-                )
-                for res in copy.deepcopy(results)
-            ]
-            executor.shutdown(wait=True)
+        check_rd_cached(results, cached_results, uncached_results, total, dialog, lock)
     elif is_tb_enabled():
-        with ThreadPoolExecutor() as executor:
-            tor_box_client = Torbox(token=get_setting("torbox_token"))
-            [
-                executor.submit(
-                    check_torbox_cached,
-                    tor_box_client,
-                    res,
-                    cached_results,
-                    uncached_results,
-                    total,
-                    dialog,
-                    lock=lock,
-                )
-                for res in copy.deepcopy(results)
-            ]
-            executor.shutdown(wait=True)
+        check_torbox_cached(
+            results, cached_results, uncached_results, total, dialog, lock
+        )
+    elif is_pm_enabled():
+        check_pm_cached(results, cached_results, uncached_results, total, dialog, lock)
 
-    if is_tb_enabled() or is_pm_enabled(): 
+    if is_tb_enabled() or is_pm_enabled():
         if get_setting("show_uncached"):
             cached_results.extend(uncached_results)
 
@@ -112,38 +71,60 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     return cached_results
 
 
-def check_pm_cached(client, res, cached_results, uncached_result, total, dialog, lock):
-    debrid_dialog_update(total, dialog, lock)
-    info_hash = res.get("infoHash")
-    if info_hash:
-        res["debridType"] = "PM"
-        torr_available = client.get_torrent_instant_availability(info_hash)
-        if torr_available.get("response")[0]:
-            with lock:
-                res["isDebrid"] = True
-                cached_results.append(res)
-        else:
-            with lock:
-                res["isDebrid"] = False
-                uncached_result.append(res)
+def check_pm_cached(results, cached_results, uncached_result, total, dialog, lock):
+    pm_client = Premiumize(token=get_setting("premiumize_token"))
+    hashes = [res.get("infoHash") for res in results]
+    response = pm_client.get_torrent_instant_availability(hashes)
+    for res in results:
+        debrid_dialog_update(total, dialog, lock)
+        info_hash = res.get("infoHash")
+        if info_hash:
+            res["debridType"] = "PM"
+            if info_hash in response.get("response"):
+                with lock:
+                    res["isDebrid"] = True
+                    cached_results.append(res)
+            else:
+                with lock:
+                    res["isDebrid"] = False
+                    uncached_result.append(res)
 
 
-def check_torbox_cached(
-    client, res, cached_results, uncached_result, total, dialog, lock
-):
-    debrid_dialog_update(total, dialog, lock)
-    info_hash = res.get("infoHash")
-    if info_hash:
-        res["debridType"] = "TB"
-        torr_available = client.get_torrent_instant_availability(info_hash)
-        if info_hash in torr_available.get("data", {}):
-            with lock:
-                res["isDebrid"] = True
-                cached_results.append(res)
+def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    torr_available = rd_client.get_user_torrent_list()
+    torr_available_hashes = [torr["hash"] for torr in torr_available]
+    for res in results:
+        debrid_dialog_update(total, dialog, lock)
+        res["debridType"] = "RD"
+        res["isDebrid"] = True
+        if res.get("infoHash") in torr_available_hashes:
+            res["isCached"] = True
+            cached_results.append(res)
         else:
-            with lock:
-                res["isDebrid"] = False
-                uncached_result.append(res)
+            uncached_results.append(res)
+    # Add cause of RD removed cache check endpoint
+    cached_results.extend(uncached_results)
+
+
+def check_torbox_cached(results, cached_results, uncached_results, total, dialog, lock):
+    kodilog("debrid::check_torbox_cached")
+    tor_box_client = Torbox(token=get_setting("torbox_token"))
+    hashes = [res.get("infoHash") for res in results]
+    response = tor_box_client.get_torrent_instant_availability(hashes)
+    for res in results:
+        debrid_dialog_update(total, dialog, lock)
+        info_hash = res.get("infoHash")
+        if info_hash:
+            res["debridType"] = "TB"
+            if info_hash in response.get("data", []):
+                with lock:
+                    res["isDebrid"] = True
+                    cached_results.append(res)
+            else:
+                with lock:
+                    res["isDebrid"] = False
+                    uncached_results.append(res)
 
 
 def get_magnet_and_infohash(results, lock, dialog):

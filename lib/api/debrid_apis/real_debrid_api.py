@@ -1,8 +1,7 @@
 from time import time
+from lib.api.debrid_apis.debrid_client import DebridClient
 from lib.utils.kodi_utils import sleep as ksleep
 from base64 import b64encode, b64decode
-import requests
-from requests import ConnectionError
 from lib.utils.kodi_utils import (
     copy2clip,
     dialog_ok,
@@ -18,7 +17,7 @@ from xbmcgui import DialogProgress
 # Modified to add func add_torrent_file, get_user_downloads_list
 
 
-class RealDebrid:
+class RealDebrid(DebridClient):
     BASE_URL = "https://api.real-debrid.com/rest/1.0"
     OAUTH_URL = "https://api.real-debrid.com/oauth/v2"
     OPENSOURCE_CLIENT_ID = "X245A4XAIBGVM"
@@ -27,6 +26,18 @@ class RealDebrid:
         self.encoded_token = encoded_token
         self.headers = {}
         self.initialize_headers()
+
+    def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+        error_code = error_data.get("error_code")
+        match error_code:
+            case 9:
+                raise ProviderException("Real-Debrid Permission denied")
+            case 22:
+                raise ProviderException("IP address not allowed")
+            case 34:
+                raise ProviderException("Too many requests")
+            case 35:
+                raise ProviderException("Content marked as infringing")
 
     def __del__(self):
         if self.encoded_token:
@@ -37,35 +48,14 @@ class RealDebrid:
         method,
         url,
         data=None,
-        file=None,
         params=None,
         is_return_none=False,
+        is_expected_to_fail=False,
     ):
-        try:
-            if method == "GET":
-                response = requests.get(url, params=params, headers=self.headers)
-            elif method == "POST":
-                response = requests.post(url, data=data, headers=self.headers)
-            elif method == "DELETE":
-                response = requests.delete(url, headers=self.headers)
-            elif method == "PUT":
-                response = requests.put(url, data=file, headers=self.headers)
-
-            if response.status_code == 401:
-                notification("Invalid token")
-                return
-            elif response.status_code == 403 and response.json().get("error_code") == 9:
-                notification("Real-Debrid Permission denied for free account")
-                return
-
-            if is_return_none:
-                return {}
-
-            return response.json()
-        except ConnectionError:
-            notification("No network connection")
-        except Exception as err:
-            notification(f"Error: {str(err)}")
+        params = params or {}
+        return super()._make_request(
+            method, url, data, params, is_return_none, is_expected_to_fail
+        )
 
     def initialize_headers(self):
         if self.encoded_token:

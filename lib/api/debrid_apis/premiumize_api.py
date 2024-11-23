@@ -24,9 +24,26 @@ class Premiumize(DebridClient):
         self.headers = {}
         self.initialize_headers()
 
+    async def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+        pass
+
     def initialize_headers(self):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    async def _make_request(
+        self,
+        method,
+        url,
+        data=None,
+        params=None,
+        is_return_none=False,
+        is_expected_to_fail=False,
+    ) -> dict | list:
+        params = params or {}
+        return await super()._make_request(
+            method, url, data, params, is_return_none, is_expected_to_fail
+        )
 
     def get_token(self, code):
         return self._make_request(
@@ -103,23 +120,6 @@ class Premiumize(DebridClient):
             progressDialog.close()
         except:
             pass
-
-    def download(self, magnet):
-        info_hash = magnet_to_info_hash(magnet)
-        folder_id = self.create_or_get_folder_id(info_hash)
-        response_data = self.add_magent_link(magnet, folder_id)
-        if "error" in response_data.get("status"):
-            kodilog(f"Failed to add magnet to Premiumize {response_data.get('message')}")
-            return
-        torrent_id = response_data["id"]
-        torr_info = self.get_torrent_info(torrent_id)
-        if torr_info["status"] == "finished":
-            if torr_info["folder_id"] is None:
-                torr_folder_data = self.get_folder_list(
-                    self.create_or_get_folder_id(info_hash)
-                )
-            else:
-                torr_folder_data = self.get_folder_list(torr_info["folder_id"])
 
     def create_or_get_folder_id(self, info_hash):
         folder_data = self.get_folder_list()
@@ -209,5 +209,3 @@ class Premiumize(DebridClient):
                 or torrent_name == torrent["name"]
             ):
                 return torrent
-
-
