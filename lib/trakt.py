@@ -23,7 +23,7 @@ from lib.utils.utils import (
     set_media_infotag,
     tmdb_get,
 )
-from lib.utils.kodi_utils import ADDON_PATH, url_for
+from lib.utils.kodi_utils import ADDON_PATH, container_update, url_for
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -107,7 +107,7 @@ def process_trakt_result(results, query, category, mode, submode, api, page, plu
         execute_thread_pool(results, show_trending_lists, mode, plugin)
     elif query == Trakt.WATCHLIST:
         execute_thread_pool(results, show_watchlist, mode, plugin)
-    
+
     if category == Trakt.ANIME_TRENDING or category == Trakt.ANIME_MOST_WATCHED:
         kodilog("trakt::process_trakt_result")
         execute_thread_pool(results, show_anime_common, submode, plugin)
@@ -401,6 +401,20 @@ def add_dir_item(mode, list_item, ids, title, plugin):
             isFolder=True,
         )
     else:
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Rescrape item",
+                    container_update(
+                        name="search",
+                        mode=mode,
+                        query=title,
+                        ids=ids,
+                        rescrape=True,
+                    ),
+                )
+            ]
+        )
         addDirectoryItem(
             plugin.handle,
             url_for(
