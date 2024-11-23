@@ -38,6 +38,8 @@ class RealDebrid(DebridClient):
                 raise ProviderException("Too many requests")
             case 35:
                 raise ProviderException("Content marked as infringing")
+            case 25:
+                raise ProviderException("Service Unavailable")
 
     def __del__(self):
         if self.encoded_token:
