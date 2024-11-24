@@ -134,7 +134,6 @@ def get_rd_pack_link(file_id, torrent_id):
 def get_rd_info():
     user = client.get_user()
     expiration = user["expiration"]
-    kodilog(expiration)
     try:
         expires = datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
     except:

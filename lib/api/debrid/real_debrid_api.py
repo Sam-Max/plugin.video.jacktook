@@ -1,5 +1,6 @@
 from time import time
 from lib.api.debrid.debrid_client import DebridClient
+from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import sleep as ksleep
 from base64 import b64encode, b64decode
 from lib.utils.kodi_utils import (
@@ -24,7 +25,7 @@ class RealDebrid(DebridClient):
 
     def __init__(self, encoded_token=None):
         self.encoded_token = encoded_token
-        self.headers = {}
+        super().__init__()
         self.initialize_headers()
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
@@ -62,10 +63,16 @@ class RealDebrid(DebridClient):
     def initialize_headers(self):
         if self.encoded_token:
             token_data = self.decode_token_str(self.encoded_token)
-            access_token_data = self.get_token(
-                token_data["client_id"], token_data["client_secret"], token_data["code"]
-            )
-            if access_token_data:
+            if "private_token" in token_data:
+                self.headers = {
+                    "Authorization": f"Bearer {token_data['private_token']}"
+                }
+            else:
+                access_token_data = self.get_token(
+                    token_data["client_id"],
+                    token_data["client_secret"],
+                    token_data["code"],
+                )
                 self.headers = {
                     "Authorization": f"Bearer {access_token_data['access_token']}"
                 }
@@ -107,23 +114,24 @@ class RealDebrid(DebridClient):
             "GET",
             f"{self.OAUTH_URL}/device/credentials",
             params={"client_id": self.OPENSOURCE_CLIENT_ID, "code": device_code},
+            is_expected_to_fail=True,
         )
-        if response_data:
-            if "client_secret" not in response_data:
-                return response_data
-            token_data = self.get_token(
-                response_data["client_id"], response_data["client_secret"], device_code
+
+        if "client_secret" not in response_data:
+            return response_data
+        
+        token_data = self.get_token(
+            response_data["client_id"], response_data["client_secret"], device_code
+        )
+        if "access_token" in token_data:
+            token = self.encode_token_data(
+                response_data["client_id"],
+                response_data["client_secret"],
+                token_data["refresh_token"],
             )
-            if token_data:
-                if "access_token" in token_data:
-                    token = self.encode_token_data(
-                        response_data["client_id"],
-                        response_data["client_secret"],
-                        token_data["refresh_token"],
-                    )
-                    return {"token": token}
-                else:
-                    return token_data
+            return {"token": token}
+        else:
+            return token_data
 
     def auth(self):
         response = self.get_device_code()
@@ -145,12 +153,11 @@ class RealDebrid(DebridClient):
             while time() - start_time < expires_in:
                 try:
                     response = self.authorize(device_code)
-                    if response:
-                        if "token" in response:
-                            progressDialog.close()
-                            set_setting("real_debrid_token", response["token"])
-                            dialog_ok("Success", "Authentication completed.")
-                            return
+                    if "token" in response:
+                        progressDialog.close()
+                        set_setting("real_debrid_token", response["token"])
+                        dialog_ok("Success", "Authentication completed.")
+                        return
                     if progressDialog.iscanceled():
                         progressDialog.close()
                         return

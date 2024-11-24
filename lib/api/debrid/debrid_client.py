@@ -1,8 +1,6 @@
 from abc import abstractmethod
-from time import sleep
 import traceback
 import requests
-
 from lib.api.jacktook.kodi import kodilog
 
 
@@ -10,7 +8,6 @@ class DebridClient:
     def __init__(self, token=None):
         self.token = token
         self.headers = {}
-        self.initialize_headers()
 
     def _make_request(
         self,
@@ -57,7 +54,10 @@ class DebridClient:
 
             if error.response.status_code == 401:
                 raise ProviderException("Invalid token")
-
+            
+            if error.response.status_code == 403:
+                raise ProviderException("Forbidden")
+            
             formatted_traceback = "".join(traceback.format_exception(error))
             
             kodilog(formatted_traceback)
@@ -77,39 +77,11 @@ class DebridClient:
                 f"Failed to parse response error: {error}. \nresponse: {response.text}"
             )
 
-    def initialize_headers(self):
-        raise NotImplementedError
-
-    def disable_access_token(self):
-        raise NotImplementedError
-
-    def wait_for_status(
-        self,
-        torrent_id,
-        target_status,
-        max_retries,
-        retry_interval,
-    ):
-        """Wait for the torrent to reach a particular status."""
-        retries = 0
-        while retries < max_retries:
-            torrent_info = self.get_torrent_info(torrent_id)
-            if torrent_info["status"] == target_status:
-                return torrent_info
-            sleep(retry_interval)
-            retries += 1
-        raise ProviderException(
-            f"Torrent not reach {target_status} status.",
-        )
-
     @abstractmethod
-    async def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+    def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         """
         Service specific errors on api requests.
         """
-        raise NotImplementedError
-
-    def get_torrent_info(self, torrent_id):
         raise NotImplementedError
 
 

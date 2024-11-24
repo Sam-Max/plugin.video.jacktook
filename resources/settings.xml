@@ -57,15 +57,18 @@
     <category label="30150">
         <setting label="30152" type="lsep"/>
         <setting id="real_debrid_enabled" type="bool" label="Enabled" default="false"/>
-        <setting id="real_debrid_token" type="text" label="30154" default=""/>
+        <setting id="real_debrid_token" type="text" label="30154" default="" visible="false"/>
         <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
         <setting label="Premiumize Configuration" type="lsep"/>
         <setting id="premiumize_enabled" type="bool" label="Enabled" default="false"/>
-        <setting id="premiumize_token" type="text" label="Token:" default=""/>
+        <setting id="premiumize_token" type="text" label="Token:" default="" visible="false"/>
         <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/pm_auth)" />
         <setting label="TorBox Configuration" type="lsep"/>
         <setting id="torbox_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="torbox_token" type="text" label="Token:" default=""/>
+        <!-- <setting label="AllDebrid Configuration" type="lsep"/>
+        <setting id="alldebrid_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="alldebrid_token" type="text" label="Token:" default=""/> -->
         <setting label="" type="lsep"/>
         <setting id="show_uncached" type="bool" label="Show uncached torrents" default="true"/>
     </category>
