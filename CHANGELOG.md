@@ -1,3 +1,6 @@
+## 0.3.4
+* Improvements on Torbox
+
 ## 0.3.3
 * Refactor Real Debrid due to recent API changes
 * Fixed Torrentio not getting results
