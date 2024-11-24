@@ -1,5 +1,5 @@
 import os
-from lib.api.debrid_apis.real_debrid_api import RealDebrid
+from lib.api.debrid.real_debrid_api import RealDebrid
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog

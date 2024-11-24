@@ -3,9 +3,9 @@ import requests
 import requests
 from threading import Lock
 from concurrent.futures import ThreadPoolExecutor
-from lib.api.debrid_apis.premiumize_api import Premiumize
-from lib.api.debrid_apis.real_debrid_api import RealDebrid
-from lib.api.debrid_apis.tor_box_api import Torbox
+from lib.api.debrid.premiumize_api import Premiumize
+from lib.api.debrid.real_debrid_api import RealDebrid
+from lib.api.debrid.tor_box_api import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import get_pm_link

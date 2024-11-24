@@ -1,4 +1,4 @@
-from lib.api.debrid_apis.debrid_client import DebridClient, ProviderException
+from lib.api.debrid.debrid_client import DebridClient, ProviderException
 from lib.utils.kodi_utils import notification
 from xbmcgui import DialogProgress
 from lib.utils.kodi_utils import sleep as ksleep, dialogyesno
@@ -51,7 +51,11 @@ class Torbox(DebridClient):
         )
 
     def get_user_torrent_list(self):
-        return self._make_request("GET", "/torrents/mylist")
+        return self._make_request(
+            "GET",
+            "/torrents/mylist",
+            params={"bypass_cache": "true"},
+        )
 
     def get_torrent_info(self, magnet_id):
         response = self.get_user_torrent_list()

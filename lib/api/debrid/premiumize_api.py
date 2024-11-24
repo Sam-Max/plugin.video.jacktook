@@ -1,6 +1,6 @@
 import time
 from typing import List, Optional, Dict
-from lib.api.debrid_apis.debrid_client import DebridClient, ProviderException
+from lib.api.debrid.debrid_client import DebridClient, ProviderException
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import copy2clip
 from lib.utils.kodi_utils import sleep as ksleep

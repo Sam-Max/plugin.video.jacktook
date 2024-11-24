@@ -1,5 +1,5 @@
 import os
-from lib.api.debrid_apis.premiumize_api import Premiumize
+from lib.api.debrid.premiumize_api import Premiumize
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (

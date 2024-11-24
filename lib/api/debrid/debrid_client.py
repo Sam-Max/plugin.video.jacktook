@@ -3,6 +3,8 @@ from time import sleep
 import traceback
 import requests
 
+from lib.api.jacktook.kodi import kodilog
+
 
 class DebridClient:
     def __init__(self, token=None):
@@ -47,7 +49,9 @@ class DebridClient:
 
             if response.headers.get("Content-Type") == "application/json":
                 error_content = response.json()
-                self._handle_service_specific_errors(error_content, error.response.status_code)
+                self._handle_service_specific_errors(
+                    error_content, error.response.status_code
+                )
             else:
                 error_content = response.text()
 
@@ -55,9 +59,12 @@ class DebridClient:
                 raise ProviderException("Invalid token")
 
             formatted_traceback = "".join(traceback.format_exception(error))
-            raise ProviderException(
-                f"API Error {error_content} \n{formatted_traceback}",
-            )
+            
+            kodilog(formatted_traceback)
+            kodilog(error_content)
+            kodilog(error.response.status_code)
+
+            raise ProviderException(f"API Error: {error_content}")
 
     @staticmethod
     def _parse_response(response, is_return_none):
@@ -101,7 +108,7 @@ class DebridClient:
         Service specific errors on api requests.
         """
         raise NotImplementedError
-    
+
     def get_torrent_info(self, torrent_id):
         raise NotImplementedError
 
