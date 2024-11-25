@@ -1,5 +1,4 @@
 import time
-from typing import List, Optional, Dict
 from lib.api.debrid.debrid_client import DebridClient, ProviderException
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import copy2clip
@@ -24,14 +23,14 @@ class Premiumize(DebridClient):
         self.headers = {}
         self.initialize_headers()
 
-    async def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+    def _handle_service_specific_errors(self, error_data, status_code: int):
         pass
 
     def initialize_headers(self):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
 
-    async def _make_request(
+    def _make_request(
         self,
         method,
         url,
@@ -39,9 +38,9 @@ class Premiumize(DebridClient):
         params=None,
         is_return_none=False,
         is_expected_to_fail=False,
-    ) -> dict | list:
+    ):
         params = params or {}
-        return await super()._make_request(
+        return super()._make_request(
             method, url, data, params, is_return_none, is_expected_to_fail
         )
 
@@ -181,7 +180,7 @@ class Premiumize(DebridClient):
             "POST", f"{self.BASE_URL}/transfer/delete", data={"id": torrent_id}
         )
 
-    def get_torrent_instant_availability(self, torrent_hashes: List[str]):
+    def get_torrent_instant_availability(self, torrent_hashes):
         results = self._make_request(
             "GET", f"{self.BASE_URL}/cache/check", params={"items[]": torrent_hashes}
         )
@@ -193,7 +192,7 @@ class Premiumize(DebridClient):
 
     def get_available_torrent(
         self, info_hash: str, torrent_name
-    ) -> Optional[Dict[str, Any]]:
+    ):
         torrent_list_response = self.get_transfer_list()
         if torrent_list_response.get("status") != "success":
             if torrent_list_response.get("message") == "Not logged in.":
