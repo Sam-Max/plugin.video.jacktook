@@ -12,12 +12,13 @@ class JacktookPlayer(Player):
         self.url = None
         self.curr_time = 0.0
         self.resume_time = 0.0
+        self.is_playing = False
         self.db = db
 
     def run(self, list_item):
         hide_busy_dialog()
-        if not self.url:
-            return self.run_error()
+        if self.url is None:
+            self.run_error()
         try:
             if self.resume_time > 0.0:
                 choice = xbmcgui.Dialog().yesno(
@@ -39,15 +40,18 @@ class JacktookPlayer(Player):
     #     if self.bookmark > 0.0:
     #         self.seekTime(self.bookmark)
 
+    def onPlayBackStopped(self):
+        self.is_playing = False
+
     def play_video(self, list_item):
+        self.is_playing = True 
         self.play(self.url, list_item)
-        sleep(3000)
         # if self.resume_time > 0.0:
         #     self.seekTime(self.resume_time)
         Thread(target=self.monitor_playback).start()
 
     def monitor_playback(self):
-        while self.isPlayingVideo():
+        while self.is_playing:
             try:
                 self.total_time = self.getTotalTime()
                 self.curr_time = self.getTime()
@@ -71,8 +75,8 @@ class JacktookPlayer(Player):
         #     list_item.setProperty("StartPercent", str(self.resume_time))
 
     def run_error(self):
-        notification("Playback Failed!!")
-        return False
+        self.is_playing = False
+        notification("Playback Failed")
 
     def set_bookmark(self):
         rounded_time = round(float(self.curr_time / self.total_time * 100), 1)
