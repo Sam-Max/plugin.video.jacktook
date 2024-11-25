@@ -86,8 +86,8 @@ class RealDebrid(DebridClient):
     def decode_token_str(token):
         try:
             client_id, client_secret, code = b64decode(token).decode().split(":")
-        except ValueError:
-            raise ProviderException("Invalid token")
+        except ValueError as e:
+            raise ProviderException(f"Invalid token {e}")
         return {"client_id": client_id, "client_secret": client_secret, "code": code}
 
     def get_device_code(self):
@@ -119,7 +119,7 @@ class RealDebrid(DebridClient):
 
         if "client_secret" not in response_data:
             return response_data
-        
+
         token_data = self.get_token(
             response_data["client_id"], response_data["client_secret"], device_code
         )
@@ -132,6 +132,12 @@ class RealDebrid(DebridClient):
             return {"token": token}
         else:
             return token_data
+
+    def remove_auth(self):
+        set_setting("real_debrid_token", "")
+        set_setting("real_debid_authorized", "false")
+        set_setting("real_debrid_user", "")
+        dialog_ok("Success", "Authentification Removed.")
 
     def auth(self):
         response = self.get_device_code()
@@ -156,6 +162,9 @@ class RealDebrid(DebridClient):
                     if "token" in response:
                         progressDialog.close()
                         set_setting("real_debrid_token", response["token"])
+                        set_setting("real_debid_authorized", "true")
+                        self.initialize_headers()
+                        set_setting("real_debrid_user", self.get_user()["username"])
                         dialog_ok("Success", "Authentication completed.")
                         return
                     if progressDialog.iscanceled():

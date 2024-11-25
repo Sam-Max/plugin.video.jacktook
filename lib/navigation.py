@@ -120,7 +120,7 @@ if JACKTORR_ADDON:
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 
-if get_setting("kodi_language"):     
+if get_setting("kodi_language"):
     kodi_lang = getLanguage(ISO_639_1)
 else:
     kodi_lang = "en"
@@ -964,6 +964,12 @@ def clear_cached_all():
 def rd_auth():
     rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
     rd_client.auth()
+
+
+@plugin.route("/rd_remove_auth")
+def rd_auth():
+    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    rd_client.remove_auth()
 
 
 @plugin.route("/pm_auth")

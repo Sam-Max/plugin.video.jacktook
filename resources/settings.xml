@@ -57,8 +57,11 @@
     <category label="30150">
         <setting label="30152" type="lsep"/>
         <setting id="real_debrid_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="real_debid_authorized" type="bool" label="" default="false" visible="false"/>
+        <setting id="real_debrid_user" type="text" label="User" default="" visible="eq(-1,true)"/>
         <setting id="real_debrid_token" type="text" label="30154" default="" visible="false"/>
         <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
+        <setting type="action" label="Remove Authorization" action="RunPlugin(plugin://plugin.video.jacktook/rd_remove_auth)" />
         <setting label="Premiumize Configuration" type="lsep"/>
         <setting id="premiumize_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="premiumize_token" type="text" label="Token:" default="" visible="false"/>
