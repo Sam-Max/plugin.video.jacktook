@@ -1,3 +1,9 @@
+## 0.3.5
+* Fix Real Debrid Authentification not working
+* Add Real Debrid remove authorization button and username info on settings
+* Add option to select Kodi language for TMDB metadata.
+* Playback improvements
+
 ## 0.3.4
 * Improvements on Torbox
 
