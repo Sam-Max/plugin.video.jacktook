@@ -120,9 +120,11 @@ if JACKTORR_ADDON:
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 
-kodi_lang = getLanguage(ISO_639_1)
-if kodi_lang:
-    tmdb.language = kodi_lang
+if get_setting("kodi_language"):     
+    kodi_lang = getLanguage(ISO_639_1)
+else:
+    kodi_lang = "en"
+tmdb.language = kodi_lang
 
 
 def query_arg(name, required=True):

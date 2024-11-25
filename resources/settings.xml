@@ -90,6 +90,7 @@
     <category label="30100">
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
+        <setting id="kodi_language" type="bool" label="Use Kodi Language" default="false"/>
     </category>
     <category label="Trakt">
         <setting label="Trakt Configuration" type="lsep"/>
