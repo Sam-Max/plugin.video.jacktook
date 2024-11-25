@@ -98,55 +98,6 @@ class Torbox(DebridClient):
         else:
             notification(f"Magnet sent to cloud")
 
-    def download2(self, magnet, pack=False):
-        cancelled = False
-        TORBOX_ERROR_STATUS = ["failed"]
-        self.add_magnet_link(magnet)
-        ksleep(3000)
-        progressDialog = DialogProgress()
-        progressDialog.create("Cloud Transfer")
-        while True:
-            torrent_info = self.get_torrent_info(magnet)
-            if torrent_info:
-                torrent_id = torrent_info.get("id")
-                status = torrent_info["download_state"]
-                progress = torrent_info["progress"]
-                if status == "metaDL":
-                    progressDialog.update(int(progress), "Getting Metadata...")
-                if status == "downloading":
-                    while status == "downloading" and progress < 100:
-                        msg = f"{status}...\n"
-                        msg += f"Speed: {torrent_info['download_speed']}\n"
-                        msg += f"ETA: {torrent_info['eta']}\n"
-                        msg += f"Seeds:{torrent_info['seeds']}\n"
-                        msg += f"Progress:{torrent_info['progress']}\n"
-                        progress = torrent_info["progress"]
-                        progressDialog.update(int(progress), msg)
-                        if progressDialog.iscanceled():
-                            cancelled = True
-                            break
-                        ksleep(5)
-                        torrent_info = self.get_torrent_info(magnet)
-                        print(torrent_info)
-                        status = torrent_info["download_state"]
-                        if any(x in status for x in TORBOX_ERROR_STATUS):
-                            notification(f"Torbox Error. Status {status}")
-                            break
-                elif status == "completed" or cancelled is True:
-                    break
-        try:
-            progressDialog.close()
-        except Exception:
-            pass
-        ksleep(500)
-        if cancelled:
-            response = dialogyesno(
-                "Kodi", "Do you want to continue the transfer in background?"
-            )
-            if response:
-                pass
-            else:
-                self.delete_torrent(torrent_id)
 
     def delete_torrent(self, torrent_id):
         self._make_request(
