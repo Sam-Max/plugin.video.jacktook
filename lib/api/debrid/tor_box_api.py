@@ -17,15 +17,14 @@ class Torbox(DebridClient):
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error")
-        match error_code:
-            case "BAD_TOKEN" | "AUTH_ERROR" | "OAUTH_VERIFICATION_ERROR":
-                raise ProviderException("Invalid Torbox token")
-            case "DOWNLOAD_TOO_LARGE":
-                raise ProviderException("Download size too large for the user plan")
-            case "ACTIVE_LIMIT" | "MONTHLY_LIMIT":
-                raise ProviderException("Download limit exceeded")
-            case "DOWNLOAD_SERVER_ERROR" | "DATABASE_ERROR":
-                raise ProviderException("Torbox server error")
+        if error_code in {"BAD_TOKEN", "AUTH_ERROR", "OAUTH_VERIFICATION_ERROR"}:
+            raise ProviderException("Invalid Torbox token")
+        elif error_code == "DOWNLOAD_TOO_LARGE":
+            raise ProviderException("Download size too large for the user plan")
+        elif error_code in {"ACTIVE_LIMIT", "MONTHLY_LIMIT"}:
+            raise ProviderException("Download limit exceeded")
+        elif error_code in {"DOWNLOAD_SERVER_ERROR", "DATABASE_ERROR"}:
+            raise ProviderException("Torbox server error")
 
     def _make_request(
         self,
@@ -97,7 +96,6 @@ class Torbox(DebridClient):
             notification(f"Failed to add magnet link to Torbox {response_data}")
         else:
             notification(f"Magnet sent to cloud")
-
 
     def delete_torrent(self, torrent_id):
         self._make_request(

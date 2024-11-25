@@ -30,17 +30,17 @@ class RealDebrid(DebridClient):
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
-        match error_code:
-            case 9:
-                raise ProviderException("Real-Debrid Permission denied")
-            case 22:
-                raise ProviderException("IP address not allowed")
-            case 34:
-                raise ProviderException("Too many requests")
-            case 35:
-                raise ProviderException("Content marked as infringing")
-            case 25:
-                raise ProviderException("Service Unavailable")
+        if error_code == 9:
+            raise ProviderException("Real-Debrid Permission denied")
+        elif error_code == 22:
+            raise ProviderException("IP address not allowed")
+        elif error_code == 34:
+            raise ProviderException("Too many requests")
+        elif error_code == 35:
+            raise ProviderException("Content marked as infringing")
+        elif error_code == 25:
+            raise ProviderException("Service Unavailable")
+
 
     def __del__(self):
         if self.encoded_token:
