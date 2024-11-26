@@ -1,8 +1,6 @@
-import copy
 import requests
 import requests
 from threading import Lock
-from concurrent.futures import ThreadPoolExecutor
 from lib.api.debrid.premiumize_api import Premiumize
 from lib.api.debrid.real_debrid_api import RealDebrid
 from lib.api.debrid.tor_box_api import Torbox
@@ -11,7 +9,6 @@ from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import get_pm_link
 from lib.utils.rd_utils import get_rd_link, get_rd_pack_link
 from lib.utils.torbox_utils import get_torbox_link, get_torbox_pack_link
-from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
     get_cached,
@@ -130,9 +127,8 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
 def get_magnet_and_infohash(results, lock, dialog):
     with lock:
         for count, res in enumerate(results):
-            magnet = ""
-            info_hash = ""
-            if guid := res.get("guid"):
+            magnet = info_hash = ""
+            if guid := res.get("guid", ""):
                 if guid.startswith("magnet:?") or len(guid) == 40:
                     magnet = guid
                     info_hash = (
@@ -159,16 +155,15 @@ def get_magnet_and_infohash(results, lock, dialog):
 
 
 def get_magnet_from_uri(uri, dialog, count, results):
-    magnet = ""
-    info_hash = ""
     dialog.update(
         0,
         "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-        f"Extracting Magnet...{count}/{len(results)}",
+        f"Processing...{count}/{len(results)}",
     )
+    magnet = info_hash = ""
     if is_url(uri):
         try:
-            res = requests.get(
+            res = requests.head(
                 uri, allow_redirects=False, timeout=10, headers=USER_AGENT_HEADER
             )
             if res.status_code == 200:
@@ -177,8 +172,8 @@ def get_magnet_from_uri(uri, dialog, count, results):
                     if uri.startswith("magnet:"):
                         magnet = uri
                         info_hash = get_info_hash_from_magnet(uri).lower()
-                elif res.headers.get("Content-Type") == "application/octet-stream":
-                    magnet = extract_magnet_from_url(uri)
+                # elif res.headers.get("Content-Type") == "application/octet-stream":
+                #     magnet = extract_magnet_from_url(uri)
         except Exception as e:
             kodilog(f"Failed to extract torrent data from: {str(e)}")
     return magnet, info_hash
