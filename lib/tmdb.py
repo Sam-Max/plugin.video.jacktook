@@ -138,8 +138,8 @@ def show_items(res, plugin, mode):
         elif "title" in res:
             title = res.title
 
-        if media_type == "movies":
-            mode = media_type
+        if media_type == "movie":
+            mode = "movies"
             release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
             tvdb_id = -1
