@@ -6,7 +6,7 @@ from lib.utils.kodi_utils import (
     get_property,
     set_property,
     clear_property,
-    dialog_ok
+    dialog_ok,
 )
 from time import time
 from lib.api.jacktook.kodi import kodilog
@@ -15,7 +15,7 @@ from lib.updater import updates_check_addon
 
 
 first_run_update_prop = "jacktook.first_run_update"
-pause_services_prop= "jacktook.pause_services"
+pause_services_prop = "jacktook.pause_services"
 
 
 class OnNotificationActions:
@@ -35,6 +35,11 @@ class CheckKodiVersion:
                 "Jacktook",
                 "Kodi 20 or above required[CR]Please update Kodi to use addon",
             )
+
+
+class DatabaseSetup:
+    def run(self):
+        setup_databases()
 
 
 class UpdateCheck:
@@ -71,7 +76,7 @@ class JacktookMOnitor(xbmc.Monitor):
 
     def start(self):
         CheckKodiVersion().run()
-        setup_databases()
+        DatabaseSetup().run()
         Thread(target=UpdateCheck().run).start()
 
     def onNotification(self, sender, method, data):

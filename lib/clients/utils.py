@@ -5,10 +5,28 @@ from lib.clients.jackgram import Jackgram
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.torrentio import Torrentio
 from lib.clients.zilean import Zilean
-from lib.utils.kodi_utils import get_setting, notification, translation
+from lib.utils.kodi_utils import ADDON, get_setting, notification, translation
 from lib.utils.utils import Indexer
 from lib.utils.settings import get_int_setting
 from lib.api.jacktook.kodi import kodilog
+
+
+def load_indexer_state():
+    previous_indexer = ADDON.getSetting("previous_indexer")
+    return {"previous_indexer": previous_indexer if previous_indexer else ""}
+
+
+indexer_state = load_indexer_state()
+
+
+def check_indexer(current_indexer):
+    if current_indexer != indexer_state["previous_indexer"]:
+        indexer_state["previous_indexer"] = current_indexer
+        ADDON.setSetting("previous_indexer", indexer_state["previous_indexer"])
+        ADDON.setSetting("debrid_cached_check", "false")
+        return True
+    ADDON.setSetting("debrid_cached_check", "true")
+    return False
 
 
 def get_client(indexer):

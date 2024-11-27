@@ -26,16 +26,17 @@ dialog_update = {"count": -1, "percent": 50}
 
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
-    kodilog("debrid::check_debrid_cached")
     if not rescrape:
-        if query:
-            if mode == "tv" or media_type == "tv":
-                cached_results = get_cached(query, params=(episode, "deb"))
-            else:
-                cached_results = get_cached(query, params=("deb"))
+        debrid_cached_check = get_setting("debrid_cached_check")
+        if debrid_cached_check:
+            if query:
+                if mode == "tv" or media_type == "tv":
+                    cached_results = get_cached(query, params=(episode, "deb"))
+                else:
+                    cached_results = get_cached(query, params=("deb"))
 
-            if cached_results:
-                return cached_results
+                if cached_results:
+                    return cached_results
 
     lock = Lock()
     cached_results = []
