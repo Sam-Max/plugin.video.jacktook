@@ -162,7 +162,8 @@ def handle_torrent_items(
         else (guid if guid and guid.startswith("magnet:?") else "")
     )
     url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
-    if not url.startswith("magnet:?"):
+    if url.startswith("magnet:?") and not magnet:
+        magnet = url
         url = ""
     list_item = ListItem(label=formated_title)
     set_video_properties(list_item, poster, mode, title, overview, ids)

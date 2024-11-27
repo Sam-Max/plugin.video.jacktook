@@ -9,6 +9,7 @@ from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import get_pm_link
 from lib.utils.rd_utils import get_rd_link, get_rd_pack_link
 from lib.utils.torbox_utils import get_torbox_link, get_torbox_pack_link
+from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
     get_cached,
@@ -41,7 +42,8 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     uncached_results = []
 
     total = len(results)
-    get_magnet_and_infohash(results, lock, dialog)
+
+    extract_infohash(results, dialog)
 
     if is_rd_enabled():
         check_rd_cached(results, cached_results, uncached_results, total, dialog, lock)
@@ -124,42 +126,33 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
                     uncached_results.append(res)
 
 
-def get_magnet_and_infohash(results, lock, dialog):
-    with lock:
-        for count, res in enumerate(results):
-            magnet = info_hash = ""
-            if guid := res.get("guid", ""):
-                if guid.startswith("magnet:?") or len(guid) == 40:
-                    magnet = guid
-                    info_hash = (
-                        res["infoHash"].lower()
-                        if res.get("infoHash")
-                        else get_info_hash_from_magnet(guid).lower()
-                    )
-                else:
-                    # For some indexers, the guid is a torrent file url
-                    magnet, info_hash = get_magnet_from_uri(
-                        res.get("guid"), dialog, count, results
-                    )
+def extract_infohash(results, dialog):
+    for count, res in enumerate(results[:]):
+        dialog.update(
+            0,
+            "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+            f"Processing...{count}/{len(results)}",
+        )
 
-            if not (magnet and info_hash):
-                url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
-                if url.startswith("magnet:?"):
-                    magnet = url
-                    info_hash = get_info_hash_from_magnet(url).lower()
-                else:
-                    magnet, info_hash = get_magnet_from_uri(url, dialog, count, results)
+        info_hash = None
+        if res.get("infoHash"):
+            info_hash = res["infoHash"].lower()
+        elif (guid := res.get("guid", "")) and (
+            guid.startswith("magnet:?") or len(guid) == 40
+        ):
+            info_hash = get_info_hash_from_magnet(guid).lower()
+        elif (
+            url := res.get("magnetUrl", "") or res.get("downloadUrl", "")
+        ) and url.startswith("magnet:?"):
+            info_hash = get_info_hash_from_magnet(url).lower()
 
-            res["magnet"] = magnet
+        if info_hash:
             res["infoHash"] = info_hash
+        else:
+            results.remove(res)
 
 
-def get_magnet_from_uri(uri, dialog, count, results):
-    dialog.update(
-        0,
-        "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-        f"Processing...{count}/{len(results)}",
-    )
+def get_magnet_from_uri(uri):
     magnet = info_hash = ""
     if is_url(uri):
         try:
@@ -172,8 +165,8 @@ def get_magnet_from_uri(uri, dialog, count, results):
                     if uri.startswith("magnet:"):
                         magnet = uri
                         info_hash = get_info_hash_from_magnet(uri).lower()
-                # elif res.headers.get("Content-Type") == "application/octet-stream":
-                #     magnet = extract_magnet_from_url(uri)
+                elif res.headers.get("Content-Type") == "application/octet-stream":
+                    magnet = extract_magnet_from_url(uri)
         except Exception as e:
             kodilog(f"Failed to extract torrent data from: {str(e)}")
     return magnet, info_hash
