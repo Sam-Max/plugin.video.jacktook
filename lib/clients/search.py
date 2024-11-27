@@ -78,7 +78,7 @@ def search_client(
             dialog.create(
                 f"Jacktook [COLOR FFFF6B00]{current_indexer}[/COLOR]", "Searching..."
             )
-            response = client.search(query)
+            response = client.search(query, mode, media_type, season, episode)
 
         elif current_indexer == Indexer.BURST:
             response = client.search(tmdb_id, query, mode, media_type, season, episode)

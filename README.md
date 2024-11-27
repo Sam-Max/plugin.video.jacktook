@@ -60,8 +60,9 @@ Detailed instructions are available at [LinuxServer.io Jackett Docker](https://h
 Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
 
 ## How to run Zilean service using Docker:
+The host url for Zilean is: https://zilean.elfhosted.com
 
-Detailed instructions are available at [Zilean](https://github.com/iPromKnight/zilean) 
+Detailed instructions for self-hosting are available at [Zilean](https://github.com/iPromKnight/zilean) 
 
 
 ## How to run Jackgram service using Docker:

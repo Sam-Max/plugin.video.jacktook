@@ -16,7 +16,7 @@
     <category label="30020">
         <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst|Zilean|Jackgram" default="Torrentio"/>
         <setting label="Torrentio Configuration" type="lsep"/>
-        <setting id="torrentio_host" type="text" label="30025" default=""/>
+        <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
         <setting id="torrentio_results_per_page" type="number" label="30029" default="60"/>
         <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached|None" default="None"/>
@@ -28,13 +28,13 @@
         <setting id="jackgram_desc_length" type="number" label="30026" default="100"/>
         <setting id="jackgram_sort_by" type="labelenum" label="Sort" values="Size|Quality|None" default="Quality"/>
         <setting label="Elfhosted/KnightCrawler Configuration" type="lsep"/>
-        <setting id="elfhosted_host" type="text" label="30025" default=""/>
+        <setting id="elfhosted_host" type="text" label="30025" default="https://torrentio.elfhosted.com/"/>
         <setting id="elfhosted_desc_length" type="number" label="30026" default="100"/>
         <setting id="elfhosted_results_per_page" type="number" label="30029" default="25"/>
         <setting id="elfhosted_sort_by" type="labelenum" label="30028" values="Size|Cached|Quality" default="Seeds"/>
         <setting label="Zilean Configuration" type="lsep"/>
-        <setting id="zilean_host" type="text" label="Zilean Host" default=""/>
-        <setting id="zilean_timeout" type="number" label="Zilean Timeout" default="5"/>
+        <setting id="zilean_host" type="text" label="Zilean Host" default="https://zilean.elfhosted.com"/>
+        <setting id="zilean_timeout" type="number" label="Zilean Timeout" default="10"/>
         <setting label="30022" type="lsep"/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>

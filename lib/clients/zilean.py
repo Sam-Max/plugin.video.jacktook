@@ -3,10 +3,8 @@ import logging
 from types import SimpleNamespace
 from requests import ConnectTimeout, ReadTimeout, Session
 from requests.exceptions import RequestException
-
-
-# Source: https://rivenmedia/riven/backend/program/scrapers/zilean.py
-# With some modifications from source
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.utils import USER_AGENT_HEADER
 
 
 class Zilean:
@@ -29,12 +27,9 @@ class Zilean:
             self._notification(f"Zilean failed to initialize: {e}")
             return False
 
-    def search(self, query):
-        if not query:
-            return {}
-
+    def search(self, query, mode, media_type, season, episode):
         try:
-            data = self.scrape(query)
+            data = self.api_scrape(query, mode, media_type, season, episode)
             return self.parse_response(data)
         except RateLimitExceeded:
             logging.warning(f"Zilean ratelimit exceeded for query: {query}")
@@ -46,46 +41,47 @@ class Zilean:
             logging.error(f"Zilean request exception: {e}")
         except Exception as e:
             logging.error(f"Zilean exception thrown: {e}")
-        return {}
 
-    def scrape(self, query):
-        data, item_count = self.api_scrape(query)
-        if data:
-            logging.info(
-                "SCRAPER", f"Found {len(data)} entries out of {item_count} for {query}"
+    def api_scrape(self, query, mode, media_type, season, episode):
+        filtered_url = f"{self.url}/dmm/filtered"
+        search_url = f"{self.url}/dmm/search"
+
+        if mode in {"tv", "movies"} or media_type in {"tv", "movies"}:
+            params = {"Query": query}
+            if mode == "tv" or media_type == "tv":
+                params.update({"Season": season, "Episode": episode})
+
+            res = self.session.get(
+                filtered_url, params=params, headers=USER_AGENT_HEADER, timeout=10
             )
         else:
-            logging.info("NOT_FOUND", f"No entries found for {query}")
-        return data 
-    
-    def api_scrape(self, query):
-        query_text = query
-        if not query_text:
-            return {}, 0
+            payload = {"queryText": query}
+            res = self.session.post(
+                search_url,
+                json=payload,
+                headers=USER_AGENT_HEADER,
+                timeout=self.timeout,
+            )
 
-        url = f"{self.url}/dmm/search"
-        payload = {"queryText": query_text}
+        if res.status_code != 200:
+            return
 
-        response = self.session.post(url, json=payload, timeout=self.timeout)
-        if response.status_code != 200:
-            return {}, 0
         response = json.loads(
-            response.content, object_hook=lambda item: SimpleNamespace(**item)
+            res.content, object_hook=lambda item: SimpleNamespace(**item)
         )
 
         torrents = []
         for result in response:
-            if not result.filename or not result.infoHash:
-                continue
             torrents.append(
                 {
-                    "infoHash": result.infoHash,
-                    "filename": result.filename,
-                    "filesize": result.filesize,
+                    "infoHash": result.info_hash,
+                    "filename": result.raw_title,
+                    "filesize": result.size,
+                    "languages": result.languages,
                 }
             )
 
-        return torrents, len(torrents)
+        return torrents
 
     def parse_response(self, data):
         results = []
@@ -99,7 +95,7 @@ class Zilean:
                     "size": item["filesize"],
                     "qualityTitle": "",
                     "seeders": 0,
-                    "languages": "",
+                    "languages": item["languages"],
                     "fullLanguages": "",
                     "publishDate": "",
                     "peers": 0,
