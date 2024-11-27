@@ -1,3 +1,9 @@
+## 0.3.6
+* Fix tmdb movies results not showing on main search
+* Improve Jackett/Prowlarr integration with Debrid for faster results
+* Add mechanism to detect indexers change when making a search
+* Minor fixes and improvements.
+
 ## 0.3.5
 * Fix Real Debrid Authentification not working
 * Add Real Debrid remove authorization button and username info on settings

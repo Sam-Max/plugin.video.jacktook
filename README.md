@@ -5,7 +5,7 @@ A Kodi addon for torrent finding and streaming.
 
 ## Features.
 
-**Torrent Search Sources**: Jacktook Burst, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr and Zilean. 
+**Torrent Search Sources**: Jacktook Burst, Jackgram, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr and Zilean. 
 
 **Torrent Engines**: Jacktorr, Torrest and Elementum.
 
