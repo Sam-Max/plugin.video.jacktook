@@ -15,6 +15,17 @@ from xbmcplugin import addDirectoryItem
 pm_client = Premiumize(token=get_setting("premiumize_token"))
 
 
+def get_pm_link(infoHash):
+    magnet = info_hash_to_magnet(infoHash)
+    response_data = pm_client.create_download_link(magnet)
+    if "error" in response_data.get("status"):
+        kodilog(f"Failed to get link from Premiumize {response_data.get('message')}")
+        return
+    content = response_data.get("content")
+    selected_file = max(content, key=lambda x: x.get("size", 0))
+    return selected_file["stream_link"]
+
+
 def get_pm_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
@@ -76,12 +87,3 @@ def show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
 
 
 
-def get_pm_link(infoHash):
-    magnet = info_hash_to_magnet(infoHash)
-    response_data = pm_client.create_download_link(magnet)
-    if "error" in response_data.get("status"):
-        kodilog(f"Failed to get link from Premiumize {response_data.get('message')}")
-        return
-    content = response_data.get("content")
-    selected_file = max(content, key=lambda x: x.get("size", 0))
-    return selected_file["stream_link"]

@@ -72,22 +72,20 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
 
 
 def check_pm_cached(results, cached_results, uncached_result, total, dialog, lock):
+    kodilog("debrid::check_pm_cached")
     pm_client = Premiumize(token=get_setting("premiumize_token"))
     hashes = [res.get("infoHash") for res in results]
-    response = pm_client.get_torrent_instant_availability(hashes)
-    for res in results:
+    cached_torrents = pm_client.get_torrent_instant_availability(hashes)
+    cached_response = cached_torrents.get("response")
+    for e, res in enumerate(results):
         debrid_dialog_update(total, dialog, lock)
-        info_hash = res.get("infoHash")
-        if info_hash:
-            res["debridType"] = "PM"
-            if info_hash in response.get("response"):
-                with lock:
-                    res["isDebrid"] = True
-                    cached_results.append(res)
-            else:
-                with lock:
-                    res["isDebrid"] = False
-                    uncached_result.append(res)
+        res["debridType"] = "PM"
+        if cached_response[e] is True:
+            res["isDebrid"] = True
+            cached_results.append(res)
+        else:
+            res["isDebrid"] = False
+            uncached_result.append(res)
 
 
 def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
