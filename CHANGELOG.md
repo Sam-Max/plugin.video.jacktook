@@ -1,3 +1,8 @@
+## 0.3.7
+* Update Premiumize.
+* Update Zilean (now supports movies and tv search)
+* Update TMDB Helper json file with zip file
+
 ## 0.3.6
 * Fix tmdb movies results not showing on main search
 * Improve Jackett/Prowlarr integration with Debrid for faster results
