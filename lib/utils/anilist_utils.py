@@ -1,9 +1,9 @@
 import os
 from lib.api.jacktook.kodi import kodilog
 from lib.db.anime_db import get_all_ids
-from lib.anizip import search_anizip_episodes
-from lib.api.anilist_api import anilist_client
-from lib.simkl import search_simkl_episodes
+from lib.utils.anizip_utils import search_anizip_episodes
+from lib.clients.anilist import anilist_client
+from lib.utils.simkl_utils import search_simkl_episodes
 from lib.utils.utils import (
     add_next_button,
     get_cached,

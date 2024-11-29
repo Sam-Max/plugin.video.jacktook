@@ -1,5 +1,5 @@
 import os
-from lib.api.debrid.real_debrid_api import RealDebrid
+from lib.clients.debrid.realdebrid import RealDebrid
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
@@ -11,6 +11,7 @@ from lib.utils.kodi_utils import (
     url_for,
 )
 from lib.utils.utils import (
+    debrid_dialog_update,
     get_cached,
     get_random_color,
     info_hash_to_magnet,
@@ -22,6 +23,22 @@ from xbmcplugin import addDirectoryItem
 
 
 client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+
+
+def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
+    torr_available = client.get_user_torrent_list()
+    torr_available_hashes = [torr["hash"] for torr in torr_available]
+    for res in results:
+        debrid_dialog_update(total, dialog, lock)
+        res["debridType"] = "RD"
+        res["isDebrid"] = True
+        if res.get("infoHash") in torr_available_hashes:
+            res["isCached"] = True
+            cached_results.append(res)
+        else:
+            uncached_results.append(res)
+    # Add cause of RD removed cache check endpoint
+    cached_results.extend(uncached_results)
 
 
 def add_rd_magnet(magnet, is_pack=False):

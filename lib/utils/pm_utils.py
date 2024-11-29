@@ -1,8 +1,9 @@
 import os
-from lib.api.debrid.premiumize_api import Premiumize
+from lib.clients.debrid.premiumize import Premiumize
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (
+    debrid_dialog_update,
     get_cached,
     info_hash_to_magnet,
     set_cached,
@@ -13,6 +14,22 @@ from xbmcplugin import addDirectoryItem
 
 
 pm_client = Premiumize(token=get_setting("premiumize_token"))
+
+
+def check_pm_cached(results, cached_results, uncached_result, total, dialog, lock):
+    kodilog("debrid::check_pm_cached")
+    hashes = [res.get("infoHash") for res in results]
+    cached_torrents = pm_client.get_torrent_instant_availability(hashes)
+    cached_response = cached_torrents.get("response")
+    for e, res in enumerate(results):
+        debrid_dialog_update(total, dialog, lock)
+        res["debridType"] = "PM"
+        if cached_response[e] is True:
+            res["isDebrid"] = True
+            cached_results.append(res)
+        else:
+            res["isDebrid"] = False
+            uncached_result.append(res)
 
 
 def get_pm_link(infoHash):
@@ -34,7 +51,9 @@ def get_pm_pack_info(info_hash):
     magnet = info_hash_to_magnet(info_hash)
     response_data = pm_client.create_download_link(magnet)
     if "error" in response_data.get("status"):
-        notification(f"Failed to get link from Premiumize {response_data.get('message')}")
+        notification(
+            f"Failed to get link from Premiumize {response_data.get('message')}"
+        )
         return
     info = {}
     if response_data.get("content") > 0:
@@ -58,11 +77,7 @@ def show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
     for url, title in info["files"]:
         list_item = ListItem(label=f"{title}")
         list_item.setArt(
-            {
-                "icon": os.path.join(
-                    ADDON_PATH, "resources", "img", "trending.png"
-                )
-            }
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
         addDirectoryItem(
             plugin.handle,
@@ -84,6 +99,3 @@ def show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
             list_item,
             isFolder=False,
         )
-
-
-

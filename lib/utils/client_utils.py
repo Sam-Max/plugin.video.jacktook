@@ -1,5 +1,5 @@
-from lib.clients.burst import Burst
-from lib.clients.elhosted import Elfhosted
+from lib.clients.jacktook_burst import Burst
+from lib.clients.elfhosted import Elfhosted
 from lib.clients.jackett import Jackett
 from lib.clients.jackgram import Jackgram
 from lib.clients.prowlarr import Prowlarr

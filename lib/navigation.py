@@ -5,9 +5,9 @@ from threading import Thread
 from urllib.parse import quote
 import requests
 
-from lib.api.debrid.premiumize_api import Premiumize
-from lib.api.debrid.real_debrid_api import RealDebrid
-from lib.api.debrid.tor_box_api import Torbox
+from lib.clients.debrid.premiumize import Premiumize
+from lib.clients.debrid.realdebrid import RealDebrid
+from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
@@ -19,7 +19,7 @@ from lib.api.trakt.trakt_api import (
     trakt_revoke_authentication,
 )
 from lib.clients.search import search_client
-from lib.debrid import check_debrid_cached
+from lib.utils.debrid_utils import check_debrid_cached
 from lib.files_history import last_files
 from lib.indexer import show_indexers_results
 from lib.play import make_listing, play

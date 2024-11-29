@@ -1,14 +1,11 @@
 import requests
 import requests
 from threading import Lock
-from lib.api.debrid.premiumize_api import Premiumize
-from lib.api.debrid.real_debrid_api import RealDebrid
-from lib.api.debrid.tor_box_api import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting
-from lib.utils.pm_utils import get_pm_link
-from lib.utils.rd_utils import get_rd_link, get_rd_pack_link
-from lib.utils.torbox_utils import get_torbox_link, get_torbox_pack_link
+from lib.utils.pm_utils import check_pm_cached, get_pm_link
+from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_link
+from lib.utils.torbox_utils import check_torbox_cached, get_torbox_link, get_torbox_pack_link
 from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
@@ -19,11 +16,8 @@ from lib.utils.utils import (
     is_tb_enabled,
     is_url,
     set_cached,
+    dialog_update,
 )
-
-
-dialog_update = {"count": -1, "percent": 50}
-
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
@@ -71,60 +65,6 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     return cached_results
 
 
-def check_pm_cached(results, cached_results, uncached_result, total, dialog, lock):
-    kodilog("debrid::check_pm_cached")
-    pm_client = Premiumize(token=get_setting("premiumize_token"))
-    hashes = [res.get("infoHash") for res in results]
-    cached_torrents = pm_client.get_torrent_instant_availability(hashes)
-    cached_response = cached_torrents.get("response")
-    for e, res in enumerate(results):
-        debrid_dialog_update(total, dialog, lock)
-        res["debridType"] = "PM"
-        if cached_response[e] is True:
-            res["isDebrid"] = True
-            cached_results.append(res)
-        else:
-            res["isDebrid"] = False
-            uncached_result.append(res)
-
-
-def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
-    torr_available = rd_client.get_user_torrent_list()
-    torr_available_hashes = [torr["hash"] for torr in torr_available]
-    for res in results:
-        debrid_dialog_update(total, dialog, lock)
-        res["debridType"] = "RD"
-        res["isDebrid"] = True
-        if res.get("infoHash") in torr_available_hashes:
-            res["isCached"] = True
-            cached_results.append(res)
-        else:
-            uncached_results.append(res)
-    # Add cause of RD removed cache check endpoint
-    cached_results.extend(uncached_results)
-
-
-def check_torbox_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("debrid::check_torbox_cached")
-    tor_box_client = Torbox(token=get_setting("torbox_token"))
-    hashes = [res.get("infoHash") for res in results]
-    response = tor_box_client.get_torrent_instant_availability(hashes)
-    for res in results:
-        debrid_dialog_update(total, dialog, lock)
-        info_hash = res.get("infoHash")
-        if info_hash:
-            res["debridType"] = "TB"
-            if info_hash in response.get("data", []):
-                with lock:
-                    res["isDebrid"] = True
-                    cached_results.append(res)
-            else:
-                with lock:
-                    res["isDebrid"] = False
-                    uncached_results.append(res)
-
-
 def extract_infohash(results, dialog):
     for count, res in enumerate(results[:]):
         dialog.update(
@@ -169,18 +109,6 @@ def get_magnet_from_uri(uri):
         except Exception as e:
             kodilog(f"Failed to extract torrent data from: {str(e)}")
     return magnet, info_hash
-
-
-def debrid_dialog_update(total, dialog, lock):
-    with lock:
-        dialog_update["count"] += 1
-        dialog_update["percent"] += 2
-
-        dialog.update(
-            dialog_update.get("percent"),
-            f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
-            f"Checking: {dialog_update.get('count')}/{total}",
-        )
 
 
 def get_debrid_direct_url(info_hash, debrid_type):

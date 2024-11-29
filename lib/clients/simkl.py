@@ -1,7 +1,7 @@
 import json
 import requests
 
-class SIMKLAPI:
+class SIMKL:
     def __init__(self):
         self.ClientID = (
             "59dfdc579d244e1edf6f89874d521d37a69a95a1abd349910cb056a1872ba2c8"

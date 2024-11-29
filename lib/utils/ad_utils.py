@@ -1,9 +1,9 @@
 import os
-from lib.clients.debrid.torbox import Torbox
+from lib.clients.debrid.alldebrid import AllDebrid
+from lib.api.debrid.debrid_client import ProviderException
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (
-    debrid_dialog_update,
     get_cached,
     get_random_color,
     info_hash_to_magnet,
@@ -15,52 +15,32 @@ from xbmcplugin import addDirectoryItem
 
 EXTENSIONS = supported_video_extensions()[:-1]
 
-client = Torbox(token=get_setting("torbox_token"))
+client = AllDebrid(token=get_setting("alldebrid_token"))
 
 
-def check_torbox_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("debrid::check_torbox_cached")
-    hashes = [res.get("infoHash") for res in results]
-    response = client.get_torrent_instant_availability(hashes)
-    for res in results:
-        debrid_dialog_update(total, dialog, lock)
-        info_hash = res.get("infoHash")
-        if info_hash:
-            res["debridType"] = "TB"
-            if info_hash in response.get("data", []):
-                with lock:
-                    res["isDebrid"] = True
-                    cached_results.append(res)
-            else:
-                with lock:
-                    res["isDebrid"] = False
-                    uncached_results.append(res)
-
-
-def add_torbox_torrent(info_hash):
-    kodilog("torbox::add_torbox_torrent")
+def add_ad_torrent(info_hash):
+    kodilog("ad_utils::add_ad_torrent")
     torrent_info = client.get_available_torrent(info_hash)
     if torrent_info:
-        if (
-            torrent_info["download_finished"] is True
-            and torrent_info["download_present"] is True
-        ):
-            return torrent_info
+        if torrent_info["status"] == "Ready":
+            return torrent_info.get("id")
+        elif torrent_info["statusCode"] == 7:
+            client.delete_torrent(torrent_info.get("id"))
+            raise ProviderException("Not enough seeders available to parse magnet link")
     else:
         magnet = info_hash_to_magnet(info_hash)
         response = client.add_magnet_link(magnet)
-        if response.get("success") is False:
-            raise TorboxException(f"Failed to add magnet link to Torbox {response}")
-        if "Found Cached" in response.get("detail", ""):
-            torrent_info = client.get_available_torrent(info_hash)
-            if torrent_info:
-                return torrent_info
+        if not response.get("success", False):
+            raise Exception(
+                f"Failed to add magnet: {response.get('error', 'Unknown error')}"
+            )
+        return response["data"]["magnets"][0]["id"]
 
 
-def get_torbox_link(info_hash):
-    kodilog("torbox::get_torbox_link")
-    torrent_info = add_torbox_torrent(info_hash)
-    if torrent_info:
+def get_ad_link(info_hash):
+    torrent_id = add_ad_torrent(info_hash)
+    if torrent_id:
+        torrent_info = client.get_torrent_info(torrent_id)
         file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
         response_data = client.create_download_link(
             torrent_info.get("id"), file.get("id")
@@ -68,17 +48,16 @@ def get_torbox_link(info_hash):
         return response_data.get("data")
 
 
-def get_torbox_pack_link(file_id, torrent_id):
-    kodilog("torbox_utils::get_torbox_pack_link")
+def get_ad_pack_link(file_id, torrent_id):
     response = client.create_download_link(torrent_id, file_id)
     return response.get("data")
 
 
-def get_torbox_pack_info(info_hash):
+def get_ad_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
         return info
-    torrent_info = add_torbox_torrent(info_hash)
+    torrent_info = add_ad_torrent(info_hash)
     info = {}
     if torrent_info:
         info["id"] = torrent_info["id"]
@@ -91,8 +70,8 @@ def get_torbox_pack_info(info_hash):
             ]
             files = []
             for id, name in enumerate(files_names):
-                tracker_color = get_random_color("TB")
-                title = f"[B][COLOR {tracker_color}][TB-Cached][/COLOR][/B]-{name}"
+                tracker_color = get_random_color("AD")
+                title = f"[B][COLOR {tracker_color}][AD-Cached][/COLOR][/B]-{name}"
                 files.append((id, title))
             info["files"] = files
             set_cached(info, info_hash)
@@ -101,7 +80,7 @@ def get_torbox_pack_info(info_hash):
             notification("Not a torrent pack")
 
 
-def show_tb_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+def show_ad_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
     for file_id, title in info["files"]:
         list_item = ListItem(label=title)
         list_item.setArt(
@@ -127,9 +106,3 @@ def show_tb_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
             list_item,
             isFolder=False,
         )
-
-
-class TorboxException(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)

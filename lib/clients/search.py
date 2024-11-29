@@ -1,4 +1,4 @@
-from lib.clients.utils import check_indexer, get_client
+from lib.utils.client_utils import check_indexer, get_client
 from lib.utils.kodi_utils import (
     get_setting,
     notification,

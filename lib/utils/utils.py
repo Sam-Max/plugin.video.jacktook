@@ -58,6 +58,8 @@ USER_AGENT_HEADER = {
 TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
+dialog_update = {"count": -1, "percent": 50}
+
 video_extensions = (
     ".001",
     ".3g2",
@@ -392,8 +394,7 @@ def set_watched_file(title, is_torrent, extra_data):
         "debrid_type": extra_data["debrid_info"].get("debrid_type", ""),
         "is_debrid_pack": extra_data["debrid_info"].get("is_debrid_pack", False),
         "file_id": extra_data["debrid_info"].get("file_id", ""),
-        "torrent_id": extra_data["debrid_info"].get("torrent_id", "")
-
+        "torrent_id": extra_data["debrid_info"].get("torrent_id", ""),
     }
     main_db.commit()
 
@@ -950,3 +951,15 @@ def unicode_flag_to_country_code(unicode_flag):
 
     country_code = first_letter.lower() + second_letter.lower()
     return country_code
+
+
+def debrid_dialog_update(total, dialog, lock):
+    with lock:
+        dialog_update["count"] += 1
+        dialog_update["percent"] += 2
+
+        dialog.update(
+            dialog_update.get("percent"),
+            f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+            f"Checking: {dialog_update.get('count')}/{total}",
+        )

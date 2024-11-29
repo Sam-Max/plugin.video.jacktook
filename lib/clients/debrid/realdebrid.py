@@ -1,6 +1,6 @@
 from time import time
-from lib.api.debrid.debrid_client import DebridClient
 from lib.api.jacktook.kodi import kodilog
+from lib.clients.debrid.debrid_client import DebridClient
 from lib.utils.kodi_utils import sleep as ksleep
 from base64 import b64encode, b64decode
 from lib.utils.kodi_utils import (

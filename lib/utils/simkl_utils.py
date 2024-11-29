@@ -1,8 +1,8 @@
 import os
 import re
-from lib.api.fma_api import FindMyAnime, extract_season
+from lib.clients.fma import FindMyAnime, extract_season
 from lib.api.jacktook.kodi import kodilog
-from lib.api.simkl_api import SIMKLAPI
+from lib.clients.simkl import SIMKL
 from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
 from lib.utils.utils import (
     get_cached,
@@ -34,7 +34,7 @@ def search_simkl_api(mal_id):
     if cached_results:
         return cached_results
 
-    simkl = SIMKLAPI()
+    simkl = SIMKL()
     res = simkl.get_anilist_episodes(mal_id)
 
     set_cached(res, type, params=(mal_id))

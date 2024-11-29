@@ -1,7 +1,7 @@
 import json
 from urllib.parse import quote
 from lib.api.jacktook.kodi import kodilog
-from lib.debrid import get_debrid_direct_url, get_debrid_pack_direct_url
+from lib.utils.debrid_utils import get_debrid_direct_url, get_debrid_pack_direct_url
 from lib.player import JacktookPlayer
 from lib.db.bookmark_db import bookmark_db
 from lib.utils.kodi_utils import (
