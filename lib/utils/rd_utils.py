@@ -41,21 +41,27 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
     cached_results.extend(uncached_results)
 
 
-def add_rd_magnet(magnet, is_pack=False):
-    response = client.add_magent_link(magnet)
-    torrent_id = response.get("id")
-    if not torrent_id:
-        kodilog("Failed to add magnet link to Real-Debrid")
-        return None
-    torr_info = client.get_torrent_info(torrent_id)
-    status = torr_info["status"]
+def add_rd_magnet(info_hash, is_pack=False):
+    kodilog("rd_utils::add_rd_magnet")
+    torrent_info = client.get_available_torrent(info_hash)
+    if not torrent_info:
+        check_max_active_count()
+        magnet = info_hash_to_magnet(info_hash)
+        response = client.add_magent_link(magnet)
+        torrent_id = response.get("id")
+        if not torrent_id:
+            kodilog("Failed to add magnet link to Real-Debrid")
+            return
+        torrent_info = client.get_torrent_info(torrent_id)
+    torrent_id = torrent_info["id"]
+    status = torrent_info["status"]
     if status in ["magnet_error", "error", "virus", "dead"]:
         client.delete_torrent(torrent_id)
         raise Exception(f"Torrent cannot be downloaded due to status: {status}")
-    elif status in ["queued", "downloading", "downloaded"]:
-        return None
+    elif status in ["queued", "downloading"]:
+        return
     elif status == "waiting_files_selection":
-        files = torr_info["files"]
+        files = torrent_info["files"]
         extensions = supported_video_extensions()[:-1]
         video_files = [
             item
@@ -67,17 +73,16 @@ def add_rd_magnet(magnet, is_pack=False):
             torr_keys = [str(i["id"]) for i in video_files]
             if torr_keys:
                 torr_keys = ",".join(torr_keys)
-                client.select_files(torr_info["id"], torr_keys)
+                client.select_files(torrent_info["id"], torr_keys)
         else:
             if video_files:
                 video = max(video_files, key=lambda x: x["bytes"])
-                client.select_files(torr_info["id"], video["id"])
-        return torrent_id
+                client.select_files(torrent_info["id"], video["id"])
+    return torrent_id
 
 
 def get_rd_link(info_hash):
-    magnet = info_hash_to_magnet(info_hash)
-    torrent_id = add_rd_magnet(magnet)
+    torrent_id = add_rd_magnet(info_hash)
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
@@ -90,8 +95,7 @@ def get_rd_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
         return info
-    magnet = info_hash_to_magnet(info_hash)
-    torrent_id = add_rd_magnet(magnet, is_pack=True)
+    torrent_id = add_rd_magnet(info_hash, is_pack=True)
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
@@ -165,6 +169,17 @@ def get_rd_info():
     append("[B]Days Remaining:[/B] %s" % days_remaining)
     append("[B]Fidelity Points:[/B] %s" % user["points"])
     dialog_text("Real-Debrid", "\n".join(body))
+
+
+def check_max_active_count():
+    active_count = client.get_torrent_active_count()
+    if active_count["nb"] >= active_count["limit"]:
+        hashes = active_count["list"]  
+        if hashes:
+            torrents = client.get_user_torrent_list()
+            torrent_info = [i for i in torrents if i["hash"] == hashes[0]]
+            torrent_id = torrent_info[0]["id"]
+            client.delete_torrent(torrent_id) # delete one to open a slot
 
 
 class LinkNotFoundError(Exception):

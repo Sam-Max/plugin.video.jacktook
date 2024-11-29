@@ -38,7 +38,7 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
 
 
 def add_torbox_torrent(info_hash):
-    kodilog("torbox::add_torbox_torrent")
+    kodilog("torbox_utils::add_torbox_torrent")
     torrent_info = client.get_available_torrent(info_hash)
     if torrent_info:
         if (

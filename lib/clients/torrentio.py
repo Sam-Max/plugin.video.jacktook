@@ -30,7 +30,6 @@ class Torrentio:
     def parse_response(self, res):
         res = json.loads(res.text)
         kodilog("torrentio::parse_response")
-        kodilog(res)
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])

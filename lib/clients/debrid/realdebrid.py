@@ -40,6 +40,10 @@ class RealDebrid(DebridClient):
             raise ProviderException("Content marked as infringing")
         elif error_code == 25:
             raise ProviderException("Service Unavailable")
+        elif error_code == 21:
+            raise ProviderException("Too many active downloads")
+        elif error_code == 35:
+            raise ProviderException("Infringing file")
 
 
     def __del__(self):
@@ -299,6 +303,9 @@ class RealDebrid(DebridClient):
 
     def get_user(self):
         return self._make_request("GET", f"{self.BASE_URL}/user")
+    
+    def get_torrent_active_count(self):
+        return self._make_request("GET", f"{self.BASE_URL}/torrents/activeCount")
 
     def get_torrent_info(self, torrent_id):
         return self._make_request("GET", f"{self.BASE_URL}/torrents/info/{torrent_id}")
