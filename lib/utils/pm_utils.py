@@ -1,3 +1,4 @@
+import copy
 import os
 from lib.clients.debrid.premiumize import Premiumize
 from lib.api.jacktook.kodi import kodilog
@@ -21,8 +22,8 @@ def check_pm_cached(results, cached_results, uncached_result, total, dialog, loc
     hashes = [res.get("infoHash") for res in results]
     cached_torrents = pm_client.get_torrent_instant_availability(hashes)
     cached_response = cached_torrents.get("response")
-    for e, res in enumerate(results):
-        debrid_dialog_update(total, dialog, lock)
+    for e, res in enumerate(copy.deepcopy(results)):
+        debrid_dialog_update("PM", total, dialog, lock)
         res["debridType"] = "PM"
         if cached_response[e] is True:
             res["isDebrid"] = True

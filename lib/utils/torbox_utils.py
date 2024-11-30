@@ -1,3 +1,4 @@
+import copy
 import os
 from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
@@ -22,8 +23,8 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
     kodilog("debrid::check_torbox_cached")
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
-    for res in results:
-        debrid_dialog_update(total, dialog, lock)
+    for res in copy.deepcopy(results):
+        debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
         if info_hash:
             res["debridType"] = "TB"

@@ -1,3 +1,4 @@
+import copy
 import os
 from lib.clients.debrid.realdebrid import RealDebrid
 import time
@@ -28,8 +29,8 @@ client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
 def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
     torr_available = client.get_user_torrent_list()
     torr_available_hashes = [torr["hash"] for torr in torr_available]
-    for res in results:
-        debrid_dialog_update(total, dialog, lock)
+    for res in copy.deepcopy(results):
+        debrid_dialog_update("RD", total, dialog, lock)
         res["debridType"] = "RD"
         res["isDebrid"] = True
         if res.get("infoHash") in torr_available_hashes:

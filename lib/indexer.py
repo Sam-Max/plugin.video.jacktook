@@ -94,7 +94,7 @@ def handle_debrid_items(
     debrid_type = res.get("debridType")
 
     if res.get("isPack"):
-        if get_setting("real_debrid_enabled"):
+        if debrid_type == "RD":
             label_title = get_debrid_label_pack(res, format_debrid_type, formated_title)
         else:
             label_title = f"{format_debrid_type}-Cached-Pack-{formated_title}"
@@ -104,7 +104,7 @@ def handle_debrid_items(
             list_item, tv_data, ids, info_hash, res["debridType"], mode, plugin
         )
     else:
-        if get_setting("real_debrid_enabled"):
+        if debrid_type == "RD":
             label_title = get_debrid_label(res, format_debrid_type, formated_title)
         else:
             label_title = f"{format_debrid_type}-Cached-{formated_title}"

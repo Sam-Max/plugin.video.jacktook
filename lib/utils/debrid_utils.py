@@ -42,11 +42,12 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
 
     if is_rd_enabled():
         check_rd_cached(results, cached_results, uncached_results, total, dialog, lock)
-    elif is_tb_enabled():
+    
+    if is_tb_enabled():
         check_torbox_cached(
             results, cached_results, uncached_results, total, dialog, lock
         )
-    elif is_pm_enabled():
+    if is_pm_enabled():
         check_pm_cached(results, cached_results, uncached_results, total, dialog, lock)
 
     if is_tb_enabled() or is_pm_enabled():

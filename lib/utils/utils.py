@@ -953,13 +953,13 @@ def unicode_flag_to_country_code(unicode_flag):
     return country_code
 
 
-def debrid_dialog_update(total, dialog, lock):
+def debrid_dialog_update(debrid_type, total, dialog, lock):
     with lock:
         dialog_update["count"] += 1
         dialog_update["percent"] += 2
 
         dialog.update(
             dialog_update.get("percent"),
-            f"Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+            f"Jacktook [COLOR FFFF6B00]Debrid-{debrid_type}[/COLOR]",
             f"Checking: {dialog_update.get('count')}/{total}",
         )
