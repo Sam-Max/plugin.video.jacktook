@@ -618,8 +618,10 @@ def limit_results(results):
         limit = get_int_setting("torrentio_results_per_page")
     elif indexer == Indexer.ELHOSTED:
         limit = get_int_setting("elfhosted_results_per_page")
+    elif indexer == Indexer.JACKGRAM:
+        limit = get_int_setting("jackgram_results_per_page")
     else:
-        limit = 20
+        limit = 50
     return results[:limit]
 
 

@@ -1,7 +1,7 @@
 import json
 from requests import Session
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import convert_size_to_bytes, translation
+from lib.utils.kodi_utils import translation
 
 
 class Jackgram:
@@ -22,47 +22,50 @@ class Jackgram:
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
-            return self.parse_response(res, mode)
+            if mode in ["tv", "movies"]:
+                return self.parse_response(res)
+            else:
+                return self.parse_response_search(res)
         except Exception as e:
             self._notification(f"{translation(30228)}: {str(e)}")
 
-    def parse_response(self, res, mode):
+    def parse_response(self, res):
         res = json.loads(res.text)
-        if mode in ["tv", "movies"]:
-            results = []
-            for item in res["streams"]:
-                link = self.generate_link(tmdb_id=res["tmdb_id"], hash=item["hash"])
+        results = []
+        for item in res["streams"]:
+            link = self.generate_link(tmdb_id=res["tmdb_id"], hash=item["hash"])
+            results.append(
+                {
+                    "indexer": item["name"],
+                    "title": item["title"],
+                    "qualityTitle": item["quality"],
+                    "size": item["size"],
+                    "publishDate": item["date"],
+                    "duration": item["duration"],
+                    "downloadUrl": link,
+                }
+            )
+        return results
+
+    def parse_response_search(self, res):
+        res = json.loads(res.text)
+        results = []
+        for item in res["results"]:
+            for file in item["files"]:
+                link = self.generate_link(tmdb_id=item["tmdb_id"], hash=file["hash"])
+                date = "" if file["date"] == None else file["date"]
                 results.append(
                     {
-                        "indexer": item["name"],
-                        "title": item["title"],
-                        "qualityTitle": item["quality"],
-                        "size": item["size"],
-                        "publishDate": item["date"],
-                        "duration": item["duration"],
+                        "indexer": file["name"],
+                        "title": file["title"],
+                        "qualityTitle": file["quality"],
+                        "size": file["size"],
+                        "publishDate": date,
+                        "duration": file["duration"],
                         "downloadUrl": link,
                     }
                 )
-            return results
-        else:
-            results = []
-            for item in res["results"]:
-                for file in item["files"]:
-                    link = self.generate_link(
-                        tmdb_id=item["tmdb_id"], hash=file["hash"]
-                    )
-                    results.append(
-                        {
-                            "indexer": file["name"],
-                            "title": file["title"],
-                            "qualityTitle": file["quality"],
-                            "size": file["size"],
-                            "publishDate": file["date"],
-                            "duration": file["duration"],
-                            "downloadUrl": link,
-                        }
-                    )
-                return results
+        return results
 
     def generate_link(self, tmdb_id, hash):
         return f"{self.host}/dl/{tmdb_id}?hash={hash}"

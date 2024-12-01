@@ -26,7 +26,8 @@
         <setting label="Jackgram Configuration" type="lsep"/>
         <setting id="jackgram_host" type="text" label="Jackgram Host" default=""/>
         <setting id="jackgram_desc_length" type="number" label="30026" default="100"/>
-        <setting id="jackgram_sort_by" type="labelenum" label="Sort" values="Size|Quality|None" default="Quality"/>
+        <setting id="jackgram_results_per_page" type="number" label="30029" default="60"/>
+        <setting id="jackgram_sort_by" type="labelenum" label="Sort" values="Size|Quality|Date|None" default="Quality"/>
         <setting label="Elfhosted/KnightCrawler Configuration" type="lsep"/>
         <setting id="elfhosted_host" type="text" label="30025" default="https://torrentio.elfhosted.com/"/>
         <setting id="elfhosted_desc_length" type="number" label="30026" default="100"/>
