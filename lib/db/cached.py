@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from hashlib import sha256
 
+from lib.api.jacktook.kodi import kodilog
 import xbmcaddon
 import xbmcgui
 
@@ -23,11 +24,10 @@ ADDON_ID = xbmcaddon.Addon().getAddonInfo("id")
 
 if not PY3:
     ADDON_DATA = ADDON_DATA.decode("utf-8")
-    
+
 if not os.path.exists(ADDON_DATA):
     os.makedirs(ADDON_DATA)
 
-# Sqlite pragmas, according to https://www.sqlite.org/pragma.html
 SQLITE_SETTINGS = {
     "journal_mode": "wal",
     "auto_vacuum": "full",
@@ -39,7 +39,6 @@ SQLITE_SETTINGS = {
 
 def pickle_hash(obj):
     data = pickle.dumps(obj)
-    # We could also use zlib.adler32 here
     h = sha256()
     h.update(data)
     return h.hexdigest()
@@ -155,6 +154,33 @@ class Cache(_BaseCache):
             "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
             (key, sqlite3.Binary(data), expires),
         )
+    
+    def add_to_list(self, key, item, expires):
+        """Append an item to a list stored under the given key."""
+        existing_data = self.get_list(key)  # Retrieve the existing list
+        existing_data.append(item)  # Add the new item
+        self._set(
+            key,
+            self._prepare(existing_data),
+            datetime.utcnow() + expires,
+        )
+
+    def get_list(self, key):
+        """Retrieve the list stored under the given key."""
+        result = self._get(key)
+        if result:
+            data, expires = result
+            if expires > datetime.utcnow():
+                return self._process(data)  # Deserialize the list
+        return []  
+
+    def clear_list(self, key):
+        """Clear the list stored under the given key."""
+        self._set(
+            key,
+            self._prepare([]),  
+            datetime.utcnow(),  # Set an immediate expiry to clear the list
+        )
 
     def _set_version(self, version):
         self._conn.execute("PRAGMA user_version={}".format(version))
@@ -186,37 +212,7 @@ class Cache(_BaseCache):
         self._conn.close()
 
 
-class LoadingCache(object):
-    def __init__(self, expiry_time, loader, cache_type, *args, **kwargs):
-        self._expiry_time = expiry_time
-        self._loader = loader
-        self._hashed_key = kwargs.pop("hashed_key", False)
-        self._identifier = kwargs.pop("identifier", "")
-        self._cache = cache_type(*args, **kwargs)
-        self._sentinel = object()
-
-    def get(self, key):
-        data = self._cache.get(
-            key,
-            default=self._sentinel,
-            hashed_key=self._hashed_key,
-            identifier=self._identifier,
-        )
-        if data is self._sentinel:
-            data = self._loader(key)
-            self._cache.set(
-                key,
-                data,
-                self._expiry_time,
-                hashed_key=self._hashed_key,
-                identifier=self._identifier,
-            )
-        return data
-
-    def close(self):
-        self._cache.close()
-
-
+# A decorator for applying caching to functions
 def cached(expiry_time, ignore_self=False, identifier="", cache_type=Cache):
     def decorator(func):
         sentinel = object()
@@ -225,7 +221,6 @@ def cached(expiry_time, ignore_self=False, identifier="", cache_type=Cache):
         @wraps(func)
         def wrapper(*args, **kwargs):
             key_args = args[1:] if ignore_self else args
-            # noinspection PyProtectedMember
             key = cache._generate_key((key_args, kwargs), identifier=identifier)
             result = cache.get(key, default=sentinel, hashed_key=True)
             if result is sentinel:
@@ -239,10 +234,9 @@ def cached(expiry_time, ignore_self=False, identifier="", cache_type=Cache):
     return decorator
 
 
-# noinspection PyTypeChecker
+# A shortcut decorator for using in-memory caching.
 def memory_cached(expiry_time, instance_method=False, identifier=""):
     return cached(expiry_time, instance_method, identifier, MemoryCache)
-
 
 
 cache = Cache()

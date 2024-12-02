@@ -17,7 +17,7 @@ from xbmcplugin import addDirectoryItem
 from lib.db.main_db import main_db
 from lib.utils.kodi_utils import (
     ADDON_PATH,
-    Keyboard,
+    show_keyboard,
     get_kodi_version,
     url_for,
     url_for_path,
@@ -28,7 +28,7 @@ def search_anilist(category, page, plugin):
     client = anilist_client()
     if category == "SearchAnime":
         if page == 1:
-            text = Keyboard(id=30242)
+            text = show_keyboard(id=30242)
             if not text:
                 return
             main_db.set_query("query", text)

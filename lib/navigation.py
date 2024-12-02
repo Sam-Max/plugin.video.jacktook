@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import wraps
 import logging
 import os
@@ -46,6 +47,7 @@ from lib.tmdb import (
     show_results,
 )
 from lib.db.bookmark_db import bookmark_db
+from lib.db.cached import cache
 
 from lib.utils.utils import (
     DialogListener,
@@ -76,7 +78,8 @@ from lib.utils.kodi_utils import (
     MOVIES_TYPE,
     SHOWS_TYPE,
     JACKTORR_ADDON,
-    Keyboard,
+    container_update,
+    show_keyboard,
     action,
     addon_status,
     buffer_and_play,
@@ -93,7 +96,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 
-from lib.utils.settings import is_auto_play
+from lib.utils.settings import get_cache_expiration, is_auto_play
 from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
@@ -134,7 +137,15 @@ def query_arg(name, required=True):
             if name not in kwargs:
                 query_list = plugin.args.get(name)
                 if query_list:
-                    if name in ["direct", "rescrape", "is_torrent", "data"]:
+                    if name in [
+                        "direct",
+                        "rescrape",
+                        "is_torrent",
+                        "data",
+                        "is_clear",
+                        "is_keyboard",
+                        "rename",
+                    ]:
                         kwargs[name] = eval(query_list[0])
                     elif name == "query":
                         kwargs[name] = unquote(query_list[0])
@@ -374,13 +385,61 @@ def anime_item(mode):
                 )
 
 
-@plugin.route("/search_direct/<mode>")
-def search_direct(mode):
-    text = Keyboard(id=30243)
-    if text:
-        list_item = ListItem(label=f"Search [I]{text}[/I]")
+@plugin.route("/search_direct")
+@query_arg("mode", required=False)
+@query_arg("query", required=False)
+@query_arg("is_clear", required=False)
+@query_arg("is_keyboard", required=False)
+@query_arg("rename", required=False)
+def search_direct(
+    mode="multi",
+    query="",
+    is_clear=False,
+    is_keyboard=True,
+    update_listing=False,
+    rename=False,
+):
+    if is_clear:
+        cache.clear_list(key=mode)
+        is_keyboard = False
+
+    if rename or is_clear:
+        update_listing = True
+
+    if is_keyboard:
+        text = show_keyboard(id=30243, default=query)
+        if text:
+            cache.add_to_list(
+                key=mode,
+                item=(mode, text),
+                expires=timedelta(hours=get_cache_expiration()),
+            )
+
+    list_item = ListItem(label=f"Search")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search_direct, mode=mode),
+        list_item,
+        isFolder=True,
+    )
+
+    for mode, text in cache.get_list(key=mode):
+        list_item = ListItem(label=f"[I]{text}[/I]")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
+        )
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Modify Search",
+                    container_update(
+                        name="search_direct", mode=mode, query=text, rename=True
+                    ),
+                )
+            ]
         )
         addDirectoryItem(
             plugin.handle,
@@ -388,7 +447,19 @@ def search_direct(mode):
             list_item,
             isFolder=True,
         )
-        endOfDirectory(plugin.handle)
+
+    list_item = ListItem(label=f"Clear Searches")
+    list_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
+    )
+    addDirectoryItem(
+        plugin.handle,
+        plugin.url_for(search_direct, mode=mode, is_clear=True),
+        list_item,
+        isFolder=True,
+    )
+
+    endOfDirectory(plugin.handle, updateListing=update_listing)
 
 
 @plugin.route("/search")

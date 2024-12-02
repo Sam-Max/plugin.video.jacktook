@@ -349,12 +349,12 @@ def sleep(miliseconds):
     xbmc.sleep(miliseconds)
 
 
-def Keyboard(id, default="", hidden=False):
+def show_keyboard(id, default="", hidden=False):
     keyboard = xbmc.Keyboard(default, translation(id), hidden)
     keyboard.doModal()
     if keyboard.isConfirmed():
         return keyboard.getText()
-
+    
 
 def get_current_view_id():
     return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()

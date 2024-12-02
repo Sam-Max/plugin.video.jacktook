@@ -24,7 +24,7 @@ from lib.utils.kodi_utils import (
     ADDON_PATH,
     MOVIES_TYPE,
     SHOWS_TYPE,
-    Keyboard,
+    show_keyboard,
     get_kodi_version,
     notification,
     url_for,
@@ -85,7 +85,7 @@ def add_icon_genre(item, name):
 def search(mode, genre_id, page):
     if mode == "multi":
         if page == 1:
-            query = Keyboard(id=30241)
+            query = show_keyboard(id=30241)
             if not query:
                 return
             main_db.set_query("search_query", query)
@@ -244,7 +244,7 @@ def handle_tmdb_anime_query(category, mode, page, plugin):
     anime = Anime()
     if category == "Anime_Search":
         if page == 1:
-            query = Keyboard(id=30242)
+            query = show_keyboard(id=30242)
             if not query:
                 return
             main_db.set_query("anime_query", query)
