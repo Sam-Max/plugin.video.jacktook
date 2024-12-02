@@ -2,7 +2,7 @@ from functools import wraps
 import logging
 import os
 from threading import Thread
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 import requests
 
 from lib.clients.debrid.premiumize import Premiumize
@@ -136,6 +136,8 @@ def query_arg(name, required=True):
                 if query_list:
                     if name in ["direct", "rescrape", "is_torrent", "data"]:
                         kwargs[name] = eval(query_list[0])
+                    elif name == "query":
+                        kwargs[name] = unquote(query_list[0])
                     else:
                         kwargs[name] = query_list[0]
                 elif required:
@@ -376,14 +378,13 @@ def anime_item(mode):
 def search_direct(mode):
     text = Keyboard(id=30243)
     if text:
-        text = quote(text)
         list_item = ListItem(label=f"Search [I]{text}[/I]")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
         )
         addDirectoryItem(
             plugin.handle,
-            plugin.url_for(search, mode=mode, query=text, direct=True),
+            plugin.url_for(search, mode=mode, query=quote(text), direct=True),
             list_item,
             isFolder=True,
         )
