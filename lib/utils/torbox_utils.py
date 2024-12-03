@@ -6,6 +6,7 @@ from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
 from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
+    get_public_ip,
     get_random_color,
     info_hash_to_magnet,
     set_cached,
@@ -63,8 +64,9 @@ def get_torbox_link(info_hash):
     torrent_info = add_torbox_torrent(info_hash)
     if torrent_info:
         file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
+        user_ip = get_public_ip()
         response_data = client.create_download_link(
-            torrent_info.get("id"), file.get("id")
+            torrent_info.get("id"), file.get("id"), user_ip
         )
         return response_data.get("data")
 

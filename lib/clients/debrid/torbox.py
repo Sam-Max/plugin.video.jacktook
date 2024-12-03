@@ -1,3 +1,4 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.debrid_client import DebridClient, ProviderException
 from lib.utils.kodi_utils import notification
 
@@ -75,11 +76,19 @@ class Torbox(DebridClient):
             params={"hash": torrent_hashes, "format": "object"},
         )
 
-    def create_download_link(self, torrent_id, filename):
+    def create_download_link(self, torrent_id, filename, user_ip):
+        params = {
+            "token": self.token,
+            "torrent_id": torrent_id,
+            "file_id": filename,
+        }
+        if user_ip:
+            params["user_ip"] = user_ip
+
         response = self._make_request(
             "GET",
             "/torrents/requestdl",
-            params={"token": self.token, "torrent_id": torrent_id, "file_id": filename},
+            params=params,
             is_expected_to_fail=True,
         )
         if "successfully" in response.get("detail"):

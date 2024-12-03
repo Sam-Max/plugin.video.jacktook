@@ -965,3 +965,13 @@ def debrid_dialog_update(debrid_type, total, dialog, lock):
             f"Jacktook [COLOR FFFF6B00]Debrid-{debrid_type}[/COLOR]",
             f"Checking: {dialog_update.get('count')}/{total}",
         )
+
+def get_public_ip():
+    url = "https://ipconfig.io/ip"
+    try:
+        response = requests.get(url, timeout=5)
+        response.raise_for_status() 
+        return response.text.strip()
+    except requests.RequestException as e:
+        kodilog(f"Error: {e}")
+        return None
