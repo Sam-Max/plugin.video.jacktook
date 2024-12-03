@@ -1,3 +1,14 @@
+## 0.3.8
+* Real Debrid Improvements.
+    - check if the torrent is on user torrents list, so not to add again.
+    - add a check for max activate downloads, and delete one if limit achieved.
+* Direct Search Improvements.
+    - save search queries, and added menu item option to modify search queries by the user
+* Torbox Improvements
+    - use public ip address of user for torbox cdn selecction
+* Multi Debrid Search support
+* Add jackgram_results_per_page setting option for Jackgram client.
+
 ## 0.3.7
 * Update Premiumize.
 * Update Zilean (now supports movies and tv search)
