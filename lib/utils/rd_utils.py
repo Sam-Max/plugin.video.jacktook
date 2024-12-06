@@ -12,6 +12,7 @@ from lib.utils.kodi_utils import (
     url_for,
 )
 from lib.utils.utils import (
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_random_color,
@@ -27,19 +28,30 @@ client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
 
 
 def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
-    torr_available = client.get_user_torrent_list()
-    torr_available_hashes = [torr["hash"] for torr in torr_available]
+    is_media_fusion = False
+    if get_setting("indexer") == Indexer.MEDIAFUSION:
+        is_media_fusion = True
+    else:
+        torr_available = client.get_user_torrent_list()
+        torr_available_hashes = [torr["hash"] for torr in torr_available]
+
     for res in copy.deepcopy(results):
         debrid_dialog_update("RD", total, dialog, lock)
         res["debridType"] = "RD"
         res["isDebrid"] = True
-        if res.get("infoHash") in torr_available_hashes:
-            res["isCached"] = True
-            cached_results.append(res)
+        if not is_media_fusion:
+            if res.get("infoHash") in torr_available_hashes:
+                res["isCached"] = True
+                cached_results.append(res)
+            else:
+                uncached_results.append(res)
         else:
-            uncached_results.append(res)
-    # Add cause of RD removed cache check endpoint
-    cached_results.extend(uncached_results)
+            cached_results.append(res)
+            res["isCached"] = True
+
+    if not is_media_fusion:
+        # Add uncached_results cause of RD removed cache check endpoint
+        cached_results.extend(uncached_results)
 
 
 def add_rd_magnet(info_hash, is_pack=False):
@@ -175,12 +187,12 @@ def get_rd_info():
 def check_max_active_count():
     active_count = client.get_torrent_active_count()
     if active_count["nb"] >= active_count["limit"]:
-        hashes = active_count["list"]  
+        hashes = active_count["list"]
         if hashes:
             torrents = client.get_user_torrent_list()
             torrent_info = [i for i in torrents if i["hash"] == hashes[0]]
             torrent_id = torrent_info[0]["id"]
-            client.delete_torrent(torrent_id) # delete one to open a slot
+            client.delete_torrent(torrent_id)  # delete one to open a slot
 
 
 class LinkNotFoundError(Exception):

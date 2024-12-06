@@ -143,33 +143,13 @@ msgctxt "#30203"
 msgid "Client ID"
 msgstr "Client ID"
 
-msgctxt "#30220"
-msgid "You need to configure Jackett"
-msgstr "Necesitas configuar Jackett"
-
 msgctxt "#30221"
-msgid "Jackett API key is invalid"
-msgstr "API de Jackett incorrecta"
+msgid "API key is invalid"
+msgstr "API key es incorrecta"
 
 msgctxt "#30223"
-msgid "You need to configure Prowlarr first"
-msgstr "Necesitas configuar Prowlarr primero"
-
-msgctxt "#30224"
-msgid "Prowlarr API key is invalid"
-msgstr "API de Prowlarr incorrecta"
-
-msgctxt "#30225"
-msgid "You need to configure Elhosted/KnighCrawlerr first"
-msgstr ""
-
-msgctxt "#30226"
-msgid "You need to configure Plex first"
-msgstr "Necesitas configuar Plex primero"
-
-msgctxt "#30227"
-msgid "You need to configure Torrentio first"
-msgstr "Necesitas configurar Torrentio primero"
+msgid "You need to configure inderxer first"
+msgstr "Necesitas configuar el indexer primero"
 
 msgctxt "#30228"
 msgid "The request to Torrentio failed."

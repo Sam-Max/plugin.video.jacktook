@@ -146,6 +146,7 @@ class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
+    MEDIAFUSION = "MediaFusion"
     JACKGRAM = "Jackgram"
     ELHOSTED = "Elfhosted"
     BURST = "Burst"

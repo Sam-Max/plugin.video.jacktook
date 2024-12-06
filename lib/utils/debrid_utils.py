@@ -35,7 +35,6 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     lock = Lock()
     cached_results = []
     uncached_results = []
-
     total = len(results)
 
     extract_infohash(results, dialog)

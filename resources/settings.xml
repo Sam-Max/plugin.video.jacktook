@@ -14,7 +14,7 @@
         <setting id="clear_cache_update" type="bool" label="Clear cache when update" default="true"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Jackett|Prowlarr|Torrentio|Elfhosted|Burst|Zilean|Jackgram" default="Torrentio"/>
+        <setting id="indexer" type="labelenum" label="30021" values="Torrentio|Burst|Jackett|Prowlarr|MediaFusion|Elfhosted|Zilean|Jackgram" default="Torrentio"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
@@ -51,6 +51,9 @@
         <setting id="prowlarr_results_per_page" type="number" label="30029" default="25"/>
         <setting id="prowlarr_timeout" type="slider" label="30031" option="int" range="1,1,30" default="25"/>
         <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
+        <setting label="MediaFusion configuration" type="lsep"/>
+        <setting id="mediafusion_host" type="text" label="30052" default="https://mediafusion.elfhosted.com"/>
+        <setting id="mediafusion_manifest_url" type="text" label="Manifest Url" default=""/>
         <setting label="Jacktook Burst Configuration" type="lsep"/>
         <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/open_burst_config)" />
         <setting id="burst_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached" default="Seeds"/>
@@ -76,21 +79,6 @@
         <setting label="" type="lsep"/>
         <setting id="show_uncached" type="bool" label="Show uncached torrents" default="true"/>
     </category>
-    <!-- <category label="Plex">
-        <setting label="Plex Configuration" type="lsep"/>
-        <setting type="text" label="Login to your Plextv account to get your servers" enable="false" visible="true" />
-        <setting type="action" label="Login" action="RunPlugin(plugin://plugin.video.jacktook/plex_auth)" />
-        <setting id="plex_user" type="text" label="User" visible="true" default=""/>
-        <setting id="plex_token" type="text" label="Plex Token" visible="true" default=""/> 
-        <setting type="text" label="Select a server after login" enable="false" visible="true" />
-        <setting type="action" label="Select Server" action="RunPlugin(plugin://plugin.video.jacktook/plex_validate)" />
-        <setting type="action" label="Logout" action="RunPlugin(plugin://plugin.video.jacktook/plex_logout)" />
-        <setting label="Server Configuration" type="lsep"/>
-        <setting id="plex_server_name" type="text" label="Server Name" default=""/>
-        <setting id="plex_discovery_url" type="text" label="Server Discovery URL"  default=""/>
-        <setting id="plex_streaming_url" type="text" label="Server Streaming URL" default=""/>
-        <setting id="plex_server_token" type="text" label="Server Token" default=""/>
-    </category> -->
     <category label="30100">
         <setting label="30102" type="lsep"/>
         <setting id="tmdb_apikey" type="text" label="30103" default=""/>
@@ -107,14 +95,8 @@
         <setting id="jacktook.trakt.secret" type="text" label="Trakt Secret" default="8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"/>
         <setting type="action" label="Log out" action="RunPlugin(plugin://plugin.video.jacktook/trakt_logout)" />
     </category>
-    <!-- <category label="30140">
-        <setting label="30142" type="lsep"/>
-        <setting id="anilist_client_id" type="text" label="30143" default=""/>
-        <setting id="anilist_client_secret" type="text" label="30144" default=""/>
-    </category> -->
     <category label="30200">
         <setting label="30202" type="lsep"/>
         <setting id="fanarttv_client_id" type="text" label="30203" default=""/>
     </category>
-    
 </settings>

@@ -167,7 +167,7 @@ def refresh():
     xbmc.executebuiltin("Container.Refresh")
 
 
-def notification(message, heading=ADDON_NAME, icon=ADDON_ICON, time=5000, sound=True):
+def notification(message, heading=ADDON_NAME, icon=ADDON_ICON, time=2000, sound=True):
     xbmcgui.Dialog().notification(heading, message, icon, time, sound)
 
 
