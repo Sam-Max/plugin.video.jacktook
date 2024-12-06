@@ -64,9 +64,8 @@ def get_torbox_link(info_hash):
     torrent_info = add_torbox_torrent(info_hash)
     if torrent_info:
         file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
-        user_ip = get_public_ip()
         response_data = client.create_download_link(
-            torrent_info.get("id"), file.get("id"), user_ip
+            torrent_info.get("id"), file.get("id"), get_public_ip()
         )
         return response_data.get("data")
 

@@ -67,6 +67,9 @@ class _BaseCache(object):
         return ret
 
     def set(self, key, data, expiry_time, hashed_key=False, identifier=""):
+        if expiry_time == timedelta(0):
+            return  # Do nothing, as it will expire immediately
+        
         self._set(
             self._generate_key(key, hashed_key, identifier),
             self._prepare(data),

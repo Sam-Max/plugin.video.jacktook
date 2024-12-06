@@ -972,12 +972,20 @@ def debrid_dialog_update(debrid_type, total, dialog, lock):
             f"Checking: {dialog_update.get('count')}/{total}",
         )
 
+
 def get_public_ip():
-    url = "https://ipconfig.io/ip"
-    try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status() 
-        return response.text.strip()
-    except requests.RequestException as e:
-        kodilog(f"Error: {e}")
-        return None
+    public_ip = cache.get("public_ip")
+    if not public_ip:
+        try:
+            response = requests.get("https://ipconfig.io/ip", timeout=5)
+            response.raise_for_status()
+            public_ip = response.text.strip()
+            cache.set(
+                "public_ip",
+                public_ip,
+                timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+            )
+        except requests.RequestException as e:
+            kodilog(f"Error getting public ip: {e}")
+            return None
+    return public_ip
