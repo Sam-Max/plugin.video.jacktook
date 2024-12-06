@@ -1,3 +1,7 @@
+## 0.3.9
+* Add EasyDebrid support.
+* Add MediaFusion indexer.
+
 ## 0.3.8
 * Real Debrid Improvements.
     - check if the torrent is on user torrents list, so not to add again.
