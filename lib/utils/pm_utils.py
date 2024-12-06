@@ -20,8 +20,8 @@ pm_client = Premiumize(token=get_setting("premiumize_token"))
 def check_pm_cached(results, cached_results, uncached_result, total, dialog, lock):
     kodilog("debrid::check_pm_cached")
     hashes = [res.get("infoHash") for res in results]
-    cached_torrents = pm_client.get_torrent_instant_availability(hashes)
-    cached_response = cached_torrents.get("response")
+    torrents_info = pm_client.get_torrent_instant_availability(hashes)
+    cached_response = torrents_info.get("response")
     for e, res in enumerate(copy.deepcopy(results)):
         debrid_dialog_update("PM", total, dialog, lock)
         res["debridType"] = "PM"
@@ -57,15 +57,18 @@ def get_pm_pack_info(info_hash):
         )
         return
     info = {}
-    if response_data.get("content") > 0:
-        for item in response_data.get("content"):
+    torrent_content = response_data.get("content", [])
+    if len(torrent_content) > 1:
+        files = []
+        for item in torrent_content:
             name = item.get("path").rsplit("/", 1)[-1]
             if (
                 any(name.lower().endswith(x) for x in extensions)
                 and not item.get("link", "") == ""
             ):
                 title = f"[B][Cached][/B]-{name}"
-                info["files"] = (item["link"], title)
+                files.append((item["link"], title))
+        info["files"] = files
         if info:
             set_cached(info, info_hash)
             return info

@@ -6,13 +6,12 @@ from lib.utils.kodi_utils import notification
 class Torbox(DebridClient):
     BASE_URL = "https://api.torbox.app/v1/api"
 
-    def __init__(self, token=None):
-        self.token = token
-        self.initialize_headers()
-
     def initialize_headers(self):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    def disable_access_token(self):
+        pass
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error")
@@ -31,13 +30,20 @@ class Torbox(DebridClient):
         url,
         data=None,
         params=None,
+        json=None,
         is_return_none=False,
         is_expected_to_fail=False,
     ):
         params = params or {}
         url = self.BASE_URL + url
         return super()._make_request(
-            method, url, data, params, is_return_none, is_expected_to_fail
+            method,
+            url,
+            data=data,
+            params=params,
+            json=json,
+            is_return_none=is_return_none,
+            is_expected_to_fail=is_expected_to_fail,
         )
 
     def add_magnet_link(self, magnet_link):

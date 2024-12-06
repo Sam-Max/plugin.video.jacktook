@@ -3,7 +3,6 @@ from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.debrid_client import DebridClient, ProviderException
 from lib.utils.kodi_utils import copy2clip
 from lib.utils.kodi_utils import sleep as ksleep
-from typing import Any
 from lib.utils.kodi_utils import (
     copy2clip,
     dialog_ok,
@@ -18,17 +17,15 @@ class Premiumize(DebridClient):
     OAUTH_URL = "https://www.premiumize.me/authorize"
     CLIENT_ID = "855400527"
 
-    def __init__(self, token=None):
-        self.token = token
-        self.headers = {}
-        self.initialize_headers()
-
-    def _handle_service_specific_errors(self, error_data, status_code: int):
-        pass
-
     def initialize_headers(self):
         if self.token:
             self.headers = {"Authorization": f"Bearer {self.token}"}
+
+    def disable_access_token(self):
+        pass
+
+    def _handle_service_specific_errors(self, error_data, status_code: int):
+        pass
 
     def _make_request(
         self,
@@ -36,12 +33,19 @@ class Premiumize(DebridClient):
         url,
         data=None,
         params=None,
+        json=None,
         is_return_none=False,
         is_expected_to_fail=False,
     ):
         params = params or {}
         return super()._make_request(
-            method, url, data, params, is_return_none, is_expected_to_fail
+            method,
+            url,
+            data=data,
+            params=params,
+            json=json,
+            is_return_none=is_return_none,
+            is_expected_to_fail=is_expected_to_fail,
         )
 
     def get_token(self, code):
@@ -190,9 +194,7 @@ class Premiumize(DebridClient):
             )
         return results
 
-    def get_available_torrent(
-        self, info_hash: str, torrent_name
-    ):
+    def get_available_torrent(self, info_hash: str, torrent_name):
         torrent_list_response = self.get_transfer_list()
         if torrent_list_response.get("status") != "success":
             if torrent_list_response.get("message") == "Not logged in.":

@@ -24,7 +24,7 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 
 
-client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+client = RealDebrid(token=get_setting("real_debrid_token"))
 
 
 def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
@@ -114,9 +114,10 @@ def get_rd_pack_info(info_hash):
     torr_info = client.get_torrent_info(torrent_id)
     info = {}
     info["id"] = torr_info["id"]
-    if len(torr_info["files"]) > 0:
+    torrent_files = torr_info["files"]
+    if len(torrent_files) > 1:
         torr_names = [
-            item["path"] for item in torr_info["files"] if item["selected"] == 1
+            item["path"] for item in torrent_files if item["selected"] == 1
         ]
         files = []
         for id, name in enumerate(torr_names):

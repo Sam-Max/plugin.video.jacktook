@@ -655,7 +655,7 @@ def get_rd_downloads(page=1):
     debrid_color = get_random_color(debrid_type)
     format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
 
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     downloads = rd_client.get_user_downloads_list(page=page)
     for d in downloads:
         torrent_li = list_item(f"{format_debrid_type}-{d['filename']}", "download.png")
@@ -962,7 +962,7 @@ def next_page_trakt(query="", category="", mode="", submode="", api="", page=1):
 @query_arg("debrid_type", required=True)
 def download(magnet, debrid_type):
     if debrid_type == "RD":
-        rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+        rd_client = RealDebrid(token=get_setting("real_debrid_token"))
         thread = Thread(
             target=rd_client.download, args=(magnet,), kwargs={"pack": False}
         )
@@ -1038,13 +1038,13 @@ def clear_cached_all():
 
 @plugin.route("/rd_auth")
 def rd_auth():
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     rd_client.auth()
 
 
 @plugin.route("/rd_remove_auth")
 def rd_auth():
-    rd_client = RealDebrid(encoded_token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     rd_client.remove_auth()
 
 

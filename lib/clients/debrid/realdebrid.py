@@ -14,19 +14,28 @@ from lib.utils.kodi_utils import (
 from lib.utils.utils import supported_video_extensions
 from xbmcgui import DialogProgress
 
-# Source: https://github.com/mhdzumair/MediaFusion/blob/main/streaming_providers/realdebrid/client.py
-# Modified to add func add_torrent_file, get_user_downloads_list
-
 
 class RealDebrid(DebridClient):
     BASE_URL = "https://api.real-debrid.com/rest/1.0"
     OAUTH_URL = "https://api.real-debrid.com/oauth/v2"
     OPENSOURCE_CLIENT_ID = "X245A4XAIBGVM"
 
-    def __init__(self, encoded_token=None):
-        self.encoded_token = encoded_token
-        super().__init__()
-        self.initialize_headers()
+    def initialize_headers(self):
+        if self.token:
+            token_data = self.decode_token_str(self.token)
+            if "private_token" in token_data:
+                self.headers = {
+                    "Authorization": f"Bearer {token_data['private_token']}"
+                }
+            else:
+                access_token_data = self.get_token(
+                    token_data["client_id"],
+                    token_data["client_secret"],
+                    token_data["code"],
+                )
+                self.headers = {
+                    "Authorization": f"Bearer {access_token_data['access_token']}"
+                }
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
@@ -45,9 +54,8 @@ class RealDebrid(DebridClient):
         elif error_code == 35:
             raise ProviderException("Infringing file")
 
-
     def __del__(self):
-        if self.encoded_token:
+        if self.token:
             self.disable_access_token()
 
     def _make_request(
@@ -56,30 +64,20 @@ class RealDebrid(DebridClient):
         url,
         data=None,
         params=None,
+        json=None,
         is_return_none=False,
         is_expected_to_fail=False,
     ):
         params = params or {}
         return super()._make_request(
-            method, url, data, params, is_return_none, is_expected_to_fail
+            method,
+            url,
+            data=data,
+            params=params,
+            json=json,
+            is_return_none=is_return_none,
+            is_expected_to_fail=is_expected_to_fail,
         )
-
-    def initialize_headers(self):
-        if self.encoded_token:
-            token_data = self.decode_token_str(self.encoded_token)
-            if "private_token" in token_data:
-                self.headers = {
-                    "Authorization": f"Bearer {token_data['private_token']}"
-                }
-            else:
-                access_token_data = self.get_token(
-                    token_data["client_id"],
-                    token_data["client_secret"],
-                    token_data["code"],
-                )
-                self.headers = {
-                    "Authorization": f"Bearer {access_token_data['access_token']}"
-                }
 
     @staticmethod
     def encode_token_data(client_id, client_secret, code):
@@ -167,6 +165,7 @@ class RealDebrid(DebridClient):
                         progressDialog.close()
                         set_setting("real_debrid_token", response["token"])
                         set_setting("real_debid_authorized", "true")
+                        self.token = response["token"]
                         self.initialize_headers()
                         set_setting("real_debrid_user", self.get_user()["username"])
                         dialog_ok("Success", "Authentication completed.")
@@ -303,7 +302,7 @@ class RealDebrid(DebridClient):
 
     def get_user(self):
         return self._make_request("GET", f"{self.BASE_URL}/user")
-    
+
     def get_torrent_active_count(self):
         return self._make_request("GET", f"{self.BASE_URL}/torrents/activeCount")
 

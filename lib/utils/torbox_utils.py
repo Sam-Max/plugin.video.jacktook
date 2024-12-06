@@ -85,10 +85,11 @@ def get_torbox_pack_info(info_hash):
     info = {}
     if torrent_info:
         info["id"] = torrent_info["id"]
-        if len(torrent_info["files"]) > 0:
+        torrent_files = torrent_info["files"]
+        if len(torrent_files) > 0:
             files_names = [
                 item["name"]
-                for item in torrent_info["files"]
+                for item in torrent_files
                 for x in EXTENSIONS
                 if item["short_name"].lower().endswith(x)
             ]
