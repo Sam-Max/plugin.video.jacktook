@@ -2,6 +2,7 @@ import requests
 import requests
 from threading import Lock
 from lib.api.jacktook.kodi import kodilog
+from lib.utils.ed_utils import check_ed_cached, get_ed_link
 from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import check_pm_cached, get_pm_link
 from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_link
@@ -11,6 +12,7 @@ from lib.utils.utils import (
     USER_AGENT_HEADER,
     get_cached,
     get_info_hash_from_magnet,
+    is_ed_enabled,
     is_pm_enabled,
     is_rd_enabled,
     is_tb_enabled,
@@ -48,6 +50,9 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
         )
     if is_pm_enabled():
         check_pm_cached(results, cached_results, uncached_results, total, dialog, lock)
+
+    if is_ed_enabled():
+        check_ed_cached(results, cached_results, uncached_results, total, dialog, lock)
 
     if is_tb_enabled() or is_pm_enabled():
         if get_setting("show_uncached"):
@@ -118,6 +123,8 @@ def get_debrid_direct_url(info_hash, debrid_type):
         return get_pm_link(info_hash)
     elif debrid_type == "TB":
         return get_torbox_link(info_hash)
+    elif debrid_type == "ED":
+        return get_ed_link(info_hash)
 
 
 def get_debrid_pack_direct_url(file_id, torrent_id, debrid_type):

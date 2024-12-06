@@ -184,6 +184,7 @@ def is_debrid_activated():
         get_setting("real_debrid_enabled")
         or get_setting("premiumize_enabled")
         or get_setting("torbox_enabled")
+        or get_setting("easydebrid_enabled")
     )
 
 
@@ -206,6 +207,10 @@ def is_pm_enabled():
 
 def is_tb_enabled():
     return get_setting("torbox_enabled")
+
+
+def is_ed_enabled():
+    return get_setting("easydebrid_enabled")
 
 
 def list_item(label, icon):

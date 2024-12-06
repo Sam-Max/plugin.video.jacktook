@@ -13,6 +13,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 
+from lib.utils.ed_utils import get_ed_pack_info, show_ed_pack_info
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
@@ -874,6 +875,9 @@ def show_pack_info(ids, info_hash, debrid_type, mode, tv_data):
     elif debrid_type == "RD":
         if info := get_rd_pack_info(info_hash):
             show_rd_pack_info(info, ids, debrid_type, tv_data, mode, plugin)
+    elif debrid_type == "ED":
+        if info := get_ed_pack_info(info_hash):
+            show_ed_pack_info(info, ids, debrid_type, tv_data, mode, plugin)
 
 
 @plugin.route("/search_item")

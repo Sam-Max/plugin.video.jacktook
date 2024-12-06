@@ -2,12 +2,14 @@ from abc import abstractmethod
 import traceback
 import requests
 from lib.api.jacktook.kodi import kodilog
+from abc import ABC, abstractmethod
 
 
-class DebridClient:
-    def __init__(self, token=None):
-        self.token = token
+class DebridClient(ABC):
+    def __init__(self, token):
         self.headers = {}
+        self.token = token
+        self.initialize_headers()
 
     def _make_request(
         self,
@@ -15,20 +17,22 @@ class DebridClient:
         url,
         data=None,
         params=None,
+        json=None,
         is_return_none=False,
         is_expected_to_fail=False,
     ) -> dict:
-        response = self._perform_request(method, url, data, params)
+        response = self._perform_request(method, url, data, params, json)
         self._handle_errors(response, is_expected_to_fail)
         return self._parse_response(response, is_return_none)
 
-    def _perform_request(self, method, url, data, params):
+    def _perform_request(self, method, url, data, params, json):
         try:
             return requests.Session().request(
                 method,
                 url,
                 params=params,
                 data=data,
+                json=json,
                 headers=self.headers,
                 timeout=15,
             )
@@ -54,17 +58,25 @@ class DebridClient:
 
             if error.response.status_code == 401:
                 raise ProviderException("Invalid token")
-            
+
             if error.response.status_code == 403:
                 raise ProviderException("Forbidden")
-            
+
             formatted_traceback = "".join(traceback.format_exception(error))
-            
+
             kodilog(formatted_traceback)
             kodilog(error_content)
             kodilog(error.response.status_code)
 
             raise ProviderException(f"API Error: {error_content}")
+
+    @abstractmethod
+    async def initialize_headers(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def disable_access_token(self):
+        raise NotImplementedError
 
     @staticmethod
     def _parse_response(response, is_return_none):

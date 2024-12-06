@@ -73,6 +73,9 @@
         <setting label="TorBox Configuration" type="lsep"/>
         <setting id="torbox_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="torbox_token" type="text" label="Token:" default=""/>
+        <setting label="EasyDebrid Configuration" type="lsep"/>
+        <setting id="easydebrid_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="easydebrid_token" type="text" label="Token:" default=""/>
         <!-- <setting label="AllDebrid Configuration" type="lsep"/>
         <setting id="alldebrid_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="alldebrid_token" type="text" label="Token:" default=""/> -->
