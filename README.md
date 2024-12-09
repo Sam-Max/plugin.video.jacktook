@@ -5,7 +5,7 @@ A Kodi addon for torrent finding and streaming.
 
 ## Features.
 
-**Torrent Search Sources**: Jacktook Burst, Jackgram, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr, Zilean and MediaFusion
+**Torrent Sources**: Jacktook Burst, Jackgram, Torrentio, Elhosted-KnightCrawlerr, Jackett, Prowlarr, Zilean and MediaFusion
 
 **Torrent Engines**: Jacktorr, Torrest and Elementum.
 
@@ -13,7 +13,7 @@ A Kodi addon for torrent finding and streaming.
 
 **Debrid Services**: RealDebrid, Premiumize, Torbox and EasyDebrid
 
-**Metadata**: TMDB, Trakt.tv, AniList, Simkl and Fanart.tv. 
+**Metadata**: TMDB, Trakt and Fanart.tv. 
 
 ## Requirements.
 
@@ -23,33 +23,25 @@ A Kodi addon for torrent finding and streaming.
 
 The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), so that any updates will be automatically installed.
 
+**Note**:
 
-**Note**: After each update, it is recommended that you clear cache to make sure changes take effect.
+- After each update, it is recommended that you clear cache to make sure changes takes effect.
 
-## Steps.
-
-1. Install this addon (recommended way of installing the addon is through its repository)
-
-2. Add configuration on addon settings to connect with an indexer like: Torrentio, Elfhosted, Jackett, Prowlarr or Jacktook Burst.
-
-3. Install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/) addons.
+- Optional install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/), for torrent p2p streaming.
 
 
 **Notes**:
-1. Jacktorr/Jackgram/Torrest/Elementum are optional if using Debrid services.
-2. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14. (from version 0.1.5)
-3. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to improve search speed and results.
+1. Jacktorr|Jackgram|Torrest|Elementum are optional if using Debrid.
+2. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to get more results.
+3. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14.
 4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses Jacktorr Addon). After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
 5. You can deploy/install on a remote server (instructions more below) the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
 5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
 
-## How to configure Torrentio/Elfhosted:
-The host url for Torrentio is: `https://torrentio.strem.fun/` and for Elfhosted: `https://torrentio.elfhosted.com/`
-
 ## How to use Jacktook Burst:
 
-Only needed to install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
+Install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
 
 ## How to run Jackett service using Docker:
 
@@ -59,8 +51,7 @@ Detailed instructions are available at [LinuxServer.io Jackett Docker](https://h
 
 Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
 
-## How to run Zilean service using Docker:
-The host url for Zilean is: https://zilean.elfhosted.com
+## How to run self-hosted Zilean service using Docker:
 
 Detailed instructions for self-hosting are available at [Zilean](https://github.com/iPromKnight/zilean) 
 
@@ -69,7 +60,7 @@ Detailed instructions for self-hosting are available at [Zilean](https://github.
 
 Detailed instructions are available at [Jackgram](https://github.com/sam-max/Jackgram) 
 
-## How to run Jacktorr Engine using Docker Compose (optional):
+## How to run Jacktorr Torrent Engine using Docker Compose (optional):
 
 ```
 version: '3.3'
