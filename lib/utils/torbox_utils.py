@@ -93,9 +93,9 @@ def get_torbox_pack_info(info_hash):
                 if item["short_name"].lower().endswith(x)
             ]
             files = []
+            tracker_color = get_random_color("TB")
             for id, name in enumerate(files_names):
-                tracker_color = get_random_color("TB")
-                title = f"[B][COLOR {tracker_color}][TB-Cached][/COLOR][/B]-{name}"
+                title = f"[B][COLOR {tracker_color}][TB][/COLOR][/B]-Cached-{name}"
                 files.append((id, title))
             info["files"] = files
             set_cached(info, info_hash)

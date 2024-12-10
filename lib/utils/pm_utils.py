@@ -6,6 +6,7 @@ from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_settin
 from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
+    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -60,13 +61,14 @@ def get_pm_pack_info(info_hash):
     torrent_content = response_data.get("content", [])
     if len(torrent_content) > 1:
         files = []
+        tracker_color = get_random_color("PM")
         for item in torrent_content:
             name = item.get("path").rsplit("/", 1)[-1]
             if (
                 any(name.lower().endswith(x) for x in extensions)
                 and not item.get("link", "") == ""
             ):
-                title = f"[B][Cached][/B]-{name}"
+                title = f"[B][COLOR {tracker_color}][PM][/COLOR][/B]-Cached-{name}"
                 files.append((item["link"], title))
         info["files"] = files
         if info:

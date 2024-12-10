@@ -6,6 +6,7 @@ from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
     get_public_ip,
+    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -54,10 +55,11 @@ def get_ed_pack_info(info_hash):
     torrent_files = response_data.get("files", [])
     if len(torrent_files) > 1:
         files = []
+        tracker_color = get_random_color("TB")
         for item in torrent_files:
             name = item["filename"]
             if any(name.lower().endswith(x) for x in extensions):
-                title = f"[B][ED]-Cached[/B]-{name}"
+                title = f"[B][COLOR {tracker_color}][ED][/COLOR][/B]-Cached-{name}"
                 files.append((item["url"], title))
         info["files"] = files
         if info:

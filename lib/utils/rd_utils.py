@@ -121,9 +121,9 @@ def get_rd_pack_info(info_hash):
             item["path"] for item in torrent_files if item["selected"] == 1
         ]
         files = []
+        tracker_color = get_random_color("RD")
         for id, name in enumerate(torr_names):
-            tracker_color = get_random_color("RD")
-            title = f"[B][COLOR {tracker_color}][RD-Cached][/COLOR][/B]-{name.split('/', 1)[1]}"
+            title = f"[B][COLOR {tracker_color}][RD][/COLOR][/B]-Cached-{name.split('/', 1)[1]}"
             files.append((id, title))
         info["files"] = files
         set_cached(info, info_hash)
