@@ -2,7 +2,7 @@ from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.tmdbv3api.utils import get_dates, years_tvshows
 
 
-class Anime(TMDb):
+class TmdbAnime(TMDb):
     _urls = {
         "discover_tv": "/discover/tv",
         "discover_movie": "/discover/movie",

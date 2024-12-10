@@ -1,26 +1,23 @@
 import os
-from lib.utils.kodi_utils import ADDON_PATH, container_update, get_kodi_version, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update, get_kodi_version
 from lib.utils.utils import (
     TMDB_POSTER_URL,
     get_fanart,
     set_media_infotag,
     set_video_info,
-    set_watched_title,
     tmdb_get,
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 
 
-def show_season_info(ids, mode, media_type, plugin):
+def show_season_info(ids, mode, media_type):
     tmdb_id, tvdb_id, _ = ids.split(", ")
 
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
     seasons = details.seasons
     overview = details.overview
-
-    set_watched_title(name, ids, mode=mode, media_type=media_type)
 
     show_poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
     fanart_data = get_fanart(tvdb_id)
@@ -65,9 +62,9 @@ def show_season_info(ids, mode, media_type, plugin):
         list_item.setProperty("IsPlayable", "false")
 
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details/season",
+            ADDON_HANDLE,
+            build_url(
+                "tv_episodes_details",
                 tv_name=name,
                 ids=ids,
                 mode=mode,
@@ -79,7 +76,7 @@ def show_season_info(ids, mode, media_type, plugin):
         )
 
 
-def show_episode_info(tv_name, season, ids, mode, media_type, plugin):
+def show_episode_info(tv_name, season, ids, mode, media_type):
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = get_fanart(tvdb_id)
@@ -137,7 +134,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type, plugin):
                 (
                     "Rescrape item",
                     container_update(
-                        name="search",
+                        "search",
                         mode=mode,
                         query=tv_name,
                         ids=ids,
@@ -149,9 +146,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type, plugin):
         )
 
         addDirectoryItem(
-            plugin.handle,
-             url_for(
-                name="search",
+            ADDON_HANDLE,
+             build_url(
+                "search",
                 mode=mode,
                 media_type=media_type,
                 query=tv_name,

@@ -3,7 +3,7 @@ import re
 from lib.clients.fma import FindMyAnime, extract_season
 from lib.api.jacktook.kodi import kodilog
 from lib.clients.simkl import SIMKL
-from lib.utils.kodi_utils import ADDON_PATH, get_kodi_version, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, get_kodi_version
 from lib.utils.utils import (
     get_cached,
     set_cached,
@@ -92,7 +92,7 @@ def simkl_parse_show_results(response, title, season, plugin):
                 )
 
             addDirectoryItem(
-                plugin.handle,
+                ADDON_HANDLE,
                 url_for(
                     name="search",
                     mode="anime",
@@ -104,4 +104,4 @@ def simkl_parse_show_results(response, title, season, plugin):
                 isFolder=True,
             )
 
-    endOfDirectory(plugin.handle)
+    endOfDirectory(ADDON_HANDLE)

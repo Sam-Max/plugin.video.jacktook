@@ -5,11 +5,12 @@ import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
+    ADDON_HANDLE,
     ADDON_PATH,
+    build_url,
     get_setting,
     dialog_text,
     notification,
-    url_for,
 )
 from lib.utils.utils import (
     Indexer,
@@ -132,16 +133,16 @@ def get_rd_pack_info(info_hash):
         return
 
 
-def show_rd_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+def show_rd_pack_info(info, ids, debrid_type, tv_data, mode):
     for file_id, title in info["files"]:
         list_item = ListItem(label=title)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="play_from_pack",
+            ADDON_HANDLE,
+            build_url(
+                "play_from_pack",
                 title=title,
                 mode=mode,
                 data={

@@ -111,8 +111,9 @@ def call_trakt(
                     API_ENDPOINT % path, params=params, headers=headers, timeout=timeout
                 )
             resp.raise_for_status()
-        except Exception as e:
-            raise Exception(f"Trakt Error: {str(e)}")
+        except requests.RequestException as error:
+            if error.response.status_code == 401:
+                raise ProviderException("Trakt Error: Unauthorized")
         return resp
 
     CLIENT_ID = trakt_client()
@@ -738,3 +739,9 @@ def clear_cache(cache_type):
         success = lists_cache.delete_all_lists()
     if success:
         return success
+
+
+class ProviderException(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)

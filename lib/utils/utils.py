@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 import hashlib
+import json
 import os
 import re
 import unicodedata
@@ -22,15 +23,17 @@ from lib.api.tmdbv3api.objs.tv import TV
 from lib.torf._magnet import Magnet
 from lib.fanart import search_api_fanart
 from lib.utils.kodi_utils import (
+    ADDON_HANDLE,
     ADDON_PATH,
     MOVIES_TYPE,
     SHOWS_TYPE,
+    build_url,
     container_refresh,
     get_jacktorr_setting,
     get_kodi_version,
     get_setting,
+    set_property,
     translation,
-    url_for,
 )
 from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
@@ -42,6 +45,7 @@ from lib.utils.settings import get_int_setting
 from lib.utils.torrentio_utils import filter_by_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
+import xbmcgui
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
 from xbmc import getSupportedMedia
 from zipfile import ZipFile
@@ -140,6 +144,7 @@ class Debrids(Enum):
     RD = "Real-Debrid"
     PM = "Premiumize"
     TB = "Torbox"
+    ED = "EasyDebrid"
 
 
 class Indexer(Enum):
@@ -159,6 +164,14 @@ class Players(Enum):
     ELEMENTUM = "Elementum"
     DEBRID = "Debrid"
     JACKGRAM = "Jackgram"
+
+
+class Anime(Enum):
+    SEARCH = "Anime_Search"
+    POPULAR = "Anime_Popular"
+    TRENDING = "Anime_Trending"
+    AIRING = "Anime_On_The_Air"
+    MOST_WATCHED = "Anime_Most_Watched"
 
 
 class DialogListener:
@@ -195,6 +208,8 @@ def check_debrid_enabled(debrid_type):
         return is_pm_enabled()
     elif debrid_type == Debrids.TB:
         return is_tb_enabled()
+    elif debrid_type == Debrids.ED:
+        return is_ed_enabled()
 
 
 def is_rd_enabled():
@@ -225,6 +240,37 @@ def list_item(label, icon):
     return item
 
 
+def load_window_test():
+    window = MyWindow("mywindow.xml", ADDON_PATH, "Default", "1080p")
+    # window.onInit()
+    # window.doModal()
+    return window
+
+
+class MyWindow(xbmcgui.WindowXML):
+    def __init__(self, *args, **kwargs):
+        xbmcgui.WindowXML.__init__(self)
+        self.list_control = None
+
+    def onInit(self):
+        self.list_control = self.getControl(32503)
+
+    def add_item(self, list_item):
+        if self.list_control:
+            self.list_control.addItem(list_item)
+
+    def onClick(self, control_id):
+        if control_id == 32503:  # List control
+            selected_item = self.list_control.getSelectedItem()
+            if selected_item:
+                xbmcgui.Dialog().notification(
+                    "Selected Item",
+                    selected_item.getLabel(),
+                    xbmcgui.NOTIFICATION_INFO,
+                    3000,
+                )
+
+
 def add_play_item(
     list_item,
     ids,
@@ -237,12 +283,11 @@ def add_play_item(
     is_torrent=False,
     debrid_type="",
     is_cached=False,
-    plugin=None,
 ):
     addDirectoryItem(
-        plugin.handle,
-        url_for(
-            name="play_torrent",
+        ADDON_HANDLE,
+        build_url(
+            "play_torrent",
             title=title,
             mode=mode,
             is_torrent=is_torrent,
@@ -263,11 +308,11 @@ def add_play_item(
     )
 
 
-def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode, plugin):
+def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode):
     addDirectoryItem(
-        plugin.handle,
-        url_for(
-            name="show_pack_info",
+        ADDON_HANDLE,
+        build_url(
+            "show_pack_info",
             ids=ids,
             debrid_type=debrid_type,
             info_hash=info_hash,
@@ -334,6 +379,36 @@ def set_video_info(
     list_item.setInfo("video", info)
 
 
+def make_listing(url, metadata):
+    title = metadata.get("title")
+    ids = metadata.get("ids")
+    tv_data = metadata.get("tv_data", {})
+    mode = metadata.get("mode", "")
+
+    list_item = ListItem(label=title)
+    list_item.setPath(url)
+    list_item.setContentLookup(False)
+    list_item.setLabel(title)
+
+    if tv_data:
+        ep_name, episode, season = tv_data.split("(^)")
+    else:
+        ep_name = episode = season = ""
+
+    set_media_infotag(
+        list_item,
+        mode,
+        title,
+        season_number=season,
+        episode=episode,
+        ep_name=ep_name,
+        ids=ids,
+    )
+
+    set_windows_property(mode, ids)
+    return list_item
+
+
 def set_media_infotag(
     list_item,
     mode,
@@ -348,7 +423,7 @@ def set_media_infotag(
     url="",
 ):
     info_tag = list_item.getVideoInfoTag()
-    if mode in ["movies"]:
+    if mode == "movies":
         info_tag.setMediaType("movie")
         info_tag.setTitle(name)
         info_tag.setOriginalTitle(name)
@@ -368,6 +443,9 @@ def set_media_infotag(
             info_tag.setSeason(int(season_number))
         if episode:
             info_tag.setEpisode(int(episode))
+
+    list_item.setProperty("IsPlayable", "true")
+
     info_tag.setPlot(overview)
     if duration:
         info_tag.setDuration(int(duration))
@@ -379,12 +457,34 @@ def set_media_infotag(
         )
 
 
+def set_windows_property(mode, ids):
+    if ids:
+        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        if mode == "movies":
+            ids = {
+                "tmdb": tmdb_id,
+                "imdb": imdb_id,
+            }
+        else:
+            ids = {
+                "tvdb": tvdb_id,
+            }
+        set_property(
+            "script.trakt.ids",
+            json.dumps(ids),
+        )
+
+
 def set_watched_file(title, is_torrent, extra_data):
     if title in main_db.database["jt:lfh"]:
         return
 
     if is_torrent:
-        title = f"[B][Uncached][/B]-{title}"
+        color = get_random_color("Direct")
+        title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
+    else:
+        color = get_random_color("Cached")
+        title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
 
     if title not in main_db.database["jt:watch"]:
         main_db.database["jt:watch"][title] = True
@@ -443,11 +543,11 @@ def get_cached(path, params={}):
     return cache.get(identifier, hashed_key=True)
 
 
-def set_cached(results, path, params={}):
+def set_cached(data, path, params={}):
     identifier = "{}|{}".format(path, params)
     cache.set(
         identifier,
-        results,
+        data,
         timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         hashed_key=True,
     )
@@ -540,11 +640,11 @@ def get_tmdb_tv_data(id):
     return imdb_id, tvdb_id
 
 
-def set_content_type(mode, media_type="movies", plugin=None):
+def set_content_type(mode, media_type="movies"):
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        setContent(plugin.handle, MOVIES_TYPE)
+        setContent(ADDON_HANDLE, MOVIES_TYPE)
     elif mode == "movies" or media_type == "movies":
-        setContent(plugin.handle, SHOWS_TYPE)
+        setContent(ADDON_HANDLE, SHOWS_TYPE)
 
 
 # This method was taken from script.elementum.jackett addon
@@ -599,7 +699,7 @@ def clear_all_cache():
     clear_cache(cache_type="list")
 
 
-def clear(type=""):
+def clear(type="lth"):
     dialog = Dialog()
     confirmed = dialog.yesno(
         "Clear History",
@@ -883,7 +983,7 @@ def supported_video_extensions():
     return media_types.split("|")
 
 
-def add_next_button(func_name, plugin, page=None, **kwargs):
+def add_next_button(func_name, page=1, **kwargs):
     list_item = ListItem(label="Next")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
@@ -891,12 +991,12 @@ def add_next_button(func_name, plugin, page=None, **kwargs):
 
     page += 1
     addDirectoryItem(
-        plugin.handle,
-        url_for(name=func_name, page=page, **kwargs),
+        ADDON_HANDLE,
+        build_url(func_name, page=page, **kwargs),
         list_item,
         isFolder=True,
     )
-    endOfDirectory(plugin.handle)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def is_video(s):

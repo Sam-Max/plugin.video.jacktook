@@ -2,7 +2,7 @@ import copy
 import os
 from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
 from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
@@ -104,16 +104,16 @@ def get_torbox_pack_info(info_hash):
             notification("Not a torrent pack")
 
 
-def show_tb_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+def show_tb_pack_info(info, ids, debrid_type, tv_data, mode):
     for file_id, title in info["files"]:
         list_item = ListItem(label=title)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="play_from_pack",
+            ADDON_HANDLE,
+            build_url(
+                "play_from_pack",
                 title=title,
                 mode=mode,
                 data={

@@ -16,11 +16,11 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 from lib.db.main_db import main_db
 from lib.utils.kodi_utils import (
+    ADDON_HANDLE,
     ADDON_PATH,
+    build_url,
     show_keyboard,
     get_kodi_version,
-    url_for,
-    url_for_path,
 )
 
 
@@ -123,18 +123,16 @@ def anilist_show_results(results, category, page, plugin):
 
         if format in ["TV", "OVA"]:
             addDirectoryItem(
-                plugin.handle,
-                url_for_path(
-                    name="anilist/episodes", path=f"{title}/{anilist_id}/{mal_id}"
-                ),
+                ADDON_HANDLE,
+                build_url("anilist/episodes", path=f"{title}/{anilist_id}/{mal_id}"),
                 list_item,
                 isFolder=True,
             )
         else:
             addDirectoryItem(
-                plugin.handle,
-                url_for(
-                    name="search",
+                ADDON_HANDLE,
+                build_url(
+                    "search",
                     mode=mode,
                     query=title,
                     ids=f"{tmdb_id}, {tvdb_id}, {imdb_id}",

@@ -17,13 +17,14 @@ from lib.api.trakt.trakt_api import (
 )
 from lib.tmdb import TMDB_BACKDROP_URL, TMDB_POSTER_URL
 from lib.utils.utils import (
+    Anime,
     Enum,
     add_next_button,
     execute_thread_pool,
     set_media_infotag,
     tmdb_get,
 )
-from lib.utils.kodi_utils import ADDON_PATH, container_update, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -34,8 +35,6 @@ from lib.utils.paginator import paginator_db
 class Trakt(Enum):
     TRENDING = "trakt_trending"
     TRENDING_RECENT = "trakt_trending_recent"
-    ANIME_TRENDING = "Anime_Trending"
-    ANIME_MOST_WATCHED = "Anime_Most_Watched"
     TOP10 = "trakt_top10"
     WATCHED = "trakt_watched"
     FAVORITED = "trakt_favorited"
@@ -87,35 +86,34 @@ def handle_trakt_tv_query(query, mode, page):
 
 def handle_trakt_anime_query(query, page):
     kodilog("trakt::handle_trakt_anime_query")
-    if query == Trakt.ANIME_TRENDING:
+    if query == Anime.TRENDING:
         return trakt_anime_trending(page)
-    elif query == Trakt.ANIME_MOST_WATCHED:
+    elif query == Anime.MOST_WATCHED:
         return trakt_anime_most_watched(page)
 
 
-def process_trakt_result(results, query, category, mode, submode, api, page, plugin):
+def process_trakt_result(results, query, category, mode, submode, api, page):
     if (
         query == Trakt.TRENDING
         or query == Trakt.WATCHED
         or query == Trakt.FAVORITED
         or query == Trakt.TOP10
     ):
-        execute_thread_pool(results, show_common_categories, mode, plugin)
+        execute_thread_pool(results, show_common_categories, mode)
     elif query == Trakt.RECOMENDATIONS:
-        execute_thread_pool(results, show_recommendations, mode, plugin)
+        execute_thread_pool(results, show_recommendations, mode)
     elif query == Trakt.TRENDING_LISTS:
-        execute_thread_pool(results, show_trending_lists, mode, plugin)
+        execute_thread_pool(results, show_trending_lists, mode)
     elif query == Trakt.WATCHLIST:
-        execute_thread_pool(results, show_watchlist, mode, plugin)
+        execute_thread_pool(results, show_watchlist, mode)
 
-    if category == Trakt.ANIME_TRENDING or category == Trakt.ANIME_MOST_WATCHED:
+    if category == Anime.TRENDING or category == Anime.MOST_WATCHED:
         kodilog("trakt::process_trakt_result")
-        execute_thread_pool(results, show_anime_common, submode, plugin)
+        execute_thread_pool(results, show_anime_common, submode)
 
     add_next_button(
-        "next_page_trakt",
-        plugin,
-        page,
+        "search_item",
+        page=page,
         query=query,
         category=category,
         mode=mode,
@@ -124,9 +122,8 @@ def process_trakt_result(results, query, category, mode, submode, api, page, plu
     )
 
 
-def show_anime_common(res, mode, plugin):
+def show_anime_common(res, mode):
     kodilog("trakt::show_anime_common")
-    kodilog(mode)
     ids = extract_ids(res)
     title = res["show"]["title"]
 
@@ -161,10 +158,10 @@ def show_anime_common(res, mode, plugin):
         ids=ids,
     )
 
-    add_dir_item(mode, list_item, ids, title, plugin)
+    add_dir_item(mode, list_item, ids, title)
 
 
-def show_common_categories(res, mode, plugin):
+def show_common_categories(res, mode):
     if mode == "tv":
         title = res["show"]["title"]
         ids = extract_ids(res, mode)
@@ -200,10 +197,10 @@ def show_common_categories(res, mode, plugin):
         ids=ids,
     )
 
-    add_dir_item(mode, list_item, ids, title, plugin)
+    add_dir_item(mode, list_item, ids, title)
 
 
-def show_watchlist(res, mode, plugin):
+def show_watchlist(res, mode):
     tmdb_id = res["media_ids"]["tmdb"]
     tvdb_id = -1
     imdb_id = res["media_ids"]["imdb"]
@@ -228,10 +225,10 @@ def show_watchlist(res, mode, plugin):
         }
     )
 
-    add_dir_item(mode, list_item, ids, title, plugin)
+    add_dir_item(mode, list_item, ids, title)
 
 
-def show_trending_lists(res, mode, plugin):
+def show_trending_lists(res, mode):
     list_title = res["list"]["name"]
     list_item = ListItem(list_title)
     description = res["list"]["description"]
@@ -243,9 +240,9 @@ def show_trending_lists(res, mode, plugin):
     list_item.setInfo("video", info_labels)
 
     addDirectoryItem(
-        plugin.handle,
-        url_for(
-            name="/trakt/list/content",
+        ADDON_HANDLE,
+        build_url(
+            "trakt_list_content",
             list_type=res["list"]["type"],
             mode=mode,
             user=res["list"]["user"]["ids"]["slug"],
@@ -256,7 +253,7 @@ def show_trending_lists(res, mode, plugin):
     )
 
 
-def show_recommendations(res, mode, plugin):
+def show_recommendations(res, mode):
     title = res["title"]
     tmdb_id = res["ids"]["tmdb"]
     tvdb_id = -1
@@ -294,10 +291,10 @@ def show_recommendations(res, mode, plugin):
 
     list_item.setProperty("IsPlayable", "false")
 
-    add_dir_item(mode, list_item, ids, title, plugin)
+    add_dir_item(mode, list_item, ids, title)
 
 
-def show_lists_content_items(res, plugin):
+def show_lists_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
     tvdb_id = -1
     imdb_id = res["media_ids"]["imdb"]
@@ -338,9 +335,9 @@ def show_lists_content_items(res, plugin):
 
     if res["type"] == "show":
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details",
+            ADDON_HANDLE,
+            build_url(
+                "tv_seasons_details",
                 ids=ids,
                 mode="tv",
             ),
@@ -349,9 +346,9 @@ def show_lists_content_items(res, plugin):
         )
     else:
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="search",
+            ADDON_HANDLE,
+            build_url(
+                "search",
                 query=title,
                 mode="movies",
                 ids=ids,
@@ -361,18 +358,18 @@ def show_lists_content_items(res, plugin):
         )
 
 
-def show_trakt_list_content(list_type, mode, user, slug, with_auth, page, plugin):
+def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
     data = get_trakt_list_contents(list_type, user, slug, with_auth)
     paginator_db.initialize(data)
     items = paginator_db.get_page(page)
-    execute_thread_pool(items, show_lists_content_items, plugin)
-    add_next_button("/trakt/paginator", plugin, page, mode=mode)
+    execute_thread_pool(items, show_lists_content_items)
+    add_next_button("list_trakt_page", page, mode=mode)
 
 
-def show_trakt_list_page(page, mode, plugin):
+def show_list_trakt_page(page, mode):
     items = paginator_db.get_page(page)
-    execute_thread_pool(items, show_lists_content_items, plugin)
-    add_next_button("/trakt/paginator", plugin, page, mode=mode)
+    execute_thread_pool(items, show_lists_content_items)
+    add_next_button("list_trakt_page", page, mode=mode)
 
 
 def extract_ids(res, mode="tv"):
@@ -388,12 +385,12 @@ def extract_ids(res, mode="tv"):
     return f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
 
-def add_dir_item(mode, list_item, ids, title, plugin):
+def add_dir_item(mode, list_item, ids, title):
     if mode == "tv":
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="tv/details",
+            ADDON_HANDLE,
+            build_url(
+                "tv_seasons_details",
                 ids=ids,
                 mode="tv",
             ),
@@ -416,9 +413,9 @@ def add_dir_item(mode, list_item, ids, title, plugin):
             ]
         )
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="search",
+            ADDON_HANDLE,
+            build_url(
+                "search",
                 query=title,
                 mode="movies",
                 ids=ids,

@@ -1,8 +1,8 @@
 import os
 from lib.clients.anizip import AniZipApi
 from lib.db.anime_db import get_all_ids
-from lib.utils.kodi_utils import ADDON_PATH, container_update, get_kodi_version, url_for
-from lib.utils.utils import get_cached, set_cached, set_video_info, set_media_infotag, tvdb_get
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, container_update, get_kodi_version
+from lib.utils.utils import get_cached, set_cached, set_video_info, set_media_infotag
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
@@ -98,7 +98,7 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
         )
         
         addDirectoryItem(
-            plugin.handle,
+            ADDON_HANDLE,
             url_for(
                 name="search",
                 mode="anime",
@@ -110,4 +110,4 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
             isFolder=True,
         )
 
-    endOfDirectory(plugin.handle)
+    endOfDirectory(ADDON_HANDLE)

@@ -8,9 +8,9 @@
         <setting label="Cache" type="lsep"/>
         <setting id="cache_enabled" type="bool" label="30107" default="true"/>
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>
-        <setting type="action" label="30106" action="RunPlugin(plugin://plugin.video.jacktook/clear_cached_all)" />
+        <setting type="action" label="30106" action="RunPlugin(plugin://plugin.video.jacktook/?action=clear_all_cached)" />
         <setting label="Update" type="lsep"/>
-        <setting type="action" label="Update addon" action="RunPlugin(plugin://plugin.video.jacktook/addon_update)"/>
+        <setting type="action" label="Update addon" action="RunPlugin(plugin://plugin.video.jacktook/?action=addon_update)"/>
         <setting id="clear_cache_update" type="bool" label="Clear cache when update" default="true"/>
     </category>
     <category label="30020">
@@ -22,7 +22,7 @@
         <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached|None" default="None"/>
         <setting id="torrentio_priority_lang" type="labelenum" label="Priority Language" values="GB|JP|RU|IT|PT|ES|MX|KR|CN|TW|FR|DE|NL|IN|PL|LT|CZ|SK|SI|HU|RO|HR|UA|GR|DK|FI|SE|NO|TR|None" default="None"/>
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
-        <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/open_torr_providers_select)"/>
+        <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_selection)"/>
         <setting label="Jackgram Configuration" type="lsep"/>
         <setting id="jackgram_host" type="text" label="Jackgram Host" default=""/>
         <setting id="jackgram_desc_length" type="number" label="30026" default="100"/>
@@ -55,7 +55,7 @@
         <setting id="mediafusion_host" type="text" label="30052" default="https://mediafusion.elfhosted.com"/>
         <setting id="mediafusion_manifest_url" type="text" label="Manifest Url" default=""/>
         <setting label="Jacktook Burst Configuration" type="lsep"/>
-        <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/open_burst_config)" />
+        <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/?action=open_burst_config)" />
         <setting id="burst_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached" default="Seeds"/>
     </category>
     <category label="30150">
@@ -64,12 +64,12 @@
         <setting id="real_debid_authorized" type="bool" label="" default="false" visible="false"/>
         <setting id="real_debrid_user" type="text" label="User" default="" visible="eq(-1,true)"/>
         <setting id="real_debrid_token" type="text" label="30154" default="" visible="false"/>
-        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/rd_auth)" />
-        <setting type="action" label="Remove Authorization" action="RunPlugin(plugin://plugin.video.jacktook/rd_remove_auth)" />
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/?action=rd_auth)" />
+        <setting type="action" label="Remove Authorization" action="RunPlugin(plugin://plugin.video.jacktook/?action=rd_remove_auth)" />
         <setting label="Premiumize Configuration" type="lsep"/>
         <setting id="premiumize_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="premiumize_token" type="text" label="Token:" default="" visible="false"/>
-        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/pm_auth)" />
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/?action=pm_auth)" />
         <setting label="TorBox Configuration" type="lsep"/>
         <setting id="torbox_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="torbox_token" type="text" label="Token:" default=""/>
@@ -89,14 +89,14 @@
     </category>
     <category label="Trakt">
         <setting label="Trakt Configuration" type="lsep"/>
-        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/trakt_auth)" />
+        <setting type="action" label="Authorize" action="RunPlugin(plugin://plugin.video.jacktook/?action=trakt_auth)" />
         <setting id="trakt.expires" type="text" default="0" visible="false"/>
         <setting id="trakt.refresh" type="text" default="0" visible="false"/>
         <setting id="trakt.token" type="text" default="0" visible="false"/>
         <setting id="trakt.user" type="text" default="0" visible="false"/>
         <setting id="jacktook.trakt.client" type="text" label="Trakt Client" default="1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb"/>
         <setting id="jacktook.trakt.secret" type="text" label="Trakt Secret" default="8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"/>
-        <setting type="action" label="Log out" action="RunPlugin(plugin://plugin.video.jacktook/trakt_logout)" />
+        <setting type="action" label="Log out" action="RunPlugin(plugin://plugin.video.jacktook/?action=trakt_logout)" />
     </category>
     <category label="30200">
         <setting label="30202" type="lsep"/>

@@ -2,7 +2,7 @@ import copy
 import os
 from lib.clients.debrid.premiumize import Premiumize
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
 from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
@@ -77,16 +77,16 @@ def get_pm_pack_info(info_hash):
         return
 
 
-def show_pm_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+def show_pm_pack_info(info, ids, debrid_type, tv_data, mode):
     for url, title in info["files"]:
         list_item = ListItem(label=f"{title}")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="play_torrent",
+            ADDON_HANDLE,
+            build_url(
+                "play_torrent",
                 title=title,
                 mode=mode,
                 is_torrent=False,

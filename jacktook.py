@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
 
-from lib.navigation import run
+from lib.router import addon_router
 
-run()
+addon_router()

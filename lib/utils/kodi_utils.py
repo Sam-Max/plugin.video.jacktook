@@ -3,7 +3,9 @@ from datetime import datetime
 import json
 import re
 import sys
+from urllib import parse
 from urllib.parse import quote, urlencode
+from lib.api.jacktook.kodi import kodilog
 from lib.utils.custom_dialogs import CustomDialog
 import xbmc
 import xbmcgui
@@ -32,6 +34,7 @@ except:
     JACKTORR_ADDON = None
 
 ADDON = xbmcaddon.Addon()
+ADDON_HANDLE = int(sys.argv[1])
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ICON = ADDON.getAddonInfo("icon")
 ADDON_ID = ADDON.getAddonInfo("id")
@@ -208,36 +211,26 @@ def container_update(name, **kwargs):
     :param path: The path where to update.
     :type path: str
     """
-    return "Container.Update({})".format(url_for_args(name, kwargs))
+    return "Container.Update({})".format(build_url(name, **kwargs))
 
 
 def container_refresh():
     execute_builtin("Container.Refresh")
 
 
-def action(plugin, func, *args, **kwargs):
-    return "RunPlugin({})".format(plugin.url_for(func, *args, **kwargs))
-
-
 def action_url_run(name, **kwargs):
-    return "RunPlugin({})".format(url_for_args(name, kwargs))
+    return "RunPlugin({})".format(build_url(name, **kwargs))
 
 
-def url_for_args(name, kwargs):
+def build_url(action, **params):
+    query = parse.urlencode(params)
+    return f"plugin://{ADDON_ID}/?action={action}&{query}"
+
+
+def url_for(action, **kwargs):
     qs_kwargs = dict(((k, v) for k, v in list(kwargs.items())))
     query = "?" + urlencode(qs_kwargs) if qs_kwargs else ""
-    return f"plugin://{ADDON_ID}/{name}" + query
-
-
-def url_for(name, **kwargs):
-    qs_kwargs = dict(((k, v) for k, v in list(kwargs.items())))
-    query = "?" + urlencode(qs_kwargs) if qs_kwargs else ""
-    return f"plugin://{ADDON_ID}/{name}" + query
-
-
-def url_for_path(name, path):
-    path = path if path.startswith("/") else "/" + path
-    return f"plugin://{ADDON_ID}/{name}" + path
+    return f"plugin://{ADDON_ID}/?action={action}&{query}"
 
 
 def play_info_hash(info_hash):
@@ -274,6 +267,9 @@ def hide_busy_dialog():
 def execute_builtin(command, block=False):
     return xbmc.executebuiltin(command, block)
 
+
+def get_visibility():
+    return xbmc.getCondVisibility
 
 def delete_file(file):
     xbmc_delete(file)

@@ -1,7 +1,7 @@
 import copy
 from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.easydebrid import EasyDebrid
-from lib.utils.kodi_utils import get_setting, notification, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, build_url, get_setting, notification
 from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
@@ -68,13 +68,13 @@ def get_ed_pack_info(info_hash):
         return
 
 
-def show_ed_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
+def show_ed_pack_info(info, ids, debrid_type, tv_data, mode):
     for url, title in info["files"]:
         list_item = ListItem(label=f"{title}")
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="play_torrent",
+            ADDON_HANDLE,
+            build_url(
+                "play_torrent",
                 title=title,
                 mode=mode,
                 is_torrent=False,

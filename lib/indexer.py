@@ -22,7 +22,7 @@ from lib.utils.utils import (
 from xbmcgui import ListItem
 
 
-def show_indexers_results(res, mode, ids, tv_data, direct, plugin):
+def show_indexers_results(res, mode, ids, tv_data, direct):
     kodilog("indexer::show_indexers_results")
     description_length = get_description_length()
 
@@ -66,15 +66,14 @@ def show_indexers_results(res, mode, ids, tv_data, direct, plugin):
             title,
             overview,
             mode,
-            plugin,
         )
     elif get_setting("indexer") == Indexer.JACKGRAM:
         handle_jackgram_items(
-            res, formated_title, tv_data, ids, poster, title, overview, mode, plugin
+            res, formated_title, tv_data, ids, poster, title, overview, mode
         )
     else:
         handle_torrent_items(
-            res, formated_title, tv_data, ids, poster, title, overview, mode, plugin
+            res, formated_title, tv_data, ids, poster, title, overview, mode
         )
 
 
@@ -88,7 +87,6 @@ def handle_debrid_items(
     title,
     overview,
     mode,
-    plugin,
 ):
     info_hash = res.get("infoHash")
     debrid_type = res.get("debridType")
@@ -100,9 +98,7 @@ def handle_debrid_items(
             label_title = f"{format_debrid_type}-Cached-Pack-{formated_title}"
 
         list_item = ListItem(label=label_title)
-        add_pack_item(
-            list_item, tv_data, ids, info_hash, res["debridType"], mode, plugin
-        )
+        add_pack_item(list_item, tv_data, ids, info_hash, res["debridType"], mode)
     else:
         if debrid_type == "RD":
             label_title = get_debrid_label(res, format_debrid_type, formated_title)
@@ -134,21 +130,20 @@ def handle_debrid_items(
             debrid_type=debrid_type,
             info_hash=info_hash,
             mode=mode,
-            plugin=plugin,
         )
 
 
 def handle_jackgram_items(
-    res, formated_title, tv_data, ids, poster, title, overview, mode, plugin
+    res, formated_title, tv_data, ids, poster, title, overview, mode
 ):
     url = res.get("downloadUrl")
     list_item = ListItem(label=formated_title)
     set_video_properties(list_item, poster, mode, title, overview, ids)
-    add_play_item(list_item, ids, tv_data, title, url, mode=mode, plugin=plugin)
+    add_play_item(list_item, ids, tv_data, title, url, mode=mode)
 
 
 def handle_torrent_items(
-    res, formated_title, tv_data, ids, poster, title, overview, mode, plugin
+    res, formated_title, tv_data, ids, poster, title, overview, mode
 ):
     guid = res.get("guid")
     magnet = (
@@ -189,7 +184,6 @@ def handle_torrent_items(
         url=url,
         is_torrent=True,
         mode=mode,
-        plugin=plugin,
     )
 
 

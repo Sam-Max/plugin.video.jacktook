@@ -2,7 +2,7 @@ import os
 from lib.clients.debrid.alldebrid import AllDebrid
 from lib.api.debrid.debrid_client import ProviderException
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, url_for
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
 from lib.utils.utils import (
     get_cached,
     get_random_color,
@@ -87,9 +87,9 @@ def show_ad_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
         addDirectoryItem(
-            plugin.handle,
-            url_for(
-                name="play_from_pack",
+            ADDON_HANDLE,
+            build_url(
+                "play_from_pack",
                 title=title,
                 mode=mode,
                 data={
