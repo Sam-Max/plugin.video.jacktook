@@ -84,7 +84,7 @@ msgid "Host"
 msgstr ""
 
 msgctxt "#30053"
-msgid "IndexersIds "
+msgid "Indexers-Ids"
 msgstr ""
 
 msgctxt "#30054"

@@ -80,8 +80,8 @@ msgid "Host"
 msgstr "Host"
 
 msgctxt "#30053"
-msgid "IndexersIds"
-msgstr "Ids Indexadores"
+msgid "Indexers-Ids"
+msgstr "Ids de los Indexadores"
 
 msgctxt "#30054"
 msgid "Anime IndexersIds"

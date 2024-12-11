@@ -33,7 +33,7 @@ The recommended way of installing the addon is through its [repository](https://
 **Notes**:
 1. Jacktorr|Jackgram|Torrest|Elementum are optional if using Debrid.
 2. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to get more results.
-3. Prowlarr IndexerIds field is comma separated trackers ids without space. Ex. 12,13,14.
+3. Prowlarr Indexers-Ids field is space separated ids of the indexers you have on your Prowlarr instance configured. Ex. 25 27 14. By default this field is empty, which means it will search on all your indexers.
 4. You can deploy/install on a remote server (instructions more below) the TorrServer Engine (torrent client that uses Jacktorr Addon). After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
 5. You can deploy/install on a remote server (instructions more below) the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
 5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)

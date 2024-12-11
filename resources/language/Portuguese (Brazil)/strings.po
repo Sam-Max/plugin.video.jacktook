@@ -76,7 +76,7 @@ msgid "Host"
 msgstr "Host do Prowlarr"
 
 msgctxt "#30053"
-msgid "IndexersIds "
+msgid "Indexers-Ids"
 msgstr "IDs dos Indexadores "
 
 msgctxt "#30054"

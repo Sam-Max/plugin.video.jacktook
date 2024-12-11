@@ -56,7 +56,6 @@ def search_client(
             response = client.search(
                 query,
                 mode,
-                imdb_id,
                 season,
                 episode,
                 indexers_ids,
