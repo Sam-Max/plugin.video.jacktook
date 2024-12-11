@@ -26,7 +26,7 @@ class AllDebrid(DebridClient):
         params,
         is_return_none: bool = False,
         is_expected_to_fail: bool = False,
-    ) -> dict:
+    ):
         params = params or {}
         url = self.BASE_URL + url
         return super()._make_request(
@@ -68,7 +68,7 @@ class AllDebrid(DebridClient):
         response = self._make_request("GET", "/magnet/status", params={"id": magnet_id})
         return response.get("data", {}).get("magnets")
 
-    def get_torrent_instant_availability(self, magnet_links: list[str]):
+    def get_torrent_instant_availability(self, magnet_links):
         response = self._make_request(
             "POST", "/magnet/instant", data={"magnets[]": magnet_links}
         )

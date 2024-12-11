@@ -32,7 +32,7 @@ class EasyDebrid(DebridClient):
         json=None,
         is_return_none: bool = False,
         is_expected_to_fail: bool = False,
-    ) -> dict:
+    ):
         params = params or {}
         url = self.BASE_URL + url
         return super()._make_request(
@@ -45,7 +45,7 @@ class EasyDebrid(DebridClient):
             is_expected_to_fail=is_expected_to_fail,
         )
 
-    def get_torrent_instant_availability(self, urls: list[str]):
+    def get_torrent_instant_availability(self, urls):
         return self._make_request(
             "POST",
             "/link/lookup",
@@ -59,7 +59,7 @@ class EasyDebrid(DebridClient):
             json={"url": magnet},
         )
 
-    def get_torrent_info(self, torrent_id: str) -> dict:
+    def get_torrent_info(self, torrent_id: str):
         pass
 
     def get_user_info(self):

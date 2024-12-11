@@ -20,7 +20,7 @@ class DebridClient(ABC):
         json=None,
         is_return_none=False,
         is_expected_to_fail=False,
-    ) -> dict:
+    ):
         response = self._perform_request(method, url, data, params, json)
         self._handle_errors(response, is_expected_to_fail)
         return self._parse_response(response, is_return_none)
