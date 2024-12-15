@@ -28,6 +28,7 @@ def get_playback_info(
     debrid_type = extra_data["debrid_info"].get("debrid_type", "")
     is_debrid_pack = extra_data["debrid_info"].get("is_debrid_pack", False)
     extra_data["mode"] = mode
+    extra_data["title"] = title
 
     set_watched_file(
         title,
@@ -67,8 +68,12 @@ def get_playback_info(
                 if not _url:
                     notification("File not cached")
                     return None, None
+    if _url:
+        extra_data["url"] = _url
+    else:
+        extra_data["url"] = addon_url
 
-    return (_url, extra_data) if _url else (addon_url, extra_data)
+    return extra_data
 
 
 def get_torrent_url(magnet, url, mode, ids):

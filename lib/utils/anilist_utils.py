@@ -9,7 +9,6 @@ from lib.utils.utils import (
     get_cached,
     get_fanart,
     set_cached,
-    set_video_info,
     set_media_infotag,
 )
 from xbmcgui import ListItem
@@ -20,7 +19,6 @@ from lib.utils.kodi_utils import (
     ADDON_PATH,
     build_url,
     show_keyboard,
-    get_kodi_version,
 )
 
 
@@ -106,20 +104,12 @@ def anilist_show_results(results, category, page, plugin):
         )
         list_item.setProperty("IsPlayable", "false")
 
-        if get_kodi_version() >= 20:
-            set_media_infotag(
-                list_item,
-                mode,
-                title,
-                description,
-            )
-        else:
-            set_video_info(
-                list_item,
-                mode,
-                title,
-                description,
-            )
+        set_media_infotag(
+            list_item,
+            mode,
+            title,
+            description,
+        )
 
         if format in ["TV", "OVA"]:
             addDirectoryItem(

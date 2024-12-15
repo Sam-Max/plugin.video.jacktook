@@ -10,6 +10,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 
+from lib.utils.custom_dialogs import CustomDialog, CustomWindow
 from lib.utils.ed_utils import get_ed_pack_info, show_ed_pack_info
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.torrentio_utils import open_providers_selection
@@ -18,7 +19,7 @@ from lib.api.trakt.trakt_api import (
     trakt_revoke_authentication,
 )
 from lib.clients.search import search_client
-from lib.utils.debrid_utils import handle_debrid_client, handle_results
+from lib.utils.debrid_utils import check_debrid_cached, handle_results
 from lib.files_history import last_files
 from lib.play import get_playback_info
 from lib.titles_history import last_titles
@@ -46,12 +47,14 @@ from lib.db.cached import cache
 from lib.utils.utils import (
     DialogListener,
     Players,
+    clean_auto_play_undesired,
     clear,
     clear_all_cache,
     get_password,
     get_random_color,
     get_service_host,
     get_username,
+    is_debrid_activated,
     make_listing,
     post_process,
     pre_process,
@@ -73,6 +76,7 @@ from lib.utils.kodi_utils import (
     JACKTORR_ADDON,
     action_url_run,
     build_url,
+    close_all_dialog,
     container_update,
     show_keyboard,
     addon_status,
@@ -85,7 +89,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 
-from lib.utils.settings import get_cache_expiration
+from lib.utils.settings import get_cache_expiration, is_auto_play
 from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
@@ -188,6 +192,13 @@ def root_menu():
         ADDON_HANDLE,
         build_url("donate"),
         list_item("Donate", "donate.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("test_window"),
+        list_item("Test", ""),
         isFolder=True,
     )
 
@@ -453,32 +464,76 @@ def search(params):
             return
 
         if client == Players.DEBRID:
-            handle_debrid_client(
+            final_results = handle_debrid_client(
                 query,
                 proc_results,
                 mode,
                 media_type,
                 p_dialog,
                 rescrape,
-                ids,
-                tv_data,
                 season,
                 episode,
             )
+            if is_auto_play():
+                auto_play(final_results, ids, tv_data, mode)
+            else:
+                handle_results(final_results, mode, ids, tv_data, False)
         else:
             final_results = post_process(proc_results)
             handle_results(final_results, mode, ids, tv_data, direct)
 
 
+def handle_debrid_client(
+    query,
+    proc_results,
+    mode,
+    media_type,
+    p_dialog,
+    rescrape,
+    season,
+    episode,
+):
+    if not is_debrid_activated():
+        notification("No debrid client enabled")
+        return
+
+    debrid_cached = check_debrid_cached(
+        query, proc_results, mode, media_type, p_dialog, rescrape, episode
+    )
+    if not debrid_cached:
+        notification("No cached results")
+        return
+
+    return post_process(debrid_cached, season)
+
+
 def play_torrent(params):
-    kodilog("play_torrent")
-    url, data = get_playback_info(
+    data = get_playback_info(
         title=params["title"],
         mode=params.get("mode", ""),
         is_torrent=eval(params["is_torrent"]),
         extra_data=eval(params["data"]),
     )
-    list_item = make_listing(url, data)
+    list_item = make_listing(data)
+    setResolvedUrl(ADDON_HANDLE, True, list_item)
+
+
+def auto_play(results, ids, tv_data, mode):
+    result = clean_auto_play_undesired(results)
+    data = get_playback_info(
+        title=result.get("title"),
+        mode=mode,
+        is_torrent=False,
+        extra_data={
+            "ids": ids,
+            "info_hash": result.get("infoHash"),
+            "tv_data": tv_data,
+            "debrid_info": {
+                "debrid_type": result.get("debridType"),
+            },
+        },
+    )
+    list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
@@ -651,10 +706,8 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = eval(params.get("data"))
-    url, data = get_playback_info(
-        params.get("title"), params.get("mode"), extra_data=data
-    )
-    list_item = make_listing(url, data)
+    data = get_playback_info(params.get("title"), params.get("mode"), extra_data=data)
+    list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
@@ -696,6 +749,7 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     set_content_type(mode)
+    
     if api == "trakt":
         result = handle_trakt_query(query, category, mode, page)
         if result:

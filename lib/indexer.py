@@ -196,7 +196,7 @@ def get_media_details(tmdb_id, mode):
         details = tmdb_get("movie_details", tmdb_id)
     else:
         return "", ""
-    poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
+    poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
     overview = details.overview or ""
     return poster, overview
 

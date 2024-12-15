@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+import copy
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -239,38 +240,6 @@ def list_item(label, icon):
     )
     return item
 
-
-def load_window_test():
-    window = MyWindow("mywindow.xml", ADDON_PATH, "Default", "1080p")
-    # window.onInit()
-    # window.doModal()
-    return window
-
-
-class MyWindow(xbmcgui.WindowXML):
-    def __init__(self, *args, **kwargs):
-        xbmcgui.WindowXML.__init__(self)
-        self.list_control = None
-
-    def onInit(self):
-        self.list_control = self.getControl(32503)
-
-    def add_item(self, list_item):
-        if self.list_control:
-            self.list_control.addItem(list_item)
-
-    def onClick(self, control_id):
-        if control_id == 32503:  # List control
-            selected_item = self.list_control.getSelectedItem()
-            if selected_item:
-                xbmcgui.Dialog().notification(
-                    "Selected Item",
-                    selected_item.getLabel(),
-                    xbmcgui.NOTIFICATION_INFO,
-                    3000,
-                )
-
-
 def add_play_item(
     list_item,
     ids,
@@ -325,10 +294,7 @@ def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode):
 
 
 def set_video_properties(list_item, poster, mode, title, overview, ids):
-    if get_kodi_version() >= 20:
-        set_media_infotag(list_item, mode, title, overview, ids=ids)
-    else:
-        set_video_info(list_item, mode, title, overview, ids=ids)
+    set_media_infotag(list_item, mode, title, overview, ids=ids)
     list_item.setProperty("IsPlayable", "true")
     list_item.setArt(
         {
@@ -379,16 +345,16 @@ def set_video_info(
     list_item.setInfo("video", info)
 
 
-def make_listing(url, metadata):
+def make_listing(metadata):
     title = metadata.get("title")
     ids = metadata.get("ids")
     tv_data = metadata.get("tv_data", {})
     mode = metadata.get("mode", "")
 
     list_item = ListItem(label=title)
-    list_item.setPath(url)
-    list_item.setContentLookup(False)
     list_item.setLabel(title)
+    list_item.setPath(metadata.get("url"))
+    list_item.setContentLookup(False)
 
     if tv_data:
         ep_name, episode, season = tv_data.split("(^)")
@@ -965,6 +931,17 @@ def filter_by_quality(results):
 
     combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
     return combined_list
+
+
+def clean_auto_play_undesired(results):
+    undesired = ("SD", "CAM", "TELE", "SYNC", "480p")
+    for res in copy.deepcopy(results):
+        if res.get("isPack"):
+            results.remove(res)
+        else:
+            if any(u in res["title"] for u in undesired):
+                results.remove(res)
+    return results[0]
 
 
 def is_torrent_url(uri):

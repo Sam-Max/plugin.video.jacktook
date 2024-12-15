@@ -1,10 +1,10 @@
 import os
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update, get_kodi_version
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update
+from lib.utils.settings import is_auto_play
 from lib.utils.utils import (
     TMDB_POSTER_URL,
     get_fanart,
     set_media_infotag,
-    set_video_info,
     tmdb_get,
 )
 from xbmcgui import ListItem
@@ -19,7 +19,7 @@ def show_season_info(ids, mode, media_type):
     seasons = details.seasons
     overview = details.overview
 
-    show_poster = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
+    show_poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}" 
     fanart_data = get_fanart(tvdb_id)
     fanart = fanart_data["fanart"] if fanart_data else ""
 
@@ -42,14 +42,9 @@ def show_season_info(ids, mode, media_type):
 
         list_item = ListItem(label=season_name)
 
-        if get_kodi_version() >= 20:
-            set_media_infotag(
-                list_item, mode, name, overview, season_number=season_number, ids=ids
-            )
-        else:
-            set_video_info(
-                list_item, mode, name, overview, season_number=season_number, ids=ids
-            )
+        set_media_infotag(
+            list_item, mode, name, overview, season_number=season_number, ids=ids
+        )
 
         list_item.setArt(
             {
@@ -97,28 +92,16 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
 
         list_item = ListItem(label=label)
 
-        if get_kodi_version() >= 20:
-            set_media_infotag(
-                list_item,
-                mode,
-                tv_name,
-                ep.overview,
-                episode=episode,
-                duration=duration,
-                air_date=air_date,
-                ids=ids,
-            )
-        else:
-            set_video_info(
-                list_item,
-                mode,
-                tv_name,
-                ep.overview,
-                episode=episode,
-                duration=duration,
-                air_date=air_date,
-                ids=ids,
-            )
+        set_media_infotag(
+            list_item,
+            mode,
+            tv_name,
+            ep.overview,
+            episode=episode,
+            duration=duration,
+            air_date=air_date,
+            ids=ids,
+        )
 
         list_item.setArt(
             {
@@ -128,7 +111,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setProperty("IsPlayable", "false")
+        list_item.setProperty("IsPlayable", "true" if is_auto_play() else "false")
         list_item.addContextMenuItems(
             [
                 (
@@ -156,5 +139,5 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                 tv_data=tv_data,
             ),
             list_item,
-            isFolder=True,
+            isFolder=False if is_auto_play() else True,
         )

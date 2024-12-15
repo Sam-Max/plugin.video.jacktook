@@ -4,10 +4,9 @@ from threading import Lock
 from lib.api.jacktook.kodi import kodilog
 from lib.indexer import show_indexers_results
 from lib.utils.ed_utils import check_ed_cached, get_ed_link
-from lib.utils.kodi_utils import ADDON_HANDLE, action_url_run, close_all_dialog, execute_builtin, get_setting, notification, set_view
+from lib.utils.kodi_utils import ADDON_HANDLE, get_setting, notification, set_view
 from lib.utils.pm_utils import check_pm_cached, get_pm_link
 from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_link
-from lib.utils.settings import is_auto_play
 from lib.utils.torbox_utils import (
     check_torbox_cached,
     get_torbox_link,
@@ -19,13 +18,11 @@ from lib.utils.utils import (
     execute_thread_pool,
     get_cached,
     get_info_hash_from_magnet,
-    is_debrid_activated,
     is_ed_enabled,
     is_pm_enabled,
     is_rd_enabled,
     is_tb_enabled,
     is_url,
-    post_process,
     set_cached,
     dialog_update,
 )
@@ -79,57 +76,6 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
             set_cached(cached_results, query, params=("deb"))
 
     return cached_results
-
-
-def handle_debrid_client(
-    query,
-    proc_results,
-    mode,
-    media_type,
-    p_dialog,
-    rescrape,
-    ids,
-    tv_data,
-    season,
-    episode,
-):
-    if not is_debrid_activated():
-        notification("No debrid client enabled")
-        return
-
-    debrid_cached = check_debrid_cached(
-        query, proc_results, mode, media_type, p_dialog, rescrape, episode
-    )
-    if not debrid_cached:
-        notification("No cached results")
-        return
-
-    final_results = post_process(debrid_cached, season)
-    if is_auto_play():
-        auto_play(final_results, ids, tv_data, mode, p_dialog)
-    else:
-        handle_results(final_results, mode, ids, tv_data, False)
-
-
-def auto_play(results, ids, tv_data, mode, p_dialog):
-    p_dialog.close()
-    close_all_dialog()
-
-    first_result = results[0]
-    title = first_result.get("title")
-    infoHash = first_result.get("infoHash")
-    debridType = first_result.get("debridType")
-    
-    execute_builtin(action_url_run(name="play_torrent", title=title,
-        mode=mode,
-        data={
-            "ids": ids,
-            "info_hash":infoHash ,
-            "tv_data": tv_data,
-            "debrid_info": {
-                "debrid_type": debridType,
-            },
-        },))
 
 
 def handle_results(final_results, mode, ids, tv_data, direct):

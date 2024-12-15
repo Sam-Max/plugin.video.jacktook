@@ -7,7 +7,6 @@ from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, get_kodi_version
 from lib.utils.utils import (
     get_cached,
     set_cached,
-    set_video_info,
     set_media_infotag,
 )
 from xbmcgui import ListItem
@@ -72,24 +71,14 @@ def simkl_parse_show_results(response, title, season, plugin):
             )
             list_item.setProperty("IsPlayable", "false")
 
-            if get_kodi_version() >= 20:
-                set_media_infotag(
-                    list_item,
-                    mode="tv",
-                    name=ep_name,
-                    overview=description,
-                    ep_name=ep_name,
-                    air_date=date,
-                )
-            else:
-                set_video_info(
-                    list_item,
-                    mode="tv",
-                    name=ep_name,
-                    overview=description,
-                    ep_name=ep_name,
-                    air_date=date,
-                )
+            set_media_infotag(
+                list_item,
+                mode="tv",
+                name=ep_name,
+                overview=description,
+                ep_name=ep_name,
+                air_date=date,
+            )
 
             addDirectoryItem(
                 ADDON_HANDLE,

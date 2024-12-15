@@ -93,6 +93,7 @@ def handle_trakt_anime_query(query, page):
 
 
 def process_trakt_result(results, query, category, mode, submode, api, page):
+    kodilog("trakt::process_trakt_result")
     if (
         query == Trakt.TRENDING
         or query == Trakt.WATCHED
@@ -108,7 +109,6 @@ def process_trakt_result(results, query, category, mode, submode, api, page):
         execute_thread_pool(results, show_watchlist, mode)
 
     if category == Anime.TRENDING or category == Anime.MOST_WATCHED:
-        kodilog("trakt::process_trakt_result")
         execute_thread_pool(results, show_anime_common, submode)
 
     add_next_button(
@@ -133,11 +133,9 @@ def show_anime_common(res, mode):
     else:
         details = tmdb_get("movie_details", tmdb_id)
 
-    poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
-    backdrop_path = (
-        TMDB_BACKDROP_URL + details.backdrop_path if details.backdrop_path else ""
-    )
-
+    poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
+    
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -212,11 +210,9 @@ def show_watchlist(res, mode):
     else:
         details = tmdb_get("movie_details", tmdb_id)
 
-    poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
-    backdrop_path = (
-        TMDB_BACKDROP_URL + details.backdrop_path if details.backdrop_path else ""
-    )
-
+    poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
+    
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -265,11 +261,9 @@ def show_recommendations(res, mode):
     else:
         details = tmdb_get("movie_details", tmdb_id)
 
-    poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
-    backdrop_path = (
-        TMDB_BACKDROP_URL + details.backdrop_path if details.backdrop_path else ""
-    )
-
+    poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
+    
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -308,11 +302,9 @@ def show_lists_content_items(res):
         mode = "movies"
         details = tmdb_get("movie_details", tmdb_id)
 
-    poster_path = TMDB_POSTER_URL + details.poster_path if details.poster_path else ""
-    backdrop_path = (
-        TMDB_BACKDROP_URL + details.backdrop_path if details.backdrop_path else ""
-    )
-
+    poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
+    
     list_item = ListItem(title)
     list_item.setArt(
         {

@@ -2,6 +2,7 @@ import os
 import threading
 from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.search import Search
+from lib.utils.settings import is_auto_play
 from lib.utils.utils import (
     TMDB_BACKDROP_URL,
     TMDB_POSTER_URL,
@@ -268,7 +269,8 @@ def show_items(res, mode):
             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
         }
     )
-    list_item.setProperty("IsPlayable", "false")
+   
+    list_item.setProperty("IsPlayable", "true" if is_auto_play() else "false")
 
     if mode == "movies":
         list_item.addContextMenuItems(
@@ -294,7 +296,7 @@ def show_items(res, mode):
                 ids=ids,
             ),
             list_item,
-            isFolder=True,
+            isFolder=False if is_auto_play() else True,
         )
     else:
         addDirectoryItem(
