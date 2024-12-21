@@ -4,6 +4,8 @@ import requests
 from lib.api.jacktook.kodi import kodilog
 from abc import ABC, abstractmethod
 
+from lib.utils.kodi_utils import notification
+
 
 class DebridClient(ABC):
     def __init__(self, token):
@@ -101,3 +103,5 @@ class ProviderException(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
+        notification(self.message)
+        

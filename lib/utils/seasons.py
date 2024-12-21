@@ -1,9 +1,8 @@
 import os
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update
-from lib.utils.settings import is_auto_play
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from lib.utils.utils import (
     TMDB_POSTER_URL,
-    get_fanart,
+    get_fanart_details,
     set_media_infotag,
     tmdb_get,
 )
@@ -19,9 +18,8 @@ def show_season_info(ids, mode, media_type):
     seasons = details.seasons
     overview = details.overview
 
-    show_poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}" 
-    fanart_data = get_fanart(tvdb_id)
-    fanart = fanart_data["fanart"] if fanart_data else ""
+    show_poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     for s in seasons:
         season_name = s.name
@@ -50,7 +48,7 @@ def show_season_info(ids, mode, media_type):
             {
                 "poster": poster,
                 "tvshow.poster": poster,
-                "fanart": fanart,
+                "fanart": fanart_data["fanart"],
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
@@ -74,7 +72,7 @@ def show_season_info(ids, mode, media_type):
 def show_episode_info(tv_name, season, ids, mode, media_type):
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-    fanart_data = get_fanart(tvdb_id)
+    fanart_data = get_fanart_details(tvdb_id)
 
     for ep in season_details.episodes:
         ep_name = ep.name
@@ -111,13 +109,13 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setProperty("IsPlayable", "true" if is_auto_play() else "false")
+        list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [
                 (
                     "Rescrape item",
-                    container_update(
-                        "search",
+                    play_media(
+                        name="search",
                         mode=mode,
                         query=tv_name,
                         ids=ids,
@@ -130,7 +128,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
 
         addDirectoryItem(
             ADDON_HANDLE,
-             build_url(
+            build_url(
                 "search",
                 mode=mode,
                 media_type=media_type,
@@ -139,5 +137,5 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                 tv_data=tv_data,
             ),
             list_item,
-            isFolder=False if is_auto_play() else True,
+            isFolder=False,
         )

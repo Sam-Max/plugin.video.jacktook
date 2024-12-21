@@ -23,7 +23,7 @@ from lib.navigation import (
     play_url,
     pm_auth,
     rd_info,
-    show_pack_info,
+    test_source_select,
     torrentio_selection,
     play_torrent,
     rd_auth,
@@ -53,7 +53,6 @@ from lib.utils.torrent_utils import (
 
 
 def addon_router():
-    kodilog("addon_router")
     param_string = sys.argv[2][1:]
     actions = {
         "tv_shows_items": tv_shows_items,
@@ -99,12 +98,11 @@ def addon_router():
         "torrentio_selection": torrentio_selection,
         "display_picture": display_picture,
         "display_text": display_text,
-        "show_pack_info": show_pack_info,
+        "test_source_select": test_source_select,
     }
 
     if param_string:
         params = dict(parse.parse_qsl(param_string))
-        kodilog(params)
         action = params.get("action")
         action_func = actions.get(action)
         if action_func:

@@ -1,9 +1,9 @@
 import copy
-import os
 from lib.clients.debrid.premiumize import Premiumize
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
+from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
+    Debrids,
     debrid_dialog_update,
     get_cached,
     get_random_color,
@@ -11,8 +11,6 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
 
 pm_client = Premiumize(token=get_setting("premiumize_token"))
@@ -25,12 +23,12 @@ def check_pm_cached(results, cached_results, uncached_result, total, dialog, loc
     cached_response = torrents_info.get("response")
     for e, res in enumerate(copy.deepcopy(results)):
         debrid_dialog_update("PM", total, dialog, lock)
-        res["debridType"] = "PM"
+        res["type"] = Debrids.PM
         if cached_response[e] is True:
-            res["isDebrid"] = True
+            res["isCached"] = True
             cached_results.append(res)
         else:
-            res["isDebrid"] = False
+            res["isCached"] = False
             uncached_result.append(res)
 
 
@@ -68,8 +66,7 @@ def get_pm_pack_info(info_hash):
                 any(name.lower().endswith(x) for x in extensions)
                 and not item.get("link", "") == ""
             ):
-                title = f"[B][COLOR {tracker_color}][PM][/COLOR][/B]-Cached-{name}"
-                files.append((item["link"], title))
+                files.append((item["link"], name))
         info["files"] = files
         if info:
             set_cached(info, info_hash)
@@ -79,29 +76,3 @@ def get_pm_pack_info(info_hash):
         return
 
 
-def show_pm_pack_info(info, ids, debrid_type, tv_data, mode):
-    for url, title in info["files"]:
-        list_item = ListItem(label=f"{title}")
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_torrent",
-                title=title,
-                mode=mode,
-                is_torrent=False,
-                data={
-                    "ids": ids,
-                    "url": url,
-                    "tv_data": tv_data,
-                    "debrid_info": {
-                        "debrid_type": debrid_type,
-                        "is_debrid_pack": True,
-                    },
-                },
-            ),
-            list_item,
-            isFolder=False,
-        )

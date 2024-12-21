@@ -5,8 +5,6 @@ import re
 import sys
 from urllib import parse
 from urllib.parse import quote, urlencode
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.custom_dialogs import CustomDialog
 import xbmc
 import xbmcgui
 from xbmcgui import Window
@@ -34,8 +32,13 @@ except:
     JACKTORR_ADDON = None
 
 ADDON = xbmcaddon.Addon()
-ADDON_HANDLE = int(sys.argv[1])
+try:
+    ADDON_HANDLE = int(sys.argv[1])
+except IndexError:
+    ADDON_HANDLE = 0
 ADDON_PATH = ADDON.getAddonInfo("path")
+IMAGES_PATH = f"{ADDON_PATH}/resources/images/"
+DEFAULT_LOGO = f"{IMAGES_PATH}tv.png"
 ADDON_ICON = ADDON.getAddonInfo("icon")
 ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_VERSION = ADDON.getAddonInfo("version")
@@ -107,14 +110,6 @@ def addon_status():
     except:
         pass
     return xbmcgui.Dialog().textviewer("Status", msg, False)
-
-
-def donate_message():
-    msg = "If you like Jacktook you can support \n"
-    msg += "its development by making a small donation to:\n\n"
-    msg += "[COLOR snow]https://ko-fi.com/sammax09[/COLOR]"
-    dialog = CustomDialog("customdialog.xml", ADDON_PATH, "Default", heading="", text=msg)
-    dialog.doModal()
 
 
 def is_torrest_addon():
@@ -243,8 +238,8 @@ def buffer_and_play(info_hash, file_id, path):
     return f"PlayMedia({url})"
 
 
-def play_media(plugin, func, *args, **kwargs):
-    execute_builtin("PlayMedia({})".format(plugin.url_for(func, *args, **kwargs)))
+def play_media(name, *args, **kwargs):
+    return "PlayMedia({})".format(build_url(name, *args, **kwargs))
 
 
 def show_busy_dialog():
@@ -259,7 +254,7 @@ def container_refresh():
     execute_builtin("Container.Refresh")
 
 
-def hide_busy_dialog():
+def close_busy_dialog():
     execute_builtin("Dialog.Close(busydialognocancel)")
     execute_builtin("Dialog.Close(busydialog)")
 
@@ -270,6 +265,7 @@ def execute_builtin(command, block=False):
 
 def get_visibility():
     return xbmc.getCondVisibility
+
 
 def delete_file(file):
     xbmc_delete(file)
@@ -350,7 +346,7 @@ def show_keyboard(id, default="", hidden=False):
     keyboard.doModal()
     if keyboard.isConfirmed():
         return keyboard.getText()
-    
+
 
 def get_current_view_id():
     return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()

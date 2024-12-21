@@ -89,11 +89,11 @@ class Zilean:
             results.append(
                 {
                     "title": item["filename"],
+                    "type": "Torrent",
                     "indexer": "Zilean",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
                     "size": item["filesize"],
-                    "qualityTitle": "",
                     "seeders": 0,
                     "languages": item["languages"],
                     "fullLanguages": "",

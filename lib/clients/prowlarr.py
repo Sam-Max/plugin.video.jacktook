@@ -58,11 +58,11 @@ class Prowlarr:
 
     def parse_response(self, res):
         response = res.json()
-        kodilog(response)
         for res in response:
             res.update(
                 {
-                    "qualityTitle": "",
+                    "type": "Torrent",
+                    "provider": "Prowlarr",
                     "peers": int(res.get("peers", 0)),
                     "seeders": int(res.get("seeders", 0)),
                 }

@@ -4,6 +4,7 @@ from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
 from lib.utils.utils import (
+    Debrids,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
@@ -28,14 +29,14 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
         debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
         if info_hash:
-            res["debridType"] = "TB"
+            res["type"] = Debrids.TB
             if info_hash in response.get("data", []):
                 with lock:
-                    res["isDebrid"] = True
+                    res["isCached"] = True
                     cached_results.append(res)
             else:
                 with lock:
-                    res["isDebrid"] = False
+                    res["isCached"] = False
                     uncached_results.append(res)
 
 
@@ -83,6 +84,7 @@ def get_torbox_pack_info(info_hash):
     torrent_info = add_torbox_torrent(info_hash)
     info = {}
     if torrent_info:
+        kodilog(torrent_info)
         info["id"] = torrent_info["id"]
         torrent_files = torrent_info["files"]
         if len(torrent_files) > 0:
@@ -93,43 +95,13 @@ def get_torbox_pack_info(info_hash):
                 if item["short_name"].lower().endswith(x)
             ]
             files = []
-            tracker_color = get_random_color("TB")
             for id, name in enumerate(files_names):
-                title = f"[B][COLOR {tracker_color}][TB][/COLOR][/B]-Cached-{name}"
-                files.append((id, title))
+                files.append((id, name))
             info["files"] = files
             set_cached(info, info_hash)
             return info
         else:
             notification("Not a torrent pack")
-
-
-def show_tb_pack_info(info, ids, debrid_type, tv_data, mode):
-    for file_id, title in info["files"]:
-        list_item = ListItem(label=title)
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_from_pack",
-                title=title,
-                mode=mode,
-                data={
-                    "ids": ids,
-                    "tv_data": tv_data,
-                    "debrid_info": {
-                        "file_id": file_id,
-                        "torrent_id": info["id"],
-                        "debrid_type": debrid_type,
-                        "is_debrid_pack": True,
-                    },
-                },
-            ),
-            list_item,
-            isFolder=False,
-        )
 
 
 class TorboxException(Exception):

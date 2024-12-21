@@ -8,6 +8,7 @@ import re
 import unicodedata
 import requests
 
+from lib.api.fanart.fanarttv import FanartTv
 from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import clear_cache
 from lib.db.bookmark_db import bookmark_db
@@ -31,7 +32,6 @@ from lib.utils.kodi_utils import (
     build_url,
     container_refresh,
     get_jacktorr_setting,
-    get_kodi_version,
     get_setting,
     set_property,
     translation,
@@ -46,7 +46,6 @@ from lib.utils.settings import get_int_setting
 from lib.utils.torrentio_utils import filter_by_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
-import xbmcgui
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
 from xbmc import getSupportedMedia
 from zipfile import ZipFile
@@ -142,7 +141,7 @@ torrent_indexers = ["Prowlarr", "Jackett", "Torrentio", "Elfhosted", "Burst"]
 
 
 class Debrids(Enum):
-    RD = "Real-Debrid"
+    RD = "RealDebrid"
     PM = "Premiumize"
     TB = "Torbox"
     ED = "EasyDebrid"
@@ -202,14 +201,14 @@ def is_debrid_activated():
     )
 
 
-def check_debrid_enabled(debrid_type):
-    if debrid_type == Debrids.RD:
+def check_debrid_enabled(type):
+    if type == Debrids.RD:
         return is_rd_enabled()
-    elif debrid_type == Debrids.PM:
+    elif type == Debrids.PM:
         return is_pm_enabled()
-    elif debrid_type == Debrids.TB:
+    elif type == Debrids.TB:
         return is_tb_enabled()
-    elif debrid_type == Debrids.ED:
+    elif type == Debrids.ED:
         return is_ed_enabled()
 
 
@@ -239,58 +238,6 @@ def list_item(label, icon):
         }
     )
     return item
-
-def add_play_item(
-    list_item,
-    ids,
-    tv_data,
-    title,
-    url="",
-    info_hash="",
-    magnet="",
-    mode="",
-    is_torrent=False,
-    debrid_type="",
-    is_cached=False,
-):
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(
-            "play_torrent",
-            title=title,
-            mode=mode,
-            is_torrent=is_torrent,
-            data={
-                "ids": ids,
-                "url": url,
-                "info_hash": info_hash,
-                "magnet": magnet,
-                "tv_data": tv_data,
-                "debrid_info": {
-                    "debrid_type": debrid_type,
-                    "is_cached": is_cached,
-                },
-            },
-        ),
-        list_item,
-        isFolder=False,
-    )
-
-
-def add_pack_item(list_item, tv_data, ids, info_hash, debrid_type, mode):
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(
-            "show_pack_info",
-            ids=ids,
-            debrid_type=debrid_type,
-            info_hash=info_hash,
-            mode=mode,
-            tv_data=tv_data,
-        ),
-        list_item,
-        isFolder=True,
-    )
 
 
 def set_video_properties(list_item, poster, mode, title, overview, ids):
@@ -399,7 +346,7 @@ def set_media_infotag(
     else:
         info_tag.setMediaType("season")
         if ep_name:
-            info_tag.setTitle(name)
+            info_tag.setTitle(f"{ep_name} S{int(season_number):02d}E{int(episode):02d}")
         info_tag.setTvShowTitle(name)
         if url:
             info_tag.setFilenameAndPath(url)
@@ -463,10 +410,10 @@ def set_watched_file(title, is_torrent, extra_data):
         "is_torrent": is_torrent,
         "magnet": extra_data.get("magnet", ""),
         "info_hash": extra_data.get("info_hash", ""),
-        "debrid_type": extra_data["debrid_info"].get("debrid_type", ""),
-        "is_debrid_pack": extra_data["debrid_info"].get("is_debrid_pack", False),
-        "file_id": extra_data["debrid_info"].get("file_id", ""),
-        "torrent_id": extra_data["debrid_info"].get("torrent_id", ""),
+        "type": extra_data.get("type", ""),
+        "is_pack": extra_data.get("is_pack", False),
+        "file_id": extra_data.get("pack_info", {}).get("file_id", ""),
+        "torrent_id": extra_data.get("pack_info", {}).get("torrent_id", ""),
     }
     main_db.commit()
 
@@ -487,13 +434,19 @@ def is_torrent_watched(title):
     return main_db.database["jt:watch"].get(title, False)
 
 
-def get_fanart(tvdb_id, mode="tv"):
+def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     identifier = "{}|{}".format("fanart.tv", tvdb_id)
     data = cache.get(identifier, hashed_key=True)
     if data:
         return data
     else:
-        data = search_api_fanart(mode, language="en", media_id=tvdb_id)
+        fanart = FanartTv(get_setting("fanart_tv_client_id"))
+        if mode == "tv":
+            results = fanart.get_show(tvdb_id)
+            data = get_fanart_data(results)
+        else:
+            results = fanart.get_movie(tmdb_id)
+            data = get_fanart_data(results)
         if data:
             cache.set(
                 identifier,
@@ -502,6 +455,26 @@ def get_fanart(tvdb_id, mode="tv"):
                 hashed_key=True,
             )
     return data
+
+
+def get_fanart_data(fanart_details):
+    fanart_objec = fanart_details["fanart_object"]
+    fanart = clearlogo = poster = ""
+    if fanart_objec:
+        art = fanart_objec.get("art", {})
+        fanart_obj = art.get("fanart", {})
+        if fanart_obj:
+            fanart = fanart_obj[0]["url"]
+
+        clearlogo_obj = art.get("clearlogo", {})
+        if clearlogo_obj:
+            clearlogo = clearlogo_obj[0]["url"]
+
+        poster_obj = art.get("poster", {})
+        if poster_obj:
+            poster = poster_obj[0]["url"]
+
+    return {"fanart": fanart, "clearlogo": clearlogo, "poster": poster}
 
 
 def get_cached(path, params={}):
@@ -637,14 +610,15 @@ def get_random_color(provider_name):
 
 
 def get_colored_languages(languages):
-    if len(languages) > 0:
-        colored_languages = []
-        for lang in languages:
-            lang_color = get_random_color(lang)
-            colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
-            colored_languages.append(colored_lang)
-        colored_languages = ", " + ", ".join(colored_languages)
-        return colored_languages
+    if not languages:
+        return ""
+    colored_languages = []
+    for lang in languages:
+        lang_color = get_random_color(lang)
+        colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
+        colored_languages.append(colored_lang)
+    colored_languages = " ".join(colored_languages)
+    return colored_languages
 
 
 def execute_thread_pool(results, func, *args, **kwargs):
@@ -663,6 +637,8 @@ def clear_all_cache():
     bookmark_db.clear_bookmarks()
     clear_cache(cache_type="trakt")
     clear_cache(cache_type="list")
+    clear(type="lth")
+    clear(type="lfh")
 
 
 def clear(type="lth"):
@@ -857,15 +833,15 @@ def sort_results(first_res, second_res=None):
         if second_res:
             return sort_second_result(first_sorted, second_res, type="publishDate")
     elif sort_by == "Quality":
-        first_sorted = sorted(first_res, key=lambda r: r["Quality"], reverse=True)
+        first_sorted = sorted(first_res, key=lambda r: r["quality"], reverse=True)
         if second_res:
-            return sort_second_result(first_sorted, second_res, type="Quality")
+            return sort_second_result(first_sorted, second_res, type="quality")
     elif sort_by == "Cached":
         first_sorted = sorted(
-            first_res, key=lambda r: r.get("isDebrid", ""), reverse=True
+            first_res, key=lambda r: r.get("isCached", ""), reverse=True
         )
         if second_res:
-            return sort_second_result(first_sorted, second_res, type="isDebrid")
+            return sort_second_result(first_sorted, second_res, type="isCached")
     else:
         return first_res
 
@@ -909,24 +885,19 @@ def filter_by_quality(results):
     for res in results:
         title = res["title"]
         if "480p" in title:
-            res["qualityTitle"] = "[B][COLOR orange]480p - [/COLOR][/B]" + res["title"]
-            res["Quality"] = "480p"
+            res["quality"] = "[B][COLOR orange]480p[/COLOR][/B]"
             quality_720p.append(res)
         elif "720p" in title:
-            res["qualityTitle"] = "[B][COLOR orange]720p - [/COLOR][/B]" + res["title"]
-            res["Quality"] = "720p"
+            res["quality"] = "[B][COLOR orange]720p[/COLOR][/B]"
             quality_720p.append(res)
         elif "1080p" in title:
-            res["qualityTitle"] = "[B][COLOR blue]1080p - [/COLOR][/B]" + res["title"]
-            res["Quality"] = "1080p"
+            res["quality"] = "[B][COLOR blue]1080p[/COLOR][/B]"
             quality_1080p.append(res)
         elif "2160" in title:
-            res["qualityTitle"] = "[B][COLOR yellow]4k - [/COLOR][/B]" + res["title"]
-            res["Quality"] = "4k"
+            res["quality"] = "[B][COLOR yellow]4k[/COLOR][/B]"
             quality_4k.append(res)
         else:
-            res["qualityTitle"] = "[B][COLOR yellow]N/A - [/COLOR][/B]" + res["title"]
-            res["Quality"] = "N/A"
+            res["quality"] = "[B][COLOR yellow]N/A[/COLOR][/B]"
             no_quarlity.append(res)
 
     combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
@@ -1038,14 +1009,14 @@ def unicode_flag_to_country_code(unicode_flag):
     return country_code
 
 
-def debrid_dialog_update(debrid_type, total, dialog, lock):
+def debrid_dialog_update(type, total, dialog, lock):
     with lock:
         dialog_update["count"] += 1
         dialog_update["percent"] += 2
 
         dialog.update(
             dialog_update.get("percent"),
-            f"Jacktook [COLOR FFFF6B00]Debrid-{debrid_type}[/COLOR]",
+            f"Jacktook [COLOR FFFF6B00]Debrid-{type}[/COLOR]",
             f"Checking: {dialog_update.get('count')}/{total}",
         )
 
@@ -1066,3 +1037,10 @@ def get_public_ip():
             kodilog(f"Error getting public ip: {e}")
             return None
     return public_ip
+
+
+def extract_publish_date(date):
+    if not date:
+        return ""
+    match = re.search(r"\d{4}-\d{2}-\d{2}", date)
+    return match.group() if match else ""

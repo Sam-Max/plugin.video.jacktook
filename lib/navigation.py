@@ -9,9 +9,12 @@ from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
+from lib.gui.custom_dialogs import (
+    CustomDialog,
+    source_select,
+    source_select_mock,
+)
 
-from lib.utils.custom_dialogs import CustomDialog, CustomWindow
-from lib.utils.ed_utils import get_ed_pack_info, show_ed_pack_info
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
@@ -19,7 +22,6 @@ from lib.api.trakt.trakt_api import (
     trakt_revoke_authentication,
 )
 from lib.clients.search import search_client
-from lib.utils.debrid_utils import check_debrid_cached, handle_results
 from lib.files_history import last_files
 from lib.play import get_playback_info
 from lib.titles_history import last_titles
@@ -31,12 +33,12 @@ from lib.trakt import (
     show_list_trakt_page,
 )
 
-from lib.utils.pm_utils import get_pm_pack_info, show_pm_pack_info
-from lib.utils.rd_utils import get_rd_info, get_rd_pack_info, show_rd_pack_info
+from lib.utils.rd_utils import get_rd_info
 from lib.utils.items_menus import tv_items, movie_items, anime_items
-from lib.utils.torbox_utils import get_torbox_pack_info, show_tb_pack_info
+from lib.utils.debrid_utils import check_debrid_cached
 
 from lib.tmdb import (
+    get_tmdb_media_details,
     handle_tmdb_anime_query,
     handle_tmdb_query,
     search as tmdb_search,
@@ -45,11 +47,13 @@ from lib.tmdb import (
 from lib.db.cached import cache
 
 from lib.utils.utils import (
+    TMDB_POSTER_URL,
     DialogListener,
     Players,
     clean_auto_play_undesired,
     clear,
     clear_all_cache,
+    get_fanart_details,
     get_password,
     get_random_color,
     get_service_host,
@@ -77,11 +81,11 @@ from lib.utils.kodi_utils import (
     action_url_run,
     build_url,
     close_all_dialog,
+    close_busy_dialog,
     container_update,
     show_keyboard,
     addon_status,
     burst_addon_settings,
-    donate_message,
     get_setting,
     notification,
     play_info_hash,
@@ -195,12 +199,12 @@ def root_menu():
         isFolder=True,
     )
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("test_window"),
-        list_item("Test", ""),
-        isFolder=True,
-    )
+    # addDirectoryItem(
+    #     ADDON_HANDLE,
+    #     build_url("test_source_select"),
+    #     list_item("Test", ""),
+    #     isFolder=False,
+    # )
 
     endOfDirectory(ADDON_HANDLE)
 
@@ -390,6 +394,7 @@ def search_direct(params):
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
         )
+        list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [
                 (
@@ -404,7 +409,7 @@ def search_direct(params):
             ADDON_HANDLE,
             build_url("search", mode=mode, query=quote(text), direct=True),
             list_item,
-            isFolder=True,
+            isFolder=False,
         )
 
     list_item = ListItem(label=f"Clear Searches")
@@ -443,44 +448,87 @@ def search(params):
     client = get_setting("client_player")
 
     with DialogListener() as listener:
-        p_dialog = listener.dialog
-
         results = search_client(
-            query, ids, mode, media_type, p_dialog, rescrape, season, episode
+            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
         )
-        if not results:
-            notification("No results found")
-            return
+    if not results:
+        notification("No results found")
+        return
 
-        proc_results = pre_process(
-            results,
-            mode,
-            ep_name,
-            episode,
-            season,
-        )
-        if not proc_results:
-            notification("No results found for episode")
-            return
+    proc_results = pre_process(
+        results,
+        mode,
+        ep_name,
+        episode,
+        season,
+    )
+    if not proc_results:
+        notification("No results found for episode")
+        return
 
-        if client == Players.DEBRID:
+    if client == Players.DEBRID:
+        with DialogListener() as listener:
             final_results = handle_debrid_client(
                 query,
                 proc_results,
                 mode,
                 media_type,
-                p_dialog,
+                listener.dialog,
                 rescrape,
                 season,
                 episode,
             )
-            if is_auto_play():
-                auto_play(final_results, ids, tv_data, mode)
-            else:
-                handle_results(final_results, mode, ids, tv_data, False)
+        if is_auto_play():
+            auto_play(final_results, ids, tv_data, mode)
+            return
         else:
-            final_results = post_process(proc_results)
-            handle_results(final_results, mode, ids, tv_data, direct)
+            data = handle_results(final_results, mode, ids, tv_data, direct)
+    else:
+        final_results = post_process(proc_results)
+        data = handle_results(final_results, mode, ids, tv_data, direct)
+
+    if not data:
+        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+        close_busy_dialog()
+        close_all_dialog()
+        return
+
+    list_item = make_listing(data)
+    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    # player = JacktookPLayer(db=bookmark_db)
+    # player.run(data=data)
+    # setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+    # close_busy_dialog()
+    # close_all_dialog()
+
+
+def handle_results(final_results, mode, ids, tv_data, direct=False):
+    if not final_results:
+        notification("No final results available")
+        return
+
+    if direct:
+        item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
+    else:
+        tmdb_id, tvdb_id, _ = ids.split(", ")
+
+        details = get_tmdb_media_details(tmdb_id, mode)
+        poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+        overview = details.overview or ""
+
+        fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
+
+        item_info = {
+            "poster": poster,
+            "fanart": fanart_data["fanart"] or poster,
+            "clearlogo": fanart_data["clearlogo"],
+            "plot": overview,
+            "tv_data": tv_data,
+            "ids": ids,
+            "mode": mode,
+        }
+
+    return source_select(item_info, sources=final_results)
 
 
 def handle_debrid_client(
@@ -508,48 +556,42 @@ def handle_debrid_client(
 
 
 def play_torrent(params):
-    data = get_playback_info(
-        title=params["title"],
-        mode=params.get("mode", ""),
-        is_torrent=eval(params["is_torrent"]),
-        extra_data=eval(params["data"]),
-    )
+    kodilog("play_torrent")
+    data = eval(params["data"])
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
 def auto_play(results, ids, tv_data, mode):
     result = clean_auto_play_undesired(results)
-    data = get_playback_info(
-        title=result.get("title"),
-        mode=mode,
-        is_torrent=False,
-        extra_data={
+    playback_info = get_playback_info(
+        data={
+            "title": result.get("title"),
+            "mode": mode,
+            "type": result.get("type"),
             "ids": ids,
             "info_hash": result.get("infoHash"),
             "tv_data": tv_data,
-            "debrid_info": {
-                "debrid_type": result.get("debridType"),
-            },
+            "is_torrent": False,
         },
     )
-    list_item = make_listing(data)
+    list_item = make_listing(playback_info)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
 def cloud_details(params):
-    debrid_type = params.get("debrid_type")
+    type = params.get("type")
 
-    if debrid_type == Debrids.RD:
+    if type == Debrids.RD:
         downloads_method = "get_rd_downloads"
         info_method = "rd_info"
-    elif debrid_type == Debrids.PM:
+    elif type == Debrids.PM:
         notification("Not yet implemented")
         return
-    elif debrid_type == Debrids.TB:
+    elif type == Debrids.TB:
         notification("Not yet implemented")
         return
-    elif debrid_type == Debrids.ED:
+    elif type == Debrids.ED:
         notification("Not yet implemented")
         return
 
@@ -581,7 +623,7 @@ def cloud(params):
             ADDON_HANDLE,
             build_url(
                 "cloud_details",
-                debrid_type=debrid_name,
+                type=debrid_name,
             ),
             torrent_li,
             isFolder=True,
@@ -595,14 +637,14 @@ def rd_info(params):
 
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
-    debrid_type = "RD"
-    debrid_color = get_random_color(debrid_type)
-    format_debrid_type = f"[B][COLOR {debrid_color}][{debrid_type}][/COLOR][/B]"
+    type = Debrids.RD
+    debrid_color = get_random_color(type)
+    formated_type = f"[B][COLOR {debrid_color}][{type}][/COLOR][/B]"
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     downloads = rd_client.get_user_downloads_list(page=page)
     for d in downloads:
-        torrent_li = list_item(f"{format_debrid_type}-{d['filename']}", "download.png")
+        torrent_li = list_item(f"{formated_type}-{d['filename']}", "download.png")
         torrent_li.setProperty("IsPlayable", "true")
         addDirectoryItem(
             ADDON_HANDLE,
@@ -706,37 +748,9 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = eval(params.get("data"))
-    data = get_playback_info(params.get("title"), params.get("mode"), extra_data=data)
+    data = get_playback_info(data)
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
-
-
-def show_pack_info(params):
-    ids = params.get("ids")
-    info_hash = params.get("info_hash")
-    debrid_type = params.get("debrid_type")
-    mode = params.get("mode")
-    tv_data = params.get("tv_data", {})
-
-    if mode == "movies":
-        setContent(ADDON_HANDLE, MOVIES_TYPE)
-    elif mode == "tv":
-        setContent(ADDON_HANDLE, SHOWS_TYPE)
-
-    if debrid_type == "PM":
-        if info := get_pm_pack_info(info_hash):
-            show_pm_pack_info(info, ids, debrid_type, tv_data, mode)
-    elif debrid_type == "TB":
-        if info := get_torbox_pack_info(info_hash):
-            show_tb_pack_info(info, ids, debrid_type, tv_data, mode)
-    elif debrid_type == "RD":
-        if info := get_rd_pack_info(info_hash):
-            show_rd_pack_info(info, ids, debrid_type, tv_data, mode)
-    elif debrid_type == "ED":
-        if info := get_ed_pack_info(info_hash):
-            show_ed_pack_info(info, ids, debrid_type, tv_data, mode)
-
-    endOfDirectory(ADDON_HANDLE)
 
 
 def search_item(params):
@@ -749,7 +763,7 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     set_content_type(mode)
-    
+
     if api == "trakt":
         result = handle_trakt_query(query, category, mode, page)
         if result:
@@ -789,16 +803,16 @@ def next_page_anime(params):
     )
 
 
-def download(magnet, debrid_type):
-    if debrid_type == "RD":
+def download(magnet, type):
+    if type == "RD":
         rd_client = RealDebrid(token=get_setting("real_debrid_token"))
         thread = Thread(
             target=rd_client.download, args=(magnet,), kwargs={"pack": False}
         )
-    elif debrid_type == "TB":
+    elif type == "TB":
         tb_client = Torbox(token=get_setting("torbox_token"))
         thread = Thread(target=tb_client.download, args=(magnet,))
-    elif debrid_type == "PM":
+    elif type == "PM":
         pm_client = Premiumize(token=get_setting("premiumize_token"))
         thread = Thread(
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
@@ -815,7 +829,16 @@ def status(params):
 
 
 def donate(params):
-    donate_message()
+    msg = "If you like Jacktook you can support \n"
+    msg += "its development by making a small donation to:\n\n"
+    msg += "[COLOR snow]https://ko-fi.com/sammax09[/COLOR]"
+    dialog = CustomDialog(
+        "customdialog.xml",
+        ADDON_PATH,
+        heading="Donation",
+        text=msg,
+    )
+    dialog.doModal()
 
 
 def settings(params):
@@ -868,3 +891,7 @@ def open_burst_config(params):
 
 def torrentio_selection(params):
     open_providers_selection()
+
+
+def test_source_select(params):
+    source_select_mock()

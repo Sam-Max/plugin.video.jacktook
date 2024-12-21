@@ -1,8 +1,9 @@
 import copy
 from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.easydebrid import EasyDebrid
-from lib.utils.kodi_utils import ADDON_HANDLE, build_url, get_setting, notification
+from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
+    Debrids,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
@@ -11,8 +12,6 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
 
 client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip())
@@ -25,12 +24,12 @@ def check_ed_cached(results, cached_results, uncached_results, total, dialog, lo
     cached_response = torrents_info.get("cached", [])
     for e, res in enumerate(copy.deepcopy(results)):
         debrid_dialog_update("ED", total, dialog, lock)
-        res["debridType"] = "ED"
+        res["type"] = Debrids.ED
         if cached_response[e] is True:
-            res["isDebrid"] = True
+            res["isCached"] = True
             cached_results.append(res)
         else:
-            res["isDebrid"] = False
+            res["isCached"] = False
             uncached_results.append(res)
 
 
@@ -55,12 +54,10 @@ def get_ed_pack_info(info_hash):
     torrent_files = response_data.get("files", [])
     if len(torrent_files) > 1:
         files = []
-        tracker_color = get_random_color("TB")
         for item in torrent_files:
             name = item["filename"]
             if any(name.lower().endswith(x) for x in extensions):
-                title = f"[B][COLOR {tracker_color}][ED][/COLOR][/B]-Cached-{name}"
-                files.append((item["url"], title))
+                files.append((item["url"], name))
         info["files"] = files
         if info:
             set_cached(info, info_hash)
@@ -69,27 +66,3 @@ def get_ed_pack_info(info_hash):
         notification("Not a torrent pack")
         return
 
-
-def show_ed_pack_info(info, ids, debrid_type, tv_data, mode):
-    for url, title in info["files"]:
-        list_item = ListItem(label=f"{title}")
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_torrent",
-                title=title,
-                mode=mode,
-                is_torrent=False,
-                data={
-                    "ids": ids,
-                    "url": url,
-                    "tv_data": tv_data,
-                    "debrid_info": {
-                        "debrid_type": debrid_type,
-                        "is_debrid_pack": True,
-                    },
-                },
-            ),
-            list_item,
-            isFolder=False,
-        )

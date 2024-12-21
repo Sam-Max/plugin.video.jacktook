@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 from threading import Thread
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
     clear_property,
     close_all_dialog,
-    hide_busy_dialog,
+    close_busy_dialog,
     notification,
 )
 from lib.utils.utils import set_media_infotag, set_windows_property
@@ -18,7 +17,7 @@ set_resume, set_watched = 5, 90
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 
 
-class TestPlayer(xbmc.Player):
+class JacktookPLayer(xbmc.Player):
     def __init__(self, db):
         xbmc.Player.__init__(self)
         self.url = None
@@ -29,26 +28,26 @@ class TestPlayer(xbmc.Player):
         self.media_marked = False
         self.playback_successful = None
         self.cancel_all_playback = False
+        self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
-    def run(self, url=None, data=None):
-        hide_busy_dialog()
+    def run(self, data=None):
+        close_busy_dialog()
         self.clear_playback_properties()
 
-        if not url:
-            kodilog(f"URL missing: {url}")
-            return self.run_error()
         try:
-            return self.play_video(url, self.make_listing(data))
+            kodilog(data)
+            list_item = self.make_listing(data)
+            self.play_video(data["url"], list_item)
         except Exception as e:
             kodilog(f"Error in run: {e}")
             return self.run_error()
-
-    def make_listing(self, metadata):
-        url = metadata.get("url")
-        title = metadata.get("title")
-        ids = metadata.get("ids")
-        tv_data = metadata.get("tv_data", {})
-        mode = metadata.get("mode", "")
+            
+    def make_listing(self, data):
+        url = data.get("url")
+        title = data.get("title")
+        ids = data.get("ids")
+        tv_data = data.get("tv_data", {})
+        mode = data.get("mode", "")
 
         list_item = ListItem(label=title)
         list_item.setPath(url)
@@ -75,10 +74,27 @@ class TestPlayer(xbmc.Player):
 
         set_windows_property(mode, ids)
         return list_item
+    
+    def play_playlist(self, playlist):
+        self.kodi_monitor = Monitor()
+        try:
+            self.play(playlist)
+            self.check_playback_start()
+
+            if self.playback_successful:
+                self.monitor()
+            else:
+                if self.cancel_all_playback:
+                    self.kill_dialog()
+                self.stop()
+
+        except Exception as e:
+            notification(f"Error playing playlist: {e}")
+            self.run_error()
 
     def play_video(self, url, list_item):
         self.set_constants(url)
-        hide_busy_dialog()
+        close_busy_dialog()
 
         try:
             self.play(self.url, list_item)
@@ -110,9 +126,9 @@ class TestPlayer(xbmc.Player):
                 self.playback_successful = False
             elif resolve_percent >= 100:
                 self.playback_successful = False
-            elif get_visibility("Window.IsTopMost(okdialog)"):
-                # execute_builtin("SendClick(okdialog, 11)")
-                self.playback_successful = False
+            # elif get_visibility("Window.IsTopMost(okdialog)"):
+            #     execute_builtin("SendClick(okdialog, 11)")
+            #     self.playback_successful = False
             elif self.isPlayingVideo():
                 kodilog("isPlayingVideo")
                 try:
@@ -140,7 +156,7 @@ class TestPlayer(xbmc.Player):
                 sleep(100)
                 total_check_time += 0.10
 
-            hide_busy_dialog()
+            close_busy_dialog()
             sleep(1000)
 
             while self.isPlayingVideo():
@@ -168,7 +184,7 @@ class TestPlayer(xbmc.Player):
                     kodilog(f"Error in monitor: {e}")
                     sleep(250)
 
-            hide_busy_dialog()
+            close_busy_dialog()
 
             if not self.media_marked:
                 self.media_watched_marker()
@@ -180,7 +196,6 @@ class TestPlayer(xbmc.Player):
 
         finally:
             self.clear_playback_properties()
-            
 
     def media_watched_marker(self):
         self.media_marked = True
@@ -204,7 +219,9 @@ class TestPlayer(xbmc.Player):
         self.cancel_all_playback = False
 
     def set_bookmark(self):
-        Thread(target=self.db.set_bookmark, args=(self.url, self.playback_percent)).start()
+        Thread(
+            target=self.db.set_bookmark, args=(self.url, self.playback_percent)
+        ).start()
 
     def get_bookmark(self):
         return self.db.get_bookmark(self.url)

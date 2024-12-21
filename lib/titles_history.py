@@ -26,7 +26,7 @@ def last_titles():
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
-        list_item.setProperty("IsPlayable", "false")
+        list_item.setProperty("IsPlayable", "true")
 
         mode = data["mode"]
         ids = data.get("ids")
@@ -52,6 +52,6 @@ def last_titles():
                     ids=ids,
                 ),
                 list_item,
-                isFolder=True,
+                isFolder=False,
             )
     endOfDirectory(ADDON_HANDLE)

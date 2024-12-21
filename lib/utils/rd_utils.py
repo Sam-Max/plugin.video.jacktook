@@ -1,31 +1,23 @@
 import copy
-import os
-from lib.clients.debrid.realdebrid import RealDebrid
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
+from lib.clients.debrid.realdebrid import RealDebrid
 from lib.utils.kodi_utils import (
-    ADDON_HANDLE,
-    ADDON_PATH,
-    build_url,
     get_setting,
     dialog_text,
     notification,
 )
 from lib.utils.utils import (
+    Debrids,
     Indexer,
     debrid_dialog_update,
     get_cached,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
-
-client = RealDebrid(token=get_setting("real_debrid_token"))
 
 
 def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
@@ -33,33 +25,34 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
     if get_setting("indexer") == Indexer.MEDIAFUSION:
         is_media_fusion = True
     else:
+        client = RealDebrid(token=get_setting("real_debrid_token"))
         torr_available = client.get_user_torrent_list()
         torr_available_hashes = [torr["hash"] for torr in torr_available]
 
     for res in copy.deepcopy(results):
         debrid_dialog_update("RD", total, dialog, lock)
-        res["debridType"] = "RD"
-        res["isDebrid"] = True
+        res["type"] = Debrids.RD
         if not is_media_fusion:
             if res.get("infoHash") in torr_available_hashes:
                 res["isCached"] = True
                 cached_results.append(res)
             else:
+                res["isCached"] = False
                 uncached_results.append(res)
         else:
-            cached_results.append(res)
             res["isCached"] = True
+            cached_results.append(res)
 
     if not is_media_fusion:
         # Add uncached_results cause of RD removed cache check endpoint
         cached_results.extend(uncached_results)
 
 
-def add_rd_magnet(info_hash, is_pack=False):
+def add_rd_magnet(client, info_hash, is_pack=False):
     kodilog("rd_utils::add_rd_magnet")
     torrent_info = client.get_available_torrent(info_hash)
     if not torrent_info:
-        check_max_active_count()
+        check_max_active_count(client)
         magnet = info_hash_to_magnet(info_hash)
         response = client.add_magent_link(magnet)
         torrent_id = response.get("id")
@@ -96,7 +89,8 @@ def add_rd_magnet(info_hash, is_pack=False):
 
 
 def get_rd_link(info_hash):
-    torrent_id = add_rd_magnet(info_hash)
+    client = RealDebrid(token=get_setting("real_debrid_token"))
+    torrent_id = add_rd_magnet(client, info_hash)
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
@@ -109,22 +103,23 @@ def get_rd_pack_info(info_hash):
     info = get_cached(info_hash)
     if info:
         return info
-    torrent_id = add_rd_magnet(info_hash, is_pack=True)
+    client = RealDebrid(token=get_setting("real_debrid_token"))
+    torrent_id = add_rd_magnet(client, info_hash, is_pack=True)
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
+    kodilog(torr_info)
     info = {}
     info["id"] = torr_info["id"]
     torrent_files = torr_info["files"]
     if len(torrent_files) > 1:
-        torr_names = [
-            item["path"] for item in torrent_files if item["selected"] == 1
+        torr_items = [
+            item for item in torrent_files if item["selected"] == 1
         ]
         files = []
-        tracker_color = get_random_color("RD")
-        for id, name in enumerate(torr_names):
-            title = f"[B][COLOR {tracker_color}][RD][/COLOR][/B]-Cached-{name.split('/', 1)[1]}"
-            files.append((id, title))
+        for item in torr_items:
+            title = item["path"].split('/', 1)[1]
+            files.append((item["id"], title))
         info["files"] = files
         set_cached(info, info_hash)
         return info
@@ -133,41 +128,15 @@ def get_rd_pack_info(info_hash):
         return
 
 
-def show_rd_pack_info(info, ids, debrid_type, tv_data, mode):
-    for file_id, title in info["files"]:
-        list_item = ListItem(label=title)
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_from_pack",
-                title=title,
-                mode=mode,
-                data={
-                    "ids": ids,
-                    "tv_data": tv_data,
-                    "debrid_info": {
-                        "file_id": file_id,
-                        "torrent_id": info["id"],
-                        "debrid_type": debrid_type,
-                        "is_debrid_pack": True,
-                    },
-                },
-            ),
-            list_item,
-            isFolder=False,
-        )
-
-
 def get_rd_pack_link(file_id, torrent_id):
+    client = RealDebrid(token=get_setting("real_debrid_token"))
     torr_info = client.get_torrent_info(torrent_id)
     response = client.create_download_link(torr_info["links"][int(file_id)])
     return response.get("download")
 
 
 def get_rd_info():
+    client = RealDebrid(token=get_setting("real_debrid_token"))
     user = client.get_user()
     expiration = user["expiration"]
     try:
@@ -186,7 +155,7 @@ def get_rd_info():
     dialog_text("Real-Debrid", "\n".join(body))
 
 
-def check_max_active_count():
+def check_max_active_count(client):
     active_count = client.get_torrent_active_count()
     if active_count["nb"] >= active_count["limit"]:
         hashes = active_count["list"]

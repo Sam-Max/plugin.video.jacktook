@@ -2,7 +2,6 @@ import os
 import threading
 from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.search import Search
-from lib.utils.settings import is_auto_play
 from lib.utils.utils import (
     TMDB_BACKDROP_URL,
     TMDB_POSTER_URL,
@@ -27,9 +26,9 @@ from lib.utils.kodi_utils import (
     MOVIES_TYPE,
     SHOWS_TYPE,
     build_url,
+    play_media,
     show_keyboard,
     notification,
-    container_update,
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, setContent
@@ -85,8 +84,7 @@ def add_icon_genre(item, name):
 
 def search(mode, genre_id, page):
     if mode == "multi":
-        query = handle_multi_search(page)
-        return Search().multi(str(query), page=page)
+        return handle_multi_search(page)
     elif mode == "movies":
         return handle_movie_search(genre_id, page)
     elif mode == "tv":
@@ -97,11 +95,11 @@ def handle_multi_search(page):
     if page == 1:
         query = show_keyboard(id=30241)
         if not query:
-            return None
+            return
         main_db.set_query("search_query", query)
     else:
         query = main_db.get_query("search_query")
-    return query
+    return Search().multi(query, page=page)
 
 
 def handle_movie_search(genre_id, page):
@@ -270,14 +268,14 @@ def show_items(res, mode):
         }
     )
    
-    list_item.setProperty("IsPlayable", "true" if is_auto_play() else "false")
+    list_item.setProperty("IsPlayable", "true")
 
     if mode == "movies":
         list_item.addContextMenuItems(
             [
                 (
                     "Rescrape item",
-                    container_update(
+                    play_media(
                         name="search",
                         mode=mode,
                         query=title,
@@ -296,7 +294,7 @@ def show_items(res, mode):
                 ids=ids,
             ),
             list_item,
-            isFolder=False if is_auto_play() else True,
+            isFolder=False,
         )
     else:
         addDirectoryItem(
@@ -361,7 +359,7 @@ def anime_show_results(res, mode):
             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
         }
     )
-    list_item.setProperty("IsPlayable", "false")
+    list_item.setProperty("IsPlayable", "true")
 
     set_media_infotag(
         list_item,
@@ -391,7 +389,7 @@ def anime_show_results(res, mode):
                 ids=ids,
             ),
             list_item,
-            isFolder=True,
+            isFolder=False,
         )
 
 
@@ -415,3 +413,13 @@ def anime_checker(results, mode):
     results["results"] = anime_results
     results["total_results"] = len(anime_results)
     return results
+
+
+def get_tmdb_media_details(tmdb_id, mode):
+    if not tmdb_id:
+        return
+    if mode == "tv":
+        details = tmdb_get("tv_details", tmdb_id)
+    elif mode == "movies":
+        details = tmdb_get("movie_details", tmdb_id)
+    return details

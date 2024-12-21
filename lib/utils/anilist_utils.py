@@ -7,7 +7,7 @@ from lib.utils.simkl_utils import search_simkl_episodes
 from lib.utils.utils import (
     add_next_button,
     get_cached,
-    get_fanart,
+    get_fanart_details,
     set_cached,
     set_media_infotag,
 )
@@ -87,7 +87,7 @@ def anilist_show_results(results, category, page, plugin):
         tvdb_id = ids.get("tvdb", -1)
         tmdb_id = ids.get("tmdb", -1)
 
-        data = get_fanart(tvdb_id)
+        data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
         if data:
             poster = data["poster"]
             fanart = data["fanart"]

@@ -26,6 +26,7 @@ class Burst:
             results.append(
                 {
                     "title": r.title,
+                    "type": "Torrent",
                     "indexer": r.indexer,
                     "guid": r.guid,
                     "infoHash": None,

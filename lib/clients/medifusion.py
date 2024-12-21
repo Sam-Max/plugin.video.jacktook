@@ -44,7 +44,7 @@ class MediaFusion:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "qualityTitle": "",
+                    "type": "Torrent",
                     "indexer": "MediaFusion",
                     "guid": info_hash,
                     "infoHash": info_hash,

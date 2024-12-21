@@ -3,6 +3,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 from urllib.parse import quote
 
+from lib.utils.kodi_utils import notification
+
 
 class TorrServer(object):
     def __init__(self, host, port, username, password, ssl_enabled=False, session=None):
@@ -145,5 +147,8 @@ class TorrServer(object):
 
 
 class TorrServerError(Exception):
-    pass
+     def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
+        notification(self.message)
 

@@ -9,6 +9,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 from lib.utils.utils import (
+    Debrids,
     Players,
     set_watched_file,
     torrent_clients,
@@ -16,25 +17,15 @@ from lib.utils.utils import (
 from xbmcgui import Dialog
 
 
-def get_playback_info(
-    title,
-    mode,
-    is_torrent=False,
-    extra_data={},
-):
-    url = extra_data.get("url", "")
-    magnet = extra_data.get("magnet", "")
-    ids = extra_data.get("ids", [])
-    debrid_type = extra_data["debrid_info"].get("debrid_type", "")
-    is_debrid_pack = extra_data["debrid_info"].get("is_debrid_pack", False)
-    extra_data["mode"] = mode
-    extra_data["title"] = title
-
-    set_watched_file(
-        title,
-        is_torrent,
-        extra_data=extra_data,
-    )
+def get_playback_info(data):
+    title = data.get("title", "")
+    mode = data.get("mode", "")
+    type = data.get("type", "")
+    url = data.get("url", "")
+    magnet = data.get("magnet", "")
+    is_torrent = data.get("is_torrent", "")
+    ids = data.get("ids", [])
+    is_pack = data.get("is_pack", False)
 
     client = get_setting("client_player")
     _url = None
@@ -51,29 +42,30 @@ def get_playback_info(
         if is_torrent:
             addon_url = get_torrent_url()
         else:
-            if is_debrid_pack:
-                if debrid_type in ["RD", "TB"]:
-                    file_id = extra_data["debrid_info"].get("file_id", "")
-                    torrent_id = extra_data["debrid_info"].get("torrent_id", "")
-                    _url = get_debrid_pack_direct_url(file_id, torrent_id, debrid_type)
+            if is_pack:
+                if type in [Debrids.RD, Debrids.TB]:
+                    file_id = data.get("pack_info", {}).get("file_id", "")
+                    torrent_id = data.get("pack_info", {}).get("torrent_id", "")
+                    _url = get_debrid_pack_direct_url(file_id, torrent_id, type)
                     if _url is None:
                         notification("File not cached")
-                        return None, None
+                        return None
                 else:
                     _url = url
             else:
-                _url = get_debrid_direct_url(
-                    extra_data.get("info_hash", ""), debrid_type
-                )
+                _url = get_debrid_direct_url(data.get("info_hash", ""), type)
                 if not _url:
                     notification("File not cached")
-                    return None, None
-    if _url:
-        extra_data["url"] = _url
-    else:
-        extra_data["url"] = addon_url
+                    return None
 
-    return extra_data
+    if _url:
+        data["url"] = _url
+    else:
+        data["url"] = addon_url
+
+    set_watched_file(title, is_torrent, extra_data=data)
+
+    return data
 
 
 def get_torrent_url(magnet, url, mode, ids):

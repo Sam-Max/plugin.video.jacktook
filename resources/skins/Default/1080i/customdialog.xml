@@ -1,5 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<window>
+<window type="dialog">
+    <coordinates>
+        <left>600</left>
+        <top>300</top>
+        <width>800</width>
+        <height>400</height>
+    </coordinates>
+
     <defaultcontrol always="true">32503</defaultcontrol>
     <animation type="WindowOpen" reversible="false">
         <effect type="zoom" start="80" end="100" center="50%,50%" delay="160" tween="back" time="240"/>
@@ -10,34 +16,26 @@
         <effect type="fade" start="100" end="0" time="240"/>
     </animation>
     <depth>0.40</depth>
+
     <controls>
         <control type="group">
+            <width>800</width>
+            <height>400</height>
+
             <!-- Background -->
             <control type="image">
-                <left>400</left>
-                <top>200</top>
-                <width>500</width>
-                <height>250</height>
-                <texture colordiffuse="F0F0F0F0">AddonWindow/black.png</texture>
+                <texture>white.png</texture>
+                <colordiffuse>CC000000</colordiffuse>
             </control>
-            <!-- Window title -->
+            <!-- Window Title -->
             <control type="label" id="32500">
-                <left>400</left>
-                <top>220</top>
-                <width>500</width>
-                <height>30</height>
                 <font>font14</font>
                 <align>center</align>
-                <aligny>center</aligny>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
             </control>
-            <!-- Additional Label -->
+            <!-- Text Body -->
             <control type="label" id="32501">
-                <left>400</left>
-                <top>260</top>
-                <width>500</width>
-                <height>100</height>
                 <font>font14</font>
                 <align>center</align>
                 <aligny>center</aligny>
@@ -47,10 +45,9 @@
             </control>
             <!-- Close button -->
             <control type="button" id="32503">
-                <left>850</left>
-                <top>218</top>
-                <width>32</width>
-                <height>32</height>
+                <left>745</left>
+                <width>50</width>
+                <height>50</height>
                 <texturefocus colordiffuse="FF12A0C7">Button/close.png</texturefocus>
                 <texturenofocus colordiffuse="EEFFFFFF">Button/close.png</texturenofocus>
             </control>

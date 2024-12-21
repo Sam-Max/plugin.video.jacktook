@@ -31,13 +31,13 @@ class Elfhosted:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "qualityTitle": "",
+                    "type": "Torrent",
                     "indexer": "Elfhosted",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
                     "size": parsed_item["size"],
-                    "seeders": 0,
                     "publishDate": "",
+                    "seeders": 0,
                     "peers": 0,
                 }
             )

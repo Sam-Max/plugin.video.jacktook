@@ -24,7 +24,7 @@ from lib.utils.utils import (
     set_media_infotag,
     tmdb_get,
 )
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, container_update
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -143,7 +143,7 @@ def show_anime_common(res, mode):
             "fanart": backdrop_path,
         }
     )
-    list_item.setProperty("IsPlayable", "false")
+    list_item.setProperty("IsPlayable", "true")
     overview = details.get("overview", "")
 
     set_media_infotag(
@@ -181,7 +181,7 @@ def show_common_categories(res, mode):
             "fanart": backdrop_path,
         }
     )
-    list_item.setProperty("IsPlayable", "false")
+    list_item.setProperty("IsPlayable", "true")
 
     overview = details.get("overview", "")
 
@@ -283,7 +283,7 @@ def show_recommendations(res, mode):
         ids=ids,
     )
 
-    list_item.setProperty("IsPlayable", "false")
+    list_item.setProperty("IsPlayable", "true")
 
     add_dir_item(mode, list_item, ids, title)
 
@@ -313,7 +313,7 @@ def show_lists_content_items(res):
         }
     )
 
-    list_item.setProperty("IsPlayable", "false")
+    list_item.setProperty("IsPlayable", "true")
 
     set_media_infotag(
         list_item,
@@ -346,7 +346,7 @@ def show_lists_content_items(res):
                 ids=ids,
             ),
             list_item,
-            isFolder=True,
+            isFolder=False,
         )
 
 
@@ -394,7 +394,7 @@ def add_dir_item(mode, list_item, ids, title):
             [
                 (
                     "Rescrape item",
-                    container_update(
+                    play_media(
                         name="search",
                         mode=mode,
                         query=title,

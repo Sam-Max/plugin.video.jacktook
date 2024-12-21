@@ -35,9 +35,9 @@ def last_files():
             ADDON_HANDLE,
             build_url(
                 "play_torrent",
-                title=title,
-                is_torrent=data.get("is_torrent"),
                 data={
+                    "title": title,
+                    "is_torrent": data.get("is_torrent"),
                     "ids": data.get("ids"),
                     "url": data.get("url"),
                     "info_hash": data.get("info_hash"),
@@ -46,7 +46,7 @@ def last_files():
                     "debrid_info": {
                         "file_id": data.get("file_id"),
                         "torrent_id": data.get("torrent_id"),
-                        "debrid_type": data.get("debrid_type"),
+                        "type": data.get("type"),
                         "is_debrid_pack": data.get("is_debrid_pack"),
                     },
                 },

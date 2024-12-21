@@ -1,8 +1,7 @@
-import os
 from lib.clients.debrid.alldebrid import AllDebrid
-from lib.api.debrid.debrid_client import ProviderException
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
+from lib.clients.debrid.debrid_client import ProviderException
+from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     get_cached,
     get_random_color,
@@ -10,8 +9,6 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
 EXTENSIONS = supported_video_extensions()[:-1]
 
@@ -80,29 +77,3 @@ def get_ad_pack_info(info_hash):
             notification("Not a torrent pack")
 
 
-def show_ad_pack_info(info, ids, debrid_type, tv_data, mode, plugin):
-    for file_id, title in info["files"]:
-        list_item = ListItem(label=title)
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_from_pack",
-                title=title,
-                mode=mode,
-                data={
-                    "ids": ids,
-                    "tv_data": tv_data,
-                    "debrid_info": {
-                        "file_id": file_id,
-                        "torrent_id": info["id"],
-                        "debrid_type": debrid_type,
-                        "is_debrid_pack": True,
-                    },
-                },
-            ),
-            list_item,
-            isFolder=False,
-        )

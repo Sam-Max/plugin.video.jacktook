@@ -36,7 +36,7 @@ class Torrentio:
             results.append(
                 {
                     "title": parsed_item["title"],
-                    "qualityTitle": "",
+                    "type": "Torrent",
                     "indexer": "Torrentio",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],

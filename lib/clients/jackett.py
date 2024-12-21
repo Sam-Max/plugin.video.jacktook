@@ -41,10 +41,11 @@ def extract_result(results, item):
     }
     results.append(
         {
-            "qualityTitle": "",
             "title": item.get("title", ""),
-            "indexer": item.get("jackettindexer", {}).get("#text", ""),
+            "type": "Torrent",
+            "indexer": "Jackett",
             "publishDate": item.get("pubDate", ""),
+            "provider": item.get("jackettindexer", {}).get("#text", ""),
             "guid": item.get("guid", ""),
             "downloadUrl": item.get("link", ""),
             "size": item.get("size", ""),

@@ -1,7 +1,7 @@
 import os
 from lib.clients.anizip import AniZipApi
 from lib.db.anime_db import get_all_ids
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, container_update
+from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, container_update, play_media
 from lib.utils.utils import get_cached, set_cached, set_media_infotag
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -75,7 +75,7 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
             [
                 (
                     "Rescrape item",
-                    container_update(
+                    play_media(
                         name="search",
                         mode="anime",
                         query=title,

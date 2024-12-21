@@ -35,10 +35,10 @@ class Jackgram:
         for item in res["streams"]:
             link = self.generate_link(tmdb_id=res["tmdb_id"], hash=item["hash"])
             results.append(
-                {
-                    "indexer": item["name"],
+                {   
                     "title": item["title"],
-                    "qualityTitle": item["quality"],
+                    "type": "Direct",
+                    "indexer": item["name"],
                     "size": item["size"],
                     "publishDate": item["date"],
                     "duration": item["duration"],
@@ -56,9 +56,9 @@ class Jackgram:
                 date = "" if file["date"] == None else file["date"]
                 results.append(
                     {
-                        "indexer": file["name"],
                         "title": file["title"],
-                        "qualityTitle": file["quality"],
+                        "type": "Direct",
+                        "indexer": file["name"],
                         "size": file["size"],
                         "publishDate": date,
                         "duration": file["duration"],

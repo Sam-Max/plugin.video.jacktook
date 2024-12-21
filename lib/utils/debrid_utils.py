@@ -1,21 +1,20 @@
 import requests
-import requests
 from threading import Lock
 from lib.api.jacktook.kodi import kodilog
-from lib.indexer import show_indexers_results
-from lib.utils.ed_utils import check_ed_cached, get_ed_link
-from lib.utils.kodi_utils import ADDON_HANDLE, get_setting, notification, set_view
-from lib.utils.pm_utils import check_pm_cached, get_pm_link
-from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_link
+from lib.utils.ed_utils import check_ed_cached, get_ed_link, get_ed_pack_info
+from lib.utils.kodi_utils import get_setting
+from lib.utils.pm_utils import check_pm_cached, get_pm_link, get_pm_pack_info
+from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_info, get_rd_pack_link
 from lib.utils.torbox_utils import (
     check_torbox_cached,
     get_torbox_link,
+    get_torbox_pack_info,
     get_torbox_pack_link,
 )
 from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
-    execute_thread_pool,
+    Debrids,
     get_cached,
     get_info_hash_from_magnet,
     is_ed_enabled,
@@ -26,7 +25,6 @@ from lib.utils.utils import (
     set_cached,
     dialog_update,
 )
-from xbmcplugin import endOfDirectory
 
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
@@ -46,6 +44,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     cached_results = []
     uncached_results = []
     total = len(results)
+    dialog.create("")
 
     extract_infohash(results, dialog)
 
@@ -78,16 +77,50 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     return cached_results
 
 
-def handle_results(final_results, mode, ids, tv_data, direct):
-    if not final_results:
-        notification("No final results available")
-        return
+def get_debrid_status(res):
+    type = res.get("type")
+    
+    if res.get("isPack"):
+        if type == Debrids.RD:
+            status_string = get_rd_status_pack(res)
+        else:
+            status_string = f"[B]Cached-Pack[/B]" 
+    else:
+        if type == Debrids.RD:
+            status_string = get_rd_status(res)
+        else:
+            status_string = f"[B]Cached[/B]"
 
-    execute_thread_pool(
-        final_results, show_indexers_results, mode, ids, tv_data, direct
-    )
-    set_view("widelist")
-    endOfDirectory(ADDON_HANDLE)
+    return status_string
+
+
+def get_rd_status(res):
+    if res.get("isCached"):
+        label = f"[B]Cached[/B]"
+    else:
+        label = f"[B]Download[/B]"
+    return label
+
+
+def get_rd_status_pack(res):
+    if res.get("isCached"):
+        label = f"[B]Pack-Cached[/B]"
+    else:
+        label = f"[B]Pack-Download[/B]"
+    return label
+
+
+def get_pack_info(type, info_hash):
+    if type == Debrids.PM:
+        info = get_pm_pack_info(info_hash)
+    elif type == Debrids.TB:
+        info = get_torbox_pack_info(info_hash)
+    elif type == Debrids.RD:
+        info = get_rd_pack_info(info_hash)
+    elif type == Debrids.ED:
+        info = get_ed_pack_info(info_hash)
+
+    return info
 
 
 def extract_infohash(results, dialog):
@@ -136,19 +169,19 @@ def get_magnet_from_uri(uri):
     return magnet, info_hash
 
 
-def get_debrid_direct_url(info_hash, debrid_type):
-    if debrid_type == "RD":
+def get_debrid_direct_url(info_hash, type):
+    if type == Debrids.RD:
         return get_rd_link(info_hash)
-    elif debrid_type == "PM":
+    elif type == Debrids.PM:
         return get_pm_link(info_hash)
-    elif debrid_type == "TB":
+    elif type == Debrids.TB:
         return get_torbox_link(info_hash)
-    elif debrid_type == "ED":
+    elif type == Debrids.ED:
         return get_ed_link(info_hash)
 
 
-def get_debrid_pack_direct_url(file_id, torrent_id, debrid_type):
-    if debrid_type == "RD":
+def get_debrid_pack_direct_url(file_id, torrent_id, type):
+    if type == Debrids.RD:
         return get_rd_pack_link(file_id, torrent_id)
-    elif debrid_type == "TB":
+    elif type == Debrids.TB:
         return get_torbox_pack_link(file_id, torrent_id)

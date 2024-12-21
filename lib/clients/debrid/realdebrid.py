@@ -1,6 +1,5 @@
 from time import time
-from lib.api.jacktook.kodi import kodilog
-from lib.clients.debrid.debrid_client import DebridClient
+from lib.clients.debrid.debrid_client import DebridClient, ProviderException
 from lib.utils.kodi_utils import sleep as ksleep
 from base64 import b64encode, b64decode
 from lib.utils.kodi_utils import (
@@ -354,8 +353,3 @@ class RealDebrid(DebridClient):
             is_return_none=True,
         )
 
-
-class ProviderException(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
