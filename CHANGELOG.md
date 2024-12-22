@@ -1,3 +1,7 @@
+## 0.4.0
+* Add custom source select and resolve windows dialog.
+* Improvements and fixes.
+
 ## 0.3.9
 * Add EasyDebrid support.
 * Add MediaFusion indexer.
