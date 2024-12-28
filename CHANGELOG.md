@@ -1,3 +1,10 @@
+## 0.4.1
+* Add play next dialog for episodes playback
+* Add automatic playlist creation for shows episodes.
+* Update tmdb helper to work with the new routing system.
+* Update Jackgram Indexer.
+* Others minor improvements and fixes.
+
 ## 0.4.0
 * Add custom source select and resolve windows dialog.
 * Improvements and fixes.
