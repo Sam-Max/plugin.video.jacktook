@@ -33,8 +33,14 @@ class MainDatabase:
             os.path.join("special://home/addons/", ADDON_ID, "addon.xml")
         )
 
+    def set_data(self, key, subkey, value):
+        if subkey in self.database[key]:
+            del self.database[key][subkey]
+        self.database[key][subkey]= value
+        self.commit()
+
     def set_query(self, key, value):
-        self.database[key] = value
+        self.database[key]= value
         self.commit()
 
     def get_query(self, key):

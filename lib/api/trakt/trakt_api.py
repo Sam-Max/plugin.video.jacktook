@@ -149,7 +149,7 @@ def call_trakt(
     elif status_code == 429:
         headers = response.headers
         if "Retry-After" in headers:
-            time.sleep(1000 * headers["Retry-After"])
+            time.sleep(1000 * int(headers["Retry-After"]))
             response = send_query()
     response.encoding = "utf-8"
     try:

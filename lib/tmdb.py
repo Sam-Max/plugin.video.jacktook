@@ -166,8 +166,9 @@ def handle_tmdb_anime_query(category, mode, page):
         data = anime.anime_on_the_air(mode, page)
     elif category == Anime.POPULAR:
         data = anime.anime_popular(mode, page)
-        kodilog(data)
-    process_anime_result(data, mode, category, page)
+
+    if data:
+        process_anime_result(data, mode, category, page)
 
 
 def process_anime_result(data, mode, category, page):
@@ -193,7 +194,6 @@ def process_tmdb_result(data, mode, page):
 
 
 def show_anime_results(data, mode, category, page):
-    kodilog("show_anime_results")
     execute_thread_pool(data.results, anime_show_results, mode)
     add_next_button("next_page_anime", page=page, mode=mode, category=category)
 
@@ -268,9 +268,8 @@ def show_items(res, mode):
         }
     )
    
-    list_item.setProperty("IsPlayable", "true")
-
     if mode == "movies":
+        list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [
                 (
@@ -343,12 +342,13 @@ def anime_show_results(res, mode):
     tmdb_id = res.get("id", -1)
     if mode == "movies":
         title = res.title
-        imdb_id, _ = get_tmdb_movie_data(tmdb_id)
+        imdb_id, duration = get_tmdb_movie_data(tmdb_id)
         tvdb_id = -1
     elif mode == "tv":
         title = res.name
         title = res["name"]
         imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
+        duration = ""
 
     ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
@@ -359,13 +359,13 @@ def anime_show_results(res, mode):
             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
         }
     )
-    list_item.setProperty("IsPlayable", "true")
 
     set_media_infotag(
         list_item,
         mode,
         title,
         description,
+        duration=duration,
     )
 
     if mode == "tv":
@@ -380,6 +380,7 @@ def anime_show_results(res, mode):
             isFolder=True,
         )
     else:
+        list_item.setProperty("IsPlayable", "true")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(

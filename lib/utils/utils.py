@@ -23,7 +23,6 @@ from lib.api.tmdbv3api.objs.season import Season
 from lib.api.tmdbv3api.objs.tv import TV
 
 from lib.torf._magnet import Magnet
-from lib.fanart import search_api_fanart
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -300,7 +299,6 @@ def make_listing(metadata):
 
     list_item = ListItem(label=title)
     list_item.setLabel(title)
-    list_item.setPath(metadata.get("url"))
     list_item.setContentLookup(False)
 
     if tv_data:
@@ -317,6 +315,8 @@ def make_listing(metadata):
         ep_name=ep_name,
         ids=ids,
     )
+
+    list_item.setProperty("IsPlayable", "true")
 
     set_windows_property(mode, ids)
     return list_item
@@ -336,6 +336,8 @@ def set_media_infotag(
     url="",
 ):
     info_tag = list_item.getVideoInfoTag()
+    info_tag.setPath(url)
+
     if mode == "movies":
         info_tag.setMediaType("movie")
         info_tag.setTitle(name)
@@ -343,21 +345,17 @@ def set_media_infotag(
     elif mode == "multi":
         info_tag.setMediaType("video")
         info_tag.setTitle(name)
+        info_tag.setFilenameAndPath(url)
     else:
-        info_tag.setMediaType("season")
-        if ep_name:
-            info_tag.setTitle(f"{ep_name} S{int(season_number):02d}E{int(episode):02d}")
-        info_tag.setTvShowTitle(name)
-        if url:
-            info_tag.setFilenameAndPath(url)
+        info_tag.setMediaType("episode")
+        info_tag.setTvShowTitle(f"{season_number}x{episode}. {ep_name}")
+        info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
         if season_number:
             info_tag.setSeason(int(season_number))
         if episode:
             info_tag.setEpisode(int(episode))
-
-    list_item.setProperty("IsPlayable", "true")
 
     info_tag.setPlot(overview)
     if duration:
@@ -388,7 +386,7 @@ def set_windows_property(mode, ids):
         )
 
 
-def set_watched_file(title, is_torrent, extra_data):
+def set_watched_file(title, is_torrent, data):
     if title in main_db.database["jt:lfh"]:
         return
 
@@ -402,19 +400,10 @@ def set_watched_file(title, is_torrent, extra_data):
     if title not in main_db.database["jt:watch"]:
         main_db.database["jt:watch"][title] = True
 
-    main_db.database["jt:lfh"][title] = {
-        "timestamp": datetime.now(),
-        "ids": extra_data.get("ids", []),
-        "tv_data": extra_data.get("tv_data", {}),
-        "url": extra_data.get("url", ""),
-        "is_torrent": is_torrent,
-        "magnet": extra_data.get("magnet", ""),
-        "info_hash": extra_data.get("info_hash", ""),
-        "type": extra_data.get("type", ""),
-        "is_pack": extra_data.get("is_pack", False),
-        "file_id": extra_data.get("pack_info", {}).get("file_id", ""),
-        "torrent_id": extra_data.get("pack_info", {}).get("torrent_id", ""),
-    }
+    data["timestamp"] = datetime.now().strftime("%a, %d %b %Y %I:%M %p")
+    data["is_torrent"] = is_torrent
+
+    main_db.set_data(key="jt:lfh", subkey=title, value=data)
     main_db.commit()
 
 
@@ -422,11 +411,16 @@ def set_watched_title(title, ids, mode="", media_type=""):
     if mode == "multi":
         mode = media_type
     if title != "None":
-        main_db.database["jt:lth"][title] = {
-            "timestamp": datetime.now(),
-            "ids": ids,
-            "mode": mode,
-        }
+        current_time = datetime.now()
+        main_db.set_data(
+            key="jt:lth",
+            subkey=title,
+            value={
+                "timestamp": current_time.strftime("%a, %d %b %Y %I:%M %p"),
+                "ids": ids,
+                "mode": mode,
+            },
+        )
         main_db.commit()
 
 
@@ -581,9 +575,9 @@ def get_tmdb_tv_data(id):
 
 def set_content_type(mode, media_type="movies"):
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        setContent(ADDON_HANDLE, MOVIES_TYPE)
-    elif mode == "movies" or media_type == "movies":
         setContent(ADDON_HANDLE, SHOWS_TYPE)
+    elif mode == "movies" or media_type == "movies":
+        setContent(ADDON_HANDLE, MOVIES_TYPE)
 
 
 # This method was taken from script.elementum.jackett addon

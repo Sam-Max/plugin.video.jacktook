@@ -3,7 +3,7 @@ from copy import deepcopy
 import json
 import xbmcgui
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON, close_busy_dialog
+from lib.utils.kodi_utils import ADDON
 
 
 ACTION_PREVIOUS_MENU = 10
@@ -29,7 +29,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         self.add_item_information_to_window(item_information)
 
     def onInit(self):
-        # close_busy_dialog()
         pass
 
     def get_cached_focus(self):
@@ -57,7 +56,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                     control.selectItem(int(item_id))
                     self.setFocus(control)
                     return
-                
+
             if control_list and control_list.size() > 0:
                 if control_list_reset:
                     control_list.selectItem(0)
@@ -66,9 +65,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                 control = self.getControl(control_id)
                 self.setFocus(control)
             else:
-                raise ValueError(
-                    "Neither valid control list nor control ID provided."
-                )
+                raise ValueError("Neither valid control list nor control ID provided.")
         except (RuntimeError, ValueError) as e:
             kodilog(f"Could not set focus: {e}", "debug")
             if control_id:
@@ -98,6 +95,15 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                 self.setProperty(f"info.{i}", str(value))
             except UnicodeEncodeError:
                 self.setProperty(f"info.{i}", value)
+
+    def getControlProgress(self, control_id):
+        control = self.getControl(control_id)
+        if not isinstance(control, xbmcgui.ControlProgress):
+            raise AttributeError(
+                f"Control with Id {control_id} should be of type ControlProgress"
+            )
+
+        return control
 
     def onClick(self, control_id):
         self.handle_action(7, control_id)

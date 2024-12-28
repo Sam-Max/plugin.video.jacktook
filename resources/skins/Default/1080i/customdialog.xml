@@ -22,11 +22,14 @@
             <width>800</width>
             <height>400</height>
 
-            <!-- Background -->
+            <!-- Card with Rounded Corners -->
             <control type="image">
-                <texture>white.png</texture>
+                <width>800</width>
+                <height>400</height>
+                <texture border="30">circle.png</texture>
                 <colordiffuse>CC000000</colordiffuse>
             </control>
+
             <!-- Window Title -->
             <control type="label" id="32500">
                 <font>font14</font>
@@ -34,22 +37,51 @@
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
             </control>
+
             <!-- Text Body -->
             <control type="label" id="32501">
                 <font>font14</font>
+                <top>90</top>
+                <width>780</width>
+                <height>400</height>
                 <align>center</align>
-                <aligny>center</aligny>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
-                <wrap>true</wrap> 
+                <wrapmultiline>true</wrapmultiline>
             </control>
-            <!-- Close button -->
+
+             <!-- Close button -->
             <control type="button" id="32503">
                 <left>745</left>
                 <width>50</width>
                 <height>50</height>
                 <texturefocus colordiffuse="FF12A0C7">Button/close.png</texturefocus>
                 <texturenofocus colordiffuse="EEFFFFFF">Button/close.png</texturenofocus>
+            </control>
+        </control>
+
+        <control type="group">
+            <width>600</width>
+            <height>100</height>
+            <top>280</top>
+            <left>90</left>
+
+            <!-- Card with Rounded Corners -->
+            <control type="image">
+                <right>-6</right>
+                <bottom>-6</bottom>
+                <texture border="30">circle.png</texture>
+                <colordiffuse>CCFF0000</colordiffuse>
+            </control>
+
+             <!-- Text URL -->
+            <control type="label" id="32502">
+                <font>font14</font>
+                <align>center</align>
+                <aligny>center</aligny>
+                <textcolor>white</textcolor>
+                <shadowcolor>FF000000</shadowcolor>
+                <wrap>true</wrap> 
             </control>
         </control>
     </controls>

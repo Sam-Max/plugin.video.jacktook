@@ -23,7 +23,7 @@ def last_files():
     )
 
     for title, data in reversed(main_db.database["jt:lfh"].items()):
-        formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
+        formatted_time = data["timestamp"]
         label = f"{title}—{formatted_time}"
         list_item = ListItem(label=label)
         list_item.setArt(
@@ -35,21 +35,7 @@ def last_files():
             ADDON_HANDLE,
             build_url(
                 "play_torrent",
-                data={
-                    "title": title,
-                    "is_torrent": data.get("is_torrent"),
-                    "ids": data.get("ids"),
-                    "url": data.get("url"),
-                    "info_hash": data.get("info_hash"),
-                    "magnet": data.get("magnet"),
-                    "tv_data": data.get("tv_data"),
-                    "debrid_info": {
-                        "file_id": data.get("file_id"),
-                        "torrent_id": data.get("torrent_id"),
-                        "type": data.get("type"),
-                        "is_debrid_pack": data.get("is_debrid_pack"),
-                    },
-                },
+                data=data,
             ),
             list_item,
             False,

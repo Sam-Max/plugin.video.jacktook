@@ -2,8 +2,10 @@ from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
 
 from lib.api.jacktook.kodi import kodilog
+from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
-from lib.utils.kodi_utils import ADDON_PATH
+from lib.gui.resume_window import ResumeDialog
+from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
 
 
@@ -42,16 +44,19 @@ class MyWindow(WindowXML):
 class CustomDialog(WindowXMLDialog):
     _heading = 32500
     _text = 32501
+    _url = 32502
     _close_button_id = 32503
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.heading = kwargs.get("heading")
         self.text = kwargs.get("text")
+        self.url = kwargs.get("url")
 
     def onInit(self):
         self.getControl(self._heading).setLabel(self.heading)
         self.getControl(self._text).setLabel(self.text)
+        self.getControl(self._url).setLabel(self.url)
 
     def onClick(self, controlId):
         if controlId == self._close_button_id:
@@ -71,14 +76,14 @@ mock_source = {
 }
 
 _mock_information = {
-    "fanart": "",
+    "fanart": "https://assets.fanart.tv/fanart/tv/453280/showbackground/secret-level-674c531a09534.jpg",
+    "poster": "http://image.tmdb.org/t/p/w780/856MRq23grNxpeVl1PdFgmmLiT0.jpg",
     "clearlogo": "https://assets.fanart.tv/fanart/movies/86161/hdmovielogo/mobile-suit-gundam-0083-the-last-blitz-of-zeon-5c2ede0c7530d.png",
     "plot": "Silo is the story of the last ten thousand people on earth, their mile-deep home protecting them from the toxic and deadly world outside. However, no one knows when or why the silo was built and any who try to find out face fatal consequences.",
 }
 
 
 def source_select(item_info, sources):
-    kodilog(item_info)
     window = SourceSelect(
         "source_select.xml",
         ADDON_PATH,
@@ -89,6 +94,43 @@ def source_select(item_info, sources):
     data = window.doModal()
     del window
     return data
+
+
+def run_next_dialog(params):
+    kodilog("run_next_dialog")
+    if PLAYLIST.size() > 0 and PLAYLIST.getposition() != (PLAYLIST.size() - 1):
+        try:
+            window = PlayNext(
+                "playing_next.xml",
+                ADDON_PATH,
+                item_information=eval(params["item_info"]),
+            )
+            window.doModal()
+        finally:
+            del window
+
+def run_resume_dialog(params):
+    try:
+        resume_window = ResumeDialog(
+            "resume_dialog.xml",
+            ADDON_PATH,
+            resume_percent=params.get("resume"),
+        )
+        resume_window.doModal()
+        return resume_window.resume
+    finally:
+        del resume_window
+
+def run_next_mock():
+    try:
+        window = PlayNext(
+            "playing_next.xml",
+            ADDON_PATH,
+            item_information=_mock_information,
+        )
+        window.doModal()
+    finally:
+        del window
 
 
 def source_select_mock():
@@ -103,6 +145,19 @@ def source_select_mock():
     )
     window.doModal()
     del window
+
+
+def resume_dialog_mock():
+    try:
+        window = ResumeDialog(
+            "resume_dialog.xml",
+            ADDON_PATH,
+            resume_percent=25.0,
+        )
+        window.doModal()
+        return window.resume
+    finally:
+        del window
 
 
 def resolver_mock():

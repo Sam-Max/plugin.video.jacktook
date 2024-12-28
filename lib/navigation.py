@@ -1,3 +1,4 @@
+from ast import literal_eval
 from datetime import timedelta
 import os
 from threading import Thread
@@ -9,12 +10,16 @@ from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
+from lib.db.bookmark_db import bookmark_db
 from lib.gui.custom_dialogs import (
     CustomDialog,
+    resume_dialog_mock,
+    run_next_mock,
     source_select,
     source_select_mock,
 )
 
+from lib.player import JacktookPLayer
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
@@ -28,7 +33,6 @@ from lib.titles_history import last_titles
 
 from lib.trakt import (
     handle_trakt_query,
-    process_trakt_result,
     show_trakt_list_content,
     show_list_trakt_page,
 )
@@ -80,8 +84,7 @@ from lib.utils.kodi_utils import (
     JACKTORR_ADDON,
     action_url_run,
     build_url,
-    close_all_dialog,
-    close_busy_dialog,
+    cancel_playback,
     container_update,
     show_keyboard,
     addon_status,
@@ -195,13 +198,13 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("donate"),
-        list_item("Donate", "donate.png"),
+        list_item("Support", "donate.png"),
         isFolder=True,
     )
 
     # addDirectoryItem(
     #     ADDON_HANDLE,
-    #     build_url("test_source_select"),
+    #     build_url("test_resume_dialog"),
     #     list_item("Test", ""),
     #     isFolder=False,
     # )
@@ -427,6 +430,7 @@ def search_direct(params):
 
 
 def search(params):
+    kodilog(params)
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
@@ -488,18 +492,12 @@ def search(params):
         data = handle_results(final_results, mode, ids, tv_data, direct)
 
     if not data:
-        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
-        close_busy_dialog()
-        close_all_dialog()
+        cancel_playback()
         return
 
-    list_item = make_listing(data)
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
-    # player = JacktookPLayer(db=bookmark_db)
-    # player.run(data=data)
-    # setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
-    # close_busy_dialog()
-    # close_all_dialog()
+    player = JacktookPLayer(db=bookmark_db)
+    player.run(data=data)
+    del player
 
 
 def handle_results(final_results, mode, ids, tv_data, direct=False):
@@ -557,9 +555,10 @@ def handle_debrid_client(
 
 def play_torrent(params):
     kodilog("play_torrent")
-    data = eval(params["data"])
-    list_item = make_listing(data)
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    data = literal_eval(params["data"])
+    player = JacktookPLayer(db=bookmark_db)
+    player.run(data=data)
+    del player
 
 
 def auto_play(results, ids, tv_data, mode):
@@ -575,8 +574,9 @@ def auto_play(results, ids, tv_data, mode):
             "is_torrent": False,
         },
     )
-    list_item = make_listing(playback_info)
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    player = JacktookPLayer(db=bookmark_db)
+    player.run(data=playback_info)
+    del player
 
 
 def cloud_details(params):
@@ -765,9 +765,7 @@ def search_item(params):
     set_content_type(mode)
 
     if api == "trakt":
-        result = handle_trakt_query(query, category, mode, page)
-        if result:
-            process_trakt_result(result, query, category, mode, submode, api, page)
+        handle_trakt_query(query, category, mode, page, submode, api)
     elif api == "tmdb":
         handle_tmdb_query(query, category, mode, submode, page)
 
@@ -829,14 +827,13 @@ def status(params):
 
 
 def donate(params):
-    msg = "If you like Jacktook you can support \n"
-    msg += "its development by making a small donation to:\n\n"
-    msg += "[COLOR snow]https://ko-fi.com/sammax09[/COLOR]"
+    msg = "If you like Jacktook and appreciate the time and effort invested by me developing this addon you can support me by making a one time payment to:"
     dialog = CustomDialog(
         "customdialog.xml",
         ADDON_PATH,
-        heading="Donation",
+        heading="Support Jacktook",
         text=msg,
+        url="[COLOR snow]https://ko-fi.com/sammax09[/COLOR]",
     )
     dialog.doModal()
 
@@ -893,5 +890,13 @@ def torrentio_selection(params):
     open_providers_selection()
 
 
+def test_run_next(params):
+    run_next_mock()
+
+
 def test_source_select(params):
     source_select_mock()
+
+
+def test_resume_dialog(params):
+    resume_dialog_mock()

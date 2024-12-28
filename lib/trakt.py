@@ -43,13 +43,15 @@ class Trakt(Enum):
     WATCHLIST = "trakt_watchlist"
 
 
-def handle_trakt_query(query, category, mode, page):
+def handle_trakt_query(query, category, mode, page, submode, api):
     if mode == "movies":
-        return handle_trakt_movie_query(query, mode, page)
+        result = handle_trakt_movie_query(query, mode, page)
     elif mode == "tv":
-        return handle_trakt_tv_query(query, mode, page)
+        result = handle_trakt_tv_query(query, mode, page)
     elif mode == "anime":
-        return handle_trakt_anime_query(category, page)
+        result = handle_trakt_anime_query(category, page)
+    if result:
+        process_trakt_result(result, query, category, mode, submode, api, page)
 
 
 def handle_trakt_movie_query(query, mode, page):
@@ -134,8 +136,8 @@ def show_anime_common(res, mode):
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
-    
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}"
+
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -143,7 +145,6 @@ def show_anime_common(res, mode):
             "fanart": backdrop_path,
         }
     )
-    list_item.setProperty("IsPlayable", "true")
     overview = details.get("overview", "")
 
     set_media_infotag(
@@ -165,15 +166,18 @@ def show_common_categories(res, mode):
         ids = extract_ids(res, mode)
         tmdb_id = ids.split(",")[0]
         details = tmdb_get("tv_details", tmdb_id)
+        duration = ""
     else:
         title = res["movie"]["title"]
         ids = extract_ids(res, mode)
         tmdb_id = ids.split(",")[0]
         details = tmdb_get("movie_details", tmdb_id)
+        duration = details.runtime
+        
 
     poster_path = TMDB_POSTER_URL + details.get("poster_path", "")
     backdrop_path = TMDB_BACKDROP_URL + details.get("backdrop_path", "")
-
+    
     list_item = ListItem(label=title)
     list_item.setArt(
         {
@@ -181,7 +185,6 @@ def show_common_categories(res, mode):
             "fanart": backdrop_path,
         }
     )
-    list_item.setProperty("IsPlayable", "true")
 
     overview = details.get("overview", "")
 
@@ -191,7 +194,7 @@ def show_common_categories(res, mode):
         title,
         overview,
         air_date="",
-        duration="",
+        duration=duration,
         ids=ids,
     )
 
@@ -211,8 +214,8 @@ def show_watchlist(res, mode):
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
-    
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}"
+
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -262,8 +265,8 @@ def show_recommendations(res, mode):
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
-    
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}"
+
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -283,8 +286,6 @@ def show_recommendations(res, mode):
         ids=ids,
     )
 
-    list_item.setProperty("IsPlayable", "true")
-
     add_dir_item(mode, list_item, ids, title)
 
 
@@ -303,8 +304,8 @@ def show_lists_content_items(res):
         details = tmdb_get("movie_details", tmdb_id)
 
     poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}" 
-    
+    backdrop_path = f"{TMDB_BACKDROP_URL}{details.backdrop_path or ''}"
+
     list_item = ListItem(title)
     list_item.setArt(
         {
@@ -312,8 +313,6 @@ def show_lists_content_items(res):
             "fanart": backdrop_path,
         }
     )
-
-    list_item.setProperty("IsPlayable", "true")
 
     set_media_infotag(
         list_item,
@@ -337,6 +336,7 @@ def show_lists_content_items(res):
             isFolder=True,
         )
     else:
+        list_item.setProperty("IsPlayable", "true")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -390,6 +390,7 @@ def add_dir_item(mode, list_item, ids, title):
             isFolder=True,
         )
     else:
+        list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [
                 (

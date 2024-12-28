@@ -101,6 +101,8 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
             ids=ids,
         )
 
+        list_item.setProperty("IsPlayable", "true")
+        
         list_item.setArt(
             {
                 "poster": poster,
@@ -109,7 +111,6 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                 "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
             }
         )
-        list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [
                 (

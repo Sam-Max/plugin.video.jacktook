@@ -20,14 +20,13 @@ def last_titles():
     addDirectoryItem(ADDON_HANDLE, build_url("clear_history", type="lth"), list_item)
 
     for title, data in reversed(main_db.database["jt:lth"].items()):
-        formatted_time = data["timestamp"].strftime("%a, %d %b %Y %I:%M %p")
+        formatted_time = data["timestamp"]
 
         list_item = ListItem(label=f"{title}— {formatted_time}")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
-        list_item.setProperty("IsPlayable", "true")
-
+        
         mode = data["mode"]
         ids = data.get("ids")
 
@@ -43,6 +42,7 @@ def last_titles():
                 isFolder=True,
             )
         elif mode == "movies":
+            list_item.setProperty("IsPlayable", "true")
             addDirectoryItem(
                 ADDON_HANDLE,
                 build_url(

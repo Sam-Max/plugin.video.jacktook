@@ -1,6 +1,6 @@
 import sys
 from urllib import parse
-from lib.api.jacktook.kodi import kodilog
+from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
     anime_item,
@@ -23,6 +23,8 @@ from lib.navigation import (
     play_url,
     pm_auth,
     rd_info,
+    test_resume_dialog,
+    test_run_next,
     test_source_select,
     torrentio_selection,
     play_torrent,
@@ -51,10 +53,11 @@ from lib.utils.torrent_utils import (
     torrent_files,
 )
 
-
 def addon_router():
     param_string = sys.argv[2][1:]
     actions = {
+        "run_next_dialog": run_next_dialog,
+        "run_resume_dialog": run_resume_dialog,
         "tv_shows_items": tv_shows_items,
         "tv_seasons_details": tv_seasons_details,
         "tv_episodes_details": tv_episodes_details,
@@ -99,6 +102,8 @@ def addon_router():
         "display_picture": display_picture,
         "display_text": display_text,
         "test_source_select": test_source_select,
+        "test_run_next": test_run_next,
+        "test_resume_dialog": test_resume_dialog,
     }
 
     if param_string:

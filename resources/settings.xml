@@ -4,7 +4,9 @@
         <setting label="30001" type="lsep"/>
         <setting id="client_player" type="labelenum" label="30002" values="Jacktorr|Jackgram|Torrest|Elementum|Debrid|" default="Jacktorr"/>
         <setting label="Playback" type="lsep"/>
-        <setting id="auto_play" type="bool" label="Auto Play" default="false"/>
+        <setting id="auto_play" type="bool" label="Auto-Play" default="false"/>
+        <setting id="playnext_dialog_enabled" type="bool" label="Enable Next Episode Dialog" default="true"/>
+        <setting id="playnext_time" type="slider" label="Seconds left before show Next Episode Dialog" option="int" range="10,5,180" default="50"/>
         <setting label="Cache" type="lsep"/>
         <setting id="cache_enabled" type="bool" label="30107" default="true"/>
         <setting id="cache_expiration" type="slider" label="30105" option="int" range="1,1,30" default="24"/>

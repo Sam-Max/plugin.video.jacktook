@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol always="true">1002</defaultcontrol>
+    <controls>
+        <control type="group">
+			<left>400</left>
+			<bottom>500</bottom>
+			<width>520</width>
+			<height>220</height>
+
+            <!-- Buttons -->
+            <control type="grouplist">
+                <orientation>vertical</orientation>
+                <height>150</height>
+                <itemgap>15</itemgap>
+                <align>right</align>
+
+                <control type="button" id="1002">
+                    <height>56</height>
+                    <width>auto</width>
+                    <font>font12</font>
+                    <textoffsetx>20</textoffsetx>
+                    <textcolor>ddffffff</textcolor>
+                    <focusedcolor>eeffffff</focusedcolor>
+                    <selectedcolor>ddffffff</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+
+                <control type="button" id="1003">
+                    <height>56</height>
+                    <width>auto</width>
+                    <font>font12</font>
+                    <textoffsetx>20</textoffsetx>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+            </control>
+        </control>
+    </controls>
+</window>

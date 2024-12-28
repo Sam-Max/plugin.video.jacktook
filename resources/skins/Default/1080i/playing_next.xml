@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<onload>Dialog.Close(fullscreeninfo,true)</onload>
+    <onload>Dialog.Close(videoosd,true)</onload>
+
+	<defaultcontrol always="true">3001</defaultcontrol>
+
+	<controls>
+		<control type="group">
+			<right>20</right>
+			<bottom>150</bottom>
+			<width>520</width>
+			<height>220</height>
+
+            <animation type="WindowOpen" reversible="false">
+                <effect type="fade" start="0" end="100" time="300" tween="cubic" easing="in"/>
+                <effect type="slide" start="400%,0" end="0,0" time="400" tween="cubic" easing="in"/>
+            </animation>
+
+            <animation type="WindowClose" reversible="false">
+                <effect type="slide" start="0,0" end="400%,0" time="400" tween="cubic" easing="in"/>
+            </animation>
+
+			<!-- Thumb -->
+			<control type="group">
+
+				<!-- Card with Rounded Corners -->
+				<control type="image">
+					<right>-6</right>
+					<bottom>-6</bottom>
+					<width>540</width>
+					<height>240</height>
+					<texture border="30">circle.png</texture>
+					<colordiffuse>00000000</colordiffuse>
+				</control>
+
+			</control>
+
+			<!-- Progress Bar -->
+			<control type="progress" id="3014">
+				<bottom>120</bottom>
+				<height>100</height>
+				<reveal>true</reveal>
+				<righttexture></righttexture>
+				<overlaytexture></overlaytexture>
+				<lefttexture></lefttexture>
+				<texturebg border="30"colordiffuse="33FFFFFF">circle.png</texturebg>
+				<midtexture border="30" colordiffuse="FFFFFFFF">circle.png</midtexture>
+			</control>
+
+			<!-- Shadow -->
+			<control type="image">
+				<height>100</height>
+				<texture colordiffuse="99000000" border="30">circle.png</texture>
+			</control>
+
+			<!-- Labels -->
+			<control type="group">
+				<top>10</top>
+				<left>20</left>
+
+				<!-- Time -->
+				<control type="group">
+					<top>20</top>
+					<left>120</left>
+
+					<control type="label">
+						<height>20</height>
+						<font>font12</font>
+						<textcolor>ffffffff</textcolor>
+						<label>Playing in $INFO[Player.TimeRemaining(ss)] seconds</label>
+						<visible>!Integer.IsGreater(Player.TimeRemaining,59)</visible>
+					</control>
+				</control>
+
+				<!-- Buttons -->
+				<control type="grouplist">
+					<orientation>horizontal</orientation>
+					<height>56</height>
+					<bottom>20</bottom>
+					<right>20</right>
+					<itemgap>20</itemgap>
+					<align>right</align>
+
+					<!-- Continue Watching -->
+					<control type="button" id="3002">
+						<label>Continue Watching</label>
+						<height>56</height>
+						<width>auto</width>
+						<font>font12</font>
+						<textoffsetx>20</textoffsetx>
+						<textcolor>ddffffff</textcolor>
+						<focusedcolor>eeffffff</focusedcolor>
+						<selectedcolor>ddffffff</selectedcolor>
+						<align>center</align>
+						<texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+						<texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+						<pulseonselect>no</pulseonselect>
+					</control>
+
+					<!-- Next Episode -->
+					<control type="button" id="3001">
+						<label>Next Episode</label>
+						<height>56</height>
+						<width>auto</width>
+						<font>font12</font>
+						<textoffsetx>20</textoffsetx>
+						<textcolor>DDFFFFFF</textcolor>
+						<focusedcolor>EEFFFFFF</focusedcolor>
+						<selectedcolor>DDFFFFFF</selectedcolor>
+						<align>center</align>
+						<texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+						<texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+						<pulseonselect>no</pulseonselect>
+					</control>
+				</control>
+			</control>
+        </control>
+    </controls>
+</window>

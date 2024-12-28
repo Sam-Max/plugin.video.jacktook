@@ -1,7 +1,11 @@
+from threading import Thread
 import xbmcgui
+from lib.api.jacktook.kodi import kodilog
+from lib.db.bookmark_db import bookmark_db
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
-from lib.utils.kodi_utils import ADDON_PATH
+from lib.gui.resume_window import ResumeDialog
+from lib.utils.kodi_utils import ADDON_PATH, action_url_run
 from lib.utils.debrid_utils import get_debrid_status
 from lib.utils.kodi_utils import bytes_to_human_readable
 from lib.utils.utils import (
@@ -21,6 +25,7 @@ class SourceSelect(BaseWindow):
         self.sources = sources
         self.item_information = item_information
         self.playback_info = None
+        self.resume = None
         self.CACHE_KEY = (
             self.item_information["tv_data"] or self.item_information["ids"]
         )
@@ -98,23 +103,28 @@ class SourceSelect(BaseWindow):
 
         selected_source = self.sources[self.position]
 
-        self.resolver_window = ResolverWindow(
+        resolver_window = ResolverWindow(
             "resolver.xml",
             ADDON_PATH,
             source=selected_source,
             previous_window=self,
             item_information=self.item_information,
         )
-        self.playback_info = self.resolver_window.doModal(pack_select)
-        del self.resolver_window
+        resolver_window.doModal(pack_select)
+        self.playback_info = resolver_window.playback_info
 
+        del resolver_window
         self.setProperty("instant_close", "true")
         self.close()
 
-
-def run_threaded(target_func, *args, **kwargs):
-    from threading import Thread
-
-    thread = Thread(target=target_func, args=args, kwargs=kwargs)
-    thread.start()
-    return thread
+    def show_resume_dialog(self, playback_percent):
+        try:
+            resume_window = ResumeDialog(
+                "resume_dialog.xml",
+                ADDON_PATH,
+                resume_percent=playback_percent,
+            )
+            resume_window.doModal()
+            return resume_window.resume
+        finally:
+            del resume_window

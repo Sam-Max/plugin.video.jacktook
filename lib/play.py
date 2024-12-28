@@ -63,7 +63,7 @@ def get_playback_info(data):
     else:
         data["url"] = addon_url
 
-    set_watched_file(title, is_torrent, extra_data=data)
+    set_watched_file(title, is_torrent, data)
 
     return data
 

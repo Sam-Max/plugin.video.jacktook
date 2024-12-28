@@ -3,16 +3,20 @@ from datetime import datetime
 import json
 import re
 import sys
-from urllib import parse
-from urllib.parse import quote, urlencode
-import xbmc
-import xbmcgui
-from xbmcgui import Window
-import xbmcaddon
 import time
 import sqlite3 as database
+
+from urllib import parse
+from urllib.parse import quote, urlencode
+
+import xbmc
+import xbmcgui
+from xbmcgui import Window, ListItem
+import xbmcaddon
+from xbmcplugin import setResolvedUrl
 from xbmcvfs import translatePath as translate_path, delete as xbmc_delete
 from xbmc import executeJSONRPC
+
 
 _URL = sys.argv[0]
 
@@ -43,6 +47,7 @@ ADDON_ICON = ADDON.getAddonInfo("icon")
 ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
+PLAYLIST = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
 progressDialog = xbmcgui.DialogProgress()
 
@@ -402,3 +407,10 @@ def get_datetime(string=False, dt=False):
     if string:
         return d.strftime("%Y-%m-%d")
     return datetime.date(d)
+
+
+def cancel_playback():
+    PLAYLIST.clear()
+    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+    close_busy_dialog()
+    close_all_dialog()

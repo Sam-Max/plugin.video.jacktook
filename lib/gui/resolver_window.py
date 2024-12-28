@@ -1,4 +1,3 @@
-from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.play import get_playback_info
@@ -30,15 +29,6 @@ class ResolverWindow(BaseWindow):
         self.previous_window = previous_window
         self.setProperty("enable_busy_spinner", "false")
 
-    def show(self, pack_select=False):
-        self.pack_select = pack_select
-
-        if not self.source:
-            return
-
-        self._update_window_properties(self.source)
-        super().show()
-
     def doModal(
         self,
         pack_select=False,
@@ -50,7 +40,6 @@ class ResolverWindow(BaseWindow):
 
         self._update_window_properties(self.source)
         super().doModal()
-        return self.playback_info
 
     def onInit(self):
         super().onInit()
@@ -121,6 +110,7 @@ class ResolverWindow(BaseWindow):
 
         self.playback_info = self.window.doModal()  
         del self.window      
+
 
     def _update_window_properties(self, source):
         self.setProperty("enable_busy_spinner", "true")
