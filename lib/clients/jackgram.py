@@ -1,6 +1,5 @@
 import json
 from requests import Session
-from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import translation
 
 
@@ -33,7 +32,6 @@ class Jackgram:
         res = json.loads(res.text)
         results = []
         for item in res["streams"]:
-            link = self.generate_link(tmdb_id=res["tmdb_id"], hash=item["hash"])
             results.append(
                 {   
                     "title": item["title"],
@@ -42,7 +40,7 @@ class Jackgram:
                     "size": item["size"],
                     "publishDate": item["date"],
                     "duration": item["duration"],
-                    "downloadUrl": link,
+                    "downloadUrl": item["url"],
                 }
             )
         return results
@@ -52,7 +50,6 @@ class Jackgram:
         results = []
         for item in res["results"]:
             for file in item["files"]:
-                link = self.generate_link(tmdb_id=item["tmdb_id"], hash=file["hash"])
                 date = "" if file["date"] == None else file["date"]
                 results.append(
                     {
@@ -62,10 +59,7 @@ class Jackgram:
                         "size": file["size"],
                         "publishDate": date,
                         "duration": file["duration"],
-                        "downloadUrl": link,
+                        "downloadUrl": file["url"],
                     }
                 )
         return results
-
-    def generate_link(self, tmdb_id, hash):
-        return f"{self.host}/dl/{tmdb_id}?hash={hash}"
