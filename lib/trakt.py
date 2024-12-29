@@ -16,13 +16,13 @@ from lib.api.trakt.trakt_api import (
     trakt_watchlist,
 )
 from lib.tmdb import TMDB_BACKDROP_URL, TMDB_POSTER_URL
+from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     Anime,
     Enum,
     add_next_button,
     execute_thread_pool,
     set_media_infotag,
-    tmdb_get,
 )
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from xbmcgui import ListItem

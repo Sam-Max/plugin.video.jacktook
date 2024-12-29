@@ -1,10 +1,10 @@
 import os
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
+from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     TMDB_POSTER_URL,
     get_fanart_details,
     set_media_infotag,
-    tmdb_get,
 )
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem

@@ -14,6 +14,13 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": "Tmdb - Years",
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_years",
+        "icon": "tmdb.png",
+    },
+    {
         "name": "Trakt - Trending",
         "mode": "tv",
         "api": "trakt",
@@ -70,6 +77,13 @@ movie_items = [
         "mode": "movies",
         "api": "tmdb",
         "query": "tmdb_genres",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Tmdb - Years",
+        "mode": "movies",
+        "api": "tmdb",
+        "query": "tmdb_years",
         "icon": "tmdb.png",
     },
     {

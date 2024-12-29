@@ -21,6 +21,7 @@ from lib.gui.custom_dialogs import (
 
 from lib.player import JacktookPLayer
 from lib.utils.seasons import show_episode_info, show_season_info
+from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
     trakt_authenticate,
@@ -42,11 +43,12 @@ from lib.utils.items_menus import tv_items, movie_items, anime_items
 from lib.utils.debrid_utils import check_debrid_cached
 
 from lib.tmdb import (
-    get_tmdb_media_details,
     handle_tmdb_anime_query,
     handle_tmdb_query,
     search as tmdb_search,
     show_tmdb_results,
+    show_tmdb_year_result,
+    tmdb_search_year,
 )
 from lib.db.cached import cache
 
@@ -223,16 +225,28 @@ def search_tmdb(params):
         setContent(ADDON_HANDLE, SHOWS_TYPE)
 
     data = tmdb_search(mode, genre_id, page)
-    if data:
-        if data.total_results == 0:
-            notification("No results found")
-            return
-        show_tmdb_results(
-            data.results,
-            page=page,
-            genre_id=genre_id,
-            mode=mode,
-        )
+
+    if data and data.total_results == 0:
+        notification("No results found")
+        return
+
+    show_tmdb_results(data.results, page, mode, genre_id)
+
+
+def search_tmdb_year(params):
+    mode = params["mode"]
+    page = int(params["page"])
+    year = int(params["year"])
+
+    set_content_type(mode)
+
+    data = tmdb_search_year(mode, year, page)
+
+    if data and data.total_results == 0:
+        notification("No results found")
+        return
+
+    show_tmdb_year_result(data.results, page, mode, year)
 
 
 def tv_shows_items(params):
@@ -790,9 +804,9 @@ def list_trakt_page(params):
 
 
 def anime_search(params):
-    handle_tmdb_anime_query(
-        params.get("category"), params.get("mode"), params.get("page", 1)
-    )
+    mode = params.get("mode")
+    set_content_type(mode)
+    handle_tmdb_anime_query(params.get("category"), mode, params.get("page", 1))
 
 
 def next_page_anime(params):

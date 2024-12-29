@@ -12,9 +12,9 @@ from lib.utils.kodi_utils import (
     get_setting,
     notification,
 )
+from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     make_listing,
-    tmdb_get,
 )
 from xbmc import Monitor, getCondVisibility as get_visibility
 from lib.utils.kodi_utils import sleep
