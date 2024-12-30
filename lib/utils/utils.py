@@ -309,8 +309,6 @@ def make_listing(metadata):
     )
 
     list_item.setProperty("IsPlayable", "true")
-
-    set_windows_property(mode, ids)
     return list_item
 
 

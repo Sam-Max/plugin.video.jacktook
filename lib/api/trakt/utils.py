@@ -89,3 +89,6 @@ def title_key(title):
 def sort_for_article(_list, _key):
     _list.sort(key=lambda k: re.sub(r"(^the |^a |^an )", "", k[_key].lower()))
     return _list
+
+
+

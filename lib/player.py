@@ -1,5 +1,7 @@
+from json import dumps as json_dumps
 from threading import Thread
 from lib.api.jacktook.kodi import kodilog
+from lib.api.trakt.trakt_api import make_trakt_slug
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
     PLAYLIST,
@@ -11,6 +13,7 @@ from lib.utils.kodi_utils import (
     execute_builtin,
     get_setting,
     notification,
+    set_property,
 )
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
@@ -46,6 +49,8 @@ class JacktookPLayer(xbmc.Player):
     def run(self, data=None):
         self.set_constants(data)
         self.clear_playback_properties()
+        self.add_external_trakt_scrolling()
+
         close_busy_dialog()
 
         try:
@@ -142,7 +147,7 @@ class JacktookPLayer(xbmc.Player):
 
             while self.isPlayingVideo():
                 try:
-                    self.total_time, self.curr_time = (
+                    self.total_time, self.current_time = (
                         self.getTotalTime(),
                         self.getTime(),
                     )
@@ -153,19 +158,15 @@ class JacktookPLayer(xbmc.Player):
 
                     sleep(1000)
 
-                    self.current_point = round(
-                        float(self.curr_time / self.total_time * 100), 1
+                    self.watched_percentage = round(
+                        float(self.current_time / self.total_time * 100), 1
                     )
 
-                    time_left = int(self.total_time) - int(self.curr_time)
-
-                    kodilog(f"TIME LEFT: {time_left}")
+                    time_left = int(self.total_time) - int(self.current_time)
 
                     if self.next_dialog and time_left <= self.playing_next_time:
                         xbmc.executebuiltin(
-                            action_url_run(
-                                name="run_next_dialog", item_info=self.data
-                            )
+                            action_url_run(name="run_next_dialog", item_info=self.data)
                         )
                         self.next_dialog = False
 
@@ -230,15 +231,14 @@ class JacktookPLayer(xbmc.Player):
     def media_watched_marker(self):
         self.media_marked = True
         try:
-            if self.current_point >= set_resume:
-                self.playback_percent = self.current_point
+            if self.watched_percentage >= set_resume:
                 self.set_bookmark()
         except Exception as e:
             kodilog(f"Error in media_watched_marker: {e}")
 
     def set_bookmark(self):
         Thread(
-            target=self.db.set_bookmark, args=(self.db_key, self.playback_percent)
+            target=self.db.set_bookmark, args=(self.db_key, self.watched_percentage)
         ).start()
 
     def get_bookmark(self):
@@ -257,14 +257,28 @@ class JacktookPLayer(xbmc.Player):
         self.url = self.data["url"]
         self.db_key = self.data.get("info_hash") or self.url
         self.kodi_monitor = Monitor()
-        self.playback_percent = self.get_bookmark()
+        self.watched_percentage = self.get_bookmark()
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")
 
+    def add_external_trakt_scrolling(self):
+        ids = self.data.get("ids")
+        mode = self.data.get("mode")
+
+        if ids:
+            tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+            trakt_ids = {
+                "tmdb": tmdb_id,
+                "imdb": imdb_id,
+                "slug": make_trakt_slug(self.data.get("title")),
+            }
+            if mode == "tv":
+                trakt_ids["tvdb"] = tvdb_id
+            set_property("script.trakt.ids", json_dumps(trakt_ids))
+
     def cancel_playback(self):
         self.PLAYLIST.clear()
-        # setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
         close_busy_dialog()
         close_all_dialog()
 

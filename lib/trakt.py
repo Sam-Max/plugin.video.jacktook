@@ -40,6 +40,7 @@ class Trakt(Enum):
     FAVORITED = "trakt_favorited"
     RECOMENDATIONS = "trakt_recommendations"
     TRENDING_LISTS = "trakt_trending_lists"
+    POPULAR_LISTS = "trakt_popular_lists"
     WATCHLIST = "trakt_watchlist"
 
 
@@ -67,6 +68,8 @@ def handle_trakt_movie_query(query, mode, page):
         return trakt_recommendations("movies")
     elif query in Trakt.TRENDING_LISTS:
         return trakt_trending_popular_lists(list_type="trending", page_no=page)
+    elif query in Trakt.POPULAR_LISTS:
+        return trakt_trending_popular_lists(list_type="popular", page_no=page)
     elif query in Trakt.WATCHLIST:
         return trakt_watchlist(mode)
 
@@ -82,6 +85,8 @@ def handle_trakt_tv_query(query, mode, page):
         return trakt_recommendations("shows")
     elif query in Trakt.TRENDING_LISTS:
         return trakt_trending_popular_lists(list_type="trending", page_no=page)
+    elif query in Trakt.POPULAR_LISTS:
+        return trakt_trending_popular_lists(list_type="popular", page_no=page)
     elif query in Trakt.WATCHLIST:
         return trakt_watchlist(mode)
 
@@ -105,7 +110,7 @@ def process_trakt_result(results, query, category, mode, submode, api, page):
         execute_thread_pool(results, show_common_categories, mode)
     elif query == Trakt.RECOMENDATIONS:
         execute_thread_pool(results, show_recommendations, mode)
-    elif query == Trakt.TRENDING_LISTS:
+    elif query == Trakt.TRENDING_LISTS or query == Trakt.POPULAR_LISTS:
         execute_thread_pool(results, show_trending_lists, mode)
     elif query == Trakt.WATCHLIST:
         execute_thread_pool(results, show_watchlist, mode)

@@ -42,10 +42,10 @@ tv_items = [
         "icon": "trakt.png",
     },
     {
-        "name": "Trakt - Recomendations",
+        "name": "Trakt - Popular Lists",
         "mode": "tv",
         "api": "trakt",
-        "query": "trakt_recommendations",
+        "query": "trakt_popular_lists",
         "icon": "trakt.png",
     },
     {
@@ -53,6 +53,13 @@ tv_items = [
         "mode": "tv",
         "api": "trakt",
         "query": "trakt_trending_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Trakt - Recomendations",
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_recommendations",
         "icon": "trakt.png",
     },
     {
@@ -115,17 +122,24 @@ movie_items = [
         "icon": "trakt.png",
     },
     {
-        "name": "Trakt - Recomendations",
-        "mode": "movies",
+        "name": "Trakt - Popular Lists",
+        "mode": "tv",
         "api": "trakt",
-        "query": "trakt_recommendations",
+        "query": "trakt_popular_lists",
         "icon": "trakt.png",
     },
     {
         "name": "Trakt - Trending Lists",
-        "mode": "movies",
+        "mode": "tv",
         "api": "trakt",
         "query": "trakt_trending_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Trakt - Recomendations",
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_recommendations",
         "icon": "trakt.png",
     },
     {

@@ -1,28 +1,17 @@
 # -*- coding: utf-8 -*-
 import json
 import random
-from threading import Thread
 import time
 import requests
-from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
 from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.trakt_cache import (
     cache_trakt_object,
-    clear_trakt_calendar,
-    clear_trakt_collection_watchlist_data,
-    clear_trakt_favorites,
-    clear_trakt_hidden_data,
-    clear_trakt_list_contents_data,
-    clear_trakt_list_data,
-    clear_trakt_recommendations,
-    reset_activity,
 )
 from lib.api.trakt.utils import sort_for_article, sort_list
 from lib.utils.kodi_utils import (
-    clear_property,
     copy2clip,
     dialog_ok,
     get_datetime,
@@ -33,7 +22,6 @@ from lib.utils.kodi_utils import (
 )
 from lib.utils.settings import lists_sort_order, trakt_client, trakt_secret
 from xbmc import Player as player
-from lib.api.trakt.utils import jsondate_to_datetime as js2date
 from lib.utils.kodi_utils import progressDialog
 
 
@@ -113,6 +101,7 @@ def call_trakt(
             resp.raise_for_status()
         except requests.RequestException as error:
             if error.response.status_code == 401:
+                notification("Trakt Error: Unauthorized")
                 raise ProviderException("Trakt Error: Unauthorized")
         return resp
 
@@ -279,7 +268,6 @@ def trakt_authenticate():
         except:
             pass
         notification("Trakt Account Authorized", time=3000)
-        trakt_sync_activities(force_update=True)
         return True
     notification("Trakt Error Authorizing", time=3000)
     return False
@@ -290,7 +278,7 @@ def trakt_revoke_authentication():
     set_setting("trakt.expires", "")
     set_setting("trakt.token", "")
     set_setting("trakt.refresh", "")
-    clear_all_trakt_cache_data(refresh=False)
+    clear_all_trakt_cache_data()
     CLIENT_ID = trakt_client()
     if CLIENT_ID in empty_setting_check:
         return no_client_key()
@@ -303,7 +291,7 @@ def trakt_revoke_authentication():
         "client_secret": CLIENT_SECRET,
     }
     call_trakt("oauth/revoke", data=data, with_auth=False)
-    notification("You are logged out from Trakt.tv!!", time=3000)
+    notification("You are now logged out from Trakt.tv", time=3000)
 
 
 def trakt_movies_trending(page_no):
@@ -650,82 +638,12 @@ def get_trakt(params):
     return result[0] if params.get("pagination", True) else result
 
 
-def trakt_sync_activities(force_update=False):
-    def clear_properties(media_type):
-        for item in ((True, True), (True, False), (False, True), (False, False)):
-            clear_property("1_%s_%s_%s_watched" % (media_type, item[0], item[1]))
-
-    def _get_timestamp(date_time):
-        return int(time.mktime(date_time.timetuple()))
-
-    def _compare(latest, cached):
-        try:
-            result = _get_timestamp(js2date(latest, res_format)) > _get_timestamp(
-                js2date(cached, res_format)
-            )
-        except:
-            result = True
-        return result
-
-    if force_update:
-        clear_all_trakt_cache_data(refresh=False)
-    clear_trakt_calendar()
-    clear_trakt_list_contents_data("user_lists")
-    clear_trakt_list_contents_data("liked_lists")
-    clear_trakt_list_contents_data("my_lists")
-    if (
-        get_setting("trakt.user", "empty_setting") in ("empty_setting", "")
-        and not force_update
-    ):
-        return "no account"
-    try:
-        latest = trakt_get_activity()
-    except:
-        return "failed"
-    cached = reset_activity(latest)
-    if not _compare(latest["all"], cached["all"]):
-        return "not needed"
-    clear_list_contents, lists_actions = False, []
-    cached_movies, latest_movies = cached["movies"], latest["movies"]
-    cached_shows, latest_shows = cached["shows"], latest["shows"]
-    cached_episodes, latest_episodes = cached["episodes"], latest["episodes"]
-    cached_lists, latest_lists = cached["lists"], latest["lists"]
-    if _compare(latest["recommendations"], cached["recommendations"]):
-        clear_trakt_recommendations()
-    if _compare(latest["favorites"], cached["favorites"]):
-        clear_trakt_favorites()
-    if _compare(latest_movies["collected_at"], cached_movies["collected_at"]):
-        clear_trakt_collection_watchlist_data("collection", "movie")
-    if _compare(latest_episodes["collected_at"], cached_episodes["collected_at"]):
-        clear_trakt_collection_watchlist_data("collection", "tvshow")
-    if _compare(latest_movies["watchlisted_at"], cached_movies["watchlisted_at"]):
-        clear_trakt_collection_watchlist_data("watchlist", "movie")
-    if _compare(latest_shows["watchlisted_at"], cached_shows["watchlisted_at"]):
-        clear_trakt_collection_watchlist_data("watchlist", "tvshow")
-    if _compare(latest_shows["hidden_at"], cached_shows["hidden_at"]):
-        clear_properties("episode")
-        clear_trakt_hidden_data("progress_watched")
-    if _compare(latest_lists["updated_at"], cached_lists["updated_at"]):
-        clear_list_contents = True
-        lists_actions.append("my_lists")
-    if _compare(latest_lists["liked_at"], cached_lists["liked_at"]):
-        clear_list_contents = True
-        lists_actions.append("liked_lists")
-    if clear_list_contents:
-        for item in lists_actions:
-            clear_trakt_list_data(item)
-            clear_trakt_list_contents_data(item)
-    return "success"
-
-
-def clear_all_trakt_cache_data(refresh=True):
+def clear_all_trakt_cache_data():
     try:
         dbcon = connect_database("trakt_db")
         for table in ("trakt_data", "progress", "watched", "watched_status"):
             dbcon.execute(BASE_DELETE % table)
         dbcon.execute("VACUUM")
-        if refresh:
-            Thread(target=trakt_sync_activities).start()
         return True
     except:
         return False
