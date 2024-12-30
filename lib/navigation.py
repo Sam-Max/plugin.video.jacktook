@@ -226,6 +226,9 @@ def search_tmdb(params):
 
     data = tmdb_search(mode, genre_id, page)
 
+    if not data:
+        return
+    
     if data.total_results == 0:
         notification("No results found")
         return
@@ -241,6 +244,9 @@ def search_tmdb_year(params):
     set_content_type(mode)
 
     data = tmdb_search_year(mode, year, page)
+
+    if not data:
+        return
 
     if data.total_results == 0:
         notification("No results found")

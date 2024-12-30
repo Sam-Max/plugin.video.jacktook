@@ -357,25 +357,6 @@ def set_media_infotag(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
         )
 
-
-def set_windows_property(mode, ids):
-    if ids:
-        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
-        if mode == "movies":
-            ids = {
-                "tmdb": tmdb_id,
-                "imdb": imdb_id,
-            }
-        else:
-            ids = {
-                "tvdb": tvdb_id,
-            }
-        set_property(
-            "script.trakt.ids",
-            json.dumps(ids),
-        )
-
-
 def set_watched_file(title, is_torrent, data):
     if title in main_db.database["jt:lfh"]:
         return

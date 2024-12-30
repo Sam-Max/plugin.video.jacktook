@@ -16,43 +16,13 @@ from lib.db.cached import cache
 from lib.utils.utils import execute_thread_pool
 
 
-def add_icon_genre(item, name):
-    genre_icons = {
-        "Action": "genre_action.png",
-        "Adventure": "genre_adventure.png",
-        "Action & Adventure": "genre_adventure.png",
-        "Science Fiction": "genre_scifi.png",
-        "Sci-Fi & Fantasy": "genre_scifi.png",
-        "Fantasy": "genre_fantasy.png",
-        "Animation": "genre_animation.png",
-        "Comedy": "genre_comedy.png",
-        "Crime": "genre_crime.png",
-        "Documentary": "genre_documentary.png",
-        "Kids": "genre_kids.png",
-        "News": "genre_news.png",
-        "Reality": "genre_reality.png",
-        "Soap": "genre_soap.png",
-        "Talk": "genre_talk.png",
-        "Drama": "genre_drama.png",
-        "Family": "genre_family.png",
-        "History": "genre_history.png",
-        "Horror": "genre_horror.png",
-        "Music": "genre_music.png",
-        "Mystery": "genre_mystery.png",
-        "Romance": "genre_romance.png",
-        "Thriller": "genre_thriller.png",
-        "War": "genre_war.png",
-        "War & Politics": "genre_war.png",
-        "Western": "genre_western.png",
-    }
-    icon_path = genre_icons.get(name)
-    if icon_path:
-        item.setArt(
-            {
-                "icon": os.path.join(ADDON_PATH, "resources", "img", icon_path),
-                "thumb": os.path.join(ADDON_PATH, "resources", "img", icon_path),
-            }
-        )
+def add_icon_genre(item, icon_path="tmdb.png"):
+    item.setArt(
+        {
+            "icon": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+            "thumb": os.path.join(ADDON_PATH, "resources", "img", icon_path),
+        }
+    )
 
 
 def add_icon_tmdb(item, icon_path="tmdb.png"):

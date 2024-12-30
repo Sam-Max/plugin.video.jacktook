@@ -202,12 +202,15 @@ def show_items(res, mode):
             release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
             tvdb_id = -1
-            label_title = f"[B][MOVIE][/B]- {title}"
+            label_title = f"[B]MOVIE -[/B] {title}"
         elif media_type == "tv":
             mode = media_type
             release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
-            label_title = f"[B][TV][/B]- {title}"
+            duration = ""
+            label_title = f"[B]TV -[/B] {title}"
+        else:
+            return
 
     poster_path = res.get("poster_path", "")
     if poster_path:
@@ -285,7 +288,7 @@ def show_years_items(mode, page):
     current_year = datetime.now().year
     for year in range(current_year, 1899, -1):
         list_item = ListItem(label=str(year))
-        add_icon_tmdb(list_item)
+        add_icon_tmdb(list_item, icon_path="status.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -307,7 +310,7 @@ def show_genres_items(data, mode, page):
         if name == "TV Movie":
             continue
         list_item = ListItem(label=name)
-        add_icon_genre(list_item, name)
+        add_icon_genre(list_item)
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -317,6 +320,7 @@ def show_genres_items(data, mode, page):
             isFolder=True,
         )
     endOfDirectory(ADDON_HANDLE)
+    set_view("widelist")
 
 
 def show_anime_results(res, mode):
