@@ -88,6 +88,7 @@ from lib.utils.kodi_utils import (
     build_url,
     cancel_playback,
     container_update,
+    play_media,
     show_keyboard,
     addon_status,
     burst_addon_settings,
@@ -228,7 +229,7 @@ def search_tmdb(params):
 
     if not data:
         return
-    
+
     if data.total_results == 0:
         notification("No results found")
         return
@@ -421,11 +422,21 @@ def search_direct(params):
         list_item.addContextMenuItems(
             [
                 (
+                    "Rescrape Item",
+                    play_media(
+                        name="search",
+                        mode=mode,
+                        query=quote(text),
+                        rescrape=True,
+                        direct=True,
+                    ),
+                ),
+                (
                     "Modify Search",
                     container_update(
                         name="search_direct", mode=mode, query=text, rename=True
                     ),
-                )
+                ),
             ]
         )
         addDirectoryItem(
