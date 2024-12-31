@@ -31,7 +31,7 @@ class MediaFusion:
                 return
             return self.parse_response(res)
         except Exception as e:
-            self._notification(f"{translation(30228)}: {str(e)}")
+            self._notification(f"{translation(30233)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

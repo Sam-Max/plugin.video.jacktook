@@ -26,7 +26,7 @@ class Jackgram:
             else:
                 return self.parse_response_search(res)
         except Exception as e:
-            self._notification(f"{translation(30228)}: {str(e)}")
+            self._notification(f"{translation(30232)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

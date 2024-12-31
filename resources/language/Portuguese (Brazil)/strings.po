@@ -171,6 +171,14 @@ msgctxt "#30231"
 msgid "The request to Elhosted failed."
 msgstr "A solicitação para o Elhosted falhou."
 
+msgctxt "#30232"
+msgid "The request to Jackgram failed."
+msgstr "A solicitação para o Jackgram falhou."
+
+msgctxt "#30233"
+msgid "The request to Mediafusion failed."
+msgstr "A solicitação para o Mediafusion falhou."
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache do TMDB limpo"
