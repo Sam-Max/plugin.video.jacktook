@@ -128,7 +128,6 @@ def check_databases_integrity():
 
 
 def clear_all_cache():
-    progressDialog = progress_dialog()
     line = "Clearing....[CR]%s"
     caches = (
         ("trakt", "Trakt Cache"),
@@ -139,14 +138,10 @@ def clear_all_cache():
     )
     for count, cache_type in enumerate(caches, 1):
         try:
-            progressDialog.update(
-                line % (cache_type[1]), int(float(count) / float(len(caches)) * 100)
-            )
-            clear_cache(cache_type[0], silent=True)
+            clear_cache(cache_type[0])
             sleep(1000)
         except:
             pass
-    progressDialog.close()
     sleep(100)
     dialog_ok(heading="", line1="Success")
 

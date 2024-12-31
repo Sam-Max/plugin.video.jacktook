@@ -16,7 +16,7 @@ from lib.utils.kodi_utils import (
     update_kodi_addons_db,
     dialog_text,
 )
-from lib.utils.utils import clear_all_cache, unzip
+from lib.utils.utils import clear_cache_on_update, unzip
 from lib.utils.settings import cache_clear_update
 from xbmcvfs import translatePath as translate_path
 
@@ -89,7 +89,7 @@ def get_changes(online_version=False):
 
 def update_addon(new_version, action):
     if cache_clear_update(): 
-        clear_all_cache()
+        clear_cache_on_update()
     close_all_dialog()
     execute_builtin("ActivateWindow(Home)", True)
     zip_name = f"plugin.video.jacktook-{new_version}.zip"

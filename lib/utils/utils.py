@@ -541,13 +541,16 @@ def paginate_list(data, page_size=10):
         yield data[i : i + page_size]
 
 
+def clear_cache_on_update():
+    clear(type="lth")
+    clear(type="lfh")
+
+
 def clear_all_cache():
     cache.clean_all()
     bookmark_db.clear_bookmarks()
     clear_cache(cache_type="trakt")
     clear_cache(cache_type="list")
-    clear(type="lth")
-    clear(type="lfh")
 
 
 def clear(type="lth"):
