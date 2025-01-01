@@ -285,19 +285,19 @@ def movies_items(params):
 def direct_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_direct", mode="multi"),
+        build_url("search_direct", mode="direct"),
         list_item("Search", "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_direct", mode="tv"),
+        build_url("search_direct", mode="direct"),
         list_item("TV Search", "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_direct", mode="movies"),
+        build_url("search_direct", mode="direct"),
         list_item("Movie Search", "movies.png"),
         isFolder=True,
     )
@@ -461,7 +461,6 @@ def search_direct(params):
 
 
 def search(params):
-    kodilog(params)
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
@@ -531,8 +530,8 @@ def search(params):
     del player
 
 
-def handle_results(final_results, mode, ids, tv_data, direct=False):
-    if not final_results:
+def handle_results(results, mode, ids, tv_data, direct=False):
+    if not results:
         notification("No final results available")
         return
 
@@ -557,7 +556,16 @@ def handle_results(final_results, mode, ids, tv_data, direct=False):
             "mode": mode,
         }
 
-    return source_select(item_info, sources=final_results)
+    if mode == "direct":
+        xml_file_string = "source_select_direct.xml"
+    else:
+        xml_file_string = "source_select.xml"
+
+    return source_select(
+        item_info,
+        xml_file=xml_file_string,
+        sources=results,
+    )
 
 
 def handle_debrid_client(

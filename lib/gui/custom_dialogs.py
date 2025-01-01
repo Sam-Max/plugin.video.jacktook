@@ -83,9 +83,9 @@ _mock_information = {
 }
 
 
-def source_select(item_info, sources):
+def source_select(item_info, xml_file, sources):
     window = SourceSelect(
-        "source_select.xml",
+        xml_file,
         ADDON_PATH,
         item_information=item_info,
         sources=sources,

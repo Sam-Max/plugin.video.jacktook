@@ -16,13 +16,14 @@
 
             <!-- Fallback -->
             <control type="image">
-                <texture>white.png</texture>
-                <colordiffuse>FF000000</colordiffuse>
+                <texture background="true">jtk_fanart.png</texture>
+                <visible>String.IsEmpty(Window().Property(info.fanart))</visible>
             </control>
 
             <!-- Fanart -->
             <control type="image">
                 <texture background="true">$INFO[Window().Property(info.fanart)]</texture>
+                <visible>!String.IsEmpty(Window().Property(info.fanart))</visible>
             </control>
 
             <!-- Overlay -->
@@ -37,7 +38,7 @@
             <left>685</left> <!-- Center horizontally: (1920 - 550) / 2 -->
             <width>550</width>
             <height>400</height> <!-- Increased height to accommodate Clearlogo -->
-
+            
             <!-- Clearlogo -->
             <control type="image">
                 <top>0</top>
@@ -46,6 +47,7 @@
                 <height>200</height>
                 <align>center</align>
                 <texture>$INFO[Window().Property(info.clearlogo)]</texture>
+                <visible>!String.IsEmpty(Window().Property(info.clearlogo))</visible>
             </control>
 
             <!-- Plot -->

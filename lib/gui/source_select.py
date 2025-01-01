@@ -1,11 +1,8 @@
-from threading import Thread
 import xbmcgui
-from lib.api.jacktook.kodi import kodilog
-from lib.db.bookmark_db import bookmark_db
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH, action_url_run
+from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.debrid_utils import get_debrid_status
 from lib.utils.kodi_utils import bytes_to_human_readable
 from lib.utils.utils import (

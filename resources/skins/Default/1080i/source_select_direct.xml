@@ -1,0 +1,580 @@
+<window type="dialog">
+    <coordinates>
+        <left>0</left>
+        <top>0</top>
+		<width>1920</width>
+		<height>1080</height>
+    </coordinates>
+
+    <controls>
+
+        <!-- Background -->
+        <control type="group">
+            <top>0</top>
+            <left>0</left>
+            <width>1920</width>
+            <height>1080</height>
+
+            <!-- Fallback -->
+            <control type="image">
+                <texture>white.png</texture>
+                <colordiffuse>8000000</colordiffuse>
+                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+            </control>
+
+            <!-- Fanart -->
+            <control type="image">
+                <texture background="true">$INFO[Window().Property(info.fanart)]</texture>
+                <colordiffuse>FFFFFFFF</colordiffuse>
+                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+            </control>
+
+            <!-- Overlay -->
+            <control type="image">
+				<texture background="true">white.png</texture>
+				<colordiffuse>CC000000</colordiffuse>
+                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+			</control>
+        </control>
+
+		<!-- Clearlogo -->
+		<control type="image">
+			<animation type="WindowOpen">
+                <effect type="slide" start="841,401" time="350" tween="cubic" easing="in"/>
+				<effect type="zoom" start="140,140" time="350" center="auto" tween="cubic" easing="in"/>
+			</animation>
+            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
+            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+            <animation type="Conditional" condition="!String.IsEqual(Window().Property(resolving),true)">
+                <effect type="slide" start="841,401" time="350" delay="350" tween="cubic" easing="in"/>
+				<effect type="zoom" start="140,140" time="350" delay="350" center="auto" tween="cubic" easing="in"/>
+			</animation>
+			<top>0</top>
+			<left>20</left>
+			<width>200</width>
+			<height>150</height>
+			<aspectratio>keep</aspectratio>
+			<texture>jtk_clearlogo.png</texture>
+			<colordiffuse>CCFFFFFF</colordiffuse>
+			<visible>!String.IsEmpty(Window().Property(info.clearlogo)) + !String.IsEqual(Window().Property(instant_close),true)</visible>
+		</control>
+
+		<!-- Scrollbar -->
+		<control type="scrollbar" id="1111">
+			<animation effect="fade" time="350" tween="cubic" easing="in" delay="350">WindowOpen</animation>
+			<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
+            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+            <animation effect="fade" time="350" delay="700" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+			<showonepage>false</showonepage>
+			<texturesliderbackground colordiffuse="99362e33">white.png</texturesliderbackground>
+			<texturesliderbar colordiffuse="66FFFFFF">white.png</texturesliderbar>
+			<texturesliderbarfocus colordiffuse="$INFO[Window().Property(settings.color)]">white.png</texturesliderbarfocus>
+            <visible>!String.IsEqual(Window().Property(instant_close),false)</visible>
+		</control>
+
+        <!-- Sources List -->
+        <control type="list" id="1000">
+			<animation effect="slide" start="-1400,0" time="350" tween="cubic" easing="in">WindowOpen</animation>
+			<animation effect="slide" end="-1400,0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
+            <animation effect="slide" end="-1400,0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+            <animation effect="slide" start="-1400,0" time="350" delay="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+            <viewtype label="Sources">list</viewtype>
+			<pagecontrol>1111</pagecontrol>
+            <left>320</left>
+            <top>110</top>
+            <width>1500</width>
+            <height>900</height>
+            <itemgap>20</itemgap>
+            <orientation>vertical</orientation>
+            <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+
+			<!-- Unfocused Source -->
+            <itemlayout height="200">
+				<control type="group">
+                    <width>1250</width>
+
+					<control type="image">
+						<top>10</top>
+						<width>200</width>
+						<texture border="30">left-circle.png</texture>
+						<colordiffuse>FF00559D</colordiffuse>
+					</control>
+
+					<!-- Card with Rounded Corners -->
+                    <control type="image">
+                        <top>10</top>
+						<texture border="30">circle.png</texture>
+                        <colordiffuse>FF362e33</colordiffuse>
+                    </control>
+
+					<!-- Resolution -->
+					<control type="label">
+						<font>font30</font>
+						<top>70</top>
+						<align>center</align>
+						<width>200</width>
+						<textcolor>66FFFFFF</textcolor>
+						<label>[UPPERCASE]$INFO[ListItem.Property(quality)][/UPPERCASE]</label>
+					</control>
+
+					<!-- Type -->
+					<control type="label">
+						<top>120</top>
+						<align>center</align>
+						<width>200</width>
+						<font>font20</font>
+						<textcolor>66FFFFFF</textcolor>
+						<align>left</align>
+						<label>$INFO[ListItem.Property(type)]</label>
+					</control>
+
+					<!-- Release Title -->
+                    <control type="label">
+                        <top>30</top>
+                        <left>220</left>
+                        <width>1000</width>
+                        <height>20</height>
+                        <font>font12</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <align>left</align>
+                        <label>[B]$INFO[ListItem.Property(title)][/B]</label>
+                    </control>
+
+					<control type="group">
+						<top>40</top>
+						<left>20</left>
+
+						<control type="group">
+							<top>30</top>
+
+							<!-- Size -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<textcolor>CCFFFFFF</textcolor>
+								<align>left</align>
+								<left>200</left>
+								<label>[UPPERCASE]SIZE: $INFO[ListItem.Property(size)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(size))</visible>
+								
+							</control>
+
+							<!-- Peers -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
+							</control>
+
+							<!-- Seeders -->
+							<control type="label">
+								<right>20</right>
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
+							</control>
+
+						</control>
+
+						<control type="group">
+							<top>70</top>
+
+							<!-- Indexer -->
+							<control type="label">
+								<width>600</width>
+								<height>20</height>
+								<font>font12</font>
+								<left>200</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<align>left</align>
+								<label>[UPPERCASE]INDEXER: $INFO[ListItem.Property(indexer)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(indexer))</visible>
+							</control>
+
+							<!-- Provider -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]PROVIDER: $INFO[ListItem.Property(provider)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(provider))</visible>
+							</control>
+
+							<!-- PublishDate -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]DATE: $INFO[ListItem.Property(publishDate)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(publishDate))</visible>
+							</control>
+
+						</control>
+						<control type="group">
+							<top>110</top>
+
+							<!-- Status -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>200</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]STATUS: [/UPPERCASE]$INFO[ListItem.Property(status)]</label>
+								<visible>!String.IsEmpty(ListItem.Property(status))</visible>
+							</control>
+
+							<!-- Languages -->
+								<control type="label">
+									<height>20</height>
+									<font>font12</font>
+									<align>left</align>
+									<left>550</left>
+									<textcolor>FFFFFFFF</textcolor>
+									<label>[UPPERCASE]LANGUAGES: $INFO[ListItem.Property(fullLanguages)][/UPPERCASE]</label>
+									<visible>!String.IsEmpty(ListItem.Property(fullLanguages))</visible>
+								</control>
+						</control>		
+					</control>
+                </control>
+            </itemlayout>
+
+			<!-- Unfocused Source -->
+            <focusedlayout height="200" condition="!Control.HasFocus(1000)">
+                <control type="group">
+                    <width>1250</width>
+
+					<control type="image">
+						<top>10</top>
+						<width>200</width>
+						<texture border="30">left-circle.png</texture>
+						<colordiffuse>FF00559D</colordiffuse>
+					</control>
+
+					<!-- Card with Rounded Corners -->
+                    <control type="image">
+                        <top>10</top>
+                        <texture border="30">circle.png</texture>
+                        <colordiffuse>992A3E5C</colordiffuse>
+                    </control>
+
+					<!-- Resolution -->
+					<control type="label">
+						<font>font30</font>
+						<top>70</top>
+						<align>center</align>
+						<width>200</width>
+						<textcolor>66FFFFFF</textcolor>
+						<label>[UPPERCASE]$INFO[ListItem.Property(quality)][/UPPERCASE]</label>
+					</control>
+
+					<!-- Type -->
+					<control type="label">
+						<top>120</top>
+						<align>center</align>
+						<width>200</width>
+						<font>font20</font>
+						<textcolor>66FFFFFF</textcolor>
+						<align>left</align>
+						<label>$INFO[ListItem.Property(type)]</label>
+					</control>
+
+					<!-- Release Title -->
+                    <control type="label">
+                        <top>30</top>
+                        <left>220</left>
+                        <width>1000</width>
+                        <height>20</height>
+                        <font>font12</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <align>left</align>
+                        <label>[B]$INFO[ListItem.Property(title)][/B]</label>
+                    </control>
+
+					<control type="group">
+						<top>40</top>
+						<left>20</left>
+
+						<control type="group">
+							<top>30</top>
+
+							<!-- Size -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<textcolor>FFFFFFFF</textcolor>
+								<align>left</align>
+								<left>200</left>
+								<label>[UPPERCASE]SIZE: $INFO[ListItem.Property(size)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(size))</visible>
+							</control>
+
+							<!-- Peers -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
+							</control>
+
+							<!-- Seeders -->
+							<control type="label">
+								<right>20</right>
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
+							</control>
+						</control>
+
+						<control type="group">
+							<top>70</top>
+
+							<!-- Indexer -->
+							<control type="label">
+								<width>600</width>
+								<height>20</height>
+								<font>font12</font>
+								<left>200</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<align>left</align>
+								<label>[UPPERCASE]INDEXER: $INFO[ListItem.Property(indexer)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(indexer))</visible>
+							</control>
+
+							<!-- Provider -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]PROVIDER: $INFO[ListItem.Property(provider)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(provider))</visible>
+							</control>
+
+							<!-- PublishDate -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]DATE: $INFO[ListItem.Property(publishDate)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(publishDate))</visible>
+							</control>
+
+							<control type="group">
+								<top>110</top>
+
+								<!-- Status -->
+								<control type="label">
+									<height>20</height>
+									<font>font12</font>
+									<align>left</align>
+									<left>200</left>
+									<textcolor>FFFFFFFF</textcolor>
+									<label>[UPPERCASE]STATUS: [/UPPERCASE]$INFO[ListItem.Property(status)]</label>
+									<visible>!String.IsEmpty(ListItem.Property(status))</visible>
+								</control>
+
+								<!-- Languages -->
+									<control type="label">
+										<height>20</height>
+										<font>font12</font>
+										<align>left</align>
+										<left>550</left>
+										<textcolor>FFFFFFFF</textcolor>
+										<label>[UPPERCASE]LANGUAGES: $INFO[ListItem.Property(fullLanguages)][/UPPERCASE]</label>
+										<visible>!String.IsEmpty(ListItem.Property(fullLanguages))</visible>
+									</control>
+							</control>					
+						</control>		
+					</control>
+                </control>
+            </focusedlayout>
+
+			<!-- Focused Source -->
+            <focusedlayout height="200" condition="Control.HasFocus(1000)">
+                <control type="group">
+					<width>1250</width>
+					
+					<control type="image">
+						<top>10</top>
+						<width>200</width>
+						<texture border="30">left-circle.png</texture>
+						<colordiffuse>FF00559D</colordiffuse>
+					</control>
+
+					<!-- Card with Rounded Corners -->
+                    <control type="image">
+                        <top>10</top>
+                        <texture border="30">circle.png</texture>
+                        <colordiffuse>992A3E5C</colordiffuse>
+                    </control>
+
+					<!-- Resolution -->
+					<control type="label">
+						<font>font30</font>
+						<top>70</top>
+						<align>center</align>
+						<width>200</width>
+						<textcolor>FFFFFFFF</textcolor>
+						<label>[UPPERCASE]$INFO[ListItem.Property(quality)][/UPPERCASE]</label>
+					</control>
+
+					<!-- Type -->
+					<control type="label">
+						<top>120</top>
+						<align>center</align>
+						<width>200</width>
+						<font>font20</font>
+						<textcolor>FFFFFFFF</textcolor>
+						<align>left</align>
+						<label>$INFO[ListItem.Property(type)]</label>
+					</control>
+
+					<!-- Release Title -->
+                    <control type="label">
+                        <top>30</top>
+                        <left>220</left>
+                        <width>1000</width>
+                        <height>20</height>
+                        <font>font12</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <align>left</align>
+                        <label>[B]$INFO[ListItem.Property(title)][/B]</label>
+                    </control>
+
+					<control type="group">
+						<top>40</top>
+						<left>20</left>
+
+						<control type="group">
+							<top>30</top>
+
+							<!-- Size -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<textcolor>FFFFFFFF</textcolor>
+								<align>left</align>
+								<left>200</left>
+								<label>[UPPERCASE]SIZE: $INFO[ListItem.Property(size)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(size))</visible>
+							</control>
+
+							<!-- Peers -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
+							</control>
+
+							<!-- Seeders -->
+							<control type="label">
+								<right>20</right>
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
+							</control>
+
+						</control>
+
+						<control type="group">
+							<top>70</top>
+
+							<!-- Indexer -->
+							<control type="label">
+								<width>600</width>
+								<height>20</height>
+								<font>font12</font>
+								<left>200</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<align>left</align>
+								<label>[UPPERCASE]INDEXER: $INFO[ListItem.Property(indexer)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(indexer))</visible>
+							</control>
+
+							<!-- Provider -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]PROVIDER: $INFO[ListItem.Property(provider)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(provider))</visible>
+							</control>
+
+							<!-- PublishDate -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>900</left>
+								<textcolor>CCFFFFFF</textcolor>
+								<label>[UPPERCASE]DATE: $INFO[ListItem.Property(publishDate)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(publishDate))</visible>
+							</control>
+						</control>
+						<control type="group">
+							<top>110</top>
+
+							<!-- Status -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>200</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]STATUS: [/UPPERCASE]$INFO[ListItem.Property(status)]</label>
+								<visible>!String.IsEmpty(ListItem.Property(status))</visible>
+							</control>
+
+							<!-- Languages -->
+							<control type="label">
+								<height>20</height>
+								<font>font12</font>
+								<align>left</align>
+								<left>550</left>
+								<textcolor>FFFFFFFF</textcolor>
+								<label>[UPPERCASE]LANGUAGES: $INFO[ListItem.Property(fullLanguages)][/UPPERCASE]</label>
+								<visible>!String.IsEmpty(ListItem.Property(fullLanguages))</visible>
+							</control>
+						</control>		
+					</control>
+                </control>
+            </focusedlayout>
+        </control>
+    </controls>
+</window>
