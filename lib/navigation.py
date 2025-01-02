@@ -170,6 +170,14 @@ def root_menu():
         isFolder=True,
     )
 
+    if get_setting("show_telegram_menu"):
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url("get_telegram_latest", page=1),
+            list_item("Telegram", "cloud.png"),
+            isFolder=True,
+        )
+
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("cloud"),
@@ -212,7 +220,7 @@ def root_menu():
     #     isFolder=False,
     # )
 
-    endOfDirectory(ADDON_HANDLE)
+    endOfDirectory(ADDON_HANDLE, cacheToDisc=False)
 
 
 def search_tmdb(params):
@@ -593,7 +601,6 @@ def handle_debrid_client(
 
 
 def play_torrent(params):
-    kodilog("play_torrent")
     data = literal_eval(params["data"])
     player = JacktookPLayer(db=bookmark_db)
     player.run(data=data)

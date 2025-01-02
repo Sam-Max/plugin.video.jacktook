@@ -47,6 +47,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
+from lib.telegram import get_telegram_files, get_telegram_latest
 from lib.utils.torrent_utils import (
     display_picture,
     display_text,
@@ -101,6 +102,8 @@ def addon_router():
         "torrent_action": torrent_action,
         "torrent_files": torrent_files,
         "torrentio_selection": torrentio_selection,
+        "get_telegram_files": get_telegram_files,
+        "get_telegram_latest":get_telegram_latest,
         "display_picture": display_picture,
         "display_text": display_text,
         "test_source_select": test_source_select,

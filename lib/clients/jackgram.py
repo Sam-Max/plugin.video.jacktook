@@ -28,12 +28,19 @@ class Jackgram:
         except Exception as e:
             self._notification(f"{translation(30232)}: {str(e)}")
 
+    def get_latest(self, page):
+        url = f"{self.host}/stream/latest?page={page}"
+        res = self.session.get(url, timeout=10)
+        if res.status_code != 200:
+            return
+        return res.json()
+
     def parse_response(self, res):
         res = json.loads(res.text)
         results = []
         for item in res["streams"]:
             results.append(
-                {   
+                {
                     "title": item["title"],
                     "type": "Direct",
                     "indexer": item["name"],

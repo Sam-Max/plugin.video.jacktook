@@ -194,39 +194,40 @@ class JacktookPLayer(xbmc.Player):
 
     def build_playlist(self):
         if self.data["mode"] == "tv":
-            ids = self.data["ids"]
-            tmdb_id, _, _ = ids.split(", ")
+            ids = self.data.get("ids")
+            if ids:
+                tmdb_id, _, _ = ids.split(", ")
 
-            details = tmdb_get("tv_details", tmdb_id)
-            name = details.name
-            tv_data = self.data["tv_data"]
-            _, episode_number, season_number = tv_data.split("(^)")
+                details = tmdb_get("tv_details", tmdb_id)
+                name = details.name
+                tv_data = self.data["tv_data"]
+                _, episode_number, season_number = tv_data.split("(^)")
 
-            season_details = tmdb_get(
-                "season_details", {"id": tmdb_id, "season": season_number}
-            )
-            for episode in season_details.episodes:
-                episode_name = episode.name
-                _episode_number = episode.episode_number
-                if _episode_number <= int(episode_number):
-                    continue
-                label = f"{season_number}x{_episode_number}. {episode_name}"
-                tv_data = f"{episode_name}(^){_episode_number}(^){season_number}"
-
-                url = build_url(
-                    "search",
-                    mode=self.data["mode"],
-                    query=name,
-                    ids=ids,
-                    tv_data=tv_data,
-                    rescrape=True,
+                season_details = tmdb_get(
+                    "season_details", {"id": tmdb_id, "season": season_number}
                 )
+                for episode in season_details.episodes:
+                    episode_name = episode.name
+                    _episode_number = episode.episode_number
+                    if _episode_number <= int(episode_number):
+                        continue
+                    label = f"{season_number}x{_episode_number}. {episode_name}"
+                    tv_data = f"{episode_name}(^){_episode_number}(^){season_number}"
 
-                list_item = ListItem(label=label)
-                list_item.setPath(url)
-                list_item.setProperty("IsPlayable", "true")
+                    url = build_url(
+                        "search",
+                        mode=self.data["mode"],
+                        query=name,
+                        ids=ids,
+                        tv_data=tv_data,
+                        rescrape=True,
+                    )
 
-                self.PLAYLIST.add(url=url, listitem=list_item)
+                    list_item = ListItem(label=label)
+                    list_item.setPath(url)
+                    list_item.setProperty("IsPlayable", "true")
+
+                    self.PLAYLIST.add(url=url, listitem=list_item)
 
     def media_watched_marker(self):
         self.media_marked = True

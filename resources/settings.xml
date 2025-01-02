@@ -104,4 +104,8 @@
         <setting label="30202" type="lsep"/>
         <setting id="fanart_tv_client_id" type="text" label="30203" default="fa836e1c874ba95ab08a14ee88e05565"/>
     </category>
+    <category label="Menus">
+        <setting label="" type="lsep"/>
+        <setting id="show_telegram_menu" type="bool" label="Show Telegram Menu" default="false"/>
+    </category>
 </settings>

@@ -219,10 +219,11 @@ def is_ed_enabled():
     return get_setting("easydebrid_enabled")
 
 
-def list_item(label, icon):
+def list_item(label, icon="", poster_path=""):
     item = ListItem(label)
     item.setArt(
         {
+            "poster": poster_path,
             "icon": os.path.join(ADDON_PATH, "resources", "img", icon),
             "thumb": os.path.join(ADDON_PATH, "resources", "img", icon),
             "fanart": os.path.join(ADDON_PATH, "fanart.png"),
