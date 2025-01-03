@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 import threading
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
+from lib.api.tmdbv3api.objs.episode import Episode
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
 from lib.api.tmdbv3api.objs.movie import Movie
@@ -34,7 +35,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
     )
 
 
-def tmdb_get(path, params={}):
+def tmdb_get(path, params=None):
     identifier = "{}|{}".format(path, params)
     data = cache.get(identifier, hashed_key=True)
     if data:
@@ -49,6 +50,8 @@ def tmdb_get(path, params={}):
         data = TV().details(params)
     elif path == "season_details":
         data = Season().details(params["id"], params["season"])
+    elif path == "episode_details":
+        data = Episode().details(params["id"], params["season"], params["episode"])
     elif path == "movie_genres":
         data = Genre().movie_list()
     elif path == "tv_genres":

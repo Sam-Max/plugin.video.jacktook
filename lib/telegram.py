@@ -1,3 +1,4 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.jackgram import Jackgram
 from lib.utils.client_utils import validate_host
 from lib.utils.tmdb_utils import tmdb_get
@@ -53,23 +54,46 @@ def telegram_items(info):
     set_media_infotag(item, mode, title, overview=overview)
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("get_telegram_files", item=info),
+        build_url("get_telegram_files", data=info),
         item,
         isFolder=True,
     )
 
 
 def get_telegram_files(params):
-    item = eval(params["item"])
-    set_content_type(item["type"])
-    for info in item["files"]:
-        item = list_item(info["title"])
-        set_media_infotag(item, info["mode"], info["title"])
-        item.setProperty("IsPlayable", "true")
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("play_torrent", data=info),
-            item,
-            isFolder=False,
-        )
+    data = eval(params["data"])
+    mode = data["type"]
+
+    set_content_type(mode)
+
+    execute_thread_pool(data["files"], telegram_files_items, data)
     endOfDirectory(ADDON_HANDLE)
+
+
+def telegram_files_items(info, data):
+    mode = info["mode"]
+    if mode == "tv":
+        details = tmdb_get(
+            "episode_details",
+            params={
+                "id": data["tmdb_id"],
+                "season": info["season"],
+                "episode": info["episode"],
+            },
+        )
+        poster_path = TMDB_POSTER_URL + details.still_path
+    else:
+        details = tmdb_get("movie_details", data["tmdb_id"])
+        poster_path = TMDB_POSTER_URL + details.poster_path
+
+    overview = details.overview or ""
+
+    item = list_item(info["title"], poster_path=poster_path)
+    set_media_infotag(item, info["mode"], info["title"], overview=overview)
+    item.setProperty("IsPlayable", "true")
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("play_torrent", data=info),
+        item,
+        isFolder=False,
+    )
