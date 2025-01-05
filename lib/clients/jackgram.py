@@ -34,6 +34,13 @@ class Jackgram:
         if res.status_code != 200:
             return
         return res.json()
+    
+    def get_files(self, page):
+        url = f"{self.host}/stream/files?page={page}"
+        res = self.session.get(url, timeout=10)
+        if res.status_code != 200:
+            return
+        return res.json()
 
     def parse_response(self, res):
         res = json.loads(res.text)

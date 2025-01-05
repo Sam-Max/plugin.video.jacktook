@@ -41,7 +41,7 @@ def show_season_info(ids, mode, media_type):
         list_item = ListItem(label=season_name)
 
         set_media_infotag(
-            list_item, mode, name, overview, season_number=season_number, ids=ids
+            list_item, mode, name, overview, season=season_number, ids=ids
         )
 
         list_item.setArt(
@@ -102,7 +102,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         )
 
         list_item.setProperty("IsPlayable", "true")
-        
+
         list_item.setArt(
             {
                 "poster": poster,

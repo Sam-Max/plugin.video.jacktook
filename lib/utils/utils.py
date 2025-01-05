@@ -303,7 +303,7 @@ def make_listing(metadata):
         list_item,
         mode,
         title,
-        season_number=season,
+        season=season,
         episode=episode,
         ep_name=ep_name,
         ids=ids,
@@ -319,7 +319,7 @@ def set_media_infotag(
     name,
     overview="",
     ids="",
-    season_number="",
+    season="",
     episode="",
     ep_name="",
     duration="",
@@ -339,12 +339,13 @@ def set_media_infotag(
         info_tag.setFilenameAndPath(url)
     else:
         info_tag.setMediaType("episode")
-        info_tag.setTvShowTitle(f"{season_number}x{episode}. {ep_name}")
+        info_tag.setTitle(name)
+        info_tag.setTvShowTitle(f"{season}x{episode}. {ep_name}")
         info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
-        if season_number:
-            info_tag.setSeason(int(season_number))
+        if season:
+            info_tag.setSeason(int(season))
         if episode:
             info_tag.setEpisode(int(episode))
 

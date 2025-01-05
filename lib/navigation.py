@@ -173,7 +173,7 @@ def root_menu():
     if get_setting("show_telegram_menu"):
         addDirectoryItem(
             ADDON_HANDLE,
-            build_url("get_telegram_latest", page=1),
+            build_url("telegram_menu"),
             list_item("Telegram", "cloud.png"),
             isFolder=True,
         )
@@ -221,6 +221,22 @@ def root_menu():
     # )
 
     endOfDirectory(ADDON_HANDLE, cacheToDisc=False)
+
+
+def telegram_menu(params):
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("get_telegram_latest", page=1),
+        list_item("Latest", "cloud.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("get_telegram_files", page=1),
+        list_item("Files", "cloud.png"),
+        isFolder=True,
+    )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def search_tmdb(params):

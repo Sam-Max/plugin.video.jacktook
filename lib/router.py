@@ -24,6 +24,7 @@ from lib.navigation import (
     pm_auth,
     rd_info,
     search_tmdb_year,
+    telegram_menu,
     test_resume_dialog,
     test_run_next,
     test_source_select,
@@ -37,7 +38,6 @@ from lib.navigation import (
     search_item,
     search_tmdb,
     settings,
-    status,
     titles,
     torrents,
     trakt_auth,
@@ -47,13 +47,18 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.telegram import get_telegram_files, get_telegram_latest
+from lib.telegram import (
+    get_telegram_files,
+    get_telegram_latest,
+    get_telegram_latest_files,
+)
 from lib.utils.torrent_utils import (
     display_picture,
     display_text,
     torrent_action,
     torrent_files,
 )
+
 
 def addon_router():
     param_string = sys.argv[2][1:]
@@ -82,7 +87,6 @@ def addon_router():
         "cloud": cloud,
         "cloud_details": cloud_details,
         "settings": settings,
-        "status": status,
         "files": files,
         "titles": titles,
         "history": history,
@@ -103,7 +107,9 @@ def addon_router():
         "torrent_files": torrent_files,
         "torrentio_selection": torrentio_selection,
         "get_telegram_files": get_telegram_files,
-        "get_telegram_latest":get_telegram_latest,
+        "get_telegram_latest": get_telegram_latest,
+        "get_telegram_latest_files": get_telegram_latest_files,
+        "telegram_menu": telegram_menu,
         "display_picture": display_picture,
         "display_text": display_text,
         "test_source_select": test_source_select,
