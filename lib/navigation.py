@@ -90,7 +90,6 @@ from lib.utils.kodi_utils import (
     container_update,
     play_media,
     show_keyboard,
-    addon_status,
     burst_addon_settings,
     get_setting,
     notification,
@@ -194,13 +193,6 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("status"),
-        list_item("Status", "status.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
         build_url("history"),
         list_item("History", "history.png"),
         isFolder=True,
@@ -209,7 +201,7 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("donate"),
-        list_item("Support", "donate.png"),
+        list_item("Donation", "donate.png"),
         isFolder=True,
     )
 
@@ -882,10 +874,6 @@ def download(magnet, type):
 
 def addon_update(params):
     updates_check_addon()
-
-
-def status(params):
-    addon_status()
 
 
 def donate(params):
