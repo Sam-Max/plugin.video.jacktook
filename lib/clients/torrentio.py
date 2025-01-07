@@ -1,17 +1,14 @@
 import json
 import re
-from lib.api.jacktook.kodi import kodilog
+from lib.clients.base import BaseClient
 from lib.utils.countries import find_language_by_unicode
 from lib.utils.kodi_utils import convert_size_to_bytes, translation
 from lib.utils.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
-from requests import Session
 
 
-class Torrentio:
-    def __init__(self, host, notification) -> None:
-        self.host = host.rstrip("/")
-        self._notification = notification
-        self.session = Session()
+class Torrentio(BaseClient):
+    def __init__(self, host, notification):
+        super().__init__(host, notification)
 
     def search(self, imdb_id, mode, media_type, season, episode):
         try:
@@ -19,17 +16,15 @@ class Torrentio:
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-            kodilog(url)
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res)
         except Exception as e:
-            self._notification(f"{translation(30228)}: {str(e)}")
+            self.notification(f"{translation(30228)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)
-        kodilog("torrentio::parse_response")
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])

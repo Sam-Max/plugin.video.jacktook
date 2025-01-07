@@ -1,13 +1,12 @@
 import json
 import re
-import requests
+from lib.clients.base import BaseClient
 from lib.utils.kodi_utils import convert_size_to_bytes, translation
 
 
-class Elfhosted:
-    def __init__(self, host, notification) -> None:
-        self.host = host.rstrip("/")
-        self._notification = notification
+class Elfhosted(BaseClient):
+    def __init__(self, host, notification):
+        super().__init__(host, notification)
 
     def search(self, imdb_id, mode, media_type, season, episode):
         try:
@@ -15,13 +14,13 @@ class Elfhosted:
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-            res = requests.get(url, timeout=10)
+            res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
             response = self.parse_response(res)
             return response
         except Exception as e:
-            self._notification(f"{translation(30231)}: {str(e)}")
+            self.notification(f"{translation(30231)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

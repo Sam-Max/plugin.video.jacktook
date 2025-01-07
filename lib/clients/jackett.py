@@ -1,13 +1,13 @@
-import requests
-from lib.utils.kodi_utils import notification, translation
+from lib.clients.base import BaseClient
+from lib.utils.kodi_utils import translation
 from lib import xmltodict
 from lib.utils.settings import get_jackett_timeout
 
-class Jackett:
-    def __init__(self, host, apikey, notification) -> None:
-        self.host = host.rstrip("/")
+
+class Jackett(BaseClient):
+    def __init__(self, host, apikey, notification):
+        super().__init__(host, notification)
         self.apikey = apikey
-        self._notification = notification
 
     def search(self, query, mode, season, episode):
         try:
@@ -17,9 +17,9 @@ class Jackett:
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
             elif mode == "multi":
                 url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
-            res = requests.get(url, timeout=get_jackett_timeout())
+            res = self.session.get(url, timeout=get_jackett_timeout())
             if res.status_code != 200:
-                notification(f"{translation(30229)} ({res.status_code})")
+                self.notification(f"{translation(30229)} ({res.status_code})")
                 return
             return self.parse_response(res)
         except Exception as e:

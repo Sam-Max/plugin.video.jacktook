@@ -53,6 +53,9 @@ USER_AGENT_HEADER = {
 TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
+MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FNnLMvSfOc4e1IcejWJmykujTnWAlQKRi9cct5k3IRqhu-wFBnDoe_QmwMjJI3FnQtFNp2u3jDo23THEEgKXHYqTMrLos="
+
+
 dialog_update = {"count": -1, "percent": 50}
 
 video_extensions = (

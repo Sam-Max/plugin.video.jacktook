@@ -1,15 +1,13 @@
-import requests
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import notification, translation
+from lib.clients.base import BaseClient
+from lib.utils.kodi_utils import translation
 from lib.utils.settings import get_prowlarr_timeout
 
 
-class Prowlarr:
-    def __init__(self, host, apikey, notification) -> None:
-        self.host = host.rstrip("/")
+class Prowlarr(BaseClient):
+    def __init__(self, host, apikey, notification):
+        super().__init__(host, notification)
         self.base_url = f"{self.host}/api/v1/search"
         self.apikey = apikey
-        self._notification = notification
 
     def search(
         self,
@@ -43,14 +41,14 @@ class Prowlarr:
                 for indexer_id in indexers.split():
                     params[f"indexerIds"] = indexer_id
 
-            response = requests.get(
+            response = self.session.get(
                 self.base_url,
                 params=params,
                 timeout=get_prowlarr_timeout(),
                 headers=headers,
             )
             if response.status_code != 200:
-                notification(f"{translation(30230)} {response.status_code}")
+                self.notification(f"{translation(30230)} {response.status_code}")
                 return
             return self.parse_response(response)
         except Exception as e:
