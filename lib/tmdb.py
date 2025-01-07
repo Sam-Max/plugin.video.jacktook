@@ -13,7 +13,9 @@ from lib.utils.tmdb_utils import (
 from lib.utils.utils import (
     TMDB_BACKDROP_URL,
     TMDB_POSTER_URL,
+    Animation,
     Anime,
+    Cartoons,
     add_next_button,
     execute_thread_pool,
     set_media_infotag,
@@ -38,27 +40,10 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 
 
-def search(mode, genre_id, page):
-    if mode == "multi":
-        return handle_multi_search(page)
-    elif mode == "movies":
-        return handle_movie_search(genre_id, page)
-    elif mode == "tv":
-        return handle_tv_search(genre_id, page)
+def search_tmdb(params):
+    mode = params["mode"]
+    page = int(params["page"])
 
-
-def tmdb_search_year(mode, year, page):
-    if mode == "movies":
-        return tmdb_get(
-            path="discover_movie", params={"primary_release_year": year, "page": page}
-        )
-    elif mode == "tv":
-        return tmdb_get(
-            path="discover_tv", params={"first_air_date_year": year, "page": page}
-        )
-
-
-def handle_multi_search(page):
     if page == 1:
         query = show_keyboard(id=30241)
         if not query:
@@ -66,82 +51,73 @@ def handle_multi_search(page):
         main_db.set_query("search_query", query)
     else:
         query = main_db.get_query("search_query")
-    return Search().multi(query, page=page)
+
+    data = Search().multi(query, page=page)
+
+    if data.total_results == 0:
+        notification("No results found")
+        return
+
+    show_tmdb_results(data.results, mode)
+
+    add_next_button("search_tmdb", page=page, mode=mode)
 
 
-def handle_movie_search(genre_id, page):
-    if genre_id != -1:
-        return tmdb_get(
-            path="discover_movie",
-            params={
-                "with_genres": genre_id,
-                "append_to_response": "external_ids",
-                "page": page,
-            },
-        )
-    return tmdb_get("trending_movie", page)
+def handle_tmdb_query(params):
+    query = params.get("query", "")
+    mode = params["mode"]
+    submode = params.get("submode", None)
+    category = params.get("category", None)
+    page = int(params.get("page", 1))
 
-
-def handle_tv_search(genre_id, page):
-    if genre_id != -1:
-        return tmdb_get(
-            path="discover_tv", params={"with_genres": genre_id, "page": page}
-        )
-    return tmdb_get("trending_tv", page)
-
-
-def handle_tmdb_query(query, category, mode, submode, page):
     if mode == "movies":
         handle_tmdb_movie_query(query, page, mode)
     elif mode == "tv":
         handle_tmdb_tv_query(query, page, mode)
-    elif mode == "anime":
-        handle_tmdb_anime_query(category, submode, page)
+    elif mode == "anime" or mode == "cartoon" or mode == "animation":
+        handle_tmdb_anime_query(category, mode, submode, page)
 
 
 def handle_tmdb_movie_query(query, page, mode):
     if query == "tmdb_trending":
-        result = search("movies", genre_id=-1, page=page)
+        result = tmdb_get("trending_movie", page)
         if result:
             if result.total_results == 0:
                 notification("No results found")
                 return
             show_tmdb_results(
                 result.results,
-                page=page,
-                genre_id=-1,
                 mode=mode,
             )
+            add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
     elif query == "tmdb_genres":
-        result = tmdb_get(path="movie_genres")
-        show_genres_items(result, mode, page)
+        show_genres_items(mode, page)
     elif query == "tmdb_years":
         show_years_items(mode, page)
 
 
 def handle_tmdb_tv_query(query, page, mode):
     if query == "tmdb_trending":
-        result = search(mode="tv", genre_id=-1, page=page)
+        result = tmdb_get("trending_tv", page)
         if result:
             if result.total_results == 0:
                 notification("No results found")
                 return
             show_tmdb_results(
                 result.results,
-                page=page,
-                genre_id=-1,
                 mode=mode,
             )
+            add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
     elif query == "tmdb_genres":
-        result = tmdb_get(path="tv_genres")
-        show_genres_items(result, mode, page)
+        show_genres_items(mode, page)
     elif query == "tmdb_years":
         show_years_items(mode, page)
 
 
-def handle_tmdb_anime_query(category, mode, page):
+def handle_tmdb_anime_query(category, mode, submode, page):
     kodilog("handle_tmdb_anime_query")
-    anime = TmdbAnime()
+    tmdb_anime = TmdbAnime()
+
     if category == Anime.SEARCH:
         if page == 1:
             query = show_keyboard(id=30242)
@@ -150,34 +126,115 @@ def handle_tmdb_anime_query(category, mode, page):
             main_db.set_query("anime_query", query)
         else:
             query = main_db.get_query("anime_query")
-        data = anime.anime_search(query, mode, page)
-        data = anime_checker(data, mode)
+        data = tmdb_anime.anime_search(query, submode, page)
+        data = anime_checker(data, submode)
     elif category == Anime.AIRING:
-        data = anime.anime_on_the_air(mode, page)
+        data = tmdb_anime.anime_on_the_air(submode, page)
     elif category == Anime.POPULAR:
-        data = anime.anime_popular(mode, page)
+        data = tmdb_anime.anime_popular(submode, page)
+    elif category == Anime.POPULAR_RECENT:
+        data = tmdb_anime.anime_popular_recent(submode, page)
+    elif category == Anime.YEARS:
+        show_years_items(mode, page, submode)
+        return
+    elif category == Anime.GENRES:
+        show_genres_items(mode, page, submode)
+        return
+    elif category == Animation().POPULAR:
+        data = tmdb_anime.animation_popular(submode, page)
+    elif category == Cartoons.POPULAR:
+        data = tmdb_anime.cartoons_popular(submode, page)
 
     if data:
         if data.total_results == 0:
             notification("No results found")
             return
-        execute_thread_pool(data.results, show_anime_results, mode)
-        add_next_button("next_page_anime", page=page, mode=mode, category=category)
+
+        execute_thread_pool(data.results, show_anime_results, submode)
+
+        add_next_button(
+            "next_page_anime", page=page, mode=mode, submode=submode, category=category
+        )
 
 
-def show_tmdb_year_result(results, page, mode, year):
-    execute_thread_pool(results, show_items, mode)
-    add_next_button("search_tmdb_year", page=page, mode=mode, year=year)
+def tmdb_search_genres(mode, genre_id, page, submode=None):
+    if mode == "movies":
+        results = tmdb_get(
+            path="discover_movie",
+            params={
+                "with_genres": genre_id,
+                "append_to_response": "external_ids",
+                "page": page,
+            },
+        )
+    elif mode == "tv":
+        results = tmdb_get(
+            path="discover_tv",
+            params={"with_genres": genre_id, "page": page},
+        )
+    if mode == "anime":
+        results = tmdb_get(
+            path="anime_genres",
+            params={"mode": submode, "genre_id": genre_id, "page": page},
+        )
+
+    if results:
+        if results.total_results == 0:
+            notification("No results found")
+            return
+
+        show_tmdb_results(results.results, mode, submode)
+
+        add_next_button("search_tmdb_genres", mode=mode, submode=submode, genre_id=genre_id, page=page)
 
 
-def show_tmdb_results(results, page, mode, genre_id=0):
-    execute_thread_pool(results, show_items, mode)
-    add_next_button("search_tmdb", page=page, mode=mode, genre_id=genre_id)
+def tmdb_search_year(mode, submode, year, page):
+    kodilog(mode)
+    kodilog(year)
+    if mode == "movies":
+        results = tmdb_get(
+            path="discover_movie",
+            params={"primary_release_year": year, "page": page},
+        )
+    elif mode == "tv":
+        results = tmdb_get(
+            path="discover_tv",
+            params={"first_air_date_year": year, "page": page},
+        )
+    if mode == "anime":
+        kodilog(submode)
+        kodilog(year)
+        results = tmdb_get(
+            path="anime_year",
+            params={"mode": submode, "year": year, "page": page},
+        )
+
+    if results:
+        if results.total_results == 0:
+            notification("No results found")
+            return
+
+        show_tmdb_year_result(results.results, mode, submode)
+
+        add_next_button(
+            "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
+        )
 
 
-def show_items(res, mode):
+def show_tmdb_year_result(results, mode, submode):
+    execute_thread_pool(results, show_items, mode, submode)
+
+
+def show_tmdb_results(results, mode, submode=None):
+    execute_thread_pool(results, show_items, mode, submode)
+
+
+def show_items(res, mode, submode=None):
     tmdb_id = res.id
     media_type = res.get("media_type", "")
+
+    if mode == "anime":
+        mode = submode
 
     if mode == "movies":
         title = res.title
@@ -204,13 +261,11 @@ def show_items(res, mode):
             tvdb_id = -1
             label_title = f"[B]MOVIE -[/B] {title}"
         elif media_type == "tv":
-            mode = media_type
+            mode = "tv"
             release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
             duration = ""
             label_title = f"[B]TV -[/B] {title}"
-        else:
-            return
 
     poster_path = res.get("poster_path", "")
     if poster_path:
@@ -284,7 +339,7 @@ def show_items(res, mode):
         )
 
 
-def show_years_items(mode, page):
+def show_years_items(mode, page, submode=None):
     current_year = datetime.now().year
     for year in range(current_year, 1899, -1):
         list_item = ListItem(label=str(year))
@@ -294,6 +349,7 @@ def show_years_items(mode, page):
             build_url(
                 "search_tmdb_year",
                 mode=mode,
+                submode=submode,
                 year=year,
                 page=page,
             ),
@@ -304,8 +360,19 @@ def show_years_items(mode, page):
     set_view("widelist")
 
 
-def show_genres_items(data, mode, page):
-    for genre in data.genres:
+def show_genres_items(mode, page, submode=None):
+    if mode == "anime":
+        if submode == "tv":
+            genres = tmdb_get(path="tv_genres")
+        else:
+            genres = tmdb_get(path="movie_genres")
+    else:
+        if mode == "tv":
+            genres = tmdb_get(path="tv_genres")
+        else:
+            genres = tmdb_get(path="movie_genres")
+
+    for genre in genres:
         name = genre["name"]
         if name == "TV Movie":
             continue
@@ -314,7 +381,11 @@ def show_genres_items(data, mode, page):
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
-                "search_tmdb", mode=mode.split("_")[0], genre_id=genre["id"], page=page
+                "search_tmdb_genres",
+                mode=mode,
+                submode=submode,
+                genre_id=genre["id"],
+                page=page,
             ),
             list_item,
             isFolder=True,

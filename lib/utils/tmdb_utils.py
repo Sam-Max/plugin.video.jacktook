@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 import threading
+from lib.api.jacktook.kodi import kodilog
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.api.tmdbv3api.objs.episode import Episode
 from lib.api.tmdbv3api.objs.find import Find
@@ -57,19 +58,19 @@ def tmdb_get(path, params=None):
     elif path == "tv_genres":
         data = Genre().tv_list()
     elif path == "discover_movie":
-        discover = Discover()
-        data = discover.discover_movies(params)
+        data = Discover().discover_movies(params)
     elif path == "discover_tv":
-        discover = Discover()
-        data = discover.discover_tv_shows(params)
+        data = Discover().discover_tv_shows(params)
     elif path == "trending_movie":
-        trending = Trending()
-        data = trending.movie_week(page=params)
+        data = Trending().movie_week(page=params)
     elif path == "trending_tv":
-        trending = Trending()
-        data = trending.tv_week(page=params)
+        data = Trending().tv_week(page=params)
     elif path == "find_by_tvdb":
         data = Find().find_by_tvdb_id(params)
+    elif path == "anime_year":
+        data = TmdbAnime().anime_year(params)
+    elif path == "anime_genres":
+        data = TmdbAnime().anime_genres(params)
     cache.set(
         identifier,
         data,

@@ -160,9 +160,23 @@ class Players(Enum):
 class Anime(Enum):
     SEARCH = "Anime_Search"
     POPULAR = "Anime_Popular"
+    POPULAR_RECENT = "Anime_Popular_Recent"
     TRENDING = "Anime_Trending"
     AIRING = "Anime_On_The_Air"
     MOST_WATCHED = "Anime_Most_Watched"
+    YEARS = "Anime_Years"
+    GENRES = "Anime_Genres"
+
+
+class Animation(Enum):
+    POPULAR = "Animation_Popular"
+
+
+class Cartoons(Enum):
+    SEARCH = "Cartoons_Search"
+    POPULAR = "Cartoons_Popular"
+    POPULAR_RECENT = "Cartoons_Popular_Recent"
+    YEARS = "Cartoons_Years"
 
 
 class DialogListener:
@@ -358,6 +372,7 @@ def set_media_infotag(
         info_tag.setUniqueIDs(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
         )
+
 
 def set_watched_file(title, is_torrent, data):
     if title in main_db.database["jt:lfh"]:

@@ -3,6 +3,8 @@ from urllib import parse
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
+    animation_item,
+    animation_menu,
     anime_item,
     anime_menu,
     anime_search,
@@ -23,6 +25,7 @@ from lib.navigation import (
     play_url,
     pm_auth,
     rd_info,
+    search_tmdb_genres,
     search_tmdb_year,
     telegram_menu,
     test_resume_dialog,
@@ -36,7 +39,6 @@ from lib.navigation import (
     search,
     search_direct,
     search_item,
-    search_tmdb,
     settings,
     titles,
     torrents,
@@ -52,6 +54,7 @@ from lib.telegram import (
     get_telegram_latest,
     get_telegram_latest_files,
 )
+from lib.tmdb import handle_tmdb_query, search_tmdb
 from lib.utils.torrent_utils import (
     display_picture,
     display_text,
@@ -74,8 +77,10 @@ def addon_router():
         "anime_item": anime_item,
         "anime_search": anime_search,
         "search": search,
-        "search_tmdb": search_tmdb,
+        "search_tmdb":search_tmdb,
         "search_tmdb_year": search_tmdb_year,
+        "search_tmdb_genres": search_tmdb_genres,
+        "handle_tmdb_query": handle_tmdb_query,
         "search_direct": search_direct,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
@@ -115,6 +120,8 @@ def addon_router():
         "test_source_select": test_source_select,
         "test_run_next": test_run_next,
         "test_resume_dialog": test_resume_dialog,
+        "animation_menu": animation_menu,
+        "animation_item": animation_item,
     }
 
     if param_string:
