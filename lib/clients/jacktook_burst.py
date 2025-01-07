@@ -1,10 +1,11 @@
+from lib.clients.base import BaseClient
 from lib.providers import burst_search, burst_search_episode, burst_search_movie
 from lib.utils.kodi_utils import convert_size_to_bytes
 
 
-class Burst:
-    def __init__(self, notification) -> None:
-        self._notification = notification
+class Burst(BaseClient):
+    def __init__(self, notification):
+        super().__init__("", notification)
 
     def search(self, tmdb_id, query, mode, media_type, season, episode):
         try:
@@ -18,7 +19,7 @@ class Burst:
                 results = self.parse_response(results)
             return results
         except Exception as e:
-            self._notification(f"Burst error: {str(e)}")
+            self.notification(f"Burst error: {str(e)}")
 
     def parse_response(self, res):
         results = []

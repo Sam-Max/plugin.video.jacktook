@@ -1,13 +1,11 @@
 import json
-from requests import Session
+from lib.clients.base import BaseClient
 from lib.utils.kodi_utils import translation
 
 
-class Jackgram:
+class Jackgram(BaseClient):
     def __init__(self, host, notification):
-        self.host = host.rstrip("/")
-        self._notification = notification
-        self.session = Session()
+        super().__init__(host, notification)
 
     def search(self, tmdb_id, query, mode, media_type, season, episode):
         try:
@@ -26,10 +24,17 @@ class Jackgram:
             else:
                 return self.parse_response_search(res)
         except Exception as e:
-            self._notification(f"{translation(30232)}: {str(e)}")
+            self.notification(f"{translation(30232)}: {str(e)}")
 
     def get_latest(self, page):
         url = f"{self.host}/stream/latest?page={page}"
+        res = self.session.get(url, timeout=10)
+        if res.status_code != 200:
+            return
+        return res.json()
+    
+    def get_files(self, page):
+        url = f"{self.host}/stream/files?page={page}"
         res = self.session.get(url, timeout=10)
         if res.status_code != 200:
             return

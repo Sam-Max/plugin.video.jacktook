@@ -161,9 +161,30 @@ anime_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": "Anime Popular Recent",
+        "mode": "anime",
+        "category": "Anime_Popular_Recent",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
         "name": "Anime Airing",
         "mode": "anime",
         "category": "Anime_On_The_Air",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Anime Years",
+        "mode": "anime",
+        "category": "Anime_Years",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Anime Genres",
+        "mode": "anime",
+        "category": "Anime_Genres",
         "api": "tmdb",
         "icon": "tmdb.png",
     },
@@ -180,5 +201,22 @@ anime_items = [
         "category": "Anime_Most_Watched",
         "api": "trakt",
         "icon": "trakt.png",
+    },
+]
+
+animation_items = [
+    {
+        "name": "Cartoons Popular",
+        "mode": "cartoon",
+        "category": "Cartoons_Popular",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": "Animation Popular",
+        "mode": "animation",
+        "category": "Animation_Popular",
+        "api": "tmdb",
+        "icon": "tmdb.png",
     },
 ]

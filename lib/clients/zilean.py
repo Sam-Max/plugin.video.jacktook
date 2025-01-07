@@ -1,21 +1,17 @@
 import json
 import logging
 from types import SimpleNamespace
-from requests import ConnectTimeout, ReadTimeout, Session
+from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
-from lib.api.jacktook.kodi import kodilog
+from lib.clients.base import BaseClient
 from lib.utils.utils import USER_AGENT_HEADER
 
 
-class Zilean:
-    def __init__(self, url, timeout, notification, logger):
-        self.api_key = None
-        self.url = url
+class Zilean(BaseClient):
+    def __init__(self, host, timeout, notification):
+        super().__init__(host, notification)
         self.timeout = timeout
-        self.session = Session()
-        self._notification = notification
         self.initialized = self.validate()
-        self.logger = logger
         if not self.initialized:
             return
 
@@ -43,8 +39,8 @@ class Zilean:
             logging.error(f"Zilean exception thrown: {e}")
 
     def api_scrape(self, query, mode, media_type, season, episode):
-        filtered_url = f"{self.url}/dmm/filtered"
-        search_url = f"{self.url}/dmm/search"
+        filtered_url = f"{self.host}/dmm/filtered"
+        search_url = f"{self.host}/dmm/search"
 
         if mode in {"tv", "movies"} or media_type in {"tv", "movies"}:
             params = {"Query": query}
@@ -105,7 +101,7 @@ class Zilean:
 
     def ping(self, additional_headers=None):
         return self.session.get(
-            f"{self.url}/healthchecks/ping",
+            f"{self.host}/healthchecks/ping",
             headers=additional_headers,
             timeout=self.timeout,
         )

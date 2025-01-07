@@ -39,15 +39,13 @@ from lib.trakt import (
 )
 
 from lib.utils.rd_utils import get_rd_info
-from lib.utils.items_menus import tv_items, movie_items, anime_items
+from lib.utils.items_menus import tv_items, movie_items, anime_items, animation_items
 from lib.utils.debrid_utils import check_debrid_cached
 
 from lib.tmdb import (
     handle_tmdb_anime_query,
     handle_tmdb_query,
-    search as tmdb_search,
-    show_tmdb_results,
-    show_tmdb_year_result,
+    tmdb_search_genres,
     tmdb_search_year,
 )
 from lib.db.cached import cache
@@ -81,7 +79,6 @@ from lib.utils.kodi_utils import (
     ADDON_HANDLE,
     ADDON_PATH,
     EPISODES_TYPE,
-    MOVIES_TYPE,
     SHOWS_TYPE,
     JACKTORR_ADDON,
     action_url_run,
@@ -90,7 +87,6 @@ from lib.utils.kodi_utils import (
     container_update,
     play_media,
     show_keyboard,
-    addon_status,
     burst_addon_settings,
     get_setting,
     notification,
@@ -134,7 +130,7 @@ def root_menu():
     setPluginCategory(ADDON_HANDLE, "Main Menu")
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_tmdb", mode="multi", genre_id=-1, page=1),
+        build_url("search_tmdb", mode="multi", page=1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
@@ -156,6 +152,14 @@ def root_menu():
         list_item("Anime", "anime.png"),
         isFolder=True,
     )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("animation_menu"),
+        list_item("Animation", "anime.png"),
+        isFolder=True,
+    )
+
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("direct_menu"),
@@ -173,7 +177,7 @@ def root_menu():
     if get_setting("show_telegram_menu"):
         addDirectoryItem(
             ADDON_HANDLE,
-            build_url("get_telegram_latest", page=1),
+            build_url("telegram_menu"),
             list_item("Telegram", "cloud.png"),
             isFolder=True,
         )
@@ -194,13 +198,6 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("status"),
-        list_item("Status", "status.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
         build_url("history"),
         list_item("History", "history.png"),
         isFolder=True,
@@ -209,7 +206,7 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("donate"),
-        list_item("Support", "donate.png"),
+        list_item("Donate", "donate.png"),
         isFolder=True,
     )
 
@@ -223,45 +220,92 @@ def root_menu():
     endOfDirectory(ADDON_HANDLE, cacheToDisc=False)
 
 
-def search_tmdb(params):
-    mode = params["mode"]
-    genre_id = int(params.get("genre_id"))
-    page = int(params["page"])
+def animation_menu(params):
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("animation_item", mode="tv"),
+        list_item("TV Shows", "tv.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("animation_item", mode="movies"),
+        list_item("Movies", "movies.png"),
+        isFolder=True,
+    )
+    endOfDirectory(ADDON_HANDLE)
 
-    if mode in ["movies", "movie_genres"]:
-        setContent(ADDON_HANDLE, MOVIES_TYPE)
-    elif mode in ["tv", "tv_genres"]:
-        setContent(ADDON_HANDLE, SHOWS_TYPE)
 
-    data = tmdb_search(mode, genre_id, page)
+def animation_item(params):
+    mode = params.get("mode")
+    if mode == "tv":
+        for item in animation_items:
+            addDirectoryItem(
+                ADDON_HANDLE,
+                build_url(
+                    "search_item",
+                    category=item["category"],
+                    mode=item["mode"],
+                    submode=mode,
+                    api=item["api"],
+                ),
+                list_item(item["name"], item["icon"]),
+                isFolder=True,
+            )
+    if mode == "movies":
+        for item in animation_items:
+            if item["api"] == "tmdb":
+                addDirectoryItem(
+                    ADDON_HANDLE,
+                    build_url(
+                        "search_item",
+                        category=item["category"],
+                        mode=item["mode"],
+                        submode=mode,
+                        api=item["api"],
+                    ),
+                    list_item(item["name"], item["icon"]),
+                    isFolder=True,
+                )
+    endOfDirectory(ADDON_HANDLE)
 
-    if not data:
-        return
 
-    if data.total_results == 0:
-        notification("No results found")
-        return
-
-    show_tmdb_results(data.results, page, mode, genre_id)
+def telegram_menu(params):
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("get_telegram_latest", page=1),
+        list_item("Latest", "cloud.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("get_telegram_files", page=1),
+        list_item("Files", "cloud.png"),
+        isFolder=True,
+    )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def search_tmdb_year(params):
     mode = params["mode"]
+    submode = params["submode"]
     page = int(params["page"])
     year = int(params["year"])
 
     set_content_type(mode)
 
-    data = tmdb_search_year(mode, year, page)
+    tmdb_search_year(mode, submode, year, page)
 
-    if not data:
-        return
 
-    if data.total_results == 0:
-        notification("No results found")
-        return
+def search_tmdb_genres(params):
+    mode = params["mode"]
+    submode = params["submode"]
+    genre_id = params["genre_id"]
+    page = int(params["page"])
 
-    show_tmdb_year_result(data.results, page, mode, year)
+    set_content_type(mode)
+
+    tmdb_search_genres(mode, genre_id, page, submode=submode)
 
 
 def tv_shows_items(params):
@@ -813,7 +857,7 @@ def search_item(params):
     if api == "trakt":
         handle_trakt_query(query, category, mode, page, submode, api)
     elif api == "tmdb":
-        handle_tmdb_query(query, category, mode, submode, page)
+        handle_tmdb_query(params)
 
 
 def trakt_list_content(params):
@@ -837,13 +881,22 @@ def list_trakt_page(params):
 
 def anime_search(params):
     mode = params.get("mode")
+    page = params.get("page", 1)
+    category = params.get("category")
     set_content_type(mode)
-    handle_tmdb_anime_query(params.get("category"), mode, params.get("page", 1))
+
+    handle_tmdb_anime_query(category, mode, submode=mode, page=page)
 
 
 def next_page_anime(params):
+    mode = params.get("mode")
+    set_content_type(mode)
+
     handle_tmdb_anime_query(
-        params.get("category"), params.get("mode"), page=int(params.get("page", 1)) + 1
+        params.get("category"),
+        mode,
+        params.get("submode"),
+        page=int(params.get("page", 1)) + 1,
     )
 
 
@@ -866,10 +919,6 @@ def download(magnet, type):
 
 def addon_update(params):
     updates_check_addon()
-
-
-def status(params):
-    addon_status()
 
 
 def donate(params):

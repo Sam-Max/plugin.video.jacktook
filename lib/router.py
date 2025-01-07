@@ -3,6 +3,8 @@ from urllib import parse
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
+    animation_item,
+    animation_menu,
     anime_item,
     anime_menu,
     anime_search,
@@ -23,7 +25,9 @@ from lib.navigation import (
     play_url,
     pm_auth,
     rd_info,
+    search_tmdb_genres,
     search_tmdb_year,
+    telegram_menu,
     test_resume_dialog,
     test_run_next,
     test_source_select,
@@ -35,9 +39,7 @@ from lib.navigation import (
     search,
     search_direct,
     search_item,
-    search_tmdb,
     settings,
-    status,
     titles,
     torrents,
     trakt_auth,
@@ -47,13 +49,19 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.telegram import get_telegram_files, get_telegram_latest
+from lib.telegram import (
+    get_telegram_files,
+    get_telegram_latest,
+    get_telegram_latest_files,
+)
+from lib.tmdb import handle_tmdb_query, search_tmdb
 from lib.utils.torrent_utils import (
     display_picture,
     display_text,
     torrent_action,
     torrent_files,
 )
+
 
 def addon_router():
     param_string = sys.argv[2][1:]
@@ -69,8 +77,10 @@ def addon_router():
         "anime_item": anime_item,
         "anime_search": anime_search,
         "search": search,
-        "search_tmdb": search_tmdb,
+        "search_tmdb":search_tmdb,
         "search_tmdb_year": search_tmdb_year,
+        "search_tmdb_genres": search_tmdb_genres,
+        "handle_tmdb_query": handle_tmdb_query,
         "search_direct": search_direct,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
@@ -82,7 +92,6 @@ def addon_router():
         "cloud": cloud,
         "cloud_details": cloud_details,
         "settings": settings,
-        "status": status,
         "files": files,
         "titles": titles,
         "history": history,
@@ -103,12 +112,16 @@ def addon_router():
         "torrent_files": torrent_files,
         "torrentio_selection": torrentio_selection,
         "get_telegram_files": get_telegram_files,
-        "get_telegram_latest":get_telegram_latest,
+        "get_telegram_latest": get_telegram_latest,
+        "get_telegram_latest_files": get_telegram_latest_files,
+        "telegram_menu": telegram_menu,
         "display_picture": display_picture,
         "display_text": display_text,
         "test_source_select": test_source_select,
         "test_run_next": test_run_next,
         "test_resume_dialog": test_resume_dialog,
+        "animation_menu": animation_menu,
+        "animation_item": animation_item,
     }
 
     if param_string:

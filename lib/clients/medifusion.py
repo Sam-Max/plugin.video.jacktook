@@ -1,42 +1,70 @@
-import json
 import re
-import requests
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import convert_size_to_bytes, translation
-from lib.utils.utils import USER_AGENT_HEADER
-from requests import Session
+from lib.clients.base import BaseClient
+from lib.utils.kodi_utils import convert_size_to_bytes, get_setting
+from lib.utils.utils import (
+    MEDIA_FUSION_DEFAULT_KEY,
+    USER_AGENT_HEADER,
+    get_cached,
+    set_cached,
+)
+from requests.utils import urlparse
 
 
-class MediaFusion:
-    def __init__(self, host, manifest_url, notification) -> None:
-        self.host = host.rstrip("/")
-        self.api_key = self.extract_api_key(manifest_url)
-        self._notification = notification
-        self.session = Session()
+class MediaFusion(BaseClient):
+    def __init__(self, host, notification):
+        super().__init__(host, notification)
+        self.encryption_url = "https://mediafusion.elfhosted.com/encrypt-user-data"
+        self.api_key = self.extract_api_key()
 
-    def extract_api_key(self, manifest_url):
-        return (
-            manifest_url.replace(self.host, "").replace("manifest.json", "").strip("/")
-        )
+    def extract_api_key(self):
+        if get_setting("real_debrid_enabled"):
+            api_key = get_cached(path="md.rd.key")
+            if api_key:
+                return api_key
+            config_json = self.get_config_json()
+            config_json["streaming_provider"] = {
+                "token": get_setting("real_debrid_token"),
+                "service": "realdebrid",
+                "only_show_cached_streams": True,
+            }
+            path = self.session.post(self.encryption_url, json=config_json, timeout=4.0)
+            path = path.json()["encrypted_str"]
+            api_key = (
+                path.replace(self.host, "").replace("manifest.json", "").strip("/")
+            )
+            set_cached(data=api_key, path="md.rd.key")
+            return api_key
+        else:
+            return MEDIA_FUSION_DEFAULT_KEY
+
+    def get_config_json(self):
+        return {
+            "streaming_provider": {
+                "token": "",
+                "service": "",
+                "only_show_cached_streams": False,
+            },
+            "enable_catalogs": False,
+            "max_streams_per_resolution": 99,
+            "torrent_sorting_priority": [],
+            "certification_filter": ["Disable"],
+            "nudity_filter": ["Disable"],
+        }
 
     def search(self, imdb_id, mode, media_type, season, episode):
-        try:
+        # try:
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/{self.api_key}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/{self.api_key}/stream/movie/{imdb_id}.json"
-            kodilog(url)
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
-            return self.parse_response(res)
-        except Exception as e:
-            self._notification(f"{translation(30233)}: {str(e)}")
+            return self.parse_response(res.json())
+        # except Exception as e:
+        #     self.notification(f"{translation(30233)}: {str(e)}")
 
     def parse_response(self, res):
-        res = json.loads(res.text)
-        kodilog(res)
-        kodilog("mediafusion::parse_response")
         results = []
         for item in res["streams"]:
             info_hash = self.extract_info_hash(item)
@@ -57,14 +85,12 @@ class MediaFusion:
                     "peers": 0,
                 }
             )
-        kodilog(results)
         return results
 
     def extract_info_hash(self, item):
         if "url" in item:
-            query = requests.utils.urlparse(item["url"]).query
-            params = dict(i.split("=") for i in query.split("&"))
-            info_hash = params["info_hash"]
+            path = urlparse(item["url"]).path.split('/')
+            info_hash = path[path.index('stream') + 1]
         else:
             info_hash = item["infoHash"]
         return info_hash

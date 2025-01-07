@@ -105,18 +105,6 @@ def get_kodi_version():
     return kodi_version
 
 
-def addon_status():
-    msg = f"[B]Jacktook Version[/B]: {ADDON_VERSION}\n\n"
-    try:
-        msg += f"[B]Jacktorr Server IP/Address[/B]: {JACKTORR_ADDON.getSetting('service_host')}\n"
-        msg += (
-            f"[B]Jacktorr Server Port[/B]: {JACKTORR_ADDON.getSetting('service_port')}"
-        )
-    except:
-        pass
-    return xbmcgui.Dialog().textviewer("Status", msg, False)
-
-
 def is_torrest_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({TORREST_ADDON_ID})")
 

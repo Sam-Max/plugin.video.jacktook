@@ -9,7 +9,6 @@ from lib.clients.zilean import Zilean
 from lib.utils.kodi_utils import ADDON, get_setting, notification, translation
 from lib.utils.utils import Indexer
 from lib.utils.settings import get_int_setting
-from lib.api.jacktook.kodi import kodilog
 
 
 def load_indexer_state():
@@ -74,13 +73,9 @@ def get_client(indexer):
 
     elif indexer == Indexer.MEDIAFUSION:
         host = get_setting("mediafusion_host")
-        manifest_url = get_setting("mediafusion_manifest_url")
         if not validate_host(host):
             return
-        if not manifest_url:
-            notification(translation(30223))
-            return
-        return MediaFusion(host, manifest_url, notification)
+        return MediaFusion(host, notification)
 
     elif indexer == Indexer.JACKGRAM:
         host = get_setting("jackgram_host")
@@ -99,7 +94,7 @@ def get_client(indexer):
         host = get_setting("zilean_host")
         if not validate_host(host):
             return
-        return Zilean(host, timeout, notification, kodilog)
+        return Zilean(host, timeout, notification)
 
     elif indexer == Indexer.BURST:
         return Burst(notification)

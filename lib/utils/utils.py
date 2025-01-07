@@ -53,6 +53,9 @@ USER_AGENT_HEADER = {
 TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
+MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FNnLMvSfOc4e1IcejWJmykujTnWAlQKRi9cct5k3IRqhu-wFBnDoe_QmwMjJI3FnQtFNp2u3jDo23THEEgKXHYqTMrLos="
+
+
 dialog_update = {"count": -1, "percent": 50}
 
 video_extensions = (
@@ -160,9 +163,23 @@ class Players(Enum):
 class Anime(Enum):
     SEARCH = "Anime_Search"
     POPULAR = "Anime_Popular"
+    POPULAR_RECENT = "Anime_Popular_Recent"
     TRENDING = "Anime_Trending"
     AIRING = "Anime_On_The_Air"
     MOST_WATCHED = "Anime_Most_Watched"
+    YEARS = "Anime_Years"
+    GENRES = "Anime_Genres"
+
+
+class Animation(Enum):
+    POPULAR = "Animation_Popular"
+
+
+class Cartoons(Enum):
+    SEARCH = "Cartoons_Search"
+    POPULAR = "Cartoons_Popular"
+    POPULAR_RECENT = "Cartoons_Popular_Recent"
+    YEARS = "Cartoons_Years"
 
 
 class DialogListener:
@@ -303,7 +320,7 @@ def make_listing(metadata):
         list_item,
         mode,
         title,
-        season_number=season,
+        season=season,
         episode=episode,
         ep_name=ep_name,
         ids=ids,
@@ -319,7 +336,7 @@ def set_media_infotag(
     name,
     overview="",
     ids="",
-    season_number="",
+    season="",
     episode="",
     ep_name="",
     duration="",
@@ -339,10 +356,11 @@ def set_media_infotag(
         info_tag.setFilenameAndPath(url)
     else:
         info_tag.setMediaType("episode")
+        info_tag.setTitle(name)
 
         showTitle = f"{name}"
-        if season_number and episode:
-            showTitle += f" {season_number}x{episode}"
+        if season and episode:
+            showTitle += f" {season}x{episode}"
         if ep_name:
             showTitle += f". {ep_name}"
 
@@ -350,8 +368,8 @@ def set_media_infotag(
         info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
-        if season_number:
-            info_tag.setSeason(int(season_number))
+        if season:
+            info_tag.setSeason(int(season))
         if episode:
             info_tag.setEpisode(int(episode))
 
@@ -364,6 +382,7 @@ def set_media_infotag(
         info_tag.setUniqueIDs(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
         )
+
 
 def set_watched_file(title, is_torrent, data):
     if title in main_db.database["jt:lfh"]:
