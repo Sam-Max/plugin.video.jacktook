@@ -1,3 +1,11 @@
+## 0.4.2
+* Add Telegram menu (with option to enable/disable) with submenus to access Jackgram cached files (for advanced users)
+* Add Anime year and genre search.
+* Add TMDB year search for TV and Movies.
+* Add Trakt popular lists.
+* Some visual improvements on direct search source selection.
+* Others minor improvements and fixes.
+
 ## 0.4.1
 * Add play next dialog for episodes playback
 * Add automatic playlist creation for shows episodes.
