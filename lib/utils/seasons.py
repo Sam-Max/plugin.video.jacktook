@@ -77,7 +77,6 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     for ep in season_details.episodes:
         ep_name = ep.name
         episode = ep.episode_number
-        label = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
         tv_data = f"{ep_name}(^){episode}(^){season}"
@@ -88,14 +87,16 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         else:
             poster = fanart_data.get("fanart", "") if fanart_data else ""
 
-        list_item = ListItem(label=label)
+        list_item = ListItem()
 
         set_media_infotag(
             list_item,
             mode,
             tv_name,
             ep.overview,
+            season=season,
             episode=episode,
+            ep_name=ep_name,
             duration=duration,
             air_date=air_date,
             ids=ids,

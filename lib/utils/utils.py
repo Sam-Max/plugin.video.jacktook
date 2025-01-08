@@ -356,6 +356,7 @@ def set_media_infotag(
         info_tag.setFilenameAndPath(url)
     else:
         info_tag.setMediaType("episode")
+        info_tag.setTvShowTitle(name)
         info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
@@ -363,13 +364,8 @@ def set_media_infotag(
             info_tag.setSeason(int(season))
         if episode:
             info_tag.setEpisode(int(episode))
-            title = f"{name}"
-            if season and episode:
-                title += f" {season}x{episode}"
-            if ep_name:
-                title += f". {ep_name}"
-
-            info_tag.setTvShowTitle(title)
+        if ep_name:
+            info_tag.setTitle(ep_name)
         else:
             info_tag.setTitle(name)
             
