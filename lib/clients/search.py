@@ -41,58 +41,54 @@ def search_client(
     total_results = []
 
     if get_setting("torrentio_enabled"):
-        if imdb_id == -1:
-            return
-        perform_search(
-            Indexer.TORRENTIO,
-            dialog,
-            imdb_id,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+        if imdb_id != -1:
+            perform_search(
+                Indexer.TORRENTIO,
+                dialog,
+                imdb_id,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
 
     if get_setting("mediafusion_enabled"):
-        if imdb_id == -1:
-            return
-        perform_search(
-            Indexer.MEDIAFUSION,
-            dialog,
-            imdb_id,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+        if imdb_id != -1:
+            perform_search(
+                Indexer.MEDIAFUSION,
+                dialog,
+                imdb_id,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
 
-    elif get_setting("elfhosted_enabled"):
-        if imdb_id == -1:
-            return
-        perform_search(
-            Indexer.ELHOSTED,
-            dialog,
-            imdb_id,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+    if get_setting("elfhosted_enabled"):
+        if imdb_id != -1:
+            perform_search(
+                Indexer.ELHOSTED,
+                dialog,
+                imdb_id,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
 
-    elif get_setting("zilean_enabled"):
-        if imdb_id == -1:
-            return
-        perform_search(
-            Indexer.ZILEAN,
-            dialog,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+    if get_setting("zilean_enabled"):
+        if imdb_id != -1:
+            perform_search(
+                Indexer.ZILEAN,
+                dialog,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
 
-    elif get_setting("jacktookburst_enabled"):
+    if get_setting("jacktookburst_enabled"):
         perform_search(
             Indexer.BURST,
             dialog,
@@ -126,7 +122,7 @@ def search_client(
             episode,
         )
 
-    elif get_setting("jackgram_enabled"):
+    if get_setting("jackgram_enabled"):
         perform_search(
             Indexer.JACKGRAM,
             dialog,
