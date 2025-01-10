@@ -17,13 +17,13 @@
     </category>
     <category label="30020">
         <setting id="indexer" type="labelenum" label="30021" values="Torrentio|Burst|Jackett|Prowlarr|MediaFusion|Elfhosted|Zilean|Jackgram" default="Torrentio"/>
+        <setting id="filter_by_episode" type="bool" label="30710" default="true"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
         <setting id="torrentio_results_per_page" type="number" label="30029" default="60"/>
         <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached|None" default="None"/>
         <setting id="torrentio_priority_lang" type="labelenum" label="Priority Language" values="GB|JP|RU|IT|PT|ES|MX|KR|CN|TW|FR|DE|NL|IN|PL|LT|CZ|SK|SI|HU|RO|HR|UA|GR|DK|FI|SE|NO|TR|None" default="None"/>
-        <setting id="torrentio_filter_by_episode" type="bool" label="Filter by Season and Episode" default="true" help="If enabled the torrentio results will be filtered to get results that contain the specific season and episode of the selected item"/>
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
         <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_selection)"/>
         <setting label="Jackgram Configuration" type="lsep"/>
