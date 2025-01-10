@@ -27,32 +27,32 @@
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
         <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_selection)"/>
         <setting label="Jackgram Configuration" type="lsep"/>
-        <setting id="jackgram_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="jackgram_enabled" type="bool" label="Enable" default="false"/>
         <setting id="jackgram_host" type="text" label="Jackgram Host" default=""/>
         <setting label="Elfhosted/KnightCrawler Configuration" type="lsep"/>
         <setting id="elfhosted_enabled" type="bool" label="Enable" default="true"/>
         <setting id="elfhosted_host" type="text" label="30025" default="https://torrentio.elfhosted.com/"/>
         <setting label="Zilean Configuration" type="lsep"/>
-        <setting id="zilean_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="zilean_enabled" type="bool" label="Enable" default="false"/>
         <setting id="zilean_host" type="text" label="Zilean Host" default="https://zilean.elfhosted.com"/>
         <setting id="zilean_timeout" type="number" label="Zilean Timeout" default="10"/>
         <setting label="30022" type="lsep"/>
-        <setting id="jackett_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="jackett_enabled" type="bool" label="Enable" default="false"/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
         <setting id="jackett_timeout" type="slider" label="30030" option="int" range="1,1,30" default="25"/>
         <setting label="30050" type="lsep"/>
-        <setting id="prowlarr_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="prowlarr_enabled" type="bool" label="Enable" default="false"/>
         <setting id="prowlarr_host" type="text" label="30052" default=""/>
         <setting id="prowlarr_apikey" type="text" label="30051" default=""/>
         <setting id="prowlarr_indexer_ids" type="text" label="30053" default=""/>
         <setting id="prowlarr_timeout" type="slider" label="30031" option="int" range="1,1,30" default="25"/>
         <setting label="MediaFusion configuration" type="lsep"/>
-        <setting id="mediafusion_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="mediafusion_enabled" type="bool" label="Enable" default="false"/>
         <setting id="mediafusion_host" type="text" label="30052" default="https://mediafusion.elfhosted.com"/>
         <setting id="mediafusion_manifest_url" type="text" label="Manifest Url" default=""/>
         <setting label="Jacktook Burst Configuration" type="lsep"/>
-        <setting id="jacktookburst_enabled" type="bool" label="Enable" default="true"/>
+        <setting id="jacktookburst_enabled" type="bool" label="Enable" default="false"/>
         <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/?action=open_burst_config)" />
     </category>
     <category label="30150">
