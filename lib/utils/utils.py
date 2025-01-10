@@ -710,7 +710,8 @@ def pre_process(res, mode, episode_name, episode, season):
     res = remove_duplicate(res)
     if get_setting("indexer") == Indexer.TORRENTIO:
         res = filter_by_torrentio_provider(res)
-    if mode == "tv" and get_setting("torrentio_filter_by_episode"):
+    if mode == "tv" and (get_setting("indexer") != Indexer.TORRENTIO or get_setting("torrentio_filter_by_episode")):
+        # do not filter by episode if torrentio is the indexer and the setting is disabled
         res = filter_by_episode(res, episode_name, episode, season)
     res = filter_by_quality(res)
     return res
