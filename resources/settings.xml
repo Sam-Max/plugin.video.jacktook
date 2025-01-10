@@ -23,7 +23,6 @@
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_enabled" type="bool" label="Enable" default="true"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
-        <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
         <setting id="torrentio_priority_lang" type="labelenum" label="Priority Language" values="GB|JP|RU|IT|PT|ES|MX|KR|CN|TW|FR|DE|NL|IN|PL|LT|CZ|SK|SI|HU|RO|HR|UA|GR|DK|FI|SE|NO|TR|None" default="None"/>
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
         <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_selection)"/>

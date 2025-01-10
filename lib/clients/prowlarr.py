@@ -23,19 +23,16 @@ class Prowlarr(BaseClient):
             "X-Api-Key": self.apikey,
         }
 
-        params = {"query": query}
-
         try:
+            params = {"query": query}
+            params["type"] = "search"
+            
             if mode == "tv":
                 params["categories"] = [5000, 8000]
-                params["type"] = "search"
                 query = f"{query} S{int(season):02d}E{int(episode):02d}"
                 params["query"] = query
             elif mode == "movies":
                 params["categories"] = [2000, 8000]
-                params["type"] = "search"
-            elif mode == "multi":
-                params["type"] = "search"
 
             if indexers:
                 for indexer_id in indexers.split():

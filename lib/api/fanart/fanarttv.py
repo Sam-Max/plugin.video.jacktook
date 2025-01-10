@@ -11,7 +11,6 @@ from lib.utils.kodi_utils import notification
 def fanart_guard_response(func):
     @wraps(func)
     def wrapper(*args, **kwarg):
-        kodilog("fanart_guard_response")
         import requests
 
         try:
@@ -176,7 +175,6 @@ class FanartTv(ApiBase):
 
     @handle_single_item_or_list
     def _handle_response(self, response, art_type, season=None):
-        kodilog("_handle_response")
         try:
             if response:
                 result = {"art": self._handle_art(response, art_type, season)}
