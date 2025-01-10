@@ -127,7 +127,7 @@ def extract_infohash(results, dialog):
     for count, res in enumerate(results[:]):
         dialog.update(
             0,
-            "Jacktook [COLOR FFFF6B00]Debrid[/COLOR]",
+            "Jacktook [COLOR FFFF6B00]Processing...[/COLOR]",
             f"Processing...{count}/{len(results)}",
         )
 

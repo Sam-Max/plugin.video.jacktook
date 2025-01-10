@@ -28,7 +28,8 @@ class Burst(BaseClient):
                 {
                     "title": r.title,
                     "type": "Torrent",
-                    "indexer": r.indexer,
+                    "indexer": "Burst",
+                    "provider": r.indexer,
                     "guid": r.guid,
                     "infoHash": None,
                     "size": convert_size_to_bytes(r.size),

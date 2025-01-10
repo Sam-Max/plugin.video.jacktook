@@ -60,7 +60,8 @@ class Prowlarr(BaseClient):
             res.update(
                 {
                     "type": "Torrent",
-                    "provider": "Prowlarr",
+                    "indexer": "Prowlarr",
+                    "provider": res.get("indexer"),
                     "peers": int(res.get("peers", 0)),
                     "seeders": int(res.get("seeders", 0)),
                 }

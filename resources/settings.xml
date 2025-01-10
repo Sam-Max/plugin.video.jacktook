@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <category label="30000">
-        <setting label="30001" type="lsep"/>
-        <setting id="client_player" type="labelenum" label="30002" values="Jacktorr|Jackgram|Torrest|Elementum|Debrid|" default="Jacktorr"/>
+    <category label="30001">
+        <setting id="torrent_enable" type="bool" label="Use Torrent" default="true"/>
+        <setting id="torrent_client" type="labelenum" label="30002" values="Jacktorr|Torrest|Elementum" default="Jacktorr" visible="eq(-1,true)"/>
         <setting label="Playback" type="lsep"/>
         <setting id="auto_play" type="bool" label="Auto-Play" default="false"/>
         <setting id="playnext_dialog_enabled" type="bool" label="Enable Next Episode Dialog" default="true"/>
@@ -16,53 +16,49 @@
         <setting id="clear_cache_update" type="bool" label="Clear cache when update" default="true"/>
     </category>
     <category label="30020">
-        <setting id="indexer" type="labelenum" label="30021" values="Torrentio|Burst|Jackett|Prowlarr|MediaFusion|Elfhosted|Zilean|Jackgram" default="Torrentio"/>
+        <setting label="Indexers Configuration" type="lsep"/>
+        <setting id="indexers_total_results" type="number" label="30029" default="60"/>
+        <setting id="indexers_desc_length" type="number" label="30026" default="100"/>
+        <setting id="indexers_sort_by" type="labelenum" label="Sort" values="Seeds|Size|Quality|Cached|Date|None" default="Quality"/>
         <setting label="Torrentio Configuration" type="lsep"/>
+        <setting id="torrentio_enabled" type="bool" label="Enable" default="true"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
-        <setting id="torrentio_results_per_page" type="number" label="30029" default="60"/>
-        <setting id="torrentio_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached|None" default="None"/>
         <setting id="torrentio_priority_lang" type="labelenum" label="Priority Language" values="GB|JP|RU|IT|PT|ES|MX|KR|CN|TW|FR|DE|NL|IN|PL|LT|CZ|SK|SI|HU|RO|HR|UA|GR|DK|FI|SE|NO|TR|None" default="None"/>
         <setting type="text" label="Click below to select torrentio providers" enable="false" visible="true" /> 
         <setting type="action" label="Torrentio Providers" action="RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_selection)"/>
         <setting label="Jackgram Configuration" type="lsep"/>
+        <setting id="jackgram_enabled" type="bool" label="Enable" default="true"/>
         <setting id="jackgram_host" type="text" label="Jackgram Host" default=""/>
-        <setting id="jackgram_desc_length" type="number" label="30026" default="100"/>
-        <setting id="jackgram_results_per_page" type="number" label="30029" default="60"/>
-        <setting id="jackgram_sort_by" type="labelenum" label="Sort" values="Size|Quality|Date|None" default="Quality"/>
         <setting label="Elfhosted/KnightCrawler Configuration" type="lsep"/>
+        <setting id="elfhosted_enabled" type="bool" label="Enable" default="true"/>
         <setting id="elfhosted_host" type="text" label="30025" default="https://torrentio.elfhosted.com/"/>
-        <setting id="elfhosted_desc_length" type="number" label="30026" default="100"/>
-        <setting id="elfhosted_results_per_page" type="number" label="30029" default="25"/>
-        <setting id="elfhosted_sort_by" type="labelenum" label="30028" values="Size|Cached|Quality" default="Seeds"/>
         <setting label="Zilean Configuration" type="lsep"/>
+        <setting id="zilean_enabled" type="bool" label="Enable" default="true"/>
         <setting id="zilean_host" type="text" label="Zilean Host" default="https://zilean.elfhosted.com"/>
         <setting id="zilean_timeout" type="number" label="Zilean Timeout" default="10"/>
         <setting label="30022" type="lsep"/>
+        <setting id="jackett_enabled" type="bool" label="Enable" default="true"/>
         <setting id="jackett_host" type="text" label="30025" default=""/>
         <setting id="jackett_apikey" type="text" label="30023" default=""/>
-        <setting id="jackett_desc_length" type="number" label="30026" default="100"/>
-        <setting id="jackett_results_per_page" type="number" label="30029" default="25"/>
         <setting id="jackett_timeout" type="slider" label="30030" option="int" range="1,1,30" default="25"/>
-        <setting id="jackett_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
         <setting label="30050" type="lsep"/>
+        <setting id="prowlarr_enabled" type="bool" label="Enable" default="true"/>
         <setting id="prowlarr_host" type="text" label="30052" default=""/>
         <setting id="prowlarr_apikey" type="text" label="30051" default=""/>
         <setting id="prowlarr_indexer_ids" type="text" label="30053" default=""/>
-        <setting id="prowlarr_desc_length" type="number" label="30026" default="100"/>
-        <setting id="prowlarr_results_per_page" type="number" label="30029" default="25"/>
         <setting id="prowlarr_timeout" type="slider" label="30031" option="int" range="1,1,30" default="25"/>
-        <setting id="prowlarr_sort_by" type="labelenum" label="30028" values="Seeds|Size|Date|Quality|Cached" default="Seeds"/>
         <setting label="MediaFusion configuration" type="lsep"/>
+        <setting id="mediafusion_enabled" type="bool" label="Enable" default="true"/>
         <setting id="mediafusion_host" type="text" label="30052" default="https://mediafusion.elfhosted.com"/>
         <setting id="mediafusion_manifest_url" type="text" label="Manifest Url" default=""/>
         <setting label="Jacktook Burst Configuration" type="lsep"/>
+        <setting id="jacktookburst_enabled" type="bool" label="Enable" default="true"/>
         <setting type="action" label="Burst Configuration" action="RunPlugin(plugin://plugin.video.jacktook/?action=open_burst_config)" />
-        <setting id="burst_sort_by" type="labelenum" label="30028" values="Seeds|Size|Quality|Cached" default="Seeds"/>
     </category>
     <category label="30150">
         <setting label="30152" type="lsep"/>
-        <setting id="real_debrid_enabled" type="bool" label="Enabled" default="false"/>
+        <setting id="real_debrid_enabled" type="bool" label="Enable" default="false"/>
         <setting id="real_debid_authorized" type="bool" label="" default="false" visible="false"/>
         <setting id="real_debrid_user" type="text" label="User" default="" visible="eq(-1,true)"/>
         <setting id="real_debrid_token" type="text" label="30154" default="" visible="false"/>
@@ -78,9 +74,6 @@
         <setting label="EasyDebrid Configuration" type="lsep"/>
         <setting id="easydebrid_enabled" type="bool" label="Enabled" default="false"/>
         <setting id="easydebrid_token" type="text" label="Token:" default=""/>
-        <!-- <setting label="AllDebrid Configuration" type="lsep"/>
-        <setting id="alldebrid_enabled" type="bool" label="Enabled" default="false"/>
-        <setting id="alldebrid_token" type="text" label="Token:" default=""/> -->
         <setting label="" type="lsep"/>
         <setting id="show_uncached" type="bool" label="Show uncached torrents" default="true"/>
     </category>

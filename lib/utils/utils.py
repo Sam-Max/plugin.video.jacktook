@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 import copy
 from datetime import datetime, timedelta
 import hashlib
-import json
 import os
 import re
 import unicodedata
@@ -27,14 +26,12 @@ from lib.utils.kodi_utils import (
     container_refresh,
     get_jacktorr_setting,
     get_setting,
-    set_property,
     translation,
 )
 
 from lib.utils.settings import get_cache_expiration, is_cache_enabled
-from lib.utils.settings import get_int_setting
 
-from lib.utils.torrentio_utils import filter_by_torrentio_provider
+from lib.utils.torrentio_utils import filter_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
@@ -54,7 +51,6 @@ TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
 TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FNnLMvSfOc4e1IcejWJmykujTnWAlQKRi9cct5k3IRqhu-wFBnDoe_QmwMjJI3FnQtFNp2u3jDo23THEEgKXHYqTMrLos="
-
 
 dialog_update = {"count": -1, "percent": 50}
 
@@ -129,11 +125,6 @@ class Enum:
         return [value for name, value in vars(cls).items() if not name.startswith("_")]
 
 
-torrent_clients = ["Jacktorr", "Torrest", "Elementum"]
-
-torrent_indexers = ["Prowlarr", "Jackett", "Torrentio", "Elfhosted", "Burst"]
-
-
 class Debrids(Enum):
     RD = "RealDebrid"
     PM = "Premiumize"
@@ -147,6 +138,7 @@ class Indexer(Enum):
     TORRENTIO = "Torrentio"
     MEDIAFUSION = "MediaFusion"
     JACKGRAM = "Jackgram"
+    TELEGRAM = "Telegram"
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
     ZILEAN = "Zilean"
@@ -180,6 +172,21 @@ class Cartoons(Enum):
     POPULAR = "Cartoons_Popular"
     POPULAR_RECENT = "Cartoons_Popular_Recent"
     YEARS = "Cartoons_Years"
+
+
+torrent_clients = [
+    Players.JACKTORR,
+    Players.TORREST,
+    Players.ELEMENTUM,
+]
+
+torrent_indexers = [
+    Indexer.PROWLARR,
+    Indexer.JACKETT,
+    Indexer.TORRENTIO,
+    Indexer.ELHOSTED,
+    Indexer.BURST,
+]
 
 
 class DialogListener:
@@ -589,38 +596,12 @@ def clear(type="lth"):
 
 
 def limit_results(results):
-    indexer = get_setting("indexer")
-    if indexer == Indexer.JACKETT:
-        limit = get_int_setting("jackett_results_per_page")
-    elif indexer == Indexer.PROWLARR:
-        limit = get_int_setting("prowlarr_results_per_page")
-    elif indexer == Indexer.TORRENTIO:
-        limit = get_int_setting("torrentio_results_per_page")
-    elif indexer == Indexer.ELHOSTED:
-        limit = get_int_setting("elfhosted_results_per_page")
-    elif indexer == Indexer.JACKGRAM:
-        limit = get_int_setting("jackgram_results_per_page")
-    else:
-        limit = 50
+    limit = int(get_setting("indexers_total_results"))
     return results[:limit]
 
 
 def get_description_length():
-    indexer = get_setting("indexer")
-    if indexer == Indexer.JACKETT:
-        desc_length = "jackett_desc_length"
-    elif indexer == Indexer.PROWLARR:
-        desc_length = "prowlarr_desc_length"
-    elif indexer == Indexer.TORRENTIO:
-        desc_length = "torrentio_desc_length"
-    elif indexer == Indexer.ELHOSTED:
-        desc_length = "elfhosted_desc_length"
-    elif indexer == Indexer.JACKGRAM:
-        desc_length = "jackgram_desc_length"
-    else:
-        desc_length = 150
-        return desc_length
-    return int(get_setting(desc_length))
+    return int(get_setting("indexers_desc_length"))
 
 
 def remove_duplicate(results):
@@ -644,20 +625,6 @@ def unzip(zip_location, destination_location, destination_check):
     except:
         status = False
     return status
-
-
-def post_process(res, season=None):
-    kodilog("utils::post_process")
-    if season:
-        check_pack(res, season)
-    if (
-        get_setting("indexer") == Indexer.TORRENTIO
-        and get_setting("torrentio_priority_lang") != "None"
-    ):
-        res = sort_by_priority_language(res)
-    else:
-        res = sort_results(res)
-    return res
 
 
 def check_pack(results, season_num):
@@ -700,83 +667,74 @@ def check_pack(results, season_num):
             res["isPack"] = False
 
 
-def pre_process(res, mode, episode_name, episode, season):
-    kodilog("utils::pre_process")
-    res = remove_duplicate(res)
-    if get_setting("indexer") == Indexer.TORRENTIO:
-        res = filter_by_torrentio_provider(res)
-    res = limit_results(res)
+def pre_process(results, mode, episode_name, episode, season):
+    results = remove_duplicate(results)
+
+    if get_setting("torrentio_enable"):
+        results = filter_torrentio_provider(results)
+
     if mode == "tv":
-        res = filter_by_episode(res, episode_name, episode, season)
-    res = filter_by_quality(res)
-    return res
+        results = filter_by_episode(results, episode_name, episode, season)
+
+    results = filter_by_quality(results)
+    return results
 
 
-def sort_by_priority_language(results):
-    priority_lang = get_setting("torrentio_priority_lang")
+def post_process(results, season=None):
+    if season:
+        check_pack(results, season)
+
+    if (
+        get_setting("torrentio_enable")
+        and get_setting("torrentio_priority_lang") != "None"
+    ):
+        results = sort_priority_language(results)
+    else:
+        results = sort_results(results)
+
+    results = limit_results(results)
+
+    return results
+
+
+def sort_priority_language(results):
+    torrentio_priority_lang = get_setting("torrentio_priority_lang")
     priority_lang_list = []
     non_priority_lang_list = []
     for res in results:
-        if "languages" in res and priority_lang in res["languages"]:
+        if "languages" in res and torrentio_priority_lang in res["languages"]:
             priority_lang_list.append(res)
         else:
             non_priority_lang_list.append(res)
     return sort_results(priority_lang_list, non_priority_lang_list)
 
 
-def filter_by_priority_language(results):
-    indexer = get_setting("indexer")
-    if indexer == Indexer.TORRENTIO:
-        filtered_results = []
-        priority_lang = get_setting("torrentio_priority_lang")
-        for res in results:
-            if priority_lang in res["languages"]:
-                filtered_results.append(res)
-        return filtered_results
-
-
-def sort_results(first_res, second_res=None):
-    indexer = get_setting("indexer")
-    if indexer == Indexer.JACKETT:
-        sort_by = get_setting("jackett_sort_by")
-    elif indexer == Indexer.PROWLARR:
-        sort_by = get_setting("prowlarr_sort_by")
-    elif indexer == Indexer.TORRENTIO:
-        sort_by = get_setting("torrentio_sort_by")
-    elif indexer == Indexer.ELHOSTED:
-        sort_by = get_setting("elfhosted_sort_by")
-    elif indexer == Indexer.BURST:
-        sort_by = get_setting("burst_sort_by")
-    elif indexer == Indexer.JACKGRAM:
-        sort_by = get_setting("jackgram_sort_by")
-    else:
-        sort_by = "None"
-
+def sort_results(results, second_res=None):
+    sort_by = get_setting("indexers_sort_by")
     if sort_by == "Seeds":
-        first_sorted = sorted(first_res, key=lambda r: r["seeders"], reverse=True)
+        first_sorted = sorted(results, key=lambda r: r.get("seeders", 0), reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="seeders")
     elif sort_by == "Size":
-        first_sorted = sorted(first_res, key=lambda r: r["size"], reverse=True)
+        first_sorted = sorted(results, key=lambda r: r.get("size", 0), reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="size")
     elif sort_by == "Date":
-        first_sorted = sorted(first_res, key=lambda r: r["publishDate"], reverse=True)
+        first_sorted = sorted(results, key=lambda r: r.get("publishDate", ""), reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="publishDate")
     elif sort_by == "Quality":
-        first_sorted = sorted(first_res, key=lambda r: r["quality"], reverse=True)
+        first_sorted = sorted(results, key=lambda r: r.get("quality", ""), reverse=True)
         if second_res:
             return sort_second_result(first_sorted, second_res, type="quality")
     elif sort_by == "Cached":
         first_sorted = sorted(
-            first_res, key=lambda r: r.get("isCached", ""), reverse=True
+            results, key=lambda r: r.get("isCached", ""), reverse=True
         )
         if second_res:
             return sort_second_result(first_sorted, second_res, type="isCached")
     else:
-        return first_res
-
+        return results
     return first_sorted
 
 

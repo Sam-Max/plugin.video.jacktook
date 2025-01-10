@@ -5,6 +5,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
 from lib.utils.utils import (
     Debrids,
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
@@ -26,6 +27,8 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
     for res in copy.deepcopy(results):
+        if res["indexer"] == Indexer.JACKGRAM:
+             continue
         debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
         if info_hash:

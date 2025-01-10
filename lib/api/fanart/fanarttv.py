@@ -17,11 +17,6 @@ def fanart_guard_response(func):
         try:
             response = func(*args, **kwarg)
             
-            kodilog(response.status_code)
-            kodilog("AAAAAAAAAAAAAAAAAAAAAAAAAa")
-            kodilog(response.status_code)
-            kodilog("BBBBBBBBBBBBBBBBBBBBBBBBBB")
-            
             if response.status_code in [200, 201]:
                 return response
 
@@ -76,9 +71,7 @@ class FanartTv(ApiBase):
     def __init__(self, client_key):
         self.language = getLanguage(ISO_639_1)
         self.client_key = client_key
-        kodilog(f"Client key: {self.client_key}")
         self.fanart_support = bool(self.client_key)
-        kodilog(self.fanart_support)
         self.headers = {"client-key": self.client_key, "api-key": self.api_key}
 
     @cached_property
@@ -141,7 +134,6 @@ class FanartTv(ApiBase):
 
     @fanart_guard_response
     def _get(self, url, **params):
-        kodilog("_get")
         if not self.fanart_support:
             return None
         timeout = params.pop("timeout", 10)
@@ -153,7 +145,6 @@ class FanartTv(ApiBase):
         )
 
     def _get_json(self, url, **params):
-        kodilog("_get_json")
         response = self._get(url, **params)
         return response.json() if response else None
 

@@ -1,22 +1,28 @@
-from lib.utils.client_utils import check_indexer, get_client
-from lib.utils.kodi_utils import (
-    get_setting,
-    notification,
-)
-from lib.utils.utils import Indexer, Players, get_cached, set_cached, torrent_clients
+from lib.api.jacktook.kodi import kodilog
+from lib.utils.client_utils import get_client
+from lib.utils.kodi_utils import get_setting
+from lib.utils.utils import Indexer, get_cached, set_cached
 
 
 def show_dialog(title, message, dialog):
-    dialog.create(f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
+    dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
 
 
 def search_client(
     query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
 ):
-    current_indexer = get_setting("indexer")
-    is_indexer_changed = check_indexer(current_indexer)
 
-    if not is_indexer_changed and not rescrape:
+    def perform_search(indexer_key, dialog, *args, **kwargs):
+        if indexer_key != Indexer.BURST:
+            show_dialog(indexer_key, f"Searching {indexer_key}", dialog)
+        client = get_client(indexer_key)
+        if not client:
+            return
+        results = client.search(*args, **kwargs)
+        if results:
+            total_results.extend(results)
+
+    if not rescrape:
         if mode == "tv" or media_type == "tv" or mode == "anime":
             cached_results = get_cached(query, params=(episode, "index"))
         else:
@@ -31,70 +37,111 @@ def search_client(
     else:
         tmdb_id = imdb_id = -1
 
-    client_player = get_setting("client_player")
-    client = get_client(current_indexer)
-    if not client:
-        dialog.create("")
-        return
+    dialog.create("")
+    total_results = []
 
-    if client_player in torrent_clients or client_player == Players.DEBRID:
-        if (
-            current_indexer
-            in [Indexer.TORRENTIO, Indexer.MEDIAFUSION, Indexer.ELHOSTED]
-            and imdb_id == -1
-        ):
-            notification(f"Direct Search not supported for {current_indexer}")
+    if get_setting("torrentio_enabled"):
+        if imdb_id == -1:
             return
+        perform_search(
+            Indexer.TORRENTIO,
+            dialog,
+            imdb_id,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
 
-        if current_indexer == Indexer.JACKETT:
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(query, mode, season, episode)
-
-        elif current_indexer == Indexer.PROWLARR:
-            indexers_ids = get_setting("prowlarr_indexer_ids")
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(
-                query,
-                mode,
-                season,
-                episode,
-                indexers_ids,
-            )
-
-        elif (
-            current_indexer == Indexer.TORRENTIO
-            or current_indexer == Indexer.MEDIAFUSION
-        ):
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(imdb_id, mode, media_type, season, episode)
-
-        elif current_indexer == Indexer.ELHOSTED:
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(imdb_id, mode, media_type, season, episode)
-
-        elif current_indexer == Indexer.ZILEAN:
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(query, mode, media_type, season, episode)
-
-        elif current_indexer == Indexer.BURST:
-            response = client.search(tmdb_id, query, mode, media_type, season, episode)
-            dialog.create("")
-
-        else:
-            notification(f"Select the correct indexer for the {client_player} client")
+    if get_setting("mediafusion_enabled"):
+        if imdb_id == -1:
             return
+        perform_search(
+            Indexer.MEDIAFUSION,
+            dialog,
+            imdb_id,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
 
-    elif client_player == Players.JACKGRAM:
-        if current_indexer == Indexer.JACKGRAM:
-            show_dialog(current_indexer, "Searching...", dialog)
-            response = client.search(tmdb_id, query, mode, media_type, season, episode)
-        else:
-            notification(f"Select the correct indexer for the {client_player} client")
+    elif get_setting("elfhosted_enabled"):
+        if imdb_id == -1:
             return
+        perform_search(
+            Indexer.ELHOSTED,
+            dialog,
+            imdb_id,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
+
+    elif get_setting("zilean_enabled"):
+        if imdb_id == -1:
+            return
+        perform_search(
+            Indexer.ZILEAN,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
+
+    elif get_setting("jacktookburst_enabled"):
+        perform_search(
+            Indexer.BURST,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
+
+    if get_setting("prowlarr_enabled"):
+        indexers_ids = get_setting("prowlarr_indexer_ids")
+        perform_search(
+            Indexer.PROWLARR,
+            dialog,
+            query,
+            mode,
+            season,
+            episode,
+            indexers_ids,
+        )
+
+    if get_setting("jackett_enabled"):
+        perform_search(
+            Indexer.JACKETT,
+            dialog,
+            query,
+            mode,
+            season,
+            episode,
+        )
+
+    elif get_setting("jackgram_enabled"):
+        perform_search(
+            Indexer.JACKGRAM,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
 
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        set_cached(response, query, params=(episode, "index"))
+        set_cached(total_results, query, params=(episode, "index"))
     else:
-        set_cached(response, query, params=("index"))
+        set_cached(total_results, query, params=("index"))
 
-    return response
+    kodilog(total_results)
+    return total_results

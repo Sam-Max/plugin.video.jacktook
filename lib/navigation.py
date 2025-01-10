@@ -531,8 +531,6 @@ def search(params):
         except ValueError:
             pass
 
-    client = get_setting("client_player")
-
     with DialogListener() as listener:
         results = search_client(
             query, ids, mode, media_type, listener.dialog, rescrape, season, episode
@@ -552,7 +550,7 @@ def search(params):
         notification("No results found for episode")
         return
 
-    if client == Players.DEBRID:
+    if get_setting("torrent_enable") == False:
         with DialogListener() as listener:
             final_results = handle_debrid_client(
                 query,

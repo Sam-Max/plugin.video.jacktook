@@ -4,6 +4,7 @@ from lib.clients.debrid.easydebrid import EasyDebrid
 from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
@@ -23,6 +24,8 @@ def check_ed_cached(results, cached_results, uncached_results, total, dialog, lo
     torrents_info = client.get_torrent_instant_availability(magnets)
     cached_response = torrents_info.get("cached", [])
     for e, res in enumerate(copy.deepcopy(results)):
+        if res["indexer"] == Indexer.JACKGRAM:
+             continue
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
         if cached_response[e] is True:

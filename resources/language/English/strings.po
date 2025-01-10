@@ -20,11 +20,11 @@ msgid "Players"
 msgstr ""
 
 msgctxt "#30001"
-msgid "Clients:"
+msgid "Clients"
 msgstr ""
 
 msgctxt "#30002"
-msgid "Client"
+msgid "Torrent Client"
 msgstr ""
 
 msgctxt "#30020"

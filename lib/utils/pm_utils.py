@@ -4,6 +4,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_random_color,
@@ -22,6 +23,8 @@ def check_pm_cached(results, cached_results, uncached_result, total, dialog, loc
     torrents_info = pm_client.get_torrent_instant_availability(hashes)
     cached_response = torrents_info.get("response")
     for e, res in enumerate(copy.deepcopy(results)):
+        if res["indexer"] == Indexer.JACKGRAM:
+             continue
         debrid_dialog_update("PM", total, dialog, lock)
         res["type"] = Debrids.PM
         if cached_response[e] is True:
