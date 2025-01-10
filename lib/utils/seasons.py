@@ -80,14 +80,14 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         air_date = ep.air_date
         duration = ep.runtime
         tv_data = f"{ep_name}(^){episode}(^){season}"
-
+        label = f"{season}x{episode}. {ep_name}"
         still_path = ep.get("still_path", "")
         if still_path:
             poster = TMDB_POSTER_URL + still_path
         else:
             poster = fanart_data.get("fanart", "") if fanart_data else ""
 
-        list_item = ListItem()
+        list_item = ListItem(label=label)
 
         set_media_infotag(
             list_item,
