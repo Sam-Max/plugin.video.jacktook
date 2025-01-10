@@ -431,7 +431,7 @@ def anime_item(params):
 
 
 def search_direct(params):
-    mode = params.get("mode", "multi")
+    mode = params.get("mode")
     query = params.get("query", "")
     is_clear = params.get("is_clear", False)
     is_keyboard = params.get("is_keyboard", True)
@@ -535,20 +535,20 @@ def search(params):
         results = search_client(
             query, ids, mode, media_type, listener.dialog, rescrape, season, episode
         )
-    if not results:
-        notification("No results found")
-        return
+        if not results:
+            notification("No results found")
+            return
 
-    proc_results = pre_process(
-        results,
-        mode,
-        ep_name,
-        episode,
-        season,
-    )
-    if not proc_results:
-        notification("No results found for episode")
-        return
+        proc_results = pre_process(
+            results,
+            mode,
+            ep_name,
+            episode,
+            season,
+        )
+        if not proc_results:
+            notification("No results found for episode")
+            return
 
     if get_setting("torrent_enable") == False:
         with DialogListener() as listener:
