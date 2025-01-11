@@ -302,19 +302,3 @@ msgstr "Drop torrent"
 msgctxt "#30710"
 msgid "Filter TV Shows by Season and Episode"
 msgstr "Filtrar programas de TV por temporada e episódio"
-
-msgctxt "#30801"
-msgid "Transmission"
-msgstr "Transmission"
-
-msgctxt "#30802"
-msgid "Enable Transmission"
-msgstr "Ativar Transmission"
-
-msgctxt "#30803"
-msgid "Username"
-msgstr "Usuário"
-
-msgctxt "#30804"
-msgid "Password"
-msgstr "Senha"
