@@ -77,11 +77,10 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     for ep in season_details.episodes:
         ep_name = ep.name
         episode = ep.episode_number
-        label = f"{season}x{episode}. {ep_name}"
         air_date = ep.air_date
         duration = ep.runtime
         tv_data = f"{ep_name}(^){episode}(^){season}"
-
+        label = f"{season}x{episode}. {ep_name}"
         still_path = ep.get("still_path", "")
         if still_path:
             poster = TMDB_POSTER_URL + still_path
@@ -95,7 +94,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
             mode,
             tv_name,
             ep.overview,
+            season=season,
             episode=episode,
+            ep_name=ep_name,
             duration=duration,
             air_date=air_date,
             ids=ids,

@@ -17,6 +17,7 @@
     </category>
     <category label="30020">
         <setting id="indexer" type="labelenum" label="30021" values="Torrentio|Burst|Jackett|Prowlarr|MediaFusion|Elfhosted|Zilean|Jackgram" default="Torrentio"/>
+        <setting id="filter_by_episode" type="bool" label="30710" default="true"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/"/>
         <setting id="torrentio_desc_length" type="number" label="30026" default="100"/>
