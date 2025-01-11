@@ -288,10 +288,12 @@ def show_items(res, mode, submode=None):
         air_date=release_date,
         duration=duration,
         ids=ids,
+        original_name=res.get("original_name", ""),
     )
 
     list_item.setArt(
         {
+            "thumb": poster_path,
             "poster": poster_path,
             "fanart": backdrop_path,
             "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
@@ -425,6 +427,7 @@ def show_anime_results(res, mode):
         title,
         description,
         duration=duration,
+        original_name=res.get("original_name", ""),
     )
 
     if mode == "tv":

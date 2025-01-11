@@ -342,21 +342,19 @@ def set_media_infotag(
     duration="",
     air_date="",
     url="",
+    original_name=""
 ):
     info_tag = list_item.getVideoInfoTag()
     info_tag.setPath(url)
-
+    info_tag.setTitle(name)
+    info_tag.setOriginalTitle(original_name if original_name else name)
     if mode == "movies":
         info_tag.setMediaType("movie")
-        info_tag.setTitle(name)
-        info_tag.setOriginalTitle(name)
     elif mode == "multi":
         info_tag.setMediaType("video")
-        info_tag.setTitle(name)
         info_tag.setFilenameAndPath(url)
     else:
         info_tag.setMediaType("episode")
-        info_tag.setTvShowTitle(name)
         info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
@@ -372,7 +370,7 @@ def set_media_infotag(
 
     info_tag.setPlot(overview)
     if duration:
-        info_tag.setDuration(int(duration))
+        info_tag.setDuration(int(duration)*60)
     if ids:
         tmdb_id, tvdb_id, imdb_id = ids.split(", ")
         info_tag.setIMDBNumber(imdb_id)
