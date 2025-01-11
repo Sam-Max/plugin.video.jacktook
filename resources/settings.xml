@@ -20,6 +20,7 @@
         <setting id="indexers_total_results" type="number" label="30029" default="60"/>
         <setting id="indexers_desc_length" type="number" label="30026" default="100"/>
         <setting id="indexers_sort_by" type="labelenum" label="Sort" values="Seeds|Size|Quality|Cached|Date|None" default="Quality"/>
+        <setting id="filter_by_episode" type="bool" label="30710" default="true"/>
         <setting label="Torrentio Configuration" type="lsep"/>
         <setting id="torrentio_enabled" type="bool" label="Enable" default="true"/>
         <setting id="torrentio_host" type="text" label="30025" default="https://torrentio.strem.fun/" visible="eq(-1,true)"/>

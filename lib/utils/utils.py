@@ -363,8 +363,7 @@ def set_media_infotag(
         info_tag.setFilenameAndPath(url)
     else:
         info_tag.setMediaType("episode")
-        info_tag.setTitle(name)
-        info_tag.setTvShowTitle(f"{season}x{episode}. {ep_name}")
+        info_tag.setTvShowTitle(name)
         info_tag.setFilenameAndPath(url)
         if air_date:
             info_tag.setFirstAired(air_date)
@@ -372,6 +371,11 @@ def set_media_infotag(
             info_tag.setSeason(int(season))
         if episode:
             info_tag.setEpisode(int(episode))
+        if ep_name:
+            info_tag.setTitle(ep_name)
+        else:
+            info_tag.setTitle(name)
+            
 
     info_tag.setPlot(overview)
     if duration:
@@ -673,7 +677,7 @@ def pre_process(results, mode, episode_name, episode, season):
     if get_setting("torrentio_enabled"):
         results = filter_torrentio_provider(results)
 
-    if mode == "tv":
+    if mode == "tv" and get_setting("filter_by_episode"):
         results = filter_by_episode(results, episode_name, episode, season)
 
     results = filter_by_quality(results)
@@ -706,36 +710,23 @@ def sort_priority_language(results):
             priority_lang_list.append(res)
         else:
             non_priority_lang_list.append(res)
-    return sort_results(priority_lang_list, non_priority_lang_list)
+    return sort_results(priority_lang_list) + sort_results(non_priority_lang_list)
 
 
-def sort_results(results, second_res=None):
+def sort_results(res):
     sort_by = get_setting("indexers_sort_by")
     if sort_by == "Seeds":
-        first_sorted = sorted(results, key=lambda r: r.get("seeders", 0), reverse=True)
-        if second_res:
-            return sort_second_result(first_sorted, second_res, type="seeders")
+        return sorted(res, key=lambda r: r["seeders"], reverse=True)
     elif sort_by == "Size":
-        first_sorted = sorted(results, key=lambda r: r.get("size", 0), reverse=True)
-        if second_res:
-            return sort_second_result(first_sorted, second_res, type="size")
+        return sorted(res, key=lambda r: r["size"], reverse=True)
     elif sort_by == "Date":
-        first_sorted = sorted(results, key=lambda r: r.get("publishDate", ""), reverse=True)
-        if second_res:
-            return sort_second_result(first_sorted, second_res, type="publishDate")
+        return sorted(res, key=lambda r: r["publishDate"], reverse=True)
     elif sort_by == "Quality":
-        first_sorted = sorted(results, key=lambda r: r.get("quality", ""), reverse=True)
-        if second_res:
-            return sort_second_result(first_sorted, second_res, type="quality")
+        return sorted(res, key=lambda r: r["quality"], reverse=True)
     elif sort_by == "Cached":
-        first_sorted = sorted(
-            results, key=lambda r: r.get("isCached", ""), reverse=True
-        )
-        if second_res:
-            return sort_second_result(first_sorted, second_res, type="isCached")
+        return sorted(res, key=lambda r: r.get("isCached", ""), reverse=True)
     else:
-        return results
-    return first_sorted
+        return res
 
 
 def sort_second_result(first_sorted, second_res, type):
