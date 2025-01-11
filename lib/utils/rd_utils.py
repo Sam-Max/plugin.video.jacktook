@@ -26,8 +26,10 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
     torr_available_hashes = [torr["hash"] for torr in torr_available]
 
     for res in copy.deepcopy(results):
-        if res["indexer"] == Indexer.JACKGRAM:
-             continue
+        if res["indexer"] == Indexer.TELEGRAM:
+            res["isCached"] = False
+            uncached_results.append(res)
+            continue
         debrid_dialog_update("RD", total, dialog, lock)
         res["type"] = Debrids.RD
         if res["indexer"] == Indexer.MEDIAFUSION:

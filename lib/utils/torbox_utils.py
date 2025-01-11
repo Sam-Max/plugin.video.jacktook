@@ -1,21 +1,17 @@
 import copy
-import os
 from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
+from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
     Indexer,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
 EXTENSIONS = supported_video_extensions()[:-1]
 
@@ -27,8 +23,10 @@ def check_torbox_cached(results, cached_results, uncached_results, total, dialog
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
     for res in copy.deepcopy(results):
-        if res["indexer"] == Indexer.JACKGRAM:
-             continue
+        if res["indexer"] == Indexer.TELEGRAM:
+            res["isCached"] = False
+            uncached_results.append(res)
+            continue
         debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
         if info_hash:

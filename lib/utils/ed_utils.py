@@ -8,7 +8,6 @@ from lib.utils.utils import (
     debrid_dialog_update,
     get_cached,
     get_public_ip,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -24,8 +23,10 @@ def check_ed_cached(results, cached_results, uncached_results, total, dialog, lo
     torrents_info = client.get_torrent_instant_availability(magnets)
     cached_response = torrents_info.get("cached", [])
     for e, res in enumerate(copy.deepcopy(results)):
-        if res["indexer"] == Indexer.JACKGRAM:
-             continue
+        if res["indexer"] == Indexer.TELEGRAM:
+            res["isCached"] = False
+            uncached_results.append(res)
+            continue
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
         if cached_response[e] is True:

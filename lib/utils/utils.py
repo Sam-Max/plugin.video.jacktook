@@ -729,12 +729,6 @@ def sort_results(res):
         return res
 
 
-def sort_second_result(first_sorted, second_res, type):
-    second_sorted = sorted(second_res, key=lambda r: r[type], reverse=True)
-    first_sorted.extend(second_sorted)
-    return first_sorted
-
-
 def filter_by_episode(results, episode_name, episode_num, season_num):
     episode_fill = f"{int(episode_num):02}"
     season_fill = f"{int(season_num):02}"
