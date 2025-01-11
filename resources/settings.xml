@@ -109,4 +109,11 @@
         <setting label="" type="lsep"/>
         <setting id="show_telegram_menu" type="bool" label="Show Telegram Menu" default="false"/>
     </category>
+    <category label="30801">
+        <setting label="" type="lsep"/>
+        <setting id="transmission_enabled" type="bool" label="30802" default="false"/>
+        <setting id="transmission_url" type="text" label="30025" default="localhost:9091"/>
+        <setting id="transmission_user" type="text" label="30803" default=""/>
+        <setting id="transmission_pass" type="text" label="30804" default=""/>
+    </category>
 </settings>

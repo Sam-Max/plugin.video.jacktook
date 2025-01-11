@@ -2,7 +2,7 @@ import xbmcgui
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH
+from lib.utils.kodi_utils import ADDON_PATH, notification
 from lib.utils.debrid_utils import get_debrid_status
 from lib.utils.kodi_utils import bytes_to_human_readable
 from lib.utils.utils import (
@@ -10,6 +10,9 @@ from lib.utils.utils import (
     get_colored_languages,
     get_random_color,
 )
+from lib.api.jacktook.kodi import kodilog
+from lib.api.transmission import queue_torrent_to_transmission
+from lib.utils.kodi_utils import get_setting
 
 
 class SourceSelect(BaseWindow):
@@ -73,9 +76,33 @@ class SourceSelect(BaseWindow):
             selected_source = self.sources[self.position]
             type = selected_source["type"]
             if type == "Torrent":
-                response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])
+                response = xbmcgui.Dialog().contextmenu(["Download to Debrid", "Download to Transmission"])
                 if response == 0:
                     self._download_into()
+                elif response == 1:
+                    kodilog("Selected source: %s" % selected_source)
+
+                    enabled = get_setting("transmission_enabled")
+                    url = get_setting("transmission_url")
+                    username = get_setting("transmission_user")
+                    password = get_setting("transmission_pass")
+                    
+                    if not enabled or not url:
+                        notification("Transmission not configured")
+                        return
+    
+                    infoHash = selected_source.get("infoHash")
+                    
+                    if not infoHash:
+                        notification("No infoHash found")
+                        
+                    try:
+                        queue_torrent_to_transmission(infoHash, url, username, password)
+                        notification("Torrent queued to Transmission")
+                    except Exception as e:
+                        notification(f"Failed to queue torrent to transmission: {e}")
+                    return
+                        
             elif type == "Direct":
                 pass
             else:
