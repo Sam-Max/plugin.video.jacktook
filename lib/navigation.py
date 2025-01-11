@@ -566,6 +566,9 @@ def search(params):
             auto_play(final_results, ids, tv_data, mode)
             return
         else:
+            if not final_results:
+                notification("No cached results found")
+                return
             data = handle_results(final_results, mode, ids, tv_data, direct)
     else:
         final_results = post_process(proc_results)
@@ -581,10 +584,6 @@ def search(params):
 
 
 def handle_results(results, mode, ids, tv_data, direct=False):
-    if not results:
-        notification("No final results available")
-        return
-
     if direct:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
@@ -636,8 +635,9 @@ def handle_debrid_client(
         query, proc_results, mode, media_type, p_dialog, rescrape, episode
     )
     if not debrid_cached:
-        notification("No cached results")
-        return
+        if not get_setting("jackgram_enabled"):
+            return
+        return post_process(proc_results, season) 
 
     return post_process(debrid_cached, season)
 
@@ -655,6 +655,7 @@ def auto_play(results, ids, tv_data, mode):
         data={
             "title": result.get("title"),
             "mode": mode,
+            "indexer": result.get("indexer"),
             "type": result.get("type"),
             "ids": ids,
             "info_hash": result.get("infoHash"),

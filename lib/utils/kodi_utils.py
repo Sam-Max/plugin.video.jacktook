@@ -399,6 +399,6 @@ def get_datetime(string=False, dt=False):
 
 def cancel_playback():
     PLAYLIST.clear()
-    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
     close_busy_dialog()
     close_all_dialog()
+    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))

@@ -670,7 +670,7 @@ def check_pack(results, season_num):
 def pre_process(results, mode, episode_name, episode, season):
     results = remove_duplicate(results)
 
-    if get_setting("torrentio_enable"):
+    if get_setting("torrentio_enabled"):
         results = filter_torrentio_provider(results)
 
     if mode == "tv":
@@ -685,7 +685,7 @@ def post_process(results, season=None):
         check_pack(results, season)
 
     if (
-        get_setting("torrentio_enable")
+        get_setting("torrentio_enabled")
         and get_setting("torrentio_priority_lang") != "None"
     ):
         results = sort_priority_language(results)

@@ -50,6 +50,8 @@ def get_playback_info(data):
     else:
         if is_torrent:
             addon_url = get_torrent_url()
+            if not addon_url:
+                return
         else:
             if is_pack:
                 if type in [Debrids.RD, Debrids.TB]:

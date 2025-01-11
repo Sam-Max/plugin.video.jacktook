@@ -1,10 +1,16 @@
+import copy
 import requests
 from threading import Lock
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.ed_utils import check_ed_cached, get_ed_link, get_ed_pack_info
 from lib.utils.kodi_utils import get_setting
 from lib.utils.pm_utils import check_pm_cached, get_pm_link, get_pm_pack_info
-from lib.utils.rd_utils import check_rd_cached, get_rd_link, get_rd_pack_info, get_rd_pack_link
+from lib.utils.rd_utils import (
+    check_rd_cached,
+    get_rd_link,
+    get_rd_pack_info,
+    get_rd_pack_link,
+)
 from lib.utils.torbox_utils import (
     check_torbox_cached,
     get_torbox_link,
@@ -15,6 +21,7 @@ from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
     Debrids,
+    Indexer,
     get_cached,
     get_info_hash_from_magnet,
     is_ed_enabled,
@@ -46,7 +53,7 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     total = len(results)
     dialog.create("")
 
-    extract_infohash(results, dialog)
+    extract_infohash(results)
 
     if is_rd_enabled():
         check_rd_cached(results, cached_results, uncached_results, total, dialog, lock)
@@ -79,12 +86,12 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
 
 def get_debrid_status(res):
     type = res.get("type")
-    
+
     if res.get("isPack"):
         if type == Debrids.RD:
             status_string = get_rd_status_pack(res)
         else:
-            status_string = f"[B]Cached-Pack[/B]" 
+            status_string = f"[B]Cached-Pack[/B]"
     else:
         if type == Debrids.RD:
             status_string = get_rd_status(res)
@@ -123,14 +130,8 @@ def get_pack_info(type, info_hash):
     return info
 
 
-def extract_infohash(results, dialog):
-    for count, res in enumerate(results[:]):
-        dialog.update(
-            0,
-            "Jacktook [COLOR FFFF6B00]Processing...[/COLOR]",
-            f"Processing...{count}/{len(results)}",
-        )
-
+def extract_infohash(results):
+    for res in copy.deepcopy(results):
         info_hash = None
         if res.get("infoHash"):
             info_hash = res["infoHash"].lower()
@@ -146,7 +147,8 @@ def extract_infohash(results, dialog):
         if info_hash:
             res["infoHash"] = info_hash
         else:
-            results.remove(res)
+            if res["indexer"] != Indexer.TELEGRAM:
+                results.remove(res)
 
 
 def get_magnet_from_uri(uri):

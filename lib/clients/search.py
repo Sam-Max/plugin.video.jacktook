@@ -139,5 +139,4 @@ def search_client(
     else:
         set_cached(total_results, query, params=("index"))
 
-    kodilog(total_results)
     return total_results

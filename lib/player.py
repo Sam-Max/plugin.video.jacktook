@@ -282,6 +282,7 @@ class JacktookPLayer(xbmc.Player):
         self.PLAYLIST.clear()
         close_busy_dialog()
         close_all_dialog()
+        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
     def run_error(self):
         self.playback_successful = False

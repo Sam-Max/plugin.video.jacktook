@@ -29,7 +29,6 @@ items = [
 
 
 def open_providers_selection(identifier="torrentio_providers"):
-    kodilog("torrentio::open_providers_selection")
     cached_providers = cache.get(identifier, hashed_key=True)
     if cached_providers:
         choice = xbmcgui.Dialog().yesno(
@@ -38,10 +37,9 @@ def open_providers_selection(identifier="torrentio_providers"):
             yeslabel="Ok",
             nolabel="No",
         )
-        if choice:
-            providers_selection()
-        else:
-            pass
+        if not choice:
+            return
+        providers_selection()
     else:
         providers_selection()
 
@@ -70,9 +68,10 @@ def filter_torrentio_provider(results, identifier="torrentio_providers"):
     if not selected_providers:
         return results
 
-    for res in results:
-        if (
-            res["indexer"] == "Torrentio"
-            and res["provider"] not in selected_providers
-        ):
-            results.remove(res)
+    filtered_results = [
+        res
+        for res in results
+        if res["indexer"] != "Torrentio"
+        or (res["indexer"] == "Torrentio" and res["provider"] in selected_providers)
+    ]
+    return filtered_results
