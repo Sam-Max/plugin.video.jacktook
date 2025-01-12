@@ -4,10 +4,10 @@ from lib.clients.debrid.easydebrid import EasyDebrid
 from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
@@ -17,17 +17,34 @@ from lib.utils.utils import (
 client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip())
 
 
-def check_ed_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("ed_utils::check_ed_cached")
-    magnets = [info_hash_to_magnet(res["infoHash"]) for res in results]
-    torrents_info = client.get_torrent_instant_availability(magnets)
-    cached_response = torrents_info.get("cached", [])
-    for e, res in enumerate(copy.deepcopy(results)):
+def check_ed_cached(
+    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+):
+    filtered_results = [res for res in results if "infoHash" in res]
+    if filtered_results:
+        magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
+        torrents_info = client.get_torrent_instant_availability(magnets)
+        cached_response = torrents_info.get("cached", [])
+
+    for res in results:
+        if res["indexer"] == Indexer.TELEGRAM:
+            if telegram_results:
+                continue
+            else:
+                telegram_results.append(res)
+                continue
+
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
-        if cached_response[e] is True:
-            res["isCached"] = True
-            cached_results.append(res)
+
+        if res in filtered_results:
+            index = filtered_results.index(res)
+            if cached_response[index] is True:
+                res["isCached"] = True
+                cached_results.append(res)
+            else:
+                res["isCached"] = False
+                uncached_results.append(res)
         else:
             res["isCached"] = False
             uncached_results.append(res)
@@ -65,4 +82,3 @@ def get_ed_pack_info(info_hash):
     else:
         notification("Not a torrent pack")
         return
-

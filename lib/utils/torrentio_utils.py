@@ -27,11 +27,8 @@ items = [
     "Cinecalidad",
 ]
 
-identifier = "torrentio_providers"
 
-
-def open_providers_selection():
-    kodilog("torrentio::open_providers_selection")
+def open_providers_selection(identifier="torrentio_providers"):
     cached_providers = cache.get(identifier, hashed_key=True)
     if cached_providers:
         choice = xbmcgui.Dialog().yesno(
@@ -40,15 +37,14 @@ def open_providers_selection():
             yeslabel="Ok",
             nolabel="No",
         )
-        if choice:
-            providers_selection()
-        else:
-            pass
+        if not choice:
+            return
+        providers_selection()
     else:
         providers_selection()
 
 
-def providers_selection():
+def providers_selection(identifier="torrentio_providers"):
     selected = xbmcgui.Dialog().multiselect("Select Providers", items)
     if selected:
         providers = [items[i] for i in selected]
@@ -58,20 +54,24 @@ def providers_selection():
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
             hashed_key=True,
         )
-        xbmcgui.Dialog().ok("Selection Dialog", f"Successfully selected: {',' .join(providers)}")
+        xbmcgui.Dialog().ok(
+            "Selection Dialog", f"Successfully selected: {',' .join(providers)}"
+        )
     else:
         xbmcgui.Dialog().notification(
             "Selection", "No providers selected", xbmcgui.NOTIFICATION_INFO
         )
 
 
-def filter_by_torrentio_provider(results):
-    filetred_providers = []
+def filter_torrentio_provider(results, identifier="torrentio_providers"):
     selected_providers = cache.get(identifier, hashed_key=True)
-    if selected_providers:
-        for res in results:
-            if res["provider"] in selected_providers:
-                filetred_providers.append(res)
-        return filetred_providers
-    else:
+    if not selected_providers:
         return results
+
+    filtered_results = [
+        res
+        for res in results
+        if res["indexer"] != "Torrentio"
+        or (res["indexer"] == "Torrentio" and res["provider"] in selected_providers)
+    ]
+    return filtered_results

@@ -19,33 +19,34 @@ from lib.utils.utils import (
 )
 
 
-
-def check_rd_cached(results, cached_results, uncached_results, total, dialog, lock):
-    is_media_fusion = False
-    if get_setting("indexer") == Indexer.MEDIAFUSION:
-        is_media_fusion = True
-    else:
-        client = RealDebrid(token=get_setting("real_debrid_token"))
-        torr_available = client.get_user_torrent_list()
-        torr_available_hashes = [torr["hash"] for torr in torr_available]
+def check_rd_cached(
+    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+):
+    client = RealDebrid(token=get_setting("real_debrid_token"))
+    torr_available = client.get_user_torrent_list()
+    torr_available_hashes = [torr["hash"] for torr in torr_available]
 
     for res in copy.deepcopy(results):
+        if res["indexer"] == Indexer.TELEGRAM:
+            telegram_results.append(res)
+            continue
+
         debrid_dialog_update("RD", total, dialog, lock)
         res["type"] = Debrids.RD
-        if not is_media_fusion:
+
+        if res["indexer"] == Indexer.MEDIAFUSION:
+            res["isCached"] = True
+            cached_results.append(res)
+        else:
             if res.get("infoHash") in torr_available_hashes:
                 res["isCached"] = True
                 cached_results.append(res)
             else:
                 res["isCached"] = False
                 uncached_results.append(res)
-        else:
-            res["isCached"] = True
-            cached_results.append(res)
 
-    if not is_media_fusion:
-        # Add uncached_results cause of RD removed cache check endpoint
-        cached_results.extend(uncached_results)
+    # Add uncached_results cause of RD removed cached check endpoint
+    cached_results.extend(uncached_results)
 
 
 def add_rd_magnet(client, info_hash, is_pack=False):
@@ -113,12 +114,10 @@ def get_rd_pack_info(info_hash):
     info["id"] = torr_info["id"]
     torrent_files = torr_info["files"]
     if len(torrent_files) > 1:
-        torr_items = [
-            item for item in torrent_files if item["selected"] == 1
-        ]
+        torr_items = [item for item in torrent_files if item["selected"] == 1]
         files = []
         for item in torr_items:
-            title = item["path"].split('/', 1)[1]
+            title = item["path"].split("/", 1)[1]
             files.append((item["id"], title))
         info["files"] = files
         set_cached(info, info_hash)

@@ -8,22 +8,28 @@ class Jackett(BaseClient):
     def __init__(self, host, apikey, notification):
         super().__init__(host, notification)
         self.apikey = apikey
+        self.base_url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}"
 
     def search(self, query, mode, season, episode):
         try:
             if mode == "tv":
-                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=tvsearch&q={query}&season={season}&ep={episode}"
+                url = f"{self.base_url}&t=tvsearch&q={query}&season={season}&ep={episode}"
             elif mode == "movies":
-                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&q={query}"
-            elif mode == "multi":
-                url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}&t=search&q={query}"
-            res = self.session.get(url, timeout=get_jackett_timeout())
-            if res.status_code != 200:
-                self.notification(f"{translation(30229)} ({res.status_code})")
+                url = f"{self.base_url}&q={query}"
+            else:
+                url = f"{self.base_url}&t=search&q={query}"
+
+            response = self.session.get(
+                url,
+                timeout=get_jackett_timeout(),
+            )
+
+            if response.status_code != 200:
+                self.notification(f"{translation(30229)} ({response.status_code})")
                 return
-            return self.parse_response(res)
+            return self.parse_response(response)
         except Exception as e:
-            self._notification(f"{translation(30229)}: {str(e)}")
+            self.notification(f"{translation(30229)}: {str(e)}")
 
     def parse_response(self, res):
         res = xmltodict.parse(res.content)

@@ -7,7 +7,6 @@ from lib.api.jacktook.kodi import kodilog
 def handle_single_item_or_list(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        kodilog("handle_single_item_or_list")
         if isinstance(args[-1], (list, types.GeneratorType)):
             results = []
             for i in args[-1]:

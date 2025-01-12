@@ -431,7 +431,7 @@ def anime_item(params):
 
 
 def search_direct(params):
-    mode = params.get("mode", "multi")
+    mode = params.get("mode")
     query = params.get("query", "")
     is_clear = params.get("is_clear", False)
     is_keyboard = params.get("is_keyboard", True)
@@ -531,28 +531,26 @@ def search(params):
         except ValueError:
             pass
 
-    client = get_setting("client_player")
-
     with DialogListener() as listener:
         results = search_client(
             query, ids, mode, media_type, listener.dialog, rescrape, season, episode
         )
-    if not results:
-        notification("No results found")
-        return
+        if not results:
+            notification("No results found")
+            return
 
-    proc_results = pre_process(
-        results,
-        mode,
-        ep_name,
-        episode,
-        season,
-    )
-    if not proc_results:
-        notification("No results found for episode")
-        return
+        proc_results = pre_process(
+            results,
+            mode,
+            ep_name,
+            episode,
+            season,
+        )
+        if not proc_results:
+            notification("No results found for episode")
+            return
 
-    if client == Players.DEBRID:
+    if get_setting("torrent_enable") == False:
         with DialogListener() as listener:
             final_results = handle_debrid_client(
                 query,
@@ -568,6 +566,9 @@ def search(params):
             auto_play(final_results, ids, tv_data, mode)
             return
         else:
+            if not final_results:
+                notification("No cached results found")
+                return
             data = handle_results(final_results, mode, ids, tv_data, direct)
     else:
         final_results = post_process(proc_results)
@@ -583,10 +584,6 @@ def search(params):
 
 
 def handle_results(results, mode, ids, tv_data, direct=False):
-    if not results:
-        notification("No final results available")
-        return
-
     if direct:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
@@ -630,16 +627,13 @@ def handle_debrid_client(
     season,
     episode,
 ):
-    if not is_debrid_activated():
-        notification("No debrid client enabled")
-        return
-
     debrid_cached = check_debrid_cached(
         query, proc_results, mode, media_type, p_dialog, rescrape, episode
     )
     if not debrid_cached:
-        notification("No cached results")
-        return
+        if not get_setting("jackgram_enabled"):
+            return
+        return post_process(proc_results, season) 
 
     return post_process(debrid_cached, season)
 
@@ -657,6 +651,7 @@ def auto_play(results, ids, tv_data, mode):
         data={
             "title": result.get("title"),
             "mode": mode,
+            "indexer": result.get("indexer"),
             "type": result.get("type"),
             "ids": ids,
             "info_hash": result.get("infoHash"),

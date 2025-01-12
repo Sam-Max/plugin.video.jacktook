@@ -1,4 +1,3 @@
-from lib.api.jacktook.kodi import kodilog
 from lib.api.tmdbv3api.exceptions import TMDbException
 from lib.clients.jackgram import Jackgram
 from lib.utils.client_utils import validate_host
@@ -6,7 +5,6 @@ from lib.utils.tmdb_utils import tmdb_get
 
 from lib.utils.utils import (
     TMDB_POSTER_URL,
-    Indexer,
     add_next_button,
     execute_thread_pool,
     list_item,
@@ -26,9 +24,9 @@ from xbmcplugin import addDirectoryItem, endOfDirectory
 
 
 def check_jackgram_active():
-    indexer = get_setting("indexer")
-    if indexer != Indexer.JACKGRAM:
-        notification("You need to select Jackgram indexer")
+    jackgram_enabled = get_setting("jackgram_enabled")
+    if not jackgram_enabled:
+        notification("You need to activate Jackgram indexer")
         return False
     return True
 

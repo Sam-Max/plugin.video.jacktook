@@ -1,36 +1,44 @@
 import copy
-import os
 from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, get_setting, notification
+from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
+    Indexer,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
 )
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
 
 EXTENSIONS = supported_video_extensions()[:-1]
 
 client = Torbox(token=get_setting("torbox_token"))
 
 
-def check_torbox_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("debrid::check_torbox_cached")
+def check_torbox_cached(
+    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+):
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
+    cached_response = response.get("data", [])
+
     for res in copy.deepcopy(results):
+        if res["indexer"] == Indexer.TELEGRAM:
+            if telegram_results:
+                continue
+            else:
+                telegram_results.append(res)
+                continue
+
         debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
+
         if info_hash:
             res["type"] = Debrids.TB
-            if info_hash in response.get("data", []):
+            if info_hash in cached_response:
                 with lock:
                     res["isCached"] = True
                     cached_results.append(res)

@@ -83,6 +83,7 @@ class ResolverWindow(BaseWindow):
             data={
                 "title": self.source["title"],
                 "type": self.source["type"],
+                "indexer": self.source["indexer"],
                 "url": url,
                 "magnet": magnet,
                 "info_hash": self.source.get("infoHash", ""),
