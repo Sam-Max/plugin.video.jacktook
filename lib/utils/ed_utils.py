@@ -17,27 +17,26 @@ from lib.utils.utils import (
 client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip())
 
 
-def check_ed_cached(results, cached_results, uncached_results, total, dialog, lock):
+def check_ed_cached(
+    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+):
     filtered_results = [res for res in results if "infoHash" in res]
+    if filtered_results:
+        magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
+        torrents_info = client.get_torrent_instant_availability(magnets)
+        cached_response = torrents_info.get("cached", [])
 
-    if not filtered_results:
-        uncached_results.extend(results)
-        return
-
-    magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
-    
-    torrents_info = client.get_torrent_instant_availability(magnets)
-    cached_response = torrents_info.get("cached", [])
-    
     for res in results:
         if res["indexer"] == Indexer.TELEGRAM:
-            res["isCached"] = False
-            uncached_results.append(res)
-            continue
-        
+            if telegram_results:
+                continue
+            else:
+                telegram_results.append(res)
+                continue
+
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
-        
+
         if res in filtered_results:
             index = filtered_results.index(res)
             if cached_response[index] is True:
@@ -49,7 +48,6 @@ def check_ed_cached(results, cached_results, uncached_results, total, dialog, lo
         else:
             res["isCached"] = False
             uncached_results.append(res)
-
 
 
 def get_ed_link(info_hash):
@@ -84,4 +82,3 @@ def get_ed_pack_info(info_hash):
     else:
         notification("Not a torrent pack")
         return
-

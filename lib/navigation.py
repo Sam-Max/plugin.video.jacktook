@@ -627,10 +627,6 @@ def handle_debrid_client(
     season,
     episode,
 ):
-    if not is_debrid_activated():
-        notification("No debrid client enabled")
-        return
-
     debrid_cached = check_debrid_cached(
         query, proc_results, mode, media_type, p_dialog, rescrape, episode
     )

@@ -48,30 +48,63 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                     return cached_results
 
     lock = Lock()
+
     cached_results = []
     uncached_results = []
+    telegram_results = []
+
     total = len(results)
     dialog.create("")
 
     extract_infohash(results)
 
     if is_rd_enabled():
-        check_rd_cached(results, cached_results, uncached_results, total, dialog, lock)
+        check_rd_cached(
+            results,
+            cached_results,
+            uncached_results,
+            telegram_results,
+            total,
+            dialog,
+            lock,
+        )
 
     if is_tb_enabled():
         check_torbox_cached(
-            results, cached_results, uncached_results, total, dialog, lock
+            results,
+            cached_results,
+            uncached_results,
+            telegram_results,
+            total,
+            dialog,
+            lock,
         )
     if is_pm_enabled():
-        check_pm_cached(results, cached_results, uncached_results, total, dialog, lock)
+        check_pm_cached(
+            results,
+            cached_results,
+            uncached_results,
+            telegram_results,
+            total,
+            dialog,
+            lock,
+        )
 
     if is_ed_enabled():
-        check_ed_cached(results, cached_results, uncached_results, total, dialog, lock)
+        check_ed_cached(
+            results,
+            cached_results,
+            uncached_results,
+            telegram_results,
+            total,
+            dialog,
+            lock,
+        )
 
     if any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
         "show_uncached"
     ):
-        cached_results.extend(uncached_results)
+        cached_results.extend(uncached_results + telegram_results)
 
     dialog_update["count"] = -1
     dialog_update["percent"] = 50
