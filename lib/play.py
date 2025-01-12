@@ -34,8 +34,9 @@ def get_playback_info(data):
     _url = None
     addon_url = None
 
-    if indexer == Indexer.TELEGRAM:
-        set_watched_file(title, is_torrent, data)
+    is_telegram = indexer == Indexer.TELEGRAM
+    if is_telegram:
+        set_watched_file(title, data, is_telegram=is_telegram)
         return data
 
     if torrent_enable:
@@ -74,7 +75,7 @@ def get_playback_info(data):
     else:
         data["url"] = addon_url
 
-    set_watched_file(title, is_torrent, data)
+    set_watched_file(title, data, is_torrent=is_torrent)
 
     return data
 

@@ -375,7 +375,6 @@ def set_media_infotag(
             info_tag.setTitle(ep_name)
         else:
             info_tag.setTitle(name)
-            
 
     info_tag.setPlot(overview)
     if duration:
@@ -388,13 +387,16 @@ def set_media_infotag(
         )
 
 
-def set_watched_file(title, is_torrent, data):
+def set_watched_file(title, data, is_telegram=False, is_torrent=False):
     if title in main_db.database["jt:lfh"]:
         return
 
-    if is_torrent:
+    if is_telegram:
         color = get_random_color("Direct")
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
+    elif is_torrent:
+        color = get_random_color("Torrent")
+        title = f"[B][COLOR {color}][Torrent][/COLOR][/B] - {title}"
     else:
         color = get_random_color("Cached")
         title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
