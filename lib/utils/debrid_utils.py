@@ -68,9 +68,10 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     if is_ed_enabled():
         check_ed_cached(results, cached_results, uncached_results, total, dialog, lock)
 
-    if is_tb_enabled() or is_pm_enabled():
-        if get_setting("show_uncached"):
-            cached_results.extend(uncached_results)
+    if any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
+        "show_uncached"
+    ):
+        cached_results.extend(uncached_results)
 
     dialog_update["count"] = -1
     dialog_update["percent"] = 50

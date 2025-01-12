@@ -18,23 +18,38 @@ client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip
 
 
 def check_ed_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("ed_utils::check_ed_cached")
-    magnets = [info_hash_to_magnet(res["infoHash"]) for res in results]
+    filtered_results = [res for res in results if "infoHash" in res]
+
+    if not filtered_results:
+        uncached_results.extend(results)
+        return
+
+    magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
+    
     torrents_info = client.get_torrent_instant_availability(magnets)
     cached_response = torrents_info.get("cached", [])
-    for e, res in enumerate(copy.deepcopy(results)):
+    
+    for res in results:
         if res["indexer"] == Indexer.TELEGRAM:
             res["isCached"] = False
             uncached_results.append(res)
             continue
+        
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
-        if cached_response[e] is True:
-            res["isCached"] = True
-            cached_results.append(res)
+        
+        if res in filtered_results:
+            index = filtered_results.index(res)
+            if cached_response[index] is True:
+                res["isCached"] = True
+                cached_results.append(res)
+            else:
+                res["isCached"] = False
+                uncached_results.append(res)
         else:
             res["isCached"] = False
             uncached_results.append(res)
+
 
 
 def get_ed_link(info_hash):

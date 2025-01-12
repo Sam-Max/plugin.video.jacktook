@@ -19,19 +19,22 @@ client = Torbox(token=get_setting("torbox_token"))
 
 
 def check_torbox_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("debrid::check_torbox_cached")
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
+    cached_response = response.get("data", [])
+
     for res in copy.deepcopy(results):
         if res["indexer"] == Indexer.TELEGRAM:
             res["isCached"] = False
             uncached_results.append(res)
             continue
+
         debrid_dialog_update("TB", total, dialog, lock)
         info_hash = res.get("infoHash")
+        
         if info_hash:
             res["type"] = Debrids.TB
-            if info_hash in response.get("data", []):
+            if info_hash in cached_response:
                 with lock:
                     res["isCached"] = True
                     cached_results.append(res)

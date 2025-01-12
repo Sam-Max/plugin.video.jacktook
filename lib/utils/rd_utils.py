@@ -30,8 +30,10 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
             res["isCached"] = False
             uncached_results.append(res)
             continue
+
         debrid_dialog_update("RD", total, dialog, lock)
         res["type"] = Debrids.RD
+       
         if res["indexer"] == Indexer.MEDIAFUSION:
             res["isCached"] = True
             cached_results.append(res)
@@ -43,7 +45,7 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
                 res["isCached"] = False
                 uncached_results.append(res)
 
-    # Add uncached_results cause of RD removed cache check endpoint
+    # Add uncached_results cause of RD removed cached check endpoint
     cached_results.extend(uncached_results)
 
 

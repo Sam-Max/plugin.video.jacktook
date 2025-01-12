@@ -18,17 +18,19 @@ pm_client = Premiumize(token=get_setting("premiumize_token"))
 
 
 def check_pm_cached(results, cached_results, uncached_results, total, dialog, lock):
-    kodilog("debrid::check_pm_cached")
     hashes = [res.get("infoHash") for res in results]
     torrents_info = pm_client.get_torrent_instant_availability(hashes)
     cached_response = torrents_info.get("response")
+    
     for e, res in enumerate(copy.deepcopy(results)):
         if res["indexer"] == Indexer.TELEGRAM:
             res["isCached"] = False
             uncached_results.append(res)
             continue
+        
         debrid_dialog_update("PM", total, dialog, lock)
         res["type"] = Debrids.PM
+        
         if cached_response[e] is True:
             res["isCached"] = True
             cached_results.append(res)

@@ -716,13 +716,13 @@ def sort_priority_language(results):
 def sort_results(res):
     sort_by = get_setting("indexers_sort_by")
     if sort_by == "Seeds":
-        return sorted(res, key=lambda r: r["seeders"], reverse=True)
+        return sorted(res, key=lambda r: r.get("seeders", 0), reverse=True)
     elif sort_by == "Size":
-        return sorted(res, key=lambda r: r["size"], reverse=True)
+        return sorted(res, key=lambda r: r.get("size", 0), reverse=True)
     elif sort_by == "Date":
-        return sorted(res, key=lambda r: r["publishDate"], reverse=True)
+        return sorted(res, key=lambda r: r.get("publishDate", ""), reverse=True)
     elif sort_by == "Quality":
-        return sorted(res, key=lambda r: r["quality"], reverse=True)
+        return sorted(res, key=lambda r: r.get("quality", ""), reverse=True)
     elif sort_by == "Cached":
         return sorted(res, key=lambda r: r.get("isCached", ""), reverse=True)
     else:
