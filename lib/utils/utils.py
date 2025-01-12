@@ -349,7 +349,7 @@ def set_media_infotag(
     duration="",
     air_date="",
     url="",
-    original_name=""
+    original_name="",
 ):
     info_tag = list_item.getVideoInfoTag()
     info_tag.setPath(url)
@@ -376,7 +376,7 @@ def set_media_infotag(
 
     info_tag.setPlot(overview)
     if duration:
-        info_tag.setDuration(int(duration)*60)
+        info_tag.setDuration(int(duration) * 60)
     if ids:
         tmdb_id, tvdb_id, imdb_id = ids.split(", ")
         info_tag.setIMDBNumber(imdb_id)
@@ -710,7 +710,8 @@ def sort_priority_language(results):
             priority_lang_list.append(res)
         else:
             non_priority_lang_list.append(res)
-    return sort_results(priority_lang_list) + sort_results(non_priority_lang_list)
+    priority_lang_list.extend(non_priority_lang_list)
+    return sort_results(priority_lang_list)
 
 
 def sort_results(res):
