@@ -40,9 +40,6 @@ def validate_key(api_key):
     if not api_key:
         notification(translation(30223))
         return None
-    if len(api_key) != 32:
-        notification(translation(30221))
-        return None
     return True
 
 
