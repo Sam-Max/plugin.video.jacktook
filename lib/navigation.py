@@ -693,6 +693,7 @@ def cloud_details(params):
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
+   
 
 
 def cloud(params):
@@ -724,12 +725,14 @@ def get_rd_downloads(params):
     page = int(params.get("page", 1))
     type = Debrids.RD
     debrid_color = get_random_color(type)
-    formated_type = f"[B][COLOR {debrid_color}][{type}][/COLOR][/B]"
+    formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     downloads = rd_client.get_user_downloads_list(page=page)
-    for d in downloads:
-        torrent_li = list_item(f"{formated_type}-{d['filename']}", "download.png")
+    
+    sorted_downloads = sorted(downloads, key=lambda x: x["filename"], reverse=False)
+    for d in sorted_downloads:
+        torrent_li = list_item(f"{formated_type} - {d['filename']}", "download.png")
         torrent_li.setProperty("IsPlayable", "true")
         addDirectoryItem(
             ADDON_HANDLE,
@@ -747,6 +750,7 @@ def get_rd_downloads(params):
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
+    
 
 
 def torrents(params):

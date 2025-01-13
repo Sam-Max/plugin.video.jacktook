@@ -189,8 +189,6 @@ def tmdb_search_genres(mode, genre_id, page, submode=None):
 
 
 def tmdb_search_year(mode, submode, year, page):
-    kodilog(mode)
-    kodilog(year)
     if mode == "movies":
         results = tmdb_get(
             path="discover_movie",
@@ -202,8 +200,6 @@ def tmdb_search_year(mode, submode, year, page):
             params={"first_air_date_year": year, "page": page},
         )
     if mode == "anime":
-        kodilog(submode)
-        kodilog(year)
         results = tmdb_get(
             path="anime_year",
             params={"mode": submode, "year": year, "page": page},
