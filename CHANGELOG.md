@@ -1,3 +1,6 @@
+## 0.4.4
+* some fixes and improvements
+
 ## 0.4.3
 * Add search capability across multiple indexers
 * Add filter by episode and season option 
