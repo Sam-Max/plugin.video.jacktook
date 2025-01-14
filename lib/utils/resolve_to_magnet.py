@@ -12,7 +12,7 @@ def resolve_to_magnet(url):
         
     """
     if url.startswith('magnet:?'):
-        return True
+        return url
 
     try:
         response = requests.get(url, allow_redirects=False, stream=True)
