@@ -1,3 +1,9 @@
+## 0.4.3
+* Add search capability across multiple indexers
+* Add filter by episode and season option 
+* Some visual improvements for Arctic Horizon 2 skin.
+* Other minor improvements and fixes
+
 ## 0.4.2
 * Add Telegram menu (with option to enable/disable) with submenus to access Jackgram cached files (for advanced users)
 * Add Anime year and genre search.
