@@ -573,8 +573,7 @@ def paginate_list(data, page_size=10):
 
 
 def clear_cache_on_update():
-    clear(type="lth")
-    clear(type="lfh")
+    clear(update=True)
 
 
 def clear_all_cache():
@@ -584,16 +583,20 @@ def clear_all_cache():
     clear_cache(cache_type="list")
 
 
-def clear(type="lth"):
+def clear(type="", update=False):
+    if update:
+        msg = "Do you want to clear your cached history?."
+    else:
+        msg = "Do you want to clear this history?."
     dialog = Dialog()
-    confirmed = dialog.yesno(
-        "Clear History",
-        "Do you want to clear this history list?.",
-    )
+    confirmed = dialog.yesno("Clear History", msg)
     if confirmed:
         if type == "lth":
             main_db.database["jt:lth"] = {}
+        elif type == "lfh":
+            main_db.database["jt:lfh"] = {}
         else:
+            main_db.database["jt:lth"] = {}
             main_db.database["jt:lfh"] = {}
         main_db.commit()
         container_refresh()
