@@ -16,7 +16,6 @@ from lib.utils.utils import (
     torrent_clients,
 )
 from xbmcgui import Dialog
-from lib.utils.resolve_to_magnet import resolve_to_magnet
 
 def get_playback_info(data):
     title = data.get("title", "")
@@ -102,9 +101,6 @@ def get_elementum_url(magnet, url, mode, ids):
     else:
         tmdb_id = ""
     
-    if not magnet:
-        magnet = resolve_to_magnet(url) or ""
-    
     uri = magnet or url or ""
     return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
 
@@ -113,9 +109,6 @@ def get_jacktorr_url(magnet, url):
     if not is_jacktorr_addon():
         notification(translation(30253))
         return
-    
-    if not magnet:
-        magnet = resolve_to_magnet(url) or ""
 
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
@@ -128,9 +121,6 @@ def get_torrest_url(magnet, url):
     if not is_torrest_addon():
         notification(translation(30250))
         return
-
-    if not magnet:
-        magnet = resolve_to_magnet(url) or ""
 
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
