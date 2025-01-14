@@ -160,11 +160,11 @@ msgid "Client ID"
 msgstr ""
 
 msgctxt "#30221"
-msgid "API key is invalid"
+msgid "No API key provided for"
 msgstr ""
 
 msgctxt "#30223"
-msgid "You need to configure indexer first"
+msgid "You need to configure"
 msgstr ""
 
 msgctxt "#30228"

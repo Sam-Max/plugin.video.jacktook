@@ -144,12 +144,12 @@ msgid "Client ID"
 msgstr "Client ID"
 
 msgctxt "#30221"
-msgid "API key is invalid"
-msgstr "API key es incorrecta"
+msgid "No API key provided for"
+msgstr "API key no provista para"
 
 msgctxt "#30223"
-msgid "You need to configure inderxer first"
-msgstr "Necesitas configuar el indexer primero"
+msgid "You need to configure"
+msgstr "Necesitas configuar"
 
 msgctxt "#30228"
 msgid "The request to Torrentio failed."

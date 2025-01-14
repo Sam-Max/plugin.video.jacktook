@@ -29,16 +29,16 @@ def check_indexer(current_indexer):
     return False
 
 
-def validate_host(host):
+def validate_host(host, indexer):
     if not host:
-        notification(translation(30223))
+        notification(f"{translation(30223)}: {indexer}")
         return None
     return True
 
 
-def validate_key(api_key):
+def validate_key(api_key, indexer):
     if not api_key:
-        notification(translation(30223))
+        notification(f"{translation(30221)}: {indexer}")
         return None
     return True
 
@@ -47,49 +47,49 @@ def get_client(indexer):
     if indexer == Indexer.JACKETT:
         host = get_setting("jackett_host")
         api_key = get_setting("jackett_apikey")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
-        if not validate_key(api_key):
+        if not validate_key(api_key, indexer):
             return
         return Jackett(host, api_key, notification)
 
     elif indexer == Indexer.PROWLARR:
         host = get_setting("prowlarr_host")
         api_key = get_setting("prowlarr_apikey")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
-        if not validate_key(api_key):
+        if not validate_key(api_key, indexer):
             return
         return Prowlarr(host, api_key, notification)
 
     elif indexer == Indexer.TORRENTIO:
         host = get_setting("torrentio_host")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
         return Torrentio(host, notification)
 
     elif indexer == Indexer.MEDIAFUSION:
         host = get_setting("mediafusion_host")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
         return MediaFusion(host, notification)
 
     elif indexer == Indexer.JACKGRAM:
         host = get_setting("jackgram_host")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
         return Jackgram(host, notification)
 
     elif indexer == Indexer.ELHOSTED:
         host = get_setting("elfhosted_host")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
         return Elfhosted(host, notification)
 
     elif indexer == Indexer.ZILEAN:
         timeout = get_int_setting("zilean_timeout")
         host = get_setting("zilean_host")
-        if not validate_host(host):
+        if not validate_host(host, indexer):
             return
         return Zilean(host, timeout, notification)
 
