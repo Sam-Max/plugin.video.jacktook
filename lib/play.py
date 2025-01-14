@@ -43,7 +43,7 @@ def get_playback_info(data):
         if torrent_client == Players.TORREST:
             addon_url = get_torrest_url(magnet, url)
         elif torrent_client == Players.ELEMENTUM:
-            addon_url = get_elementum_url(magnet, mode, ids)
+            addon_url = get_elementum_url(magnet, url, mode, ids)
         elif torrent_client == Players.JACKTORR:
             addon_url = get_jacktorr_url(magnet, url)
         if not addon_url:
@@ -87,13 +87,13 @@ def get_torrent_url(magnet, url, mode, ids):
     if torrent_clients[chosen_client] == "Torrest":
         addon_url = get_torrest_url(magnet, url)
     elif torrent_clients[chosen_client] == "Elementum":
-        addon_url = get_elementum_url(magnet, mode, ids)
+        addon_url = get_elementum_url(magnet, url, mode, ids)
     elif torrent_clients[chosen_client] == "Jacktorr":
         addon_url = get_jacktorr_url(magnet, url)
     return addon_url
 
 
-def get_elementum_url(magnet, mode, ids):
+def get_elementum_url(magnet, url, mode, ids):
     if not is_elementum_addon():
         notification(translation(30252))
         return
@@ -101,7 +101,9 @@ def get_elementum_url(magnet, mode, ids):
         tmdb_id, _, _ = ids.split(", ")
     else:
         tmdb_id = ""
-    return f"plugin://plugin.video.elementum/play?uri={quote(magnet)}&type={mode}&tmdb={tmdb_id}"
+    
+    uri = magnet or url or ""
+    return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
 
 
 def get_jacktorr_url(magnet, url):
