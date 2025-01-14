@@ -17,6 +17,7 @@ from lib.utils.utils import (
 )
 from xbmcgui import Dialog
 
+
 def get_playback_info(data):
     title = data.get("title", "")
     mode = data.get("mode", "")
@@ -109,7 +110,6 @@ def get_jacktorr_url(magnet, url):
     if not is_jacktorr_addon():
         notification(translation(30253))
         return
-
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
     else:
@@ -121,7 +121,6 @@ def get_torrest_url(magnet, url):
     if not is_torrest_addon():
         notification(translation(30250))
         return
-
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
     else:
