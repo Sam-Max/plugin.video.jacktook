@@ -1,4 +1,5 @@
 import requests
+from lib.utils.utils import USER_AGENT_HEADER
 
 def resolve_to_magnet(url):
     """
@@ -15,7 +16,7 @@ def resolve_to_magnet(url):
         return url
 
     try:
-        response = requests.get(url, allow_redirects=False, stream=True)
+        response = requests.get(url, headers=USER_AGENT_HEADER, timeout=10, allow_redirects=False, stream=True)
         is_redirect = response.is_redirect or response.is_permanent_redirect
         redirect_location = response.headers.get('Location') if is_redirect else None
         

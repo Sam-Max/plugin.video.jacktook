@@ -4,6 +4,7 @@ from lib.play import get_playback_info
 from lib.utils.debrid_utils import get_pack_info
 from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.utils import Indexer, info_hash_to_magnet
+from lib.utils.resolve_to_magnet import resolve_to_magnet
 
 
 class ResolverWindow(BaseWindow):
@@ -56,10 +57,13 @@ class ResolverWindow(BaseWindow):
                 magnet = info_hash_to_magnet(guid)
             else:
                 magnet = guid if guid and guid.startswith("magnet:?") else ""
-
             if url.startswith("magnet:?") and not magnet:
                 magnet = url
                 url = ""
+
+            if not magnet:
+                magnet = resolve_to_magnet(url) or ""
+                
             is_torrent = True
         elif type == "Direct":
             url = self.source.get("downloadUrl")
