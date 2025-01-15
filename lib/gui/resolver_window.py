@@ -56,7 +56,14 @@ class ResolverWindow(BaseWindow):
             if indexer in {Indexer.TORRENTIO, Indexer.ELHOSTED, Indexer.ZILEAN}:
                 magnet = info_hash_to_magnet(guid)
             else:
-                magnet = guid if guid and guid.startswith("magnet:?") else ""
+                if guid and guid.startswith("magnet:?"):
+                    magnet = guid
+                elif indexer == Indexer.BURST:
+                    url = guid
+                    magnet = ""
+                else:
+                    magnet = ""
+
             if url.startswith("magnet:?") and not magnet:
                 magnet = url
                 url = ""
