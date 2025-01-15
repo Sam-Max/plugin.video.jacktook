@@ -160,11 +160,11 @@ def get_pack_info(type, info_hash):
         info = get_rd_pack_info(info_hash)
     elif type == Debrids.ED:
         info = get_ed_pack_info(info_hash)
-
     return info
 
 
 def extract_infohash(results):
+    filtered_results = []
     for res in copy.deepcopy(results):
         info_hash = None
         if res.get("infoHash"):
@@ -180,9 +180,11 @@ def extract_infohash(results):
 
         if info_hash:
             res["infoHash"] = info_hash
-        else:
-            if res["indexer"] != Indexer.TELEGRAM:
-                results.remove(res)
+            filtered_results.append(res)
+        elif res["indexer"] == Indexer.TELEGRAM:
+            filtered_results.append(res)
+
+    results[:] = filtered_results
 
 
 def get_magnet_from_uri(uri):
