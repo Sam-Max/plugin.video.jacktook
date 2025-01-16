@@ -49,7 +49,7 @@ class Prowlarr(BaseClient):
                 return
             return self.parse_response(response)
         except Exception as e:
-            self._notification(f"{translation(30230)}: {str(e)}")
+            self.handle_exception(f"{translation(30230)}: {str(e)}")
 
     def parse_response(self, res):
         response = res.json()

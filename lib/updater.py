@@ -82,7 +82,7 @@ def get_changes(online_version=False):
                 f"New Online Release (v{online_version}) Changelog", result.text
             )
         except Exception as err:
-            return notification(f"Error:{err}")
+            return notification(f"Error: {err}")
     else:
         dialog_text("Changelog", file=changelog_location)
 

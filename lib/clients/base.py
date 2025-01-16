@@ -16,3 +16,9 @@ class BaseClient(ABC):
     def parse_response(self, res):
         pass
 
+    def handle_exception(self, exception):
+        exception_message = str(exception)
+        if len(exception_message) > 70:
+            exception_message = exception_message[:70] + "..."
+        self.notification(exception_message)
+

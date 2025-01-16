@@ -19,7 +19,7 @@ class Burst(BaseClient):
                 results = self.parse_response(results)
             return results
         except Exception as e:
-            self.notification(f"Burst error: {str(e)}")
+            self.handle_exception(f"Burst error: {str(e)}")
 
     def parse_response(self, res):
         results = []

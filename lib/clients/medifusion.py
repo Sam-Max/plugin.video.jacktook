@@ -1,6 +1,6 @@
 import re
 from lib.clients.base import BaseClient
-from lib.utils.kodi_utils import convert_size_to_bytes, get_setting
+from lib.utils.kodi_utils import convert_size_to_bytes, get_setting, translation
 from lib.utils.utils import (
     MEDIA_FUSION_DEFAULT_KEY,
     USER_AGENT_HEADER,
@@ -52,7 +52,7 @@ class MediaFusion(BaseClient):
         }
 
     def search(self, imdb_id, mode, media_type, season, episode):
-        # try:
+        try:
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/{self.api_key}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
@@ -61,8 +61,8 @@ class MediaFusion(BaseClient):
             if res.status_code != 200:
                 return
             return self.parse_response(res.json())
-        # except Exception as e:
-        #     self.notification(f"{translation(30233)}: {str(e)}")
+        except Exception as e:
+            self.handle_exception(f"{translation(30233)}: {str(e)}")
 
     def parse_response(self, res):
         results = []
@@ -89,8 +89,8 @@ class MediaFusion(BaseClient):
 
     def extract_info_hash(self, item):
         if "url" in item:
-            path = urlparse(item["url"]).path.split('/')
-            info_hash = path[path.index('stream') + 1]
+            path = urlparse(item["url"]).path.split("/")
+            info_hash = path[path.index("stream") + 1]
         else:
             info_hash = item["infoHash"]
         return info_hash

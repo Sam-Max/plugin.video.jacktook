@@ -288,4 +288,4 @@ class JacktookPLayer(xbmc.Player):
         self.playback_successful = False
         self.clear_playback_properties()
         self.cancel_playback()
-        notification(message="Playback Failed", time=3500)
+        notification("Playback Failed", time=3500)

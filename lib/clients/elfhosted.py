@@ -20,7 +20,7 @@ class Elfhosted(BaseClient):
             response = self.parse_response(res)
             return response
         except Exception as e:
-            self.notification(f"{translation(30231)}: {str(e)}")
+            self.handle_exception(f"{translation(30231)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

@@ -29,7 +29,7 @@ class Jackett(BaseClient):
                 return
             return self.parse_response(response)
         except Exception as e:
-            self.notification(f"{translation(30229)}: {str(e)}")
+            self.handle_exception(f"{translation(30229)}: {str(e)}")
 
     def parse_response(self, res):
         res = xmltodict.parse(res.content)

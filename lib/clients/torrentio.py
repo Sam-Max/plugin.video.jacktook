@@ -21,7 +21,7 @@ class Torrentio(BaseClient):
                 return
             return self.parse_response(res)
         except Exception as e:
-            self.notification(f"{translation(30228)}: {str(e)}")
+            self.handle_exception(f"{translation(30228)}: {str(e)}")
 
     def parse_response(self, res):
         res = json.loads(res.text)

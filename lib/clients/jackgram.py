@@ -24,7 +24,7 @@ class Jackgram(BaseClient):
             else:
                 return self.parse_response_search(res)
         except Exception as e:
-            self.notification(f"{translation(30232)}: {str(e)}")
+            self.handle_exception(f"{translation(30232)}: {e}")
 
     def get_latest(self, page):
         url = f"{self.host}/stream/latest?page={page}"
