@@ -5,6 +5,7 @@ from lib.utils.tmdb_utils import tmdb_get
 
 from lib.utils.utils import (
     TMDB_POSTER_URL,
+    Indexer,
     add_next_button,
     execute_thread_pool,
     list_item,
@@ -35,7 +36,7 @@ def get_telegram_files(params):
     if check_jackgram_active():
         page = int(params.get("page"))
         host = get_setting("jackgram_host")
-        if not validate_host(host):
+        if not validate_host(host, Indexer.TELEGRAM):
             return
         jackgram_client = Jackgram(host, notification)
         results = jackgram_client.get_files(page=page)
@@ -60,7 +61,7 @@ def get_telegram_latest(params):
     if check_jackgram_active():
         page = int(params.get("page"))
         host = get_setting("jackgram_host")
-        if not validate_host(host):
+        if not validate_host(host, Indexer.TELEGRAM):
             return
         jackgram_client = Jackgram(host, notification)
         results = jackgram_client.get_latest(page=page)
@@ -102,7 +103,7 @@ def telegram_latest_items(info):
 def get_telegram_latest_files(params):
     data = eval(params["data"])
     mode = data["type"]
-    
+
     set_content_type(mode)
     execute_thread_pool(data["files"], telegram_latest_files, data)
     endOfDirectory(ADDON_HANDLE)
@@ -126,13 +127,15 @@ def telegram_latest_files(info, data):
             poster_path = TMDB_POSTER_URL + details.still_path
             overview = details.overview or ""
             episode_name = details.name
-        except TMDbException: # Cause of anime tmdb id fails when getting episode details
+        except (
+            TMDbException
+        ):  # Cause of anime tmdb id fails when getting episode details
             poster_path = ""
             overview = ""
             episode_name = ""
 
         item = list_item(title, poster_path=poster_path)
-        
+
         set_media_infotag(
             item,
             mode,
