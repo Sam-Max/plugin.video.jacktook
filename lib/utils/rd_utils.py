@@ -78,10 +78,11 @@ def add_rd_magnet(client, info_hash, is_pack=False):
             if item["path"].lower().endswith(x)
         ]
         if is_pack:
-            torr_keys = [str(i["id"]) for i in video_files]
-            if torr_keys:
-                torr_keys = ",".join(torr_keys)
-                client.select_files(torrent_info["id"], torr_keys)
+            if video_files:
+                torr_keys = [str(i["id"]) for i in video_files]
+                if torr_keys:
+                    torr_keys = ",".join(torr_keys)
+                    client.select_files(torrent_info["id"], torr_keys)
         else:
             if video_files:
                 video = max(video_files, key=lambda x: x["bytes"])
@@ -109,7 +110,6 @@ def get_rd_pack_info(info_hash):
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
-    kodilog(torr_info)
     info = {}
     info["id"] = torr_info["id"]
     torrent_files = torr_info["files"]
@@ -130,7 +130,15 @@ def get_rd_pack_info(info_hash):
 def get_rd_pack_link(file_id, torrent_id):
     client = RealDebrid(token=get_setting("real_debrid_token"))
     torr_info = client.get_torrent_info(torrent_id)
-    response = client.create_download_link(torr_info["links"][int(file_id)])
+    index = next(
+        (
+            index
+            for index, item in enumerate(torr_info["files"])
+            if item["id"] == file_id
+        ),
+        None,
+    )
+    response = client.create_download_link(torr_info["links"][index])
     return response.get("download")
 
 
