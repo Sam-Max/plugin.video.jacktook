@@ -302,3 +302,511 @@ msgstr "Drop torrent"
 msgctxt "#30710"
 msgid "Filter TV Shows by Season and Episode"
 msgstr "Filtrar programas de TV por temporada y episodio"
+
+msgctxt "#30711"
+msgid "Torrent Settings"
+msgstr "Configuración de Torrents"
+
+msgctxt "#30712"
+msgid "General"
+msgstr "General"
+
+msgctxt "#30713"
+msgid "Use Torrent"
+msgstr "Usar Torrent"
+
+msgctxt "#30714"
+msgid "Jacktorr"
+msgstr "Jacktorr"
+
+msgctxt "#30715"
+msgid "Torrest"
+msgstr "Torrest"
+
+msgctxt "#30716"
+msgid "Elementum"
+msgstr "Elementum"
+
+msgctxt "#30717"
+msgid "Playback"
+msgstr "Reproducción"
+
+msgctxt "#30718"
+msgid "Auto-Play"
+msgstr "Reproducción automática"
+
+msgctxt "#30719"
+msgid "Enable Next Episode Dialog"
+msgstr "Próximo episodio"
+
+msgctxt "#30720"
+msgid "Seconds left before show Next Episode Dialog"
+msgstr "Segundos para siguiente episodio"
+
+msgctxt "#30721"
+msgid "Cache Enabled"
+msgstr "Caché habilitada"
+
+msgctxt "#30722"
+msgid "Cache Expiration (days)"
+msgstr "Expiración de caché (días)"
+
+msgctxt "#30723"
+msgid "Cache"
+msgstr "Caché"
+
+msgctxt "#30724"
+msgid "Update"
+msgstr "Actualizar"
+
+msgctxt "#30725"
+msgid "Indexers Configuration"
+msgstr "Configuración de indexadores"
+
+msgctxt "#30726"
+msgid "Sort"
+msgstr "Ordenar"
+
+msgctxt "#30727"
+msgid "Quality"
+msgstr "Calidad"
+
+msgctxt "#30728"
+msgid "Seeds"
+msgstr "Seeds"
+
+msgctxt "#30729"
+msgid "Size"
+msgstr "Tamaño"
+
+msgctxt "#30730"
+msgid "Cached"
+msgstr "En caché"
+
+msgctxt "#30731"
+msgid "Date"
+msgstr "Fecha"
+
+msgctxt "#30732"
+msgid "None"
+msgstr "Ninguno"
+
+msgctxt "#30733"
+msgid "Torrentio Configuration"
+msgstr "Configuración de Torrentio"
+
+msgctxt "#30734"
+msgid "Enable"
+msgstr "Habilitar"
+
+msgctxt "#30735"
+msgid "https://torrentio.strem.fun/"
+msgstr "https://torrentio.strem.fun/"
+
+msgctxt "#30736"
+msgid "Priority Language"
+msgstr "Idioma prioritario"
+
+msgctxt "#30737"
+msgid "GB"
+msgstr "GB"
+
+msgctxt "#30738"
+msgid "JP"
+msgstr "JP"
+
+msgctxt "#30739"
+msgid "RU"
+msgstr "RU"
+
+msgctxt "#30740"
+msgid "IT"
+msgstr "IT"
+
+msgctxt "#30741"
+msgid "PT"
+msgstr "PT"
+
+msgctxt "#30742"
+msgid "ES"
+msgstr "ES"
+
+msgctxt "#30743"
+msgid "MX"
+msgstr "MX"
+
+msgctxt "#30744"
+msgid "KR"
+msgstr "KR"
+
+msgctxt "#30745"
+msgid "CN"
+msgstr "CN"
+
+msgctxt "#30746"
+msgid "TW"
+msgstr "TW"
+
+msgctxt "#30747"
+msgid "FR"
+msgstr "FR"
+
+msgctxt "#30748"
+msgid "DE"
+msgstr "DE"
+
+msgctxt "#30749"
+msgid "NL"
+msgstr "NL"
+
+msgctxt "#30750"
+msgid "IN"
+msgstr "IN"
+
+msgctxt "#30751"
+msgid "PL"
+msgstr "PL"
+
+msgctxt "#30752"
+msgid "LT"
+msgstr "LT"
+
+msgctxt "#30753"
+msgid "CZ"
+msgstr "CZ"
+
+msgctxt "#30754"
+msgid "SK"
+msgstr "SK"
+
+msgctxt "#30755"
+msgid "SI"
+msgstr "SI"
+
+msgctxt "#30756"
+msgid "HU"
+msgstr "HU"
+
+msgctxt "#30757"
+msgid "RO"
+msgstr "RO"
+
+msgctxt "#30758"
+msgid "HR"
+msgstr "HR"
+
+msgctxt "#30759"
+msgid "UA"
+msgstr "UA"
+
+msgctxt "#30760"
+msgid "GR"
+msgstr "GR"
+
+msgctxt "#30761"
+msgid "DK"
+msgstr "DK"
+
+msgctxt "#30762"
+msgid "FI"
+msgstr "FI"
+
+msgctxt "#30763"
+msgid "SE"
+msgstr "SE"
+
+msgctxt "#30764"
+msgid "NO"
+msgstr "NO"
+
+msgctxt "#30765"
+msgid "TR"
+msgstr "TR"
+
+msgctxt "#30766"
+msgid "Torrentio Providers"
+msgstr "Proveedores de Torrentio"
+
+msgctxt "#30767"
+msgid "Jackgram Configuration"
+msgstr "Configuración de Jackgram"
+
+msgctxt "#30768"
+msgid "Jackgram Host"
+msgstr "Host de Jackgram"
+
+msgctxt "#30769"
+msgid "Elfhosted/KnightCrawler Configuration"
+msgstr "Configuración de Elfhosted/KnightCrawler"
+
+msgctxt "#30770"
+msgid "https://torrentio.elfhosted.com/"
+msgstr "https://torrentio.elfhosted.com/"
+
+msgctxt "#30771"
+msgid "Zilean Configuration"
+msgstr "Configuración de Zilean"
+
+msgctxt "#30772"
+msgid "Zilean Host"
+msgstr "Host de Zilean"
+
+msgctxt "#30773"
+msgid "https://zilean.elfhosted.com"
+msgstr "https://zilean.elfhosted.com"
+
+msgctxt "#30774"
+msgid "Zilean Timeout"
+msgstr "Tiempo de espera de Zilean"
+
+msgctxt "#30775"
+msgid "Jackett Configuration"
+msgstr "Configuración de Jackett"
+
+msgctxt "#30776"
+msgid "Prowlarr Configuration"
+msgstr "Configuración de Prowlarr"
+
+msgctxt "#30777"
+msgid "MediaFusion configuration"
+msgstr "Configuración de MediaFusion"
+
+msgctxt "#30778"
+msgid "https://mediafusion.elfhosted.com"
+msgstr "https://mediafusion.elfhosted.com"
+
+msgctxt "#30779"
+msgid "Manifest Url"
+msgstr "URL del manifiesto"
+
+msgctxt "#30780"
+msgid "Jacktook Burst Configuration"
+msgstr "Configuración de Jacktook Burst"
+
+msgctxt "#30781"
+msgid "Burst Configuration"
+msgstr "Configuración de Burst"
+
+msgctxt "#30782"
+msgid "User"
+msgstr "Usuario"
+
+msgctxt "#30783"
+msgid "Authorize"
+msgstr "Autorizar"
+
+msgctxt "#30784"
+msgid "Remove Authorization"
+msgstr "Eliminar autorización"
+
+msgctxt "#30785"
+msgid "Premiumize Configuration"
+msgstr "Configuración de Premiumize"
+
+msgctxt "#30786"
+msgid "Enabled"
+msgstr "Habilitado"
+
+msgctxt "#30787"
+msgid "Token:"
+msgstr "Token:"
+
+msgctxt "#30788"
+msgid "TorBox Configuration"
+msgstr "Configuración de TorBox"
+
+msgctxt "#30789"
+msgid "EasyDebrid Configuration"
+msgstr "Configuración de EasyDebrid"
+
+msgctxt "#30790"
+msgid "Uncached"
+msgstr "Uncached"
+
+msgctxt "#30791"
+msgid "Show uncached torrents"
+msgstr "Mostrar torrents sin caché"
+
+msgctxt "#30792"
+msgid "Use Kodi Language"
+msgstr "Usar idioma de Kodi"
+
+msgctxt "#30793"
+msgid "Trakt"
+msgstr "Trakt"
+
+msgctxt "#30794"
+msgid "Trakt Configuration"
+msgstr "Configuración de Trakt"
+
+msgctxt "#30795"
+msgid "Expires"
+msgstr "Expira"
+
+msgctxt "#30796"
+msgid "Refresh"
+msgstr "Actualizar"
+
+msgctxt "#30797"
+msgid "Token"
+msgstr "Token"
+
+msgctxt "#30798"
+msgid "Trakt Client"
+msgstr "Cliente de Trakt"
+
+msgctxt "#30799"
+msgid "1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb"
+msgstr ""
+
+msgctxt "#30800"
+msgid "Trakt Secret"
+msgstr "Secreto de Trakt"
+
+msgctxt "#30801"
+msgid "8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"
+msgstr ""
+
+msgctxt "#30802"
+msgid "Log out"
+msgstr "Cerrar sesión"
+
+msgctxt "#30803"
+msgid "fa836e1c874ba95ab08a14ee88e05565"
+msgstr "fa836e1c874ba95ab08a14ee88e05565"
+
+msgctxt "#30804"
+msgid "Menus"
+msgstr "Menús"
+
+msgctxt "#30805"
+msgid "Show Telegram Menu"
+msgstr "Mostrar menú de Telegram"
+
+msgctxt "#40000"
+msgid "Arabic (United Arab Emirates)"
+msgstr "Árabe (Emiratos Árabes Unidos)"
+
+msgctxt "#40001"
+msgid "Arabic (Saudi Arabia)"
+msgstr "Árabe (Arabia Saudita)"
+
+msgctxt "#40002"
+msgid "Belarusian (Belarus)"
+msgstr "Bielorruso (Bielorrusia)"
+
+msgctxt "#40003"
+msgid "Bulgarian (Bulgaria)"
+msgstr "Búlgaro (Bulgaria)"
+
+msgctxt "#40004"
+msgid "Bengali (Bangladesh)"
+msgstr "Bengalí (Bangladesh)"
+
+msgctxt "#40005"
+msgid "Catalan (Spain)"
+msgstr "Catalán (España)"
+
+msgctxt "#40006"
+msgid "Chamorro (Guam)"
+msgstr "Chamorro (Guam)"
+
+msgctxt "#40007"
+msgid "Czech (Czech Republic)"
+msgstr "Checo (República Checa)"
+
+msgctxt "#40008"
+msgid "Danish (Denmark)"
+msgstr "Danés (Dinamarca)"
+
+msgctxt "#40009"
+msgid "German (Austria)"
+msgstr "Alemán (Austria)"
+
+msgctxt "#40010"
+msgid "German (Switzerland)"
+msgstr "Alemán (Suiza)"
+
+msgctxt "#40011"
+msgid "German (Germany)"
+msgstr "Alemán (Alemania)"
+
+msgctxt "#40012"
+msgid "Greek (Greece)"
+msgstr "Griego (Grecia)"
+
+msgctxt "#40013"
+msgid "English (Australia)"
+msgstr "Inglés (Australia)"
+
+msgctxt "#40014"
+msgid "English (Canada)"
+msgstr "Inglés (Canadá)"
+
+msgctxt "#40015"
+msgid "English (United Kingdom)"
+msgstr "Inglés (Reino Unido)"
+
+msgctxt "#40016"
+msgid "English (Ireland)"
+msgstr "Inglés (Irlanda)"
+
+msgctxt "#40017"
+msgid "English (New Zealand)"
+msgstr "Inglés (Nueva Zelanda)"
+
+msgctxt "#40018"
+msgid "English (United States of America)"
+msgstr "Inglés (Estados Unidos de América)"
+
+msgctxt "#40019"
+msgid "Esperanto (None)"
+msgstr "Esperanto (Ninguno)"
+
+msgctxt "#40020"
+msgid "Spanish (Spain)"
+msgstr "Español (España)"
+
+msgctxt "#40021"
+msgid "Spanish (Mexico)"
+msgstr "Español (México)"
+
+msgctxt "#40022"
+msgid "Estonian (Estonia)"
+msgstr "Estonio (Estonia)"
+
+msgctxt "#40023"
+msgid "Basque (Spain)"
+msgstr "Vasco (España)"
+
+msgctxt "#40024"
+msgid "Persian (Iran)"
+msgstr "Persa (Irán)"
+
+msgctxt "#40025"
+msgid "Finnish (Finland)"
+msgstr "Finlandés (Finlandia)"
+
+msgctxt "#40026"
+msgid "French (Canada)"
+msgstr "Francés (Canadá)"
+
+msgctxt "#40027"
+msgid "French (France)"
+msgstr "Francés (Francia)"
+
+msgctxt "#40028"
+msgid "Galician (Spain)"
+msgstr "Gallego (España)"
+
+msgctxt "#40029"
+msgid "Hebrew (Israel)"
+msgstr "Hebreo (Israel)"
+
+msgctx "#42005"
+msgid "Language and country"
+msgstr "Idioma y país"
+
+msgctxt "#42419"
+msgid "The language and country settings used when looking up data from TMDb and Trakt APIs"
+msgstr "La configuración de idioma y país utilizada al buscar datos de las API de TMDb y Trakt"
