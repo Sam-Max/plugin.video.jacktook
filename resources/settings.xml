@@ -8,12 +8,12 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="torrent_client" type="string" label="30002" help="">
-                    <default>30714</default>
+                    <default>Jacktorr</default>
                     <constraints>
                         <options>
-                            <option label="30714">30714</option>
-                            <option label="30715">30715</option>
-                            <option label="30716">30716</option>
+                            <option label="30714">Jacktorr</option>
+                            <option label="30715">Torrest</option>
+                            <option label="30716">Elementum</option>
                         </options>
                     </constraints>
                     <control type="spinner" format="string" />
@@ -107,16 +107,16 @@
                         <popup>false</popup>
                     </control>
                 </setting>
-                <setting id="indexers_sort_by" type="labelenum" label="30726" help="">
+                <setting id="indexers_sort_by" type="string" label="30726" help="">
                     <default>30727</default>
                     <constraints>
                         <options>
-                            <option label="30728">30728</option>
-                            <option label="30729">30729</option>
-                            <option label="30727">30727</option>
-                            <option label="30730">30730</option>
-                            <option label="30731">30731</option>
-                            <option label="30732">30732</option>
+                            <option label="30728">Seeds</option>
+                            <option label="30729">Size</option>
+                            <option label="30727">Quality</option>
+                            <option label="30730">Cached</option>
+                            <option label="30731">Date</option>
+                            <option label="30732">None</option>
                         </options>
                     </constraints>
                     <control type="spinner" format="string" />
@@ -132,7 +132,7 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="torrentio_host" type="string" label="30025" help="">
-                    <default>30735</default>
+                    <default>https://torrentio.strem.fun/</default>
                     <constraints>
                         <allowempty>false</allowempty>
                     </constraints>
@@ -145,40 +145,40 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="torrentio_priority_lang" type="labelenum" label="30736" help="">
+                <setting id="torrentio_priority_lang" type="string" label="30736" help="">
                     <default>30732</default>
                     <constraints>
                         <options>
-                            <option label="30737">30737</option>
-                            <option label="30738">30738</option>
-                            <option label="30739">30739</option>
-                            <option label="30740">30740</option>
-                            <option label="30741">30741</option>
-                            <option label="30742">30742</option>
-                            <option label="30743">30743</option>
-                            <option label="30744">30744</option>
-                            <option label="30745">30745</option>
-                            <option label="30746">30746</option>
-                            <option label="30747">30747</option>
-                            <option label="30748">30748</option>
-                            <option label="30749">30749</option>
-                            <option label="30750">30750</option>
-                            <option label="30751">30751</option>
-                            <option label="30752">30752</option>
-                            <option label="30753">30753</option>
-                            <option label="30754">30754</option>
-                            <option label="30755">30755</option>
-                            <option label="30756">30756</option>
-                            <option label="30757">30757</option>
-                            <option label="30758">30758</option>
-                            <option label="30759">30759</option>
-                            <option label="30760">30760</option>
-                            <option label="30761">30761</option>
-                            <option label="30762">30762</option>
-                            <option label="30763">30763</option>
-                            <option label="30764">30764</option>
-                            <option label="30765">30765</option>
-                            <option label="30732">30732</option>
+                            <option label="30737">GB</option>
+                            <option label="30738">JP</option>
+                            <option label="30739">RU</option>
+                            <option label="30740">IT</option>
+                            <option label="30741">PT</option>
+                            <option label="30742">ES</option>
+                            <option label="30743">MX</option>
+                            <option label="30744">KR</option>
+                            <option label="30745">CN</option>
+                            <option label="30746">TW</option>
+                            <option label="30747">FR</option>
+                            <option label="30748">DE</option>
+                            <option label="30749">NL</option>
+                            <option label="30750">IN</option>
+                            <option label="30751">PL</option>
+                            <option label="30752">LT</option>
+                            <option label="30753">CZ</option>
+                            <option label="30754">SK</option>
+                            <option label="30755">SI</option>
+                            <option label="30756">HU</option>
+                            <option label="30757">RO</option>
+                            <option label="30758">HR</option>
+                            <option label="30759">UA</option>
+                            <option label="30760">GR</option>
+                            <option label="30761">DK</option>
+                            <option label="30762">FI</option>
+                            <option label="30763">SE</option>
+                            <option label="30764">NO</option>
+                            <option label="30765">TR</option>
+                            <option label="30732">None</option>
                         </options>
                     </constraints>
                     <control type="spinner" format="string" />
@@ -221,7 +221,7 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="elfhosted_host" type="string" label="30025" help="">
-                    <default>30770</default>
+                    <default>https://torrentio.elfhosted.com/</default>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -236,7 +236,7 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="zilean_host" type="string" label="30772" help="">
-                    <default>30773</default>
+                    <default>https://zilean.elfhosted.com</default>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -356,7 +356,7 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="mediafusion_host" type="string" label="30052" help="">
-                    <default>30778</default>
+                    <default>https://mediafusion.elfhosted.com</default>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -548,11 +548,11 @@
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_client" type="string" label="30798" help="">
-                    <default>30799</default>
+                    <default>1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb</default>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_secret" type="string" label="30800" help="">
-                    <default>30801</default>
+                    <default>8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1</default>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_logout" type="action" label="30802" help="">
@@ -566,7 +566,7 @@
         <category id="fanart" label="30200">
             <group id="fanart_tv" label="30202">
                 <setting id="fanart_tv_client_id" type="string" label="30203" help="">
-                    <default>30803</default>
+                    <default>fa836e1c874ba95ab08a14ee88e05565</default>
                     <control type="edit" format="string" />
                 </setting>
             </group>

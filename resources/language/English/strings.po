@@ -411,10 +411,6 @@ msgctxt "#30734"
 msgid "Enable"
 msgstr ""
 
-msgctxt "#30735"
-msgid "https://torrentio.strem.fun/"
-msgstr ""
-
 msgctxt "#30736"
 msgid "Priority Language"
 msgstr ""
@@ -551,20 +547,12 @@ msgctxt "#30769"
 msgid "Elfhosted/KnightCrawler Configuration"
 msgstr ""
 
-msgctxt "#30770"
-msgid "https://torrentio.elfhosted.com/"
-msgstr ""
-
 msgctxt "#30771"
 msgid "Zilean Configuration"
 msgstr ""
 
 msgctxt "#30772"
 msgid "Zilean Host"
-msgstr ""
-
-msgctxt "#30773"
-msgid "https://zilean.elfhosted.com"
 msgstr ""
 
 msgctxt "#30774"
@@ -581,10 +569,6 @@ msgstr ""
 
 msgctxt "#30777"
 msgid "MediaFusion configuration"
-msgstr ""
-
-msgctxt "#30778"
-msgid "https://mediafusion.elfhosted.com"
 msgstr ""
 
 msgctxt "#30779"
@@ -667,24 +651,12 @@ msgctxt "#30798"
 msgid "Trakt Client"
 msgstr ""
 
-msgctxt "#30799"
-msgid "1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb"
-msgstr ""
-
 msgctxt "#30800"
 msgid "Trakt Secret"
 msgstr ""
 
-msgctxt "#30801"
-msgid "8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"
-msgstr ""
-
 msgctxt "#30802"
 msgid "Log out"
-msgstr ""
-
-msgctxt "#30803"
-msgid "fa836e1c874ba95ab08a14ee88e05565"
 msgstr ""
 
 msgctxt "#30804"

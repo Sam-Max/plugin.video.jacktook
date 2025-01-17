@@ -277,11 +277,11 @@ msgstr "Pausar"
 
 msgctxt "#30705"
 msgid "Remove torrent"
-msgstr "Remover torrent"
+msgstr "Borrar torrent"
 
 msgctxt "#30706"
 msgid "Remove torrent and files"
-msgstr "Remover torrents y archivos"
+msgstr "Borrar torrents y archivos"
 
 msgctxt "#30707"
 msgid "Torrent status"
@@ -293,7 +293,7 @@ msgstr "Detener"
 
 msgctxt "#30800"
 msgid "Choose Torrent Client"
-msgstr ""
+msgstr "Cliente Torrent"
 
 msgctxt "#30709"
 msgid "Drop torrent"
@@ -398,10 +398,6 @@ msgstr "Configuración de Torrentio"
 msgctxt "#30734"
 msgid "Enable"
 msgstr "Habilitar"
-
-msgctxt "#30735"
-msgid "https://torrentio.strem.fun/"
-msgstr "https://torrentio.strem.fun/"
 
 msgctxt "#30736"
 msgid "Priority Language"
@@ -539,10 +535,6 @@ msgctxt "#30769"
 msgid "Elfhosted/KnightCrawler Configuration"
 msgstr "Configuración de Elfhosted/KnightCrawler"
 
-msgctxt "#30770"
-msgid "https://torrentio.elfhosted.com/"
-msgstr "https://torrentio.elfhosted.com/"
-
 msgctxt "#30771"
 msgid "Zilean Configuration"
 msgstr "Configuración de Zilean"
@@ -550,10 +542,6 @@ msgstr "Configuración de Zilean"
 msgctxt "#30772"
 msgid "Zilean Host"
 msgstr "Host de Zilean"
-
-msgctxt "#30773"
-msgid "https://zilean.elfhosted.com"
-msgstr "https://zilean.elfhosted.com"
 
 msgctxt "#30774"
 msgid "Zilean Timeout"
@@ -570,10 +558,6 @@ msgstr "Configuración de Prowlarr"
 msgctxt "#30777"
 msgid "MediaFusion configuration"
 msgstr "Configuración de MediaFusion"
-
-msgctxt "#30778"
-msgid "https://mediafusion.elfhosted.com"
-msgstr "https://mediafusion.elfhosted.com"
 
 msgctxt "#30779"
 msgid "Manifest Url"
@@ -605,7 +589,7 @@ msgstr "Configuración de Premiumize"
 
 msgctxt "#30786"
 msgid "Enabled"
-msgstr "Habilitado"
+msgstr "Habilitar"
 
 msgctxt "#30787"
 msgid "Token:"
@@ -655,25 +639,13 @@ msgctxt "#30798"
 msgid "Trakt Client"
 msgstr "Cliente de Trakt"
 
-msgctxt "#30799"
-msgid "1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb"
-msgstr ""
-
 msgctxt "#30800"
 msgid "Trakt Secret"
 msgstr "Secreto de Trakt"
 
-msgctxt "#30801"
-msgid "8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1"
-msgstr ""
-
 msgctxt "#30802"
 msgid "Log out"
 msgstr "Cerrar sesión"
-
-msgctxt "#30803"
-msgid "fa836e1c874ba95ab08a14ee88e05565"
-msgstr "fa836e1c874ba95ab08a14ee88e05565"
 
 msgctxt "#30804"
 msgid "Menus"
