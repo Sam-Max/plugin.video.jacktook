@@ -398,7 +398,8 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="real_debid_authorized" type="boolean" label="" help="" visible="false">
+                <setting id="real_debid_authorized" type="boolean" label="" help="">
+                    <visible>false</visible>
                     <default>false</default>
                     <control type="toggle" />
                     <dependencies>
@@ -407,7 +408,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_user" type="string" label="30782" help="" visible="eq(-1,true)">
+                <setting id="real_debrid_user" type="string" label="30782" help="">
                     <default />
                     <control type="edit" format="string" />
                     <dependencies>
@@ -416,7 +417,8 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_token" type="string" label="30154" help="" visible="false">
+                <setting id="real_debrid_token" type="string" label="30154" help="">
+                    <visible>false</visible>
                     <default />
                     <control type="edit" format="string" />
                     <dependencies>
@@ -453,7 +455,8 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="premiumize_token" type="string" label="30787" help="" visible="false">
+                <setting id="premiumize_token" type="string" label="30787" help="">
+                    <visible>false</visible>
                     <default />
                     <control type="edit" format="string" />
                     <dependencies>
@@ -531,19 +534,23 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="trakt_expires" type="string" label="30795" help="" visible="false">
+                <setting id="trakt_expires" type="string" label="30795" help="">
+                    <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_refresh" type="string" label="30796" help="" visible="false">
+                <setting id="trakt_refresh" type="string" label="30796" help="">
+                    <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_token" type="string" label="30797" help="" visible="false">
+                <setting id="trakt_token" type="string" label="30797" help="">
+                    <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_user" type="string" label="30782" help="" visible="false">
+                <setting id="trakt_user" type="string" label="30782" help="">
+                    <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
