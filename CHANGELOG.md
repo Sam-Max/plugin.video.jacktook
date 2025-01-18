@@ -1,3 +1,10 @@
+## 0.4.5
+* Add language and region selection setting for TMDB.
+* Fix RealDebrid episode selection on season packs
+* Fix and handle torrents where its url redirects to magnets.
+* Refactor settings.xml to new Kodi format.
+* Other minor improvements and fixes
+
 ## 0.4.4
 * some fixes and improvements
 
