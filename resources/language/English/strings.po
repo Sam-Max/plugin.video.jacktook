@@ -788,10 +788,10 @@ msgctxt "#40029"
 msgid "Hebrew (Israel)"
 msgstr ""
 
-msgctx "#42005"
+msgctxt "#42418"
 msgid "Language and country"
 msgstr ""
 
 msgctxt "#42419"
-msgid "The language and country settings used when looking up data from TMDb and Trakt APIs"
+msgid "The language and country settings used when looking up data from TMDb"
 msgstr ""

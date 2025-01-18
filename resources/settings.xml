@@ -451,7 +451,7 @@
                 </setting>
             </group>
             <group id="premiumize" label="30785">
-                <setting id="premiumize_enabled" type="boolean" label="30786" help="">
+                <setting id="premiumize_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
@@ -478,7 +478,7 @@
                 </setting>
             </group>
             <group id="torbox" label="30788">
-                <setting id="torbox_enabled" type="boolean" label="30786" help="">
+                <setting id="torbox_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
@@ -493,7 +493,7 @@
                 </setting>
             </group>
             <group id="easydebrid" label="30789">
-                <setting id="easydebrid_enabled" type="boolean" label="30786" help="">
+                <setting id="easydebrid_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
@@ -520,9 +520,83 @@
                     <default />
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="kodi_language" type="boolean" label="30792" help="">
-                    <default>false</default>
-                    <control type="toggle" />
+                <setting id="language" type="integer" label="42418" help="42419">
+                    <default>18</default>
+                    <constraints>
+                        <options>
+                            <option label="40000">0</option>
+                            <option label="40001">1</option>
+                            <option label="40002">2</option>
+                            <option label="40003">3</option>
+                            <option label="40004">4</option>
+                            <option label="40005">5</option>
+                            <option label="40006">6</option>
+                            <option label="40007">7</option>
+                            <option label="40008">8</option>
+                            <option label="40009">9</option>
+                            <option label="40010">10</option>
+                            <option label="40011">11</option>
+                            <option label="40012">12</option>
+                            <option label="40013">13</option>
+                            <option label="40014">14</option>
+                            <option label="40015">15</option>
+                            <option label="40016">16</option>
+                            <option label="40017">17</option>
+                            <option label="40018">18</option>
+                            <option label="40019">19</option>
+                            <option label="40020">20</option>
+                            <option label="40021">21</option>
+                            <option label="40022">22</option>
+                            <option label="40023">23</option>
+                            <option label="40024">24</option>
+                            <option label="40025">25</option>
+                            <option label="40026">26</option>
+                            <option label="40027">27</option>
+                            <option label="40028">28</option>
+                            <option label="40029">29</option>
+                            <option label="40030">30</option>
+                            <option label="40031">31</option>
+                            <option label="40030">32</option>
+                            <option label="40033">33</option>
+                            <option label="40034">34</option>
+                            <option label="40035">35</option>
+                            <option label="40036">36</option>
+                            <option label="40037">37</option>
+                            <option label="40038">38</option>
+                            <option label="40039">39</option>
+                            <option label="40040">40</option>
+                            <option label="40041">41</option>
+                            <option label="40042">42</option>
+                            <option label="40043">43</option>
+                            <option label="40044">44</option>
+                            <option label="40045">45</option>
+                            <option label="40046">46</option>
+                            <option label="40047">47</option>
+                            <option label="40048">48</option>
+                            <option label="40049">49</option>
+                            <option label="40050">50</option>
+                            <option label="40051">51</option>
+                            <option label="40052">52</option>
+                            <option label="40053">53</option>
+                            <option label="40054">54</option>
+                            <option label="40055">55</option>
+                            <option label="40056">56</option>
+                            <option label="40057">57</option>
+                            <option label="40058">58</option>
+                            <option label="40059">59</option>
+                            <option label="40060">60</option>
+                            <option label="40061">61</option>
+                            <option label="40062">62</option>
+                            <option label="40063">63</option>
+                            <option label="40064">64</option>
+                            <option label="40065">65</option>
+                            <option label="40066">66</option>
+                            <option label="40067">67</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string">
+                        <heading>42418</heading>
+                    </control>
                 </setting>
             </group>
         </category>

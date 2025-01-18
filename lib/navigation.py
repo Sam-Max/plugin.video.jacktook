@@ -48,6 +48,8 @@ from lib.tmdb import (
     tmdb_search_genres,
     tmdb_search_year,
 )
+from lib.utils.tmdb_consts import LANGUAGES
+
 from lib.db.cached import cache
 
 from lib.utils.utils import (
@@ -119,11 +121,13 @@ if JACKTORR_ADDON:
 tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
 
-if get_setting("kodi_language"):
-    kodi_lang = getLanguage(ISO_639_1)
-else:
-    kodi_lang = "en"
-tmdb.language = kodi_lang
+try:
+    language_index = get_setting("language")
+    tmdb.language = LANGUAGES[int(language_index)]
+except IndexError:
+    tmdb.language = "en-US"
+except ValueError:
+    tmdb.language = "en-US"
 
 
 def root_menu():
