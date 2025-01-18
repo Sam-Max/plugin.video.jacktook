@@ -779,6 +779,158 @@ msgctxt "#40029"
 msgid "Hebrew (Israel)"
 msgstr "Hebreo (Israel)"
 
+msgctxt "#40030"
+msgid "Hindi (India)"
+msgstr "Hindi (India)"
+
+msgctxt "#40031"
+msgid "Hungarian (Hungary)"
+msgstr "Húngaro (Hungría)"
+
+msgctxt "#40032"
+msgid "Indonesian (Indonesia)"
+msgstr "Indonesio (Indonesia)"
+
+msgctxt "#40033"
+msgid "Italian (Italy)"
+msgstr "Italiano (Italia)"
+
+msgctxt "#40034"
+msgid "Japanese (Japan)"
+msgstr "Japonés (Japón)"
+
+msgctxt "#40035"
+msgid "Georgian (Georgia)"
+msgstr "Georgiano (Georgia)"
+
+msgctxt "#40036"
+msgid "Kazakh (Kazakhstan)"
+msgstr "Kazajo (Kazajistán)"
+
+msgctxt "#40037"
+msgid "Kannada (India)"
+msgstr "Kannada (India)"
+
+msgctxt "#40038"
+msgid "Korean (South Korea)"
+msgstr "Coreano (Corea del Sur)"
+
+msgctxt "#40039"
+msgid "Lithuanian (Lithuania)"
+msgstr "Lituano (Lituania)"
+
+msgctxt "#40040"
+msgid "Latvian (Latvia)"
+msgstr "Letón (Letonia)"
+
+msgctxt "#40041"
+msgid "Malayalam (India)"
+msgstr "Malayalam (India)"
+
+msgctxt "#40042"
+msgid "Malay (Malaysia)"
+msgstr "Malayo (Malasia)"
+
+msgctxt "#40043"
+msgid "Malay (Singapore)"
+msgstr "Malayo (Singapur)"
+
+msgctxt "#40044"
+msgid "Norwegian Bokmål (Norway)"
+msgstr "Bokmål noruego (Noruega)"
+
+msgctxt "#40045"
+msgid "Dutch (Netherlands)"
+msgstr "Holandés (Países Bajos)"
+
+msgctxt "#40046"
+msgid "Norwegian (Norway)"
+msgstr "Noruego (Noruega)"
+
+msgctxt "#40047"
+msgid "Polish (Poland)"
+msgstr "Polaco (Polonia)"
+
+msgctxt "#40048"
+msgid "Portuguese (Brazil)"
+msgstr "Portugués (Brasil)"
+
+msgctxt "#40049"
+msgid "Portuguese (Portugal)"
+msgstr "Portugués (portugal)"
+
+msgctxt "#40050"
+msgid "Romanian (Romania)"
+msgstr "Rumano (Rumania)"
+
+msgctxt "#40051"
+msgid "Russian (Russia)"
+msgstr "Ruso (Rusia)"
+
+msgctxt "#40052"
+msgid "Sinhalese (Sri Lanka)"
+msgstr "Cingales (Sri Lanka)"
+
+msgctxt "#40053"
+msgid "Slovak (Slovakia)"
+msgstr "Eslovaco (Eslovaquia)"
+
+msgctxt "#40054"
+msgid "Slovenian (Slovenia)"
+msgstr "Esloveno (Eslovenia)"
+
+msgctxt "#40055"
+msgid "Serbian (Serbia)"
+msgstr "Serbio (Serbia)"
+
+msgctxt "#40056"
+msgid "Swedish (Sweden)"
+msgstr "Sueco (Suecia)"
+
+msgctxt "#40057"
+msgid "Tamil (India)"
+msgstr "Tamil (India)"
+
+msgctxt "#40058"
+msgid "Telugu (India)"
+msgstr "Telugu (India)"
+
+msgctxt "#40059"
+msgid "Thai (Thailand)"
+msgstr "Tailandés (Tailandia)"
+
+msgctxt "#40060"
+msgid "Tagalog (Philippines)"
+msgstr "Tagalo (Philippines)"
+
+msgctxt "#40061"
+msgid "Turkish (Turkey)"
+msgstr "Turco (Turquía"
+
+msgctxt "#40062"
+msgid "Ukrainian (Ukraine)"
+msgstr "Ucraniano (Ucrania)"
+
+msgctxt "#40063"
+msgid "Vietnamese (Vietnam)"
+msgstr "Vietnamita (Vietnam)"
+
+msgctxt "#40064"
+msgid "Mandarin (China)"
+msgstr "Mandarin (China)"
+
+msgctxt "#40065"
+msgid "Mandarin (Hong Kong)"
+msgstr "Mandarin (Hong Kong)"
+
+msgctxt "#40066"
+msgid "Mandarin (Taiwan)"
+msgstr "Mandarin (Taiwan)"
+
+msgctxt "#40067"
+msgid "Zulu (South Africa)"
+msgstr "Zulú (Sudáfrica)"
+
 msgctxt "#42418"
 msgid "Language and country"
 msgstr "Idioma y país"
