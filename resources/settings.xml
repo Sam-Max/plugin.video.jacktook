@@ -206,7 +206,10 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="jackgram_host" type="string" label="30768" help="">
-                    <default />
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -222,6 +225,9 @@
                 </setting>
                 <setting id="elfhosted_host" type="string" label="30025" help="">
                     <default>https://torrentio.elfhosted.com/</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -237,6 +243,9 @@
                 </setting>
                 <setting id="zilean_host" type="string" label="30772" help="">
                     <default>https://zilean.elfhosted.com</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -267,7 +276,10 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="jackett_host" type="string" label="30025" help="">
-                    <default />
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -276,7 +288,10 @@
                     </dependencies>
                 </setting>
                 <setting id="jackett_apikey" type="string" label="30023" help="">
-                    <default />
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -308,7 +323,10 @@
                 </setting>
                 <setting id="prowlarr_host" type="string" label="30052" help="">
                     <default />
-                    <control type="edit" format="string" />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string"/>
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="prowlarr_enabled">true</condition>
@@ -317,6 +335,9 @@
                 </setting>
                 <setting id="prowlarr_apikey" type="string" label="30051" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -326,6 +347,9 @@
                 </setting>
                 <setting id="prowlarr_indexer_ids" type="string" label="30053" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -366,6 +390,9 @@
                 </setting>
                 <setting id="mediafusion_manifest_url" type="string" label="30779" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -410,6 +437,9 @@
                 </setting>
                 <setting id="real_debrid_user" type="string" label="30782" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -484,6 +514,9 @@
                 </setting>
                 <setting id="torbox_token" type="string" label="30787" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -499,6 +532,9 @@
                 </setting>
                 <setting id="easydebrid_token" type="string" label="30787" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -518,6 +554,9 @@
             <group id="tmdb" label="30102">
                 <setting id="tmdb_apikey" type="string" label="30103" help="">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="language" type="integer" label="42418" help="42419">
