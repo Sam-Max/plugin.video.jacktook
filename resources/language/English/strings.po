@@ -360,7 +360,7 @@ msgid "Cache Enabled"
 msgstr ""
 
 msgctxt "#30722"
-msgid "Cache Expiration (days)"
+msgid "Cache Expiration (hours)"
 msgstr ""
 
 msgctxt "#30723"
@@ -667,6 +667,9 @@ msgctxt "#30805"
 msgid "Show Telegram Menu"
 msgstr ""
 
+msgctxt "#30806"
+msgid "Clear cache when update"
+msgstr ""
 
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"

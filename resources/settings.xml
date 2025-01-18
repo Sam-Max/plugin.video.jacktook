@@ -16,6 +16,11 @@
                             <option label="30716">Elementum</option>
                         </options>
                     </constraints>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="torrent_enable">true</condition>
+                        </dependency>
+                    </dependencies>
                     <control type="spinner" format="string" />
                 </setting>
             </group>
@@ -61,7 +66,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="test33" type="action" label="30106" help=""> 
+                <setting id="clear_all_cached" type="action" label="30106" help=""> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_all_cached)</data>
                     <control type="button" format="action">
                         <close>true</close>
@@ -71,7 +76,7 @@
             <group id="update" label="30724">
                 <setting id="update" type="lsep" label="30723" help=""> 
                 </setting>
-                <setting id="update_addon" type="action" label="30724" help=""> 
+                <setting id="addon_update" type="action" label="30724" help=""> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=addon_update)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -203,7 +208,7 @@
             <group id="jackgram" label="30767">
                 <setting id="jackgram_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
-                    <control type="toggle" />
+                    <control type="toggle"/>
                 </setting>
                 <setting id="jackgram_host" type="string" label="30768" help="">
                     <default/>
