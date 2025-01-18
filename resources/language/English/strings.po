@@ -314,3 +314,639 @@ msgstr ""
 msgctxt "#30710"
 msgid "Filter TV Shows by Season and Episode"
 msgstr ""
+
+msgctxt "#30711"
+msgid "Torrent Settings"
+msgstr ""
+
+msgctxt "#30712"
+msgid "General"
+msgstr ""
+
+msgctxt "#30713"
+msgid "Use Torrent"
+msgstr ""
+
+msgctxt "#30714"
+msgid "Jacktorr"
+msgstr ""
+
+msgctxt "#30715"
+msgid "Torrest"
+msgstr ""
+
+msgctxt "#30716"
+msgid "Elementum"
+msgstr ""
+
+msgctxt "#30717"
+msgid "Playback"
+msgstr ""
+
+msgctxt "#30718"
+msgid "Auto-Play"
+msgstr ""
+
+msgctxt "#30719"
+msgid "Enable Next Episode Dialog"
+msgstr ""
+
+msgctxt "#30720"
+msgid "Seconds left before show Next Episode Dialog"
+msgstr ""
+
+msgctxt "#30721"
+msgid "Cache Enabled"
+msgstr ""
+
+msgctxt "#30722"
+msgid "Cache Expiration (hours)"
+msgstr ""
+
+msgctxt "#30723"
+msgid "Cache"
+msgstr ""
+
+msgctxt "#30724"
+msgid "Update"
+msgstr ""
+
+msgctxt "#30725"
+msgid "Indexers Configuration"
+msgstr ""
+
+msgctxt "#30726"
+msgid "Sort"
+msgstr ""
+
+msgctxt "#30727"
+msgid "Quality"
+msgstr ""
+
+msgctxt "#30728"
+msgid "Seeds"
+msgstr ""
+
+msgctxt "#30729"
+msgid "Size"
+msgstr ""
+
+msgctxt "#30730"
+msgid "Cached"
+msgstr ""
+
+msgctxt "#30731"
+msgid "Date"
+msgstr ""
+
+msgctxt "#30732"
+msgid "None"
+msgstr ""
+
+msgctxt "#30733"
+msgid "Torrentio Configuration"
+msgstr ""
+
+msgctxt "#30734"
+msgid "Enable"
+msgstr ""
+
+msgctxt "#30736"
+msgid "Priority Language"
+msgstr ""
+
+msgctxt "#30737"
+msgid "GB"
+msgstr ""
+
+msgctxt "#30738"
+msgid "JP"
+msgstr ""
+
+msgctxt "#30739"
+msgid "RU"
+msgstr ""
+
+msgctxt "#30740"
+msgid "IT"
+msgstr ""
+
+msgctxt "#30741"
+msgid "PT"
+msgstr ""
+
+msgctxt "#30742"
+msgid "ES"
+msgstr ""
+
+msgctxt "#30743"
+msgid "MX"
+msgstr ""
+
+msgctxt "#30744"
+msgid "KR"
+msgstr ""
+
+msgctxt "#30745"
+msgid "CN"
+msgstr ""
+
+msgctxt "#30746"
+msgid "TW"
+msgstr ""
+
+msgctxt "#30747"
+msgid "FR"
+msgstr ""
+
+msgctxt "#30748"
+msgid "DE"
+msgstr ""
+
+msgctxt "#30749"
+msgid "NL"
+msgstr ""
+
+msgctxt "#30750"
+msgid "IN"
+msgstr ""
+
+msgctxt "#30751"
+msgid "PL"
+msgstr ""
+
+msgctxt "#30752"
+msgid "LT"
+msgstr ""
+
+msgctxt "#30753"
+msgid "CZ"
+msgstr ""
+
+msgctxt "#30754"
+msgid "SK"
+msgstr ""
+
+msgctxt "#30755"
+msgid "SI"
+msgstr ""
+
+msgctxt "#30756"
+msgid "HU"
+msgstr ""
+
+msgctxt "#30757"
+msgid "RO"
+msgstr ""
+
+msgctxt "#30758"
+msgid "HR"
+msgstr ""
+
+msgctxt "#30759"
+msgid "UA"
+msgstr ""
+
+msgctxt "#30760"
+msgid "GR"
+msgstr ""
+
+msgctxt "#30761"
+msgid "DK"
+msgstr ""
+
+msgctxt "#30762"
+msgid "FI"
+msgstr ""
+
+msgctxt "#30763"
+msgid "SE"
+msgstr ""
+
+msgctxt "#30764"
+msgid "NO"
+msgstr ""
+
+msgctxt "#30765"
+msgid "TR"
+msgstr ""
+
+msgctxt "#30766"
+msgid "Torrentio Providers"
+msgstr ""
+
+msgctxt "#30767"
+msgid "Jackgram Configuration"
+msgstr ""
+
+msgctxt "#30768"
+msgid "Jackgram Host"
+msgstr ""
+
+msgctxt "#30769"
+msgid "Elfhosted/KnightCrawler Configuration"
+msgstr ""
+
+msgctxt "#30771"
+msgid "Zilean Configuration"
+msgstr ""
+
+msgctxt "#30772"
+msgid "Zilean Host"
+msgstr ""
+
+msgctxt "#30774"
+msgid "Zilean Timeout"
+msgstr ""
+
+msgctxt "#30775"
+msgid "Jackett Configuration"
+msgstr ""
+
+msgctxt "#30776"
+msgid "Prowlarr Configuration"
+msgstr ""
+
+msgctxt "#30777"
+msgid "MediaFusion configuration"
+msgstr ""
+
+msgctxt "#30779"
+msgid "Manifest Url"
+msgstr ""
+
+msgctxt "#30780"
+msgid "Jacktook Burst Configuration"
+msgstr ""
+
+msgctxt "#30781"
+msgid "Burst Configuration"
+msgstr ""
+
+msgctxt "#30782"
+msgid "User"
+msgstr ""
+
+msgctxt "#30783"
+msgid "Authorize"
+msgstr ""
+
+msgctxt "#30784"
+msgid "Remove Authorization"
+msgstr ""
+
+msgctxt "#30785"
+msgid "Premiumize Configuration"
+msgstr ""
+
+msgctxt "#30786"
+msgid "Enabled"
+msgstr ""
+
+msgctxt "#30787"
+msgid "Token:"
+msgstr ""
+
+msgctxt "#30788"
+msgid "TorBox Configuration"
+msgstr ""
+
+msgctxt "#30789"
+msgid "EasyDebrid Configuration"
+msgstr ""
+
+msgctxt "#30790"
+msgid "Uncached"
+msgstr ""
+
+msgctxt "#30791"
+msgid "Show uncached torrents"
+msgstr ""
+
+msgctxt "#30792"
+msgid "Use Kodi Language"
+msgstr ""
+
+msgctxt "#30793"
+msgid "Trakt"
+msgstr ""
+
+msgctxt "#30794"
+msgid "Trakt Configuration"
+msgstr ""
+
+msgctxt "#30795"
+msgid "Expires"
+msgstr ""
+
+msgctxt "#30796"
+msgid "Refresh"
+msgstr ""
+
+msgctxt "#30797"
+msgid "Token"
+msgstr ""
+
+msgctxt "#30798"
+msgid "Trakt Client"
+msgstr ""
+
+msgctxt "#30800"
+msgid "Trakt Secret"
+msgstr ""
+
+msgctxt "#30802"
+msgid "Log out"
+msgstr ""
+
+msgctxt "#30804"
+msgid "Menus"
+msgstr ""
+
+msgctxt "#30805"
+msgid "Show Telegram Menu"
+msgstr ""
+
+msgctxt "#30806"
+msgid "Clear cache when update"
+msgstr ""
+
+msgctxt "#40000"
+msgid "Arabic (United Arab Emirates)"
+msgstr ""
+
+msgctxt "#40001"
+msgid "Arabic (Saudi Arabia)"
+msgstr ""
+
+msgctxt "#40002"
+msgid "Belarusian (Belarus)"
+msgstr ""
+
+msgctxt "#40003"
+msgid "Bulgarian (Bulgaria)"
+msgstr ""
+
+msgctxt "#40004"
+msgid "Bengali (Bangladesh)"
+msgstr ""
+
+msgctxt "#40005"
+msgid "Catalan (Spain)"
+msgstr ""
+
+msgctxt "#40006"
+msgid "Chamorro (Guam)"
+msgstr ""
+
+msgctxt "#40007"
+msgid "Czech (Czech Republic)"
+msgstr ""
+
+msgctxt "#40008"
+msgid "Danish (Denmark)"
+msgstr ""
+
+msgctxt "#40009"
+msgid "German (Austria)"
+msgstr ""
+
+msgctxt "#40010"
+msgid "German (Switzerland)"
+msgstr ""
+
+msgctxt "#40011"
+msgid "German (Germany)"
+msgstr ""
+
+msgctxt "#40012"
+msgid "Greek (Greece)"
+msgstr ""
+
+msgctxt "#40013"
+msgid "English (Australia)"
+msgstr ""
+
+msgctxt "#40014"
+msgid "English (Canada)"
+msgstr ""
+
+msgctxt "#40015"
+msgid "English (United Kingdom)"
+msgstr ""
+
+msgctxt "#40016"
+msgid "English (Ireland)"
+msgstr ""
+
+msgctxt "#40017"
+msgid "English (New Zealand)"
+msgstr ""
+
+msgctxt "#40018"
+msgid "English (United States of America)"
+msgstr ""
+
+msgctxt "#40019"
+msgid "Esperanto (None)"
+msgstr ""
+
+msgctxt "#40020"
+msgid "Spanish (Spain)"
+msgstr ""
+
+msgctxt "#40021"
+msgid "Spanish (Mexico)"
+msgstr ""
+
+msgctxt "#40022"
+msgid "Estonian (Estonia)"
+msgstr ""
+
+msgctxt "#40023"
+msgid "Basque (Spain)"
+msgstr ""
+
+msgctxt "#40024"
+msgid "Persian (Iran)"
+msgstr ""
+
+msgctxt "#40025"
+msgid "Finnish (Finland)"
+msgstr ""
+
+msgctxt "#40026"
+msgid "French (Canada)"
+msgstr ""
+
+msgctxt "#40027"
+msgid "French (France)"
+msgstr ""
+
+msgctxt "#40028"
+msgid "Galician (Spain)"
+msgstr ""
+
+msgctxt "#40029"
+msgid "Hebrew (Israel)"
+msgstr ""
+
+msgctxt "#40030"
+msgid "Hindi (India)"
+msgstr ""
+
+msgctxt "#40031"
+msgid "Hungarian (Hungary)"
+msgstr ""
+
+msgctxt "#40032"
+msgid "Indonesian (Indonesia)"
+msgstr ""
+
+msgctxt "#40033"
+msgid "Italian (Italy)"
+msgstr ""
+
+msgctxt "#40034"
+msgid "Japanese (Japan)"
+msgstr ""
+
+msgctxt "#40035"
+msgid "Georgian (Georgia)"
+msgstr ""
+
+msgctxt "#40036"
+msgid "Kazakh (Kazakhstan)"
+msgstr ""
+
+msgctxt "#40037"
+msgid "Kannada (India)"
+msgstr ""
+
+msgctxt "#40038"
+msgid "Korean (South Korea)"
+msgstr ""
+
+msgctxt "#40039"
+msgid "Lithuanian (Lithuania)"
+msgstr ""
+
+msgctxt "#40040"
+msgid "Latvian (Latvia)"
+msgstr ""
+
+msgctxt "#40041"
+msgid "Malayalam (India)"
+msgstr ""
+
+msgctxt "#40042"
+msgid "Malay (Malaysia)"
+msgstr ""
+
+msgctxt "#40043"
+msgid "Malay (Singapore)"
+msgstr ""
+
+msgctxt "#40044"
+msgid "Norwegian Bokmål (Norway)"
+msgstr ""
+
+msgctxt "#40045"
+msgid "Dutch (Netherlands)"
+msgstr ""
+
+msgctxt "#40046"
+msgid "Norwegian (Norway)"
+msgstr ""
+
+msgctxt "#40047"
+msgid "Polish (Poland)"
+msgstr ""
+
+msgctxt "#40048"
+msgid "Portuguese (Brazil)"
+msgstr ""
+
+msgctxt "#40049"
+msgid "Portuguese (Portugal)"
+msgstr ""
+
+msgctxt "#40050"
+msgid "Romanian (Romania)"
+msgstr ""
+
+msgctxt "#40051"
+msgid "Russian (Russia)"
+msgstr ""
+
+msgctxt "#40052"
+msgid "Sinhalese (Sri Lanka)"
+msgstr ""
+
+msgctxt "#40053"
+msgid "Slovak (Slovakia)"
+msgstr ""
+
+msgctxt "#40054"
+msgid "Slovenian (Slovenia)"
+msgstr ""
+
+msgctxt "#40055"
+msgid "Serbian (Serbia)"
+msgstr ""
+
+msgctxt "#40056"
+msgid "Swedish (Sweden)"
+msgstr ""
+
+msgctxt "#40057"
+msgid "Tamil (India)"
+msgstr ""
+
+msgctxt "#40058"
+msgid "Telugu (India)"
+msgstr ""
+
+msgctxt "#40059"
+msgid "Thai (Thailand)"
+msgstr ""
+
+msgctxt "#40060"
+msgid "Tagalog (Philippines)"
+msgstr ""
+
+msgctxt "#40061"
+msgid "Turkish (Turkey)"
+msgstr ""
+
+msgctxt "#40062"
+msgid "Ukrainian (Ukraine)"
+msgstr ""
+
+msgctxt "#40063"
+msgid "Vietnamese (Vietnam)"
+msgstr ""
+
+msgctxt "#40064"
+msgid "Mandarin (China)"
+msgstr ""
+
+msgctxt "#40065"
+msgid "Mandarin (Hong Kong)"
+msgstr ""
+
+msgctxt "#40066"
+msgid "Mandarin (Taiwan)"
+msgstr ""
+
+msgctxt "#40067"
+msgid "Zulu (South Africa)"
+msgstr ""
+
+msgctxt "#42418"
+msgid "Language and country"
+msgstr ""
+
+msgctxt "#42419"
+msgid "The language and country settings used when looking up data from TMDb"
+msgstr ""
