@@ -656,8 +656,8 @@ msgid "Show Telegram Menu"
 msgstr "Mostrar menú de Telegram"
 
 msgctxt "#30806"
-msgid "Limpiar cache al actualizar"
-msgstr ""
+msgid "Clear cache when update"
+msgstr "Limpiar cache al actualizar"
 
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
