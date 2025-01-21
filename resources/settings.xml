@@ -74,8 +74,6 @@
                 </setting>
             </group>
             <group id="update" label="30724">
-                <setting id="update" type="lsep" label="30723" help=""> 
-                </setting>
                 <setting id="addon_update" type="action" label="30724" help=""> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=addon_update)</data>
                     <control type="button" format="action">
@@ -453,8 +451,11 @@
                     </dependencies>
                 </setting>
                 <setting id="real_debrid_token" type="string" label="30154" help="">
-                    <visible>false</visible>
                     <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
@@ -491,8 +492,11 @@
                     <control type="toggle" />
                 </setting>
                 <setting id="premiumize_token" type="string" label="30787" help="">
-                    <visible>false</visible>
                     <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
