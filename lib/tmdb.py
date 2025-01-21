@@ -237,7 +237,7 @@ def show_items(res, mode, submode=None):
         label_title = title
         release_date = res.release_date
         imdb_id, duration = get_tmdb_movie_data(tmdb_id)
-        tvdb_id = -1
+        tvdb_id = None
     elif mode == "tv":
         title = res.name
         label_title = title
@@ -254,7 +254,7 @@ def show_items(res, mode, submode=None):
             mode = "movies"
             release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
-            tvdb_id = -1
+            tvdb_id = None
             label_title = f"[B]MOVIE -[/B] {title}"
         elif media_type == "tv":
             mode = "tv"
@@ -396,11 +396,11 @@ def show_anime_results(res, mode):
     description = res.get("overview", "")
     poster_path = res.get("poster_path", "")
 
-    tmdb_id = res.get("id", -1)
+    tmdb_id = res.get("id", None)
     if mode == "movies":
         title = res.title
         imdb_id, duration = get_tmdb_movie_data(tmdb_id)
-        tvdb_id = -1
+        tvdb_id = None
     elif mode == "tv":
         title = res.name
         title = res["name"]

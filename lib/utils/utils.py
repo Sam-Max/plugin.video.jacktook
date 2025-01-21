@@ -284,7 +284,7 @@ def set_video_info(
     info = {"plot": overview}
 
     if ids:
-        _, _, imdb_id = ids.split(", ")
+        _, _, imdb_id = [id.strip() for id in ids.split(',')]
         info["imdbnumber"] = imdb_id
 
     if duration:
@@ -378,7 +378,7 @@ def set_media_infotag(
     if duration:
         info_tag.setDuration(int(duration) * 60)
     if ids:
-        tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+        tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(',')]
         info_tag.setIMDBNumber(imdb_id)
         info_tag.setUniqueIDs(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
@@ -432,7 +432,7 @@ def is_torrent_watched(title):
 
 def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     identifier = "{}|{}".format(
-        "fanart.tv", tvdb_id if tvdb_id and int(tvdb_id) != -1 else tmdb_id
+        "fanart.tv", tvdb_id if tvdb_id and tvdb_id != "None" else tmdb_id
     )
     data = cache.get(identifier, hashed_key=True)
     if data:

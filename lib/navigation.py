@@ -588,7 +588,7 @@ def handle_results(results, mode, ids, tv_data, direct=False):
     if direct:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
-        tmdb_id, tvdb_id, _ = ids.split(", ")
+        tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
 
         details = get_tmdb_media_details(tmdb_id, mode)
         poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"

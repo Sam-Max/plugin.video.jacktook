@@ -134,7 +134,7 @@ def show_anime_common(res, mode):
     ids = extract_ids(res)
     title = res["show"]["title"]
 
-    tmdb_id = ids.split(",")[0]
+    tmdb_id = [id.strip() for id in ids.split(',')][0]
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
     else:
@@ -169,13 +169,13 @@ def show_common_categories(res, mode):
     if mode == "tv":
         title = res["show"]["title"]
         ids = extract_ids(res, mode)
-        tmdb_id = ids.split(",")[0]
+        tmdb_id = [id.strip() for id in ids.split(',')][0]
         details = tmdb_get("tv_details", tmdb_id)
         duration = ""
     else:
         title = res["movie"]["title"]
         ids = extract_ids(res, mode)
-        tmdb_id = ids.split(",")[0]
+        tmdb_id = [id.strip() for id in ids.split(',')][0]
         details = tmdb_get("movie_details", tmdb_id)
         duration = details.runtime
         
@@ -208,7 +208,7 @@ def show_common_categories(res, mode):
 
 def show_watchlist(res, mode):
     tmdb_id = res["media_ids"]["tmdb"]
-    tvdb_id = -1
+    tvdb_id = None
     imdb_id = res["media_ids"]["imdb"]
     ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
     title = res["title"]
@@ -260,7 +260,7 @@ def show_trending_lists(res, mode):
 def show_recommendations(res, mode):
     title = res["title"]
     tmdb_id = res["ids"]["tmdb"]
-    tvdb_id = -1
+    tvdb_id = None
     imdb_id = res["ids"]["imdb"]
     ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
 
@@ -296,7 +296,7 @@ def show_recommendations(res, mode):
 
 def show_lists_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
-    tvdb_id = -1
+    tvdb_id = None
     imdb_id = res["media_ids"]["imdb"]
     ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
     title = res["title"]
@@ -376,7 +376,7 @@ def extract_ids(res, mode="tv"):
         imdb_id = res["show"]["ids"]["imdb"]
     else:
         tmdb_id = res["movie"]["ids"]["tmdb"]
-        tvdb_id = -1
+        tvdb_id = None
         imdb_id = res["movie"]["ids"]["imdb"]
 
     return f"{tmdb_id}, {tvdb_id}, {imdb_id}"

@@ -23,7 +23,7 @@ class Elfhosted(BaseClient):
             self.handle_exception(f"{translation(30231)}: {str(e)}")
 
     def parse_response(self, res):
-        res = json.loads(res.text)
+        res = res.json()
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])

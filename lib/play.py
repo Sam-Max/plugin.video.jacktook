@@ -98,7 +98,7 @@ def get_elementum_url(magnet, url, mode, ids):
         notification(translation(30252))
         return
     if ids:
-        tmdb_id, _, _ = ids.split(", ")
+        tmdb_id, _, _ = [id.strip() for id in ids.split(',')]
     else:
         tmdb_id = ""
     

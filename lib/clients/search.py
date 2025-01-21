@@ -33,15 +33,15 @@ def search_client(
             return cached_results
 
     if ids:
-        tmdb_id, _, imdb_id = ids.split(", ")
+        tmdb_id, _, imdb_id = [id.strip() for id in ids.split(',')]
     else:
-        tmdb_id = imdb_id = -1
+        tmdb_id = imdb_id = None
 
     dialog.create("")
     total_results = []
 
     if get_setting("torrentio_enabled"):
-        if imdb_id != -1:
+        if imdb_id:
             perform_search(
                 Indexer.TORRENTIO,
                 dialog,
@@ -53,7 +53,7 @@ def search_client(
             )
 
     if get_setting("mediafusion_enabled"):
-        if imdb_id != -1:
+        if imdb_id:
             perform_search(
                 Indexer.MEDIAFUSION,
                 dialog,
@@ -65,7 +65,7 @@ def search_client(
             )
 
     if get_setting("elfhosted_enabled"):
-        if imdb_id != -1:
+        if imdb_id:
             perform_search(
                 Indexer.ELHOSTED,
                 dialog,
@@ -77,16 +77,15 @@ def search_client(
             )
 
     if get_setting("zilean_enabled"):
-        if imdb_id != -1:
-            perform_search(
-                Indexer.ZILEAN,
-                dialog,
-                query,
-                mode,
-                media_type,
-                season,
-                episode,
-            )
+        perform_search(
+            Indexer.ZILEAN,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
 
     if get_setting("jacktookburst_enabled"):
         perform_search(

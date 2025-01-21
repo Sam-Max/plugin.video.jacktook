@@ -11,7 +11,7 @@ from xbmcplugin import addDirectoryItem
 
 
 def show_season_info(ids, mode, media_type):
-    tmdb_id, tvdb_id, _ = ids.split(", ")
+    tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
 
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
@@ -70,7 +70,7 @@ def show_season_info(ids, mode, media_type):
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
-    tmdb_id, tvdb_id, _ = ids.split(", ")
+    tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
     fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 

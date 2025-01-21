@@ -41,7 +41,7 @@ class Jackgram(BaseClient):
         return res.json()
 
     def parse_response(self, res):
-        res = json.loads(res.text)
+        res = res.json()
         results = []
         for item in res["streams"]:
             results.append(
@@ -58,7 +58,7 @@ class Jackgram(BaseClient):
         return results
 
     def parse_response_search(self, res):
-        res = json.loads(res.text)
+        res = res.json()
         results = []
         for item in res["results"]:
             for file in item["files"]:

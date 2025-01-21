@@ -196,7 +196,7 @@ class JacktookPLayer(xbmc.Player):
         if self.data["mode"] == "tv":
             ids = self.data.get("ids")
             if ids:
-                tmdb_id, _, _ = ids.split(", ")
+                tmdb_id, _, _ = [id.strip() for id in ids.split(',')]
 
                 details = tmdb_get("tv_details", tmdb_id)
                 name = details.name
@@ -268,7 +268,7 @@ class JacktookPLayer(xbmc.Player):
         mode = self.data.get("mode")
 
         if ids:
-            tmdb_id, tvdb_id, imdb_id = ids.split(", ")
+            tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(',')]
             trakt_ids = {
                 "tmdb": tmdb_id,
                 "imdb": imdb_id,

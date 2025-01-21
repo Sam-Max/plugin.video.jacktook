@@ -1,5 +1,6 @@
 import json
 import re
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.base import BaseClient
 from lib.utils.countries import find_language_by_unicode
 from lib.utils.kodi_utils import convert_size_to_bytes, translation
@@ -24,7 +25,7 @@ class Torrentio(BaseClient):
             self.handle_exception(f"{translation(30228)}: {str(e)}")
 
     def parse_response(self, res):
-        res = json.loads(res.text)
+        res = res.json()
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])
