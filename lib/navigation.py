@@ -55,7 +55,6 @@ from lib.db.cached import cache
 from lib.utils.utils import (
     TMDB_POSTER_URL,
     DialogListener,
-    Players,
     clean_auto_play_undesired,
     clear,
     clear_all_cache,
@@ -64,7 +63,6 @@ from lib.utils.utils import (
     get_random_color,
     get_service_host,
     get_username,
-    is_debrid_activated,
     make_listing,
     post_process,
     pre_process,
@@ -102,7 +100,6 @@ from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
 from xbmcgui import ListItem
-from xbmc import getLanguage, ISO_639_1
 from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
