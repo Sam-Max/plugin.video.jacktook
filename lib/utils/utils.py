@@ -431,7 +431,9 @@ def is_torrent_watched(title):
 
 
 def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
-    identifier = "{}|{}".format("fanart.tv", tvdb_id)
+    identifier = "{}|{}".format(
+        "fanart.tv", tvdb_id if tvdb_id and int(tvdb_id) != -1 else tmdb_id
+    )
     data = cache.get(identifier, hashed_key=True)
     if data:
         return data

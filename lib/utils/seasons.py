@@ -72,7 +72,7 @@ def show_season_info(ids, mode, media_type):
 def show_episode_info(tv_name, season, ids, mode, media_type):
     tmdb_id, tvdb_id, _ = ids.split(", ")
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-    fanart_data = get_fanart_details(tvdb_id)
+    fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     for ep in season_details.episodes:
         ep_name = ep.name
