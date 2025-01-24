@@ -22,6 +22,7 @@ from lib.utils.utils import (
     Enum,
     add_next_button,
     execute_thread_pool,
+    set_content_type,
     set_media_infotag,
 )
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
@@ -45,6 +46,7 @@ class Trakt(Enum):
 
 
 def handle_trakt_query(query, category, mode, page, submode, api):
+    set_content_type(mode)
     if mode == "movies":
         result = handle_trakt_movie_query(query, mode, page)
     elif mode == "tv":
