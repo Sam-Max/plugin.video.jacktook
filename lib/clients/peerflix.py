@@ -44,43 +44,7 @@ class Peerflix(BaseClient):
                     "peers": 0,
                 }
             )
-        kodilog(results)
         return results
-    def parse_stream_title(self, title):
-        name = title.splitlines()[0]
-
-        size_match = re.search(r"💾 (\d+(?:\.\d+)?\s*(GB|MB))", title, re.IGNORECASE)
-        size = size_match.group(1) if size_match else ""
-        size = convert_size_to_bytes(size)
-
-        seeders_match = re.search(r"👤 (\d+)", title)
-        seeders = int(seeders_match.group(1)) if seeders_match else None
-
-        languages, full_languages = self.extract_languages(title)
-
-        provider = self.extract_provider(title)
-
-        return {
-            "title": name,
-            "size": size,
-            "seeders": seeders,
-            "languages": languages,
-            "full_languages": full_languages,
-            "provider": provider,
-        }
-
-    def extract_languages(self, title):
-        languages = []
-        full_languages = []
-        # Regex to match unicode country flag emojis
-        flag_emojis = re.findall(r"[\U0001F1E6-\U0001F1FF]{2}", title)
-        if flag_emojis:
-            for flag in flag_emojis:
-                languages.append(unicode_flag_to_country_code(flag).upper())
-                full_lang = find_language_by_unicode(flag)
-                if (full_lang != None) and (full_lang not in full_languages):
-                    full_languages.append(full_lang)
-        return languages, full_languages
 
     def extract_provider(self, title):
         match = re.search(r"🌐.* ([^ \n]+)", title)
