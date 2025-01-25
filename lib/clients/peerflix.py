@@ -20,7 +20,7 @@ class Peerflix(BaseClient):
                 return
             return self.parse_response(res)
         except Exception as e:
-            self.handle_exception(f"{translation(30228)}: {str(e)}")
+            self.handle_exception(f"{translation(30234)}: {str(e)}")
 
     def parse_response(self, res):
         res = res.json()

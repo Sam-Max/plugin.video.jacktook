@@ -179,6 +179,10 @@ msgctxt "#30233"
 msgid "The request to Mediafusion failed."
 msgstr "La peticion a Mediafusion ha fallado"
 
+msgctxt "#30234"
+msgid "The request to Peerflix failed."
+msgstr "La peticion a Peerflix ha fallado"
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache de TMDB limpiada"
