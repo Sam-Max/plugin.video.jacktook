@@ -539,6 +539,10 @@ msgctxt "#30769"
 msgid "Elfhosted/KnightCrawler Configuration"
 msgstr "Configuración de Elfhosted/KnightCrawler"
 
+msgctxt "#30770"
+msgid "Language"
+msgstr "Idioma"
+
 msgctxt "#30771"
 msgid "Zilean Configuration"
 msgstr "Configuración de Zilean"
@@ -946,3 +950,7 @@ msgstr "Idioma y país"
 msgctxt "#42419"
 msgid "The language and country settings used when looking up data from TMDb"
 msgstr "La configuración de idioma y país utilizada al buscar datos de TMDb"
+
+msgctxt "#42420"
+msgid "EN"
+msgstr "EN"

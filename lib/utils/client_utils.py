@@ -71,9 +71,10 @@ def get_client(indexer):
 
     elif indexer == Indexer.PEERFLIX:
         host = get_setting("peerflix_host")
+        language = get_setting("peerflix_language")
         if not validate_host(host, indexer):
             return
-        return Peerflix(host, notification)
+        return Peerflix(host, notification, language)
 
     elif indexer == Indexer.MEDIAFUSION:
         host = get_setting("mediafusion_host")
