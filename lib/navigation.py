@@ -852,8 +852,6 @@ def search_item(params):
     submode = params.get("submode", None)
     page = int(params.get("page", 1))
 
-    set_content_type(mode)
-
     if api == "trakt":
         handle_trakt_query(query, category, mode, page, submode, api)
     elif api == "tmdb":

@@ -69,7 +69,6 @@
 						<font>font12</font>
 						<textcolor>ffffffff</textcolor>
 						<label>Playing in $INFO[Player.TimeRemaining(ss)] seconds</label>
-						<visible>!Integer.IsGreater(Player.TimeRemaining,59)</visible>
 					</control>
 				</control>
 

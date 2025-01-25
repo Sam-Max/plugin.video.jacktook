@@ -18,6 +18,7 @@ from lib.utils.utils import (
     Cartoons,
     add_next_button,
     execute_thread_pool,
+    set_content_type,
     set_media_infotag,
 )
 
@@ -69,6 +70,8 @@ def handle_tmdb_query(params):
     submode = params.get("submode", None)
     category = params.get("category", None)
     page = int(params.get("page", 1))
+
+    set_content_type(mode)
 
     if mode == "movies":
         handle_tmdb_movie_query(query, page, mode)
