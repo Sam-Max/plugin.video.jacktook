@@ -14,7 +14,7 @@ class ResolverWindow(BaseWindow):
         location=None,
         source=None,
         item_information=None,
-        previous_window = None,
+        previous_window=None,
         close_callback=None,
     ):
         super().__init__(xml_file, location, item_information=item_information)
@@ -53,7 +53,12 @@ class ResolverWindow(BaseWindow):
             indexer = self.source.get("indexer")
             url = self.source.get("magnetUrl", "") or self.source.get("downloadUrl", "")
 
-            if indexer in {Indexer.TORRENTIO, Indexer.ELHOSTED, Indexer.ZILEAN}:
+            if indexer in {
+                Indexer.TORRENTIO,
+                Indexer.ELHOSTED,
+                Indexer.ZILEAN,
+                Indexer.MEDIAFUSION,
+            }:
                 magnet = info_hash_to_magnet(guid)
             else:
                 if guid and guid.startswith("magnet:?"):
@@ -70,7 +75,7 @@ class ResolverWindow(BaseWindow):
 
             if not magnet:
                 magnet = resolve_to_magnet(url) or ""
-                
+
             is_torrent = True
         elif type == "Direct":
             url = self.source.get("downloadUrl")
@@ -115,14 +120,13 @@ class ResolverWindow(BaseWindow):
         self.window = SourcePackSelect(
             "source_select.xml",
             ADDON_PATH,
-            source = self.source,
+            source=self.source,
             pack_info=self.pack_data,
             item_information=self.item_information,
         )
 
-        self.playback_info = self.window.doModal()  
-        del self.window      
-
+        self.playback_info = self.window.doModal()
+        del self.window
 
     def _update_window_properties(self, source):
         self.setProperty("enable_busy_spinner", "true")
