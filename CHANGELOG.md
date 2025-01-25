@@ -1,3 +1,8 @@
+## 0.4.7
+* Add Peerflix indexer support.
+* Fix Mediafusion not playing sources when using torrents
+* Other minor improvements and fixes
+
 ## 0.4.6
 * Fix a bug that was causing fanart media details not been updating correctly
 
