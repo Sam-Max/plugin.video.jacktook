@@ -5,6 +5,7 @@ from lib.clients.jackgram import Jackgram
 from lib.clients.medifusion import MediaFusion
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.torrentio import Torrentio
+from lib.clients.peerflix import Peerflix
 from lib.clients.zilean import Zilean
 from lib.utils.kodi_utils import ADDON, get_setting, notification, translation
 from lib.utils.utils import Indexer
@@ -67,6 +68,13 @@ def get_client(indexer):
         if not validate_host(host, indexer):
             return
         return Torrentio(host, notification)
+
+    elif indexer == Indexer.PEERFLIX:
+        host = get_setting("peerflix_host")
+        language = get_setting("peerflix_language")
+        if not validate_host(host, indexer):
+            return
+        return Peerflix(host, notification, language)
 
     elif indexer == Indexer.MEDIAFUSION:
         host = get_setting("mediafusion_host")

@@ -1,4 +1,3 @@
-from lib.api.jacktook.kodi import kodilog
 from lib.utils.client_utils import get_client
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer, get_cached, set_cached
@@ -33,7 +32,7 @@ def search_client(
             return cached_results
 
     if ids:
-        tmdb_id, _, imdb_id = [id.strip() for id in ids.split(',')]
+        tmdb_id, _, imdb_id = [id.strip() for id in ids.split(",")]
     else:
         tmdb_id = imdb_id = None
 
@@ -44,6 +43,18 @@ def search_client(
         if imdb_id:
             perform_search(
                 Indexer.TORRENTIO,
+                dialog,
+                imdb_id,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
+
+    if get_setting("peerflix_enabled"):
+        if imdb_id:
+            perform_search(
+                Indexer.PEERFLIX,
                 dialog,
                 imdb_id,
                 mode,

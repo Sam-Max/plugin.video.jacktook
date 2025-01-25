@@ -55,6 +55,7 @@ class ResolverWindow(BaseWindow):
 
             if indexer in {
                 Indexer.TORRENTIO,
+                Indexer.PEERFLIX,
                 Indexer.ELHOSTED,
                 Indexer.ZILEAN,
                 Indexer.MEDIAFUSION,

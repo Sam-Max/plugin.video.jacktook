@@ -191,6 +191,10 @@ msgctxt "#30233"
 msgid "The request to Mediafusion failed."
 msgstr ""
 
+msgctxt "#30234"
+msgid "The request to Peerflix failed."
+msgstr ""
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr ""
@@ -547,6 +551,10 @@ msgctxt "#30769"
 msgid "Elfhosted/KnightCrawler Configuration"
 msgstr ""
 
+msgctxt "#30770"
+msgid "Language"
+msgstr ""
+
 msgctxt "#30771"
 msgid "Zilean Configuration"
 msgstr ""
@@ -669,6 +677,10 @@ msgstr ""
 
 msgctxt "#30806"
 msgid "Clear cache when update"
+msgstr ""
+
+msgctxt "#30807"
+msgid "Peerfix Configuration"
 msgstr ""
 
 msgctxt "#40000"
@@ -949,4 +961,8 @@ msgstr ""
 
 msgctxt "#42419"
 msgid "The language and country settings used when looking up data from TMDb"
+msgstr ""
+
+msgctxt "#42420"
+msgid "EN"
 msgstr ""
