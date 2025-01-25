@@ -203,6 +203,26 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="peerflix" label="30807">
+                <setting id="peerflix_enabled" type="boolean" label="30734" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="peerflix_host" type="string" label="30025" help="">
+                    <default>https://peerflix.mov/</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
+                    <control type="edit" format="string">
+                        <heading>30025</heading>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="peerflix_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="jackgram" label="30767">
                 <setting id="jackgram_enabled" type="boolean" label="30734" help="">
                     <default>false</default>

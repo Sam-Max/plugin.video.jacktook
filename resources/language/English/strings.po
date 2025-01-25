@@ -671,6 +671,10 @@ msgctxt "#30806"
 msgid "Clear cache when update"
 msgstr ""
 
+msgctxt "#30807"
+msgid "Peerfix Configuration"
+msgstr ""
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

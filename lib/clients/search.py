@@ -51,6 +51,18 @@ def search_client(
                 season,
                 episode,
             )
+    
+    if get_setting("peerflix_enabled"):
+        if imdb_id:
+            perform_search(
+                Indexer.PEERFLIX,
+                dialog,
+                imdb_id,
+                mode,
+                media_type,
+                season,
+                episode,
+            )
 
     if get_setting("mediafusion_enabled"):
         if imdb_id:

@@ -53,7 +53,7 @@ class ResolverWindow(BaseWindow):
             indexer = self.source.get("indexer")
             url = self.source.get("magnetUrl", "") or self.source.get("downloadUrl", "")
 
-            if indexer in {Indexer.TORRENTIO, Indexer.ELHOSTED, Indexer.ZILEAN}:
+            if indexer in {Indexer.TORRENTIO, Indexer.PEERFLIX, Indexer.ELHOSTED, Indexer.ZILEAN}:
                 magnet = info_hash_to_magnet(guid)
             else:
                 if guid and guid.startswith("magnet:?"):

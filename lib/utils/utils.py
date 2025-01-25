@@ -136,6 +136,7 @@ class Indexer(Enum):
     PROWLARR = "Prowlarr"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
+    PEERFLIX = "Peerflix"
     MEDIAFUSION = "MediaFusion"
     JACKGRAM = "Jackgram"
     TELEGRAM = "Telegram"
@@ -184,6 +185,7 @@ torrent_indexers = [
     Indexer.PROWLARR,
     Indexer.JACKETT,
     Indexer.TORRENTIO,
+    Indexer.PEERFLIX,
     Indexer.ELHOSTED,
     Indexer.BURST,
 ]

@@ -24,8 +24,8 @@ msgid "Clients:"
 msgstr "Clientes"
 
 msgctxt "#30002"
-msgid "Client"
-msgstr "Cliente"
+msgid "Torrent Client"
+msgstr "Cliente Torrent"
 
 msgctxt "#30020"
 msgid "Indexers"
@@ -58,6 +58,10 @@ msgstr "Conexion insegura"
 msgctxt "#30028"
 msgid "Sort by"
 msgstr "Ordenar por"
+
+msgctxt "#30029"
+msgid "Total Results"
+msgstr "Total de resultados"
 
 msgctxt "#30030"
 msgid "Timeout"
@@ -658,6 +662,10 @@ msgstr "Mostrar menú de Telegram"
 msgctxt "#30806"
 msgid "Clear cache when update"
 msgstr "Limpiar cache al actualizar"
+
+msgctxt "#30808"
+msgid "Peerfix Configuration"
+msgstr "Configuración de Peerfix"
 
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
