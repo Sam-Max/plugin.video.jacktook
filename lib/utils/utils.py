@@ -286,7 +286,7 @@ def set_video_info(
     info = {"plot": overview}
 
     if ids:
-        _, _, imdb_id = [id.strip() for id in ids.split(',')]
+        _, _, imdb_id = [id.strip() for id in ids.split(",")]
         info["imdbnumber"] = imdb_id
 
     if duration:
@@ -380,7 +380,7 @@ def set_media_infotag(
     if duration:
         info_tag.setDuration(int(duration) * 60)
     if ids:
-        tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(',')]
+        tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(",")]
         info_tag.setIMDBNumber(imdb_id)
         info_tag.setUniqueIDs(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
@@ -640,38 +640,42 @@ def unzip(zip_location, destination_location, destination_check):
 
 def check_pack(results, season_num):
     season_fill = f"{int(season_num):02}"
-    pattern1 = r"\.S%s\." % (season_num)
-    pattern2 = r"\.S%s\." % (season_fill)
-    pattern3 = r"\sS%s\s" % (season_num)
-    pattern4 = r"\.%s\.season" % (season_num)
-    pattern5 = r"total\.season"
-    pattern6 = r"season"
-    pattern7 = r"the\.complete"
-    pattern8 = r"complete"
-    pattern9 = r"\.season\.%s\." % season_num
-    pattern10 = r"\.season%s\." % season_num
-    pattern11 = r"\.season\.%s\." % season_fill
-    pattern12 = r"\sS%s\s" % (season_fill)
 
-    patterns = "|".join(
-        [
-            pattern1,
-            pattern2,
-            pattern3,
-            pattern4,
-            pattern5,
-            pattern6,
-            pattern7,
-            pattern8,
-            pattern9,
-            pattern10,
-            pattern11,
-            pattern12,
-        ]
-    )
+    patterns = [
+        # Season as ".S{season_num}." or ".S{season_fill}."
+        r"\.S%s\." % season_num,
+        r"\.S%s\." % season_fill,
+        # Season as " S{season_num} " or " S{season_fill} "
+        r"\sS%s\s" % season_num,
+        r"\sS%s\s" % season_fill,
+        # Season as ".{season_num}.season" (like .1.season, .01.season)
+        r"\.%s\.season" % season_num,
+        # "total.season" or "season" or "the.complete"
+        r"total\.season",
+        r"season",
+        r"the\.complete",
+        r"complete",
+        # Pattern to detect episode ranges like S02E01-02
+        r"S(\d{2})E(\d{2})-(\d{2})",
+        # Season as ".season.{season_num}." or ".season.{season_fill}."
+        r"\.season\.%s\." % season_num,
+        r"\.season%s\." % season_num,
+        r"\.season\.%s\." % season_fill,
+        # Handle cases "s1 to {season_num}", "s1 thru {season_num}", etc.
+        r"s1 to %s" % season_num,
+        r"s1 to s%s" % season_num,
+        r"s01 to %s" % season_fill,
+        r"s01 to s%s" % season_fill,
+        r"s1 thru %s" % season_num,
+        r"s1 thru s%s" % season_num,
+        r"s01 thru %s" % season_fill,
+        r"s01 thru s%s" % season_fill,
+    ]
+
+    combined_pattern = "|".join(patterns)
 
     for res in results:
-        match = re.search(f"{patterns}", res["title"])
+        match = re.search(combined_pattern, res["title"])
         if match:
             res["isPack"] = True
         else:
@@ -740,22 +744,28 @@ def sort_results(res):
 def filter_by_episode(results, episode_name, episode_num, season_num):
     episode_fill = f"{int(episode_num):02}"
     season_fill = f"{int(season_num):02}"
-    pattern1 = r"S%sE%s" % (season_fill, episode_fill)
-    pattern2 = r"%sx%s" % (season_fill, episode_fill)
-    pattern3 = r"\s%s\s" % (season_fill)
-    pattern4 = r"\.S%s" % (season_fill)
-    pattern5 = r"\.S%sE%s" % (season_fill, episode_fill)
-    pattern6 = r"\sS%sE%s\s" % (season_fill, episode_fill)
 
-    patterns = "|".join(
-        [pattern1, pattern2, pattern3, pattern4, pattern5, pattern6, episode_name]
-    )
+    patterns = [
+        r"S%sE%s" % (season_fill, episode_fill),  # SXXEXX format
+        r"%sx%s" % (season_fill, episode_fill),   # XXxXX format
+        r"\s%s\s" % season_fill,                  # season surrounded by spaces
+        r"\.S%s" % season_fill,                   # .SXX format
+        r"\.S%sE%s" % (season_fill, episode_fill),  # .SXXEXX format
+        r"\sS%sE%s\s" % (season_fill, episode_fill),  # season and episode surrounded by spaces
+        r"Cap\." # match "Cap." 
+    ]
+
+    if episode_name:
+        patterns.append(episode_name)
+
+    combined_pattern = "|".join(patterns)
 
     filtered_episodes = []
     for res in results:
-        match = re.search(f"{patterns}", res["title"])
+        match = re.search(combined_pattern, res["title"])
         if match:
             filtered_episodes.append(res)
+
     return filtered_episodes
 
 
