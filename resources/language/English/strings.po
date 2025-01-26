@@ -195,6 +195,22 @@ msgctxt "#30234"
 msgid "The request to Peerflix failed."
 msgstr ""
 
+msgctxt "#30235"
+msgid "Strem.io"
+msgstr ""
+
+msgctxt "#30236"
+msgid "Strem.io add-ons"
+msgstr ""
+
+msgctxt "#30237"
+msgid "Import your config"
+msgstr ""
+
+msgctxt "#30238"
+msgid "Manage add-ons"
+msgstr ""
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr ""

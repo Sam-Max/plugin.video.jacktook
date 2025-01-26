@@ -1,7 +1,8 @@
 from lib.utils.client_utils import get_client
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer, get_cached, set_cached
-
+from lib.clients.stremio_addon import StremioAddonClient
+import lib.stremio.ui as ui
 
 def show_dialog(title, message, dialog):
     dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
@@ -143,6 +144,14 @@ def search_client(
             season,
             episode,
         )
+
+    if get_setting("stremio_enabled"):
+        selected_stremio_addons = ui.get_selected_addons()
+        for addon in selected_stremio_addons:
+            stremio_client = StremioAddonClient(addon)
+            results = stremio_client.search(imdb_id, mode, media_type, season, episode)
+            if results:
+                total_results.extend(results)
 
     if mode == "tv" or media_type == "tv" or mode == "anime":
         set_cached(total_results, query, params=(episode, "index"))
