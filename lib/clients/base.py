@@ -20,5 +20,5 @@ class BaseClient(ABC):
         exception_message = str(exception)
         if len(exception_message) > 70:
             exception_message = exception_message[:70] + "..."
-        self.notification(exception_message)
+        raise Exception(exception_message)
 
