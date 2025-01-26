@@ -466,7 +466,7 @@
                 <setting id="stremio_addons_import" type="action" label="30237">
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_enable">true</condition>
+                            <condition operator="is" setting="stremio_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_import)</data>
@@ -477,7 +477,7 @@
                 <setting id="stremio_addons_manager" type="action" label="30238">
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_enable">true</condition>
+                            <condition operator="is" setting="stremio_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_manager)</data>
