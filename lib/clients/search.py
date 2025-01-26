@@ -1,6 +1,8 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.utils.client_utils import get_client
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer, get_cached, set_cached
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def show_dialog(title, message, dialog):
@@ -10,16 +12,13 @@ def show_dialog(title, message, dialog):
 def search_client(
     query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
 ):
-
     def perform_search(indexer_key, dialog, *args, **kwargs):
         if indexer_key != Indexer.BURST:
             show_dialog(indexer_key, f"Searching {indexer_key}", dialog)
         client = get_client(indexer_key)
         if not client:
-            return
-        results = client.search(*args, **kwargs)
-        if results:
-            total_results.extend(results)
+            return []
+        return client.search(*args, **kwargs)
 
     if not rescrape:
         if mode == "tv" or media_type == "tv" or mode == "anime":
@@ -39,110 +38,144 @@ def search_client(
     dialog.create("")
     total_results = []
 
-    if get_setting("torrentio_enabled"):
-        if imdb_id:
-            perform_search(
-                Indexer.TORRENTIO,
-                dialog,
-                imdb_id,
-                mode,
-                media_type,
-                season,
-                episode,
+    tasks = []
+
+    with ThreadPoolExecutor() as executor:
+        if get_setting("torrentio_enabled") and imdb_id:
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.TORRENTIO,
+                    dialog,
+                    imdb_id,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
             )
 
-    if get_setting("peerflix_enabled"):
-        if imdb_id:
-            perform_search(
-                Indexer.PEERFLIX,
-                dialog,
-                imdb_id,
-                mode,
-                media_type,
-                season,
-                episode,
+        if get_setting("peerflix_enabled") and imdb_id:
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.PEERFLIX,
+                    dialog,
+                    imdb_id,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
             )
 
-    if get_setting("mediafusion_enabled"):
-        if imdb_id:
-            perform_search(
-                Indexer.MEDIAFUSION,
-                dialog,
-                imdb_id,
-                mode,
-                media_type,
-                season,
-                episode,
+        if get_setting("mediafusion_enabled") and imdb_id:
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.MEDIAFUSION,
+                    dialog,
+                    imdb_id,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
             )
 
-    if get_setting("elfhosted_enabled"):
-        if imdb_id:
-            perform_search(
-                Indexer.ELHOSTED,
-                dialog,
-                imdb_id,
-                mode,
-                media_type,
-                season,
-                episode,
+        if get_setting("elfhosted_enabled") and imdb_id:
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.ELHOSTED,
+                    dialog,
+                    imdb_id,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
             )
 
-    if get_setting("zilean_enabled"):
-        perform_search(
-            Indexer.ZILEAN,
-            dialog,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+        if get_setting("zilean_enabled"):
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.ZILEAN,
+                    dialog,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
+            )
 
-    if get_setting("jacktookburst_enabled"):
-        perform_search(
-            Indexer.BURST,
-            dialog,
-            tmdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+        if get_setting("jacktookburst_enabled"):
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.BURST,
+                    dialog,
+                    tmdb_id,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
+            )
 
-    if get_setting("prowlarr_enabled"):
-        indexers_ids = get_setting("prowlarr_indexer_ids")
-        perform_search(
-            Indexer.PROWLARR,
-            dialog,
-            query,
-            mode,
-            season,
-            episode,
-            indexers_ids,
-        )
+        if get_setting("prowlarr_enabled"):
+            indexers_ids = get_setting("prowlarr_indexer_ids")
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.PROWLARR,
+                    dialog,
+                    query,
+                    mode,
+                    season,
+                    episode,
+                    indexers_ids,
+                )
+            )
 
-    if get_setting("jackett_enabled"):
-        perform_search(
-            Indexer.JACKETT,
-            dialog,
-            query,
-            mode,
-            season,
-            episode,
-        )
+        if get_setting("jackett_enabled"):
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.JACKETT,
+                    dialog,
+                    query,
+                    mode,
+                    season,
+                    episode,
+                )
+            )
 
-    if get_setting("jackgram_enabled"):
-        perform_search(
-            Indexer.JACKGRAM,
-            dialog,
-            tmdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-        )
+        if get_setting("jackgram_enabled"):
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.JACKGRAM,
+                    dialog,
+                    tmdb_id,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
+            )
+
+        for future in as_completed(tasks):
+            try:
+                results = future.result()
+                if results:
+                    total_results.extend(results)
+            except Exception as e:
+                kodilog(f"Error: {e}")
 
     if mode == "tv" or media_type == "tv" or mode == "anime":
         set_cached(total_results, query, params=(episode, "index"))

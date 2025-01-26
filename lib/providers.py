@@ -1,4 +1,5 @@
 import logging
+from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_NAME, notification
 from xbmcgui import DialogProgressBG
 from lib.api.jacktook.provider import (
@@ -65,15 +66,13 @@ def get_providers_results(method, *args, **kwargs):
     data = run_providers_method(30, method, *args, **kwargs)
     for provider, provider_results in data.items():
         if not isinstance(provider_results, (tuple, list)):
-            logging.error(
-                "Expecting list or tuple as results for %s:%s", provider, method
-            )
+            kodilog("Expecting list or tuple as results for %s:%s", provider, method)
             continue
         for provider_result in provider_results:
             try:
                 _provider_result = ProviderResult(provider_result)
             except Exception as e:
-                logging.error(
+                kodilog(
                     "Invalid format on provider '%s' result (%s): %s",
                     provider,
                     provider_result,
@@ -92,9 +91,9 @@ def search(method, *args, **kwargs):
     if results:
         return results
     elif results is None:
-        notification("No providers available")
+        raise Exception("No providers available")
     else:
-        notification("No results found!")
+        raise Exception("No results found")
 
 
 def burst_search(query):
