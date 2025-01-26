@@ -459,7 +459,7 @@
         </category>
          <category id="stremio_category" label="30235">
             <group id="stremio_group" label="30236">
-                <setting id="stremio_enable" type="boolean" label="30734">
+                <setting id="stremio_enabled" type="boolean" label="30734">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
