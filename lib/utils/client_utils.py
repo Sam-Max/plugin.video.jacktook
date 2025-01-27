@@ -1,11 +1,7 @@
 from lib.clients.jacktook_burst import Burst
-from lib.clients.elfhosted import Elfhosted
 from lib.clients.jackett import Jackett
 from lib.clients.jackgram import Jackgram
-from lib.clients.medifusion import MediaFusion
 from lib.clients.prowlarr import Prowlarr
-from lib.clients.torrentio import Torrentio
-from lib.clients.peerflix import Peerflix
 from lib.clients.zilean import Zilean
 from lib.utils.kodi_utils import ADDON, get_setting, notification, translation
 from lib.utils.utils import Indexer
@@ -63,36 +59,11 @@ def get_client(indexer):
             return
         return Prowlarr(host, api_key, notification)
 
-    elif indexer == Indexer.TORRENTIO:
-        host = get_setting("torrentio_host")
-        if not validate_host(host, indexer):
-            return
-        return Torrentio(host, notification)
-
-    elif indexer == Indexer.PEERFLIX:
-        host = get_setting("peerflix_host")
-        language = get_setting("peerflix_language")
-        if not validate_host(host, indexer):
-            return
-        return Peerflix(host, notification, language)
-
-    elif indexer == Indexer.MEDIAFUSION:
-        host = get_setting("mediafusion_host")
-        if not validate_host(host, indexer):
-            return
-        return MediaFusion(host, notification)
-
     elif indexer == Indexer.JACKGRAM:
         host = get_setting("jackgram_host")
         if not validate_host(host, indexer):
             return
         return Jackgram(host, notification)
-
-    elif indexer == Indexer.ELHOSTED:
-        host = get_setting("elfhosted_host")
-        if not validate_host(host, indexer):
-            return
-        return Elfhosted(host, notification)
 
     elif indexer == Indexer.ZILEAN:
         timeout = get_int_setting("zilean_timeout")

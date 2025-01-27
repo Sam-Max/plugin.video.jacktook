@@ -43,62 +43,6 @@ def search_client(
     tasks = []
 
     with ThreadPoolExecutor() as executor:
-        if get_setting("torrentio_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.TORRENTIO,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("peerflix_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.PEERFLIX,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("mediafusion_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.MEDIAFUSION,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("elfhosted_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.ELHOSTED,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
         if get_setting("zilean_enabled"):
             tasks.append(
                 executor.submit(
