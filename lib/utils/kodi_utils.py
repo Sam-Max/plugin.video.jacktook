@@ -317,7 +317,7 @@ def bytes_to_human_readable(size, unit="B"):
         size /= 1024
         unit = list(units.keys())[list(units.values()).index(units[unit] + 1)]
 
-    return f"{size:.2f} {unit}"
+    return f"{size:.3g} {unit}"
 
 
 def convert_size_to_bytes(size_str: str) -> int:
