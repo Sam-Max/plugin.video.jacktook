@@ -1,3 +1,4 @@
+from lib.utils.client_utils import show_dialog
 from lib.utils.utils import USER_AGENT_HEADER
 from lib.stremio.addons_manager import Addon
 from lib.stremio.stream import Stream
@@ -12,8 +13,10 @@ import re
 class StremioAddonClient:
     def __init__(self, addon: Addon):
         self.addon = addon
+        self.addon_name = self.addon.manifest.name
 
-    def search(self, imdb_id, mode, media_type, season, episode):
+    def search(self, imdb_id, mode, media_type, season, episode, dialog):
+        show_dialog(self.addon_name, f"Searching {self.addon_name}", dialog)
         try:
             if mode == "tv" or media_type == "tv":
                 if not self.addon.isSupported("stream", "series", "tt"):
@@ -28,7 +31,7 @@ class StremioAddonClient:
                 return
             return self.parse_response(res)
         except Exception as e:
-            kodilog(f"Error in {self.addon.manifest.name}: {str(e)}")
+            kodilog(f"Error in {self.addon_name}: {str(e)}")
 
     def parse_response(self, res):
         res = res.json()

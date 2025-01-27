@@ -40,6 +40,10 @@ def validate_key(api_key, indexer):
     return True
 
 
+def show_dialog(title, message, dialog):
+    dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
+
+    
 def get_client(indexer):
     if indexer == Indexer.JACKETT:
         host = get_setting("jackett_host")
