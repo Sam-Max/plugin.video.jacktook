@@ -4,7 +4,7 @@ from requests import Session
 
 class BaseClient(ABC):
     def __init__(self, host, notification):
-        self.host = host.rstrip("/")
+        self.host = host.rstrip("/") if host else ""
         self.notification = notification
         self.session = Session()
 

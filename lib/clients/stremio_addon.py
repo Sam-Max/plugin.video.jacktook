@@ -1,3 +1,4 @@
+from lib.clients.base import BaseClient
 from lib.utils.client_utils import show_dialog
 from lib.utils.utils import USER_AGENT_HEADER
 from lib.stremio.addons_manager import Addon
@@ -6,12 +7,12 @@ from lib.stremio.stream import Stream
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import convert_size_to_bytes
 from lib.utils.language_detection import find_languages_in_string
-import requests
+
 import re
 
-
-class StremioAddonClient:
+class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon):
+        super().__init__(None, None)
         self.addon = addon
         self.addon_name = self.addon.manifest.name
 
@@ -26,13 +27,13 @@ class StremioAddonClient:
                 if not self.addon.isSupported("stream", "movie", "tt"):
                     return []
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
-            res = requests.get(url, headers=USER_AGENT_HEADER, timeout=10)
+            res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res)
         except Exception as e:
-            kodilog(f"Error in {self.addon_name}: {str(e)}")
-
+            self.handle_exception(f"Error in {self.addon_name}: {str(e)}")
+            
     def parse_response(self, res):
         res = res.json()
         results = []
