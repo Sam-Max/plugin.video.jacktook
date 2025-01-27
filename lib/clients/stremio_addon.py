@@ -32,7 +32,6 @@ class StremioAddonClient:
 
     def parse_response(self, res):
         res = res.json()
-        kodilog(res)
         results = []
         for item in res["streams"]:
             stream = Stream(item)
