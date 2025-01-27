@@ -31,7 +31,6 @@ from lib.utils.kodi_utils import (
 
 from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
-from lib.utils.torrentio_utils import filter_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
@@ -685,9 +684,6 @@ def check_pack(results, season_num):
 def pre_process(results, mode, episode_name, episode, season):
     results = remove_duplicate(results)
 
-    if get_setting("torrentio_enabled"):
-        results = filter_torrentio_provider(results)
-
     if mode == "tv" and get_setting("filter_by_episode"):
         results = filter_by_episode(results, episode_name, episode, season)
 
@@ -699,13 +695,7 @@ def post_process(results, season=None):
     if season:
         check_pack(results, season)
 
-    if (
-        get_setting("torrentio_enabled")
-        and get_setting("torrentio_priority_lang") != "None"
-    ):
-        results = sort_priority_language(results)
-    else:
-        results = sort_results(results)
+    results = sort_results(results)
 
     results = limit_results(results)
 
