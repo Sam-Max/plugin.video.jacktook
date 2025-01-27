@@ -69,6 +69,31 @@ class UpdateCheck:
         kodilog("Update Check Service Finished")
 
 
+def TMDBHelperAutoInstall():
+    import xbmcaddon
+    import xbmcvfs
+
+    try:
+        _ = xbmcaddon.Addon("plugin.video.themoviedb.helper")
+    except RuntimeError:
+        return
+
+    tmdb_helper_path = "special://home/addons/plugin.video.themoviedb.helper/resources/players/jacktook.select.json"
+    if xbmcvfs.exists(tmdb_helper_path):
+        return
+    jacktook_select_path = (
+        "special://home/addons/plugin.video.jacktook/jacktook.select.json"
+    )
+    if not xbmcvfs.exists(jacktook_select_path):
+        kodilog("jacktook.select.json file not found!")
+        return
+
+    ok = xbmcvfs.copy(jacktook_select_path, tmdb_helper_path)
+    if not ok:
+        kodilog("Error installing jacktook.select.json file!")
+        return
+
+
 class JacktookMOnitor(xbmc.Monitor):
     def __init__(self):
         xbmc.Monitor.__init__(self)
@@ -78,6 +103,7 @@ class JacktookMOnitor(xbmc.Monitor):
         CheckKodiVersion().run()
         DatabaseSetup().run()
         Thread(target=UpdateCheck().run).start()
+        TMDBHelperAutoInstall()
 
     def onNotification(self, sender, method, data):
         OnNotificationActions().run(sender, method, data)
