@@ -196,11 +196,11 @@ msgid "The request to Peerflix failed."
 msgstr ""
 
 msgctxt "#30235"
-msgid "Strem.io"
+msgid "Stremio"
 msgstr ""
 
 msgctxt "#30236"
-msgid "Strem.io add-ons"
+msgid "Stremio add-ons"
 msgstr ""
 
 msgctxt "#30237"
