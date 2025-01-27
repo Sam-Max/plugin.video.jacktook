@@ -1,4 +1,6 @@
-import requests
+from json import JSONDecodeError
+from requests.exceptions import RequestException, Timeout, TooManyRedirects
+from requests import Session
 from lib.utils.utils import USER_AGENT_HEADER
 from lib.api.jacktook.kodi import kodilog
 
@@ -6,17 +8,42 @@ from lib.api.jacktook.kodi import kodilog
 class Stremio:
     def __init__(self, authKey=None):
         self.authKey = authKey
-        self.session = requests.Session()
+        self.session = Session()
         self.session.headers.update(USER_AGENT_HEADER)
 
-    def _post(self, url, data):
-        return self.session.post(
-            url, json=data, headers=USER_AGENT_HEADER, timeout=10
-        ).json()
+    def _request(self, method, url, data=None):
+        try:
+            if method == 'GET':
+                resp = self.session.get(url, timeout=10)
+            elif method == 'POST':
+                resp = self.session.post(url, json=data, timeout=10)
+            else:
+                raise ValueError(f"Unsupported HTTP method: {method}")
+            
+            if resp.status_code != 200:
+                kodilog(f"Status code {resp.status_code} received for URL: {url}. Response: {resp.text}")
+                resp.raise_for_status()
+
+            try:
+                return resp.json()
+            except JSONDecodeError:
+                kodilog(f"Failed to decode JSON response for URL: {url}. Response: {resp.text}")
+                raise
+        except Timeout:
+            kodilog(f"Request timed out for URL: {url}")
+            raise
+        except TooManyRedirects:
+            kodilog(f"Too many redirects encountered for URL: {url}")
+            raise
+        except RequestException as e:
+            kodilog(f"Failed to fetch data from {url}: {e}")
+            raise
 
     def _get(self, url):
-        resp = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
-        return resp.json()
+        return self._request('GET', url)
+
+    def _post(self, url, data):
+        return self._request('POST', url, data)
 
     def login(self, email, password):
         """Login to Stremio account."""

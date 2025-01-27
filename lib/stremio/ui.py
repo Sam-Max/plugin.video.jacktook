@@ -81,7 +81,11 @@ def stremio_addons_import(params):
             hashed_key=True,
         )
     except Exception as e:
-        dialog.ok("Addons Import Failed", f"{e}")
+        dialog.ok(
+            "Add-ons Import Failed",
+            "Please try again later and report the issue if the problem persists. For more details, check the log file.",
+        )
+        kodilog(f"Failed to import addons: {e} Response ", exc_info=True)
         return
 
     dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
