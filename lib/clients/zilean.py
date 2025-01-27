@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
 from lib.clients.base import BaseClient
-from lib.utils.utils import USER_AGENT_HEADER
+from lib.utils.utils import USER_AGENT_HEADER, info_hash_to_magnet
 
 
 class Zilean(BaseClient):
@@ -88,6 +88,7 @@ class Zilean(BaseClient):
                     "type": "Torrent",
                     "indexer": "Zilean",
                     "guid": item["infoHash"],
+                    "magnet": info_hash_to_magnet(item["infoHash"]),
                     "infoHash": item["infoHash"],
                     "size": item["filesize"],
                     "seeders": 0,

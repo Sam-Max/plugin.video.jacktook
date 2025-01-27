@@ -1,6 +1,6 @@
 from lib.clients.base import BaseClient
 from lib.utils.client_utils import show_dialog
-from lib.utils.utils import USER_AGENT_HEADER
+from lib.utils.utils import USER_AGENT_HEADER, info_hash_to_magnet
 from lib.stremio.addons_manager import Addon
 from lib.stremio.stream import Stream
 
@@ -9,6 +9,7 @@ from lib.utils.kodi_utils import convert_size_to_bytes
 from lib.utils.language_detection import find_languages_in_string
 
 import re
+
 
 class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon):
@@ -33,7 +34,7 @@ class StremioAddonClient(BaseClient):
             return self.parse_response(res)
         except Exception as e:
             self.handle_exception(f"Error in {self.addon_name}: {str(e)}")
-            
+
     def parse_response(self, res):
         res = res.json()
         results = []
@@ -47,6 +48,7 @@ class StremioAddonClient(BaseClient):
                     "type": "Torrent",
                     "indexer": self.addon.manifest.name.split(" ")[0],
                     "guid": stream.infoHash,
+                    "magnet": info_hash_to_magnet(stream.infoHash),
                     "infoHash": stream.infoHash,
                     "size": stream.get_parsed_size()
                     or item.get("sizebytes")

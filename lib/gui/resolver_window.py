@@ -50,29 +50,21 @@ class ResolverWindow(BaseWindow):
         type = self.source["type"]
         if type == "Torrent":
             guid = self.source.get("guid")
+            magnet = self.source.get("magnet")
             indexer = self.source.get("indexer")
             url = self.source.get("magnetUrl", "") or self.source.get("downloadUrl", "")
 
-            if indexer in {
-                Indexer.TORRENTIO,
-                Indexer.PEERFLIX,
-                Indexer.ELHOSTED,
-                Indexer.ZILEAN,
-                Indexer.MEDIAFUSION,
-            }:
-                magnet = info_hash_to_magnet(guid)
+            if magnet:
+                pass
+            elif guid and guid.startswith("magnet:?"):
+                magnet = guid
+            elif indexer == Indexer.BURST:
+                url, magnet = guid, ""
             else:
-                if guid and guid.startswith("magnet:?"):
-                    magnet = guid
-                elif indexer == Indexer.BURST:
-                    url = guid
-                    magnet = ""
-                else:
-                    magnet = ""
+                magnet = ""
 
             if url.startswith("magnet:?") and not magnet:
-                magnet = url
-                url = ""
+                magnet, url = url, ""
 
             if not magnet:
                 magnet = resolve_to_magnet(url) or ""
