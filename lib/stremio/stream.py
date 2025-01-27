@@ -22,8 +22,10 @@ class Stream:
 
         # Initialize optional attributes
         self.name = data.get("name")
-        self.title = data.get("title") # deprecated
-        self.description = data.get("description", self.title)  # Use `title` as fallback
+        self.title = data.get("title")  # deprecated
+        self.description = data.get(
+            "description", self.title
+        )  # Use `title` as fallback
         self.subtitles = data.get("subtitles", [])
         self.sources = data.get("sources", [])
 
@@ -42,13 +44,13 @@ class Stream:
             raise ValueError(
                 "At least one of 'url', 'ytId', 'infoHash', or 'externalUrl' must be specified."
             )
+
     def get_parsed_title(self) -> str:
         title = self.filename or self.description or self.title
         return title.splitlines()[0] if title else ""
 
     def get_parsed_size(self) -> int:
         return self.videoSize or 0
-        
 
     def __repr__(self):
         return f"Stream(name={self.name}, url={self.url}, ytId={self.ytId}, infoHash={self.infoHash}, externalUrl={self.externalUrl})"
