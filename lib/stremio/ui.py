@@ -38,7 +38,7 @@ def get_selected_addon_urls() -> List[str]:
 def get_selected_addons() -> List[Addon]:
     catalog = get_addons_catalog()
     selected_ids = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
-    return [addon for addon in catalog.addons if addon.url() in selected_ids]
+    return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def stremio_addons_import(params):
@@ -139,7 +139,13 @@ def stremio_addons_manager(params):
             label=addon.manifest.name,
             label2=f"{addon.manifest.description}"
             )
-        option.setArt({"icon": addon.manifest.logo if addon.manifest.logo else None})
+        
+        logo = addon.manifest.logo
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+
+        background = addon.manifest.background
+        option.setArt({"icon": logo, "fanart": background})
         options.append(option)
 
     settings = ADDON.getSettings()
