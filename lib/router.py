@@ -61,7 +61,7 @@ from lib.utils.torrent_utils import (
     torrent_action,
     torrent_files,
 )
-from lib.stremio.ui import stremio_addons_import, stremio_addons_manager
+from lib.stremio.ui import stremio_addons_import, stremio_addons_manager, stremio_logout
 
 def addon_router():
     param_string = sys.argv[2][1:]
@@ -123,7 +123,8 @@ def addon_router():
         "animation_menu": animation_menu,
         "animation_item": animation_item,
         "stremio_addons_manager": stremio_addons_manager,
-        'stremio_addons_import': stremio_addons_import
+        'stremio_addons_import': stremio_addons_import,
+        'stremio_logout': stremio_logout,
     }
 
     if param_string:

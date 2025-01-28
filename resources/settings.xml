@@ -48,14 +48,47 @@
         </category>
         <category id="indexers_category" label="30864">
             <group id="stremio_group" label="30236">
-                <setting id="stremio_enabled" type="boolean" label="30734">
+                <setting id="stremio_enabled" type="boolean" label="30734" help="30869">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="stremio_addons_import" type="action" label="30237">
+                <setting id="stremio_loggedin" type="boolean">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_email" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_pass" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_addons_manager" type="action" label="30870" help="30872">
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_manager)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+                <setting id="stremio_login" type="action" label="30871" help="30866">
+                    <dependencies>
+                        <dependency type="visible">
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_loggedin">false</condition>
+                            </and>
                         </dependency>
                     </dependencies>
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_import)</data>
@@ -63,13 +96,16 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="stremio_addons_manager" type="action" label="30238">
+                <setting id="stremio_logout" type="action" label="30868" help="30867">
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_enabled">true</condition>
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_loggedin">true</condition>
+                            </and>
                         </dependency>
                     </dependencies>
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_manager)</data>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_logout)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>

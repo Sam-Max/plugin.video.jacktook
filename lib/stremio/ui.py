@@ -5,6 +5,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.db.cached import cache
 from datetime import timedelta
 from lib.stremio.client import Stremio
+from lib.utils.kodi_utils import ADDON
 
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_CATALOG_KEY = "stremio_catalog"
@@ -20,6 +21,11 @@ def get_addons_catalog():
             kodilog(f"Failed to fetch catalog: {e}")
             return AddonManager([])
 
+        selected_keys = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
+        if not selected_keys:
+            selected_keys = "com.stremio.torrentio.addon"
+            cache.set(STREMIO_ADDONS_KEY, selected_keys, timedelta(days=365 * 20), hashed_key=True)
+        
         cache.set(STREMIO_CATALOG_KEY, catalog, timedelta(days=1), hashed_key=True)
     return AddonManager(catalog)
 
@@ -48,7 +54,6 @@ def stremio_addons_import(params):
     # Show an input dialog for email
     email = dialog.input(heading="Enter your Email", type=xbmcgui.INPUT_ALPHANUM)
 
-    kodilog(f"Email: {email}")
     if not email:
         return
 
@@ -73,23 +78,51 @@ def stremio_addons_import(params):
         manager = AddonManager(addons).get_addons_with_resource_and_id_prefix(
             "stream", "tt"
         )
-        selected_addons = [addon.url() for addon in manager]
+        selected_addons = [addon.key() for addon in manager]
         cache.set(
             STREMIO_ADDONS_KEY,
             ",".join(selected_addons),
             timedelta(days=365 * 20),
             hashed_key=True,
         )
+        settings = ADDON.getSettings()
+        ADDON.setSetting("stremio_loggedin", "true")
+        settings.setString("stremio_email", email)
+        settings.setString("stremio_pass", password)
     except Exception as e:
         dialog.ok(
             "Add-ons Import Failed",
             "Please try again later and report the issue if the problem persists. For more details, check the log file.",
         )
-        kodilog(f"Failed to import addons: {e} Response ", exc_info=True)
+        kodilog(f"Failed to import addons: {e} Response ")
         return
 
     dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
+    
+    stremio_addons_manager(None)
 
+def stremio_logout(params):
+    dialog = xbmcgui.Dialog()
+
+    confirm = dialog.yesno(
+        "Log Out from Stremio",
+        "Are you sure you want to log out? You can continue using Stremio without logging in, but your settings will be reset to the default configuration.",
+        nolabel="Cancel",
+        yeslabel="Log Out",
+    )
+    if confirm:
+        cache.set(
+            STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True
+        )
+        cache.set(
+            STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True
+        )
+        settings = ADDON.getSettings()
+        ADDON.setSetting("stremio_loggedin", "false")
+        settings.setString("stremio_email", "")
+        settings.setString("stremio_pass", "")
+        _ = get_addons_catalog()
+        stremio_addons_manager(None)
 
 def stremio_addons_manager(params):
     selected_ids = get_selected_addon_urls()
@@ -97,67 +130,32 @@ def stremio_addons_manager(params):
 
     addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
 
-    addon_names = [
-        f"{addon.manifest.name}: {addon.manifest.description}" for addon in addons
-    ]
-    addon_urls = [addon.url() for addon in addons]
-
     dialog = xbmcgui.Dialog()
-    selected_addon_id = None
+    selected_addon_ids = [addons.index(addon) for addon in addons if addon.key() in selected_ids]
 
-    while True:
-        options = [
-            f"[{'X' if addon_url in selected_ids else ' '}] {addon_names[i]}"
-            for i, addon_url in enumerate(addon_urls)
-        ]
-
-        options.append("Remove all addons")
-
-        selected_index = dialog.select("Select an Addon", options)
-
-        if selected_index == -1:
-            break
-
-        if selected_index == len(options) - 1:
-            confirm = dialog.yesno(
-                "Reset strem.io configuration",
-                f"This will remove all the configured add-ons and start from scratch",
-                nolabel="Cancel",
-                yeslabel="Yes",
+    options = []
+    for addon in addons:
+        option = xbmcgui.ListItem(
+            label=addon.manifest.name,
+            label2=f"{addon.manifest.description}"
             )
-            if confirm:
-                cache.set(
-                    STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True
-                )
-                cache.set(
-                    STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True
-                )
-            return
+        option.setArt({"icon": addon.manifest.logo if addon.manifest.logo else None})
+        options.append(option)
 
-        selected_addon_id = addon_urls[selected_index]
+    settings = ADDON.getSettings()
+    title = "Stremio Community Addons List" if not ADDON.getSetting("stremio_loggedin") != "true" else settings.getString("stremio_email")
+    selected_indexes = dialog.multiselect(title, options, preselect=selected_addon_ids, useDetails=True)
 
-        if selected_addon_id in selected_ids:
-            confirm = dialog.yesno(
-                "Disable addon",
-                f"{addon_names[selected_index]}",
-                nolabel="Cancel",
-                yeslabel="Yes",
-            )
-            if confirm:
-                selected_ids.remove(selected_addon_id)
-        else:
-            confirm = dialog.yesno(
-                "Enable addon",
-                f"{addon_names[selected_index]}",
-                nolabel="Cancel",
-                yeslabel="Yes",
-            )
-            if confirm:
-                selected_ids.append(selected_addon_id)
+    if selected_indexes is None:
+        return
 
-        cache.set(
-            STREMIO_ADDONS_KEY,
-            ",".join(selected_ids),
-            timedelta(days=365 * 20),
-            hashed_key=True,
-        )
+
+    selected_addon_ids = [addons[index].key() for index in selected_indexes]
+
+
+    cache.set(
+        STREMIO_ADDONS_KEY,
+        ",".join(selected_addon_ids),
+        timedelta(days=365 * 20),
+        hashed_key=True,
+    )

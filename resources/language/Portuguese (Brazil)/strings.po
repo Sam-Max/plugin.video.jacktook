@@ -547,3 +547,31 @@ msgstr "Pesquisar"
 msgctxt "#30865"
 msgid "Filters and Sorting"
 msgstr "Filtro e ordem dos resultados
+
+msgctxt "#30866"
+msgid "Sign in to your Stremio account to access add-ons and personalized features."
+msgstr "Faça login na sua conta do Stremio para acessar complementos e recursos personalizados."
+
+msgctxt "#30867"
+msgid "Sign out of your Stremio account. This will disconnect your account but won't delete your data."
+msgstr "Faça logout da sua conta do Stremio. Isso desconectará sua conta, mas não excluirá seus dados."
+
+msgctxt "#30868"
+msgid "Log Out of Stremio"
+msgstr "Sair do Stremio"
+
+msgctxt "#30869"
+msgid "Enable Stremio add-ons integration."
+msgstr "Habilitar a integração de complementos do Stremio."
+
+msgctxt "#30870"
+msgid "Toggle Add-ons"
+msgstr "Alternar complementos"
+
+msgctxt "#30871"
+msgid "Log In to Stremio"
+msgstr "Fazer login no Stremio"
+
+msgctxt "#30872"
+msgid "Enable or disable Stremio add-ons."
+msgstr "Habilitar ou desabilitar complementos do Stremio."

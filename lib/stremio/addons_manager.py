@@ -23,6 +23,7 @@ class Manifest:
         types: List[str],
         behavior_hints: dict,
         contact_email: Optional[str] = None,
+        logo: Optional[str] = None,
     ):
         self.id = id
         self.version = version
@@ -33,6 +34,7 @@ class Manifest:
         self.types = types
         self.behavior_hints = behavior_hints
         self.contact_email = contact_email
+        self.logo = logo
 
     def isConfigurationRequired(self):
         return self.behavior_hints.get("configurationRequired", False)
@@ -49,6 +51,9 @@ class Addon:
 
     def url(self):
         return "/".join(self.transport_url.split("/")[:-1])
+
+    def key(self):
+        return self.manifest.id
 
     def isSupported(self, resource_name: str, type: str, id_prefix: str) -> bool:
         for resource in self.manifest.resources:
@@ -96,6 +101,7 @@ class AddonManager:
                 types=item["manifest"]["types"],
                 behavior_hints=item["manifest"].get("behaviorHints", {}),
                 contact_email=item["manifest"].get("contactEmail"),
+                logo=item["manifest"].get("logo"),
             )
             addons.append(
                 Addon(
