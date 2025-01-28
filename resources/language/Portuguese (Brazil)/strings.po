@@ -522,3 +522,28 @@ msgstr "Sua chave da API TMDB (necessária para metadados)."
 msgctxt "#30859"
 msgid "Enable Burst mode for accelerated searches."
 msgstr "Habilitar modo Burst para buscas aceleradas."
+
+
+msgctxt "#30860"
+msgid "Others"
+msgstr "Outros"
+
+msgctxt "#30861"
+msgid "Results"
+msgstr "Resultados"
+
+msgctxt "#30862"
+msgid "Torrent"
+msgstr "Torrent"
+
+msgctxt "#30863"
+msgid "Specify the torrent client"
+msgstr "Especificar o cliente de torrent"
+
+msgctxt "#30864"
+msgid "Search"
+msgstr "Pesquisar"
+
+msgctxt "#30865"
+msgid "Filters and Sorting"
+msgstr "Filtro e ordem dos resultados

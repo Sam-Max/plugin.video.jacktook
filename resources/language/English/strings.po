@@ -1198,3 +1198,28 @@ msgstr ""
 msgctxt "#30859"
 msgid "Enable Burst mode for accelerated searches."
 msgstr ""
+
+msgctxt "#30860"
+msgid "Others"
+msgstr ""
+
+msgctxt "#30861"
+msgid "Results"
+msgstr ""
+
+msgctxt "#30862"
+msgid "Torrent"
+msgstr ""
+
+msgctxt "#30863"
+msgid "Specify the torrent client"
+msgstr ""
+
+msgctxt "#30864"
+msgid "Search"
+msgstr ""
+
+msgctxt "#30865"
+msgid "Result Filters and Sorting"
+msgstr ""
+
