@@ -1080,7 +1080,7 @@ msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."
 msgstr ""
 
 msgctxt "#30830"
-msgid "Specify the torrent client executable (e.g., 'qbittorrent' or full path)."
+msgid "Specify the torrent client."
 msgstr ""
 
 msgctxt "#30831"

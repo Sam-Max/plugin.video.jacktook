@@ -1064,8 +1064,8 @@ msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."
 msgstr "Retraso (en segundos) antes de que aparezca el diálogo del próximo episodio (ej. 10)."
 
 msgctxt "#30830"
-msgid "Specify the torrent client executable (e.g., 'qbittorrent' or full path)."
-msgstr "Especificar el ejecutable del cliente de torrent (ej. 'qbittorrent' o ruta completa)."
+msgid "Specify the torrent client."
+msgstr "Especificar el ejecutable del cliente de torrent."
 
 msgctxt "#30831"
 msgid "Enable EasyDebrid cached torrent support."
