@@ -3,11 +3,11 @@
     <section id="plugin.video.jacktook">
         <category id="general_category" label="30712">
             <group id="general" label="30712">
-                <setting id="torrent_enable" type="boolean" label="30713" help="">
+                <setting id="torrent_enable" type="boolean" label="30713" help="30836">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="torrent_client" type="string" label="30002" help="">
+                <setting id="torrent_client" type="string" label="30002" help="30830">
                     <default>Jacktorr</default>
                     <constraints>
                         <options>
@@ -25,15 +25,15 @@
                 </setting>
             </group>
             <group id="playback" label="30717"> 
-                <setting id="auto_play" type="boolean" label="30718" help=""> 
+                <setting id="auto_play" type="boolean" label="30718" help="30838"> 
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help=""> 
+                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="playnext_time" type="integer" label="30720" help=""> 
+                <setting id="playnext_time" type="integer" label="30720" help="30829"> 
                     <default>50</default>
                     <constraints>
                         <minimum>5</minimum>
@@ -46,11 +46,11 @@
                 </setting>
             </group>
             <group id="cache" label="30723">
-                <setting id="cache_enabled" type="boolean" label="30721" help=""> 
+                <setting id="cache_enabled" type="boolean" label="30721" help="30809"> 
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="cache_expiration" type="integer" label="30722" help=""> 
+                <setting id="cache_expiration" type="integer" label="30722" help="30813"> 
                     <default>24</default>
                     <constraints>
                         <minimum>1</minimum>
@@ -66,7 +66,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="clear_all_cached" type="action" label="30106" help=""> 
+                <setting id="clear_all_cached" type="action" label="30106" help="30847"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_all_cached)</data>
                     <control type="button" format="action">
                         <close>true</close>
@@ -74,13 +74,13 @@
                 </setting>
             </group>
             <group id="update" label="30724">
-                <setting id="addon_update" type="action" label="30724" help=""> 
+                <setting id="addon_update" type="action" label="30724" help="30839"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=addon_update)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="clear_cache_update" type="boolean" label="30806" help=""> 
+                <setting id="clear_cache_update" type="boolean" label="30806" help="30846"> 
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
@@ -88,7 +88,7 @@
         </category>
         <category id="indexers_category" label="30020">
             <group id="indexers" label="30725">
-                <setting id="indexers_total_results" type="integer" label="30029" help="">
+                <setting id="indexers_total_results" type="integer" label="30029" help="30852">
                     <default>60</default>
                     <constraints>
                         <minimum>10</minimum>
@@ -99,7 +99,7 @@
                         <popup>false</popup>
                     </control>
                 </setting>
-                <setting id="indexers_desc_length" type="integer" label="30026" help="">
+                <setting id="indexers_desc_length" type="integer" label="30026" help="30825">
                     <default>100</default>
                     <constraints>
                         <minimum>50</minimum>
@@ -110,7 +110,7 @@
                         <popup>false</popup>
                     </control>
                 </setting>
-                <setting id="indexers_sort_by" type="string" label="30726" help="">
+                <setting id="indexers_sort_by" type="string" label="30726" help="30822">
                     <default>30727</default>
                     <constraints>
                         <options>
@@ -124,17 +124,17 @@
                     </constraints>
                     <control type="spinner" format="string" />
                 </setting>
-                <setting id="filter_by_episode" type="boolean" label="30710" help="">
+                <setting id="filter_by_episode" type="boolean" label="30710" help="30812">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
             </group>
             <group id="jackgram" label="30767">
-                <setting id="jackgram_enabled" type="boolean" label="30734" help="">
+                <setting id="jackgram_enabled" type="boolean" label="30734" help="30850">
                     <default>false</default>
                     <control type="toggle"/>
                 </setting>
-                <setting id="jackgram_host" type="string" label="30768" help="">
+                <setting id="jackgram_host" type="string" label="30768" help="30827">
                     <default/>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -148,11 +148,11 @@
                 </setting>
             </group>
             <group id="zilean" label="30771">
-                <setting id="zilean_enabled" type="boolean" label="30734" help="">
+                <setting id="zilean_enabled" type="boolean" label="30734" help="30857">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="zilean_host" type="string" label="30772" help="">
+                <setting id="zilean_host" type="string" label="30772" help="30801">
                     <default>https://zilean.elfhosted.com</default>
                     <constraints>
                         <allowempty>false</allowempty>
@@ -164,7 +164,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="zilean_timeout" type="integer" label="30774" help="">
+                <setting id="zilean_timeout" type="integer" label="30774" help="30820">
                     <default>10</default>
                     <constraints>
                         <minimum>1</minimum>
@@ -182,11 +182,11 @@
                 </setting>
             </group>
             <group id="jackett" label="30775">
-                <setting id="jackett_enabled" type="boolean" label="30734" help="">
+                <setting id="jackett_enabled" type="boolean" label="30734" help="30849">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="jackett_host" type="string" label="30025" help="">
+                <setting id="jackett_host" type="string" label="30052" help="30815">
                     <default/>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -198,7 +198,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="jackett_apikey" type="string" label="30023" help="">
+                <setting id="jackett_apikey" type="string" label="30051" help="30821">
                     <default/>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -210,7 +210,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="jackett_timeout" type="integer" label="30030" help="">
+                <setting id="jackett_timeout" type="integer" label="30031" help="30810">
                     <default>25</default>
                     <constraints>
                         <minimum>1</minimum>
@@ -228,11 +228,11 @@
                 </setting>
             </group>
             <group id="prowlarr" label="30776">
-                <setting id="prowlarr_enabled" type="boolean" label="30734" help="">
+                <setting id="prowlarr_enabled" type="boolean" label="30734" help="30826">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="prowlarr_host" type="string" label="30052" help="">
+                <setting id="prowlarr_host" type="string" label="30052" help="30851">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -244,7 +244,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="prowlarr_apikey" type="string" label="30051" help="">
+                <setting id="prowlarr_apikey" type="string" label="30051" help="30854">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -256,7 +256,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="prowlarr_indexer_ids" type="string" label="30053" help="">
+                <setting id="prowlarr_indexer_ids" type="string" label="30053" help="30840">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -268,7 +268,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="prowlarr_timeout" type="integer" label="30031" help="">
+                <setting id="prowlarr_timeout" type="integer" label="30031" help="30841">
                     <default>25</default>
                     <constraints>
                         <minimum>1</minimum>
@@ -286,11 +286,11 @@
                 </setting>
             </group>
             <group id="jacktookburst" label="30780">
-                <setting id="jacktookburst_enabled" type="boolean" label="30734" help="">
+                <setting id="jacktookburst_enabled" type="boolean" label="30734" help="30859">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="burst_config" type="action" label="30781" help="">
+                <setting id="burst_config" type="action" label="30781" help="30823">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=open_burst_config)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -336,7 +336,7 @@
         </category>
         <category id="debrid" label="30150">
             <group id="real_debrid" label="30152">
-                <setting id="real_debrid_enabled" type="boolean" label="30734" help="">
+                <setting id="real_debrid_enabled" type="boolean" label="30734" help="30837">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
@@ -350,7 +350,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_user" type="string" label="30782" help="">
+                <setting id="real_debrid_user" type="string" label="30782" help="30817">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -362,7 +362,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_token" type="string" label="30154" help="">
+                <setting id="real_debrid_token" type="string" label="30787" help="30848">
                     <default />
                     <visible>false</visible>
                     <constraints>
@@ -375,7 +375,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_auth" type="action" label="30783" help="">
+                <setting id="real_debrid_auth" type="action" label="30783" help="30835">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=rd_auth)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -386,7 +386,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_remove_auth" type="action" label="30784" help="">
+                <setting id="real_debrid_remove_auth" type="action" label="30784" help="30853">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=rd_remove_auth)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -399,11 +399,11 @@
                 </setting>
             </group>
             <group id="premiumize" label="30785">
-                <setting id="premiumize_enabled" type="boolean" label="30734" help="">
+                <setting id="premiumize_enabled" type="boolean" label="30734" help="30824">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="premiumize_token" type="string" label="30787" help="">
+                <setting id="premiumize_token" type="string" label="30787" help="30814">
                     <default />
                     <visible>false</visible>
                     <constraints>
@@ -416,7 +416,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="premiumize_auth" type="action" label="30783" help="">
+                <setting id="premiumize_auth" type="action" label="30783" help="30845">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=pm_auth)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -429,11 +429,11 @@
                 </setting>
             </group>
             <group id="torbox" label="30788">
-                <setting id="torbox_enabled" type="boolean" label="30734" help="">
+                <setting id="torbox_enabled" type="boolean" label="30734" help="30843">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="torbox_token" type="string" label="30787" help="">
+                <setting id="torbox_token" type="string" label="30787" help="30832">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -447,11 +447,11 @@
                 </setting>
             </group>
             <group id="easydebrid" label="30789">
-                <setting id="easydebrid_enabled" type="boolean" label="30734" help="">
+                <setting id="easydebrid_enabled" type="boolean" label="30734" help="30831">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="easydebrid_token" type="string" label="30787" help="">
+                <setting id="easydebrid_token" type="string" label="30787" help="30828">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -465,7 +465,7 @@
                 </setting>
             </group>
             <group id="uncached" label="30790">
-                <setting id="show_uncached" type="boolean" label="30791" help="">
+                <setting id="show_uncached" type="boolean" label="30791" help="30803">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
@@ -473,7 +473,7 @@
         </category>
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">
-                <setting id="tmdb_apikey" type="string" label="30103" help="">
+                <setting id="tmdb_apikey" type="string" label="30103" help="30858">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
@@ -562,41 +562,41 @@
         </category>
         <category id="trakt_category" label="30793">
             <group id="trakt" label="30794">
-                <setting id="trakt_auth" type="action" label="30783" help="">
+                <setting id="trakt_auth" type="action" label="30783" help="30819">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=trakt_auth)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="trakt_expires" type="string" label="30795" help="">
+                <setting id="trakt_expires" type="string" label="30795" help="30842">
                     <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_refresh" type="string" label="30796" help="">
+                <setting id="trakt_refresh" type="string" label="30796" help="30833">
                     <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_token" type="string" label="30797" help="">
+                <setting id="trakt_token" type="string" label="30797" help="30844">
                     <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_user" type="string" label="30782" help="">
+                <setting id="trakt_user" type="string" label="30782" help="30855">
                     <visible>false</visible>
                     <default>0</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_client" type="string" label="30798" help="">
+                <setting id="trakt_client" type="string" label="30798" help="30818">
                     <default>1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_secret" type="string" label="30800" help="">
+                <setting id="trakt_secret" type="string" label="30800" help="30811">
                     <default>8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1</default>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="trakt_logout" type="action" label="30802" help="">
+                <setting id="trakt_logout" type="action" label="30802" help="30856">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=trakt_auth_revoke)</data>
                     <control type="button" format="action">
 
@@ -606,7 +606,7 @@
         </category>
         <category id="fanart" label="30200">
             <group id="fanart_tv" label="30202">
-                <setting id="fanart_tv_client_id" type="string" label="30203" help="">
+                <setting id="fanart_tv_client_id" type="string" label="30203" help="30808">
                     <default>fa836e1c874ba95ab08a14ee88e05565</default>
                     <control type="edit" format="string" />
                 </setting>
@@ -614,7 +614,7 @@
         </category>
         <category id="menus" label="30804">
             <group id="telegram" label="">
-                <setting id="show_telegram_menu" type="boolean" label="30805" help="">
+                <setting id="show_telegram_menu" type="boolean" label="30805" help="30816">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
