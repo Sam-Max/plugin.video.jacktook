@@ -1,3 +1,6 @@
+## 0.4.8
+* Add support to import Stremio Addons from Stremio.io Account.
+
 ## 0.4.7
 * Add Peerflix indexer support.
 * Fix Mediafusion not playing sources when using torrents
