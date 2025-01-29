@@ -288,10 +288,10 @@
         <category id="results_category" label="30861">
             <group id="results_group" label="30865">
                 <setting id="indexers_total_results" type="integer" label="30029" help="30852">
-                    <default>60</default>
+                    <default>100</default>
                     <constraints>
                         <minimum>10</minimum>
-                        <maximum>100</maximum>
+                        <maximum>300</maximum>
                         <step>10</step>
                     </constraints>
                     <control type="slider" format="integer">
