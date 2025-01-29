@@ -183,6 +183,14 @@ msgctxt "#30234"
 msgid "The request to Peerflix failed."
 msgstr "La peticion a Peerflix ha fallado"
 
+msgctxt "#30235"
+msgid "Stremio"
+msgstr "Stremio"
+
+msgctxt "#30236"
+msgid "Stremio add-ons"
+msgstr "Addons de Stremio"
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache de TMDB limpiada"
@@ -958,3 +966,271 @@ msgstr "La configuración de idioma y país utilizada al buscar datos de TMDb"
 msgctxt "#42420"
 msgid "EN"
 msgstr "EN"
+
+msgctxt "#30801"
+msgid "Zilean server address (include port if required)."
+msgstr "Dirección del servidor Zilean (incluye el puerto si es necesario)."
+
+msgctxt "#30803"
+msgid "Display torrents not yet cached on your debrid service."
+msgstr "Mostrar torrents que aún no están en caché en tu servicio debrid."
+
+msgctxt "#30808"
+msgid "Fanart.tv API client ID (for artwork)."
+msgstr "ID de cliente de la API de Fanart.tv (para imágenes)."
+
+msgctxt "#30809"
+msgid "Improve performance by caching metadata."
+msgstr "Mejorar el rendimiento almacenando metadatos en caché."
+
+msgctxt "#30810"
+msgid "Seconds before Jackett requests time out (e.g., 30)."
+msgstr "Segundos antes de que las solicitudes a Jackett expiren (ej. 30)."
+
+msgctxt "#30811"
+msgid "Trakt client secret from OAuth application settings."
+msgstr "Clave secreta de cliente de Trakt desde la configuración de la aplicación OAuth."
+
+msgctxt "#30812"
+msgid "Limit TV show results to specific seasons/episodes."
+msgstr "Limitar los resultados de series a temporadas/episodios específicos."
+
+msgctxt "#30813"
+msgid "Hours before cached data is automatically refreshed (e.g., 24)."
+msgstr "Horas antes de que los datos en caché se actualicen automáticamente (ej. 24)."
+
+msgctxt "#30814"
+msgid "Premiumize API token (get from account page)."
+msgstr "Token de API de Premiumize (obtén en la página de la cuenta)."
+
+msgctxt "#30815"
+msgid "Jackett server URL (e.g., http://localhost:9117)."
+msgstr "URL del servidor Jackett (ej. http://localhost:9117)."
+
+msgctxt "#30816"
+msgid "Display Telegram integration options in UI."
+msgstr "Mostrar opciones de integración de Telegram en la interfaz."
+
+msgctxt "#30817"
+msgid "Your Real-Debrid account username/email."
+msgstr "Nombre de usuario/correo electrónico de tu cuenta Real-Debrid."
+
+msgctxt "#30818"
+msgid "Trakt client ID from https://trakt.tv/oauth/apps."
+msgstr "ID de cliente de Trakt desde https://trakt.tv/oauth/apps."
+
+msgctxt "#30819"
+msgid "Connect Trakt.tv account to sync watch progress."
+msgstr "Conectar cuenta de Trakt.tv para sincronizar el progreso de visualización."
+
+msgctxt "#30820"
+msgid "Seconds before Zilean requests time out (e.g., 30)."
+msgstr "Segundos antes de que las solicitudes a Zilean expiren (ej. 30)."
+
+msgctxt "#30821"
+msgid "Your Jackett API key (found in dashboard)."
+msgstr "Tu clave API de Jackett (se encuentra en el panel)."
+
+msgctxt "#30822"
+msgid "Sort results by criteria (e.g., 'date', 'title', 'size')."
+msgstr "Ordenar resultados por criterios (ej. 'fecha', 'título', 'tamaño')."
+
+msgctxt "#30823"
+msgid "Configure Burst mode settings and providers."
+msgstr "Configurar ajustes y proveedores del modo Burst."
+
+msgctxt "#30824"
+msgid "Enable Premiumize.me cloud service."
+msgstr "Habilitar el servicio en la nube Premiumize.me."
+
+msgctxt "#30825"
+msgid "Truncate descriptions after [X] characters (0 for full text)."
+msgstr "Truncar descripciones después de [X] caracteres (0 para texto completo)."
+
+msgctxt "#30826"
+msgid "Enable Prowlarr indexer management."
+msgstr "Habilitar la gestión de indexadores de Prowlarr."
+
+msgctxt "#30827"
+msgid "Jackgram server URL (e.g., http://localhost:9117)."
+msgstr "URL del servidor Jackgram (ej. http://localhost:9117)."
+
+msgctxt "#30828"
+msgid "EasyDebrid API key for authentication."
+msgstr "Clave API de EasyDebrid para autenticación."
+
+msgctxt "#30829"
+msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."
+msgstr "Retraso (en segundos) antes de que aparezca el diálogo del próximo episodio (ej. 10)."
+
+msgctxt "#30830"
+msgid "Specify the torrent client."
+msgstr "Especificar el ejecutable del cliente de torrent."
+
+msgctxt "#30831"
+msgid "Enable EasyDebrid cached torrent support."
+msgstr "Habilitar soporte para torrents en caché de EasyDebrid."
+
+msgctxt "#30832"
+msgid "Torbox API token (found in account settings)."
+msgstr "Token de API de Torbox (se encuentra en la configuración de la cuenta)."
+
+msgctxt "#30833"
+msgid "Trakt refresh token (auto-managed)."
+msgstr "Token de actualización de Trakt (gestionado automáticamente)."
+
+msgctxt "#30834"
+msgid "Show confirmation dialog before playing next episode."
+msgstr "Mostrar diálogo de confirmación antes de reproducir el próximo episodio."
+
+msgctxt "#30835"
+msgid "Authorize add-on to access Real-Debrid account."
+msgstr "Autorizar el complemento para acceder a la cuenta Real-Debrid."
+
+msgctxt "#30836"
+msgid "Enable torrent-based downloads for media content."
+msgstr "Habilitar descargas basadas en torrents para contenido multimedia."
+
+msgctxt "#30837"
+msgid "Indicates if Real-Debrid account is linked."
+msgstr "Indica si la cuenta Real-Debrid está vinculada."
+
+msgctxt "#30838"
+msgid "Automatically play next media item when current playback ends."
+msgstr "Reproducir automáticamente el siguiente elemento al terminar la reproducción actual."
+
+msgctxt "#30839"
+msgid "Check for and install the latest add-on updates."
+msgstr "Buscar e instalar las últimas actualizaciones del complemento."
+
+msgctxt "#30840"
+msgid "Comma-separated Prowlarr indexer IDs to use (e.g., 1,5,7)."
+msgstr "IDs de indexadores de Prowlarr a usar, separados por comas (ej. 1,5,7)."
+
+msgctxt "#30841"
+msgid "Timeout (seconds) for Prowlarr requests (e.g., 20)."
+msgstr "Tiempo de espera (segundos) para solicitudes de Prowlarr (ej. 20)."
+
+msgctxt "#30842"
+msgid "Trakt authorization expiration date (read-only)."
+msgstr "Fecha de expiración de la autorización de Trakt (solo lectura)."
+
+msgctxt "#30843"
+msgid "Enable Torbox.de cloud torrent integration."
+msgstr "Habilitar la integración de torrents en la nube de Torbox.de."
+
+msgctxt "#30844"
+msgid "Trakt API access token (auto-filled after auth)."
+msgstr "Token de acceso a la API de Trakt (se autocompleta después de la autorización)."
+
+msgctxt "#30845"
+msgid "Link Premiumize.me account to add-on."
+msgstr "Vincular cuenta de Premiumize.me al complemento."
+
+msgctxt "#30846"
+msgid "Clear cached data automatically after updating the add-on."
+msgstr "Borrar datos en caché automáticamente tras actualizar el complemento."
+
+msgctxt "#30847"
+msgid "Click to delete all cached data immediately."
+msgstr "Haz clic para eliminar todos los datos en caché inmediatamente."
+
+msgctxt "#30848"
+msgid "Real-Debrid API token (auto-filled after auth)."
+msgstr "Token de API de Real-Debrid (se autocompleta después de la autorización)."
+
+msgctxt "#30849"
+msgid "Enable Jackett torrent proxy support."
+msgstr "Habilitar soporte de proxy de torrents de Jackett."
+
+msgctxt "#30850"
+msgid "Enable Jackgram integration for enhanced search."
+msgstr "Habilitar la integración de Jackgram para búsquedas mejoradas."
+
+msgctxt "#30851"
+msgid "Prowlarr instance URL (e.g., http://localhost:9696)."
+msgstr "URL de la instancia de Prowlarr (ej. http://localhost:9696)."
+
+msgctxt "#30852"
+msgid "Maximum number of search results to display (e.g., 50)."
+msgstr "Número máximo de resultados de búsqueda a mostrar (ej. 50)."
+
+msgctxt "#30853"
+msgid "Revoke Real-Debrid account access."
+msgstr "Revocar el acceso a la cuenta Real-Debrid."
+
+msgctxt "#30854"
+msgid "Prowlarr API key (found in Settings > General)."
+msgstr "Clave API de Prowlarr (se encuentra en Configuración > General)."
+
+msgctxt "#30855"
+msgid "Trakt.tv username (auto-populated after auth)."
+msgstr "Nombre de usuario de Trakt.tv (se autocompleta después de la autorización)."
+
+msgctxt "#30856"
+msgid "Disconnect Trakt.tv account from add-on."
+msgstr "Desconectar la cuenta de Trakt.tv del complemento."
+
+msgctxt "#30857"
+msgid "Enable Zilean integration for metadata fetching."
+msgstr "Habilitar la integración de Zilean para obtener metadatos."
+
+msgctxt "#30858"
+msgid "Your TMDB API key (required for metadata)"
+msgstr "Tu clave API de TMDB (necesaria para metadatos)."
+
+msgctxt "#30859"
+msgid "Enable Burst mode for accelerated searches."
+msgstr "Habilitar modo Burst para búsquedas aceleradas."
+
+msgctxt "#30860"
+msgid "Others"
+msgstr "Otros"
+
+msgctxt "#30861"
+msgid "Results"
+msgstr "Resultados"
+
+msgctxt "#30862"
+msgid "Torrent"
+msgstr "Torrent"
+
+msgctxt "#30863"
+msgid "Specify the torrent client"
+msgstr "Especificar el cliente de torrent"
+
+msgctxt "#30864"
+msgid "Search"
+msgstr "Buscar"
+
+msgctxt "#30865"
+msgid "Filters and Sorting"
+msgstr "Filtros y orden de resultados"
+
+msgctxt "#30866"
+msgid "Sign in to your Stremio account to access add-ons and personalized features."
+msgstr "Inicia sesión en tu cuenta de Stremio para acceder a complementos y funciones personalizadas."
+
+msgctxt "#30867"
+msgid "Sign out of your Stremio account. This will disconnect your account but won't delete your data."
+msgstr "Cierra sesión en tu cuenta de Stremio. Esto desconectará tu cuenta, pero no eliminará tus datos."
+
+msgctxt "#30868"
+msgid "Log Out of Stremio"
+msgstr "Cerrar sesión en Stremio"
+
+msgctxt "#30869"
+msgid "Enable Stremio add-ons integration."
+msgstr "Habilita la integración de complementos de Stremio."
+
+msgctxt "#30870"
+msgid "Toggle Add-ons"
+msgstr "Activar/desactivar complementos"
+
+msgctxt "#30871"
+msgid "Log In to Stremio"
+msgstr "Iniciar sesión en Stremio"
+
+msgctxt "#30872"
+msgid "Enable or disable Stremio add-ons."
+msgstr "Habilita o deshabilita los complementos de Stremio."

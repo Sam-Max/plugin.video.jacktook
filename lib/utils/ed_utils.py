@@ -18,7 +18,7 @@ client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip
 
 
 def check_ed_cached(
-    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+    results, cached_results, uncached_results, total, dialog, lock
 ):
     filtered_results = [res for res in results if "infoHash" in res]
     if filtered_results:
@@ -27,13 +27,6 @@ def check_ed_cached(
         cached_response = torrents_info.get("cached", [])
 
     for res in results:
-        if res["indexer"] == Indexer.TELEGRAM:
-            if telegram_results:
-                continue
-            else:
-                telegram_results.append(res)
-                continue
-
         debrid_dialog_update("ED", total, dialog, lock)
         res["type"] = Debrids.ED
 

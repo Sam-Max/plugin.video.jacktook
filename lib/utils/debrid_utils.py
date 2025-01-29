@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import copy
 import requests
 from threading import Lock
@@ -22,6 +23,7 @@ from lib.utils.utils import (
     USER_AGENT_HEADER,
     Debrids,
     Indexer,
+    IndexerType,
     get_cached,
     get_info_hash_from_magnet,
     is_ed_enabled,
@@ -48,63 +50,41 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
                     return cached_results
 
     lock = Lock()
-
     cached_results = []
     uncached_results = []
-    telegram_results = []
+    direct_results = []
 
     total = len(results)
     dialog.create("")
 
-    extract_infohash(results)
+    filter_results(results, direct_results)
 
+    check_functions = []
     if is_rd_enabled():
-        check_rd_cached(
-            results,
-            cached_results,
-            uncached_results,
-            telegram_results,
-            total,
-            dialog,
-            lock,
-        )
-
+        check_functions.append(check_rd_cached)
     if is_tb_enabled():
-        check_torbox_cached(
-            results,
-            cached_results,
-            uncached_results,
-            telegram_results,
-            total,
-            dialog,
-            lock,
-        )
+        check_functions.append(check_torbox_cached)
     if is_pm_enabled():
-        check_pm_cached(
-            results,
-            cached_results,
-            uncached_results,
-            telegram_results,
-            total,
-            dialog,
-            lock,
-        )
-
+        check_functions.append(check_pm_cached)
     if is_ed_enabled():
-        check_ed_cached(
-            results,
-            cached_results,
-            uncached_results,
-            telegram_results,
-            total,
-            dialog,
-            lock,
-        )
+        check_functions.append(check_ed_cached)
+
+    with ThreadPoolExecutor() as executor:
+        futures = [
+            executor.submit(
+                fn, results, cached_results, uncached_results, total, dialog, lock
+            )
+            for fn in check_functions
+        ]
+        for future in futures:
+            future.result()
+
+    cached_results.extend(direct_results)
 
     if any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
         "show_uncached"
     ):
-        cached_results.extend(uncached_results + telegram_results)
+        cached_results.extend(uncached_results)
 
     dialog_update["count"] = -1
     dialog_update["percent"] = 50
@@ -163,28 +143,39 @@ def get_pack_info(type, info_hash):
     return info
 
 
-def extract_infohash(results):
+def filter_results(results, direct_results):
     filtered_results = []
+
     for res in copy.deepcopy(results):
-        info_hash = None
-        if res.get("infoHash"):
-            info_hash = res["infoHash"].lower()
-        elif (guid := res.get("guid", "")) and (
-            guid.startswith("magnet:?") or len(guid) == 40
-        ):
-            info_hash = get_info_hash_from_magnet(guid).lower()
-        elif (
-            url := res.get("magnetUrl", "") or res.get("downloadUrl", "")
-        ) and url.startswith("magnet:?"):
-            info_hash = get_info_hash_from_magnet(url).lower()
+        info_hash = extract_info_hash(res)
 
         if info_hash:
             res["infoHash"] = info_hash
             filtered_results.append(res)
-        elif res["indexer"] == Indexer.TELEGRAM:
-            filtered_results.append(res)
+        elif (
+            res["indexer"] == Indexer.TELEGRAM
+            or res["type"] == IndexerType.STREMIO_DEBRID
+        ):
+            direct_results.append(res)
 
     results[:] = filtered_results
+
+
+def extract_info_hash(res):
+    """Extracts and returns the info hash from a result if available."""
+    if res.get("infoHash"):
+        return res["infoHash"].lower()
+
+    if (guid := res.get("guid", "")) and (
+        guid.startswith("magnet:?") or len(guid) == 40
+    ):
+        return get_info_hash_from_magnet(guid).lower()
+
+    url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
+    if url.startswith("magnet:?"):
+        return get_info_hash_from_magnet(url).lower()
+
+    return None
 
 
 def get_magnet_from_uri(uri):

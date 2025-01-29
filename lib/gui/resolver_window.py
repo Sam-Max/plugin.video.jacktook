@@ -1,9 +1,10 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.play import get_playback_info
 from lib.utils.debrid_utils import get_pack_info
 from lib.utils.kodi_utils import ADDON_PATH
-from lib.utils.utils import Indexer, info_hash_to_magnet
+from lib.utils.utils import Indexer, IndexerType
 from lib.utils.resolve_to_magnet import resolve_to_magnet
 
 
@@ -48,38 +49,34 @@ class ResolverWindow(BaseWindow):
 
     def resolve_source(self):
         type = self.source["type"]
-        if type == "Torrent":
+        if type == IndexerType.TORRENT:
             guid = self.source.get("guid")
+            magnet = self.source.get("magnet")
             indexer = self.source.get("indexer")
             url = self.source.get("magnetUrl", "") or self.source.get("downloadUrl", "")
 
-            if indexer in {
-                Indexer.TORRENTIO,
-                Indexer.PEERFLIX,
-                Indexer.ELHOSTED,
-                Indexer.ZILEAN,
-                Indexer.MEDIAFUSION,
-            }:
-                magnet = info_hash_to_magnet(guid)
+            if magnet:
+                pass
+            elif guid and guid.startswith("magnet:?"):
+                magnet = guid
+            elif indexer == Indexer.BURST:
+                url, magnet = guid, ""
             else:
-                if guid and guid.startswith("magnet:?"):
-                    magnet = guid
-                elif indexer == Indexer.BURST:
-                    url = guid
-                    magnet = ""
-                else:
-                    magnet = ""
+                magnet = ""
 
             if url.startswith("magnet:?") and not magnet:
-                magnet = url
-                url = ""
+                magnet, url = url, ""
 
             if not magnet:
                 magnet = resolve_to_magnet(url) or ""
 
             is_torrent = True
-        elif type == "Direct":
+        elif type == IndexerType.DIRECT:
             url = self.source.get("downloadUrl")
+            magnet = ""
+            is_torrent = False
+        elif type == IndexerType.STREMIO_DEBRID:
+            url = self.source.get("url")
             magnet = ""
             is_torrent = False
         else:

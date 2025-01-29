@@ -10,7 +10,7 @@ from lib.utils.kodi_utils import (
 )
 from lib.utils.utils import (
     Debrids,
-    Indexer,
+    IndexerType,
     Players,
     set_watched_file,
     torrent_clients,
@@ -22,7 +22,6 @@ def get_playback_info(data):
     title = data.get("title", "")
     mode = data.get("mode", "")
     type = data.get("type", "")
-    indexer = data.get("indexer")
     url = data.get("url", "")
     magnet = data.get("magnet", "")
     is_torrent = data.get("is_torrent", "")
@@ -34,9 +33,12 @@ def get_playback_info(data):
     _url = None
     addon_url = None
 
-    is_telegram = indexer == Indexer.TELEGRAM
-    if is_telegram:
-        set_watched_file(title, data, is_telegram=is_telegram)
+    if type == IndexerType.DIRECT:
+        set_watched_file(title, data, is_direct=True)
+        return data
+
+    if type == IndexerType.STREMIO_DEBRID:
+        set_watched_file(title, data)
         return data
 
     if torrent_enable:
@@ -98,10 +100,10 @@ def get_elementum_url(magnet, url, mode, ids):
         notification(translation(30252))
         return
     if ids:
-        tmdb_id, _, _ = [id.strip() for id in ids.split(',')]
+        tmdb_id, _, _ = [id.strip() for id in ids.split(",")]
     else:
         tmdb_id = ""
-    
+
     uri = magnet or url or ""
     return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
 

@@ -47,10 +47,12 @@ class SourceSelect(BaseWindow):
 
             for info in source:
                 value = source[info]
+                if info == "peers":
+                    value = value if value else ""
                 if info == "publishDate":
                     value = extract_publish_date(value)
                 if info == "size":
-                    value = bytes_to_human_readable(int(value))
+                    value = bytes_to_human_readable(int(value)) if value else ""
                 if info in ["indexer", "provider", "type"]:
                     color = get_random_color(value)
                     value = f"[B][COLOR {color}]{value}[/COLOR][/B]"

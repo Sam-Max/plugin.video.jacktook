@@ -1,12 +1,10 @@
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.client_utils import get_client
+from lib.utils.client_utils import get_client, show_dialog
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer, get_cached, set_cached
+from lib.clients.stremio_addon import StremioAddonClient
+import lib.stremio.ui as ui
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-
-def show_dialog(title, message, dialog):
-    dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
 
 
 def search_client(
@@ -41,62 +39,6 @@ def search_client(
     tasks = []
 
     with ThreadPoolExecutor() as executor:
-        if get_setting("torrentio_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.TORRENTIO,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("peerflix_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.PEERFLIX,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("mediafusion_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.MEDIAFUSION,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("elfhosted_enabled") and imdb_id:
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.ELHOSTED,
-                    dialog,
-                    imdb_id,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
         if get_setting("zilean_enabled"):
             tasks.append(
                 executor.submit(
@@ -168,6 +110,22 @@ def search_client(
                     episode,
                 )
             )
+
+        if get_setting("stremio_enabled") and imdb_id:
+            selected_stremio_addons = ui.get_selected_addons()
+            for addon in selected_stremio_addons:
+                stremio_client = StremioAddonClient(addon)
+                tasks.append(
+                    executor.submit(
+                        stremio_client.search,
+                        imdb_id,
+                        mode,
+                        media_type,
+                        season,
+                        episode,
+                        dialog,
+                    )
+                )
 
         for future in as_completed(tasks):
             try:

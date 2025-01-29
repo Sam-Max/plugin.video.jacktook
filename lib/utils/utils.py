@@ -31,7 +31,6 @@ from lib.utils.kodi_utils import (
 
 from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
-from lib.utils.torrentio_utils import filter_torrentio_provider
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
@@ -145,11 +144,17 @@ class Indexer(Enum):
     ZILEAN = "Zilean"
 
 
+class IndexerType(Enum):
+    TORRENT = "Torrent"
+    DIRECT = "Direct"
+    DEBRID = "Debrid"
+    STREMIO_DEBRID = "Stremio"
+
+
 class Players(Enum):
     JACKTORR = "Jacktorr"
     TORREST = "Torrest"
     ELEMENTUM = "Elementum"
-    DEBRID = "Debrid"
     JACKGRAM = "Jackgram"
 
 
@@ -387,11 +392,11 @@ def set_media_infotag(
         )
 
 
-def set_watched_file(title, data, is_telegram=False, is_torrent=False):
+def set_watched_file(title, data, is_direct=False, is_torrent=False):
     if title in main_db.database["jt:lfh"]:
         return
 
-    if is_telegram:
+    if is_direct:
         color = get_random_color("Direct")
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
     elif is_torrent:
@@ -685,13 +690,14 @@ def check_pack(results, season_num):
 def pre_process(results, mode, episode_name, episode, season):
     results = remove_duplicate(results)
 
-    if get_setting("torrentio_enabled"):
-        results = filter_torrentio_provider(results)
+    if get_setting("stremio_enabled") and get_setting("torrent_enable"):
+        results = filter_torrent_sources(results)
 
     if mode == "tv" and get_setting("filter_by_episode"):
         results = filter_by_episode(results, episode_name, episode, season)
 
     results = filter_by_quality(results)
+
     return results
 
 
@@ -699,17 +705,19 @@ def post_process(results, season=None):
     if season:
         check_pack(results, season)
 
-    if (
-        get_setting("torrentio_enabled")
-        and get_setting("torrentio_priority_lang") != "None"
-    ):
-        results = sort_priority_language(results)
-    else:
-        results = sort_results(results)
+    results = sort_results(results)
 
     results = limit_results(results)
 
     return results
+
+
+def filter_torrent_sources(results):
+    filtered_results = []
+    for res in results:
+        if res["infoHash"] or res["guid"]:
+            filtered_results.append(res)
+    return filtered_results
 
 
 def sort_priority_language(results):
@@ -747,12 +755,13 @@ def filter_by_episode(results, episode_name, episode_num, season_num):
 
     patterns = [
         r"S%sE%s" % (season_fill, episode_fill),  # SXXEXX format
-        r"%sx%s" % (season_fill, episode_fill),   # XXxXX format
-        r"\s%s\s" % season_fill,                  # season surrounded by spaces
-        r"\.S%s" % season_fill,                   # .SXX format
+        r"%sx%s" % (season_fill, episode_fill),  # XXxXX format
+        r"\s%s\s" % season_fill,  # season surrounded by spaces
+        r"\.S%s" % season_fill,  # .SXX format
         r"\.S%sE%s" % (season_fill, episode_fill),  # .SXXEXX format
-        r"\sS%sE%s\s" % (season_fill, episode_fill),  # season and episode surrounded by spaces
-        r"Cap\." # match "Cap." 
+        r"\sS%sE%s\s"
+        % (season_fill, episode_fill),  # season and episode surrounded by spaces
+        r"Cap\.",  # match "Cap."
     ]
 
     if episode_name:

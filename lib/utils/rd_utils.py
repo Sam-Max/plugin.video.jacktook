@@ -2,6 +2,7 @@ import copy
 import time
 from datetime import datetime
 from lib.api.jacktook.kodi import kodilog
+from lib.clients.debrid.debrid_client import ProviderException
 from lib.clients.debrid.realdebrid import RealDebrid
 from lib.utils.kodi_utils import (
     get_setting,
@@ -10,7 +11,6 @@ from lib.utils.kodi_utils import (
 )
 from lib.utils.utils import (
     Debrids,
-    Indexer,
     debrid_dialog_update,
     get_cached,
     info_hash_to_magnet,
@@ -20,74 +20,88 @@ from lib.utils.utils import (
 
 
 def check_rd_cached(
-    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+    results, cached_results, uncached_results, total, dialog, lock
 ):
+    kodilog("check_rd_cached")
     client = RealDebrid(token=get_setting("real_debrid_token"))
     torr_available = client.get_user_torrent_list()
     torr_available_hashes = [torr["hash"] for torr in torr_available]
 
     for res in copy.deepcopy(results):
-        if res["indexer"] == Indexer.TELEGRAM:
-            telegram_results.append(res)
-            continue
-
         debrid_dialog_update("RD", total, dialog, lock)
-        res["type"] = Debrids.RD
 
-        if res["indexer"] == Indexer.MEDIAFUSION:
+        res["type"] = Debrids.RD
+        if res.get("infoHash") in torr_available_hashes:
             res["isCached"] = True
             cached_results.append(res)
         else:
-            if res.get("infoHash") in torr_available_hashes:
-                res["isCached"] = True
-                cached_results.append(res)
-            else:
-                res["isCached"] = False
-                uncached_results.append(res)
+            res["isCached"] = False
+            uncached_results.append(res)
 
     # Add uncached_results cause of RD removed cached check endpoint
     cached_results.extend(uncached_results)
 
 
 def add_rd_magnet(client, info_hash, is_pack=False):
-    kodilog("rd_utils::add_rd_magnet")
-    torrent_info = client.get_available_torrent(info_hash)
-    if not torrent_info:
-        check_max_active_count(client)
-        magnet = info_hash_to_magnet(info_hash)
-        response = client.add_magent_link(magnet)
-        torrent_id = response.get("id")
-        if not torrent_id:
-            kodilog("Failed to add magnet link to Real-Debrid")
+    try:
+        torrent_info = client.get_available_torrent(info_hash)
+        if not torrent_info:
+            check_max_active_count(client)
+            
+            magnet = info_hash_to_magnet(info_hash)
+            response = client.add_magnet_link(magnet)
+            torrent_id = response.get("id")
+            
+            if not torrent_id:
+                kodilog("Failed to add magnet link to Real-Debrid")
+                return
+            
+            torrent_info = client.get_torrent_info(torrent_id)
+
+        torrent_id = torrent_info["id"]
+        status = torrent_info["status"]
+
+        if status in ["magnet_error", "error", "virus", "dead"]:
+            client.delete_torrent(torrent_id)
+            raise Exception(f"Torrent cannot be downloaded due to status: {status}")
+        
+        if status in ["queued", "downloading"]:
             return
-        torrent_info = client.get_torrent_info(torrent_id)
-    torrent_id = torrent_info["id"]
-    status = torrent_info["status"]
-    if status in ["magnet_error", "error", "virus", "dead"]:
-        client.delete_torrent(torrent_id)
-        raise Exception(f"Torrent cannot be downloaded due to status: {status}")
-    elif status in ["queued", "downloading"]:
-        return
-    elif status == "waiting_files_selection":
-        files = torrent_info["files"]
-        extensions = supported_video_extensions()[:-1]
-        video_files = [
-            item
-            for item in files
-            for x in extensions
-            if item["path"].lower().endswith(x)
-        ]
+        
+        if status == "waiting_files_selection":
+            handle_file_selection(client, torrent_info, is_pack)
+        
+        return torrent_id
+
+    except ProviderException as e:
+        notification(str(e))
+        raise
+    except Exception as e:
+        notification(str(e))
+        raise
+
+
+def handle_file_selection(client, torrent_info, is_pack):
+    """Helper function to handle file selection based on the status."""
+    files = torrent_info["files"]
+    extensions = supported_video_extensions()[:-1]
+    
+    video_files = [
+        item for item in files
+        for ext in extensions
+        if item["path"].lower().endswith(ext)
+    ]
+    
+    if video_files:
         if is_pack:
-            if video_files:
-                torr_keys = [str(i["id"]) for i in video_files]
-                if torr_keys:
-                    torr_keys = ",".join(torr_keys)
-                    client.select_files(torrent_info["id"], torr_keys)
+            torr_keys = [str(i["id"]) for i in video_files]
+            if torr_keys:
+                torr_keys = ",".join(torr_keys)
+                client.select_files(torrent_info["id"], torr_keys)
         else:
-            if video_files:
-                video = max(video_files, key=lambda x: x["bytes"])
-                client.select_files(torrent_info["id"], video["id"])
-    return torrent_id
+            video = max(video_files, key=lambda x: x["bytes"])
+            client.select_files(torrent_info["id"], video["id"])
+
 
 
 def get_rd_link(info_hash):

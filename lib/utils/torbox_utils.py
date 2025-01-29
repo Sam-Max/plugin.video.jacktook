@@ -19,37 +19,27 @@ client = Torbox(token=get_setting("torbox_token"))
 
 
 def check_torbox_cached(
-    results, cached_results, uncached_results, telegram_results, total, dialog, lock
+    results, cached_results, uncached_results, total, dialog, lock
 ):
     hashes = [res.get("infoHash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
     cached_response = response.get("data", [])
 
     for res in copy.deepcopy(results):
-        if res["indexer"] == Indexer.TELEGRAM:
-            if telegram_results:
-                continue
-            else:
-                telegram_results.append(res)
-                continue
-
         debrid_dialog_update("TB", total, dialog, lock)
-        info_hash = res.get("infoHash")
 
-        if info_hash:
-            res["type"] = Debrids.TB
-            if info_hash in cached_response:
-                with lock:
-                    res["isCached"] = True
-                    cached_results.append(res)
-            else:
-                with lock:
-                    res["isCached"] = False
-                    uncached_results.append(res)
+        res["type"] = Debrids.TB
+        if res.get("infoHash") in cached_response:
+            with lock:
+                res["isCached"] = True
+                cached_results.append(res)
+        else:
+            with lock:
+                res["isCached"] = False
+                uncached_results.append(res)
 
 
 def add_torbox_torrent(info_hash):
-    kodilog("torbox_utils::add_torbox_torrent")
     torrent_info = client.get_available_torrent(info_hash)
     if torrent_info:
         if (
@@ -69,7 +59,6 @@ def add_torbox_torrent(info_hash):
 
 
 def get_torbox_link(info_hash):
-    kodilog("torbox::get_torbox_link")
     torrent_info = add_torbox_torrent(info_hash)
     if torrent_info:
         file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
@@ -80,7 +69,6 @@ def get_torbox_link(info_hash):
 
 
 def get_torbox_pack_link(file_id, torrent_id):
-    kodilog("torbox_utils::get_torbox_pack_link")
     response = client.create_download_link(torrent_id, file_id)
     return response.get("data")
 
