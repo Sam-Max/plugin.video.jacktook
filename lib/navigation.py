@@ -540,22 +540,24 @@ def search(params):
             notification("No results found")
             return
 
-        proc_results = pre_process(
+        pre_results = pre_process(
             results,
             mode,
             ep_name,
             episode,
             season,
         )
-        if not proc_results:
+        if not pre_results:
             notification("No results found for episode")
             return
 
-    if get_setting("torrent_enable") == False:
+    if get_setting("torrent_enable"):
+        post_results = post_process(pre_results)
+    else:
         with DialogListener() as listener:
-            final_results = handle_debrid_client(
+            cached_results = handle_debrid_client(
                 query,
-                proc_results,
+                pre_results,
                 mode,
                 media_type,
                 listener.dialog,
@@ -563,17 +565,17 @@ def search(params):
                 season,
                 episode,
             )
-        if is_auto_play():
-            auto_play(final_results, ids, tv_data, mode)
-            return
-        else:
-            if not final_results:
+            if not cached_results:
                 notification("No cached results found")
                 return
-            data = handle_results(final_results, mode, ids, tv_data, direct)
-    else:
-        final_results = post_process(proc_results)
-        data = handle_results(final_results, mode, ids, tv_data, direct)
+            
+            if is_auto_play():
+                auto_play(post_results, ids, tv_data, mode)
+                return
+
+            post_results = post_process(cached_results)
+            
+    data = handle_results(post_results, mode, ids, tv_data, direct)
 
     if not data:
         cancel_playback()
@@ -588,7 +590,7 @@ def handle_results(results, mode, ids, tv_data, direct=False):
     if direct:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
-        tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
+        tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(",")]
 
         details = get_tmdb_media_details(tmdb_id, mode)
         poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
@@ -628,15 +630,15 @@ def handle_debrid_client(
     season,
     episode,
 ):
-    debrid_cached = check_debrid_cached(
-        query, proc_results, mode, media_type, p_dialog, rescrape, episode
+    return check_debrid_cached(
+        query,
+        proc_results,
+        mode,
+        media_type,
+        p_dialog,
+        rescrape,
+        episode,
     )
-    if not debrid_cached:
-        if not get_setting("jackgram_enabled"):
-            return
-        return post_process(proc_results, season) 
-
-    return post_process(debrid_cached, season)
 
 
 def play_torrent(params):
@@ -694,7 +696,6 @@ def cloud_details(params):
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
-   
 
 
 def cloud(params):
@@ -730,7 +731,7 @@ def get_rd_downloads(params):
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     downloads = rd_client.get_user_downloads_list(page=page)
-    
+
     sorted_downloads = sorted(downloads, key=lambda x: x["filename"], reverse=False)
     for d in sorted_downloads:
         torrent_li = list_item(f"{formated_type} - {d['filename']}", "download.png")
@@ -751,7 +752,6 @@ def get_rd_downloads(params):
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
-    
 
 
 def torrents(params):
