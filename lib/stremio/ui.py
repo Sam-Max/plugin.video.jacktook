@@ -144,8 +144,7 @@ def stremio_addons_manager(params):
         if not logo or logo.endswith(".svg"):
             logo = "DefaultAddon.png"
 
-        background = addon.manifest.background
-        option.setArt({"icon": logo, "fanart": background})
+        option.setArt({"icon": logo})
         options.append(option)
 
     settings = ADDON.getSettings()

@@ -24,6 +24,7 @@ class Manifest:
         behavior_hints: dict,
         contact_email: Optional[str] = None,
         logo: Optional[str] = None,
+        background: Optional[str] = None,
     ):
         self.id = id
         self.version = version
@@ -35,6 +36,7 @@ class Manifest:
         self.behavior_hints = behavior_hints
         self.contact_email = contact_email
         self.logo = logo
+        self.background = background
 
     def isConfigurationRequired(self):
         return self.behavior_hints.get("configurationRequired", False)
@@ -102,6 +104,7 @@ class AddonManager:
                 behavior_hints=item["manifest"].get("behaviorHints", {}),
                 contact_email=item["manifest"].get("contactEmail"),
                 logo=item["manifest"].get("logo"),
+                background=item["manifest"].get("background"),
             )
             addons.append(
                 Addon(
