@@ -39,7 +39,7 @@ from xbmc import getSupportedMedia
 from zipfile import ZipFile
 
 
-PROVIDER_COLOR_MIN_BRIGHTNESS = 50
+PROVIDER_COLOR_MIN_BRIGHTNESS = 128
 
 URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
 
