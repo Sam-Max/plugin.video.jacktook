@@ -52,11 +52,12 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
     lock = Lock()
     cached_results = []
     uncached_results = []
+    direct_results = []
 
     total = len(results)
     dialog.create("")
 
-    filter_results(results, uncached_results)
+    filter_results(results, direct_results)
 
     check_functions = []
     if is_rd_enabled():
@@ -77,6 +78,8 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
         ]
         for future in futures:
             future.result()
+
+    cached_results.extend(direct_results)
 
     if any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
         "show_uncached"
@@ -140,7 +143,7 @@ def get_pack_info(type, info_hash):
     return info
 
 
-def filter_results(results, uncached_results):
+def filter_results(results, direct_results):
     filtered_results = []
 
     for res in copy.deepcopy(results):
@@ -153,7 +156,7 @@ def filter_results(results, uncached_results):
             res["indexer"] == Indexer.TELEGRAM
             or res["type"] == IndexerType.STREMIO_DEBRID
         ):
-            uncached_results.append(res)
+            direct_results.append(res)
 
     results[:] = filtered_results
 
