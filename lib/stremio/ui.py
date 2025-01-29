@@ -148,7 +148,8 @@ def stremio_addons_manager(params):
         options.append(option)
 
     settings = ADDON.getSettings()
-    title = "Stremio Community Addons List" if ADDON.getSetting("stremio_loggedin") != "true" else settings.getString("stremio_email")
+    stremio_email = settings.getString("stremio_email")
+    title = stremio_email or "Stremio Community Addons List" 
     selected_indexes = dialog.multiselect(title, options, preselect=selected_addon_ids, useDetails=True)
 
     if selected_indexes is None:
