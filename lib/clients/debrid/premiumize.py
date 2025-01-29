@@ -136,7 +136,7 @@ class Premiumize(DebridClient):
             return
         return folder_data.get("id")
 
-    def add_magent_link(self, magnet_link: str, folder_id: str = None):
+    def add_magnet_link(self, magnet_link: str, folder_id: str = None):
         return self._make_request(
             "POST",
             f"{self.BASE_URL}/transfer/create",

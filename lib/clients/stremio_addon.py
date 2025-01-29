@@ -1,6 +1,6 @@
 from lib.clients.base import BaseClient
 from lib.utils.client_utils import show_dialog
-from lib.utils.utils import USER_AGENT_HEADER, info_hash_to_magnet
+from lib.utils.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.stremio.addons_manager import Addon
 from lib.stremio.stream import Stream
 
@@ -41,11 +41,15 @@ class StremioAddonClient(BaseClient):
         for item in res["streams"]:
             stream = Stream(item)
             parsed = self.parse_torrent_description(stream.description)
-
             results.append(
                 {
                     "title": stream.get_parsed_title(),
-                    "type": "Torrent",
+                    "type": (
+                        IndexerType.STREMIO_DEBRID
+                        if stream.url
+                        else IndexerType.TORRENT
+                    ),
+                    "url": stream.url,
                     "indexer": self.addon.manifest.name.split(" ")[0],
                     "guid": stream.infoHash,
                     "magnet": info_hash_to_magnet(stream.infoHash),

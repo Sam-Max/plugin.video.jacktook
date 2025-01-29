@@ -181,7 +181,7 @@ class RealDebrid(DebridClient):
         interval = 5
         cancelled = False
         DEBRID_ERROR_STATUS = ("magnet_error", "error", "virus", "dead")
-        response = self.add_magent_link(magnet_url)
+        response = self.add_magnet_link(magnet_url)
         if response:
             torrent_id = response["id"]
             progressDialog = DialogProgress()
@@ -281,7 +281,7 @@ class RealDebrid(DebridClient):
     def get_hosts(self):
         return self._make_request("GET", f"{self.BASE_URL}/hosts")
 
-    def add_magent_link(self, magnet_link):
+    def add_magnet_link(self, magnet_link):
         return self._make_request(
             "POST", f"{self.BASE_URL}/torrents/addMagnet", data={"magnet": magnet_link}
         )
