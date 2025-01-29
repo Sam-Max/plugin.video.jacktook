@@ -49,7 +49,7 @@
         <category id="indexers_category" label="30864">
             <group id="stremio_group" label="30236">
                 <setting id="stremio_enabled" type="boolean" label="30734" help="30869">
-                    <default>false</default>
+                    <default>true</default>
                     <control type="toggle" />
                 </setting>
                 <setting id="stremio_loggedin" type="boolean">
