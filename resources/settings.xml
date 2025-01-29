@@ -71,13 +71,13 @@
                     <control type="edit" format="string" />
                     <visible>false</visible>
                 </setting>
-                <setting id="stremio_addons_manager" type="action" label="30870" help="30872">
+                <setting id="stremio_toggle_addons" type="action" label="30870" help="30872">
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="stremio_enabled">true</condition>
                         </dependency>
                     </dependencies>
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_manager)</data>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_addons)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
@@ -91,7 +91,7 @@
                             </and>
                         </dependency>
                     </dependencies>
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_addons_import)</data>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_login)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>

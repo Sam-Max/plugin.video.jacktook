@@ -41,7 +41,7 @@ def get_selected_addons() -> List[Addon]:
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
-def stremio_addons_import(params):
+def stremio_login(params):
     # Create a dialog box
     dialog = xbmcgui.Dialog()
 
@@ -99,7 +99,7 @@ def stremio_addons_import(params):
 
     dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
     
-    stremio_addons_manager(None)
+    stremio_toggle_addons(None)
 
 def stremio_logout(params):
     dialog = xbmcgui.Dialog()
@@ -122,9 +122,9 @@ def stremio_logout(params):
         settings.setString("stremio_email", "")
         settings.setString("stremio_pass", "")
         _ = get_addons_catalog()
-        stremio_addons_manager(None)
+        stremio_toggle_addons(None)
 
-def stremio_addons_manager(params):
+def stremio_toggle_addons(params):
     selected_ids = get_selected_addon_urls()
     addon_manager = get_addons_catalog()
 
