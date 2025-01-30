@@ -570,7 +570,7 @@ def search(params):
                 return
             
             if is_auto_play():
-                auto_play(post_results, ids, tv_data, mode)
+                auto_play(cached_results, ids, tv_data, mode)
                 return
 
             post_results = post_process(cached_results)
