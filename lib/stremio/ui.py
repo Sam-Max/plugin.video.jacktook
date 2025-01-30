@@ -24,8 +24,13 @@ def get_addons_catalog():
         selected_keys = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
         if not selected_keys:
             selected_keys = "com.stremio.torrentio.addon"
-            cache.set(STREMIO_ADDONS_KEY, selected_keys, timedelta(days=365 * 20), hashed_key=True)
-        
+            cache.set(
+                STREMIO_ADDONS_KEY,
+                selected_keys,
+                timedelta(days=365 * 20),
+                hashed_key=True,
+            )
+
         cache.set(STREMIO_CATALOG_KEY, catalog, timedelta(days=1), hashed_key=True)
     return AddonManager(catalog)
 
@@ -98,8 +103,9 @@ def stremio_login(params):
         return
 
     dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
-    
+
     stremio_toggle_addons(None)
+
 
 def stremio_logout(params):
     dialog = xbmcgui.Dialog()
@@ -111,18 +117,15 @@ def stremio_logout(params):
         yeslabel="Log Out",
     )
     if confirm:
-        cache.set(
-            STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True
-        )
-        cache.set(
-            STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True
-        )
+        cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True)
+        cache.set(STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True)
         settings = ADDON.getSettings()
         ADDON.setSetting("stremio_loggedin", "false")
         settings.setString("stremio_email", "")
         settings.setString("stremio_pass", "")
         _ = get_addons_catalog()
         stremio_toggle_addons(None)
+
 
 def stremio_toggle_addons(params):
     selected_ids = get_selected_addon_urls()
@@ -131,15 +134,16 @@ def stremio_toggle_addons(params):
     addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
 
     dialog = xbmcgui.Dialog()
-    selected_addon_ids = [addons.index(addon) for addon in addons if addon.key() in selected_ids]
+    selected_addon_ids = [
+        addons.index(addon) for addon in addons if addon.key() in selected_ids
+    ]
 
     options = []
     for addon in addons:
         option = xbmcgui.ListItem(
-            label=addon.manifest.name,
-            label2=f"{addon.manifest.description}"
-            )
-        
+            label=addon.manifest.name, label2=f"{addon.manifest.description}"
+        )
+
         logo = addon.manifest.logo
         if not logo or logo.endswith(".svg"):
             logo = "DefaultAddon.png"
@@ -149,15 +153,15 @@ def stremio_toggle_addons(params):
 
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Community Addons List" 
-    selected_indexes = dialog.multiselect(title, options, preselect=selected_addon_ids, useDetails=True)
+    title = stremio_email or "Stremio Community Addons List"
+    selected_indexes = dialog.multiselect(
+        title, options, preselect=selected_addon_ids, useDetails=True
+    )
 
     if selected_indexes is None:
         return
 
-
     selected_addon_ids = [addons[index].key() for index in selected_indexes]
-
 
     cache.set(
         STREMIO_ADDONS_KEY,
