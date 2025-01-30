@@ -24,6 +24,7 @@ def get_playback_info(data):
     type = data.get("type", "")
     url = data.get("url", "")
     magnet = data.get("magnet", "")
+    info_hash = data.get("info_hash", "")
     is_torrent = data.get("is_torrent", "")
     ids = data.get("ids", [])
     is_pack = data.get("is_pack", False)
@@ -58,19 +59,14 @@ def get_playback_info(data):
         else:
             if is_pack:
                 if type in [Debrids.RD, Debrids.TB]:
-                    file_id = data.get("pack_info", {}).get("file_id", "")
-                    torrent_id = data.get("pack_info", {}).get("torrent_id", "")
+                    pack_info = data.get("pack_info", {})
+                    file_id = pack_info.get("file_id", "")
+                    torrent_id = pack_info.get("torrent_id", "")
                     _url = get_debrid_pack_direct_url(file_id, torrent_id, type)
-                    if _url is None:
-                        notification("File not cached")
-                        return
                 else:
                     _url = url
             else:
-                _url = get_debrid_direct_url(data.get("info_hash", ""), type)
-                if not _url:
-                    notification("File not cached")
-                    return
+                _url = get_debrid_direct_url(info_hash, type)
 
     if _url:
         data["url"] = _url

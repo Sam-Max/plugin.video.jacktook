@@ -129,7 +129,6 @@ class JacktookPLayer(xbmc.Player):
                     kodilog(f"Error in check_playback_start: {e}")
 
             resolve_percent = round(resolve_percent + 26.0 / 100, 1)
-            kodilog(f"resolve_percent: {resolve_percent}")
             sleep(50)
 
     def monitor(self):
