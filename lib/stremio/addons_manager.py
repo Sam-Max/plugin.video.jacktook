@@ -81,7 +81,11 @@ class AddonManager:
 
             resources = [
                 (
-                    Resource(name=resource, types=[], id_prefixes=[])
+                    Resource(
+                        name=resource,
+                        types=item["manifest"].get("types", []),
+                        id_prefixes=item["manifest"].get("idPrefixes", []),
+                    )
                     if isinstance(resource, str)
                     else Resource(
                         name=(
@@ -125,6 +129,11 @@ class AddonManager:
             if addon.manifest.id == "org.stremio.local":
                 continue
             for resource in addon.manifest.resources:
+                if isinstance(resource, str):
+                    if resource == resource_name and id_prefix in addon.manifest.types:
+                        result.append(addon)
+                        break
+
                 if resource.name == resource_name and id_prefix in resource.id_prefixes:
                     result.append(addon)
                     break
