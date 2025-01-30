@@ -1250,3 +1250,7 @@ msgstr "Iniciar sesión en Stremio"
 msgctxt "#30872"
 msgid "Enable or disable Stremio add-ons."
 msgstr "Habilitar o deshabilitar los complementos de Stremio."
+
+msgctxt "#30873"
+msgid "Prioritize results in the selected language"
+msgstr ""

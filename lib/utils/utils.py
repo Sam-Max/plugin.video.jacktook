@@ -719,36 +719,25 @@ def filter_torrent_sources(results):
             filtered_results.append(res)
     return filtered_results
 
-
-def sort_priority_language(results):
-    torrentio_priority_lang = get_setting("torrentio_priority_lang")
-    priority_lang_list = []
-    non_priority_lang_list = []
-    for res in results:
-        if "languages" in res and torrentio_priority_lang in res["languages"]:
-            priority_lang_list.append(res)
-        else:
-            non_priority_lang_list.append(res)
-    priority_lang_list.extend(non_priority_lang_list)
-    return sort_results(priority_lang_list)
-
-
 def sort_results(res):
     sort_by = get_setting("indexers_sort_by")
-    if sort_by == "Seeds":
-        return sorted(res, key=lambda r: r.get("seeders", 0), reverse=True)
-    elif sort_by == "Size":
-        return sorted(res, key=lambda r: r.get("size", 0), reverse=True)
-    elif sort_by == "Date":
-        return sorted(res, key=lambda r: r.get("publishDate", ""), reverse=True)
-    elif sort_by == "Quality":
-        return sorted(res, key=lambda r: r.get("quality", ""), reverse=True)
-    elif sort_by == "Cached":
-        return sorted(res, key=lambda r: r.get("isCached", ""), reverse=True)
-    else:
-        return res
+    
+    field_to_sort = {
+        "Seeds": "seeders",
+        "Size": "size",
+        "Date": "publishDate",
+        "Quality": "quality",
+        "Cached": "isCached",
+    }
+    
+    if sort_by in field_to_sort:
+        res = sorted(res, key=lambda r: r.get(field_to_sort[sort_by], 0), reverse=True)
 
+    priority_language = get_setting("priority_language").lower()
+    if priority_language and priority_language != "None":
+        res = sorted(res, key=lambda r: priority_language in r.get("languages", []) , reverse=True)
 
+    return res
 def filter_by_episode(results, episode_name, episode_num, season_num):
     episode_fill = f"{int(episode_num):02}"
     season_fill = f"{int(season_num):02}"
