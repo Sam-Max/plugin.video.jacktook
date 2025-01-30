@@ -117,6 +117,12 @@ class SourceSelectNew(BaseWindow):
     ):
         super().__init__(xml_file, location, item_information=item_information)
 
+        # add a correlative id field to sources
+        for i, source in enumerate(sources):
+            source["id"] = i
+        
+        self.sources = sources
+        
         # get a list different providers that appears in the sources
         providersAndSeeds = [
                         [source["provider"], source["seeders"]]
@@ -202,9 +208,9 @@ class SourceSelectNew(BaseWindow):
 
     def handle_action(self, action_id, control_id=None):
         self.sections.set_position(self.display_list.getSelectedPosition())
-        kodilog(f"action_id: {action_id}, control_id: {control_id}")
         if action_id == xbmcgui.ACTION_CONTEXT_MENU:
-            selected_source = self.sections.get_current_source()
+            selected_source = self.getSourceFromSourceItem(self.sections.get_current_source())
+
             type = selected_source["type"]
             if type == "Torrent":
                 response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])
@@ -235,11 +241,15 @@ class SourceSelectNew(BaseWindow):
     def _resolve_pack(self):
         pass
 
+    def _get_source_from_source_item(self, source_item: SourceItem):
+        index = int(source_item.getProperty("id"))
+        return self.sources[index]
+
     def _resolve_item(self, pack_select):
         self.setProperty("resolving", "true")
 
-        selected_source = self.sections.get_current_source()
-
+        selected_source = self.getSourceFromSourceItem(self.sections.get_current_source())
+        
         resolver_window = ResolverWindow(
             "resolver.xml",
             ADDON_PATH,
