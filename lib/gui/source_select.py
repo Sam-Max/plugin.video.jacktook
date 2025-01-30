@@ -83,7 +83,7 @@ class SourceSelect(BaseWindow):
             else:
                 response = xbmcgui.Dialog().contextmenu(["Browse into"])
                 if response == 0:
-                    self._resolve_pack()
+                    self._resolve_item(pack_select=True)
 
         if action_id == 7:
             if control_id == 1000:
@@ -94,10 +94,7 @@ class SourceSelect(BaseWindow):
     def _download_into(self):
         pass
 
-    def _resolve_pack(self):
-        pass
-
-    def _resolve_item(self, pack_select):
+    def _resolve_item(self, pack_select=False):
         self.setProperty("resolving", "true")
 
         selected_source = self.sources[self.position]

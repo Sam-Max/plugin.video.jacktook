@@ -84,7 +84,7 @@ class ResolverWindow(BaseWindow):
             magnet = ""
             is_torrent = False
 
-        if self.source.get("isPack"):
+        if self.source.get("isPack") or self.pack_select:
             self.resolve_pack()
         else:
             self.resolve_single_source(url, magnet, is_torrent)
