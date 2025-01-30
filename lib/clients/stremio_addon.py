@@ -85,10 +85,10 @@ class StremioAddonClient(BaseClient):
         provider_match = re.findall(provider_pattern, desc)
 
         words = [match[1].strip() for match in provider_match]
-        if words:
-            words = words[-1].splitlines()[0]
 
-        provider = words
+        provider = "N/A"
+        if words:
+            provider = words[-1].splitlines()[0]
 
         return {
             "size": size or 0,

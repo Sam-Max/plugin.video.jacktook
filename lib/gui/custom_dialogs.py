@@ -7,6 +7,7 @@ from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
+from lib.gui.source_select_new import SourceSelectNew
 
 
 class CustomWindow(WindowXML):
@@ -84,7 +85,7 @@ _mock_information = {
 
 
 def source_select(item_info, xml_file, sources):
-    window = SourceSelect(
+    window = SourceSelectNew(
         xml_file,
         ADDON_PATH,
         item_information=item_info,

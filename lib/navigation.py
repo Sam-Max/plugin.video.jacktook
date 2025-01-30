@@ -610,7 +610,8 @@ def handle_results(results, mode, ids, tv_data, direct=False):
     if mode == "direct":
         xml_file_string = "source_select_direct.xml"
     else:
-        xml_file_string = "source_select.xml"
+        # TODO: Expecting to have a way to select between skins
+        xml_file_string = "source_select_new.xml"
 
     return source_select(
         item_info,
