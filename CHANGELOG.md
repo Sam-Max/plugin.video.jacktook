@@ -1,3 +1,8 @@
+## 0.4.9
+* Add Priority Language selection setting to filter results.
+* Fix missing some supported Stremio Addons.
+* Fix autoplay
+
 ## 0.4.8
 * Add support to import Stremio Addons from Stremio.io Account.
 
