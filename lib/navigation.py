@@ -562,19 +562,18 @@ def search(params):
                 media_type,
                 listener.dialog,
                 rescrape,
-                season,
                 episode,
             )
             if not cached_results:
                 notification("No cached results found")
                 return
-            
+
             if is_auto_play():
                 auto_play(cached_results, ids, tv_data, mode)
                 return
 
-            post_results = post_process(cached_results)
-            
+            post_results = post_process(cached_results, season)
+
     data = handle_results(post_results, mode, ids, tv_data, direct)
 
     if not data:
@@ -627,7 +626,6 @@ def handle_debrid_client(
     media_type,
     p_dialog,
     rescrape,
-    season,
     episode,
 ):
     return check_debrid_cached(
