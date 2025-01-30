@@ -67,7 +67,7 @@ class SectionCollection:
         return self.get_current_section().sources
     
     def get_current_source(self):
-        return self.get_current_section().get_current_source()
+        return self.get_current_section().get_source()
 
     def get_current_position(self):
         return self.get_current_section().position
