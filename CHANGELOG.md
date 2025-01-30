@@ -1,3 +1,6 @@
+## 0.4.10
+* Hotfix: not detecting season pack when using debrid
+
 ## 0.4.9
 * Add Priority Language selection setting to filter results.
 * Fix missing some supported Stremio Addons.
