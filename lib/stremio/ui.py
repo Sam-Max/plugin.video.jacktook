@@ -5,7 +5,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.db.cached import cache
 from datetime import timedelta
 from lib.stremio.client import Stremio
-from lib.utils.kodi_utils import ADDON
+from lib.utils.kodi_utils import ADDON, get_setting, set_setting
 
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_CATALOG_KEY = "stremio_catalog"
@@ -46,28 +46,44 @@ def get_selected_addons() -> List[Addon]:
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
-def stremio_login(params):
-    # Create a dialog box
-    dialog = xbmcgui.Dialog()
 
+def stremio_login(params):
+    dialog = xbmcgui.Dialog()
     dialog.ok(
         "Stremio Add-ons Import",
         "To import your add-ons, please log in with your Stremio email and password.\n\n"
         + "Your login details will not be saved and are only used once for this process.",
     )
 
-    # Show an input dialog for email
     email = dialog.input(heading="Enter your Email", type=xbmcgui.INPUT_ALPHANUM)
-
     if not email:
         return
 
-    # Show a password dialog
     password = dialog.input(heading="Enter your Password", type=xbmcgui.INPUT_ALPHANUM)
-
     if not password:
         return
 
+    log_in(email, password, dialog)
+
+
+def stremio_update(params):
+    dialog = xbmcgui.Dialog()
+    confirm = dialog.yesno(
+        "Update Stremio Addons",
+        "Do you want to update the Addons from you account?",
+        nolabel="Cancel",
+        yeslabel="Yes",
+    )
+    if not confirm:
+        return
+
+    email = get_setting("stremio_email")
+    password = get_setting("stremio_pass")
+
+    log_in(email, password, dialog)
+
+    
+def log_in(email, password, dialog):
     try:
         stremio = Stremio()
         stremio.login(email, password)
@@ -90,10 +106,10 @@ def stremio_login(params):
             timedelta(days=365 * 20),
             hashed_key=True,
         )
-        settings = ADDON.getSettings()
-        ADDON.setSetting("stremio_loggedin", "true")
-        settings.setString("stremio_email", email)
-        settings.setString("stremio_pass", password)
+
+        set_setting("stremio_loggedin", "true")
+        set_setting("stremio_email", email)
+        set_setting("stremio_pass", password)
     except Exception as e:
         dialog.ok(
             "Add-ons Import Failed",

@@ -110,6 +110,20 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_update" type="action" label="30874" help="">
+                    <dependencies>
+                        <dependency type="visible">
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_loggedin">true</condition>
+                            </and>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_update)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
             </group>
             <group id="jackgram" label="30767">
                 <setting id="jackgram_enabled" type="boolean" label="30734" help="30850">
