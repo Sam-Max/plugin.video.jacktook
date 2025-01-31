@@ -50,15 +50,18 @@ class SourceSelectNew(BaseWindow):
         sections = [
             self._create_priority_language_section(),
             self._create_top_seeders_section(),
-            *self._create_provider_sections(),
         ]
-        return SourceSectionManager(sections)
 
-    def _create_priority_language_section(self) -> SourceSection:
+        return SourceSectionManager([section for section in sections if section])
+
+    def _create_priority_language_section(self) -> Optional[SourceSection]:
         """Create section for priority language (Spanish) sources."""
         spanish_sources = [
             s for s in self._sources if "es" in s.get("fullLanguages", [])
         ]
+        if not spanish_sources:
+            return None
+
         return SourceSection(
             title="Priority Language",
             description="Sources with Spanish audio",
@@ -75,30 +78,6 @@ class SourceSelectNew(BaseWindow):
             description="Results with the most seeders",
             sources=[SourceItem.from_source(s) for s in non_spanish_sources],
         )
-
-    def _create_provider_sections(self) -> List[SourceSection]:
-        """Create sections organized by provider, sorted by total seeders."""
-        provider_rankings = self._calculate_provider_seed_rankings()
-        return [
-            SourceSection(
-                title=provider,
-                description=f"Sources from {provider} provider",
-                sources=[
-                    SourceItem.from_source(s)
-                    for s in self._sources
-                    if s["provider"] == provider
-                ],
-            )
-            for provider in provider_rankings
-        ]
-
-    def _calculate_provider_seed_rankings(self) -> List[str]:
-        """Calculate provider rankings based on total seeders."""
-        seed_sums: Dict[str, int] = {}
-        for source in self._sources:
-            provider = source["provider"]
-            seed_sums[provider] = seed_sums.get(provider, 0) + source.get("seeders", 0)
-        return sorted(seed_sums.keys(), key=lambda k: seed_sums[k], reverse=True)
 
     def onInit(self) -> None:
         """Initialize window controls and populate initial data."""
@@ -142,6 +121,8 @@ class SourceSelectNew(BaseWindow):
     def _populate_source_list(self) -> None:
         """Populate the source list with current section's items."""
         self._source_list.reset()
+        kodilog(f"Current Section: {self._section_manager.current_section.title}")
+        kodilog(f"Current Sources: {self._section_manager.current_section.sources}")
         current_sources = self._section_manager.current_section.sources
         self._source_list.addItems(current_sources)
         self._source_list.selectItem(
