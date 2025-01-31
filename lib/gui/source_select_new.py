@@ -1,277 +1,260 @@
 import xbmcgui
+from typing import List, Dict, Optional
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
+from lib.gui.source_section_manager import (
+    SourceSectionManager,
+    SourceSection,
+    SourceItem,
+)
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH
-from lib.utils.debrid_utils import get_debrid_status
-from lib.utils.kodi_utils import bytes_to_human_readable
-from lib.utils.utils import (
-    extract_publish_date,
-    get_colored_languages,
-    get_random_color,
-)
 from lib.api.jacktook.kodi import kodilog
-from typing import List
 
-
-class SourceItem(xbmcgui.ListItem):
-    @staticmethod
-    def fromSource(source: dict):
-        item = SourceItem(label=f"{source['title']}")
-        for info in source:
-            value = source[info]
-            if info == "peers":
-                value = value if value else ""
-            if info == "publishDate":
-                value = extract_publish_date(value)
-            if info == "size":
-                value = bytes_to_human_readable(int(value)) if value else ""
-            if info in ["indexer", "provider", "type"]:
-                color = get_random_color(value)
-                value = f"[B][COLOR {color}]{value}[/COLOR][/B]"
-            if info == "fullLanguages":
-                value = get_colored_languages(value)
-                if len(value) <= 0:
-                    value = ""
-            if info == "isCached":
-                info = "status"
-                value = get_debrid_status(source)
-            item.setProperty(info, str(value))
-        return item
-
-class Section:
-    def __init__(self, title: str, description: str, sources: List[SourceItem]):
-        self.title = title
-        self.description = description
-        self.sources = sources
-        self.position = 0
-    
-    def set_position(self, position: int):
-        self.position = position
-        
-    def get_source(self):
-        return self.sources[self.position]
-        
-class SectionCollection:
-    def __init__(self, current_index: int, sections: List[Section]):
-        self.sections = sections
-        self.current_index = current_index
-        
-    def get_current_section(self):
-        return self.sections[self.current_index]
-    
-    def get_current_description(self):
-        return self.get_current_section().description
-    
-    def get_current_sources(self):
-        return self.get_current_section().sources
-    
-    def get_current_source(self):
-        return self.get_current_section().get_source()
-
-    def get_current_position(self):
-        return self.get_current_section().position
-
-    def set_position(self, position: int):
-        self.get_current_section().set_position(position)
-
-    def get_next_section(self):
-        self.current_index += 1
-        if self.current_index > len(self.sections) - 1:
-            self.current_index = len(self.sections) - 1
-        return self.sections[self.current_index]
-        
-    def get_previous_section(self):
-        self.current_index -= 1
-        if self.current_index < 0:
-            self.current_index = 0
-        return self.sections[self.current_index]
-        
-    def get_section_by_index(self, index):
-        return self.sections[index]
-        
-    def get_section_index(self):
-        return self.current_index
-        
-    def set_section_index(self, index):
-        self.current_index = index
-        
-    def get_section_count(self):
-        return len(self.sections)
-        
-    def get_sections(self):
-        return self.sections
-    
-    def get_title(self):
-        return self.get_current_section().title
-
-    def get_titles(self):
-        return [section.title for section in self.sections]
-
-    
-    
 
 class SourceSelectNew(BaseWindow):
+    """Main window for selecting media sources from organized sections."""
+
+    CACHE_KEY_FIELD = "tv_data"  # Fallback to "ids" if not available
+
     def __init__(
-        self, xml_file, location, item_information=None, sources=None, uncached=None
+        self,
+        xml_layout: str,
+        window_location: str,
+        item_information: Optional[Dict] = None,
+        sources: Optional[List[Dict]] = None,
+        uncached: Optional[List[Dict]] = None,
     ):
-        super().__init__(xml_file, location, item_information=item_information)
+        super().__init__(xml_layout, window_location, item_information=item_information)
 
-        # add a correlative id field to sources
-        for i, source in enumerate(sources):
-            source["id"] = i
-        
-        self.sources = sources
-        
-        # get a list different providers that appears in the sources
-        providersAndSeeds = [
-                        [source["provider"], source["seeders"]]
-                        for source in sources
-                    ]
-        
-        # reduce the list to providers and the sum of their seeds
-        providers = {}
-        for provider, seeds in providersAndSeeds:
-            if provider in providers:
-                providers[provider] += seeds
-            else:
-                providers[provider] = seeds
-                
-        # get a list of providers sorted by the sum of their seeds
-        sortedProviders = [x[0] for x in sorted(providers.items(), key=lambda x: x[1], reverse=True)]                
-        
-        sectionList = []
-        sectionList.append(Section(
-            "Priority Language",
-            "Sources with Spanish audio",
-            [SourceItem.fromSource(source) for source in sources if 'es' in source["fullLanguages"]]))
-        sectionList.append(Section(
-            "Top Seeders",
-            "Results with the most seeders",
-            [SourceItem.fromSource(source) for source in sources if not 'es' in source["fullLanguages"]])
-            )
-        for provider in sortedProviders:
-            sectionList.append(Section(
-                provider,
-                f"Filtered sources from {provider} provider",
-                [SourceItem.fromSource(source) for source in sources if source["provider"] == provider]))
-        
-        
-        self.sections = SectionCollection(0, sectionList)
+        self._sources = self._preprocess_sources(sources or [])
+        self._uncached_sources = uncached or []
+        self._item_metadata = item_information or {}
+        self._playback_info = None
+        self._resume_flag = None
 
-        self.uncached_sources = uncached or []
-        self.position = -1
-        self.sources = sources
-        self.item_information = item_information
-        self.playback_info = None
-        self.resume = None
-        self.CACHE_KEY = (
-            self.item_information["tv_data"] or self.item_information["ids"]
-        )
+        self._init_ui_properties()
+        self._section_manager = self._create_section_manager()
+
+    def _preprocess_sources(self, raw_sources: List[Dict]) -> List[Dict]:
+        """Add unique identifiers to sources for tracking."""
+        return [dict(source, id=i) for i, source in enumerate(raw_sources)]
+
+    def _init_ui_properties(self) -> None:
+        """Initialize default UI state properties."""
         self.setProperty("instant_close", "false")
         self.setProperty("resolving", "false")
 
-    def onInit(self):
-        self.display_list = self.getControlList(1000)
-        self.title = self.getControl(1001)
-        self.description = self.getControl(1002)
-        self.populate_sources_list()
-        self.set_default_focus(self.display_list, 1000, control_list_reset=True)
+    def _create_section_manager(self) -> SourceSectionManager:
+        """Organize sources into categorized sections."""
+        sections = [
+            self._create_priority_language_section(),
+            self._create_top_seeders_section(),
+            *self._create_provider_sections(),
+        ]
+        return SourceSectionManager(sections)
+
+    def _create_priority_language_section(self) -> SourceSection:
+        """Create section for priority language (Spanish) sources."""
+        spanish_sources = [
+            s for s in self._sources if "es" in s.get("fullLanguages", [])
+        ]
+        return SourceSection(
+            title="Priority Language",
+            description="Sources with Spanish audio",
+            sources=[SourceItem.from_source(s) for s in spanish_sources],
+        )
+
+    def _create_top_seeders_section(self) -> SourceSection:
+        """Create section for sources with highest combined seeders."""
+        non_spanish_sources = [
+            s for s in self._sources if "es" not in s.get("fullLanguages", [])
+        ]
+        return SourceSection(
+            title="Top Seeders",
+            description="Results with the most seeders",
+            sources=[SourceItem.from_source(s) for s in non_spanish_sources],
+        )
+
+    def _create_provider_sections(self) -> List[SourceSection]:
+        """Create sections organized by provider, sorted by total seeders."""
+        provider_rankings = self._calculate_provider_seed_rankings()
+        return [
+            SourceSection(
+                title=provider,
+                description=f"Sources from {provider} provider",
+                sources=[
+                    SourceItem.from_source(s)
+                    for s in self._sources
+                    if s["provider"] == provider
+                ],
+            )
+            for provider in provider_rankings
+        ]
+
+    def _calculate_provider_seed_rankings(self) -> List[str]:
+        """Calculate provider rankings based on total seeders."""
+        seed_sums: Dict[str, int] = {}
+        for source in self._sources:
+            provider = source["provider"]
+            seed_sums[provider] = seed_sums.get(provider, 0) + source.get("seeders", 0)
+        return sorted(seed_sums.keys(), key=lambda k: seed_sums[k], reverse=True)
+
+    def onInit(self) -> None:
+        """Initialize window controls and populate initial data."""
+        self._source_list = self.getControlList(1000)
+        self._navigation_label = self.getControl(1001)
+        self._description_label = self.getControl(1002)
+        self._refresh_ui()
+        self.set_default_focus(self._source_list, 1000, control_list_reset=True)
         super().onInit()
 
-    def doModal(self):
-        super().doModal()
-        return self.playback_info
-        
-    def populate_sources_list(self):
-        
-        # nav bar
-        titles = self.sections.get_titles()
-        current_index = self.sections.get_section_index()
-        
-        navitems = titles[:current_index]
-        navitems = ["...", navitems[-2], navitems[-1]] if len(navitems) > 2 else navitems
+    def _refresh_ui(self) -> None:
+        """Update all UI elements with current state."""
+        self._update_navigation_header()
+        self._update_description()
+        self._populate_source_list()
 
-        navitems.append(f"[B][COLOR white]{titles[current_index]}[/COLOR][/B]")
-        navitems.extend(titles[current_index + 1:])
-    
-        self.title.setLabel(" | ".join(navitems))
-        
-        # description
-        self.description.setLabel(self.sections.get_current_description())
+    def _update_navigation_header(self) -> None:
+        """Update the navigation breadcrumb display."""
+        current_index = self._section_manager._current_index
+        all_titles = self._section_manager.section_titles
 
-        # list
-        self.display_list.reset()
-        sources = self.sections.get_current_sources()
-        self.display_list.addItems(sources)
-        self.display_list.selectItem(self.sections.get_current_position())
+        # Build truncated navigation path
+        preceding_titles = all_titles[:current_index]
+        if len(preceding_titles) > 2:
+            preceding_titles = ["...", *preceding_titles[-2:]]
 
-    def handle_action(self, action_id, control_id=None):
-        self.sections.set_position(self.display_list.getSelectedPosition())
-        if action_id == xbmcgui.ACTION_CONTEXT_MENU:
-            selected_source = self.getSourceFromSourceItem(self.sections.get_current_source())
+        navigation_path = [
+            *preceding_titles,
+            f"[B][COLOR white]{all_titles[current_index]}[/COLOR][/B]",
+            *all_titles[current_index + 1 :],
+        ]
 
-            type = selected_source["type"]
-            if type == "Torrent":
-                response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])
-                if response == 0:
-                    self._download_into()
-            elif type == "Direct":
-                pass
-            else:
-                response = xbmcgui.Dialog().contextmenu(["Browse into"])
-                if response == 0:
-                    self._resolve_pack()
+        self._navigation_label.setLabel(" | ".join(navigation_path))
+
+    def _update_description(self) -> None:
+        """Update the section description label."""
+        self._description_label.setLabel(
+            self._section_manager.current_section.description
+        )
+
+    def _populate_source_list(self) -> None:
+        """Populate the source list with current section's items."""
+        self._source_list.reset()
+        current_sources = self._section_manager.current_section.sources
+        self._source_list.addItems(current_sources)
+        self._source_list.selectItem(
+            self._section_manager.current_section.selection_position
+        )
+
+    def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
+        """Handle user input actions."""
+        kodilog(f"Action ID: {action_id}, Control ID: {control_id}")
         if control_id == 1000:
-            if action_id == xbmcgui.ACTION_SELECT_ITEM:
-                if control_id == 1000:
-                    control_list = self.getControl(control_id)
-                    self.set_cached_focus(control_id, control_list.getSelectedPosition())
-                    self._resolve_item(pack_select=False)
-            if action_id == xbmcgui.ACTION_MOVE_LEFT:
-                self.sections.get_previous_section()
-                self.populate_sources_list()
-            if action_id == xbmcgui.ACTION_MOVE_RIGHT:
-                self.sections.get_next_section()
-                self.populate_sources_list()
-            
-    def _download_into(self):
+            self._handle_source_list_action(action_id)
+
+    def _handle_source_list_action(self, action_id: int) -> None:
+        """Process actions specific to the source list control."""
+        current_section = self._section_manager.current_section
+        current_section.update_selection_position(
+            self._source_list.getSelectedPosition()
+        )
+
+        action_handlers = {
+            xbmcgui.ACTION_SELECT_ITEM: self._resolve_selected_source,
+            xbmcgui.ACTION_MOVE_LEFT: self._section_manager.move_to_previous_section,
+            xbmcgui.ACTION_MOVE_RIGHT: self._section_manager.move_to_next_section,
+            xbmcgui.ACTION_CONTEXT_MENU: self._show_context_menu,
+        }
+
+        handler = action_handlers.get(action_id)
+        if handler:
+            handler()
+            self._refresh_ui()
+
+    def _show_context_menu(self) -> None:
+        """Display context menu for selected source."""
+        source = self._get_source_from_item(
+            self._section_manager.current_section.current_source
+        )
+        menu_options = self._get_context_menu_options(source["type"])
+
+        choice = xbmcgui.Dialog().contextmenu(menu_options)
+        if choice == 0:
+            self._handle_context_choice(source["type"])
+
+    def _get_context_menu_options(self, source_type: str) -> List[str]:
+        """Get available context menu options based on source type."""
+        return {
+            "Torrent": ["Download to Debrid"],
+            "Direct": [],
+        }.get(source_type, ["Browse into"])
+
+    def _handle_context_choice(self, source_type: str) -> None:
+        """Handle context menu selection."""
+        handlers = {
+            "Torrent": self._download_to_debrid,
+            "Direct": lambda: None,
+            "default": self._browse_source_pack,
+        }
+        handler = handlers.get(source_type, handlers["default"])
+        handler()
+
+    def _download_to_debrid(self) -> None:
+        """Handle Debrid download request."""
+        # Implementation placeholder
         pass
 
-    def _resolve_pack(self):
+    def _browse_source_pack(self) -> None:
+        """Handle pack browsing request."""
+        # Implementation placeholder
         pass
 
-    def _get_source_from_source_item(self, source_item: SourceItem):
-        index = int(source_item.getProperty("id"))
-        return self.sources[index]
-
-    def _resolve_item(self, pack_select):
+    def _resolve_selected_source(self) -> None:
+        """Initiate resolution of the selected source."""
         self.setProperty("resolving", "true")
+        selected_source = self._get_source_from_item(
+            self._section_manager.current_section.current_source
+        )
 
-        selected_source = self.getSourceFromSourceItem(self.sections.get_current_source())
-        
-        resolver_window = ResolverWindow(
+        resolver = ResolverWindow(
             "resolver.xml",
             ADDON_PATH,
             source=selected_source,
             previous_window=self,
-            item_information=self.item_information,
+            item_information=self._item_metadata,
         )
-        resolver_window.doModal(pack_select)
-        self.playback_info = resolver_window.playback_info
+        resolver.doModal(pack_select=False)
+        self._playback_info = resolver.playback_info
 
-        del resolver_window
+        del resolver
+        self._close_window()
+
+    def _get_source_from_item(self, source_item: SourceItem) -> Dict:
+        """Retrieve original source data from ListItem."""
+        source_id = int(source_item.getProperty("id"))
+        return next(s for s in self._sources if s["id"] == source_id)
+
+    def _close_window(self) -> None:
+        """Close the window and clean up resources."""
         self.setProperty("instant_close", "true")
         self.close()
 
-    def show_resume_dialog(self, playback_percent):
+    def doModal(self) -> Optional[Dict]:
+        """Display the window and return playback info when closed."""
+        super().doModal()
+        return self._playback_info
+
+    def show_resume_dialog(self, playback_percent: float) -> bool:
+        """Display resume playback dialog."""
         try:
-            resume_window = ResumeDialog(
+            resume_dialog = ResumeDialog(
                 "resume_dialog.xml",
                 ADDON_PATH,
                 resume_percent=playback_percent,
             )
-            resume_window.doModal()
-            return resume_window.resume
+            resume_dialog.doModal()
+            return resume_dialog.resume
         finally:
-            del resume_window
+            del resume_dialog
