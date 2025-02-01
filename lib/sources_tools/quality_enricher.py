@@ -1,6 +1,6 @@
 from .enricher import Enricher
 import re
-from typing import Dict
+from typing import Dict, List
 
 
 class QualityEnricher(Enricher):
@@ -10,14 +10,13 @@ class QualityEnricher(Enricher):
             self.label = label
             self.priority = priority
 
-    def __init__(self, field_name: str = "quality"):
-        self.field_name = field_name
+    def __init__(self):
         self.tiers = [
             self.ResolutionTier(
-                r"(?i)\b(2160p?|4k|uhd)\b", "[B][COLOR yellow]4k[/COLOR][/B]", 4
+                r"(?i)\b(2160p?|4k)\b", "[B][COLOR yellow]4k[/COLOR][/B]", 4
             ),
             self.ResolutionTier(
-                r"(?i)\b(1080p?|fullhd)\b", "[B][COLOR blue]1080p[/COLOR][/B]", 3
+                r"(?i)\b(1080p?)\b", "[B][COLOR blue]1080p[/COLOR][/B]", 3
             ),
             self.ResolutionTier(
                 r"(?i)\b720p?\b", "[B][COLOR orange]720p[/COLOR][/B]", 2
@@ -26,6 +25,15 @@ class QualityEnricher(Enricher):
                 r"(?i)\b480p?\b", "[B][COLOR orange]480p[/COLOR][/B]", 1
             ),
         ]
+
+    def initialize(self, items: List[Dict]) -> None:
+        return
+
+    def needs(self):
+        return ["title"]
+    
+    def provides(self):
+        return ["quality", "quality_sort"]
 
     def enrich(self, item: Dict) -> None:
         title = item.get("title", "")

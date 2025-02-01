@@ -50,6 +50,7 @@ class SourceSelectNew(BaseWindow):
         sections = [
             self._create_priority_language_section(),
             self._create_top_seeders_section(),
+            *self._create_quality_sections(),
         ]
 
         return SourceSectionManager([section for section in sections if section])
@@ -62,10 +63,11 @@ class SourceSelectNew(BaseWindow):
         if not spanish_sources:
             return None
 
+        sources = [SourceItem.from_source(s) for s in spanish_sources]
         return SourceSection(
-            title="Priority Language",
+            title=f"Priority Language ({len(sources)})",
             description="Sources with Spanish audio",
-            sources=[SourceItem.from_source(s) for s in spanish_sources],
+            sources=sources,
         )
 
     def _create_top_seeders_section(self) -> SourceSection:
@@ -73,17 +75,49 @@ class SourceSelectNew(BaseWindow):
         non_spanish_sources = [
             s for s in self._sources if "es" not in s.get("fullLanguages", [])
         ]
+        sources = [SourceItem.from_source(s) for s in non_spanish_sources]
+
         return SourceSection(
-            title="Top Seeders",
+            title=f"All results ({len(non_spanish_sources)})",
             description="Results with the most seeders",
-            sources=[SourceItem.from_source(s) for s in non_spanish_sources],
+            sources=sources,
         )
+
+    def _create_quality_sections(self) -> List[SourceSection]:
+        """Create sections for sources grouped by quality."""
+        quality_groups = {
+            "4K": ["4K", "UHD", "2160p"],
+            "1080p": ["1080p", "Full HD"],
+            "720p": ["720p", "HD"],
+            "SD": ["480p", "360p", "240p"],
+        }
+
+        quality_sections = []
+        for quality, keywords in quality_groups.items():
+            quality_sources = [
+                s
+                for s in self._sources
+                if any(kw in s.get("title", "") for kw in keywords)
+            ]
+
+            if quality_sources:
+                quality_sections.append(
+                    SourceSection(
+                        title=f"{quality} ({len(quality_sources)})",
+                        description=f"Sources with {quality} resolution",
+                        sources=[SourceItem.from_source(s) for s in quality_sources],
+                    )
+                )
+
+        return quality_sections
 
     def onInit(self) -> None:
         """Initialize window controls and populate initial data."""
         self._source_list = self.getControlList(1000)
         self._navigation_label = self.getControl(1001)
         self._description_label = self.getControl(1002)
+        self._settings_group = self.getControl(2000)
+
         self._refresh_ui()
         self.set_default_focus(self._source_list, 1000, control_list_reset=True)
         super().onInit()
@@ -121,8 +155,6 @@ class SourceSelectNew(BaseWindow):
     def _populate_source_list(self) -> None:
         """Populate the source list with current section's items."""
         self._source_list.reset()
-        kodilog(f"Current Section: {self._section_manager.current_section.title}")
-        kodilog(f"Current Sources: {self._section_manager.current_section.sources}")
         current_sources = self._section_manager.current_section.sources
         self._source_list.addItems(current_sources)
         self._source_list.selectItem(
@@ -134,6 +166,8 @@ class SourceSelectNew(BaseWindow):
         kodilog(f"Action ID: {action_id}, Control ID: {control_id}")
         if control_id == 1000:
             self._handle_source_list_action(action_id)
+        if control_id >= 2000:
+            self._handle_settings_action(action_id)
 
     def _handle_source_list_action(self, action_id: int) -> None:
         """Process actions specific to the source list control."""
@@ -144,7 +178,7 @@ class SourceSelectNew(BaseWindow):
 
         action_handlers = {
             xbmcgui.ACTION_SELECT_ITEM: self._resolve_selected_source,
-            xbmcgui.ACTION_MOVE_LEFT: self._section_manager.move_to_previous_section,
+            xbmcgui.ACTION_MOVE_LEFT: self._section_manager.move_to_previous_section if self._section_manager._current_index >0 else self._settings_open,
             xbmcgui.ACTION_MOVE_RIGHT: self._section_manager.move_to_next_section,
             xbmcgui.ACTION_CONTEXT_MENU: self._show_context_menu,
         }
@@ -154,6 +188,23 @@ class SourceSelectNew(BaseWindow):
             handler()
             self._refresh_ui()
 
+    def _handle_settings_action(self, action_id):
+        if action_id == xbmcgui.ACTION_MOVE_RIGHT:
+            self._settings_close()
+            
+    def _settings_open(self) -> None:
+        """Open settings sidebar."""
+        self.setProperty("settings_open", "true")
+        #self._settings_group.setVisible(True)
+        self._settings_group_first = self.getControl(2003)
+        self.setFocus(self._settings_group_first)
+
+    def _settings_close(self) -> None:
+        """Close settings sidebar."""
+        self.setProperty("settings_open", "")
+        #self._settings_group.setVisible(False)
+        self.setFocus(self._source_list)
+        
     def _show_context_menu(self) -> None:
         """Display context menu for selected source."""
         source = self._get_source_from_item(

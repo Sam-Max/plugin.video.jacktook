@@ -21,6 +21,7 @@ from lib.sources_tools import (
     QualityEnricher,
     LanguageEnricher,
     IsPackEnricher,
+    CacheEnricher
 )
 from lib.utils.kodi_utils import convert_size_to_bytes
 from lib.utils.language_detection import language_codes, langsSet
@@ -638,14 +639,15 @@ def unzip(zip_location, destination_location, destination_check):
 
 def pre_process(results, mode, ep_name, episode, season):
     results = (
-        EnricherBuilder(results)
-        .add(StatsEnricher(size_converter=convert_size_to_bytes))
-        .add(QualityEnricher())
-        .add(LanguageEnricher(language_codes, langsSet))
-        .build()
+        EnricherBuilder()
+            .add(StatsEnricher(size_converter=convert_size_to_bytes))
+            .add(QualityEnricher())
+            .add(LanguageEnricher(language_codes, langsSet))
+            .add(CacheEnricher())
+            .build(results)
     )
 
-    filters = FilterBuilder(results)
+    filters = FilterBuilder()
 
     if get_setting("stremio_enabled") and get_setting("torrent_enable"):
         filters.filter_by_source()
@@ -653,16 +655,16 @@ def pre_process(results, mode, ep_name, episode, season):
     if mode == "tv" and get_setting("filter_by_episode"):
         filters.filter_by_episode(ep_name, episode, season)
 
-    return filters.build()
+    return filters.build(results)
 
 
 def post_process(results, season=0):
     sort_by = get_setting("indexers_sort_by")
     limit = int(get_setting("indexers_total_results"))
 
-    results = EnricherBuilder(results).add(IsPackEnricher(season)).build()
+    results = EnricherBuilder().add(IsPackEnricher(season)).build(results)
 
-    filters = FilterBuilder(results).limit(limit)
+    filters = FilterBuilder().limit(limit).deduple_by_infoHash()
 
     if sort_by == "Seeds":
         filters.sort_by("seeders", ascending=False)
@@ -676,7 +678,7 @@ def post_process(results, season=0):
     elif sort_by == "Cached":
         filters.sort_by("isCached", ascending=False)
 
-    return filters.build()
+    return filters.build(results)
 
 
 def clean_auto_play_undesired(results):

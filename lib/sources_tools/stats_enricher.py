@@ -1,5 +1,5 @@
 from .enricher import Enricher
-from typing import Dict, Callable
+from typing import Dict, Callable, List
 import re
 
 
@@ -9,6 +9,15 @@ class StatsEnricher(Enricher):
         self.seeders_pattern = re.compile(r"👤 (\d+)")
         self.provider_pattern = re.compile(r"([🌐🔗⚙️])\s*([^🌐🔗⚙️]+)")
         self.convert_size = size_converter
+        
+    def initialize(self, items: List[Dict]) -> None:
+        return
+
+    def needs(self):
+        return ["description"]
+
+    def provides(self):
+        return ["size", "seeders", "provider"]
 
     def enrich(self, item: Dict) -> None:
         desc = item.get("description", "")

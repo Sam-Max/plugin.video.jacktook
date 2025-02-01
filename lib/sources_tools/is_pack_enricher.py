@@ -1,7 +1,7 @@
 from .enricher import Enricher
 import re
 from re import Pattern
-from typing import Dict
+from typing import Dict, List
 
 
 class IsPackEnricher(Enricher):
@@ -9,6 +9,15 @@ class IsPackEnricher(Enricher):
         self.season_number = season_number
         self.season_fill = f"{season_number:02d}"
         self.pattern = self._build_pattern()
+
+    def initialize(self, items: List[Dict]) -> None:
+        return
+    
+    def needs(self):
+        return ["title"]
+    
+    def provides(self):
+        return ["isPack"]
 
     def _build_pattern(self) -> Pattern:
         base_patterns = [

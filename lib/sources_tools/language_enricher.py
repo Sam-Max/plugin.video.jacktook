@@ -1,6 +1,6 @@
 from .enricher import Enricher
 import re
-from typing import Dict, Set
+from typing import Dict, Set, List
 
 
 class LanguageEnricher(Enricher):
@@ -10,6 +10,15 @@ class LanguageEnricher(Enricher):
             r"\b(?:" + "|".join(re.escape(k) for k in keywords) + r")\b", re.IGNORECASE
         )
         self.language_map = language_map
+
+    def initialize(self, items: List[Dict]) -> None:
+        return
+
+    def needs(self):
+        return ["description", "languages"]
+    
+    def provides(self):
+        return ["languages", "fullLanguages"]
 
     def enrich(self, item: Dict) -> None:
         desc = item.get("description", "")

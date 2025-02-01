@@ -31,7 +31,6 @@ class SourceItem(xbmcgui.ListItem):
             "provider": lambda v, s: SourceItem._format_colored_text(v),
             "type": lambda v, s: SourceItem._format_colored_text(v),
             "fullLanguages": lambda v, s: get_colored_languages(v) or "",
-            "status": lambda v, s: get_debrid_status(s) if s.get("isCached") else "",
         }
 
         item = SourceItem(label=source["title"])

@@ -77,9 +77,9 @@ class Torbox(DebridClient):
 
     def get_torrent_instant_availability(self, torrent_hashes):
         return self._make_request(
-            "GET",
+            "POST",
             "/torrents/checkcached",
-            params={"hash": torrent_hashes, "format": "object"},
+            json={"hashes": torrent_hashes, "format": "object"},
         )
 
     def create_download_link(self, torrent_id, filename, user_ip):
