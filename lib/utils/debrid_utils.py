@@ -198,9 +198,10 @@ def get_magnet_from_uri(uri):
     return magnet, info_hash
 
 
-def get_debrid_direct_url(info_hash, type):
+def get_debrid_direct_url(type, data):
+    info_hash = data.get("info_hash", "")
     if type == Debrids.RD:
-        return get_rd_link(info_hash)
+        return get_rd_link(info_hash, data)
     elif type == Debrids.PM:
         return get_pm_link(info_hash)
     elif type == Debrids.TB:

@@ -24,7 +24,6 @@ def get_playback_info(data):
     type = data.get("type", "")
     url = data.get("url", "")
     magnet = data.get("magnet", "")
-    info_hash = data.get("info_hash", "")
     is_torrent = data.get("is_torrent", "")
     ids = data.get("ids", [])
     is_pack = data.get("is_pack", False)
@@ -66,8 +65,8 @@ def get_playback_info(data):
                 else:
                     _url = url
             else:
-                _url = get_debrid_direct_url(info_hash, type)
-
+                _url = get_debrid_direct_url(type, data)
+                
     if _url:
         data["url"] = _url
     else:
