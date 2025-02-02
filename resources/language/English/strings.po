@@ -1258,3 +1258,7 @@ msgstr ""
 msgctxt "#30874"
 msgid "Update Addons"
 msgstr ""
+
+msgctxt "#30875"
+msgid "Toggle Catalogs Add-ons"
+msgstr "Alternar complementos de catalogos"
