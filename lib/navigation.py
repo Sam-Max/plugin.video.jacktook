@@ -20,6 +20,7 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
+from lib.stremio.categories import list_stremio_catalogs
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
@@ -319,6 +320,7 @@ def tv_shows_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="tv")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -332,6 +334,7 @@ def movies_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="movie")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -428,6 +431,7 @@ def anime_item(params):
                     list_item(item["name"], item["icon"]),
                     isFolder=True,
                 )
+    list_stremio_catalogs(menu_type="anime")
     endOfDirectory(ADDON_HANDLE)
 
 

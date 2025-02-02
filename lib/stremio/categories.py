@@ -5,26 +5,28 @@ from lib.stremio.ui import get_selected_catalogs_addons
 from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification
 
 
-def list_stremio_catalogs():
+def list_stremio_catalogs(menu_type="tv"):
     selected_addons = get_selected_catalogs_addons()
     if not selected_addons:
         return
 
     for addon in selected_addons:
         for catalog in addon.manifest.catalogs:
-            action = "list_stremio_catalog"
-            listitem = ListItem(label=catalog["name"])
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url(
-                    action,
-                    addon_url=addon.url(),
-                    catalog_type=catalog["type"],
-                    catalog_id=catalog["id"],
-                ),
-                listitem,
-                isFolder=True,
-            )
+            if menu_type == catalog["type"]:
+                action = "list_stremio_catalog"
+                listitem = ListItem(label=catalog["name"])
+                listitem.setArt({"icon": addon.manifest.logo})
+                addDirectoryItem(
+                    ADDON_HANDLE,
+                    build_url(
+                        action,
+                        addon_url=addon.url(),
+                        catalog_type=catalog["type"],
+                        catalog_id=catalog["id"],
+                    ),
+                    listitem,
+                    isFolder=True,
+                )
 
 
 def list_stremio_catalog(params):

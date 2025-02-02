@@ -49,6 +49,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
+from lib.stremio.categories import list_stremio_catalog, list_stremio_seasons
 from lib.telegram import (
     get_telegram_files,
     get_telegram_latest,
@@ -124,6 +125,8 @@ def addon_router():
         "animation_item": animation_item,
         "stremio_toggle_addons": stremio_toggle_addons,
         "stremio_toggle_catalogs": stremio_toggle_catalogs,
+        "list_stremio_catalog": list_stremio_catalog,
+        "list_stremio_seasons": list_stremio_seasons,
         'stremio_login': stremio_login,
         'stremio_logout': stremio_logout,
         "stremio_update": stremio_update,
