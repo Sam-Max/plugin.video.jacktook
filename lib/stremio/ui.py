@@ -8,6 +8,7 @@ from lib.stremio.client import Stremio
 from lib.utils.kodi_utils import ADDON, get_setting, set_setting
 
 STREMIO_ADDONS_KEY = "stremio_addons"
+STREMIO_CATALOGS_ADDONS_KEY = "stremio_catalog_addons"
 STREMIO_CATALOG_KEY = "stremio_catalog"
 
 
@@ -40,11 +41,21 @@ def get_selected_addon_urls() -> List[str]:
     return selected_addons.split(",")
 
 
+def get_selected_catalogs_addon_urls() -> List[str]:
+    selected_addons = cache.get(STREMIO_CATALOGS_ADDONS_KEY, hashed_key=True) or ""
+    return selected_addons.split(",")
+
+
 def get_selected_addons() -> List[Addon]:
     catalog = get_addons_catalog()
     selected_ids = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
+
+def get_selected_catalogs_addons() -> List[Addon]:
+    catalog = get_addons_catalog()
+    selected_ids = cache.get(STREMIO_CATALOGS_ADDONS_KEY, hashed_key=True) or ""
+    return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def stremio_login(params):
@@ -82,7 +93,7 @@ def stremio_update(params):
 
     log_in(email, password, dialog)
 
-    
+
 def log_in(email, password, dialog):
     try:
         stremio = Stremio()
@@ -141,6 +152,49 @@ def stremio_logout(params):
         settings.setString("stremio_pass", "")
         _ = get_addons_catalog()
         stremio_toggle_addons(None)
+
+
+def stremio_toggle_catalogs(params):
+    kodilog("stremio_toggle_catalogs")
+    selected_ids = get_selected_catalogs_addon_urls()
+
+    addon_manager = get_addons_catalog()
+    addons = addon_manager.get_addons_with_resource("catalog")
+
+    dialog = xbmcgui.Dialog()
+    selected_addon_ids = [addons.index(addon) for addon in addons if addon.key() in selected_ids] 
+
+    options = []
+    for addon in addons:
+        option = xbmcgui.ListItem(
+            label=addon.manifest.name, label2=f"{addon.manifest.description}"
+        )
+
+        logo = addon.manifest.logo
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+
+        option.setArt({"icon": logo})
+        options.append(option)
+
+    settings = ADDON.getSettings()
+    stremio_email = settings.getString("stremio_email")
+    title = stremio_email or "Stremio Community Addons List"
+    selected_indexes = dialog.multiselect(
+        title, options, preselect=selected_addon_ids, useDetails=True
+    )
+
+    if selected_indexes is None:
+        return
+
+    selected_addon_ids = [addons[index].key() for index in selected_indexes]
+
+    cache.set(
+        STREMIO_CATALOGS_ADDONS_KEY,
+        ",".join(selected_addon_ids),
+        timedelta(days=365 * 20),
+        hashed_key=True,
+    )
 
 
 def stremio_toggle_addons(params):
