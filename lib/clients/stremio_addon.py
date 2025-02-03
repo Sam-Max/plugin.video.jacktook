@@ -30,21 +30,22 @@ class StremioAddonCatalogsClient(BaseClient):
             return
         return res.json()
     
-    def get_season_info(self):
+    def get_meta_info(self):
         url = f"{self.base_url}/meta/{self.params['catalog_type']}/{self.params['video_id']}.json"
+        kodilog(url)
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
         return res.json()
     
-    def get_streams(self):
+    def get_stream_info(self):
         url = f"{self.base_url}/stream/{self.params['catalog_type']}/{self.params['video_id']}.json"
+        kodilog(url)
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
         return res.json()
-
-
+    
 
 class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon):

@@ -46,10 +46,11 @@ from lib.navigation import (
     trakt_auth_revoke,
     trakt_list_content,
     tv_episodes_details,
+    tv_menu,
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.stremio.categories import list_stremio_catalog, list_stremio_seasons
+from lib.stremio.catalogs import list_stremio_catalog, list_stremio_episodes, list_stremio_seasons, list_stremio_tv, list_stremio_tv_streams
 from lib.telegram import (
     get_telegram_files,
     get_telegram_latest,
@@ -127,6 +128,10 @@ def addon_router():
         "stremio_toggle_catalogs": stremio_toggle_catalogs,
         "list_stremio_catalog": list_stremio_catalog,
         "list_stremio_seasons": list_stremio_seasons,
+        "list_stremio_episodes": list_stremio_episodes,
+        "list_stremio_tv_streams": list_stremio_tv_streams,
+        "list_stremio_tv": list_stremio_tv,
+        "tv_menu": tv_menu,
         'stremio_login': stremio_login,
         'stremio_logout': stremio_logout,
         "stremio_update": stremio_update,
