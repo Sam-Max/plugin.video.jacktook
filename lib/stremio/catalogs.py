@@ -4,6 +4,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.clients.stremio_addon import StremioAddonCatalogsClient
 from lib.stremio.ui import get_selected_catalogs_addons
 from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification
+from lib.utils.tmdb_utils import tmdb_get
 
 
 def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
@@ -88,12 +89,24 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
 
     for video in videos:
         if video["type"] == "series":
-            url = build_url(
-                "list_stremio_seasons",
-                addon_url=addon_url,
-                catalog_type=catalog_type,
-                video_id=video["id"],
-            )
+            tmdb_id = video.get("moviedb_id")
+            imdb_id = video.get("imdb_id")
+
+            if tmdb_id or imdb_id:
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+                url = build_url(
+                    "tv_seasons_details",
+                    ids=ids,
+                    mode="tv",
+                    media_type="tv",
+                )
+            else:
+                url = build_url(
+                    "list_stremio_seasons",
+                    addon_url=addon_url,
+                    catalog_type=catalog_type,
+                    video_id=video["id"],
+                )
         elif video["type"] == "tv":
             if video.get("streams"):
                 url = build_url("list_stremio_tv_streams", streams=video["streams"])
@@ -105,7 +118,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
                     video_id=video["id"],
                 )
         elif video["type"] == "movie":
-            ids = f"{-1}, {-1}, {video.get('imdb_id', -1)}"
+            ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": video.get("imdb_id")}
             url = build_url("search", mode="movies", query=video["name"], ids=ids)
         else:
             continue
@@ -120,6 +133,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
         tags.setPlot(video.get("description", ""))
         tags.setRating(float(video.get("imdbRating", 0)))
         tags.setGenres(video.get("genres", []))
+        tags.setMediaType("video")
 
         list_item.setArt(
             {
@@ -204,7 +218,9 @@ def list_stremio_episodes(params):
         return
 
     for video in videos:
-        season = int(video["imdbSeason"]) if video.get("imdbSeason") else video["season"]
+        season = (
+            int(video["imdbSeason"]) if video.get("imdbSeason") else video["season"]
+        )
         episode = (
             int(video["imdbEpisode"]) if video.get("imdbEpisode") else video["episode"]
         )
@@ -213,7 +229,13 @@ def list_stremio_episodes(params):
             continue
 
         tv_data = f"{video['title']}(^){video['episode']}(^){video['season']}"
-        ids = f"{-1}, {-1}, {video.get('imdb_id', -1)}"
+
+        ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": None}
+        if imdb_id := video.get("imdb_id"):
+            ids["imdb_id"] = imdb_id
+            res = tmdb_get("find_by_imdb_id", imdb_id)
+            if res["tv_results"]:
+                ids["tmdb_id"] = res["tv_results"][0]["id"]
 
         url = build_url(
             "search",

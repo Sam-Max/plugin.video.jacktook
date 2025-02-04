@@ -29,7 +29,7 @@ def search_client(
             return cached_results
 
     if ids:
-        tmdb_id, _, imdb_id = [id.strip() for id in ids.split(",")]
+        tmdb_id, _, imdb_id = ids.values()
     else:
         tmdb_id = imdb_id = None
 

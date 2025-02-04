@@ -534,7 +534,7 @@ def search(params):
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
-    ids = params.get("ids", "")
+    ids = literal_eval(params.get("ids", ""))
     tv_data = params.get("tv_data", "")
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
@@ -603,9 +603,9 @@ def search(params):
 
 
 def handle_results(results, mode, ids, tv_data, direct=False):
-    tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(",")]
+    tmdb_id, tvdb_id, _ = ids.values()
 
-    if direct or imdb_id:
+    if direct or not tmdb_id:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
         details = get_tmdb_media_details(tmdb_id, mode)
@@ -828,7 +828,7 @@ def play_url(params):
 
 
 def tv_seasons_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", ""))
     mode = params["mode"]
     media_type = params.get("media_type", None)
 
@@ -839,7 +839,7 @@ def tv_seasons_details(params):
 
 
 def tv_episodes_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", ""))
     mode = params["mode"]
     tv_name = params["tv_name"]
     season = params["season"]
