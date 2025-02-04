@@ -38,16 +38,14 @@ from lib.utils.utils import (
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
-        debrid_cached_check = get_setting("debrid_cached_check")
-        if debrid_cached_check:
-            if query:
-                if mode == "tv" or media_type == "tv":
-                    cached_results = get_cached(query, params=(episode, "deb"))
-                else:
-                    cached_results = get_cached(query, params=("deb"))
+        if query:
+            if mode == "tv" or media_type == "tv":
+                cached_results = get_cached(query, params=(episode, "deb"))
+            else:
+                cached_results = get_cached(query, params=("deb"))
 
-                if cached_results:
-                    return cached_results
+            if cached_results:
+                return cached_results
 
     lock = Lock()
     cached_results = []
