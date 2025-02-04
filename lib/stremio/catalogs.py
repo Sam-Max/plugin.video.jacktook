@@ -135,6 +135,12 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
         tags.setGenres(video.get("genres", []))
         tags.setMediaType("video")
 
+        if video["type"] == "movie":
+            list_item.setProperty("IsPlayable", "true")
+            isFolder = False
+        else:
+            isFolder = True
+
         list_item.setArt(
             {
                 "thumb": video.get("poster", ""),
@@ -147,7 +153,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
         )
 
         addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=True
+            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=isFolder
         )
 
 
@@ -246,8 +252,8 @@ def list_stremio_episodes(params):
             tv_data=tv_data,
         )
 
-        li = ListItem(label=f"{season}x{episode}. {video['title']}")
-        tags = li.getVideoInfoTag()
+        list_item = ListItem(label=f"{season}x{episode}. {video['title']}")
+        tags = list_item.getVideoInfoTag()
         tags.setUniqueID(
             meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
         )
@@ -259,7 +265,9 @@ def list_stremio_episodes(params):
         tags.setSeason(season)
         tags.setEpisode(episode)
 
-        li.setArt(
+        list_item.setProperty("IsPlayable", "true")
+
+        list_item.setArt(
             {
                 "thumb": meta_data.get("poster", ""),
                 "poster": meta_data.get("poster", ""),
@@ -270,7 +278,7 @@ def list_stremio_episodes(params):
             }
         )
 
-        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=li, isFolder=True)
+        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False)
 
     endOfDirectory(ADDON_HANDLE)
 

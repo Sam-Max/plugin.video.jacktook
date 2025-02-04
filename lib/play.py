@@ -26,7 +26,7 @@ def get_playback_info(data):
     url = data.get("url", "")
     magnet = data.get("magnet", "")
     is_torrent = data.get("is_torrent", "")
-    ids = literal_eval(data.get("ids", ""))
+    ids = data.get("ids", "")
     is_pack = data.get("is_pack", False)
 
     torrent_enable = get_setting("torrent_enable")
