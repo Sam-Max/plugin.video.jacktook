@@ -118,6 +118,23 @@ def log_in(email, password, dialog):
             hashed_key=True,
         )
 
+        dialog = xbmcgui.Dialog()
+        confirm = dialog.yesno(
+            "Stremio Add-ons Import",
+            "Do you want also to import catalogs?",
+            nolabel="Cancel",
+            yeslabel="Yes",
+        )
+        if confirm:
+            catalogs = AddonManager(addons).get_addons_with_resource("catalog")
+            selected_catalogs = [catalog.key() for catalog in catalogs]
+            cache.set(
+                STREMIO_CATALOGS_ADDONS_KEY,
+                ",".join(selected_catalogs),
+                timedelta(days=365 * 20),
+                hashed_key=True,
+            )
+
         set_setting("stremio_loggedin", "true")
         set_setting("stremio_email", email)
         set_setting("stremio_pass", password)
@@ -145,6 +162,7 @@ def stremio_logout(params):
     )
     if confirm:
         cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True)
+        cache.set(STREMIO_CATALOGS_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True)
         cache.set(STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True)
         settings = ADDON.getSettings()
         ADDON.setSetting("stremio_loggedin", "false")
@@ -152,6 +170,7 @@ def stremio_logout(params):
         settings.setString("stremio_pass", "")
         _ = get_addons_catalog()
         stremio_toggle_addons(None)
+        stremio_toggle_catalogs(None)
 
 
 def stremio_toggle_catalogs(params):
@@ -162,7 +181,9 @@ def stremio_toggle_catalogs(params):
     addons = addon_manager.get_addons_with_resource("catalog")
 
     dialog = xbmcgui.Dialog()
-    selected_addon_ids = [addons.index(addon) for addon in addons if addon.key() in selected_ids] 
+    selected_addon_ids = [
+        addons.index(addon) for addon in addons if addon.key() in selected_ids
+    ]
 
     options = []
     for addon in addons:
@@ -179,7 +200,7 @@ def stremio_toggle_catalogs(params):
 
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Community Addons List"
+    title = stremio_email or "Stremio Community Catalogs List"
     selected_indexes = dialog.multiselect(
         title, options, preselect=selected_addon_ids, useDetails=True
     )
