@@ -1242,3 +1242,7 @@ msgstr "Priorizar resultados en el idioma seleccionado"
 msgctxt "#30874"
 msgid "Update Addons"
 msgstr "Actualizar Addons"
+
+msgctxt "#30875"
+msgid "Toggle Catalogs Add-ons"
+msgstr "Alternar complementos de catalogos"

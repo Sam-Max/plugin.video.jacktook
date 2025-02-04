@@ -20,6 +20,7 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
+from lib.stremio.catalogs import list_stremio_catalogs
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
@@ -158,6 +159,13 @@ def root_menu():
         ADDON_HANDLE,
         build_url("animation_menu"),
         list_item("Animation", "anime.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("tv_menu"),
+        list_item("Live TV", "tv.png"),
         isFolder=True,
     )
 
@@ -319,6 +327,7 @@ def tv_shows_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -332,6 +341,7 @@ def movies_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -413,6 +423,7 @@ def anime_item(params):
                 list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
+        list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
     if mode == "movies":
         for item in anime_items:
             if item["api"] == "tmdb":
@@ -428,6 +439,12 @@ def anime_item(params):
                     list_item(item["name"], item["icon"]),
                     isFolder=True,
                 )
+        list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
+    endOfDirectory(ADDON_HANDLE)
+
+
+def tv_menu(params):
+    list_stremio_catalogs(menu_type="tv")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -517,7 +534,7 @@ def search(params):
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
-    ids = params.get("ids", "")
+    ids = literal_eval(params.get("ids", ""))
     tv_data = params.get("tv_data", "")
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
@@ -548,7 +565,7 @@ def search(params):
             season,
         )
         if not pre_results:
-            notification("No results found for episode")
+            notification("No results found")
             return
 
     if get_setting("torrent_enable"):
@@ -586,11 +603,11 @@ def search(params):
 
 
 def handle_results(results, mode, ids, tv_data, direct=False):
-    if direct:
+    tmdb_id, tvdb_id, _ = ids.values()
+
+    if direct or not tmdb_id:
         item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
     else:
-        tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(",")]
-
         details = get_tmdb_media_details(tmdb_id, mode)
         poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
         overview = details.overview or ""
@@ -811,7 +828,7 @@ def play_url(params):
 
 
 def tv_seasons_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", ""))
     mode = params["mode"]
     media_type = params.get("media_type", None)
 
@@ -822,7 +839,7 @@ def tv_seasons_details(params):
 
 
 def tv_episodes_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", ""))
     mode = params["mode"]
     tv_name = params["tv_name"]
     season = params["season"]

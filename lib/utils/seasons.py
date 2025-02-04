@@ -1,4 +1,5 @@
 import os
+from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
@@ -11,14 +12,19 @@ from xbmcplugin import addDirectoryItem
 
 
 def show_season_info(ids, mode, media_type):
-    tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
+    tmdb_id, tvdb_id, imdb_id = ids.values()
+
+    if imdb_id:
+        res = tmdb_get("find_by_imdb_id", imdb_id)
+        tmdb_id = res["tv_results"][0]["id"]
+        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     details = tmdb_get("tv_details", tmdb_id)
     name = details.name
     seasons = details.seasons
     overview = details.overview
-
     show_poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
+    
     fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     for s in seasons:
@@ -70,8 +76,10 @@ def show_season_info(ids, mode, media_type):
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
-    tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(',')]
+    tmdb_id, tvdb_id, _ = ids.values()
+
     season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
+
     fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     for ep in season_details.episodes:
@@ -79,15 +87,16 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         episode = ep.episode_number
         air_date = ep.air_date
         duration = ep.runtime
+        
         tv_data = f"{ep_name}(^){episode}(^){season}"
-        label = f"{season}x{episode}. {ep_name}"
         still_path = ep.get("still_path", "")
+        
         if still_path:
             poster = TMDB_POSTER_URL + still_path
         else:
             poster = fanart_data.get("fanart", "") if fanart_data else ""
 
-        list_item = ListItem(label=label)
+        list_item = ListItem(label=f"{season}x{episode}. {ep_name}")
 
         set_media_infotag(
             list_item,
@@ -103,7 +112,6 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         )
 
         list_item.setProperty("IsPlayable", "true")
-
         list_item.setArt(
             {
                 "poster": poster,

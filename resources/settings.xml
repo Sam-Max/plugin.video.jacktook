@@ -82,6 +82,17 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_toggle_catalogs" type="action" label="30875" help="30872">
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_catalogs)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="stremio_login" type="action" label="30871" help="30866">
                     <dependencies>
                         <dependency type="visible">

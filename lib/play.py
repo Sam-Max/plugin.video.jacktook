@@ -1,3 +1,4 @@
+from ast import literal_eval
 from urllib.parse import quote
 from lib.utils.debrid_utils import get_debrid_direct_url, get_debrid_pack_direct_url
 from lib.utils.kodi_utils import (
@@ -25,7 +26,7 @@ def get_playback_info(data):
     url = data.get("url", "")
     magnet = data.get("magnet", "")
     is_torrent = data.get("is_torrent", "")
-    ids = data.get("ids", [])
+    ids = data.get("ids", "")
     is_pack = data.get("is_pack", False)
 
     torrent_enable = get_setting("torrent_enable")
@@ -94,8 +95,9 @@ def get_elementum_url(magnet, url, mode, ids):
     if not is_elementum_addon():
         notification(translation(30252))
         return
+    
     if ids:
-        tmdb_id, _, _ = [id.strip() for id in ids.split(",")]
+        tmdb_id = ids["tmdb_id"]
     else:
         tmdb_id = ""
 

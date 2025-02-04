@@ -291,8 +291,7 @@ def set_video_info(
     info = {"plot": overview}
 
     if ids:
-        _, _, imdb_id = [id.strip() for id in ids.split(",")]
-        info["imdbnumber"] = imdb_id
+        info["imdbnumber"] = ids["imdb_id"]
 
     if duration:
         info["duration"] = int(duration)
@@ -385,7 +384,7 @@ def set_media_infotag(
     if duration:
         info_tag.setDuration(int(duration) * 60)
     if ids:
-        tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(",")]
+        tmdb_id, tvdb_id, imdb_id = ids.values()
         info_tag.setIMDBNumber(imdb_id)
         info_tag.setUniqueIDs(
             {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}

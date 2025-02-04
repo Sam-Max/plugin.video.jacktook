@@ -67,6 +67,8 @@ def tmdb_get(path, params=None):
         data = Trending().tv_week(page=params)
     elif path == "find_by_tvdb":
         data = Find().find_by_tvdb_id(params)
+    elif path == "find_by_imdb_id":
+        data = Find().find_by_imdb_id(params)
     elif path == "anime_year":
         data = TmdbAnime().anime_year(params)
     elif path == "anime_genres":

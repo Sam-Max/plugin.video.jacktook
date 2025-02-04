@@ -188,7 +188,13 @@ def tmdb_search_genres(mode, genre_id, page, submode=None):
 
         show_tmdb_results(results.results, mode, submode)
 
-        add_next_button("search_tmdb_genres", mode=mode, submode=submode, genre_id=genre_id, page=page)
+        add_next_button(
+            "search_tmdb_genres",
+            mode=mode,
+            submode=submode,
+            genre_id=genre_id,
+            page=page,
+        )
 
 
 def tmdb_search_year(mode, submode, year, page):
@@ -275,7 +281,7 @@ def show_items(res, mode, submode=None):
         backdrop_path = TMDB_BACKDROP_URL + backdrop_path
 
     overview = res.get("overview", "")
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=label_title)
 
@@ -410,7 +416,7 @@ def show_anime_results(res, mode):
         imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
         duration = ""
 
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=title)
     list_item.setArt(
