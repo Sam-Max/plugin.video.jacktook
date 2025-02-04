@@ -20,7 +20,7 @@ from lib.utils.kodi_utils import (
     set_setting,
     sleep,
 )
-from lib.utils.settings import lists_sort_order, trakt_client, trakt_secret
+from lib.utils.settings import trakt_client, trakt_lists_sort_order, trakt_secret
 from xbmc import Player as player
 from lib.utils.kodi_utils import progressDialog
 
@@ -58,14 +58,14 @@ def call_trakt(
         if with_auth:
             try:
                 try:
-                    expires_at = float(get_setting("trakt.expires"))
+                    expires_at = float(get_setting("trakt_expires"))
                 except:
                     expires_at = 0.0
                 if time.time() > expires_at:
                     trakt_refresh_token()
             except:
                 pass
-            token = get_setting("trakt.token")
+            token = get_setting("trakt_token")
             if token:
                 headers["Authorization"] = "Bearer " + token
         try:
@@ -245,26 +245,26 @@ def trakt_refresh_token():
         "client_secret": CLIENT_SECRET,
         "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
         "grant_type": "refresh_token",
-        "refresh_token": get_setting("trakt.refresh"),
+        "refresh_token": get_setting("trakt_refresh"),
     }
     response = call_trakt("oauth/token", data=data, with_auth=False)
     if response:
-        set_setting("trakt.token", response["access_token"])
-        set_setting("trakt.refresh", response["refresh_token"])
-        set_setting("trakt.expires", str(time.time() + 7776000))
+        set_setting("trakt_token", response["access_token"])
+        set_setting("trakt_refresh", response["refresh_token"])
+        set_setting("trakt_expires", str(time.time() + 7776000))
 
 
 def trakt_authenticate():
     code = trakt_get_device_code()
     token = trakt_get_device_token(code)
     if token:
-        set_setting("trakt.token", token["access_token"])
-        set_setting("trakt.refresh", token["refresh_token"])
-        set_setting("trakt.expires", str(time.time() + 7776000))
+        set_setting("trakt_token", token["access_token"])
+        set_setting("trakt_refresh", token["refresh_token"])
+        set_setting("trakt_expires", str(time.time() + 7776000))
         sleep(1000)
         try:
             user = call_trakt("/users/me")
-            set_setting("trakt.user", str(user["username"]))
+            set_setting("trakt_user", str(user["username"]))
         except:
             pass
         notification("Trakt Account Authorized", time=3000)
@@ -274,10 +274,10 @@ def trakt_authenticate():
 
 
 def trakt_revoke_authentication():
-    set_setting("trakt.user", "empty_setting")
-    set_setting("trakt.expires", "")
-    set_setting("trakt.token", "")
-    set_setting("trakt.refresh", "")
+    set_setting("trakt_user", "empty_setting")
+    set_setting("trakt_expires", "")
+    set_setting("trakt_token", "")
+    set_setting("trakt_refresh", "")
     clear_all_trakt_cache_data()
     CLIENT_ID = trakt_client()
     if CLIENT_ID in empty_setting_check:
@@ -286,7 +286,7 @@ def trakt_revoke_authentication():
     if CLIENT_SECRET in empty_setting_check:
         return no_secret_key()
     data = {
-        "token": get_setting("trakt.token"),
+        "token": get_setting("trakt_token"),
         "client_id": CLIENT_ID,
         "client_secret": CLIENT_SECRET,
     }
@@ -448,7 +448,7 @@ def trakt_watchlist_lists(media_type, list_type):
 
 def trakt_watchlist(media_type):
     data = trakt_fetch_collection_watchlist("watchlist", media_type)
-    sort_order = lists_sort_order("watchlist")
+    sort_order = trakt_lists_sort_order("watchlist")
     if sort_order == 0:
         data = sort_for_article(data, "title")
     elif sort_order == 1:

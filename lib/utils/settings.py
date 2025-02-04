@@ -15,11 +15,11 @@ def get_int_setting(setting):
 
 
 def update_delay(fallback=45):
-    return get_property("jacktook.update.delay") or fallback
+    return get_property("update.delay") or fallback
 
 
 def update_action(fallback=2):
-    return get_property("jacktook.update.action") or fallback
+    return get_property("update.action") or fallback
 
 
 def is_cache_enabled():
@@ -43,12 +43,12 @@ def get_prowlarr_timeout():
 
 
 def trakt_client():
-    return get_setting("jacktook.trakt.client", "")
+    return get_setting("trakt_client", "")
 
 
 def trakt_secret():
-    return get_setting("jacktook.trakt.secret", "")
+    return get_setting("trakt_secret", "")
 
 
-def lists_sort_order(setting):
-	return int(get_setting('jacktook.sort.%s' % setting, '0'))
+def trakt_lists_sort_order(setting):
+	return int(get_setting('trakt_sort_%s' % setting, '0'))

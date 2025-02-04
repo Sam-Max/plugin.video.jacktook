@@ -116,7 +116,7 @@ if JACKTORR_ADDON:
     )
 
 tmdb = TMDb()
-tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
+tmdb.api_key = get_setting("tmdb_api_key", "b70756b7083d9ee60f849d82d94a0d80")
 
 try:
     language_index = get_setting("language")
