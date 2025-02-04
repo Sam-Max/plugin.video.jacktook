@@ -1,6 +1,5 @@
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
-from lib.api.jacktook.kodi import kodilog
 from lib.clients.stremio_addon import StremioAddonCatalogsClient
 from lib.stremio.ui import get_selected_catalogs_addons
 from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification
@@ -15,10 +14,20 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
     for addon in selected_addons:
         for catalog in addon.manifest.catalogs:
             if catalog["type"] == menu_type:
-                if catalog.get("name"):
+                catalog_name = catalog.get("name")
+                catalog_id = catalog.get("id")
+
+                if catalog_name or catalog_id:
                     action = "list_stremio_catalog"
-                    listitem = ListItem(label=catalog["name"])
+                    name = addon.manifest.name
+                    if name == "Cinemeta":
+                        label= f"{name} - {catalog['name'] or catalog['id']}"
+                    else:
+                        label = catalog_name or catalog_id
+                
+                    listitem = ListItem(label=label)
                     listitem.setArt({"icon": addon.manifest.logo})
+                
                     addDirectoryItem(
                         ADDON_HANDLE,
                         build_url(
@@ -131,7 +140,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
         )
         tags.setTitle(video["name"])
         tags.setPlot(video.get("description", ""))
-        tags.setRating(float(video.get("imdbRating", 0)))
+        tags.setRating(float(video.get("imdbRating", 0) or 0))
         tags.setGenres(video.get("genres", []))
         tags.setMediaType("video")
 
