@@ -839,7 +839,6 @@ def add_next_button(func_name, page=1, **kwargs):
         list_item,
         isFolder=True,
     )
-    endOfDirectory(ADDON_HANDLE)
 
 
 def is_video(s):

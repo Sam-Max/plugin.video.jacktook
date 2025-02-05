@@ -27,9 +27,7 @@ from lib.utils.utils import (
 )
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from xbmcgui import ListItem
-from xbmcplugin import (
-    addDirectoryItem,
-)
+from xbmcplugin import addDirectoryItem, endOfDirectory
 from lib.utils.paginator import paginator_db
 
 
@@ -129,10 +127,10 @@ def process_trakt_result(results, query, category, mode, submode, api, page):
         submode=submode,
         api=api,
     )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def show_anime_common(res, mode):
-    kodilog("trakt::show_anime_common")
     ids = extract_ids(res)
     title = res["show"]["title"]
 
@@ -180,11 +178,10 @@ def show_common_categories(res, mode):
         tmdb_id = ids["tmdb_id"]
         details = tmdb_get("movie_details", tmdb_id)
         duration = details.runtime
-        
 
     poster_path = TMDB_POSTER_URL + details.get("poster_path", "")
     backdrop_path = TMDB_BACKDROP_URL + details.get("backdrop_path", "")
-    
+
     list_item = ListItem(label=title)
     list_item.setArt(
         {
@@ -363,12 +360,14 @@ def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)
     add_next_button("list_trakt_page", page, mode=mode)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def show_list_trakt_page(page, mode):
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)
     add_next_button("list_trakt_page", page, mode=mode)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def extract_ids(res, mode="tv"):
@@ -381,7 +380,7 @@ def extract_ids(res, mode="tv"):
         tvdb_id = None
         imdb_id = res["movie"]["ids"]["imdb"]
 
-    return f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    return {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
 
 def add_dir_item(mode, list_item, ids, title):
