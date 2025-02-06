@@ -70,7 +70,7 @@ class Zilean(BaseClient):
         for result in response:
             torrents.append(
                 {
-                    "infoHash": result.info_hash,
+                    "info_hash": result.info_hash,
                     "filename": result.raw_title,
                     "filesize": result.size,
                     "languages": result.languages,
@@ -87,9 +87,9 @@ class Zilean(BaseClient):
                     "title": item["filename"],
                     "type": "Torrent",
                     "indexer": "Zilean",
-                    "guid": item["infoHash"],
-                    "magnet": info_hash_to_magnet(item["infoHash"]),
-                    "infoHash": item["infoHash"],
+                    "guid": item["info_hash"],
+                    "magnet": info_hash_to_magnet(item["info_hash"]),
+                    "info_hash": item["info_hash"],
                     "size": item["filesize"],
                     "seeders": 0,
                     "languages": item["languages"],

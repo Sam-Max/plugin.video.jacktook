@@ -1,16 +1,16 @@
-from .enricher import Enricher
+from lib.domain.interface.enricher_interface import EnricherInterface
 import re
 from re import Pattern
 from typing import Dict, List
+from lib.domain.source import Source
 
-
-class IsPackEnricher(Enricher):
+class IsPackEnricher(EnricherInterface):
     def __init__(self, season_number: int):
         self.season_number = season_number
         self.season_fill = f"{season_number:02d}"
         self.pattern = self._build_pattern()
 
-    def initialize(self, items: List[Dict]) -> None:
+    def initialize(self, items: List[Source]) -> None:
         return
     
     def needs(self):
@@ -44,6 +44,6 @@ class IsPackEnricher(Enricher):
             "|".join(f"({p})" for p in base_patterns), flags=re.IGNORECASE
         )
 
-    def enrich(self, item: Dict) -> None:
+    def enrich(self, item: Source) -> None:
         title = item.get("title", "")
-        item["isPack"] = bool(self.pattern.search(title))
+        item["is_pack"] = bool(self.pattern.search(title))

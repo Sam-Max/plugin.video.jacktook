@@ -7,7 +7,6 @@
     </coordinates>
 
     <controls>
-
         <!-- Background -->
         <control type="group">
             <top>0</top>
@@ -18,40 +17,30 @@
             <!-- Fallback -->
             <control type="image">
                 <texture>white.png</texture>
-                <colordiffuse>8000000</colordiffuse>
-                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+                <colordiffuse>C0000000</colordiffuse>
+				<!--animation effect="fade" start="0" time="350" tween="linear" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+            	<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+				            <visible>String.IsEqual(Window().Property(instant_close),false)</visible-->
+
             </control>
 
             <!-- Fanart -->
             <control type="image">
                 <texture background="true">$INFO[Window().Property(info.fanart)]</texture>
-                <colordiffuse>FFFFFFFF</colordiffuse>
-                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
-            </control>
+                <colordiffuse>FF404040</colordiffuse>
+				<aspectratio>scale</aspectratio>
+				<!--animation effect="fade" start="0" time="350" tween="linear" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+            	<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+				            <visible>String.IsEqual(Window().Property(instant_close),false)</visible-->
 
-            <!-- Overlay -->
-            <control type="image">
-				<texture background="true">white.png</texture>
-				<colordiffuse>CC000000</colordiffuse>
-                <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-                <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
-			</control>
+            </control>
         </control>
 
 		<!-- Clearlogo -->
 		<control type="image">
-			<animation type="WindowOpen">
-                <effect type="slide" start="841,401" time="350" tween="cubic" easing="in"/>
-				<effect type="zoom" start="140,140" time="350" center="auto" tween="cubic" easing="in"/>
-			</animation>
-            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
-            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-            <animation type="Conditional" condition="!String.IsEqual(Window().Property(resolving),true)">
-                <effect type="slide" start="841,401" time="350" delay="350" tween="cubic" easing="in"/>
-				<effect type="zoom" start="140,140" time="350" delay="350" center="auto" tween="cubic" easing="in"/>
-			</animation>
+			<animation effect="fade" delay="350" start="0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+          
 			<top>0</top>
 			<left>70</left>
 			<width>200</width>
@@ -59,7 +48,6 @@
 			<aspectratio>keep</aspectratio>
 			<texture>jtk_clearlogo.png</texture>
 			<colordiffuse>CCFFFFFF</colordiffuse>
-			<visible>!String.IsEmpty(Window().Property(info.clearlogo)) + !String.IsEqual(Window().Property(instant_close),true)</visible>
 		</control>
 
         
@@ -67,53 +55,51 @@
         <control type="label" id="1001">
             <label>Section 1</label>
 			<font>font20</font>
-			<top>28</top>
+			<top>50</top>
 			<left>560</left>
 			<width>1620</width>
 			<height>50</height>
+			<!--animation effect="fade" start="0" time="350" tween="linear" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+			<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation-->
         </control>
 
 		<!-- Section description -->
 		<control type="label" id="1002">
             <label>Desc 1</label>
-			<font>font12</font>
-			<top>65</top>
+			<font>font20</font>
+			<top>110</top>
 			<left>560</left>
 			<width>1620</width>
 			<height>50</height>
+			<!--animation effect="fade" start="0" time="350" tween="linear" easing="in"condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+			<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation-->
         </control>
 
 		<!-- Scrollbar -->
 		<control type="scrollbar" id="1111">
-			<animation effect="fade" time="350" tween="cubic" easing="in" delay="350">WindowOpen</animation>
-			<animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
-            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-            <animation effect="fade" time="350" delay="700" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-			<left>1820</left>
-			<top>120</top>
+            <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+            <animation effect="fade" time="350" delay="700" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+			<left>1890</left>
+			<top>190</top>
 			<width>20</width>
-			<height>890</height>
+			<height>800</height>
 			<showonepage>false</showonepage>
 			<texturesliderbackground colordiffuse="99362e33">white.png</texturesliderbackground>
 			<texturesliderbar colordiffuse="66FFFFFF">white.png</texturesliderbar>
 			<texturesliderbarfocus colordiffuse="$INFO[Window().Property(settings.color)]">white.png</texturesliderbarfocus>
-            <visible>String.IsEqual(Window().Property(instant_close),false)</visible>
 		</control>
 
 		<control type="list" id="1000">
-			<animation effect="slide" start="1400,0" time="350" tween="cubic" easing="in">WindowOpen</animation>
-			<animation effect="slide" end="1400,0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
-			<animation effect="slide" end="1400,0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
-			<animation effect="slide" start="1400,0" time="350" delay="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
+			<animation effect="slide" start="1400,0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
+			<animation effect="slide" end="1400,0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(instant_close),true)">Conditional</animation>
 			<viewtype label="Sources">list</viewtype>
 			<pagecontrol>1111</pagecontrol>
 			<left>560</left>
-			<top>110</top>
+			<top>180</top>
 			<width>1340</width>
-			<height>900</height>
+			<height>800</height>
 			<itemgap>20</itemgap>
 			<orientation>vertical</orientation>
-			<visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
 
 			<!-- Focused Source -->
 			<focusedlayout height="160">
@@ -140,8 +126,7 @@
 						<height>20</height>
 						<align>center</align>
 						<width>200</width>
-						<textcolor>FFFFFFFF</textcolor>
-						<label>$INFO[ListItem.Property(seeders)] seeds</label>
+						<label>$INFO[ListItem.Property(a1)]</label>
 					</control>
 
 					<control type="label">
@@ -150,8 +135,7 @@
 						<height>20</height>
 						<align>center</align>
 						<width>200</width>
-						<textcolor>FFFFFFFF</textcolor>
-						<label>$INFO[ListItem.Property(size)]</label>
+						<label>$INFO[ListItem.Property(a2)]</label>
 					</control>
 				
 
@@ -162,9 +146,8 @@
 						<align>center</align>
 						<width>200</width>
 						<font>font12</font>
-						<textcolor>66FFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(quality)]</label>
+						<label>$INFO[ListItem.Property(a3)]</label>
 					</control>
 
 					<!-- Release Title -->
@@ -174,9 +157,8 @@
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>FFFFFFFF</textcolor>
 						<align>left</align>
-						<label>[B]$INFO[ListItem.Property(title)][/B]</label>
+						<label>$INFO[ListItem.Property(b1)]</label>
 					</control>
 
 					<control type="label">
@@ -185,9 +167,8 @@
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>FFFFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(fullLanguages)] $INFO[ListItem.Property(indexer)] $INFO[ListItem.Property(provider)]</label>
+						<label>$INFO[ListItem.Property(b2)]</label>
 					</control>
 					
 					<control type="label">
@@ -196,9 +177,8 @@
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>CCFFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(status)]</label>
+						<label>$INFO[ListItem.Property(b3)]</label>
 					</control>
 			</focusedlayout>
 
@@ -227,8 +207,7 @@
 						<height>20</height>
 						<align>center</align>
 						<width>200</width>
-						<textcolor>FFFFFFFF</textcolor>
-						<label>$INFO[ListItem.Property(seeders)] seeds</label>
+						<label>$INFO[ListItem.Property(a1)]</label>
 					</control>
 
 					<control type="label">
@@ -237,8 +216,7 @@
 						<height>20</height>
 						<align>center</align>
 						<width>200</width>
-						<textcolor>FFFFFFFF</textcolor>
-						<label>$INFO[ListItem.Property(size)]</label>
+						<label>$INFO[ListItem.Property(a2)]</label>
 					</control>
 				
 
@@ -249,9 +227,8 @@
 						<align>center</align>
 						<width>200</width>
 						<font>font12</font>
-						<textcolor>66FFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(quality)]</label>
+						<label>$INFO[ListItem.Property(a3)]</label>
 					</control>
 
 					<!-- Release Title -->
@@ -261,9 +238,9 @@
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>FFFFFFFF</textcolor>
 						<align>left</align>
-						<label>[B]$INFO[ListItem.Property(title)][/B]</label>
+						<textcolor>66FFFFFF</textcolor>
+						<label>$INFO[ListItem.Property(b1)]</label>
 					</control>
 
 					<control type="label">
@@ -272,20 +249,18 @@
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>FFFFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(fullLanguages)] $INFO[ListItem.Property(indexer)] $INFO[ListItem.Property(provider)]</label>
+						<label>$INFO[ListItem.Property(b2)]</label>
 					</control>
-
+					
 					<control type="label">
 						<top>110</top>
 						<left>220</left>
 						<width>1000</width>
 						<height>20</height>
 						<font>font12</font>
-						<textcolor>CCFFFFFF</textcolor>
 						<align>left</align>
-						<label>$INFO[ListItem.Property(status)]</label>
+						<label>$INFO[ListItem.Property(b3)]</label>
 					</control>
 				</control>
 			</itemlayout>
@@ -293,8 +268,6 @@
 
         <!-- Side Info -->
         <control type="group">
-			<animation effect="slide" start="-600,0" time="350" tween="cubic" easing="in">WindowOpen</animation>
-			<animation effect="slide" end="-600,0" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(instant_close),true)">WindowClose</animation>
             <animation effect="slide" end="-600,0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
             <animation effect="slide" start="-600,0" delay="350" time="350" tween="cubic" easing="in" condition="!String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
 			<animation effect="slide" end="-600,0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(settings_open),true)">Conditional</animation>
@@ -303,7 +276,7 @@
             <top>100</top>
             <left>20</left>
             <width>500</width>
-            <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+
 
 			<!-- Poster -->
 			<control type="image">
@@ -316,6 +289,7 @@
 				<aligny>top</aligny>
 				<texture>$INFO[Window.Property(info.poster)]</texture>
 				<visible>!String.IsEmpty(Window.Property(info.poster))</visible>
+				<aspectratio>keep</aspectratio>
 			</control>
 			
 			<!-- Plot -->

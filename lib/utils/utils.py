@@ -14,17 +14,6 @@ from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
 from lib.db.main_db import main_db
-from lib.sources_tools import FilterBuilder
-from lib.sources_tools import (
-    EnricherBuilder,
-    StatsEnricher,
-    QualityEnricher,
-    LanguageEnricher,
-    IsPackEnricher,
-    CacheEnricher
-)
-from lib.utils.kodi_utils import convert_size_to_bytes
-from lib.utils.language_detection import language_codes, langsSet
 from lib.torf._magnet import Magnet
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
@@ -205,9 +194,16 @@ torrent_indexers = [
 ]
 
 
+class FakeDialog():
+    def create(self, message: str):
+        pass
+    def update(self, percent: int, title: str, message: str):
+        pass
 class DialogListener:
     def __init__(self):
-        self._dialog = DialogProgressBG()
+        # self._dialog = DialogProgressBG()
+        self._dialog = FakeDialog()
+        pass
 
     @property
     def dialog(self):
@@ -567,18 +563,6 @@ def get_random_color(provider_name):
     return "FF" + "".join(colors).upper()
 
 
-def get_colored_languages(languages):
-    if not languages:
-        return ""
-    colored_languages = []
-    for lang in languages:
-        lang_color = get_random_color(lang)
-        colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
-        colored_languages.append(colored_lang)
-    colored_languages = " ".join(colored_languages)
-    return colored_languages
-
-
 def execute_thread_pool(results, func, *args, **kwargs):
     with ThreadPoolExecutor(max_workers=10) as executor:
         [executor.submit(func, res, *args, **kwargs) for res in results]
@@ -637,49 +621,6 @@ def unzip(zip_location, destination_location, destination_check):
     return status
 
 
-def pre_process(results, mode, ep_name, episode, season):
-    results = (
-        EnricherBuilder()
-            .add(StatsEnricher(size_converter=convert_size_to_bytes))
-            .add(QualityEnricher())
-            .add(LanguageEnricher(language_codes, langsSet))
-            .add(CacheEnricher())
-            .build(results)
-    )
-
-    filters = FilterBuilder()
-
-    if get_setting("stremio_enabled") and get_setting("torrent_enable"):
-        filters.filter_by_source()
-
-    if mode == "tv" and get_setting("filter_by_episode"):
-        filters.filter_by_episode(ep_name, episode, season)
-
-    return filters.build(results)
-
-
-def post_process(results, season=0):
-    sort_by = get_setting("indexers_sort_by")
-    limit = int(get_setting("indexers_total_results"))
-
-    results = EnricherBuilder().add(IsPackEnricher(season)).build(results)
-
-    filters = FilterBuilder().limit(limit).deduple_by_infoHash()
-
-    if sort_by == "Seeds":
-        filters.sort_by("seeders", ascending=False)
-    elif sort_by == "Size":
-        filters.sort_by("size", ascending=False)
-    elif sort_by == "Date":
-        filters.sort_by("publishDate", ascending=False)
-    elif sort_by == "Quality":
-        filters.sort_by("quality_sort", ascending=False)
-        filters.sort_by("seeders", ascending=False)
-    elif sort_by == "Cached":
-        filters.sort_by("isCached", ascending=False)
-
-    return filters.build(results)
-
 
 def clean_auto_play_undesired(results):
     undesired = ("SD", "CAM", "TELE", "SYNC", "480p")
@@ -691,16 +632,6 @@ def clean_auto_play_undesired(results):
                 results.remove(res)
     return results[0]
 
-
-def is_torrent_url(uri):
-    res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
-    if (
-        res.status_code == 200
-        and res.headers.get("Content-Type") == "application/octet-stream"
-    ):
-        return True
-    else:
-        return False
 
 
 def supported_video_extensions():

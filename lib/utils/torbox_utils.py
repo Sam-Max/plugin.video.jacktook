@@ -21,7 +21,7 @@ client = Torbox(token=get_setting("torbox_token"))
 def check_torbox_cached(
     results, cached_results, uncached_results, total, dialog, lock
 ):
-    hashes = [res.get("infoHash") for res in results]
+    hashes = [res.get("info_hash") for res in results]
     response = client.get_torrent_instant_availability(hashes)
     cached_response = response.get("data", [])
 
@@ -29,7 +29,7 @@ def check_torbox_cached(
         debrid_dialog_update("TB", total, dialog, lock)
 
         res["type"] = Debrids.TB
-        if res.get("infoHash") in cached_response:
+        if res.get("info_hash") in cached_response:
             with lock:
                 res["isCached"] = True
                 cached_results.append(res)

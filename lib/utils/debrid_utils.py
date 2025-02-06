@@ -133,14 +133,15 @@ def get_rd_status_pack(res):
 
 def get_pack_info(type, info_hash):
     if type == Debrids.PM:
-        info = get_pm_pack_info(info_hash)
+        return get_pm_pack_info(info_hash)
     elif type == Debrids.TB:
-        info = get_torbox_pack_info(info_hash)
+        return get_torbox_pack_info(info_hash)
     elif type == Debrids.RD:
-        info = get_rd_pack_info(info_hash)
+        return get_rd_pack_info(info_hash)
     elif type == Debrids.ED:
-        info = get_ed_pack_info(info_hash)
-    return info
+        return get_ed_pack_info(info_hash)
+    else:
+        return None
 
 
 def filter_results(results, direct_results):
@@ -150,7 +151,7 @@ def filter_results(results, direct_results):
         info_hash = extract_info_hash(res)
 
         if info_hash:
-            res["infoHash"] = info_hash
+            res["info_hash"] = info_hash
             filtered_results.append(res)
         elif (
             res["indexer"] == Indexer.TELEGRAM
@@ -163,8 +164,8 @@ def filter_results(results, direct_results):
 
 def extract_info_hash(res):
     """Extracts and returns the info hash from a result if available."""
-    if res.get("infoHash"):
-        return res["infoHash"].lower()
+    if res.get("info_hash"):
+        return res["info_hash"].lower()
 
     if (guid := res.get("guid", "")) and (
         guid.startswith("magnet:?") or len(guid) == 40

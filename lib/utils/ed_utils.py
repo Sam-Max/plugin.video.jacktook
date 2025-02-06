@@ -20,9 +20,9 @@ client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip
 def check_ed_cached(
     results, cached_results, uncached_results, total, dialog, lock
 ):
-    filtered_results = [res for res in results if "infoHash" in res]
+    filtered_results = [res for res in results if "info_hash" in res]
     if filtered_results:
-        magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
+        magnets = [info_hash_to_magnet(res["info_hash"]) for res in filtered_results]
         torrents_info = client.get_torrent_instant_availability(magnets)
         cached_response = torrents_info.get("cached", [])
 

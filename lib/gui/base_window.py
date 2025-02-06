@@ -57,8 +57,8 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                     self.setFocus(control)
                     return
 
-            if control_list and control_list.size() > 0:
-                if control_list_reset:
+            if control_list:
+                if control_list.size() > 0 and control_list_reset:
                     control_list.selectItem(0)
                 self.setFocus(control_list)
             elif control_id:
@@ -67,7 +67,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             else:
                 raise ValueError("Neither valid control list nor control ID provided.")
         except (RuntimeError, ValueError) as e:
-            kodilog(f"Could not set focus: {e}", "debug")
+            kodilog(f"Could not set focus: {e}")
             if control_id:
                 self.setFocusId(control_id)
 

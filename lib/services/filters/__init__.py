@@ -1,62 +1,64 @@
 import re
-from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Union
+from typing import List, Any, Union
+from lib.domain.source import Source
+from lib.domain.interface.filter_interface import FilterInterface
 
 
-class Filter(ABC):
-    @abstractmethod
-    def apply(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+
+class FieldFilter(FilterInterface):
+    def __init__(self, field: str, value: Any):
+        self.field = field
+        self.value = value
+
+    def matches(self, item: Source) -> bool:
+        return item.get(self.field) == self.value
+    
+    def reset(self):
         pass
 
 
-class DedupeFilter(Filter):
-    def apply(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        seen = set()
-        filtered = []
-        
-        for item in items:
-            info_hash = item.get("infoHash")
-            if info_hash not in seen:
-                if info_hash is not None:
-                    seen.add(info_hash)
-                filtered.append(item)
-        
-        return filtered
+class DedupeFilter(FilterInterface):
+    def __init__(self):
+        self.seen = set()
+
+    def matches(self, item: Source) -> bool:
+        info_hash = item.get("info_hash")
+        if info_hash in self.seen:
+            return False
+        if info_hash is not None:
+            self.seen.add(info_hash)
+        return True
+
+    def reset(self):
+        self.seen.clear()
 
 
-class SourceFilter(Filter):
-    def apply(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        return [item for item in items if item.get("infoHash") or item.get("guid")]
+class SourceFilter(FilterInterface):
+    def matches(self, item: Source) -> bool:
+        return bool(item.get("info_hash") or item.get("guid"))
 
 
-class LanguageFilter(Filter):
+class LanguageFilter(FilterInterface):
     def __init__(self, languages: List[str]):
         self.languages = languages
 
-    def apply(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def matches(self, item: Source) -> bool:
         if not self.languages:
-            return items
-        return [
-            item for item in items
-            if any(lang in item.get("languages", []) for lang in self.languages)
-        ]
+            return True
+        item_langs = item.get("languages", [])
+        return any(lang in item_langs for lang in self.languages)
 
 
-class EpisodeFilter(Filter):
+class EpisodeFilter(FilterInterface):
     def __init__(self, episode_name: str, episode_num: int, season_num: int):
         self.episode_name = episode_name
         self.episode_num = episode_num
         self.season_num = season_num
+        self.compiled_pattern = self._compile_pattern()
 
-    def apply(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        episode_num = self.episode_num
-        season_num = self.season_num
-
-        if episode_num is None or season_num is None:
-            return items
-
-        episode_fill = f"{episode_num:02d}"
-        season_fill = f"{season_num:02d}"
+    def _compile_pattern(self):
+        episode_fill = f"{self.episode_num:02d}"
+        season_fill = f"{self.season_num:02d}"
 
         patterns = [
             rf"S{season_fill}E{episode_fill}",
@@ -71,18 +73,35 @@ class EpisodeFilter(Filter):
         if self.episode_name:
             patterns.append(re.escape(self.episode_name))
 
-        combined_pattern = re.compile("|".join(patterns), flags=re.IGNORECASE)
-        return [
-            item for item in items
-            if combined_pattern.search(item.get("title", ""))
-        ]
+        return re.compile("|".join(patterns), flags=re.IGNORECASE)
+
+    def matches(self, item: Source) -> bool:
+        title = item.get("title", "")
+        return bool(self.compiled_pattern.search(title))
 
 
-class FilterBuilder:
-    def __init__(self):
-        self._filters: List[Filter] = []
+class FilterBuilder(FilterInterface):
+    def __init__(self, operator: str = "AND"):
+        self._filters: List[FilterInterface] = []
+        self._operator = operator.upper()
         self._sort_criteria: List[tuple] = []
         self._limit: int = 0
+
+    def matches(self, item: Source) -> bool:
+        if not self._filters:
+            return True
+
+        results = [f.matches(item) for f in self._filters]
+        if self._operator == "AND":
+            return all(results)
+        elif self._operator == "OR":
+            return any(results)
+        else:
+            raise ValueError(f"Invalid operator: {self._operator}. Use 'AND' or 'OR'.")
+
+    def reset(self):
+        for f in self._filters:
+            f.reset()
 
     def sort_by(self, field: str, ascending: bool = True) -> "FilterBuilder":
         self._sort_criteria.append((field, ascending))
@@ -90,6 +109,14 @@ class FilterBuilder:
 
     def limit(self, n: int) -> "FilterBuilder":
         self._limit = n
+        return self
+
+    def filter_by_field(self, field: str, value: Any) -> "FilterBuilder":
+        self._filters.append(FieldFilter(field, value))
+        return self
+    
+    def filter_by_quality(self, priority: int) -> "FilterBuilder":
+        self._filters.append(FieldFilter("quality_sort", priority))
         return self
 
     def filter_by_language(self, language_code: str) -> "FilterBuilder":
@@ -100,7 +127,7 @@ class FilterBuilder:
             self._filters.append(LanguageFilter([language_code]))
         return self
 
-    def deduple_by_infoHash(self) -> "FilterBuilder":
+    def dedupe_by_infoHash(self) -> "FilterBuilder":
         self.add_filter(DedupeFilter())
         return self
 
@@ -112,7 +139,6 @@ class FilterBuilder:
     ) -> "FilterBuilder":
         episode_num = int(episode_num)
         season_num = int(season_num)
-        # Remove any existing EpisodeFilter
         self._filters = [f for f in self._filters if not isinstance(f, EpisodeFilter)]
         self._filters.append(EpisodeFilter(episode_name, episode_num, season_num))
         return self
@@ -122,20 +148,18 @@ class FilterBuilder:
             self._filters.append(SourceFilter())
         return self
 
-    def add_filter(self, filter: Filter) -> "FilterBuilder":
+    def add_filter(self, filter: FilterInterface) -> "FilterBuilder":
         self._filters.append(filter)
         return self
 
-    def build(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        filtered_items = items.copy()
-        for filter in self._filters:
-            filtered_items = filter.apply(filtered_items)
-
+    def build(self, items: List[Source]) -> List[Source]:
+        self.reset()
+        filtered_items = [item for item in items if self.matches(item)]
         sorted_items = self._apply_sorting(filtered_items)
         limited_items = self._apply_limit(sorted_items)
         return limited_items
 
-    def _apply_sorting(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_sorting(self, items: List[Source]) -> List[Source]:
         if not self._sort_criteria:
             return items
 
@@ -156,5 +180,5 @@ class FilterBuilder:
         except TypeError:
             return items
 
-    def _apply_limit(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_limit(self, items: List[Source]) -> List[Source]:
         return items[: self._limit] if self._limit else items

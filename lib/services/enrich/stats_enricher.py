@@ -1,16 +1,16 @@
-from .enricher import Enricher
+from lib.domain.interface.enricher_interface import EnricherInterface
 from typing import Dict, Callable, List
 import re
+from lib.domain.source import Source
 
-
-class StatsEnricher(Enricher):
+class StatsEnricher(EnricherInterface):
     def __init__(self, size_converter: Callable):
         self.size_pattern = re.compile(r"💾 ([\d.]+ (?:GB|MB))")
         self.seeders_pattern = re.compile(r"👤 (\d+)")
         self.provider_pattern = re.compile(r"([🌐🔗⚙️])\s*([^🌐🔗⚙️]+)")
         self.convert_size = size_converter
         
-    def initialize(self, items: List[Dict]) -> None:
+    def initialize(self, items: List[Source]) -> None:
         return
 
     def needs(self):
@@ -19,7 +19,7 @@ class StatsEnricher(Enricher):
     def provides(self):
         return ["size", "seeders", "provider"]
 
-    def enrich(self, item: Dict) -> None:
+    def enrich(self, item: Source) -> None:
         desc = item.get("description", "")
         if not desc:
             return

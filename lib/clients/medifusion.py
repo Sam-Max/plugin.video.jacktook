@@ -75,7 +75,7 @@ class MediaFusion(BaseClient):
                     "type": "Torrent",
                     "indexer": "MediaFusion",
                     "guid": info_hash,
-                    "infoHash": info_hash,
+                    "info_hash": info_hash,
                     "size": parsed_item["size"],
                     "seeders": parsed_item["seeders"],
                     "languages": parsed_item["languages"],
@@ -92,7 +92,7 @@ class MediaFusion(BaseClient):
             path = urlparse(item["url"]).path.split("/")
             info_hash = path[path.index("stream") + 1]
         else:
-            info_hash = item["infoHash"]
+            info_hash = item["info_hash"]
         return info_hash
 
     def parse_stream_title(self, item):

@@ -36,7 +36,6 @@ from lib.navigation import (
     rd_auth,
     rd_remove_auth,
     root_menu,
-    search,
     search_direct,
     search_item,
     settings,
@@ -49,6 +48,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
+from lib.search import search
 from lib.telegram import (
     get_telegram_files,
     get_telegram_latest,

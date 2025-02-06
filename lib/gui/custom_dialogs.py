@@ -7,7 +7,6 @@ from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
-from lib.gui.source_select_new import SourceSelectNew
 
 
 class CustomWindow(WindowXML):
@@ -82,20 +81,6 @@ _mock_information = {
     "clearlogo": "https://assets.fanart.tv/fanart/movies/86161/hdmovielogo/mobile-suit-gundam-0083-the-last-blitz-of-zeon-5c2ede0c7530d.png",
     "plot": "Silo is the story of the last ten thousand people on earth, their mile-deep home protecting them from the toxic and deadly world outside. However, no one knows when or why the silo was built and any who try to find out face fatal consequences.",
 }
-
-
-def source_select(item_info, xml_file, sources):
-    window = SourceSelectNew(
-        xml_file,
-        ADDON_PATH,
-        item_information=item_info,
-        sources=sources,
-        uncached=sources,
-    )
-    data = window.doModal()
-    del window
-    return data
-
 
 def run_next_dialog(params):
     kodilog("run_next_dialog")

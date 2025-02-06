@@ -31,7 +31,7 @@ class Burst(BaseClient):
                     "indexer": "Burst",
                     "provider": r.indexer,
                     "guid": r.guid,
-                    "infoHash": None,
+                    "info_hash": None,
                     "size": convert_size_to_bytes(r.size),
                     "seeders": int(r.seeders),
                     "peers": int(r.peers),

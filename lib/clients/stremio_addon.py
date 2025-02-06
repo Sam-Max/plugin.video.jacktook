@@ -47,7 +47,7 @@ class StremioAddonClient(BaseClient):
                     "indexer": self.addon.manifest.name.split(" ")[0],
                     "guid": stream.infoHash,
                     "magnet": info_hash_to_magnet(stream.infoHash),
-                    "infoHash": stream.infoHash,
+                    "info_hash": stream.infoHash,
                     "size": stream.get_parsed_size() or item.get("sizebytes"),
                     "seeders": item.get("seed", 0),
                     "languages": [item.get("language")] if item.get("language") else [],

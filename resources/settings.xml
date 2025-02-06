@@ -643,12 +643,70 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="transmission_group" label="30877">
+                <setting id="transmission_enabled" type="boolean" label="30734" help="30878">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="transmission_host" type="string" label="30052" help="30880">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="transmission_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="transmission_user" type="string" label="30782" help="30875">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="transmission_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="transmission_pass" type="string" label="30876" help="30874">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="transmission_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="transmission_folder" type="path" label="30881" help="30879">
+                    <default/>
+                    <constraints>
+                        <writable>false</writable>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="button" format="path">
+                        <heading>Transmission Download Folder</heading>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="transmission_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="uncached" label="30790">
                 <setting id="show_uncached" type="boolean" label="30791" help="30803">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
             </group>
+
         </category>
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">

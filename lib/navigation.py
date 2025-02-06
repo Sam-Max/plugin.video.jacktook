@@ -15,19 +15,16 @@ from lib.gui.custom_dialogs import (
     CustomDialog,
     resume_dialog_mock,
     run_next_mock,
-    source_select,
     source_select_mock,
 )
 
 from lib.player import JacktookPLayer
 from lib.utils.seasons import show_episode_info, show_season_info
-from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
     trakt_authenticate,
     trakt_revoke_authentication,
 )
-from lib.clients.search import search_client
 from lib.files_history import last_files
 from lib.play import get_playback_info
 from lib.titles_history import last_titles
@@ -40,7 +37,6 @@ from lib.trakt import (
 
 from lib.utils.rd_utils import get_rd_info
 from lib.utils.items_menus import tv_items, movie_items, anime_items, animation_items
-from lib.utils.debrid_utils import check_debrid_cached
 
 from lib.tmdb import (
     handle_tmdb_anime_query,
@@ -53,23 +49,16 @@ from lib.utils.tmdb_consts import LANGUAGES
 from lib.db.cached import cache
 
 from lib.utils.utils import (
-    TMDB_POSTER_URL,
-    DialogListener,
-    clean_auto_play_undesired,
     clear,
     clear_all_cache,
-    get_fanart_details,
     get_password,
     get_random_color,
     get_service_host,
     get_username,
     make_listing,
-    post_process,
-    pre_process,
     get_port,
     list_item,
     set_content_type,
-    set_watched_title,
     ssl_enabled,
     check_debrid_enabled,
     Debrids,
@@ -95,7 +84,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 
-from lib.utils.settings import get_cache_expiration, is_auto_play
+from lib.utils.settings import get_cache_expiration
 from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
@@ -513,156 +502,10 @@ def search_direct(params):
     endOfDirectory(ADDON_HANDLE, updateListing=update_listing)
 
 
-def search(params):
-    query = params["query"]
-    mode = params["mode"]
-    media_type = params.get("media_type", "")
-    ids = params.get("ids", "")
-    tv_data = params.get("tv_data", "")
-    direct = params.get("direct", False)
-    rescrape = params.get("rescrape", False)
-
-    set_content_type(mode, media_type)
-    set_watched_title(query, ids, mode, media_type)
-
-    episode, season, ep_name = (0, 0, "")
-    if tv_data:
-        try:
-            ep_name, episode, season = tv_data.split("(^)")
-        except ValueError:
-            pass
-
-    with DialogListener() as listener:
-        results = search_client(
-            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
-        )
-        if not results:
-            notification("No results found")
-            return
-
-        pre_results = pre_process(
-            results,
-            mode,
-            ep_name,
-            episode,
-            season,
-        )
-        if not pre_results:
-            notification("No results found for episode")
-            return
-
-    if get_setting("torrent_enable"):
-        post_results = post_process(pre_results)
-    else:
-        with DialogListener() as listener:
-            cached_results = handle_debrid_client(
-                query,
-                pre_results,
-                mode,
-                media_type,
-                listener.dialog,
-                rescrape,
-                episode,
-            )
-            if not cached_results:
-                notification("No cached results found")
-                return
-
-            if is_auto_play():
-                auto_play(cached_results, ids, tv_data, mode)
-                return
-
-            post_results = post_process(cached_results, season)
-
-    data = handle_results(post_results, mode, ids, tv_data, direct)
-
-    if not data:
-        cancel_playback()
-        return
-
-    player = JacktookPLayer(db=bookmark_db)
-    player.run(data=data)
-    del player
-
-
-def handle_results(results, mode, ids, tv_data, direct=False):
-    if direct:
-        item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
-    else:
-        tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(",")]
-
-        details = get_tmdb_media_details(tmdb_id, mode)
-        poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-        overview = details.overview or ""
-
-        fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
-
-        item_info = {
-            "poster": poster,
-            "fanart": fanart_data["fanart"] or poster,
-            "clearlogo": fanart_data["clearlogo"],
-            "plot": overview,
-            "tv_data": tv_data,
-            "ids": ids,
-            "mode": mode,
-        }
-
-    if mode == "direct":
-        xml_file_string = "source_select_direct.xml"
-    else:
-        # TODO: Expecting to have a way to select between skins
-        xml_file_string = "source_select_new.xml"
-
-    return source_select(
-        item_info,
-        xml_file=xml_file_string,
-        sources=results,
-    )
-
-
-def handle_debrid_client(
-    query,
-    proc_results,
-    mode,
-    media_type,
-    p_dialog,
-    rescrape,
-    episode,
-):
-    return check_debrid_cached(
-        query,
-        proc_results,
-        mode,
-        media_type,
-        p_dialog,
-        rescrape,
-        episode,
-    )
-
-
 def play_torrent(params):
     data = literal_eval(params["data"])
     player = JacktookPLayer(db=bookmark_db)
     player.run(data=data)
-    del player
-
-
-def auto_play(results, ids, tv_data, mode):
-    result = clean_auto_play_undesired(results)
-    playback_info = get_playback_info(
-        data={
-            "title": result.get("title"),
-            "mode": mode,
-            "indexer": result.get("indexer"),
-            "type": result.get("type"),
-            "ids": ids,
-            "info_hash": result.get("infoHash"),
-            "tv_data": tv_data,
-            "is_torrent": False,
-        },
-    )
-    player = JacktookPLayer(db=bookmark_db)
-    player.run(data=playback_info)
     del player
 
 
