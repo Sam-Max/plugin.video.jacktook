@@ -33,11 +33,13 @@ from lib.services.enrich import (
 )
 from lib.gui.source_select_new import SourceSelectWindow
 
-
+from lib.api.jacktook.kodi import kodilog
+import json
 def search(params):
     """
     Handles media search and playback.
     """
+    kodilog("Search params: %s" % params)
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
@@ -50,7 +52,8 @@ def search(params):
     episode, season, ep_name = parse_tv_data(tv_data)
 
     # Extract TMDb and TVDb IDs
-    tmdb_id, tvdb_id, imdb_id = extract_ids(ids)
+    ids = json.loads(ids.replace("'", '"').replace("None", "null"))
+    tmdb_id, tvdb_id, imdb_id = (ids["tmdb_id"], ids["tvdb_id"], ids["imdb_id"])
 
     # Fetch media details from TMDb
     details = get_tmdb_media_details(tmdb_id, mode)
@@ -117,14 +120,6 @@ def parse_tv_data(tv_data):
         except ValueError:
             pass
     return int(episode), int(season), ep_name
-
-
-def extract_ids(ids):
-    """
-    Extracts TMDb and TVDb IDs from the input string.
-    """
-    tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(",")]
-    return tmdb_id, tvdb_id, imdb_id
 
 
 def select_source(
