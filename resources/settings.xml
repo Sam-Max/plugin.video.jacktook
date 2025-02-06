@@ -685,7 +685,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="transmission_user" type="string" label="30782" help="30875">
+                <setting id="transmission_user" type="string" label="30782" help="30881">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
