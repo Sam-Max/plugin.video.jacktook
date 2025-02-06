@@ -50,7 +50,7 @@ def search(params):
     episode, season, ep_name = parse_tv_data(tv_data)
 
     # Extract TMDb and TVDb IDs
-    tmdb_id, tvdb_id = extract_ids(ids)
+    tmdb_id, tvdb_id, imdb_id = extract_ids(ids)
 
     # Fetch media details from TMDb
     details = get_tmdb_media_details(tmdb_id, mode)
@@ -67,13 +67,20 @@ def search(params):
         "ep_name": ep_name,
         "tvdb_id": tvdb_id,
         "tmdb_id": tmdb_id,
+        "imdb_id": imdb_id,
         "tv_data": tv_data,
-        "ids": ids,
+        "ids": {
+            "tmdb_id": tmdb_id,
+            "tvdb_id": tvdb_id,
+            "imdb_id": imdb_id,
+            },
         "mode": mode,
         "poster": poster,
         "fanart": fanart_data["fanart"] or poster,
         "clearlogo": fanart_data["clearlogo"],
         "plot": overview,
+        "query": query,
+        "media_type": media_type,
     }
 
     # Set content type and watched title
@@ -82,7 +89,7 @@ def search(params):
 
     # Search for sources
     source = select_source(
-        item_info, query, ids, mode, media_type, rescrape, season, episode, direct
+        item_info, rescrape, direct
     )
     if not source:
         return
@@ -116,12 +123,12 @@ def extract_ids(ids):
     """
     Extracts TMDb and TVDb IDs from the input string.
     """
-    tmdb_id, tvdb_id, _ = [id.strip() for id in ids.split(",")]
-    return tmdb_id, tvdb_id
+    tmdb_id, tvdb_id, imdb_id = [id.strip() for id in ids.split(",")]
+    return tmdb_id, tvdb_id, imdb_id
 
 
 def select_source(
-    item_info, query, ids, mode, media_type, rescrape, season, episode, direct
+    info_item, rescrape, direct
 ):
     """
     Searches for and selects a source.
@@ -129,17 +136,17 @@ def select_source(
 
     def get_sources():
         results = search_client(
-            query, ids, mode, media_type, FakeDialog(), rescrape, season, episode
+            info_item, FakeDialog(), rescrape,
         )
         if not results:
             notification("No results found")
             return None
-        return process(results, mode, item_info["ep_name"], episode, season)
+        return process(results, info_item["mode"], info_item["ep_name"], info_item["episode"], info_item["season"])
 
     source_select_window = SourceSelectWindow(
         "source_select_new.xml",
         ADDON_PATH,
-        item_information=item_info,
+        item_information=info_item,
         get_sources=get_sources,
     )
     source = source_select_window.doModal()
@@ -225,15 +232,13 @@ def handle_results(source, info_item):
 
     return get_playback_info(
         {
+            **info_item,
             "title": source["title"],
             "type": IndexerType.TORRENT,
             "indexer": source["indexer"],
             "info_hash": source.get("info_hash", ""),
             "magnet": source.get("magnet", ""),
             "is_pack": False,
-            "mode": info_item["mode"],
-            "ids": info_item["ids"],
-            "tv_data": info_item["tv_data"],
             "is_torrent": True,
             "url": source["magnet"],
         }

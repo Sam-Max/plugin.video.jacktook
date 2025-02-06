@@ -92,18 +92,22 @@ class SourceSelectWindow(BaseWindow):
             source["correlative_id"] = i
 
         self._sources = sources
+        self.section_manager = self._create_sections()
+
         self._refresh_ui()
+        
+        self.set_default_focus(self._source_list)
+
 
     def _refresh_ui(self) -> None:
         """Update all UI components."""
-        self.section_manager = self._create_sections()
+        kodilog(f"Current Section: {self.section_manager.current_section.title}")
         self._navigation_label.setLabel(self._build_navigation_path())
         self._description_label.setLabel(
             self.section_manager.current_section.description
         )
         self._source_list.reset()
         self._source_list.addItems(self.section_manager.current_section.sources)
-        self.set_default_focus(self._source_list)
         self.setProperty("instant_close", "false")
 
     def _build_navigation_path(self) -> str:
@@ -125,6 +129,7 @@ class SourceSelectWindow(BaseWindow):
 
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         """Route user actions to appropriate handlers."""
+        kodilog(f"Action ID: {action_id}, Control ID: {control_id}")
         if control_id is None:
             return
         elif control_id == self.SOURCE_ITEM_ID:

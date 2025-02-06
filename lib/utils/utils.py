@@ -321,18 +321,16 @@ def set_video_info(
 
 def make_listing(metadata):
     title = metadata.get("title")
-    ids = metadata.get("ids")
     tv_data = metadata.get("tv_data", {})
     mode = metadata.get("mode", "")
-
+    ep_name = metadata.get("ep_name", "")
+    episode = metadata.get("episode", "")
+    season = metadata.get("season", "")
     list_item = ListItem(label=title)
     list_item.setLabel(title)
     list_item.setContentLookup(False)
 
-    if tv_data:
-        ep_name, episode, season = tv_data.split("(^)")
-    else:
-        ep_name = episode = season = ""
+    ids={"tmdb_id":metadata["tmdb_id"], "tvdb_id":metadata["tvdb_id"], "imdb_id":metadata["imdb_id"]}
 
     set_media_infotag(
         list_item,
@@ -362,6 +360,7 @@ def set_media_infotag(
     url="",
     original_name="",
 ):
+    RuntimeError("CHECK THIS FUNCTION")
     info_tag = list_item.getVideoInfoTag()
     info_tag.setPath(url)
     info_tag.setTitle(name)

@@ -6,7 +6,6 @@ from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
-from lib.gui.source_select import SourceSelect
 
 
 class CustomWindow(WindowXML):
@@ -117,20 +116,6 @@ def run_next_mock():
         window.doModal()
     finally:
         del window
-
-
-def source_select_mock():
-    sources = [mock_source for _ in range(10)]
-
-    window = SourceSelect(
-        "source_select.xml",
-        ADDON_PATH,
-        item_information=_mock_information,
-        sources=sources,
-        uncached=sources,
-    )
-    window.doModal()
-    del window
 
 
 def resume_dialog_mock():

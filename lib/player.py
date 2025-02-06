@@ -61,6 +61,7 @@ class JacktookPLayer(xbmc.Player):
             self.play_video(list_item)
         except Exception as e:
             kodilog(f"Error in run: {e}")
+
             self.run_error()
 
     def play_playlist(self):
@@ -264,9 +265,11 @@ class JacktookPLayer(xbmc.Player):
     def add_external_trakt_scrolling(self):
         ids = self.data.get("ids")
         mode = self.data.get("mode")
-
+        tmdb_id = self.data.get("tmdb_id")
+        tvdb_id = self.data.get("tvdb_id")
+        imdb_id = self.data.get("imdb_id")
+        
         if ids:
-            tmdb_id, tvdb_id, imdb_id = ids.values()
             trakt_ids = {
                 "tmdb": tmdb_id,
                 "imdb": imdb_id,

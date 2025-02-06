@@ -15,7 +15,7 @@ from lib.gui.custom_dialogs import (
     CustomDialog,
     resume_dialog_mock,
     run_next_mock,
-    source_select_mock,
+    #source_select_mock,
 )
 
 from lib.player import JacktookPLayer
@@ -846,8 +846,8 @@ def test_run_next(params):
     run_next_mock()
 
 
-def test_source_select(params):
-    source_select_mock()
+#def test_source_select(params):
+    #source_select_mock()
 
 
 def test_resume_dialog(params):
