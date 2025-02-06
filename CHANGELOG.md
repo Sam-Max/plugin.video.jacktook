@@ -1,3 +1,8 @@
+## 0.5.0
+- Add support to import and use Stremio catalogs.
+- Add setting button action to update Stremio addons after logged in.
+- Some fixes and improvements with with Real Debrid packs detection.
+
 ## 0.4.10
 * Hotfix: not detecting season pack when using debrid
 

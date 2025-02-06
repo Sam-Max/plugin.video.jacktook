@@ -84,7 +84,7 @@ def telegram_latest_items(info):
     imdb_id = details.external_ids.get("imdb_id")
     tvdb_id = details.external_ids.get("tvdb_id")
 
-    info["ids"] = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    info["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
     overview = details.overview or ""

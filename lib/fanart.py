@@ -11,7 +11,7 @@ def make_session(url="https://"):
 # Some code snippets from nixgates.
 base_url = "https://webservice.fanart.tv/v3/%s/%s"
 API_KEY = "fa836e1c874ba95ab08a14ee88e05565"
-CLIENT_KEY = get_setting("fanarttv_client_id", API_KEY)
+CLIENT_KEY = get_setting("fanart_tv_client_id", API_KEY)
 
 seasonart_keys = ("seasonposter", "seasonbanner", "seasonthumb")
 blank_image_values = ("00", "", "None")

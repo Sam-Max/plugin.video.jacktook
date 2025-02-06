@@ -1260,6 +1260,10 @@ msgid "Transmission password (if required)."
 msgstr ""
 
 msgctxt "#30875"
+msgid "Toggle Catalogs Add-ons"
+msgstr "Alternar complementos de catalogos"
+
+msgctxt "#30881"
 msgid "Transmission username (if required)."
 msgstr ""
 
@@ -1285,4 +1289,6 @@ msgstr ""
 
 msgctxt "#30881"
 msgid "Download Folder"
+msgstr ""
+msgid "Update Addons"
 msgstr ""

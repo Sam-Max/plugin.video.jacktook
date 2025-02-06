@@ -90,43 +90,40 @@ def handle_file_selection(client, torrent_info, is_pack):
     ]
 
     if video_files:
-        if is_pack:
+        if is_pack or len(video_files) > 1:
             torrents_ids = [str(i["id"]) for i in video_files]
             if torrents_ids:
-                torrents_ids = ",".join(torrents_ids)
-                client.select_files(torrent_info["id"], torrents_ids)
+                client.select_files(torrent_info["id"], ",".join(torrents_ids))
         else:
-            video = max(video_files, key=lambda x: x["bytes"])
-            client.select_files(torrent_info["id"], video["id"])
+            client.select_files(torrent_info["id"], video_files[0]["id"])
 
 
-def get_rd_link(info_hash):
+def get_rd_link(info_hash, data):
     client = RealDebrid(token=get_setting("real_debrid_token"))
     torrent_id = add_rd_magnet(client, info_hash)
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
-    if torr_info["links"]:
-        response = client.create_download_link(torr_info["links"][0])
-        url = response.get("download")
-        if not url:
-            notification("File not cached!")
-            return
-        return url
+    if len(torr_info["links"]) > 1:
+        data["is_pack"] = True
+        return
+    response = client.create_download_link(torr_info["links"][0])
+    url = response.get("download")
+    if not url:
+        notification("File not cached!")
+        return
+    return url
 
 
 def get_rd_pack_link(file_id, torrent_id):
     client = RealDebrid(token=get_setting("real_debrid_token"))
-    torr_info = client.get_torrent_info(torrent_id)
+    torrent_info = client.get_torrent_info(torrent_id)
+    torrent_items = [item for item in torrent_info["files"] if item["selected"] == 1]
     index = next(
-        (
-            index
-            for index, item in enumerate(torr_info["files"])
-            if item["id"] == file_id
-        ),
+        (index for index, item in enumerate(torrent_items) if item["id"] == file_id),
         None,
     )
-    response = client.create_download_link(torr_info["links"][index - 1])
+    response = client.create_download_link(torrent_info["links"][index])
     url = response.get("download")
     if not url:
         notification("File not cached!")
@@ -143,7 +140,6 @@ def get_rd_pack_info(info_hash):
     if not torrent_id:
         return
     torr_info = client.get_torrent_info(torrent_id)
-    info = {}
     torrent_files = torr_info["files"]
     if len(torrent_files) <= 1:
         notification("Not a torrent pack")
@@ -153,8 +149,7 @@ def get_rd_pack_info(info_hash):
     for item in torr_items:
         title = item["path"].split("/", 1)[1]
         files.append((item["id"], title))
-    info["id"] = torr_info["id"]
-    info["files"] = files
+    info = {"id": torr_info["id"], "files": files}
     set_cached(info, info_hash)
     return info
 

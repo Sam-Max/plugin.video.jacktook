@@ -27,9 +27,7 @@ from lib.utils.utils import (
 )
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url, play_media
 from xbmcgui import ListItem
-from xbmcplugin import (
-    addDirectoryItem,
-)
+from xbmcplugin import addDirectoryItem, endOfDirectory
 from lib.utils.paginator import paginator_db
 
 
@@ -129,14 +127,14 @@ def process_trakt_result(results, query, category, mode, submode, api, page):
         submode=submode,
         api=api,
     )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def show_anime_common(res, mode):
-    kodilog("trakt::show_anime_common")
     ids = extract_ids(res)
     title = res["show"]["title"]
 
-    tmdb_id = [id.strip() for id in ids.split(',')][0]
+    tmdb_id = ids["tmdb_id"]
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
     else:
@@ -171,20 +169,19 @@ def show_common_categories(res, mode):
     if mode == "tv":
         title = res["show"]["title"]
         ids = extract_ids(res, mode)
-        tmdb_id = [id.strip() for id in ids.split(',')][0]
+        tmdb_id = ids["tmdb_id"]
         details = tmdb_get("tv_details", tmdb_id)
         duration = ""
     else:
         title = res["movie"]["title"]
         ids = extract_ids(res, mode)
-        tmdb_id = [id.strip() for id in ids.split(',')][0]
+        tmdb_id = ids["tmdb_id"]
         details = tmdb_get("movie_details", tmdb_id)
         duration = details.runtime
-        
 
     poster_path = TMDB_POSTER_URL + details.get("poster_path", "")
     backdrop_path = TMDB_BACKDROP_URL + details.get("backdrop_path", "")
-    
+
     list_item = ListItem(label=title)
     list_item.setArt(
         {
@@ -212,7 +209,7 @@ def show_watchlist(res, mode):
     tmdb_id = res["media_ids"]["tmdb"]
     tvdb_id = None
     imdb_id = res["media_ids"]["imdb"]
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
     title = res["title"]
 
     if mode == "tv":
@@ -264,7 +261,7 @@ def show_recommendations(res, mode):
     tmdb_id = res["ids"]["tmdb"]
     tvdb_id = None
     imdb_id = res["ids"]["imdb"]
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
@@ -300,7 +297,7 @@ def show_lists_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
     tvdb_id = None
     imdb_id = res["media_ids"]["imdb"]
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
     title = res["title"]
 
     if res["type"] == "show":
@@ -363,12 +360,14 @@ def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)
     add_next_button("list_trakt_page", page, mode=mode)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def show_list_trakt_page(page, mode):
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)
     add_next_button("list_trakt_page", page, mode=mode)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def extract_ids(res, mode="tv"):
@@ -381,7 +380,7 @@ def extract_ids(res, mode="tv"):
         tvdb_id = None
         imdb_id = res["movie"]["ids"]["imdb"]
 
-    return f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    return {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
 
 def add_dir_item(mode, list_item, ids, title):

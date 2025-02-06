@@ -78,7 +78,6 @@ class AddonManager:
     def _parse_addons(self, data: List[dict]) -> List[Addon]:
         addons = []
         for item in data:
-
             resources = [
                 (
                     Resource(
@@ -97,6 +96,7 @@ class AddonManager:
                 )
                 for resource in item["manifest"]["resources"]
             ]
+
             manifest = Manifest(
                 id=item["manifest"]["id"],
                 version=item["manifest"]["version"],
@@ -110,6 +110,7 @@ class AddonManager:
                 logo=item["manifest"].get("logo"),
                 background=item["manifest"].get("background"),
             )
+
             addons.append(
                 Addon(
                     transport_url=item["transportUrl"],
@@ -118,6 +119,27 @@ class AddonManager:
                 )
             )
         return addons
+
+    def get_addons_with_resource(
+        self,
+        resource_name: str,
+    ) -> List[Addon]:
+        result = []
+        for addon in self.addons:
+            if addon.manifest.isConfigurationRequired():
+                continue
+            if addon.manifest.id == "org.stremio.local":
+                continue
+            for resource in addon.manifest.resources:
+                if isinstance(resource, str):
+                    if resource == resource_name:
+                        result.append(addon)
+                        break
+
+                if resource.name == resource_name:
+                    result.append(addon)
+                    break
+        return result
 
     def get_addons_with_resource_and_id_prefix(
         self, resource_name: str, id_prefix: str

@@ -38,16 +38,14 @@ from lib.utils.utils import (
 
 def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
     if not rescrape:
-        debrid_cached_check = get_setting("debrid_cached_check")
-        if debrid_cached_check:
-            if query:
-                if mode == "tv" or media_type == "tv":
-                    cached_results = get_cached(query, params=(episode, "deb"))
-                else:
-                    cached_results = get_cached(query, params=("deb"))
+        if query:
+            if mode == "tv" or media_type == "tv":
+                cached_results = get_cached(query, params=(episode, "deb"))
+            else:
+                cached_results = get_cached(query, params=("deb"))
 
-                if cached_results:
-                    return cached_results
+            if cached_results:
+                return cached_results
 
     lock = Lock()
     cached_results = []
@@ -199,9 +197,10 @@ def get_magnet_from_uri(uri):
     return magnet, info_hash
 
 
-def get_debrid_direct_url(info_hash, type):
+def get_debrid_direct_url(type, data):
+    info_hash = data.get("info_hash", "")
     if type == Debrids.RD:
-        return get_rd_link(info_hash)
+        return get_rd_link(info_hash, data)
     elif type == Debrids.PM:
         return get_pm_link(info_hash)
     elif type == Debrids.TB:

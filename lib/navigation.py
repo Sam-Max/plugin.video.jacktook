@@ -19,6 +19,7 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
+from lib.stremio.catalogs import list_stremio_catalogs
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.torrentio_utils import open_providers_selection
 from lib.api.trakt.trakt_api import (
@@ -105,7 +106,7 @@ if JACKTORR_ADDON:
     )
 
 tmdb = TMDb()
-tmdb.api_key = get_setting("tmdb_apikey", "b70756b7083d9ee60f849d82d94a0d80")
+tmdb.api_key = get_setting("tmdb_api_key", "b70756b7083d9ee60f849d82d94a0d80")
 
 try:
     language_index = get_setting("language")
@@ -147,6 +148,13 @@ def root_menu():
         ADDON_HANDLE,
         build_url("animation_menu"),
         list_item("Animation", "anime.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("tv_menu"),
+        list_item("Live TV", "tv.png"),
         isFolder=True,
     )
 
@@ -308,6 +316,7 @@ def tv_shows_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -321,6 +330,7 @@ def movies_items(params):
             list_item(item["name"], item["icon"]),
             isFolder=True,
         )
+    list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -402,6 +412,7 @@ def anime_item(params):
                 list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
+        list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
     if mode == "movies":
         for item in anime_items:
             if item["api"] == "tmdb":
@@ -417,6 +428,12 @@ def anime_item(params):
                     list_item(item["name"], item["icon"]),
                     isFolder=True,
                 )
+        list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
+    endOfDirectory(ADDON_HANDLE)
+
+
+def tv_menu(params):
+    list_stremio_catalogs(menu_type="tv")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -655,7 +672,7 @@ def play_url(params):
 
 
 def tv_seasons_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", "{}"))
     mode = params["mode"]
     media_type = params.get("media_type", None)
 
@@ -666,7 +683,7 @@ def tv_seasons_details(params):
 
 
 def tv_episodes_details(params):
-    ids = params["ids"]
+    ids = literal_eval(params.get("ids", "{}"))
     mode = params["mode"]
     tv_name = params["tv_name"]
     season = params["season"]
@@ -762,7 +779,7 @@ def addon_update(params):
 
 
 def donate(params):
-    msg = "If you like Jacktook and appreciate the time and effort invested by me developing this addon you can support me by making a one time payment to:"
+    msg = "If you enjoy using Jacktook and appreciate the time and effort we've invested in developing this addon, you can support us with a contribution at:"
     dialog = CustomDialog(
         "customdialog.xml",
         ADDON_PATH,

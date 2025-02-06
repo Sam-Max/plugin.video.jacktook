@@ -62,6 +62,7 @@ def search_tmdb(params):
     show_tmdb_results(data.results, mode)
 
     add_next_button("search_tmdb", page=page, mode=mode)
+    endOfDirectory(ADDON_HANDLE)
 
 
 def handle_tmdb_query(params):
@@ -93,6 +94,7 @@ def handle_tmdb_movie_query(query, page, mode):
                 mode=mode,
             )
             add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
+            endOfDirectory(ADDON_HANDLE)
     elif query == "tmdb_genres":
         show_genres_items(mode, page)
     elif query == "tmdb_years":
@@ -111,6 +113,7 @@ def handle_tmdb_tv_query(query, page, mode):
                 mode=mode,
             )
             add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
+            endOfDirectory(ADDON_HANDLE)
     elif query == "tmdb_genres":
         show_genres_items(mode, page)
     elif query == "tmdb_years":
@@ -118,9 +121,7 @@ def handle_tmdb_tv_query(query, page, mode):
 
 
 def handle_tmdb_anime_query(category, mode, submode, page):
-    kodilog("handle_tmdb_anime_query")
     tmdb_anime = TmdbAnime()
-
     if category == Anime.SEARCH:
         if page == 1:
             query = show_keyboard(id=30242)
@@ -158,6 +159,7 @@ def handle_tmdb_anime_query(category, mode, submode, page):
         add_next_button(
             "next_page_anime", page=page, mode=mode, submode=submode, category=category
         )
+        endOfDirectory(ADDON_HANDLE)
 
 
 def tmdb_search_genres(mode, genre_id, page, submode=None):
@@ -188,7 +190,14 @@ def tmdb_search_genres(mode, genre_id, page, submode=None):
 
         show_tmdb_results(results.results, mode, submode)
 
-        add_next_button("search_tmdb_genres", mode=mode, submode=submode, genre_id=genre_id, page=page)
+        add_next_button(
+            "search_tmdb_genres",
+            mode=mode,
+            submode=submode,
+            genre_id=genre_id,
+            page=page,
+        )
+        endOfDirectory(ADDON_HANDLE)
 
 
 def tmdb_search_year(mode, submode, year, page):
@@ -218,6 +227,8 @@ def tmdb_search_year(mode, submode, year, page):
         add_next_button(
             "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
         )
+        endOfDirectory(ADDON_HANDLE)
+
 
 
 def show_tmdb_year_result(results, mode, submode):
@@ -275,7 +286,7 @@ def show_items(res, mode, submode=None):
         backdrop_path = TMDB_BACKDROP_URL + backdrop_path
 
     overview = res.get("overview", "")
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=label_title)
 
@@ -410,7 +421,7 @@ def show_anime_results(res, mode):
         imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
         duration = ""
 
-    ids = f"{tmdb_id}, {tvdb_id}, {imdb_id}"
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=title)
     list_item.setArt(

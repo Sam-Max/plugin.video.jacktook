@@ -82,6 +82,17 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_toggle_catalogs" type="action" label="30875" help="30872">
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_catalogs)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="stremio_login" type="action" label="30871" help="30866">
                     <dependencies>
                         <dependency type="visible">
@@ -106,6 +117,20 @@
                         </dependency>
                     </dependencies>
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_logout)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+                <setting id="stremio_update" type="action" label="30874" help="">
+                    <dependencies>
+                        <dependency type="visible">
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_loggedin">true</condition>
+                            </and>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_update)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
@@ -710,7 +735,7 @@
         </category>
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">
-                <setting id="tmdb_apikey" type="string" label="30103" help="30858">
+                <setting id="tmdb_api_key" type="string" label="30103" help="30858">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
