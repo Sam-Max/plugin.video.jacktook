@@ -33,7 +33,7 @@ class Elfhosted(BaseClient):
                     "type": "Torrent",
                     "indexer": "Elfhosted",
                     "guid": item["infoHash"],
-                    "infoHash": item["infoHash"],
+                    "info_hash": item["infoHash"],
                     "size": parsed_item["size"],
                     "publishDate": "",
                     "seeders": 0,

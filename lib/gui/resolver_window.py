@@ -100,7 +100,7 @@ class ResolverWindow(BaseWindow):
                 "indexer": self.source["indexer"],
                 "url": url,
                 "magnet": magnet,
-                "info_hash": self.source.get("infoHash", ""),
+                "info_hash": self.source.get("info_hash", ""),
                 "is_torrent": is_torrent,
                 "is_pack": self.pack_select,
                 "mode": self.item_information["mode"],
@@ -114,7 +114,7 @@ class ResolverWindow(BaseWindow):
     def resolve_pack(self):
         self.pack_data = get_pack_info(
             type=self.source.get("type"),
-            info_hash=self.source.get("infoHash"),
+            info_hash=self.source.get("info_hash"),
         )
 
         self.window = SourcePackSelect(

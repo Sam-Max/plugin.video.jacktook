@@ -264,6 +264,7 @@ langsSet = {
     "cas",
     "castellano",
     "castilian",
+    "[cap."
 }
 language_codes = {
     "bosnian": "bs",
@@ -530,6 +531,7 @@ language_codes = {
     "cas": "es",
     "castellano": "es",
     "castilian": "es",
+    "[cap.": "es"
 }
 
 

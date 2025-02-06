@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def search_client(
-    query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
+   item, dialog, rescrape=False
 ):
     def perform_search(indexer_key, dialog, *args, **kwargs):
         if indexer_key != Indexer.BURST:
@@ -19,20 +19,22 @@ def search_client(
         return client.search(*args, **kwargs)
 
     if not rescrape:
-        if mode == "tv" or media_type == "tv" or mode == "anime":
-            cached_results = get_cached(query, params=(episode, "index"))
+        if item["mode"] == "tv" or item["media_type"] == "tv" or item["mode"] == "anime":
+            cached_results = get_cached(item["query"], params=(episode, "index"))
         else:
-            cached_results = get_cached(query, params=("index"))
+            cached_results = get_cached(item["query"], params=("index"))
 
         if cached_results:
             dialog.create("")
             return cached_results
 
-    if ids:
-        tmdb_id, _, imdb_id = ids.values()
-    else:
-        tmdb_id = imdb_id = None
-
+    tmdb_id = item["tmdb_id"]
+    imdb_id = item["imdb_id"]
+    mode = item["mode"]
+    media_type = item["media_type"]
+    query = item["query"]
+    season = item["season"]
+    episode = item["episode"]
     dialog.create("")
     total_results = []
 

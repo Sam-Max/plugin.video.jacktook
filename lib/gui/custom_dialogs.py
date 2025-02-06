@@ -6,7 +6,6 @@ from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
-from lib.gui.source_select import SourceSelect
 
 
 class CustomWindow(WindowXML):
@@ -82,20 +81,6 @@ _mock_information = {
     "plot": "Silo is the story of the last ten thousand people on earth, their mile-deep home protecting them from the toxic and deadly world outside. However, no one knows when or why the silo was built and any who try to find out face fatal consequences.",
 }
 
-
-def source_select(item_info, xml_file, sources):
-    window = SourceSelect(
-        xml_file,
-        ADDON_PATH,
-        item_information=item_info,
-        sources=sources,
-        uncached=sources,
-    )
-    data = window.doModal()
-    del window
-    return data
-
-
 def run_next_dialog(params):
     kodilog("run_next_dialog")
     if PLAYLIST.size() > 0 and PLAYLIST.getposition() != (PLAYLIST.size() - 1):
@@ -131,20 +116,6 @@ def run_next_mock():
         window.doModal()
     finally:
         del window
-
-
-def source_select_mock():
-    sources = [mock_source for _ in range(10)]
-
-    window = SourceSelect(
-        "source_select.xml",
-        ADDON_PATH,
-        item_information=_mock_information,
-        sources=sources,
-        uncached=sources,
-    )
-    window.doModal()
-    del window
 
 
 def resume_dialog_mock():

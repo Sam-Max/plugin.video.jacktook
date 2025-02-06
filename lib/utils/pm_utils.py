@@ -18,7 +18,7 @@ pm_client = Premiumize(token=get_setting("premiumize_token"))
 
 
 def check_pm_cached(results, cached_results, uncached_results, total, dialog, lock):
-    hashes = [res.get("infoHash") for res in results]
+    hashes = [res.get("info_hash") for res in results]
     torrents_info = pm_client.get_torrent_instant_availability(hashes)
     cached_response = torrents_info.get("response")
 

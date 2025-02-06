@@ -28,7 +28,7 @@ def check_rd_cached(results, cached_results, uncached_results, total, dialog, lo
         debrid_dialog_update("RD", total, dialog, lock)
 
         res["type"] = Debrids.RD
-        if res.get("infoHash") in torr_available_hashes:
+        if res.get("info_hash") in torr_available_hashes:
             res["isCached"] = True
             cached_results.append(res)
         else:

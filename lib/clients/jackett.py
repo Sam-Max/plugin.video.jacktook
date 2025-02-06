@@ -58,6 +58,6 @@ def extract_result(results, item):
             "magnetUrl": attributes.get("magneturl", ""),
             "seeders": int(attributes.get("seeders", 0)),
             "peers": int(attributes.get("peers", 0)),
-            "infoHash": attributes.get("infohash", ""),
+            "info_hash": attributes.get("infohash", ""),
         }
     )

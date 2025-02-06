@@ -30,13 +30,12 @@ from lib.navigation import (
     telegram_menu,
     test_resume_dialog,
     test_run_next,
-    test_source_select,
+    #test_source_select,
     torrentio_selection,
     play_torrent,
     rd_auth,
     rd_remove_auth,
     root_menu,
-    search,
     search_direct,
     search_item,
     settings,
@@ -50,6 +49,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
+from lib.search import search
 from lib.stremio.catalogs import list_stremio_catalog, list_stremio_episodes, list_stremio_seasons, list_stremio_tv, list_stremio_tv_streams
 from lib.telegram import (
     get_telegram_files,
@@ -119,7 +119,7 @@ def addon_router():
         "telegram_menu": telegram_menu,
         "display_picture": display_picture,
         "display_text": display_text,
-        "test_source_select": test_source_select,
+        #"test_source_select": test_source_select,
         "test_run_next": test_run_next,
         "test_resume_dialog": test_resume_dialog,
         "animation_menu": animation_menu,

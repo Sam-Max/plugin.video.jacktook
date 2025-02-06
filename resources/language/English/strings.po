@@ -1256,9 +1256,39 @@ msgid "Prioritize results in the selected language"
 msgstr ""
 
 msgctxt "#30874"
-msgid "Update Addons"
+msgid "Transmission password (if required)."
 msgstr ""
 
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr "Alternar complementos de catalogos"
+
+msgctxt "#30881"
+msgid "Transmission username (if required)."
+msgstr ""
+
+msgctxt "#30876"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30877"
+msgid "Transmission Configuration"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Enable Transmission torrent client integration."
+msgstr ""
+
+msgctxt "#30879"
+msgid "Path to the folder where Transmission downloads are saved."
+msgstr ""
+
+msgctxt "#30880"
+msgid "Transmission server URL (e.g., http://localhost:9091)."
+msgstr ""
+
+msgctxt "#30881"
+msgid "Download Folder"
+msgstr ""
+msgid "Update Addons"
+msgstr ""

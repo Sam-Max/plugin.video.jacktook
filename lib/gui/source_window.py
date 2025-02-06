@@ -2,7 +2,6 @@ import abc
 import xbmcgui
 from lib.gui.base_window import BaseWindow
 from lib.utils.debrid_utils import get_debrid_status
-from lib.utils.kodi_utils import bytes_to_human_readable
 from lib.utils.utils import extract_publish_date, get_colored_languages, get_random_color
 
 
