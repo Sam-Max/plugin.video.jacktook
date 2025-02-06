@@ -4,13 +4,12 @@ from lib.utils.client_utils import validate_host
 from lib.utils.tmdb_utils import tmdb_get
 
 from lib.utils.utils import (
-    TMDB_POSTER_URL,
     Indexer,
     add_next_button,
     execute_thread_pool,
     list_item,
     set_content_type,
-    set_media_infotag,
+    set_media_infoTag,
 )
 
 from lib.utils.kodi_utils import (
@@ -22,6 +21,7 @@ from lib.utils.kodi_utils import (
 )
 
 from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcgui import ListItem
 
 
 def check_jackgram_active():
@@ -86,16 +86,14 @@ def telegram_latest_items(info):
 
     info["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-    poster_path = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-    overview = details.overview or ""
+    list_item = ListItem(label=title)
 
-    item = list_item(title, poster_path=poster_path, icon="trending.png")
-    set_media_infotag(item, mode, title, overview=overview)
+    set_media_infoTag(list_item, metadata=details, mode=mode)
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("get_telegram_latest_files", data=info),
-        item,
+        list_item,
         isFolder=True,
     )
 
@@ -112,51 +110,36 @@ def get_telegram_latest_files(params):
 def telegram_latest_files(info, data):
     mode = info["mode"]
     title = info["title"]
-    tmdb_id = data["tmdb_id"]
 
     if mode == "tv":
         try:
             details = tmdb_get(
                 "episode_details",
                 params={
-                    "id": tmdb_id,
+                    "id": data["tmdb_id"],
                     "season": info["season"],
                     "episode": info["episode"],
                 },
             )
-            poster_path = TMDB_POSTER_URL + details.still_path
-            overview = details.overview or ""
-            episode_name = details.name
-        except (
-            TMDbException
-        ):  # Cause of anime tmdb id fails when getting episode details
-            poster_path = ""
-            overview = ""
-            episode_name = ""
+        except TMDbException:  
+            # Cause of Anime TMDB Id fails when getting episode details
+            details = {}
 
-        item = list_item(title, poster_path=poster_path)
+        list_item = ListItem(label=title)
 
-        set_media_infotag(
-            item,
-            mode,
-            title,
-            ids=data["ids"],
-            ep_name=episode_name,
-            season=info["season"],
-            episode=info["episode"],
-            overview=overview,
-        )
+        set_media_infoTag(list_item, metadata=details.update(info), mode=mode)
+
     else:
-        details = tmdb_get("movie_details", tmdb_id)
-        poster_path = TMDB_POSTER_URL + details.poster_path
-        item = list_item(title, poster_path=poster_path)
-        overview = details.overview or ""
-        set_media_infotag(item, mode, title, ids=data["ids"], overview=overview)
+        details = tmdb_get("movie_details", data["tmdb_id"])
 
-    item.setProperty("IsPlayable", "true")
+        list_item = ListItem(label=title)
+        list_item.setProperty("IsPlayable", "true")
+        
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+    
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("play_torrent", data=info),
-        item,
+        list_item,
         isFolder=False,
     )

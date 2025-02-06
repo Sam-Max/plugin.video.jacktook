@@ -11,15 +11,13 @@ from lib.utils.tmdb_utils import (
     tmdb_get,
 )
 from lib.utils.utils import (
-    TMDB_BACKDROP_URL,
-    TMDB_POSTER_URL,
     Animation,
     Anime,
     Cartoons,
     add_next_button,
     execute_thread_pool,
     set_content_type,
-    set_media_infotag,
+    set_media_infoTag,
 )
 
 from xbmcgui import ListItem
@@ -30,7 +28,6 @@ from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.db.main_db import main_db
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
-    ADDON_PATH,
     build_url,
     play_media,
     set_view,
@@ -230,7 +227,6 @@ def tmdb_search_year(mode, submode, year, page):
         endOfDirectory(ADDON_HANDLE)
 
 
-
 def show_tmdb_year_result(results, mode, submode):
     execute_thread_pool(results, show_items, mode, submode)
 
@@ -240,6 +236,7 @@ def show_tmdb_results(results, mode, submode=None):
 
 
 def show_items(res, mode, submode=None):
+    kodilog(res)
     tmdb_id = res.id
     media_type = res.get("media_type", "")
 
@@ -249,15 +246,13 @@ def show_items(res, mode, submode=None):
     if mode == "movies":
         title = res.title
         label_title = title
-        release_date = res.release_date
         imdb_id, duration = get_tmdb_movie_data(tmdb_id)
+        res.runtime = duration
         tvdb_id = None
     elif mode == "tv":
         title = res.name
         label_title = title
         imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
-        duration = ""
-        release_date = res.first_air_date
     elif mode == "multi":
         if "name" in res:
             title = res.name
@@ -266,49 +261,22 @@ def show_items(res, mode, submode=None):
 
         if media_type == "movie":
             mode = "movies"
-            release_date = res.release_date
             imdb_id, duration = get_tmdb_movie_data(tmdb_id)
+            res.runtime = duration
             tvdb_id = None
             label_title = f"[B]MOVIE -[/B] {title}"
         elif media_type == "tv":
             mode = "tv"
-            release_date = res.get("first_air_date", "")
             imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
-            duration = ""
             label_title = f"[B]TV -[/B] {title}"
 
-    poster_path = res.get("poster_path", "")
-    if poster_path:
-        poster_path = TMDB_POSTER_URL + poster_path
-
-    backdrop_path = res.get("backdrop_path", "")
-    if backdrop_path:
-        backdrop_path = TMDB_BACKDROP_URL + backdrop_path
-
-    overview = res.get("overview", "")
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+
+    res.imdb_id = imdb_id
 
     list_item = ListItem(label=label_title)
 
-    set_media_infotag(
-        list_item,
-        mode,
-        title,
-        overview,
-        air_date=release_date,
-        duration=duration,
-        ids=ids,
-        original_name=res.get("original_name", ""),
-    )
-
-    list_item.setArt(
-        {
-            "thumb": poster_path,
-            "poster": poster_path,
-            "fanart": backdrop_path,
-            "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-        }
-    )
+    set_media_infoTag(list_item, metadata=res, mode=mode)
 
     if mode == "movies":
         list_item.setProperty("IsPlayable", "true")
@@ -407,38 +375,21 @@ def show_genres_items(mode, page, submode=None):
 
 
 def show_anime_results(res, mode):
-    description = res.get("overview", "")
-    poster_path = res.get("poster_path", "")
-
     tmdb_id = res.get("id", None)
     if mode == "movies":
         title = res.title
-        imdb_id, duration = get_tmdb_movie_data(tmdb_id)
+        imdb_id, _ = get_tmdb_movie_data(tmdb_id)
         tvdb_id = None
     elif mode == "tv":
         title = res.name
         title = res["name"]
         imdb_id, tvdb_id = get_tmdb_tv_data(tmdb_id)
-        duration = ""
 
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=title)
-    list_item.setArt(
-        {
-            "poster": TMDB_POSTER_URL + poster_path if poster_path else "",
-            "icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png"),
-        }
-    )
 
-    set_media_infotag(
-        list_item,
-        mode,
-        title,
-        description,
-        duration=duration,
-        original_name=res.get("original_name", ""),
-    )
+    set_media_infoTag(list_item, metadata=res, mode=mode)
 
     if mode == "tv":
         addDirectoryItem(

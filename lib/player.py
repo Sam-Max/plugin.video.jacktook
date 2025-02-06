@@ -1,5 +1,6 @@
 from json import dumps as json_dumps
 from threading import Thread
+import traceback
 from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import make_trakt_slug
 from lib.utils.kodi_utils import (
@@ -60,6 +61,7 @@ class JacktookPLayer(xbmc.Player):
                 self.build_playlist()
             self.play_video(list_item)
         except Exception as e:
+            kodilog(traceback.print_exc())
             kodilog(f"Error in run: {e}")
             self.run_error()
 
