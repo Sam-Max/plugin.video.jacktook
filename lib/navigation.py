@@ -1,5 +1,5 @@
-from ast import literal_eval
 from datetime import timedelta
+import json
 import os
 from threading import Thread
 from urllib.parse import quote
@@ -534,7 +534,7 @@ def search(params):
     query = params["query"]
     mode = params["mode"]
     media_type = params.get("media_type", "")
-    ids = literal_eval(params.get("ids", "{}"))
+    ids = json.loads(params.get("ids", "{}"))
     tv_data = params.get("tv_data", "")
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
@@ -660,7 +660,7 @@ def handle_debrid_client(
 
 
 def play_torrent(params):
-    data = literal_eval(params["data"])
+    data = json.loads(params["data"])
     player = JacktookPLayer(db=bookmark_db)
     player.run(data=data)
     del player
@@ -831,7 +831,7 @@ def play_url(params):
 
 
 def tv_seasons_details(params):
-    ids = literal_eval(params.get("ids", "{}"))
+    ids = json.loads(params.get("ids", "{}"))
     mode = params["mode"]
     media_type = params.get("media_type", None)
 
@@ -842,7 +842,7 @@ def tv_seasons_details(params):
 
 
 def tv_episodes_details(params):
-    ids = literal_eval(params.get("ids", "{}"))
+    ids = json.loads(params.get("ids", "{}"))
     mode = params["mode"]
     tv_name = params["tv_name"]
     season = params["season"]
@@ -855,7 +855,7 @@ def tv_episodes_details(params):
 
 
 def play_from_pack(params):
-    data = eval(params.get("data"))
+    data = json.loads(params.get("data"))
     data = get_playback_info(data)
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)

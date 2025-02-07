@@ -1,3 +1,4 @@
+import json
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
 
@@ -97,17 +98,17 @@ def source_select(item_info, xml_file, sources):
 
 
 def run_next_dialog(params):
-    kodilog("run_next_dialog")
     if PLAYLIST.size() > 0 and PLAYLIST.getposition() != (PLAYLIST.size() - 1):
         try:
             window = PlayNext(
                 "playing_next.xml",
                 ADDON_PATH,
-                item_information=eval(params["item_info"]),
+                item_information=json.loads(params["item_info"]),
             )
             window.doModal()
         finally:
             del window
+
 
 def run_resume_dialog(params):
     try:
@@ -120,6 +121,7 @@ def run_resume_dialog(params):
         return resume_window.resume
     finally:
         del resume_window
+
 
 def run_next_mock():
     try:

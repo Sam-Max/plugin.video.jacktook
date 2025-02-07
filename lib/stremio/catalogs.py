@@ -1,3 +1,4 @@
+import json
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
 from lib.clients.stremio_addon import StremioAddonCatalogsClient
@@ -322,7 +323,7 @@ def list_stremio_tv(params):
 
 
 def list_stremio_tv_streams(params):
-    streams = eval(params.get("streams", {}))
+    streams = json.loads(params.get("streams", {}))
     for stream in streams:
         url = build_url(
             "play_torrent",

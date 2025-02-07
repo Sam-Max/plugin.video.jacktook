@@ -194,6 +194,7 @@ class JacktookPLayer(xbmc.Player):
             self.clear_playback_properties()
 
     def build_playlist(self):
+        kodilog("build_playlist")
         if self.data["mode"] == "tv":
             ids = self.data.get("ids")
             if ids:

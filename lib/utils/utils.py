@@ -282,8 +282,8 @@ def make_listing(metadata):
     metadata["episode"] = episode
     metadata["season"] = season
     metadata["name"] = episode_name
-    metadata["id"] = ids["tmdb_id"]
-    metadata["imdb_id"] = ids["imdb_id"]
+    metadata["id"] = ids.get("tmdb_id")
+    metadata["imdb_id"] = ids.get("imdb_id")
 
     set_media_infoTag(list_item, metadata=metadata, mode=mode)
 

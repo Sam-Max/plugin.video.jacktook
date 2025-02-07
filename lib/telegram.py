@@ -1,3 +1,4 @@
+import json
 from lib.api.tmdbv3api.exceptions import TMDbException
 from lib.clients.jackgram import Jackgram
 from lib.utils.client_utils import validate_host
@@ -99,7 +100,7 @@ def telegram_latest_items(info):
 
 
 def get_telegram_latest_files(params):
-    data = eval(params["data"])
+    data = json.loads(params["data"])
     mode = data["type"]
 
     set_content_type(mode)
