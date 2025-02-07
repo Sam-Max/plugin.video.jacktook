@@ -63,7 +63,7 @@ class StremioAddonClient(BaseClient):
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
-                return
+                return []
             return self.parse_response(res)
         except Exception as e:
             self.handle_exception(f"Error in {self.addon_name}: {str(e)}")
