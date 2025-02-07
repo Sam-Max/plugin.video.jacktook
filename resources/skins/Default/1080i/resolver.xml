@@ -52,7 +52,7 @@
 
             <!-- Plot -->
             <control type="label">
-                <top>200</top> <!-- Position below Clearlogo -->
+                <top>250</top> <!-- Position below Clearlogo -->
                 <left>0</left>
                 <width>600</width>
                 <height>200</height>
@@ -66,7 +66,7 @@
         </control>
 
         <control type="group">
-            <top>700</top> <!-- Positioned below the plot -->
+            <top>750</top> <!-- Positioned below the plot -->
             <left>900</left> <!-- Centered within group: (550 - 150) / 2 -->
             <width>200</width>
             <height>200</height> 

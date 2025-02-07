@@ -120,6 +120,7 @@
 					<control type="label">
 						<font>font30</font>
 						<top>70</top>
+						<height>20</height>
 						<align>center</align>
 						<width>200</width>
 						<textcolor>66FFFFFF</textcolor>
@@ -130,6 +131,7 @@
 					<control type="label">
 						<top>120</top>
 						<align>center</align>
+						<height>20</height>
 						<width>200</width>
 						<font>font20</font>
 						<textcolor>66FFFFFF</textcolor>
@@ -284,6 +286,7 @@
 					<control type="label">
 						<font>font30</font>
 						<top>70</top>
+						<height>20</height>
 						<align>center</align>
 						<width>200</width>
 						<textcolor>FFFFFFFF</textcolor>
@@ -293,6 +296,7 @@
 					<!-- Type -->
 					<control type="label">
 						<top>120</top>
+						<height>20</height>
 						<align>center</align>
 						<width>200</width>
 						<font>font20</font>
