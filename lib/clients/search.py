@@ -1,5 +1,5 @@
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.client_utils import get_client, show_dialog
+from lib.utils.client_utils import get_client, update_dialog
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer, get_cached, set_cached
 from lib.clients.stremio_addon import StremioAddonClient
@@ -7,12 +7,26 @@ import lib.stremio.ui as ui
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+def stremio_addon_generator(stremio_addons, dialog):
+    for addon in stremio_addons:
+        update_dialog(Indexer.STREMIO, f"Searching {addon.manifest.name}", dialog)
+        yield StremioAddonClient(addon)
+
+
 def search_client(
     query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
 ):
     def perform_search(indexer_key, dialog, *args, **kwargs):
+        if indexer_key == Indexer.STREMIO:
+            stremio_addons = ui.get_selected_addons()
+            return [
+                result
+                for client in stremio_addon_generator(stremio_addons, dialog)
+                for result in client.search(*args, **kwargs)
+            ]
+
         if indexer_key != Indexer.BURST:
-            show_dialog(indexer_key, f"Searching {indexer_key}", dialog)
+            update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
         client = get_client(indexer_key)
         if not client:
             return []
@@ -112,20 +126,18 @@ def search_client(
             )
 
         if get_setting("stremio_enabled") and imdb_id:
-            selected_stremio_addons = ui.get_selected_addons()
-            for addon in selected_stremio_addons:
-                stremio_client = StremioAddonClient(addon)
-                tasks.append(
-                    executor.submit(
-                        stremio_client.search,
-                        imdb_id,
-                        mode,
-                        media_type,
-                        season,
-                        episode,
-                        dialog,
-                    )
+            tasks.append(
+                executor.submit(
+                    perform_search,
+                    Indexer.STREMIO,
+                    dialog,
+                    imdb_id,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
                 )
+            )
 
         for future in as_completed(tasks):
             try:

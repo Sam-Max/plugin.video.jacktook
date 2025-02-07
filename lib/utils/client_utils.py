@@ -1,3 +1,4 @@
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.jacktook_burst import Burst
 from lib.clients.jackett import Jackett
 from lib.clients.jackgram import Jackgram
@@ -22,7 +23,7 @@ def validate_key(api_key, indexer):
     return True
 
 
-def show_dialog(title, message, dialog):
+def update_dialog(title, message, dialog):
     dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
 
     

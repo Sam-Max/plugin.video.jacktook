@@ -133,6 +133,7 @@ class Debrids(Enum):
 
 class Indexer(Enum):
     PROWLARR = "Prowlarr"
+    STREMIO = "Stremio"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
     PEERFLIX = "Peerflix"

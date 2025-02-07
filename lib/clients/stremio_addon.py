@@ -1,5 +1,4 @@
 from lib.clients.base import BaseClient
-from lib.utils.client_utils import show_dialog
 from lib.utils.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.stremio.addons_manager import Addon
 from lib.stremio.stream import Stream
@@ -51,10 +50,8 @@ class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon):
         super().__init__(None, None)
         self.addon = addon
-        self.addon_name = self.addon.manifest.name
 
-    def search(self, imdb_id, mode, media_type, season, episode, dialog):
-        show_dialog(self.addon_name, f"Searching {self.addon_name}", dialog)
+    def search(self, imdb_id, mode, media_type, season, episode):
         try:
             if mode == "tv" or media_type == "tv":
                 if not self.addon.isSupported("stream", "series", "tt"):
