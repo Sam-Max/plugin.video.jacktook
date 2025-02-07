@@ -108,7 +108,7 @@ class ResolverWindow(BaseWindow):
                 "tv_data": self.item_information["tv_data"],
             }
         )
-        if self.playback_info["is_pack"]:
+        if self.playback_info.get("is_pack"):
             self.resolve_pack()
 
     def resolve_pack(self):
