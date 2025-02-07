@@ -113,6 +113,7 @@
 					<!-- Resolution -->
 					<control type="label">
 						<font>font30</font>
+						<height>20</height>
 						<top>70</top>
 						<align>center</align>
 						<width>200</width>
@@ -126,6 +127,7 @@
 						<align>center</align>
 						<width>200</width>
 						<font>font20</font>
+						<height>20</height>
 						<textcolor>66FFFFFF</textcolor>
 						<align>left</align>
 						<label>$INFO[ListItem.Property(type)]</label>
@@ -277,6 +279,7 @@
 					<control type="label">
 						<font>font30</font>
 						<top>70</top>
+						<height>20</height>
 						<align>center</align>
 						<width>200</width>
 						<textcolor>66FFFFFF</textcolor>
@@ -289,6 +292,7 @@
 						<align>center</align>
 						<width>200</width>
 						<font>font20</font>
+						<height>20</height>
 						<textcolor>66FFFFFF</textcolor>
 						<align>left</align>
 						<label>$INFO[ListItem.Property(type)]</label>
@@ -440,6 +444,7 @@
 						<top>70</top>
 						<align>center</align>
 						<width>200</width>
+						<height>20</height>
 						<textcolor>FFFFFFFF</textcolor>
 						<label>[UPPERCASE]$INFO[ListItem.Property(quality)][/UPPERCASE]</label>
 					</control>
@@ -450,6 +455,7 @@
 						<align>center</align>
 						<width>200</width>
 						<font>font20</font>
+						<height>20</height>
 						<textcolor>FFFFFFFF</textcolor>
 						<align>left</align>
 						<label>$INFO[ListItem.Property(type)]</label>
