@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 from lib.db.main_db import main_db
 from lib.api.tmdbv3api.objs.search import Search
 from lib.utils.tmdb_utils import (
@@ -56,7 +55,7 @@ def search_tmdb(params):
         notification("No results found")
         return
 
-    show_tmdb_results(data.results, mode)
+    execute_thread_pool(data.results, show_tmdb_results, mode)
 
     add_next_button("search_tmdb", page=page, mode=mode)
     endOfDirectory(ADDON_HANDLE)
@@ -81,15 +80,12 @@ def handle_tmdb_query(params):
 
 def handle_tmdb_movie_query(query, page, mode):
     if query == "tmdb_trending":
-        result = tmdb_get("trending_movie", page)
-        if result:
-            if result.total_results == 0:
+        data = tmdb_get("trending_movie", page)
+        if data:
+            if data.total_results == 0:
                 notification("No results found")
                 return
-            show_tmdb_results(
-                result.results,
-                mode=mode,
-            )
+            execute_thread_pool(data.results, show_tmdb_results, mode)
             add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
             endOfDirectory(ADDON_HANDLE)
     elif query == "tmdb_genres":
@@ -100,15 +96,12 @@ def handle_tmdb_movie_query(query, page, mode):
 
 def handle_tmdb_tv_query(query, page, mode):
     if query == "tmdb_trending":
-        result = tmdb_get("trending_tv", page)
-        if result:
-            if result.total_results == 0:
+        data = tmdb_get("trending_tv", page)
+        if data:
+            if data.total_results == 0:
                 notification("No results found")
                 return
-            show_tmdb_results(
-                result.results,
-                mode=mode,
-            )
+            execute_thread_pool(data.results, show_tmdb_results, mode)
             add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
             endOfDirectory(ADDON_HANDLE)
     elif query == "tmdb_genres":
@@ -161,7 +154,7 @@ def handle_tmdb_anime_query(category, mode, submode, page):
 
 def tmdb_search_genres(mode, genre_id, page, submode=None):
     if mode == "movies":
-        results = tmdb_get(
+        data = tmdb_get(
             path="discover_movie",
             params={
                 "with_genres": genre_id,
@@ -170,22 +163,22 @@ def tmdb_search_genres(mode, genre_id, page, submode=None):
             },
         )
     elif mode == "tv":
-        results = tmdb_get(
+        data = tmdb_get(
             path="discover_tv",
             params={"with_genres": genre_id, "page": page},
         )
     if mode == "anime":
-        results = tmdb_get(
+        data = tmdb_get(
             path="anime_genres",
             params={"mode": submode, "genre_id": genre_id, "page": page},
         )
 
-    if results:
-        if results.total_results == 0:
+    if data:
+        if data.total_results == 0:
             notification("No results found")
             return
 
-        show_tmdb_results(results.results, mode, submode)
+        execute_thread_pool(data.results, show_tmdb_results, mode, submode)
 
         add_next_button(
             "search_tmdb_genres",
@@ -219,7 +212,7 @@ def tmdb_search_year(mode, submode, year, page):
             notification("No results found")
             return
 
-        show_tmdb_year_result(results.results, mode, submode)
+        execute_thread_pool(results.results, show_tmdb_results, mode, submode)
 
         add_next_button(
             "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
@@ -227,15 +220,7 @@ def tmdb_search_year(mode, submode, year, page):
         endOfDirectory(ADDON_HANDLE)
 
 
-def show_tmdb_year_result(results, mode, submode):
-    execute_thread_pool(results, show_items, mode, submode)
-
-
-def show_tmdb_results(results, mode, submode=None):
-    execute_thread_pool(results, show_items, mode, submode)
-
-
-def show_items(res, mode, submode=None):
+def show_tmdb_results(res, mode, submode=None):
     kodilog(res)
     tmdb_id = res.id
     media_type = res.get("media_type", "")
@@ -271,8 +256,6 @@ def show_items(res, mode, submode=None):
             label_title = f"[B]TV -[/B] {title}"
 
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
-
-    res.imdb_id = imdb_id
 
     list_item = ListItem(label=label_title)
 
