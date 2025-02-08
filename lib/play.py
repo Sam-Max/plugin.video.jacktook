@@ -1,4 +1,3 @@
-from ast import literal_eval
 from urllib.parse import quote
 from lib.utils.debrid_utils import get_debrid_direct_url, get_debrid_pack_direct_url
 from lib.utils.kodi_utils import (

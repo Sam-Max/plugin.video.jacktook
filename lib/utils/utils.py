@@ -33,9 +33,10 @@ from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
-from xbmcplugin import addDirectoryItem, setContent, endOfDirectory
+from xbmcplugin import addDirectoryItem, setContent
 from xbmc import getSupportedMedia
 from zipfile import ZipFile
+import xbmc
 
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 128
@@ -47,7 +48,6 @@ USER_AGENT_HEADER = {
 }
 
 TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
-TMDB_BACKDROP_URL = "http://image.tmdb.org/t/p/w1280"
 
 MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FNnLMvSfOc4e1IcejWJmykujTnWAlQKRi9cct5k3IRqhu-wFBnDoe_QmwMjJI3FnQtFNp2u3jDo23THEEgKXHYqTMrLos="
 
@@ -133,6 +133,7 @@ class Debrids(Enum):
 
 class Indexer(Enum):
     PROWLARR = "Prowlarr"
+    STREMIO = "Stremio"
     JACKETT = "Jackett"
     TORRENTIO = "Torrentio"
     PEERFLIX = "Peerflix"
@@ -263,60 +264,9 @@ def list_item(label, icon="", poster_path=""):
     return item
 
 
-def set_video_properties(list_item, poster, mode, title, overview, ids):
-    set_media_infotag(list_item, mode, title, overview, ids=ids)
-    list_item.setProperty("IsPlayable", "true")
-    list_item.setArt(
-        {
-            "poster": poster,
-            "fanart": poster,
-            "icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png"),
-        }
-    )
-
-
-def set_video_info(
-    list_item,
-    mode,
-    name,
-    overview="",
-    ids="",
-    season_number="",
-    episode="",
-    ep_name="",
-    duration="",
-    air_date="",
-    url="",
-):
-    info = {"plot": overview}
-
-    if ids:
-        info["imdbnumber"] = ids["imdb_id"]
-
-    if duration:
-        info["duration"] = int(duration)
-
-    if mode in ["movies", "multi"]:
-        info.update({"mediatype": "movie", "title": name, "originaltitle": name})
-    else:
-        info.update({"mediatype": "tvshow", "tvshowtitle": name})
-        if ep_name:
-            info["title"] = name
-        if url:
-            info["filenameandpath"] = url
-        if air_date:
-            info["aired"] = air_date
-        if season_number:
-            info["season"] = int(season_number)
-        if episode:
-            info["episode"] = int(episode)
-
-    list_item.setInfo("video", info)
-
-
 def make_listing(metadata):
     title = metadata.get("title")
-    ids = metadata.get("ids")
+    ids = metadata.get("ids", {})
     tv_data = metadata.get("tv_data", {})
     mode = metadata.get("mode", "")
 
@@ -324,71 +274,184 @@ def make_listing(metadata):
     list_item.setLabel(title)
     list_item.setContentLookup(False)
 
-    if tv_data:
-        ep_name, episode, season = tv_data.split("(^)")
-    else:
-        ep_name = episode = season = ""
+    metadata["episode"] = tv_data.get("episode", "")
+    metadata["season"] = tv_data.get("season", "") 
+    metadata["name"] = tv_data.get("name", "")
+    metadata["id"] = ids.get("tmdb_id")
+    metadata["imdb_id"] = ids.get("imdb_id")
 
-    set_media_infotag(
-        list_item,
-        mode,
-        title,
-        season=season,
-        episode=episode,
-        ep_name=ep_name,
-        ids=ids,
-    )
+    set_media_infoTag(list_item, metadata=metadata, mode=mode)
 
     list_item.setProperty("IsPlayable", "true")
     return list_item
 
 
-def set_media_infotag(
-    list_item,
-    mode,
-    name,
-    overview="",
-    ids="",
-    season="",
-    episode="",
-    ep_name="",
-    duration="",
-    air_date="",
-    url="",
-    original_name="",
-):
+def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
     info_tag = list_item.getVideoInfoTag()
-    info_tag.setPath(url)
-    info_tag.setTitle(name)
-    info_tag.setOriginalTitle(original_name if original_name else name)
+
+    # General Video Info
+    info_tag.setTitle(metadata.get("title", metadata.get("name", "")))
+    info_tag.setOriginalTitle(
+        metadata.get(
+            "original_title", metadata.get("original_name", metadata.get("title", ""))
+        )
+    )
+    info_tag.setPlot(metadata.get("overview", ""))
+
+    # Year & Dates
+    if "first_air_date" in metadata:
+        info_tag.setFirstAired(metadata["first_air_date"])
+        info_tag.setYear(int(metadata["first_air_date"].split("-")[0]))
+    elif "air_date" in metadata:
+        info_tag.setFirstAired(metadata["air_date"])  # Setting air_date for episodes
+    elif "release_date" in metadata:
+        info_tag.setPremiered(metadata["release_date"])
+        info_tag.setYear(int(metadata["release_date"].split("-")[0]))
+
+    if "runtime" in metadata:
+        runtime = metadata.get("runtime")
+        if runtime:
+            info_tag.setDuration(runtime * 60)  # Convert to seconds
+
+    # Rating
+    info_tag.setRating(
+        metadata.get("vote_average", metadata.get("rating", 0)),
+        votes=metadata.get("vote_count", metadata.get("votes", 0)),
+    )
+
+    info_tag.setUserRating(int(float(metadata.get("popularity", 0))))
+
+    # Media Type
     if mode == "movies":
         info_tag.setMediaType("movie")
-    elif mode == "multi":
-        info_tag.setMediaType("video")
-        info_tag.setFilenameAndPath(url)
-    else:
+    if mode == "tv":
+        info_tag.setMediaType("tvshow")
+    elif mode == "episode":
         info_tag.setMediaType("episode")
-        info_tag.setFilenameAndPath(url)
-        if air_date:
-            info_tag.setFirstAired(air_date)
-        if season:
-            info_tag.setSeason(int(season))
-        if episode:
-            info_tag.setEpisode(int(episode))
-        if ep_name:
-            info_tag.setTitle(ep_name)
-        else:
-            info_tag.setTitle(name)
+    else:
+        info_tag.setMediaType("video")
 
-    info_tag.setPlot(overview)
-    if duration:
-        info_tag.setDuration(int(duration) * 60)
-    if ids:
-        tmdb_id, tvdb_id, imdb_id = ids.values()
-        info_tag.setIMDBNumber(imdb_id)
-        info_tag.setUniqueIDs(
-            {"imdb": str(imdb_id), "tmdb": str(tmdb_id), "tvdb": str(tvdb_id)}
-        )
+    # Classification
+    genres = metadata.get("genre_ids", metadata.get("genres", []))
+    final_genres = extract_genres(genres)
+    info_tag.setGenres(final_genres)
+
+    # Countries
+    countries = list(metadata.get("origin_country", metadata.get("countries", [])))
+    if isinstance(countries, str):
+        countries = [countries]  # Ensure it's a List
+    info_tag.setCountries(countries)
+
+    # Identification
+    if "imdb_id" in metadata:
+        info_tag.setIMDBNumber(metadata["imdb_id"])
+    if "id" in metadata:
+        unique_ids = {
+            "tmdb": str(metadata.get("id", "")),
+            "imdb": metadata.get("imdb_id", ""),
+        }
+        info_tag.setUniqueIDs(unique_ids, "tmdb")
+
+    # Artwork
+    list_item.setArt(
+        {
+            "thumb": (
+                f"http://image.tmdb.org/t/p/w780{metadata['poster_path']}"
+                if "poster_path" in metadata
+                else (
+                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
+                    if "still_path" in metadata
+                    else ""
+                )
+            ),
+            "poster": (
+                f"http://image.tmdb.org/t/p/w500{metadata['poster_path']}"
+                if "poster_path" in metadata
+                else (
+                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
+                    if "still_path" in metadata
+                    else ""
+                )
+            ),
+            "fanart": (
+                f"http://image.tmdb.org/t/p/w1280{metadata['backdrop_path']}"
+                if "backdrop_path" in metadata
+                else (
+                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
+                    if "still_path" in metadata
+                    else fanart_details.get("fanart", "")
+                )
+            ),
+        }
+    )
+
+    if "seasons" in metadata:
+        seasons = list(metadata["seasons"])
+        if isinstance(seasons, list):
+            named_seasons = [
+                (season.get("season_number", 0), season.get("name", ""))
+                for season in seasons
+            ]
+            info_tag.addSeasons(named_seasons)
+        else:
+            info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
+
+    set_cast_and_crew(info_tag, metadata)
+
+    # Episode & Season Info (for TV shows/episodes)
+    if mode in ["tv", "episode"]:
+        info_tag.setTvShowTitle(metadata.get("tvshow_title", metadata.get("name", "")))
+    if mode == "episode":
+        info_tag.setSeason(metadata.get("season", metadata.get("season_number", 0)))
+        info_tag.setEpisode(metadata.get("episode", metadata.get("episode_number", 0)))
+
+
+def extract_genres(genres):
+    genre_list = []
+
+    for g in genres:
+        if isinstance(g, dict) and "name" in g:  # Case: { "id": 28, "name": "Action" }
+            genre_list.append(g["name"])
+        elif isinstance(g, int):
+            genre_list.append(str(g))
+        elif isinstance(g, str):
+            genre_list.append(g)
+
+    return genre_list
+
+
+def set_cast_and_crew(info_tag, metadata):
+    cast_list = []
+
+    if "crew" in metadata:
+        for crew_member in metadata["crew"]:
+            actor = xbmc.Actor(
+                name=crew_member["name"],
+                role=crew_member["job"],  # Director, Writer, etc.
+                thumbnail=(
+                    f"http://image.tmdb.org/t/p/w185{crew_member['profile_path']}"
+                    if crew_member.get("profile_path")
+                    else ""
+                ),
+                order=0,  # No specific order for crew members
+            )
+            cast_list.append(actor)
+
+    if "guest_stars" in metadata:
+        for guest in metadata["guest_stars"]:
+            actor = xbmc.Actor(
+                name=guest["name"],
+                role=guest["character"],  # Role = Character name
+                thumbnail=(
+                    f"http://image.tmdb.org/t/p/w185{guest['profile_path']}"
+                    if guest.get("profile_path")
+                    else ""
+                ),
+                order=guest.get("order", 0),  # Preserve the order from TMDB
+            )
+            cast_list.append(actor)
+
+    info_tag.setCast(cast_list)
 
 
 def set_watched_file(title, data, is_direct=False, is_torrent=False):

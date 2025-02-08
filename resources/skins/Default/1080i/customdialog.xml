@@ -43,7 +43,7 @@
                 <font>font14</font>
                 <top>90</top>
                 <width>780</width>
-                <height>400</height>
+                <height>150</height>
                 <align>center</align>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
@@ -69,7 +69,7 @@
             <!-- Card with Rounded Corners -->
             <control type="image">
                 <right>-6</right>
-                <bottom>-6</bottom>
+                <bottom>-2</bottom>
                 <texture border="30">circle.png</texture>
                 <colordiffuse>CCFF0000</colordiffuse>
             </control>
@@ -79,6 +79,7 @@
                 <font>font14</font>
                 <align>center</align>
                 <aligny>center</aligny>
+                <height>100</height>
                 <textcolor>white</textcolor>
                 <shadowcolor>FF000000</shadowcolor>
                 <wrap>true</wrap> 

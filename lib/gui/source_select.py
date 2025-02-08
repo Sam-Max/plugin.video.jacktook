@@ -23,8 +23,8 @@ class SourceSelect(BaseWindow):
         self.item_information = item_information
         self.playback_info = None
         self.resume = None
-        self.CACHE_KEY = (
-            self.item_information["tv_data"] or str(self.item_information["ids"])
+        self.CACHE_KEY = str(self.item_information["tv_data"]) or str(
+            self.item_information["ids"]
         )
         self.setProperty("instant_close", "false")
         self.setProperty("resolving", "false")

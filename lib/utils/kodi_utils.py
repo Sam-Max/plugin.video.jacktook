@@ -211,6 +211,9 @@ def action_url_run(name, **kwargs):
 
 
 def build_url(action, **params):
+    for key, value in params.items():
+        if isinstance(value, (dict, list)):
+            params[key] = json.dumps(value)
     query = parse.urlencode(params)
     return f"plugin://{ADDON_ID}/?action={action}&{query}"
 
