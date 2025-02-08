@@ -58,16 +58,17 @@ def show_season_info(ids, mode, media_type):
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
-    tmdb_id, tvdb_id, _ = ids.values()
+    season_details = tmdb_get(
+        "season_details", {"id": ids.get("tmdb_id"), "season": season}
+    )
 
-    season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-
-    fanart_data = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
+    fanart_data = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
     for episode in season_details.episodes:
         ep_name = episode.name
         episode_number = episode.episode_number
-        tv_data = f"{ep_name}(^){episode_number}(^){season}"
+
+        tv_data = {"name": ep_name, "episode": episode_number, "season": season}
 
         list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
 

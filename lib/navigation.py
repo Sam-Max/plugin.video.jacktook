@@ -535,7 +535,7 @@ def search(params):
     mode = params["mode"]
     media_type = params.get("media_type", "")
     ids = json.loads(params.get("ids", "{}"))
-    tv_data = params.get("tv_data", "")
+    tv_data = json.loads(params.get("tv_data", "{}"))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
@@ -544,10 +544,7 @@ def search(params):
 
     episode, season, ep_name = (0, 0, "")
     if tv_data:
-        try:
-            ep_name, episode, season = tv_data.split("(^)")
-        except ValueError:
-            pass
+        ep_name, episode, season = tv_data.values()
 
     with DialogListener() as listener:
         results = search_client(

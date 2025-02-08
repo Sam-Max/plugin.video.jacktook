@@ -22,13 +22,13 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                     action = "list_stremio_catalog"
                     name = addon.manifest.name
                     if name == "Cinemeta":
-                        label= f"{name} - {catalog['name'] or catalog['id']}"
+                        label = f"{name} - {catalog['name'] or catalog['id']}"
                     else:
                         label = catalog_name or catalog_id
-                
+
                     listitem = ListItem(label=label)
                     listitem.setArt({"icon": addon.manifest.logo})
-                
+
                     addDirectoryItem(
                         ADDON_HANDLE,
                         build_url(
@@ -244,9 +244,14 @@ def list_stremio_episodes(params):
         if season != int(params["season"]):
             continue
 
-        tv_data = f"{video['title']}(^){video['episode']}(^){video['season']}"
+        tv_data = {
+            "name": video["title"],
+            "episode": video["episode"],
+            "season": video["season"],
+        }
 
         ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": None}
+
         if imdb_id := video.get("imdb_id"):
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
@@ -288,7 +293,9 @@ def list_stremio_episodes(params):
             }
         )
 
-        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False)
+        addDirectoryItem(
+            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
+        )
 
     endOfDirectory(ADDON_HANDLE)
 

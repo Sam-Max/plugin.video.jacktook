@@ -194,31 +194,36 @@ class JacktookPLayer(xbmc.Player):
             self.clear_playback_properties()
 
     def build_playlist(self):
-        kodilog("build_playlist")
+        kodilog("player::build_playlist")
         if self.data["mode"] == "tv":
             ids = self.data.get("ids")
             if ids:
-                tmdb_id = ids["tmdb_id"]
-                details = tmdb_get("tv_details", tmdb_id)
-                name = details.name
+                details = tmdb_get("tv_details", ids["tmdb_id"])
                 tv_data = self.data["tv_data"]
-                _, episode_number, season_number = tv_data.split("(^)")
+                season = tv_data["season"]
+                episode = tv_data["episode"]
 
                 season_details = tmdb_get(
-                    "season_details", {"id": tmdb_id, "season": season_number}
+                    "season_details", {"id": ids["tmdb_id"], "season": season}
                 )
-                for episode in season_details.episodes:
-                    episode_name = episode.name
-                    _episode_number = episode.episode_number
-                    if _episode_number <= int(episode_number):
+                for e in season_details.episodes:
+                    episode_name = e.name
+                    episode_number = e.episode_number
+
+                    if episode_number <= int(episode):
                         continue
-                    label = f"{season_number}x{_episode_number}. {episode_name}"
-                    tv_data = f"{episode_name}(^){_episode_number}(^){season_number}"
+
+                    label = f"{season}x{episode_number}. {episode_name}"
+                    tv_data = {
+                        "name": episode_name,
+                        "episode": episode_number,
+                        "season": season,
+                    }
 
                     url = build_url(
                         "search",
                         mode=self.data["mode"],
-                        query=name,
+                        query=details.name,
                         ids=ids,
                         tv_data=tv_data,
                         rescrape=True,
