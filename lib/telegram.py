@@ -1,5 +1,6 @@
 import json
-from lib.api.tmdbv3api.exceptions import TMDbException
+import traceback
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.jackgram import Jackgram
 from lib.utils.client_utils import validate_host
 from lib.utils.tmdb_utils import tmdb_get
@@ -34,17 +35,18 @@ def check_jackgram_active():
 
 
 def get_telegram_files(params):
-    if check_jackgram_active():
-        page = int(params.get("page"))
-        host = get_setting("jackgram_host")
-        if not validate_host(host, Indexer.TELEGRAM):
-            return
-        jackgram_client = Jackgram(host, notification)
-        results = jackgram_client.get_files(page=page)
-        execute_thread_pool(results, telegram_files)
-        add_next_button("get_telegram_files", page=page)
-        endOfDirectory(ADDON_HANDLE)
-        set_view("widelist")
+    if not check_jackgram_active():
+        return
+    page = int(params.get("page"))
+    host = get_setting("jackgram_host")
+    if not validate_host(host, Indexer.TELEGRAM):
+        return
+    jackgram_client = Jackgram(host, notification)
+    results = jackgram_client.get_files(page=page)
+    execute_thread_pool(results, telegram_files)
+    add_next_button("get_telegram_files", page=page)
+    endOfDirectory(ADDON_HANDLE)
+    set_view("widelist")
 
 
 def telegram_files(info):
@@ -59,17 +61,18 @@ def telegram_files(info):
 
 
 def get_telegram_latest(params):
-    if check_jackgram_active():
-        page = int(params.get("page"))
-        host = get_setting("jackgram_host")
-        if not validate_host(host, Indexer.TELEGRAM):
-            return
-        jackgram_client = Jackgram(host, notification)
-        results = jackgram_client.get_latest(page=page)
-        execute_thread_pool(results, telegram_latest_items)
-        add_next_button("get_telegram_latest", page=page)
-        endOfDirectory(ADDON_HANDLE)
-        set_view("widelist")
+    if not check_jackgram_active():
+        return
+    page = int(params.get("page"))
+    host = get_setting("jackgram_host")
+    if not validate_host(host, Indexer.TELEGRAM):
+        return
+    jackgram_client = Jackgram(host, notification)
+    results = jackgram_client.get_latest(page=page)
+    execute_thread_pool(results, telegram_latest_items)
+    add_next_button("get_telegram_latest", page=page)
+    endOfDirectory(ADDON_HANDLE)
+    set_view("widelist")
 
 
 def telegram_latest_items(info):
@@ -93,7 +96,7 @@ def telegram_latest_items(info):
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("get_telegram_latest_files", data=info),
+        build_url("get_telegram_latest_files", data=json.dumps(info)),
         list_item,
         isFolder=True,
     )
@@ -101,9 +104,7 @@ def telegram_latest_items(info):
 
 def get_telegram_latest_files(params):
     data = json.loads(params["data"])
-    mode = data["type"]
-
-    set_content_type(mode)
+    set_content_type(data["type"])
     execute_thread_pool(data["files"], telegram_latest_files, data)
     endOfDirectory(ADDON_HANDLE)
 
@@ -112,31 +113,23 @@ def telegram_latest_files(info, data):
     mode = info["mode"]
     title = info["title"]
 
+    list_item = ListItem(label=title)
+
     if mode == "tv":
-        try:
-            details = tmdb_get(
-                "episode_details",
-                params={
-                    "id": data["tmdb_id"],
-                    "season": info["season"],
-                    "episode": info["episode"],
-                },
-            )
-        except TMDbException:  
-            # Cause of Anime TMDB Id fails when getting episode details
-            details = {}
-
-        list_item = ListItem(label=title)
-
-        set_media_infoTag(list_item, metadata=details.update(info), mode=mode)
+        details = tmdb_get(
+            "episode_details",
+            params={
+                "id": data["tmdb_id"],
+                "season": info["season"],
+                "episode": info["episode"],
+            },
+        )
 
     else:
         details = tmdb_get("movie_details", data["tmdb_id"])
-
-        list_item = ListItem(label=title)
-        list_item.setProperty("IsPlayable", "true")
-        
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+    
+    list_item.setProperty("IsPlayable", "true")
+    set_media_infoTag(list_item, metadata=details, mode=mode)
     
     addDirectoryItem(
         ADDON_HANDLE,

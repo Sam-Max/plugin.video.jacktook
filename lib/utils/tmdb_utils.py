@@ -37,48 +37,45 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
 
 
 def tmdb_get(path, params=None):
-    identifier = "{}|{}".format(path, params)
+    identifier = f"{path}|{params}"
     data = cache.get(identifier, hashed_key=True)
     if data:
         return data
-    if path == "search_tv":
-        data = Search().tv_shows(params)
-    elif path == "search_movie":
-        data = Search().movies(params)
-    elif path == "movie_details":
-        data = Movie().details(params)
-    elif path == "tv_details":
-        data = TV().details(params)
-    elif path == "season_details":
-        data = Season().details(params["id"], params["season"])
-    elif path == "episode_details":
-        data = Episode().details(params["id"], params["season"], params["episode"])
-    elif path == "movie_genres":
-        data = Genre().movie_list()
-    elif path == "tv_genres":
-        data = Genre().tv_list()
-    elif path == "discover_movie":
-        data = Discover().discover_movies(params)
-    elif path == "discover_tv":
-        data = Discover().discover_tv_shows(params)
-    elif path == "trending_movie":
-        data = Trending().movie_week(page=params)
-    elif path == "trending_tv":
-        data = Trending().tv_week(page=params)
-    elif path == "find_by_tvdb":
-        data = Find().find_by_tvdb_id(params)
-    elif path == "find_by_imdb_id":
-        data = Find().find_by_imdb_id(params)
-    elif path == "anime_year":
-        data = TmdbAnime().anime_year(params)
-    elif path == "anime_genres":
-        data = TmdbAnime().anime_genres(params)
-    cache.set(
-        identifier,
-        data,
-        timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-        hashed_key=True,
-    )
+
+    handlers = {
+        "search_tv": lambda p: Search().tv_shows(p),
+        "search_movie": lambda p: Search().movies(p),
+        "movie_details": lambda p: Movie().details(p),
+        "tv_details": lambda p: TV().details(p),
+        "season_details": lambda p: Season().details(p["id"], p["season"]),
+        "episode_details": lambda p: Episode().details(
+            p["id"], p["season"], p["episode"]
+        ),
+        "movie_genres": lambda _: Genre().movie_list(),
+        "tv_genres": lambda _: Genre().tv_list(),
+        "discover_movie": lambda p: Discover().discover_movies(p),
+        "discover_tv": lambda p: Discover().discover_tv_shows(p),
+        "trending_movie": lambda p: Trending().movie_week(page=p),
+        "trending_tv": lambda p: Trending().tv_week(page=p),
+        "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),
+        "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p),
+        "anime_year": lambda p: TmdbAnime().anime_year(p),
+        "anime_genres": lambda p: TmdbAnime().anime_genres(p),
+    }
+
+    try:
+        data = handlers.get(path, lambda _: None)(params)
+    except Exception:
+        return {}
+
+    if data is not None:
+        cache.set(
+            identifier,
+            data,
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+            hashed_key=True,
+        )
+
     return data
 
 
