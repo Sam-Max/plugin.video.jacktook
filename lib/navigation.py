@@ -935,7 +935,7 @@ def addon_update(params):
 
 
 def donate(params):
-    msg = "If you enjoy using Jacktook and appreciate the time and effort we've invested in developing this addon, you can support us with a contribution at:"
+    msg = "If you enjoy using Jacktook and appreciate the time and effort we are investing in developing this addon, you can support us with a contribution at:"
     dialog = CustomDialog(
         "customdialog.xml",
         ADDON_PATH,
