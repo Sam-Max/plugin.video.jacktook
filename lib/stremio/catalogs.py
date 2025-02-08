@@ -246,8 +246,8 @@ def list_stremio_episodes(params):
 
         tv_data = {
             "name": video["title"],
-            "episode": video["episode"],
-            "season": video["season"],
+            "episode": episode,
+            "season": season,
         }
 
         ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": None}
