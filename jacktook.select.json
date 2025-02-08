@@ -3,7 +3,8 @@
     "plugin": "plugin.video.jacktook",
     "priority": 200,
     "is_resolvable": "true",
-    "play_movie": "plugin://plugin.video.jacktook/?action=search&mode=movies&rescrape=True&query={title}&ids={tmdb}%2C%20{tvdb}%2C%20{imdb}",
-    "play_episode": "plugin://plugin.video.jacktook/?action=search&mode=tv&rescrape=True&query={showname}&ids={tmdb}%2C%20{tvdb}%2C%20{imdb}&tv_data={title}%28%5E%29{episode}%28%5E%29{season}"
+    "play_movie": "plugin://plugin.video.jacktook/?action=search&mode=movies&rescrape=True&query={title}&ids=%7B%22tmdb_id%22%3A+%22{tmdb}%22%2C+%22tvdb_id%22%3A+%22{tvdb}%22%2C+%22imdb_id%22%3A+%22{imdb}%22%7D",
+    "play_episode": "plugin://plugin.video.jacktook/?action=search&mode=tv&rescrape=True&query={showname}&ids=%7B%22tmdb_id%22%3A+%22{tmdb}%22%2C+%22tvdb_id%22%3A+%22{tvdb}%22%2C+%22imdb_id%22%3A+%22{imdb}%22%7D&tv_data=%7B%22name%22%3A+%22{title}%22%2C+%22episode%22%3A+%22{episode}%22%2C+%22season%22%3A+%22{season}%22%7D"
 }
+
 
