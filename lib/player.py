@@ -194,7 +194,6 @@ class JacktookPLayer(xbmc.Player):
             self.clear_playback_properties()
 
     def build_playlist(self):
-        kodilog("player::build_playlist")
         if self.data["mode"] == "tv":
             ids = self.data.get("ids")
             if ids:
@@ -206,34 +205,36 @@ class JacktookPLayer(xbmc.Player):
                 season_details = tmdb_get(
                     "season_details", {"id": ids["tmdb_id"], "season": season}
                 )
-                for e in season_details.episodes:
-                    episode_name = e.name
-                    episode_number = e.episode_number
 
-                    if episode_number <= int(episode):
-                        continue
+                if season_details:
+                    for e in season_details.episodes:
+                        episode_name = e.name
+                        episode_number = e.episode_number
 
-                    label = f"{season}x{episode_number}. {episode_name}"
-                    tv_data = {
-                        "name": episode_name,
-                        "episode": episode_number,
-                        "season": season,
-                    }
+                        if episode_number <= int(episode):
+                            continue
 
-                    url = build_url(
-                        "search",
-                        mode=self.data["mode"],
-                        query=details.name,
-                        ids=ids,
-                        tv_data=tv_data,
-                        rescrape=True,
-                    )
+                        label = f"{season}x{episode_number}. {episode_name}"
+                        tv_data = {
+                            "name": episode_name,
+                            "episode": episode_number,
+                            "season": season,
+                        }
 
-                    list_item = ListItem(label=label)
-                    list_item.setPath(url)
-                    list_item.setProperty("IsPlayable", "true")
+                        url = build_url(
+                            "search",
+                            mode=self.data["mode"],
+                            query=details.name,
+                            ids=ids,
+                            tv_data=tv_data,
+                            rescrape=True,
+                        )
 
-                    self.PLAYLIST.add(url=url, listitem=list_item)
+                        list_item = ListItem(label=label)
+                        list_item.setPath(url)
+                        list_item.setProperty("IsPlayable", "true")
+
+                        self.PLAYLIST.add(url=url, listitem=list_item)
 
     def media_watched_marker(self):
         self.media_marked = True
