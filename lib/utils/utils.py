@@ -777,7 +777,7 @@ def post_process(results, season=0):
 def filter_torrent_sources(results):
     filtered_results = []
     for res in results:
-        if res["infoHash"] or res["guid"]:
+        if res.get("infoHash") or res.get("guid"):
             filtered_results.append(res)
     return filtered_results
 
