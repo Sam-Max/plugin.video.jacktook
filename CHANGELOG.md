@@ -1,3 +1,8 @@
+## 0.5.1
+- UI Improvements 
+- TMDB Helper json updated
+- Some fixes and improvements
+
 ## 0.5.0
 - Add support to import and use Stremio catalogs.
 - Add setting button action to update Stremio addons after logged in.
