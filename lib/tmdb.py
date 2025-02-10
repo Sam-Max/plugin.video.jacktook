@@ -221,7 +221,6 @@ def tmdb_search_year(mode, submode, year, page):
 
 
 def show_tmdb_results(res, mode, submode=None):
-    kodilog(res)
     tmdb_id = res.id
     media_type = res.get("media_type", "")
 

@@ -3,21 +3,11 @@ import copy
 import requests
 from threading import Lock
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.ed_utils import check_ed_cached, get_ed_link, get_ed_pack_info
+from lib.utils.ed_utils import EasyDebridHelper
 from lib.utils.kodi_utils import get_setting
-from lib.utils.pm_utils import check_pm_cached, get_pm_link, get_pm_pack_info
-from lib.utils.rd_utils import (
-    check_rd_cached,
-    get_rd_link,
-    get_rd_pack_info,
-    get_rd_pack_link,
-)
-from lib.utils.torbox_utils import (
-    check_torbox_cached,
-    get_torbox_link,
-    get_torbox_pack_info,
-    get_torbox_pack_link,
-)
+from lib.utils.pm_utils import PremiumizeHelper
+from lib.utils.rd_utils import RealDebridHelper
+from lib.utils.torbox_utils import TorboxHelper
 from lib.utils.torrent_utils import extract_magnet_from_url
 from lib.utils.utils import (
     USER_AGENT_HEADER,
@@ -59,13 +49,13 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
 
     check_functions = []
     if is_rd_enabled():
-        check_functions.append(check_rd_cached)
+        check_functions.append(RealDebridHelper().check_rd_cached)
     if is_tb_enabled():
-        check_functions.append(check_torbox_cached)
+        check_functions.append(TorboxHelper().check_torbox_cached)
     if is_pm_enabled():
-        check_functions.append(check_pm_cached)
+        check_functions.append(PremiumizeHelper().check_pm_cached)
     if is_ed_enabled():
-        check_functions.append(check_ed_cached)
+        check_functions.append(EasyDebridHelper().check_ed_cached)
 
     with ThreadPoolExecutor() as executor:
         futures = [
@@ -131,13 +121,13 @@ def get_rd_status_pack(res):
 
 def get_pack_info(type, info_hash):
     if type == Debrids.PM:
-        info = get_pm_pack_info(info_hash)
+        info = PremiumizeHelper().get_pm_pack_info(info_hash)
     elif type == Debrids.TB:
-        info = get_torbox_pack_info(info_hash)
+        info = TorboxHelper().get_torbox_pack_info(info_hash)
     elif type == Debrids.RD:
-        info = get_rd_pack_info(info_hash)
+        info = RealDebridHelper().get_rd_pack_info(info_hash)
     elif type == Debrids.ED:
-        info = get_ed_pack_info(info_hash)
+        info = EasyDebridHelper().get_ed_pack_info(info_hash)
     return info
 
 
@@ -199,17 +189,17 @@ def get_magnet_from_uri(uri):
 def get_debrid_direct_url(type, data):
     info_hash = data.get("info_hash", "")
     if type == Debrids.RD:
-        return get_rd_link(info_hash, data)
+        return RealDebridHelper().get_rd_link(info_hash, data)
     elif type == Debrids.PM:
-        return get_pm_link(info_hash)
+        return PremiumizeHelper().get_pm_link(info_hash)
     elif type == Debrids.TB:
-        return get_torbox_link(info_hash)
+        return TorboxHelper().get_torbox_link(info_hash)
     elif type == Debrids.ED:
-        return get_ed_link(info_hash)
+        return EasyDebridHelper().get_ed_link(info_hash)
 
 
 def get_debrid_pack_direct_url(file_id, torrent_id, type):
     if type == Debrids.RD:
-        return get_rd_pack_link(file_id, torrent_id)
+        return RealDebridHelper().get_rd_pack_link(file_id, torrent_id)
     elif type == Debrids.TB:
-        return get_torbox_pack_link(file_id, torrent_id)
+        return TorboxHelper().get_torbox_pack_link(file_id, torrent_id)

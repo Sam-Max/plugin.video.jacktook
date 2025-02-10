@@ -39,7 +39,7 @@ from lib.trakt import (
     show_list_trakt_page,
 )
 
-from lib.utils.rd_utils import get_rd_info
+from lib.utils.rd_utils import RealDebridHelper
 from lib.utils.items_menus import tv_items, movie_items, anime_items, animation_items
 from lib.utils.debrid_utils import check_debrid_cached
 
@@ -735,7 +735,7 @@ def cloud(params):
 
 
 def rd_info(params):
-    get_rd_info()
+    RealDebridHelper().get_rd_info()
 
 
 def get_rd_downloads(params):
