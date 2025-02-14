@@ -675,6 +675,40 @@
                 </setting>
             </group>
         </category>
+        <category id="subtitle_cateogy" label="30879">
+            <group id="opensubtitles" label="30876">
+                <setting id="opensub_username" type="string" label="30877" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="opensub_password" type="string" label="30878" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+            </group>
+            <group id="translator" label="30880">
+                <setting id="deepl_api_key" type="string" label="30881" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="deepl_language" type="string" label="30882" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+            </group>
+        </category>
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">
                 <setting id="tmdb_api_key" type="string" label="30103" help="30858">
