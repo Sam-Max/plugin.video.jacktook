@@ -693,19 +693,69 @@
                 </setting>
             </group>
             <group id="translator" label="30880">
+                <setting id="deepl_enabled" type="boolean" label="30734" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
                 <setting id="deepl_api_key" type="string" label="30881" help="">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="deepl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="deepl_language" type="string" label="30882" help="">
-                    <default />
+                    <default>None</default>
+                    <neading>30736</neading>
                     <constraints>
-                        <allowempty>true</allowempty>
+                        <options>
+                            <option>None</option>
+                            <option>AR</option> <!-- Arabic -->
+                            <option>BG</option> <!-- Bulgarian -->
+                            <option>CS</option> <!-- Czech -->
+                            <option>DA</option> <!-- Danish -->
+                            <option>DE</option> <!-- German -->
+                            <option>EL</option> <!-- Greek -->
+                            <option>EN-GB</option> <!-- English (British) -->
+                            <option>EN-US</option> <!-- English (American) -->
+                            <option>ES</option> <!-- Spanish -->
+                            <option>ET</option> <!-- Estonian -->
+                            <option>FI</option> <!-- Finnish -->
+                            <option>FR</option> <!-- French -->
+                            <option>HU</option> <!-- Hungarian -->
+                            <option>ID</option> <!-- Indonesian -->
+                            <option>IT</option> <!-- Italian -->
+                            <option>JA</option> <!-- Japanese -->
+                            <option>KO</option> <!-- Korean -->
+                            <option>LT</option> <!-- Lithuanian -->
+                            <option>LV</option> <!-- Latvian -->
+                            <option>NB</option> <!-- Norwegian Bokmål -->
+                            <option>NL</option> <!-- Dutch -->
+                            <option>PL</option> <!-- Polish -->
+                            <option>PT-BR</option> <!-- Portuguese (Brazilian) -->
+                            <option>PT-PT</option> <!-- Portuguese (Portugal) -->
+                            <option>RO</option> <!-- Romanian -->
+                            <option>RU</option> <!-- Russian -->
+                            <option>SK</option> <!-- Slovak -->
+                            <option>SL</option> <!-- Slovenian -->
+                            <option>SV</option> <!-- Swedish -->
+                            <option>TR</option> <!-- Turkish -->
+                            <option>UK</option> <!-- Ukrainian -->
+                            <option>ZH-HANS</option> <!-- Chinese (Simplified) -->
+                            <option>ZH-HANT</option> <!-- Chinese (Traditional) -->
+                        </options>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="deepl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <control type="list" format="string" />
                 </setting>
             </group>
         </category>
