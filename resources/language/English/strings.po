@@ -1262,3 +1262,33 @@ msgstr ""
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr "Alternar complementos de catalogos"
+
+
+msgctxt "#30876"
+msgid "OpenSubtitles Configuration"
+msgstr ""
+
+
+msgctxt "#30877"
+msgid "Username"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30879"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30880"
+msgid "DeepL Translator Configuration"
+msgstr ""
+
+msgctxt "#30881"
+msgid "Api Key"
+msgstr ""
+
+msgctxt "#30882"
+msgid "Target Language"
+msgstr ""
