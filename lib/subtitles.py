@@ -1,8 +1,11 @@
 import json
 import os
+
+import requests
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification
 import xbmc
+
 
 class SubtitleManager:
     def __init__(self, kodi_player, sub_client, translator):
@@ -107,3 +110,80 @@ class SubtitleManager:
 
         self.player.setSubtitles(subtitle_path)
         self.player.showSubtitles(True)
+
+
+class DeepLTranslator:
+    API_ENDPOINT = "https://api-free.deepl.com/v2/translate"
+
+    def __init__(self):
+        self.DEEPL_API_KEY = get_setting("deepl_api_key")
+
+    def translate_subtitle_file(self, subtitle_path, target_lang="EN"):
+        if not os.path.exists(subtitle_path):
+            notification(f"Subtitle file not found: {subtitle_path}")
+            return
+
+        try:
+            with open(subtitle_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            notification(f"Error reading subtitle file: {e}")
+            return
+
+        # SRT files are split into blocks separated by blank lines.
+        blocks = content.strip().split("\n\n")
+        translated_blocks = []
+
+        for block in blocks:
+            lines = block.splitlines()
+            # Expecting at least three lines: index, timestamp, and text.
+            if len(lines) < 3:
+                translated_blocks.append(block)
+                continue
+
+            index_line = lines[0]
+            timestamp_line = lines[1]
+            text_lines = lines[2:]
+
+            # Combine text lines into a single block (preserving newline breaks).
+            text_to_translate = "\n".join(text_lines)
+            translated_text = self.translate_text(text_to_translate, target_lang)
+
+            # Reconstruct the block.
+            new_block = "\n".join([index_line, timestamp_line, translated_text])
+            translated_blocks.append(new_block)
+
+        translated_file_path = subtitle_path.replace(".srt", f"_{target_lang}.srt")
+
+        try:
+            with open(translated_file_path, "w", encoding="utf-8") as f:
+                f.write("\n\n".join(translated_blocks))
+            return translated_file_path
+        except Exception as e:
+            notification(f"Error writing translated subtitle file: {e}")
+            return
+
+    def translate_text(self, text, target_lang="EN"):
+        data = {
+            "auth_key": self.DEEPL_API_KEY,
+            "text": text,
+            "target_lang": target_lang,
+            "preserve_formatting": 1,
+        }
+        try:
+            response = requests.post(self.API_ENDPOINT, data=data)
+            if response.status_code == 200:
+                result = response.json()
+                translations = result.get("translations")
+                if translations:
+                    return translations[0]["text"]
+                else:
+                    raise Exception("No translation returned by DeepL.")
+            else:
+                raise Exception(f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            notification(f"DeepL translation error: {e}")
+            # Fallback: return the original text if an error occurs.
+            return text
+
+
