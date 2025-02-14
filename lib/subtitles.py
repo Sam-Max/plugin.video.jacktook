@@ -1,11 +1,9 @@
 import json
 import os
-
 import requests
 from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification
+from lib.utils.kodi_utils import ADDON_PATH, get_setting, notification, set_setting
 import xbmc
-
 from lib.utils.utils import USER_AGENT_STRING
 
 
@@ -14,7 +12,7 @@ class SubtitleManager:
         self.player = kodi_player
         self.sub_client = sub_client
         self.translator = translator
-        self.translate_subtitle = get_setting("translate_subtitle")
+        self.deepl_enabled = get_setting("deepl_enabled")
 
     def json_rpc(self, method, params=None):
         request_data = {
@@ -47,41 +45,40 @@ class SubtitleManager:
             return subtitle_language["value"]
 
     def check_and_set_subtitles(self):
-        preferred_language = self.get_kodi_preferred_subtitle_language(iso_format=True)
-
-        if preferred_language == "original":
-            audio_streams = self.player.getAvailableAudioStreams()
-            if not audio_streams or len(audio_streams) == 0:
+        if self.deepl_enabled:
+            language = get_setting("deepl_language", "").lower()
+        else:
+            preferred_language = self.get_kodi_preferred_subtitle_language(iso_format=True)
+            if preferred_language == "original":
+                audio_streams = self.player.getAvailableAudioStreams()
+                if not audio_streams or len(audio_streams) == 0:
+                    return
+                language = audio_streams[0]
+            elif preferred_language == "default":
+                language = xbmc.getLanguage(xbmc.ISO_639_2)
+            elif preferred_language in ["none", "forced_only"]:
                 return
-            preferred_language = audio_streams[0]
-        elif preferred_language == "default":
-            preferred_language = xbmc.getLanguage(xbmc.ISO_639_2)
-        elif preferred_language in ["none", "forced_only"]:
-            return
-
-        kodilog(f"preferred_language:  {preferred_language}")
-
+        
+        kodilog(f"Language: {language}")
         subtitle_streams = self.player.getAvailableSubtitleStreams()
-
-        kodilog(f"subtitle_streams:  {subtitle_streams}")
+        kodilog(f"Subtitle_streams: {subtitle_streams}")
 
         for index, stream in enumerate(subtitle_streams):
-            if preferred_language in stream.lower():
+            if language in stream.lower():
                 self.player.setSubtitleStream(index)
                 self.player.showSubtitles(True)
                 return
 
-        # self.download_and_set_subtitles()
+        self.download_and_set_subtitles()
 
     def download_and_set_subtitles(self):
+        kodilog("download_and_set_subtitles")
         data = self.player.data
 
-        mode = data.get("mode", "")
+        mode = data.get("mode")
+        imdb_id = data.get("imdb_id")
         episode = data.get("episode", "")
         season = data.get("season", "")
-        name = data.get("name", "")
-        tmdb_id = data.get("tmdb_id")
-        imdb_id = data.get("imdb_id")
 
         srt_path = (
             f"{ADDON_PATH}/{imdb_id}-subtitle_{episode}.srt"
@@ -95,13 +92,16 @@ class SubtitleManager:
             return
 
         subtitle_url = self.sub_client.get_subtitles(
-            mode, imdb_id, season, episode, iso639_2="eng"
+            mode,
+            imdb_id,
+            season,
+            episode,
         )
         subtitle_path = self.sub_client.download_subtitle(
             subtitle_url, imdb_id, episode
         )
 
-        if self.translate_subtitle:
+        if self.deepl_enabled:
             if not self.translator.DEEPL_API_KEY:
                 notification("No API key set for DEEPL")
                 raise ValueError("DeepL API key missing.")
@@ -189,41 +189,111 @@ class DeepLTranslator:
             return text
 
 
-class OpenSubtitleClient:
+class OpenSubtitleStremioClient:
     OPEN_SUBTITLES_BASE_URL = "https://opensubtitles-v3.strem.io/subtitles/"
+
+    def __init__(self, notification):
+        self.notification = notification
+
+    def get_subtitles(self, mode, imdb_id, season=None, episode=None):
+        if mode == "tv":
+            url = f"{self.OPEN_SUBTITLES_BASE_URL}series/{imdb_id}:{season}:{episode}.json"
+        else:
+            url = f"{self.OPEN_SUBTITLES_BASE_URL}movie/{imdb_id}.json"
+
+        kodilog(url)
+
+        try:
+            response = requests.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                kodilog(f"OpenSubtitles Subtitles Response: {data}")
+                subtitles_list = data.get("subtitles", [])
+
+                if subtitles_list:
+                    subtitles = [s["url"] for s in subtitles_list if s["lang"] == "eng"]
+                    if not subtitles:
+                        kodilog(
+                            "No English subtitles found, using first available subtitle"
+                        )
+                        subtitles = [subtitles_list[0]["url"]]
+
+                    return subtitles[:1]
+                else:
+                    self.notification(f"No subtitles found")
+                    return
+            else:
+                self.notification(
+                    f"Failed to fetch subtitles, status code {response.status_code}"
+                )
+                return
+        except Exception as e:
+            self.notification(f"Failed to fetch subtitles: {e}")
+            return
+
+    def download_subtitle(self, subtitle_url, imdbid, episode=None):
+        try:
+            response = requests.get(subtitle_url, stream=True)
+            if response.status_code == 200:
+                file_path = (
+                    f"{ADDON_PATH}/{imdbid}-subtitle_{episode}.srt"
+                    if episode
+                    else f"{ADDON_PATH}/{imdbid}-subtitle.srt"
+                )
+
+                with open(file_path, "wb") as file:
+                    file.write(response.content)
+                return file_path
+            else:
+                self.notification(
+                    f"Failed to download {subtitle_url}, status code {response.status_code}"
+                )
+        except Exception as e:
+            self.notification(f"Subtitle download error for {subtitle_url}: {e}")
+
+
+class OpenSubtitleClient:
+    OPEN_SUBTITLES_BASE_URL = "https://api.opensubtitles.com/api/v1//subtitles/"
     OPEN_SUBTITLES_LOGIN_URL = "https://api.opensubtitles.com/api/v1/login"
 
     def __init__(self, notification):
         self.notification = notification
         self.username = get_setting("opensub_username")
         self.password = get_setting("opensub_password")
+        self.token = get_setting("opensub_token")
         self.session_token = self.login()
 
     def login(self):
-        data = {"username": self.username, "password": self.password}
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": USER_AGENT_STRING,
-        }
-        try:
-            response = requests.post(
-                self.OPEN_SUBTITLES_BASE_URL, json=data, headers=headers
-            )
-            if response.status_code == 200:
-                response_data = response.json()
-                kodilog(f"OpenSubtitles Logging Response: {response_data}")
-                session_token = response_data.get("data", {}).get("token")
-                if session_token:
-                    return session_token
+        if not self.token:
+            data = {"username": self.username, "password": self.password}
+            headers = {
+                "Accept": "application/json",
+                "Api-Key": "",
+                "Content-Type": "application/json",
+                "User-Agent": USER_AGENT_STRING,
+            }
+            try:
+                response = requests.post(
+                    self.OPEN_SUBTITLES_BASE_URL, data=data, headers=headers
+                )
+                if response.status_code == 200:
+                    response_data = response.json()
+                    kodilog(f"OpenSubtitles Logging Response: {response_data}")
+                    session_token = response_data.get("data", {}).get("token")
+                    if session_token:
+                        set_setting("opensub_token", session_token)
+                        return session_token
+                    else:
+                        self.notification("Login failed, no token received.")
+                        return
                 else:
-                    self.notification("Login failed, no token received.")
+                    self.notification(
+                        f"Login failed, status code {response.status_code}"
+                    )
                     return
-            else:
-                self.notification(f"Login failed, status code {response.status_code}")
+            except Exception as e:
+                self.notification(f"Login error: {e}")
                 return
-        except Exception as e:
-            self.notification(f"Login error: {e}")
-            return
 
     def get_subtitles(self, imdb_id, tmdb_id, season=None, episode=None):
         if not self.session_token:
