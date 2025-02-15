@@ -80,8 +80,13 @@ class SubtitleManager:
                 return
 
         subs_paths = self.download_subtitles(subtitle_language)
-        self.player.list_item.setSubtitles(subs_paths)
-        notification("Subtitles loaded...")
+        kodilog(subs_paths)
+        if subs_paths:
+            self.player.list_item.setSubtitles(subs_paths)
+            self.player.setSubtitleStream(1)
+            self.player.showSubtitles(True)
+
+            notification("Subtitles loaded...")
 
     def download_subtitles(self, lang):
         data = self.player.data
@@ -95,10 +100,18 @@ class SubtitleManager:
             kodilog("Not supported video item")
             return
 
-        folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}"
+        if mode == "tv":
+            folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}/{episode}"
+        else:
+            folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}"
 
         if os.path.exists(folder_path):
-            return [f for f in os.listdir(folder_path) if f.endswith(".srt")]
+            kodilog("Loading subtitle from local folder")
+            return [
+                os.path.join(folder_path, f)
+                for f in os.listdir(folder_path)
+                if f.endswith(".srt")
+            ]
         else:
             subtitles = self.sub_client.get_subtitles(
                 mode,
@@ -143,10 +156,10 @@ class OpenSubtitleStremioClient:
                 if subtitles_list:
                     subtitles = [s for s in subtitles_list if s["lang"] == lang]
                     if not subtitles:
-                        kodilog(
-                            "No subtitles found the selected language, using first available subtitle"
-                        )
-                        subtitles = [subtitles_list[0]]
+                        notification("No subtitles found for language")
+                        eng_subs = [s for s in subtitles_list if s["lang"] == "eng"]
+                        if eng_subs:
+                            return [eng_subs[0]]
                     return subtitles
                 else:
                     self.notification(f"No subtitles found")
@@ -167,9 +180,9 @@ class OpenSubtitleStremioClient:
             response = requests.get(subtitle_url, stream=True)
             if response.status_code == 200:
                 file_path = (
-                    f"{ADDON_PROFILE_PATH}/{imdb_id}/{title}_{episode}_{index}_{lang}.srt"
+                    f"{ADDON_PROFILE_PATH}/{imdb_id}/{episode}/subtitle.E{episode}.{index}.{lang}.srt"
                     if episode
-                    else f"{ADDON_PROFILE_PATH}/{imdb_id}/{title}_{index}_{lang}.srt"
+                    else f"{ADDON_PROFILE_PATH}/{imdb_id}/subtitle.{index}.{lang}.srt"
                 )
 
                 with open(file_path, "wb") as file:
