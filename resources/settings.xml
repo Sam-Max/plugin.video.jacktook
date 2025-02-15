@@ -677,82 +677,63 @@
         </category>
         <category id="subtitle_cateogy" label="30879">
             <group id="opensubtitles" label="30876">
-                <setting id="opensub_username" type="string" label="30877" help="">
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="opensub_password" type="string" label="30878" help="">
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-            </group>
-            <group id="translator" label="30880">
-                <setting id="deepl_enabled" type="boolean" label="30734" help="">
+                <setting id="subtitle_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="deepl_api_key" type="string" label="30881" help="">
-                    <default />
+                <setting id="subtitle_addon_host" type="string" label="30878" help="">
+                    <default>https://opensubtitles-v3.strem.io/</default>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="deepl_enabled">true</condition>
+                            <condition operator="is" setting="subtitle_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="deepl_language" type="string" label="30882" help="">
+                <setting id="subitle_language" type="string" label="30882" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
                         <options>
-                            <option>None</option>
-                            <option>AR</option> <!-- Arabic -->
-                            <option>BG</option> <!-- Bulgarian -->
-                            <option>CS</option> <!-- Czech -->
-                            <option>DA</option> <!-- Danish -->
-                            <option>DE</option> <!-- German -->
-                            <option>EL</option> <!-- Greek -->
-                            <option>EN-GB</option> <!-- English (British) -->
-                            <option>EN-US</option> <!-- English (American) -->
-                            <option>ES</option> <!-- Spanish -->
-                            <option>ET</option> <!-- Estonian -->
-                            <option>FI</option> <!-- Finnish -->
-                            <option>FR</option> <!-- French -->
-                            <option>HU</option> <!-- Hungarian -->
-                            <option>ID</option> <!-- Indonesian -->
-                            <option>IT</option> <!-- Italian -->
-                            <option>JA</option> <!-- Japanese -->
-                            <option>KO</option> <!-- Korean -->
-                            <option>LT</option> <!-- Lithuanian -->
-                            <option>LV</option> <!-- Latvian -->
-                            <option>NB</option> <!-- Norwegian Bokmål -->
-                            <option>NL</option> <!-- Dutch -->
-                            <option>PL</option> <!-- Polish -->
-                            <option>PT-BR</option> <!-- Portuguese (Brazilian) -->
-                            <option>PT-PT</option> <!-- Portuguese (Portugal) -->
-                            <option>RO</option> <!-- Romanian -->
-                            <option>RU</option> <!-- Russian -->
-                            <option>SK</option> <!-- Slovak -->
-                            <option>SL</option> <!-- Slovenian -->
-                            <option>SV</option> <!-- Swedish -->
-                            <option>TR</option> <!-- Turkish -->
-                            <option>UK</option> <!-- Ukrainian -->
-                            <option>ZH-HANS</option> <!-- Chinese (Simplified) -->
-                            <option>ZH-HANT</option> <!-- Chinese (Traditional) -->
+                            <option value="None">None</option>
+                            <option value="ara">Arabic</option>
+                            <option value="bul">Bulgarian</option>
+                            <option value="ces">Czech</option>
+                            <option value="dan">Danish</option>
+                            <option value="deu">German</option>
+                            <option value="ell">Greek</option>
+                            <option value="eng">English</option>
+                            <option value="spa">Spanish</option>
+                            <option value="est">Estonian</option>
+                            <option value="fin">Finnish</option>
+                            <option value="fra">French</option>
+                            <option value="hun">Hungarian</option>
+                            <option value="ind">Indonesian</option>
+                            <option value="ita">Italian</option>
+                            <option value="jpn">Japanese</option>
+                            <option value="kor">Korean</option>
+                            <option value="lit">Lithuanian</option>
+                            <option value="lav">Latvian</option>
+                            <option value="nob">Norwegian Bokmål</option>
+                            <option value="nld">Dutch</option>
+                            <option value="pol">Polish</option>
+                            <option value="por">Portuguese</option>
+                            <option value="ron">Romanian</option>
+                            <option value="rus">Russian</option>
+                            <option value="slk">Slovak</option>
+                            <option value="slv">Slovenian</option>
+                            <option value="swe">Swedish</option>
+                            <option value="tur">Turkish</option>
+                            <option value="ukr">Ukrainian</option>
+                            <option value="zho">Chinese</option>
                         </options>
                     </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="deepl_enabled">true</condition>
+                            <condition operator="is" setting="subtitle_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <control type="list" format="string" />
