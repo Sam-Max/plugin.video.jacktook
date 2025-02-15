@@ -662,8 +662,10 @@ def handle_debrid_client(
 
 def play_torrent(params):
     data = json.loads(params["data"])
-    player = JacktookPLayer(db=bookmark_db)
-    player.run(data=data)
+    player = JacktookPLayer(bookmark_db)
+    subtitle_manager = SubtitleManager(player)
+    player.set_subtitle_manager(subtitle_manager) 
+    player.run(data)
     del player
 
 
