@@ -300,6 +300,44 @@ def disable_enable_addon(addon_name=ADDON_NAME):
         pass
 
 
+def get_language_code(language_name):
+    language_map = {
+        "None": "None",
+        "Arabic": "ara",
+        "Bulgarian": "bul",
+        "Czech": "ces",
+        "Danish": "dan",
+        "German": "deu",
+        "Greek": "ell",
+        "English": "eng",
+        "Spanish": "spa",
+        "Estonian": "est",
+        "Finnish": "fin",
+        "French": "fra",
+        "Hungarian": "hun",
+        "Indonesian": "ind",
+        "Italian": "ita",
+        "Japanese": "jpn",
+        "Korean": "kor",
+        "Lithuanian": "lit",
+        "Latvian": "lav",
+        "Norwegian Bokmål": "nob",
+        "Dutch": "nld",
+        "Polish": "pol",
+        "Portuguese": "por",
+        "Romanian": "ron",
+        "Russian": "rus",
+        "Slovak": "slk",
+        "Slovenian": "slv",
+        "Swedish": "swe",
+        "Turkish": "tur",
+        "Ukrainian": "ukr",
+        "Chinese": "zho"
+    }
+    
+    return language_map.get(language_name, None)
+
+
 def update_kodi_addons_db(addon_name=ADDON_NAME):
     try:
         date = time.strftime("%Y-%m-%d %H:%M:%S")
