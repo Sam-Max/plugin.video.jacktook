@@ -21,6 +21,7 @@ from lib.gui.custom_dialogs import (
 
 from lib.player import JacktookPLayer
 from lib.stremio.catalogs import list_stremio_catalogs
+from lib.subtitles import SubtitleManager
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
@@ -594,8 +595,11 @@ def search(params):
         cancel_playback()
         return
 
-    player = JacktookPLayer(db=bookmark_db)
-    player.run(data=data)
+    player = JacktookPLayer(bookmark_db)
+    subtitle_manager = SubtitleManager(player)
+    player.set_subtitle_manager(subtitle_manager) 
+    player.run(data)
+    
     del player
 
 
