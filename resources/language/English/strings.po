@@ -1276,5 +1276,9 @@ msgid "Subtitles"
 msgstr ""
 
 msgctxt "#30882"
-msgid "Language"
+msgid "Primary Language"
+msgstr ""
+
+msgctxt "#30883"
+msgid "Secondary Language"
 msgstr ""

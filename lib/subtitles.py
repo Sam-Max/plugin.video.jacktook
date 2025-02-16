@@ -7,15 +7,15 @@ from lib.utils.kodi_utils import (
     ADDON_PROFILE_PATH,
     get_language_code,
     get_setting,
-    notification,
     set_setting,
 )
 import xbmc
 
 
 class SubtitleManager:
-    def __init__(self, kodi_player):
+    def __init__(self, kodi_player, notification):
         self.player = kodi_player
+        self.notification = notification
         self.sub_client = OpenSubtitleStremioClient(notification)
 
     def json_rpc(self, method, params=None):
@@ -54,45 +54,22 @@ class SubtitleManager:
 
         subtitle_language = get_setting("subitle_language")
         if subtitle_language != "None":
-            language = get_language_code(subtitle_language)
-        else:
-            preferred_language = self.get_kodi_preferred_subtitle_language(
-                iso_format=True
-            )
-            if preferred_language == "original":
-                audio_streams = self.player.getAvailableAudioStreams()
-                if not audio_streams or len(audio_streams) == 0:
-                    return
-                language = audio_streams[0]
-            elif preferred_language == "default":
-                language = xbmc.getLanguage(xbmc.ISO_639_2)
-            elif preferred_language in ["none", "forced_only"]:
-                return
+            language_code = get_language_code(subtitle_language)
 
-        kodilog(f"Language: {language}")
-        subtitle_streams = self.player.getAvailableSubtitleStreams()
-        kodilog(f"SubtitleStreams: {subtitle_streams}")
+            kodilog(f"Language: {language_code}")
 
-        for index, stream in enumerate(subtitle_streams):
-            if language in stream.lower():
-                self.player.setSubtitleStream(index)
+            subs_paths = self.download_subtitles(language_code)
+            if subs_paths:
+                self.player.list_item.setSubtitles(subs_paths)
+                self.player.setSubtitleStream(1)
                 self.player.showSubtitles(True)
-                return
 
-        subs_paths = self.download_subtitles(subtitle_language)
-        kodilog(subs_paths)
-        if subs_paths:
-            self.player.list_item.setSubtitles(subs_paths)
-            self.player.setSubtitleStream(1)
-            self.player.showSubtitles(True)
-
-            notification("Subtitles loaded...")
+                self.notification("Subtitles loaded...")
 
     def download_subtitles(self, lang):
         data = self.player.data
         mode = data.get("mode")
         imdb_id = data.get("imdb_id")
-        title = data.get("title")
         episode = data.get("episode")
         season = data.get("season")
 
@@ -106,7 +83,7 @@ class SubtitleManager:
             folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}"
 
         if os.path.exists(folder_path):
-            kodilog("Loading subtitle from local folder")
+            kodilog("Loading subtitles from local folder")
             return [
                 os.path.join(folder_path, f)
                 for f in os.listdir(folder_path)
@@ -126,7 +103,7 @@ class SubtitleManager:
 
             return [
                 self.sub_client.download_subtitle(
-                    sub["url"], count, imdb_id, title, lang=sub["lang"], episode=episode
+                    sub["url"], count, imdb_id, lang=sub["lang"], episode=episode
                 )
                 for count, sub in enumerate(subtitles)
             ]
@@ -156,10 +133,16 @@ class OpenSubtitleStremioClient:
                 if subtitles_list:
                     subtitles = [s for s in subtitles_list if s["lang"] == lang]
                     if not subtitles:
-                        notification("No subtitles found for language")
-                        eng_subs = [s for s in subtitles_list if s["lang"] == "eng"]
-                        if eng_subs:
-                            return [eng_subs[0]]
+                        fallback_language = get_setting("subitle_fallback_language")
+                        if fallback_language != "None":
+                            language_code = get_language_code(fallback_language)
+                            subtitles = [s for s in subtitles_list if s["lang"] == language_code]
+                            if not subtitles:
+                                self.notification("No subtitles found for language")
+                                raise
+                        else:
+                            self.notification("No subtitles found for language")
+                            raise
                     return subtitles
                 else:
                     self.notification(f"No subtitles found")
@@ -174,7 +157,7 @@ class OpenSubtitleStremioClient:
             raise
 
     def download_subtitle(
-        self, subtitle_url, index, imdb_id, title, lang, episode=None
+        self, subtitle_url, index, imdb_id, lang, episode=None
     ):
         try:
             response = requests.get(subtitle_url, stream=True)

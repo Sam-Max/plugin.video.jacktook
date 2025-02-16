@@ -738,6 +738,51 @@
                     </dependencies>
                     <control type="list" format="string" />
                 </setting>
+                <setting id="subitle_fallback_language" type="string" label="30883" help="">
+                    <default>None</default>
+                    <neading>30736</neading>
+                    <constraints>
+                        <options>
+                            <option value="None">None</option>
+                            <option value="ara">Arabic</option>
+                            <option value="bul">Bulgarian</option>
+                            <option value="ces">Czech</option>
+                            <option value="dan">Danish</option>
+                            <option value="deu">German</option>
+                            <option value="ell">Greek</option>
+                            <option value="eng">English</option>
+                            <option value="spa">Spanish</option>
+                            <option value="est">Estonian</option>
+                            <option value="fin">Finnish</option>
+                            <option value="fra">French</option>
+                            <option value="hun">Hungarian</option>
+                            <option value="ind">Indonesian</option>
+                            <option value="ita">Italian</option>
+                            <option value="jpn">Japanese</option>
+                            <option value="kor">Korean</option>
+                            <option value="lit">Lithuanian</option>
+                            <option value="lav">Latvian</option>
+                            <option value="nob">Norwegian Bokmål</option>
+                            <option value="nld">Dutch</option>
+                            <option value="pol">Polish</option>
+                            <option value="por">Portuguese</option>
+                            <option value="ron">Romanian</option>
+                            <option value="rus">Russian</option>
+                            <option value="slk">Slovak</option>
+                            <option value="slv">Slovenian</option>
+                            <option value="swe">Swedish</option>
+                            <option value="tur">Turkish</option>
+                            <option value="ukr">Ukrainian</option>
+                            <option value="zho">Chinese</option>
+                        </options>
+                    </constraints>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="subtitle_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <control type="list" format="string" />
+                </setting>
             </group>
         </category>
         <category id="tmdb_category" label="30100">
