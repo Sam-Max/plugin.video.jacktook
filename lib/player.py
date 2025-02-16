@@ -46,6 +46,11 @@ class JacktookPLayer(xbmc.Player):
         self.next_dialog = get_setting("playnext_dialog_enabled")
         self.playing_next_time = int(get_setting("playnext_time"))
         self.PLAYLIST = PLAYLIST
+        self.data = None
+        self.subtitle_manager = None
+
+    def set_subtitle_manager(self, subtitle_manager):
+        self.subtitle_manager = subtitle_manager
 
     def run(self, data=None):
         self.set_constants(data)
@@ -55,37 +60,21 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
 
         try:
-            list_item = make_listing(data)
-            self.PLAYLIST.add(self.url, list_item)
+            self.list_item = make_listing(data)
+            self.PLAYLIST.add(self.url, self.list_item)
             if self.data["mode"] == "tv":
                 self.build_playlist()
-            self.play_video(list_item)
+            self.play_video(self.list_item)
         except Exception as e:
             kodilog(traceback.print_exc())
             kodilog(f"Error in run: {e}")
-            self.run_error()
-
-    def play_playlist(self):
-        close_busy_dialog()
-        try:
-            self.play(self.PLAYLIST)
-            self.check_playback_start()
-
-            if self.playback_successful:
-                self.monitor()
-            else:
-                if self.cancel_all_playback:
-                    self.kill_dialog()
-                self.stop()
-
-        except Exception as e:
-            notification(f"Error playing playlist: {e}")
             self.run_error()
 
     def play_video(self, list_item):
         close_busy_dialog()
 
         try:
+            self.subtitle_manager.download_and_set_subtitles()
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.check_playback_start()
 
@@ -106,7 +95,6 @@ class JacktookPLayer(xbmc.Player):
                 pass
 
     def check_playback_start(self):
-        kodilog("check_playback_start")
         resolve_percent = 0
 
         while self.playback_successful is None:
@@ -119,7 +107,6 @@ class JacktookPLayer(xbmc.Player):
                 execute_builtin("SendClick(okdialog, 11)")
                 self.playback_successful = False
             elif self.isPlayingVideo():
-                kodilog("isPlayingVideo")
                 try:
                     if self.getTotalTime() not in total_time_errors and get_visibility(
                         video_fullscreen_check
@@ -134,7 +121,6 @@ class JacktookPLayer(xbmc.Player):
             sleep(50)
 
     def monitor(self):
-        kodilog("playback monitor")
         ensure_dialog_dead = False
         total_check_time = 0
 
@@ -296,3 +282,4 @@ class JacktookPLayer(xbmc.Player):
         self.clear_playback_properties()
         self.cancel_playback()
         notification("Playback Failed", time=3500)
+
