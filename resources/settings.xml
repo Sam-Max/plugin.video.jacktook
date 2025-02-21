@@ -784,6 +784,74 @@
                     <control type="list" format="string" />
                 </setting>
             </group>
+            <group id="deepl_translator" label="30886">
+                <setting id="deepl_enabled" type="boolean" label="30884" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="deepl_api_key" type="string" label="30885" help="">
+                    <default></default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="deepl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="deepl_target_language" type="string" label="30887" help="">
+                    <default>None</default>
+                    <neading>30736</neading>
+                    <constraints>
+                        <options>
+                            <option value="None">None</option>
+                            <option value="ar">العربية</option>
+                            <option value="bg">Български</option>
+                            <option value="zh">中文</option>
+                            <option value="zh-Hant">繁體中文</option>
+                            <option value="zh-Hans">简体中文</option>
+                            <option value="cs">Čeština</option>
+                            <option value="da">Dansk</option>
+                            <option value="nl">Nederlands</option>
+                            <option value="en">English</option>
+                            <option value="en-GB">English (British)</option>
+                            <option value="en-US">English (American)</option>
+                            <option value="et">Eesti</option>
+                            <option value="fi">Suomi</option>
+                            <option value="fr">Français</option>
+                            <option value="de">Deutsch</option>
+                            <option value="el">Ελληνικά</option>
+                            <option value="hu">Magyar</option>
+                            <option value="id">Indonesia</option>
+                            <option value="it">Italiano</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="lv">Latviešu</option>
+                            <option value="lt">Lietuvių</option>
+                            <option value="nb">Norsk (Bokmål)</option>
+                            <option value="pl">Polski</option>
+                            <option value="pt">Português</option>
+                            <option value="pt-BR">Português (Brasil)</option>
+                            <option value="ro">Română</option>
+                            <option value="ru">Русский</option>
+                            <option value="sk">Slovenčina</option>
+                            <option value="sl">Slovenščina</option>
+                            <option value="es">Español</option>
+                            <option value="sv">Svenska</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="uk">Українська</option>
+                        </options>
+                    </constraints>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="deepl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <control type="list" format="string" />
+                </setting>
+            </group>
         </category>
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">

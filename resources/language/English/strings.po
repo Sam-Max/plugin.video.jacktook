@@ -1282,3 +1282,19 @@ msgstr ""
 msgctxt "#30883"
 msgid "Secondary Language"
 msgstr ""
+
+msgctxt "#30884"
+msgid "Deepl Enabled"
+msgstr ""
+
+msgctxt "#30885"
+msgid "Deepl Api key"
+msgstr ""
+
+msgctxt "#30886"
+msgid "Translator Configuration"
+msgstr ""
+
+msgctxt "#30887"
+msgid "Deepl Target Language"
+msgstr ""

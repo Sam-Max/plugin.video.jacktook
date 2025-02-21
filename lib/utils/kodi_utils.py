@@ -300,6 +300,48 @@ def disable_enable_addon(addon_name=ADDON_NAME):
         pass
 
 
+def get_deepl_language_code(language_name):
+    language_mapping = {
+        "None": "None",
+        "العربية": "ar",
+        "Български": "bg",
+        "中文": "zh",
+        "繁體中文": "zh-Hant",
+        "简体中文": "zh-Hans",
+        "Čeština": "cs",
+        "Dansk": "da",
+        "Nederlands": "nl",
+        "English": "en",
+        "English (British)": "en-GB",
+        "English (American)": "en-US",
+        "Eesti": "et",
+        "Suomi": "fi",
+        "Français": "fr",
+        "Deutsch": "de",
+        "Ελληνικά": "el",
+        "Magyar": "hu",
+        "Indonesia": "id",
+        "Italiano": "it",
+        "日本語": "ja",
+        "한국어": "ko",
+        "Latviešu": "lv",
+        "Lietuvių": "lt",
+        "Norsk (Bokmål)": "nb",
+        "Polski": "pl",
+        "Português": "pt",
+        "Português (Brasil)": "pt-BR",
+        "Română": "ro",
+        "Русский": "ru",
+        "Slovenčina": "sk",
+        "Slovenščina": "sl",
+        "Español": "es",
+        "Svenska": "sv",
+        "Türkçe": "tr",
+        "Українська": "uk",
+    }
+    return language_mapping.get(language_name, None)
+
+
 def get_language_code(language_name):
     language_map = {
         "None": "None",
@@ -332,9 +374,9 @@ def get_language_code(language_name):
         "Swedish": "swe",
         "Turkish": "tur",
         "Ukrainian": "ukr",
-        "Chinese": "zho"
+        "Chinese": "zho",
     }
-    
+
     return language_map.get(language_name, None)
 
 

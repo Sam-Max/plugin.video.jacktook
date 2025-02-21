@@ -1,15 +1,20 @@
 import json
 import os
+import traceback
 import requests
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
     ADDON_PATH,
     ADDON_PROFILE_PATH,
+    get_deepl_language_code,
     get_language_code,
     get_setting,
     set_setting,
+    sleep,
 )
+from lib.utils.utils import USER_AGENT_STRING
 import xbmc
+import xbmcgui
 
 
 class SubtitleManager:
@@ -17,6 +22,7 @@ class SubtitleManager:
         self.player = kodi_player
         self.notification = notification
         self.sub_client = OpenSubtitleStremioClient(notification)
+        self.translator = DeepLTranslator(notification)
 
     def json_rpc(self, method, params=None):
         request_data = {
@@ -98,15 +104,244 @@ class SubtitleManager:
                 lang,
             )
 
-            if not os.path.exists(folder_path):
-                os.makedirs(folder_path)
+            if subtitles:
+                if not os.path.exists(folder_path):
+                    os.makedirs(folder_path)
 
-            return [
-                self.sub_client.download_subtitle(
-                    sub["url"], count, imdb_id, lang=sub["lang"], episode=episode
+                download_subtitles = [
+                    self.sub_client.download_subtitle(
+                        sub["url"], count, imdb_id, lang=sub["lang"], episode=episode
+                    )
+                    for count, sub in enumerate(subtitles)
+                ]
+            
+                if get_setting("deepl_enabled"):
+                    return self.translator.process_subtitles(download_subtitles, imdb_id, season, episode)
+
+                return download_subtitles
+
+class DeepLTranslator:
+    def __init__(self, notification):
+        self.base_url = "https://api-free.deepl.com/v2"
+        self.api_key = get_setting("deepl_api_key")
+        self.target_lang = get_setting("deepl_target_language")
+        self.notification = notification
+
+    def save_translated_subs(
+        self,
+        count,
+        imdbid,
+        season,
+        episode,
+        document_id,
+        document_key,
+    ):
+        """
+        Download the translated document from DeepL and save it as an .srt file.
+        The file path is determined based on whether season/episode info is provided.
+        """
+        if season and episode:
+            new_subtitle_file_path = (
+                f"{ADDON_PROFILE_PATH}/{imdbid}/{season}/subtitle.translated.{episode}.{count}.srt"
+            )
+        else:
+            new_subtitle_file_path = (
+                f"{ADDON_PROFILE_PATH}/{imdbid}/subtitle.translated.{count}.srt"
+            )
+
+        url = f"{self.base_url}/document/{document_id}/result"
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        
+        response = requests.post(url, json={"document_key": document_key}, headers=headers)
+        if response.status_code != 200:
+            error_text = response.text
+            kodilog(f"DeepL API error response: {error_text}")
+            raise Exception("DeepL API error during result download")
+        
+        os.makedirs(os.path.dirname(new_subtitle_file_path), exist_ok=True)
+        
+        with open(new_subtitle_file_path, "wb") as f:
+            f.write(response.content)
+        
+        kodilog(f"Translation saved to: {new_subtitle_file_path}")
+
+        return new_subtitle_file_path
+
+    def check_remaining_api(self, subtitles, apikeyremaining):
+        """
+        Check the total character count across subtitle files to ensure it is within your API limits.
+        """
+        filepaths = subtitles 
+
+        total_character_count = 0
+        for file_path in filepaths:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                lines = content.split("\n")
+                iscount = True
+                istimecode = False
+                istext = False
+                characters = []
+                textcount = 0
+
+                for line in lines:
+                    if line.strip() == "":
+                        iscount = True
+                        istimecode = False
+                        istext = False
+                        textcount = 0
+                    elif iscount:
+                        iscount = False
+                        istimecode = True
+                    elif istimecode:
+                        istimecode = False
+                        istext = True
+                    elif istext:
+                        if textcount == 0:
+                            characters.append(line)
+                        else:
+                            characters[-1] += " \n" + line
+                        textcount += 1
+
+                for text in characters:
+                    total_character_count += len(text)
+            except Exception as error:
+                kodilog(f"Error processing subtitle file {file_path}: {error}")
+
+        kodilog(f"Total character count for translation: {total_character_count}")
+
+        if apikeyremaining > total_character_count:
+            kodilog("Sufficient API characters remaining. Proceeding with translation.")
+            return True
+        else:
+            kodilog(
+                    f"Insufficient API characters remaining. Required: {total_character_count}, Available: {apikeyremaining}"
                 )
-                for count, sub in enumerate(subtitles)
-            ]
+            return False
+
+    def check_file_limits(self, file_path):
+        """
+        Check if a file meets size and character count limits.
+        """
+        MAX_FILE_SIZE_KB = 150
+        MAX_CHARACTERS = 1000000
+
+        stats = os.stat(file_path)
+        file_size_kb = stats.st_size / 1024
+
+        if file_size_kb > MAX_FILE_SIZE_KB:
+            msg = f"File size ({file_size_kb:.2f} KB) exceeds the limit of {MAX_FILE_SIZE_KB} KB"
+            raise Exception(msg)
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        character_count = len(content)
+
+        if character_count > MAX_CHARACTERS:
+            msg = f"Character count ({character_count}) exceeds the limit of {MAX_CHARACTERS}"
+            raise Exception(msg)
+
+        kodilog(f"File check passed: Size={file_size_kb:.2f}KB, Characters={character_count}")
+
+    def check_status(self, document_id, document_key):
+        """
+        Check the status of a document translation.
+        """
+        url = f"{self.base_url}/document/{document_id}"
+        headers = {
+            "Authorization": f"DeepL-Auth-Key {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        response = requests.get(url, params={"document_key": document_key}, headers=headers)
+        
+        kodilog("Check status response text: " + response.text)
+
+        if response.status_code != 200:
+            text = response.text
+            kodilog(f"DeepL API error response: {text}")
+            raise Exception("DeepL API error during status check")
+        
+        data = response.json()
+        
+        return data
+
+    def wait_for_translation(self, document_id, document_key):
+        """
+        Poll DeepL until the translation is complete.
+        """
+        while True:
+            status = self.check_status(document_id, document_key)
+            if status.get("status") == "done":
+                kodilog(f"Translation completed for document {document_id}")
+                return status
+            elif status.get("status") == "error":
+                msg = f"Translation failed for document {document_id}: {status.get('message')}"
+                kodilog(msg)
+                raise Exception(f"Translation failed: {status.get('message')}")
+            sleep(5000) 
+
+    def translate_document(self, filepath, imdbid, season, episode):
+        """
+        Upload a document for translation, wait for completion, then download and save the result.
+        """
+        try:
+            self.notification("Translating subtitle...")
+            self.check_file_limits(file_path=filepath)
+            # Prepare multipart form data for document upload.
+            url = f"{self.base_url}/document"
+            files = {
+                "file": (os.path.basename(filepath), open(filepath, "rb"), "application/octet-stream")
+            }
+            
+            kodilog(f"Target language: {get_deepl_language_code(self.target_lang)}")
+            data = {"target_lang": get_deepl_language_code(self.target_lang)}
+
+            headers = {"Authorization": f"DeepL-Auth-Key {self.api_key}"}
+
+            upload_response = requests.post(url, files=files, data=data, headers=headers)
+
+            kodilog("Raw response content: " + upload_response.text)
+
+            if upload_response.status_code != 200:
+                kodilog(f"Error uploading document: {upload_response.text}")
+                raise Exception("Error uploading document")
+            
+            upload_data = upload_response.json()
+
+            if "document_id" not in upload_data or "document_key" not in upload_data:
+                raise Exception(f"Invalid response from document upload: {upload_data}")
+
+            document_id = upload_data["document_id"]
+            document_key = upload_data["document_key"]
+
+            self.wait_for_translation(document_id, document_key)
+
+            self.notification("Translation done.")
+
+            return self.save_translated_subs(1, imdbid, season, episode, document_id, document_key)
+        except Exception as error:
+            kodilog(f"Error in translate_document: {error}")
+            raise
+
+    def process_subtitles(self, filepaths, imdbid, season, episode):
+        """
+        Process multiple subtitle files by translating each one.
+        """
+        translated_subtitles = []
+        for fp in filepaths:
+            try:
+                translated_sub = self.translate_document(fp, imdbid, season, episode)
+                translated_subtitles.append(translated_sub)
+            except Exception as error:
+                traceback.print_exc()
+                self.notification(f"Subtitle translate error: {error}")
+        return translated_subtitles
 
 
 class OpenSubtitleStremioClient:
@@ -136,17 +371,36 @@ class OpenSubtitleStremioClient:
                         fallback_language = get_setting("subitle_fallback_language")
                         if fallback_language != "None":
                             language_code = get_language_code(fallback_language)
-                            subtitles = [s for s in subtitles_list if s["lang"] == language_code]
+                            subtitles = [
+                                s for s in subtitles_list if s["lang"] == language_code
+                            ]
+                            
                             if not subtitles:
                                 self.notification("No subtitles found for language")
-                                raise
+                                return
+
+                            if get_setting("deepl_enabled"):
+                                subtitles_items = [xbmcgui.ListItem(label=f"Subtitle No. {e}", label2=f"{s["url"]}") for e, s in enumerate(subtitles_list)]
+                                dialog = xbmcgui.Dialog()
+                                selected_indexes = dialog.multiselect(
+                                    "Subtitles Selection",
+                                    subtitles_items,
+                                    useDetails=True,
+                                )
+
+                                if selected_indexes is None:
+                                    return []
+
+                                subtitles = [
+                                    subtitles[index] for index in selected_indexes
+                                ]
                         else:
                             self.notification("No subtitles found for language")
-                            raise
+                            return
                     return subtitles
                 else:
                     self.notification(f"No subtitles found")
-                    raise
+                    return
             else:
                 self.notification(
                     f"Failed to fetch subtitles, status code {response.status_code}"
@@ -156,9 +410,7 @@ class OpenSubtitleStremioClient:
             self.notification(f"Failed to fetch subtitles: {e}")
             raise
 
-    def download_subtitle(
-        self, subtitle_url, index, imdb_id, lang, episode=None
-    ):
+    def download_subtitle(self, subtitle_url, index, imdb_id, lang, episode=None):
         try:
             response = requests.get(subtitle_url, stream=True)
             if response.status_code == 200:
