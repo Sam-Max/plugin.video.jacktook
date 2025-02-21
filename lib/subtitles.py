@@ -84,7 +84,7 @@ class SubtitleManager:
             return
 
         if mode == "tv":
-            folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}/{episode}"
+            folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}/{season}"
         else:
             folder_path = f"{ADDON_PROFILE_PATH}/{imdb_id}"
 
@@ -110,7 +110,7 @@ class SubtitleManager:
 
                 download_subtitles = [
                     self.sub_client.download_subtitle(
-                        sub["url"], count, imdb_id, lang=sub["lang"], episode=episode
+                        sub["url"], count, imdb_id, lang=sub["lang"], season=season, episode=episode
                     )
                     for count, sub in enumerate(subtitles)
                 ]
@@ -410,12 +410,12 @@ class OpenSubtitleStremioClient:
             self.notification(f"Failed to fetch subtitles: {e}")
             raise
 
-    def download_subtitle(self, subtitle_url, index, imdb_id, lang, episode=None):
+    def download_subtitle(self, subtitle_url, index, imdb_id, lang, season=None, episode=None):
         try:
             response = requests.get(subtitle_url, stream=True)
             if response.status_code == 200:
                 file_path = (
-                    f"{ADDON_PROFILE_PATH}/{imdb_id}/{episode}/subtitle.E{episode}.{index}.{lang}.srt"
+                    f"{ADDON_PROFILE_PATH}/{imdb_id}/{season}/subtitle.E{episode}.{index}.{lang}.srt"
                     if episode
                     else f"{ADDON_PROFILE_PATH}/{imdb_id}/subtitle.{index}.{lang}.srt"
                 )
