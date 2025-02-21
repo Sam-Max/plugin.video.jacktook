@@ -1262,3 +1262,39 @@ msgstr ""
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr "Alternar complementos de catalogos"
+
+msgctxt "#30876"
+msgid "Subtitles Configuration"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Addon Host"
+msgstr ""
+
+msgctxt "#30879"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30882"
+msgid "Primary Language"
+msgstr ""
+
+msgctxt "#30883"
+msgid "Secondary Language"
+msgstr ""
+
+msgctxt "#30884"
+msgid "Deepl Enabled"
+msgstr ""
+
+msgctxt "#30885"
+msgid "Deepl Api key"
+msgstr ""
+
+msgctxt "#30886"
+msgid "Translator Configuration"
+msgstr ""
+
+msgctxt "#30887"
+msgid "Deepl Target Language"
+msgstr ""
