@@ -2,12 +2,12 @@ from lib.clients.base import BaseClient
 from lib.utils.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.stremio.addons_manager import Addon
 from lib.stremio.stream import Stream
-
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import convert_size_to_bytes
 from lib.utils.language_detection import find_languages_in_string
-import re
 
+import re
+from urllib.parse import quote
 
 class StremioAddonCatalogsClient(BaseClient):
     def __init__(self, params):
@@ -21,7 +21,15 @@ class StremioAddonCatalogsClient(BaseClient):
     def parse_response(self, res):
         pass
 
-    def get_catalog_info(self, skip, force_refresh=False):
+    def search_catalog(self, query):
+        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}/search={quote(query)}.json"
+        kodilog(url)
+        res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        if res.status_code != 200:
+            return
+        return res.json()
+
+    def get_catalog_info(self, skip):
         url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}/skip={skip}.json"
         kodilog(url)
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
