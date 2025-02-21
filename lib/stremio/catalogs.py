@@ -1,9 +1,12 @@
 import json
+from lib.api.jacktook.kodi import kodilog
+from lib.db.main_db import main_db
+from lib.utils.catalogs_utils import catalogs_get_cache
+from lib.utils.utils import add_next_button
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
-from lib.clients.stremio_addon import StremioAddonCatalogsClient
 from lib.stremio.ui import get_selected_catalogs_addons
-from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification
+from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification, show_keyboard
 from lib.utils.tmdb_utils import tmdb_get
 
 
@@ -18,11 +21,32 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                 catalog_name = catalog.get("name")
                 catalog_id = catalog.get("id")
 
+                search_capabilities = any(
+                    extra["name"] == "search" for extra in catalog.get("extra", [])
+                )
+
+                if search_capabilities:
+                    listitem = ListItem(label=f"Search-{catalog_name}")
+                    listitem.setArt({"icon": addon.manifest.logo})
+
+                    addDirectoryItem(
+                        ADDON_HANDLE,
+                        build_url(
+                            "search_catalog",
+                            page=1,
+                            addon_url=addon.url(),
+                            catalog_type=catalog["type"],
+                            catalog_id=catalog_id,
+                        ),
+                        listitem,
+                        isFolder=True,
+                    )
+
                 if catalog_name or catalog_id:
                     action = "list_stremio_catalog"
-                    name = addon.manifest.name
-                    if name == "Cinemeta":
-                        label = f"{name} - {catalog['name'] or catalog['id']}"
+                    addon_name = addon.manifest.name
+                    if addon_name == "Cinemeta":
+                        label = f"{addon_name} - {catalog_name or catalog_id}"
                     else:
                         label = catalog_name or catalog_id
 
@@ -44,14 +68,100 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                     )
 
 
+def search_catalog(params):
+    page = int(params["page"])
+
+    if page == 1:
+        query = show_keyboard(id=30241)
+        if not query:
+            return
+        main_db.set_query("search_catalog_query", query)
+    else:
+        query = main_db.get_query("search_catalog_query")
+
+    response = catalogs_get_cache("search_catalog", params, query)
+    if not response:
+        return
+
+    meta_data = response.get("metas", {})
+
+    kodilog(f"Catalog response: {meta_data}")
+
+    for meta in meta_data:
+        if meta["type"] == "series":
+            tmdb_id = meta.get("moviedb_id")
+            imdb_id = meta.get("imdb_id")
+
+            if tmdb_id or imdb_id:
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+                url = build_url(
+                    "tv_seasons_details",
+                    ids=ids,
+                    mode="tv",
+                    media_type="tv",
+                )
+            else:
+                url = build_url(
+                    "list_stremio_seasons",
+                    addon_url=params["addon_url"],
+                    catalog_type=params["catalog_type"],
+                    video_id=meta["id"],
+                )
+        elif meta["type"] == "movie":
+            tmdb_id = None
+            id = meta.get("id", "")
+            if "tmdb" in id:
+                tmdb_id = id.split(":")[1]
+
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": meta.get("imdb_id")}
+            url = build_url("search", mode="movies", query=meta["name"], ids=ids)
+        else:
+            continue
+
+        list_item = ListItem(label=f"{meta['name']}")
+
+        tags = list_item.getVideoInfoTag()
+        tags.setUniqueID(
+            meta["id"], type="imdb" if meta["id"].startswith("tt") else "mf"
+        )
+        tags.setTitle(meta["name"])
+        tags.setPlot(meta.get("description", ""))
+        # tags.setRating(float(meta.get("imdbRating", 0) or 0))
+        tags.setGenres(meta.get("genres", []))
+        tags.setMediaType("video")
+
+        if meta["type"] == "movie":
+            list_item.setProperty("IsPlayable", "true")
+            isFolder = False
+        else:
+            isFolder = True
+
+        list_item.setArt(
+            {
+                "thumb": meta.get("poster", ""),
+                "poster": meta.get("poster", ""),
+                "fanart": meta.get("poster", ""),
+                "icon": meta.get("poster", ""),
+                "banner": meta.get("background", ""),
+                "landscape": meta.get("background", ""),
+            }
+        )
+
+        addDirectoryItem(
+            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=isFolder
+        )
+
+    add_next_button("search_catalog", page=page, mode=params["catalog_type"])
+    endOfDirectory(ADDON_HANDLE)
+
+
 def list_stremio_catalog(params):
     content_type = "movies" if params["catalog_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
     skip = int(params.get("skip", 0))
 
-    addon = StremioAddonCatalogsClient(params)
-    response = addon.get_catalog_info(skip)
+    response = catalogs_get_cache("list_stremio_catalog", params, skip)
     if not response:
         return
 
@@ -128,7 +238,12 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
                     video_id=video["id"],
                 )
         elif video["type"] == "movie":
-            ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": video.get("imdb_id")}
+            tmdb_id = None
+            id = video.get("id", "")
+            if "tmdb" in id:
+                tmdb_id = id.split(":")[1]
+
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": video.get("imdb_id")}
             url = build_url("search", mode="movies", query=video["name"], ids=ids)
         else:
             continue
@@ -141,7 +256,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
         )
         tags.setTitle(video["name"])
         tags.setPlot(video.get("description", ""))
-        tags.setRating(float(video.get("imdbRating", 0) or 0))
+        # tags.setRating(float(video.get("imdbRating", 0) or 0))
         tags.setGenres(video.get("genres", []))
         tags.setMediaType("video")
 
@@ -168,8 +283,8 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
 
 
 def list_stremio_seasons(params):
-    addon = StremioAddonCatalogsClient(params)
-    response = addon.get_meta_info()
+    kodilog("catalogs::list_stremio_seasons")
+    response = catalogs_get_cache("list_stremio_seasons", params)
     if not response:
         return
 
@@ -222,8 +337,8 @@ def list_stremio_seasons(params):
 
 
 def list_stremio_episodes(params):
-    addon = StremioAddonCatalogsClient(params)
-    response = addon.get_meta_info()
+    kodilog("catalogs::list_stremio_episodes")
+    response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
         return
 
@@ -244,15 +359,24 @@ def list_stremio_episodes(params):
         if season != int(params["season"]):
             continue
 
+        title = video.get("title") or video.get("name")
+
         tv_data = {
-            "name": video["title"],
+            "name": title,
             "episode": episode,
             "season": season,
         }
 
         ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": None}
 
-        if imdb_id := video.get("imdb_id"):
+        if imdb_id := meta_data.get("imdb_id"):
+            ids["imdb_id"] = imdb_id
+            res = tmdb_get("find_by_imdb_id", imdb_id)
+            if res["tv_results"]:
+                ids["tmdb_id"] = res["tv_results"][0]["id"]
+
+        if video["id"].startswith("tt") and not imdb_id:
+            imdb_id = meta_data["id"].split(":")[0]
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
             if res["tv_results"]:
@@ -267,16 +391,16 @@ def list_stremio_episodes(params):
             tv_data=tv_data,
         )
 
-        list_item = ListItem(label=f"{season}x{episode}. {video['title']}")
+        list_item = ListItem(label=f"{season}x{episode}. {title}")
         tags = list_item.getVideoInfoTag()
         tags.setUniqueID(
             meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
         )
-        tags.setTitle(video["title"])
+        tags.setTitle(title)
         tags.setPlot(video.get("overview", ""))
         tags.setRating(float(meta_data.get("imdbRating", 0)))
         tags.setGenres(meta_data.get("genres", []))
-        tags.setTvShowTitle(video["title"])
+        tags.setTvShowTitle(title)
         tags.setSeason(season)
         tags.setEpisode(episode)
 
@@ -301,8 +425,7 @@ def list_stremio_episodes(params):
 
 
 def list_stremio_tv(params):
-    addon = StremioAddonCatalogsClient(params)
-    response = addon.get_stream_info()
+    response = catalogs_get_cache("list_stremio_tv", params)
     if not response:
         return
 
