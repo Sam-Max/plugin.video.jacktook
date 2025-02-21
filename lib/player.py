@@ -98,6 +98,7 @@ class JacktookPLayer(xbmc.Player):
 
         except Exception as e:
             kodilog(f"Error during playback: {e}")
+            kodilog(traceback.format_exc())
             self.run_error()
         finally:
             try:

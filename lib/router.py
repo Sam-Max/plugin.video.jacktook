@@ -50,7 +50,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.stremio.catalogs import list_stremio_catalog, list_stremio_episodes, list_stremio_seasons, list_stremio_tv, list_stremio_tv_streams
+from lib.stremio.catalogs import list_stremio_catalog, list_stremio_episodes, list_stremio_seasons, list_stremio_tv, list_stremio_tv_streams, search_catalog
 from lib.telegram import (
     get_telegram_files,
     get_telegram_latest,
@@ -131,6 +131,7 @@ def addon_router():
         "list_stremio_episodes": list_stremio_episodes,
         "list_stremio_tv_streams": list_stremio_tv_streams,
         "list_stremio_tv": list_stremio_tv,
+        "search_catalog": search_catalog,
         "tv_menu": tv_menu,
         'stremio_login': stremio_login,
         'stremio_logout': stremio_logout,
