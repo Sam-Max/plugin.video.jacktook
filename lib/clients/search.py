@@ -27,6 +27,7 @@ def search_client(
 
         if indexer_key != Indexer.BURST:
             update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
+        
         client = get_client(indexer_key)
         if not client:
             return []
@@ -142,10 +143,13 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
+                kodilog(f"Results from {future}: {results}")
                 if results:
                     total_results.extend(results)
             except Exception as e:
-                kodilog(f"Error: {e}")
+                import traceback
+                error_details = traceback.format_exc()
+                kodilog(f"Error occurred while processing a task: {e}\n{error_details}")
 
     if mode == "tv" or media_type == "tv" or mode == "anime":
         set_cached(total_results, query, params=(episode, "index"))

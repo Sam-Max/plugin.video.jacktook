@@ -752,13 +752,19 @@ def check_season_pack(results, season_num):
 def pre_process(results, mode, episode_name, episode, season):
     results = remove_duplicate(results)
 
+    kodilog(f"remove_duplicate: {results}", level=xbmc.LOGDEBUG)
+
     if get_setting("stremio_enabled") and get_setting("torrent_enable"):
+        kodilog(f"stremio_enabled: {results}", level=xbmc.LOGDEBUG)
         results = filter_torrent_sources(results)
 
     if mode == "tv" and get_setting("filter_by_episode"):
+        kodilog(f"filter_by_episode: {results}", level=xbmc.LOGDEBUG)
         results = filter_by_episode(results, episode_name, episode, season)
 
-    results = filter_by_quality(results)
+    results = filter_by_quality(results,)
+
+    kodilog(f"filter_by_quality: {results}", level=xbmc.LOGDEBUG)
 
     return results
 
