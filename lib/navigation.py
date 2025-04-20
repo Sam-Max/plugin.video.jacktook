@@ -282,6 +282,12 @@ def animation_item(params):
 def telegram_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
+        build_url("search_direct", mode="direct"),
+        list_item("Search", "search.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
         build_url("get_telegram_latest", page=1),
         list_item("Latest", "cloud.png"),
         isFolder=True,
@@ -346,25 +352,7 @@ def movies_items(params):
 
 
 def direct_menu(params):
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("Search", "search.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("TV Search", "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("Movie Search", "movies.png"),
-        isFolder=True,
-    )
-    endOfDirectory(ADDON_HANDLE)
+    search_direct({"mode": "direct"})
 
 
 def anime_menu(params):
