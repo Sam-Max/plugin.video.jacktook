@@ -67,25 +67,6 @@ class JacktookPLayer(xbmc.Player):
             self.play_video(self.list_item)
         except Exception as e:
             kodilog(traceback.print_exc())
-            kodilog(f"Error in run: {e}")
-            self.run_error()
-
-    def play_video(self, list_item):
-        close_busy_dialog()
-
-        try:
-            self.subtitle_manager.download_and_set_subtitles()
-            setResolvedUrl(ADDON_HANDLE, True, list_item)
-            self.check_playback_start()
-
-            if self.playback_successful:
-                self.monitor()
-            else:
-                if self.cancel_all_playback:
-                    self.kill_dialog()
-                self.stop()
-
-        except Exception as e:
             kodilog(f"Error during playback: {e}")
             self.run_error()
         finally:
@@ -93,6 +74,20 @@ class JacktookPLayer(xbmc.Player):
                 del self.kodi_monitor
             except:
                 pass
+
+    def play_video(self, list_item):
+        close_busy_dialog()
+
+        self.subtitle_manager.download_and_set_subtitles()
+        setResolvedUrl(ADDON_HANDLE, True, list_item)
+        self.check_playback_start()
+
+        if self.playback_successful:
+            self.monitor()
+        else:
+            if self.cancel_all_playback:
+                self.kill_dialog()
+            self.stop()
 
     def check_playback_start(self):
         resolve_percent = 0
