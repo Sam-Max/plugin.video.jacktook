@@ -1,22 +1,23 @@
-from lib.clients.base import BaseClient
+from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi_utils import translation
 from lib.utils.settings import get_prowlarr_timeout
+from typing import List, Optional
 
 
 class Prowlarr(BaseClient):
-    def __init__(self, host, apikey, notification):
+    def __init__(self, host: str, apikey: str, notification: callable) -> None:
         super().__init__(host, notification)
         self.base_url = f"{self.host}/api/v1/search"
         self.apikey = apikey
 
     def search(
         self,
-        query,
-        mode,
-        season,
-        episode,
-        indexers,
-    ):
+        query: str,
+        mode: str,
+        season: Optional[int],
+        episode: Optional[int],
+        indexers: Optional[str],
+    ) -> Optional[List[TorrentStream]]:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -26,7 +27,7 @@ class Prowlarr(BaseClient):
         try:
             params = {"query": query}
             params["type"] = "search"
-            
+
             if mode == "tv":
                 params["categories"] = [5000, 8000]
                 query = f"{query} S{int(season):02d}E{int(episode):02d}"
@@ -51,19 +52,27 @@ class Prowlarr(BaseClient):
         except Exception as e:
             self.handle_exception(f"{translation(30230)}: {str(e)}")
 
-    def parse_response(self, res):
+    def parse_response(self, res: any) -> List[TorrentStream]:
         response = res.json()
+        results = []
         for res in response:
-            res.update(
-                {
-                    "type": "Torrent",
-                    "indexer": "Prowlarr",
-                    "provider": res.get("indexer"),
-                    "peers": int(res.get("peers", 0)),
-                    "seeders": int(res.get("seeders", 0)),
-                }
+            results.append(
+                TorrentStream(
+                    title=res.get("title", ""),
+                    type="Torrent",
+                    indexer="Prowlarr",
+                    provider=res.get("indexer"),
+                    peers=int(res.get("peers", 0)),
+                    seeders=int(res.get("seeders", 0)),
+                    guid="",
+                    infoHash="",
+                    size=0,
+                    languages=[],
+                    fullLanguages="",
+                    publishDate="",
+                )
             )
-        return response
+        return results
 
 
 """ if anime_indexers:

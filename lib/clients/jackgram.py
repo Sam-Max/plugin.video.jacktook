@@ -1,20 +1,33 @@
-import json
-from lib.clients.base import BaseClient
+from typing import List, Dict, Optional, Any
+from lib.api.jacktook.kodi import kodilog
+from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi_utils import translation
 
 
 class Jackgram(BaseClient):
-    def __init__(self, host, notification):
+    def __init__(self, host: str, notification: callable) -> None:
         super().__init__(host, notification)
 
-    def search(self, tmdb_id, query, mode, media_type, season, episode):
+    def search(
+        self,
+        tmdb_id: str,
+        query: str,
+        mode: str,
+        media_type: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> Optional[List[TorrentStream]]:
         try:
+            kodilog(f"Searching for {query} on Jackgram")
+
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{tmdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/movie/{tmdb_id}.json"
             else:
                 url = f"{self.host}/search?query={query}"
+
+            kodilog(f"URL: {url}")
 
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
@@ -26,38 +39,38 @@ class Jackgram(BaseClient):
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
 
-    def get_latest(self, page):
+    def get_latest(self, page: int) -> Optional[Dict[str, Any]]:
         url = f"{self.host}/stream/latest?page={page}"
         res = self.session.get(url, timeout=10)
         if res.status_code != 200:
             return
         return res.json()
-    
-    def get_files(self, page):
+
+    def get_files(self, page: int) -> Optional[Dict[str, Any]]:
         url = f"{self.host}/stream/files?page={page}"
         res = self.session.get(url, timeout=10)
         if res.status_code != 200:
             return
         return res.json()
 
-    def parse_response(self, res):
+    def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()
         results = []
         for item in res["streams"]:
             results.append(
-                {
-                    "title": item["title"],
-                    "type": "Direct",
-                    "indexer": item["name"],
-                    "size": item["size"],
-                    "publishDate": item["date"],
-                    "duration": item["duration"],
-                    "downloadUrl": item["url"],
-                }
+                TorrentStream(
+                    title=item["title"],
+                    type="Direct",
+                    indexer=item["name"],
+                    size=item["size"],
+                    publishDate=item["date"],
+                    duration=item["duration"],
+                    downloadUrl=item["url"],
+                )
             )
         return results
 
-    def parse_response_search(self, res):
+    def parse_response_search(self, res: Any) -> List[Dict[str, Any]]:
         res = res.json()
         results = []
         for item in res["results"]:
