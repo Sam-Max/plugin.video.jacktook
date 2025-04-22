@@ -1,6 +1,7 @@
 import copy
 import time
 from datetime import datetime
+from typing import List, Dict, Optional, Union
 from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.debrid_client import ProviderException
 from lib.clients.debrid.realdebrid import RealDebrid
@@ -17,36 +18,45 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
+from lib.domain.torrent import TorrentStream
 
 
 class LinkNotFoundError(Exception):
     pass
 
+
 class RealDebridHelper:
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = RealDebrid(token=get_setting("real_debrid_token"))
 
-    def check_rd_cached(self, results, cached_results, uncached_results, total, dialog, lock):
+    def check_rd_cached(
+        self,
+        results: List[TorrentStream],
+        cached_results: List[Dict],
+        uncached_results: List[Dict],
+        total: int,
+        dialog: object,
+        lock: object,
+    ) -> None:
         """Checks if torrents are cached in Real-Debrid."""
         torr_available = self.client.get_user_torrent_list()
         torr_available_hashes = {torr["hash"] for torr in torr_available}
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("RD", total, dialog, lock)
-            res["type"] = Debrids.RD
+            res.type = Debrids.RD
 
             with lock:
-                if res.get("infoHash") in torr_available_hashes:
-                    res["isCached"] = True
+                if res.infoHash in torr_available_hashes:
+                    res.isCached = True
                     cached_results.append(res)
                 else:
-                    res["isCached"] = False
+                    res.isCached = False
                     uncached_results.append(res)
-
         # Add uncached_results due to RD removing cached check endpoint
         cached_results.extend(uncached_results)
 
-    def add_rd_magnet(self, info_hash, is_pack=False):
+    def add_rd_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
             torrent_info = self.client.get_available_torrent(info_hash)
@@ -85,20 +95,28 @@ class RealDebridHelper:
             notification(str(e))
             raise
 
-    def handle_file_selection(self, torrent_info, is_pack):
+    def handle_file_selection(self, torrent_info: Dict, is_pack: bool) -> None:
         """Handles file selection for Real-Debrid torrents."""
         files = torrent_info["files"]
         extensions = supported_video_extensions()[:-1]
 
-        video_files = [item for item in files if any(item["path"].lower().endswith(ext) for ext in extensions)]
+        video_files = [
+            item
+            for item in files
+            if any(item["path"].lower().endswith(ext) for ext in extensions)
+        ]
 
         if video_files:
-            torrents_ids = [str(i["id"]) for i in video_files] if is_pack or len(video_files) > 1 else [str(video_files[0]["id"])]
+            torrents_ids = (
+                [str(i["id"]) for i in video_files]
+                if is_pack or len(video_files) > 1
+                else [str(video_files[0]["id"])]
+            )
             if torrents_ids:
                 kodilog(",".join(torrents_ids))
                 self.client.select_files(torrent_info["id"], ",".join(torrents_ids))
 
-    def get_rd_link(self, info_hash, data):
+    def get_rd_link(self, info_hash: str, data: Dict) -> Optional[str]:
         """Gets a direct download link for a Real-Debrid torrent."""
         torrent_id = self.add_rd_magnet(info_hash)
         if not torrent_id:
@@ -119,12 +137,21 @@ class RealDebridHelper:
 
         return url
 
-    def get_rd_pack_link(self, file_id, torrent_id):
+    def get_rd_pack_link(self, file_id: int, torrent_id: str) -> Optional[str]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
         torrent_info = self.client.get_torrent_info(torrent_id)
-        torrent_items = [item for item in torrent_info["files"] if item["selected"] == 1]
+        torrent_items = [
+            item for item in torrent_info["files"] if item["selected"] == 1
+        ]
 
-        index = next((index for index, item in enumerate(torrent_items) if item["id"] == file_id), None)
+        index = next(
+            (
+                index
+                for index, item in enumerate(torrent_items)
+                if item["id"] == file_id
+            ),
+            None,
+        )
 
         if index is None:
             raise LinkNotFoundError("Requested file not found in torrent pack")
@@ -138,7 +165,7 @@ class RealDebridHelper:
 
         return url
 
-    def get_rd_pack_info(self, info_hash):
+    def get_rd_pack_info(self, info_hash: str) -> Optional[Dict]:
         """Retrieves information about a torrent pack, including file names."""
         info = get_cached(info_hash)
         if info:
@@ -162,7 +189,7 @@ class RealDebridHelper:
         set_cached(info, info_hash)
         return info
 
-    def get_rd_info(self):
+    def get_rd_info(self) -> None:
         """Fetches Real-Debrid account details and displays them."""
         user = self.client.get_user()
         expiration = user["expiration"]
@@ -170,7 +197,9 @@ class RealDebridHelper:
         try:
             expires = datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
-            expires = datetime(*(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6]))
+            expires = datetime(
+                *(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6])
+            )
 
         days_remaining = (expires - datetime.today()).days
         body = [
@@ -183,7 +212,7 @@ class RealDebridHelper:
         ]
         dialog_text("Real-Debrid", "\n".join(body))
 
-    def check_max_active_count(self):
+    def check_max_active_count(self) -> None:
         """Ensures Real-Debrid does not exceed active torrent limit."""
         active_count = self.client.get_torrent_active_count()
 
@@ -191,7 +220,9 @@ class RealDebridHelper:
             hashes = active_count["list"]
             if hashes:
                 torrents = self.client.get_user_torrent_list()
-                torrent_info = next((i for i in torrents if i["hash"] == hashes[0]), None)
+                torrent_info = next(
+                    (i for i in torrents if i["hash"] == hashes[0]), None
+                )
 
                 if torrent_info:
                     self.client.delete_torrent(torrent_info["id"])

@@ -1,4 +1,5 @@
 import copy
+from typing import Dict, List, Any
 from lib.clients.debrid.torbox import Torbox
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting, notification
@@ -11,6 +12,7 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
+from lib.domain.torrent import TorrentStream
 
 EXTENSIONS = supported_video_extensions()[:-1]
 
@@ -26,22 +28,28 @@ class TorboxHelper:
         self.client = Torbox(token=get_setting("torbox_token"))
 
     def check_torbox_cached(
-        self, results, cached_results, uncached_results, total, dialog, lock
-    ):
-        hashes = [res.get("infoHash") for res in results]
+        self,
+        results: List[TorrentStream],
+        cached_results: List[Dict],
+        uncached_results: List[Dict],
+        total: int,
+        dialog: Any,
+        lock: Any,
+    ) -> None:
+        hashes = [res.infoHash for res in results]
         response = self.client.get_torrent_instant_availability(hashes)
         cached_response = response.get("data", [])
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("TB", total, dialog, lock)
-            res["type"] = Debrids.TB
+            res.type = Debrids.TB
 
             with lock:
-                if res.get("infoHash") in cached_response:
-                    res["isCached"] = True
+                if res.infoHash in cached_response:
+                    res.isCached = True
                     cached_results.append(res)
                 else:
-                    res["isCached"] = False
+                    res.isCached = False
                     uncached_results.append(res)
 
     def add_torbox_torrent(self, info_hash):
