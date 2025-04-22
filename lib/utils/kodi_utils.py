@@ -313,8 +313,8 @@ def update_kodi_addons_db(addon_name=ADDON_NAME):
         pass
 
 
-def bytes_to_human_readable(size, unit="B"):
-    units = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5}
+def bytes_to_human_readable(size: int, unit: str = "B") -> str:
+    units: dict[str, int] = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5}
 
     while size >= 1024 and unit != "PB":
         size /= 1024
