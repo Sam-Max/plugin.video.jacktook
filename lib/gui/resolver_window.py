@@ -50,41 +50,7 @@ class ResolverWindow(BaseWindow):
         self.resolve_source()
 
     def resolve_source(self) -> Optional[Dict[str, Any]]:
-        type = self.source.type
-        if type == IndexerType.TORRENT:
-            guid = self.source.guid
-            magnet = self.source.magnet
-            indexer = self.source.indexer
-            url = self.source.magnetUrl or self.source.downloadUrl or ""
-
-            if magnet:
-                pass
-            elif guid and guid.startswith("magnet:?"):
-                magnet = guid
-            elif indexer == Indexer.BURST:
-                url, magnet = guid, ""
-            else:
-                magnet = ""
-
-            if url.startswith("magnet:?") and not magnet:
-                magnet, url = url, ""
-
-            if not magnet:
-                magnet = resolve_to_magnet(url) or ""
-
-            is_torrent = True
-        elif type == IndexerType.DIRECT:
-            url = self.source.downloadUrl
-            magnet = ""
-            is_torrent = False
-        elif type == IndexerType.STREMIO_DEBRID:
-            url = self.source.url
-            magnet = ""
-            is_torrent = False
-        else:
-            url = ""
-            magnet = ""
-            is_torrent = False
+        url, magnet, is_torrent = self._get_source_details()
 
         if self.source.isPack or self.pack_select:
             self.resolve_pack()
@@ -93,6 +59,38 @@ class ResolverWindow(BaseWindow):
 
         self.close()
         return self.playback_info
+
+    def _get_source_details(self) -> tuple[str, str, bool]:
+        type = self.source.type
+        url, magnet, is_torrent = "", "", False
+
+        if type == IndexerType.TORRENT:
+            url, magnet, is_torrent = self._handle_torrent_source()
+        elif type == IndexerType.DIRECT:
+            url, is_torrent = self.source.downloadUrl, False
+        elif type == IndexerType.STREMIO_DEBRID:
+            url, is_torrent = self.source.url, False
+
+        return url, magnet, is_torrent
+
+    def _handle_torrent_source(self) -> tuple[str, str, bool]:
+        guid = self.source.guid
+        magnet = ""
+        indexer = self.source.indexer
+        url = self.source.url or ""
+
+        if guid and guid.startswith("magnet:?"):
+            magnet = guid
+        elif indexer == Indexer.BURST:
+            url, magnet = guid, ""
+
+        if url.startswith("magnet:?") and not magnet:
+            magnet, url = url, ""
+
+        if not magnet:
+            magnet = resolve_to_magnet(url) or ""
+
+        return url, magnet, True
 
     def resolve_single_source(self, url: str, magnet: str, is_torrent: bool) -> None:
         self.playback_info = get_playback_info(
@@ -110,7 +108,7 @@ class ResolverWindow(BaseWindow):
                 "tv_data": self.item_information["tv_data"],
             }
         )
-        if self.playback_info.get("is_pack"):
+        if self.playback_info and self.playback_info.get("is_pack"):
             self.resolve_pack()
 
     def resolve_pack(self) -> None:
