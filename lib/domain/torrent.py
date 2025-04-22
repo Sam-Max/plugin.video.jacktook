@@ -15,6 +15,7 @@ class TorrentStream:
     provider: str
     publishDate: str
     peers: int
-    quality: str = "unknown" 
+    quality: str = "N/A"
     url: str = ""
-    isPack: bool = False  
+    isPack: bool = False
+    isCached: bool = False
