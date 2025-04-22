@@ -1,6 +1,10 @@
+from typing import List, Optional, Dict
+from lib.api.jacktook.kodi import kodilog
+from lib.domain.torrent import TorrentStream
 import xbmcgui
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
+import xbmc
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.debrid_utils import get_debrid_status
@@ -14,87 +18,91 @@ from lib.utils.utils import (
 
 class SourceSelect(BaseWindow):
     def __init__(
-        self, xml_file, location, item_information=None, sources=None, uncached=None
+        self,
+        xml_file: str,
+        location: str,
+        item_information: Optional[Dict] = None,
+        sources: Optional[List[TorrentStream]] = None,
+        uncached: Optional[List[TorrentStream]] = None,
     ):
         super().__init__(xml_file, location, item_information=item_information)
-        self.uncached_sources = uncached or []
-        self.position = -1
-        self.sources = sources
-        self.item_information = item_information
-        self.playback_info = None
-        self.resume = None
-        self.CACHE_KEY = str(self.item_information["tv_data"]) or str(
-            self.item_information["ids"]
+        self.uncached_sources: List[TorrentStream] = uncached or []
+        self.position: int = -1
+        self.sources: List[TorrentStream] = sources or []
+        self.item_information: Dict = item_information or {}
+        self.playback_info: Optional[Dict] = None
+        self.resume: Optional[bool] = None
+        self.CACHE_KEY: str = str(self.item_information.get("tv_data", "")) or str(
+            self.item_information.get("ids", "")
         )
         self.setProperty("instant_close", "false")
         self.setProperty("resolving", "false")
 
-    def onInit(self):
-        self.display_list = self.getControlList(1000)
+    def onInit(self) -> None:
+        self.display_list: xbmcgui.ControlList = self.getControlList(1000)
         self.populate_sources_list()
         self.set_default_focus(self.display_list, 1000, control_list_reset=True)
         super().onInit()
 
-    def doModal(self):
+    def doModal(self) -> Optional[Dict]:
         super().doModal()
         return self.playback_info
 
-    def populate_sources_list(self):
+    def populate_sources_list(self) -> None:
         self.display_list.reset()
 
         for source in self.sources:
-            menu_item = xbmcgui.ListItem(label=f"{source['title']}")
+            menu_item = xbmcgui.ListItem(label=source.title)
 
-            for info in source:
-                value = source[info]
-                if info == "peers":
-                    value = value if value else ""
-                if info == "publishDate":
-                    value = extract_publish_date(value)
-                if info == "size":
-                    value = bytes_to_human_readable(int(value)) if value else ""
-                if info in ["indexer", "provider", "type"]:
-                    color = get_random_color(value)
-                    value = f"[B][COLOR {color}]{value}[/COLOR][/B]"
-                if info == "fullLanguages":
-                    value = get_colored_languages(value)
-                    if len(value) <= 0:
-                        value = ""
-                if info == "isCached":
-                    info = "status"
-                    value = get_debrid_status(source)
+            kodilog(f"Adding source: {source}")
 
-                menu_item.setProperty(info, str(value))
+            menu_item.setProperty("title", source.title)
+            menu_item.setProperty("type", get_random_color(source.type))
+            menu_item.setProperty("indexer", get_random_color(source.indexer))
+            menu_item.setProperty("guid", source.guid)
+            menu_item.setProperty("infoHash", source.infoHash)
+            menu_item.setProperty("size", bytes_to_human_readable(source.size))
+            menu_item.setProperty("seeders", str(source.seeders))
+            menu_item.setProperty("languages", ", ".join(source.languages))
+            menu_item.setProperty(
+                "fullLanguages", get_colored_languages(source.fullLanguages)
+            )
+            menu_item.setProperty("provider", get_random_color(source.provider))
+            menu_item.setProperty(
+                "publishDate", extract_publish_date(source.publishDate)
+            )
+            menu_item.setProperty("peers", str(source.peers))
+            menu_item.setProperty("quality", source.quality)
+            menu_item.setProperty("status", get_debrid_status(source))
+            menu_item.setProperty("isPack", str(source.isPack))
 
             self.display_list.addItem(menu_item)
 
-    def handle_action(self, action_id, control_id=None):
+    def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         self.position = self.display_list.getSelectedPosition()
 
-        if action_id == 117:
+        if action_id == 117:  # Context menu action
             selected_source = self.sources[self.position]
-            type = selected_source["type"]
-            if type == "Torrent":
+            if selected_source.type == "Torrent":
                 response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])
                 if response == 0:
                     self._download_into()
-            elif type == "Direct":
+            elif selected_source.type == "Direct":
                 pass
             else:
                 response = xbmcgui.Dialog().contextmenu(["Browse into"])
                 if response == 0:
                     self._resolve_item(pack_select=True)
 
-        if action_id == 7:
-            if control_id == 1000:
-                control_list = self.getControl(control_id)
-                self.set_cached_focus(control_id, control_list.getSelectedPosition())
-                self._resolve_item(pack_select=False)
+        elif action_id == 7 and control_id == 1000:  # Select action
+            control_list = self.getControl(control_id)
+            self.set_cached_focus(control_id, control_list.getSelectedPosition())
+            self._resolve_item(pack_select=False)
 
-    def _download_into(self):
+    def _download_into(self) -> None:
         pass
 
-    def _resolve_item(self, pack_select=False):
+    def _resolve_item(self, pack_select: bool = False) -> None:
         self.setProperty("resolving", "true")
 
         selected_source = self.sources[self.position]
@@ -113,7 +121,7 @@ class SourceSelect(BaseWindow):
         self.setProperty("instant_close", "true")
         self.close()
 
-    def show_resume_dialog(self, playback_percent):
+    def show_resume_dialog(self, playback_percent: float) -> Optional[bool]:
         try:
             resume_window = ResumeDialog(
                 "resume_dialog.xml",
