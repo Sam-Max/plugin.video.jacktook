@@ -65,7 +65,7 @@ class Jackgram(BaseClient):
                     size=item["size"],
                     publishDate=item["date"],
                     duration=item["duration"],
-                    downloadUrl=item["url"],
+                    url=item["url"],
                 )
             )
         return results
@@ -84,7 +84,7 @@ class Jackgram(BaseClient):
                         "size": file["size"],
                         "publishDate": date,
                         "duration": file["duration"],
-                        "downloadUrl": file["url"],
+                        "url": file["url"],
                     }
                 )
         return results
