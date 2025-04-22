@@ -15,4 +15,5 @@ class TorrentStream:
     provider: str
     publishDate: str
     peers: int
-    isPack: bool = False  # Added isPack attribute
+    quality: str = "unknown" 
+    isPack: bool = False  
