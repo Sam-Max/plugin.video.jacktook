@@ -39,7 +39,7 @@ class Burst(BaseClient):
                     type="Torrent",
                     indexer="Burst",
                     guid=r.guid,
-                    infoHash=None,
+                    infoHash="",
                     size=convert_size_to_bytes(r.size),
                     seeders=int(r.seeders),
                     peers=int(r.peers),
