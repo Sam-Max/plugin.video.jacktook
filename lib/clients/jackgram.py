@@ -67,7 +67,6 @@ class Jackgram(BaseClient):
                     indexer=item["name"],
                     size=item["size"],
                     publishDate=item["date"],
-                    duration=item["duration"],
                     url=item["url"],
                 )
             )
@@ -91,6 +90,5 @@ class Jackgram(BaseClient):
             "indexer": file.get("name", ""),
             "size": file.get("size", ""),
             "publishDate": file.get("date", ""),
-            "duration": file.get("duration", ""),
             "url": file.get("url", ""),
         }
