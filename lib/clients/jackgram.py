@@ -32,10 +32,13 @@ class Jackgram(BaseClient):
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
+            
             if mode in ["tv", "movies"]:
                 return self.parse_response(res)
             else:
-                return self.parse_response_search(res)
+                response = self.parse_response_search(res)
+                kodilog(f"Jackgram search response: {response}")
+                return response
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
 
@@ -74,17 +77,20 @@ class Jackgram(BaseClient):
         res = res.json()
         results = []
         for item in res["results"]:
-            for file in item["files"]:
-                date = "" if file["date"] == None else file["date"]
-                results.append(
-                    {
-                        "title": file["title"],
-                        "type": "Direct",
-                        "indexer": file["name"],
-                        "size": file["size"],
-                        "publishDate": date,
-                        "duration": file["duration"],
-                        "url": file["url"],
-                    }
-                )
+            if item.get("type") == "file":
+                results.append(self._extract_file_info(item))
+            else:
+                for file in item.get("files", []):
+                    results.append(self._extract_file_info(file))
         return results
+
+    def _extract_file_info(self, file):
+        return {
+            "title": file.get("title", ""),
+            "type": "Direct",
+            "indexer": file.get("name", ""),
+            "size": file.get("size", ""),
+            "publishDate": file.get("date", ""),
+            "duration": file.get("duration", ""),
+            "url": file.get("url", ""),
+        }

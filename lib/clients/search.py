@@ -44,6 +44,7 @@ def search_client(
 
         if indexer_key != Indexer.BURST:
             update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
+        
         client = get_client(indexer_key)
         if not client:
             return []
@@ -146,6 +147,7 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
+                kodilog(f"Results from {future}: {results}")
                 if results:
                     total_results.extend(results)
             except Exception as e:
