@@ -643,13 +643,7 @@ def get_random_color(provider_name):
 def get_colored_languages(languages):
     if not languages:
         return ""
-    colored_languages = []
-    for lang in languages:
-        lang_color = get_random_color(lang)
-        colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
-        colored_languages.append(colored_lang)
-    colored_languages = " ".join(colored_languages)
-    return colored_languages
+    return " ".join(get_random_color(lang) for lang in languages)
 
 
 def execute_thread_pool(results, func, *args, **kwargs):
