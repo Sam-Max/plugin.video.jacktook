@@ -36,9 +36,7 @@ class Jackgram(BaseClient):
             if mode in ["tv", "movies"]:
                 return self.parse_response(res)
             else:
-                response = self.parse_response_search(res)
-                kodilog(f"Jackgram search response: {response}")
-                return response
+                return self.parse_response_search(res)
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
 
@@ -72,15 +70,17 @@ class Jackgram(BaseClient):
             )
         return results
 
-    def parse_response_search(self, res: Any) -> List[Dict[str, Any]]:
+    def parse_response_search(self, res: Any) -> List[TorrentStream]:
         res = res.json()
         results = []
         for item in res["results"]:
             if item.get("type") == "file":
-                results.append(self._extract_file_info(item))
+                file_info = self._extract_file_info(item)
+                results.append(TorrentStream(**file_info))
             else:
                 for file in item.get("files", []):
-                    results.append(self._extract_file_info(file))
+                    file_info = self._extract_file_info(file)
+                    results.append(TorrentStream(**file_info))
         return results
 
     def _extract_file_info(self, file):
