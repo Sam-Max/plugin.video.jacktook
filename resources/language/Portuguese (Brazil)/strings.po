@@ -541,7 +541,7 @@ msgid "Specify the torrent client"
 msgstr "Especificar o cliente de torrent"
 
 msgctxt "#30864"
-msgid "Search"
+msgid "Sources"
 msgstr "Pesquisar"
 
 msgctxt "#30865"
