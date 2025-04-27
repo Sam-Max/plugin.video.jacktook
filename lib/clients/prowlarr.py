@@ -1,7 +1,7 @@
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi_utils import translation
 from lib.utils.settings import get_prowlarr_timeout
-from typing import List, Optional
+from typing import List, Optional, Any
 
 
 class Prowlarr(BaseClient):
@@ -14,31 +14,32 @@ class Prowlarr(BaseClient):
         self,
         query: str,
         mode: str,
-        season: Optional[int],
-        episode: Optional[int],
-        indexers: Optional[str],
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        indexers: Optional[str] = None,
     ) -> Optional[List[TorrentStream]]:
         headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
             "X-Api-Key": self.apikey,
         }
-
         try:
-            params = {"query": query}
-            params["type"] = "search"
-
+            params = {"query": query, "type": "search"}
             if mode == "tv":
                 params["categories"] = [5000, 8000]
-                query = f"{query} S{int(season):02d}E{int(episode):02d}"
-                params["query"] = query
+                if season is not None and episode is not None:
+                    params["query"] = f"{query} S{int(season):02d}E{int(episode):02d}"
             elif mode == "movies":
                 params["categories"] = [2000, 8000]
-
+            elif mode == "anime":
+                params["categories"] = [2000, 5070, 5000, 127720, 140679]
             if indexers:
-                for indexer_id in indexers.split():
-                    params[f"indexerIds"] = indexer_id
-
+                # Accept comma or space separated
+                indexer_ids = [
+                    i.strip() for i in indexers.replace(",", " ").split() if i.strip()
+                ]
+                if indexer_ids:
+                    params["indexerIds"] = indexer_ids
             response = self.session.get(
                 self.base_url,
                 params=params,
@@ -47,12 +48,13 @@ class Prowlarr(BaseClient):
             )
             if response.status_code != 200:
                 self.notification(f"{translation(30230)} {response.status_code}")
-                return
+                return None
             return self.parse_response(response)
         except Exception as e:
             self.handle_exception(f"{translation(30230)}: {str(e)}")
+            return None
 
-    def parse_response(self, res: any) -> List[TorrentStream]:
+    def parse_response(self, res: Any) -> List[TorrentStream]:
         response = res.json()
         results = []
         for res in response:
@@ -64,24 +66,12 @@ class Prowlarr(BaseClient):
                     provider=res.get("indexer"),
                     peers=int(res.get("peers", 0)),
                     seeders=int(res.get("seeders", 0)),
-                    guid="",
-                    infoHash="",
-                    size=0,
-                    languages=[],
-                    fullLanguages="",
-                    publishDate="",
+                    guid=res.get("guid", ""),
+                    infoHash=res.get("infoHash", ""),
+                    size=int(res.get("size", 0)),
+                    languages=res.get("languages", []),
+                    fullLanguages=res.get("fullLanguages", ""),
+                    publishDate=res.get("publishDate", ""),
                 )
             )
         return results
-
-
-""" if anime_indexers:
-    anime_categories = [2000, 5070, 5000, 127720, 140679]
-    anime_categories_id = "".join(
-        [f"&categories={cat}" for cat in anime_categories]
-    )
-    anime_indexers_id = anime_indexers.split(",")
-    anime_indexers_id = "".join(
-        [f"&indexerIds={index}" for index in anime_indexers_id]
-    )
-    url = f"{self.host}/api/v1/search?query={query}{anime_categories_id}{anime_indexers_id}" """
