@@ -729,8 +729,10 @@ def pre_process(
     episode: int,
     season: int,
 ) -> List[TorrentStream]:
+    kodilog("Pre-processing results")
     builder = PreProcessBuilder(results).remove_duplicates()
     if get_setting("stremio_enabled") and get_setting("torrent_enable"):
+        kodilog("Filtering torrent sources")
         builder.filter_torrent_sources()
     if mode == "tv" and get_setting("filter_by_episode"):
         builder.filter_by_episode(episode_name, episode, season)

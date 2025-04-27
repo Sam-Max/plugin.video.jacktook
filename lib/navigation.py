@@ -110,6 +110,7 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
+import xbmc
 
 paginator = None
 
@@ -537,11 +538,13 @@ def search(params):
     ep_name, episode, season = extract_tv_data(tv_data)
 
     results = perform_search(query, ids, mode, media_type, rescrape, season, episode)
+    kodilog(f"Search results: {results}", level=xbmc.LOGDEBUG)
     if not results:
         notification("No results found")
         return
 
     pre_results = pre_process_results(results, mode, ep_name, episode, season)
+    kodilog(f"Pre-processed results: {pre_results}", level=xbmc.LOGDEBUG)
     if not pre_results:
         notification("No results found")
         return
@@ -549,6 +552,7 @@ def search(params):
     post_results = process_results(
         pre_results, query, mode, media_type, rescrape, episode, season
     )
+    kodilog(f"Post-processed results: {post_results}", level=xbmc.LOGDEBUG)
     if not post_results:
         notification("No cached results found")
         return
