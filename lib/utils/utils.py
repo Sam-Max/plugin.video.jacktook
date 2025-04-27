@@ -280,7 +280,7 @@ def make_listing(metadata):
     list_item.setContentLookup(False)
 
     metadata["episode"] = tv_data.get("episode", "")
-    metadata["season"] = tv_data.get("season", "") 
+    metadata["season"] = tv_data.get("season", "")
     metadata["name"] = tv_data.get("name", "")
     metadata["id"] = ids.get("tmdb_id")
     metadata["imdb_id"] = ids.get("imdb_id")
@@ -464,13 +464,13 @@ def set_watched_file(title, data, is_direct=False, is_torrent=False):
         return
 
     if is_direct:
-        color = get_random_color("Direct")
+        color = get_random_color("Direct", formatted=False)
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
     elif is_torrent:
-        color = get_random_color("Torrent")
+        color = get_random_color("Torrent", formatted=False)
         title = f"[B][COLOR {color}][Torrent][/COLOR][/B] - {title}"
     else:
-        color = get_random_color("Cached")
+        color = get_random_color("Cached", formatted=False)
         title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
 
     if title not in main_db.database["jt:watch"]:
@@ -616,7 +616,7 @@ def set_content_type(mode, media_type="movies"):
 
 
 # This method was taken from script.elementum.jackett addon
-def get_random_color(provider_name):
+def get_random_color(provider_name, formatted=True):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
     colors = []
 
@@ -637,7 +637,10 @@ def get_random_color(provider_name):
 
     color_format = "FF" + "".join(colors).upper()
 
-    return  f"[B][COLOR {color_format}]{provider_name}[/COLOR][/B]"
+    if formatted:
+        return f"[B][COLOR {color_format}]{provider_name}[/COLOR][/B]"
+    else:
+        return color_format
 
 
 def get_colored_languages(languages):
@@ -735,9 +738,7 @@ def pre_process(
     return builder.get_results()
 
 
-def post_process(
-    results: List[TorrentStream], season: int = 0
-) -> List[TorrentStream]:
+def post_process(results: List[TorrentStream], season: int = 0) -> List[TorrentStream]:
     return (
         PostProcessBuilder(results)
         .check_season_pack(season)

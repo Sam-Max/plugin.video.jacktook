@@ -744,7 +744,7 @@ def rd_info(params):
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
     type = Debrids.RD
-    debrid_color = get_random_color(type)
+    debrid_color = get_random_color(type, formatted=False)
     formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
