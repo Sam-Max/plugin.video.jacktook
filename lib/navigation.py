@@ -2,6 +2,7 @@ from datetime import timedelta
 import json
 import os
 from threading import Thread
+from typing import List
 from urllib.parse import quote
 
 from lib.clients.debrid.premiumize import Premiumize
@@ -11,6 +12,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.db.bookmark_db import bookmark_db
+from lib.domain.torrent import TorrentStream
 from lib.gui.custom_dialogs import (
     CustomDialog,
     resume_dialog_mock,
@@ -96,7 +98,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 
-from lib.utils.settings import get_cache_expiration, is_auto_play
+from lib.utils.settings import get_cache_expiration
 from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
@@ -108,6 +110,7 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
+import xbmc
 
 paginator = None
 
@@ -526,68 +529,104 @@ def search(params):
     tv_data = json.loads(params.get("tv_data", "{}"))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
+    
+    kodilog(f"Search: {query} - {ids} - {mode} - {tv_data}")
 
     set_content_type(mode, media_type)
     set_watched_title(query, ids, mode, media_type)
 
-    episode, season, ep_name = (0, 0, "")
-    if tv_data:
-        ep_name, episode, season = tv_data.values()
+    ep_name, episode, season = extract_tv_data(tv_data)
 
-    with DialogListener() as listener:
-        results = search_client(
-            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
-        )
-        if not results:
-            notification("No results found")
-            return
+    results = perform_search(query, ids, mode, media_type, rescrape, season, episode)
+    kodilog(f"Search results: {results}", level=xbmc.LOGDEBUG)
+    if not results:
+        notification("No results found")
+        return
 
-        pre_results = pre_process(
-            results,
-            mode,
-            ep_name,
-            episode,
-            season,
-        )
-        if not pre_results:
-            notification("No results found")
-            return
+    pre_results = pre_process_results(results, mode, ep_name, episode, season)
+    kodilog(f"Pre-processed results: {pre_results}", level=xbmc.LOGDEBUG)
+    if not pre_results:
+        notification("No results found")
+        return
 
-    if get_setting("torrent_enable"):
-        post_results = post_process(pre_results)
-    else:
-        with DialogListener() as listener:
-            cached_results = handle_debrid_client(
-                query,
-                pre_results,
-                mode,
-                media_type,
-                listener.dialog,
-                rescrape,
-                episode,
-            )
-            if not cached_results:
-                notification("No cached results found")
-                return
-
-            if is_auto_play():
-                auto_play(cached_results, ids, tv_data, mode)
-                return
-
-            post_results = post_process(cached_results, season)
+    post_results = process_results(
+        pre_results, query, mode, media_type, rescrape, episode, season
+    )
+    kodilog(f"Post-processed results: {post_results}", level=xbmc.LOGDEBUG)
+    if not post_results:
+        notification("No cached results found")
+        return
 
     data = handle_results(post_results, mode, ids, tv_data, direct)
-
     if not data:
         cancel_playback()
         return
 
+    play_data(data)
+
+
+def extract_tv_data(tv_data):
+    if tv_data:
+        return (
+            tv_data.get("name", ""),
+            tv_data.get("episode", 0),
+            tv_data.get("season", 0),
+        )
+    return "", 0, 0
+
+
+def perform_search(
+    query: str,
+    ids: dict,
+    mode: str,
+    media_type: str,
+    rescrape: bool,
+    season: int,
+    episode: int,
+) -> List[TorrentStream]:
+    with DialogListener() as listener:
+        return search_client(
+            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
+        )
+
+
+def pre_process_results(
+    results: List[TorrentStream], mode: str, ep_name: str, episode: int, season: int
+) -> List[TorrentStream]:
+    return pre_process(results, mode, ep_name, episode, season)
+
+
+def process_results(
+    pre_results: List[TorrentStream],
+    query: str,
+    mode: str,
+    media_type: str,
+    rescrape: bool,
+    episode: int,
+    season: int,
+) -> List[TorrentStream]:
+    if get_setting("torrent_enable"):
+        return post_process(pre_results)
+    else:
+        with DialogListener() as listener:
+            return check_debrid_cached(
+                query, pre_results, mode, media_type, listener.dialog, rescrape, episode
+            )
+
+
+def play_data(data: dict):
     player = JacktookPLayer(db=bookmark_db)
     player.run(data=data)
     del player
 
 
-def handle_results(results, mode, ids, tv_data, direct=False):
+def handle_results(
+    results: List[TorrentStream],
+    mode: str,
+    ids: dict,
+    tv_data: dict,
+    direct: bool = False,
+) -> dict:
     if ids:
         tmdb_id, tvdb_id, _ = ids.values()
     else:
@@ -621,26 +660,6 @@ def handle_results(results, mode, ids, tv_data, direct=False):
         item_info,
         xml_file=xml_file_string,
         sources=results,
-    )
-
-
-def handle_debrid_client(
-    query,
-    proc_results,
-    mode,
-    media_type,
-    p_dialog,
-    rescrape,
-    episode,
-):
-    return check_debrid_cached(
-        query,
-        proc_results,
-        mode,
-        media_type,
-        p_dialog,
-        rescrape,
-        episode,
     )
 
 
@@ -729,7 +748,7 @@ def rd_info(params):
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
     type = Debrids.RD
-    debrid_color = get_random_color(type)
+    debrid_color = get_random_color(type, formatted=False)
     formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))

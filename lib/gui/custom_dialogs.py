@@ -1,4 +1,6 @@
 import json
+from typing import Dict, List
+from lib.domain.torrent import TorrentStream
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
 
@@ -84,7 +86,9 @@ _mock_information = {
 }
 
 
-def source_select(item_info, xml_file, sources):
+def source_select(
+    item_info: Dict[str, str], xml_file: str, sources: List[TorrentStream]
+) -> Dict:
     window = SourceSelect(
         xml_file,
         ADDON_PATH,

@@ -6,10 +6,14 @@ import os
 import re
 import unicodedata
 import requests
+from enum import Enum
+
+from typing import List, Dict, Any
 
 from lib.api.fanart.fanarttv import FanartTv
 from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import clear_cache
+from lib.clients.base import TorrentStream
 from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
@@ -29,6 +33,7 @@ from lib.utils.kodi_utils import (
     translation,
 )
 
+from lib.utils.processors import PostProcessBuilder, PreProcessBuilder
 from lib.utils.settings import get_cache_expiration, is_cache_enabled
 
 from xbmcgui import ListItem, Dialog
@@ -275,7 +280,7 @@ def make_listing(metadata):
     list_item.setContentLookup(False)
 
     metadata["episode"] = tv_data.get("episode", "")
-    metadata["season"] = tv_data.get("season", "") 
+    metadata["season"] = tv_data.get("season", "")
     metadata["name"] = tv_data.get("name", "")
     metadata["id"] = ids.get("tmdb_id")
     metadata["imdb_id"] = ids.get("imdb_id")
@@ -459,13 +464,13 @@ def set_watched_file(title, data, is_direct=False, is_torrent=False):
         return
 
     if is_direct:
-        color = get_random_color("Direct")
+        color = get_random_color("Direct", formatted=False)
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
     elif is_torrent:
-        color = get_random_color("Torrent")
+        color = get_random_color("Torrent", formatted=False)
         title = f"[B][COLOR {color}][Torrent][/COLOR][/B] - {title}"
     else:
-        color = get_random_color("Cached")
+        color = get_random_color("Cached", formatted=False)
         title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
 
     if title not in main_db.database["jt:watch"]:
@@ -544,6 +549,19 @@ def get_fanart_data(fanart_details):
     return {"fanart": fanart, "clearlogo": clearlogo, "poster": poster}
 
 
+def get_cached_results(query, mode, media_type, episode):
+    if mode == "tv" or media_type == "tv" or mode == "anime":
+        return get_cached(query, params=(episode, "index"))
+    return get_cached(query, params=("index"))
+
+
+def cache_results(results, query, mode, media_type, episode):
+    if mode == "tv" or media_type == "tv" or mode == "anime":
+        set_cached(results, query, params=(episode, "index"))
+    else:
+        set_cached(results, query, params=("index"))
+
+
 def get_cached(path, params={}):
     identifier = "{}|{}".format(path, params)
     return cache.get(identifier, hashed_key=True)
@@ -598,7 +616,7 @@ def set_content_type(mode, media_type="movies"):
 
 
 # This method was taken from script.elementum.jackett addon
-def get_random_color(provider_name):
+def get_random_color(provider_name, formatted=True):
     hash = hashlib.sha256(provider_name.encode("utf")).hexdigest()
     colors = []
 
@@ -617,19 +635,18 @@ def get_random_color(provider_name):
     for i in range(0, 3):
         colors[i] = f"{colors[i]:02x}"
 
-    return "FF" + "".join(colors).upper()
+    color_format = "FF" + "".join(colors).upper()
+
+    if formatted:
+        return f"[B][COLOR {color_format}]{provider_name}[/COLOR][/B]"
+    else:
+        return color_format
 
 
 def get_colored_languages(languages):
     if not languages:
         return ""
-    colored_languages = []
-    for lang in languages:
-        lang_color = get_random_color(lang)
-        colored_lang = f"[B][COLOR {lang_color}][{lang}][/COLOR][/B]"
-        colored_languages.append(colored_lang)
-    colored_languages = " ".join(colored_languages)
-    return colored_languages
+    return " ".join(get_random_color(lang) for lang in languages)
 
 
 def execute_thread_pool(results, func, *args, **kwargs):
@@ -705,79 +722,32 @@ def unzip(zip_location, destination_location, destination_check):
     return status
 
 
-def check_season_pack(results, season_num):
-    season_fill = f"{int(season_num):02}"
-
-    patterns = [
-        # Season as ".S{season_num}." or ".S{season_fill}."
-        r"\.S%s\." % season_num,
-        r"\.S%s\." % season_fill,
-        # Season as " S{season_num} " or " S{season_fill} "
-        r"\sS%s\s" % season_num,
-        r"\sS%s\s" % season_fill,
-        # Season as ".{season_num}.season" (like .1.season, .01.season)
-        r"\.%s\.season" % season_num,
-        # "total.season" or "season" or "the.complete"
-        r"total\.season",
-        r"season",
-        r"the\.complete",
-        r"complete",
-        # Pattern to detect episode ranges like S02E01-02
-        r"S(\d{2})E(\d{2})-(\d{2})",
-        # Season as ".season.{season_num}." or ".season.{season_fill}."
-        r"\.season\.%s\." % season_num,
-        r"\.season%s\." % season_num,
-        r"\.season\.%s\." % season_fill,
-        # Handle cases "s1 to {season_num}", "s1 thru {season_num}", etc.
-        r"s1 to %s" % season_num,
-        r"s1 to s%s" % season_num,
-        r"s01 to %s" % season_fill,
-        r"s01 to s%s" % season_fill,
-        r"s1 thru %s" % season_num,
-        r"s1 thru s%s" % season_num,
-        r"s01 thru %s" % season_fill,
-        r"s01 thru s%s" % season_fill,
-    ]
-
-    combined_pattern = "|".join(patterns)
-
-    for res in results:
-        match = re.search(combined_pattern, res["title"])
-        if match:
-            res["isPack"] = True
-        else:
-            res["isPack"] = False
-
-
-def pre_process(results, mode, episode_name, episode, season):
-    results = remove_duplicate(results)
-
-    kodilog(f"remove_duplicate: {results}", level=xbmc.LOGDEBUG)
-
+def pre_process(
+    results: List[TorrentStream],
+    mode: str,
+    episode_name: str,
+    episode: int,
+    season: int,
+) -> List[TorrentStream]:
+    kodilog("Pre-processing results")
+    builder = PreProcessBuilder(results).remove_duplicates()
     if get_setting("stremio_enabled") and get_setting("torrent_enable"):
-        kodilog(f"stremio_enabled: {results}", level=xbmc.LOGDEBUG)
-        results = filter_torrent_sources(results)
-
+        kodilog("Filtering torrent sources")
+        builder.filter_torrent_sources()
     if mode == "tv" and get_setting("filter_by_episode"):
-        kodilog(f"filter_by_episode: {results}", level=xbmc.LOGDEBUG)
-        results = filter_by_episode(results, episode_name, episode, season)
-
-    results = filter_by_quality(results,)
-
-    kodilog(f"filter_by_quality: {results}", level=xbmc.LOGDEBUG)
-
-    return results
+        builder.filter_by_episode(episode_name, episode, season)
+    builder.filter_by_quality()
+    return builder.get_results()
 
 
-def post_process(results, season=0):
-    if int(season) > 0:
-        check_season_pack(results, season)
-
-    results = sort_results(results)
-
-    results = limit_results(results)
-
-    return results
+def post_process(results: List[TorrentStream], season: int = 0) -> List[TorrentStream]:
+    return (
+        PostProcessBuilder(results)
+        .check_season_pack(season)
+        .sort_results()
+        .limit_results()
+        .get_results()
+    )
 
 
 def filter_torrent_sources(results):
@@ -786,86 +756,6 @@ def filter_torrent_sources(results):
         if res.get("infoHash") or res.get("guid"):
             filtered_results.append(res)
     return filtered_results
-
-
-def sort_results(res):
-    sort_by = get_setting("indexers_sort_by")
-
-    field_to_sort = {
-        "Seeds": "seeders",
-        "Size": "size",
-        "Date": "publishDate",
-        "Quality": "quality",
-        "Cached": "isCached",
-    }
-
-    if sort_by in field_to_sort:
-        res = sorted(res, key=lambda r: r.get(field_to_sort[sort_by], 0), reverse=True)
-
-    priority_language = get_setting("priority_language").lower()
-    if priority_language and priority_language != "None":
-        res = sorted(
-            res, key=lambda r: priority_language in r.get("languages", []), reverse=True
-        )
-
-    return res
-
-
-def filter_by_episode(results, episode_name, episode_num, season_num):
-    episode_fill = f"{int(episode_num):02}"
-    season_fill = f"{int(season_num):02}"
-
-    patterns = [
-        r"S%sE%s" % (season_fill, episode_fill),  # SXXEXX format
-        r"%sx%s" % (season_fill, episode_fill),  # XXxXX format
-        r"\s%s\s" % season_fill,  # season surrounded by spaces
-        r"\.S%s" % season_fill,  # .SXX format
-        r"\.S%sE%s" % (season_fill, episode_fill),  # .SXXEXX format
-        r"\sS%sE%s\s"
-        % (season_fill, episode_fill),  # season and episode surrounded by spaces
-        r"Cap\.",  # match "Cap."
-    ]
-
-    if episode_name:
-        patterns.append(episode_name)
-
-    combined_pattern = "|".join(patterns)
-
-    filtered_episodes = []
-    for res in results:
-        match = re.search(combined_pattern, res["title"])
-        if match:
-            filtered_episodes.append(res)
-
-    return filtered_episodes
-
-
-def filter_by_quality(results):
-    quality_720p = []
-    quality_1080p = []
-    quality_4k = []
-    no_quarlity = []
-
-    for res in results:
-        title = res["title"]
-        if "480p" in title:
-            res["quality"] = "[B][COLOR orange]480p[/COLOR][/B]"
-            quality_720p.append(res)
-        elif "720p" in title:
-            res["quality"] = "[B][COLOR orange]720p[/COLOR][/B]"
-            quality_720p.append(res)
-        elif "1080p" in title:
-            res["quality"] = "[B][COLOR blue]1080p[/COLOR][/B]"
-            quality_1080p.append(res)
-        elif "2160" in title:
-            res["quality"] = "[B][COLOR yellow]4k[/COLOR][/B]"
-            quality_4k.append(res)
-        else:
-            res["quality"] = "[B][COLOR yellow]N/A[/COLOR][/B]"
-            no_quarlity.append(res)
-
-    combined_list = quality_4k + quality_1080p + quality_720p + no_quarlity
-    return combined_list
 
 
 def clean_auto_play_undesired(results):

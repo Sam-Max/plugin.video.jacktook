@@ -1200,8 +1200,8 @@ msgid "Specify the torrent client"
 msgstr "Especificar el cliente de torrent"
 
 msgctxt "#30864"
-msgid "Search"
-msgstr "Buscar"
+msgid "Sources"
+msgstr "Fuentes"
 
 msgctxt "#30865"
 msgid "Filters and Sorting"

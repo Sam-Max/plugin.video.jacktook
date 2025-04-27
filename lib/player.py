@@ -107,7 +107,6 @@ class JacktookPLayer(xbmc.Player):
                 pass
 
     def check_playback_start(self):
-        kodilog("check_playback_start")
         resolve_percent = 0
 
         while self.playback_successful is None:
@@ -120,7 +119,6 @@ class JacktookPLayer(xbmc.Player):
                 execute_builtin("SendClick(okdialog, 11)")
                 self.playback_successful = False
             elif self.isPlayingVideo():
-                kodilog("isPlayingVideo")
                 try:
                     if self.getTotalTime() not in total_time_errors and get_visibility(
                         video_fullscreen_check
@@ -135,7 +133,6 @@ class JacktookPLayer(xbmc.Player):
             sleep(50)
 
     def monitor(self):
-        kodilog("playback monitor")
         ensure_dialog_dead = False
         total_check_time = 0
 

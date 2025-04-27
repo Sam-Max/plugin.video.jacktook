@@ -2,6 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 import copy
 import requests
 from threading import Lock
+from typing import List, Optional
+from xbmcgui import Dialog
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.ed_utils import EasyDebridHelper
 from lib.utils.kodi_utils import get_setting
@@ -22,31 +24,56 @@ from lib.utils.utils import (
     is_tb_enabled,
     is_url,
     set_cached,
-    dialog_update,
 )
+from lib.domain.torrent import TorrentStream
 
 
-def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, episode=1):
+def check_debrid_cached(
+    query: Optional[str],
+    results: List[TorrentStream],
+    mode: str,
+    media_type: str,
+    dialog: Dialog,
+    rescrape: bool,
+    episode: int = 1,
+) -> List[TorrentStream]:
+
+    kodilog("Checking debrid cached results...")
+
     if not rescrape:
-        if query:
-            if mode == "tv" or media_type == "tv":
-                cached_results = get_cached(query, params=(episode, "deb"))
-            else:
-                cached_results = get_cached(query, params=("deb"))
-
-            if cached_results:
-                return cached_results
+        cached_results = get_cached_results(query, mode, media_type, episode)
+        if cached_results:
+            return cached_results
 
     lock = Lock()
-    cached_results = []
-    uncached_results = []
-    direct_results = []
+    cached_results, uncached_results, direct_results = [], [], []
 
-    total = len(results)
     dialog.create("")
-
     filter_results(results, direct_results)
 
+    check_functions = get_debrid_check_functions()
+    execute_debrid_checks(
+        check_functions, results, cached_results, uncached_results, dialog, lock
+    )
+
+    cached_results.extend(direct_results)
+    if should_include_uncached():
+        cached_results.extend(uncached_results)
+
+    kodilog(f"Cached results: {len(cached_results)}")
+
+    update_cache(query, mode, media_type, cached_results, episode)
+    return cached_results
+
+
+def get_cached_results(query: Optional[str], mode: str, media_type: str, episode: int):
+    if query:
+        params = (episode, "deb") if mode == "tv" or media_type == "tv" else ("deb",)
+        return get_cached(query, params=params)
+    return None
+
+
+def get_debrid_check_functions() -> List:
     check_functions = []
     if is_rd_enabled():
         check_functions.append(RealDebridHelper().check_rd_cached)
@@ -56,40 +83,56 @@ def check_debrid_cached(query, results, mode, media_type, dialog, rescrape, epis
         check_functions.append(PremiumizeHelper().check_pm_cached)
     if is_ed_enabled():
         check_functions.append(EasyDebridHelper().check_ed_cached)
+    return check_functions
 
+
+def execute_debrid_checks(
+    check_functions: List,
+    results: List[TorrentStream],
+    cached_results: list,
+    uncached_results: list,
+    dialog: Dialog,
+    lock: Lock,
+):
     with ThreadPoolExecutor() as executor:
         futures = [
             executor.submit(
-                fn, results, cached_results, uncached_results, total, dialog, lock
+                fn,
+                results,
+                cached_results,
+                uncached_results,
+                len(results),
+                dialog,
+                lock,
             )
             for fn in check_functions
         ]
         for future in futures:
             future.result()
 
-    cached_results.extend(direct_results)
 
-    if any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
+def should_include_uncached() -> bool:
+    return any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
         "show_uncached"
-    ):
-        cached_results.extend(uncached_results)
+    )
 
-    dialog_update["count"] = -1
-    dialog_update["percent"] = 50
 
+def update_cache(
+    query: Optional[str],
+    mode: str,
+    media_type: str,
+    cached_results: List[TorrentStream],
+    episode: int,
+):
     if query:
-        if mode == "tv" or media_type == "tv":
-            set_cached(cached_results, query, params=(episode, "deb"))
-        else:
-            set_cached(cached_results, query, params=("deb"))
-
-    return cached_results
+        params = (episode, "deb") if mode == "tv" or media_type == "tv" else ("deb",)
+        set_cached(cached_results, query, params=params)
 
 
-def get_debrid_status(res):
-    type = res.get("type")
+def get_debrid_status(res: TorrentStream) -> str:
+    type = res.type
 
-    if res.get("isPack"):
+    if res.isPack:
         if type == Debrids.RD:
             status_string = get_rd_status_pack(res)
         else:
@@ -103,16 +146,16 @@ def get_debrid_status(res):
     return status_string
 
 
-def get_rd_status(res):
-    if res.get("isCached"):
+def get_rd_status(res: TorrentStream) -> str:
+    if res.isCached:
         label = f"[B]Cached[/B]"
     else:
         label = f"[B]Download[/B]"
     return label
 
 
-def get_rd_status_pack(res):
-    if res.get("isCached"):
+def get_rd_status_pack(res: TorrentStream) -> str:
+    if res.isCached:
         label = f"[B]Pack-Cached[/B]"
     else:
         label = f"[B]Pack-Download[/B]"
@@ -131,35 +174,28 @@ def get_pack_info(type, info_hash):
     return info
 
 
-def filter_results(results, direct_results):
+def filter_results(results: List[TorrentStream], direct_results: List[dict]) -> None:
     filtered_results = []
 
     for res in copy.deepcopy(results):
         info_hash = extract_info_hash(res)
-
         if info_hash:
-            res["infoHash"] = info_hash
+            res.infoHash = info_hash
             filtered_results.append(res)
-        elif (
-            res["indexer"] == Indexer.TELEGRAM
-            or res["type"] == IndexerType.STREMIO_DEBRID
-        ):
+        elif res.indexer == Indexer.TELEGRAM or res.type == IndexerType.STREMIO_DEBRID:
             direct_results.append(res)
 
     results[:] = filtered_results
 
 
-def extract_info_hash(res):
-    """Extracts and returns the info hash from a result if available."""
-    if res.get("infoHash"):
-        return res["infoHash"].lower()
+def extract_info_hash(res: TorrentStream) -> Optional[str]:
+    if res.infoHash:
+        return res.infoHash.lower()
 
-    if (guid := res.get("guid", "")) and (
-        guid.startswith("magnet:?") or len(guid) == 40
-    ):
-        return get_info_hash_from_magnet(guid).lower()
+    if res.guid and (res.guid.startswith("magnet:?") or len(res.guid) == 40):
+        return get_info_hash_from_magnet(res.guid).lower()
 
-    url = res.get("magnetUrl", "") or res.get("downloadUrl", "")
+    url = res.url
     if url.startswith("magnet:?"):
         return get_info_hash_from_magnet(url).lower()
 

@@ -1,38 +1,46 @@
 import copy
+from typing import Dict, List, Any
 from lib.clients.debrid.premiumize import Premiumize
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
-    Indexer,
     debrid_dialog_update,
     get_cached,
-    get_random_color,
     info_hash_to_magnet,
     set_cached,
     supported_video_extensions,
 )
+from lib.domain.torrent import TorrentStream
 
 
 class PremiumizeHelper:
     def __init__(self):
         self.client = Premiumize(token=get_setting("premiumize_token"))
 
-    def check_pm_cached(self, results, cached_results, uncached_results, total, dialog, lock):
+    def check_pm_cached(
+        self,
+        results: List[TorrentStream],
+        cached_results: List[Dict],
+        uncached_results: List[Dict],
+        total: int,
+        dialog: Any,
+        lock: Any,
+    ) -> None:
         """Checks if torrents are cached in Premiumize."""
-        hashes = [res.get("infoHash") for res in results]
+        hashes = [res.infoHash for res in results]
         torrents_info = self.client.get_torrent_instant_availability(hashes)
         cached_response = torrents_info.get("response", [])
 
         for index, res in enumerate(copy.deepcopy(results)):
             debrid_dialog_update("PM", total, dialog, lock)
-            res["type"] = Debrids.PM
+            res.type = Debrids.PM
 
             if index < len(cached_response) and cached_response[index] is True:
-                res["isCached"] = True
+                res.isCached = True
                 cached_results.append(res)
             else:
-                res["isCached"] = False
+                res.isCached = False
                 uncached_results.append(res)
 
     def get_pm_link(self, info_hash):
@@ -41,7 +49,9 @@ class PremiumizeHelper:
         response_data = self.client.create_download_link(magnet)
 
         if response_data.get("status") == "error":
-            kodilog(f"Failed to get link from Premiumize: {response_data.get('message')}")
+            kodilog(
+                f"Failed to get link from Premiumize: {response_data.get('message')}"
+            )
             return None
 
         content = response_data.get("content", [])
@@ -62,7 +72,9 @@ class PremiumizeHelper:
         response_data = self.client.create_download_link(magnet)
 
         if response_data.get("status") == "error":
-            notification(f"Failed to get link from Premiumize: {response_data.get('message')}")
+            notification(
+                f"Failed to get link from Premiumize: {response_data.get('message')}"
+            )
             return None
 
         torrent_content = response_data.get("content", [])
@@ -73,7 +85,8 @@ class PremiumizeHelper:
         files = [
             (item.get("link"), item.get("path").rsplit("/", 1)[-1])
             for item in torrent_content
-            if any(item.get("path", "").lower().endswith(ext) for ext in extensions) and item.get("link")
+            if any(item.get("path", "").lower().endswith(ext) for ext in extensions)
+            and item.get("link")
         ]
 
         if files:

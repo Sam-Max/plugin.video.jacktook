@@ -1,3 +1,4 @@
+from typing import Dict, List, Any
 from lib.clients.debrid.easydebrid import EasyDebrid
 from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
@@ -9,35 +10,44 @@ from lib.utils.utils import (
     set_cached,
     supported_video_extensions,
 )
+from lib.domain.torrent import TorrentStream
+
 
 class EasyDebridHelper:
     def __init__(self):
         self.client = EasyDebrid(
-            token=get_setting("easydebrid_token"),
-            user_ip=get_public_ip()
+            token=get_setting("easydebrid_token"), user_ip=get_public_ip()
         )
 
-    def check_ed_cached(self, results, cached_results, uncached_results, total, dialog, lock):
-        filtered_results = [res for res in results if "infoHash" in res]
+    def check_ed_cached(
+        self,
+        results: List[TorrentStream],
+        cached_results: List[Dict],
+        uncached_results: List[Dict],
+        total: int,
+        dialog: Any,
+        lock: Any,
+    ) -> None:
+        filtered_results = [res for res in results if res.infoHash]
         if filtered_results:
-            magnets = [info_hash_to_magnet(res["infoHash"]) for res in filtered_results]
+            magnets = [info_hash_to_magnet(res.infoHash) for res in filtered_results]
             torrents_info = self.client.get_torrent_instant_availability(magnets)
             cached_response = torrents_info.get("cached", [])
 
         for res in results:
             debrid_dialog_update("ED", total, dialog, lock)
-            res["type"] = Debrids.ED
+            res.type = Debrids.ED
 
             if res in filtered_results:
                 index = filtered_results.index(res)
                 if cached_response[index] is True:
-                    res["isCached"] = True
+                    res.isCached = True
                     cached_results.append(res)
                 else:
-                    res["isCached"] = False
+                    res.isCached = False
                     uncached_results.append(res)
             else:
-                res["isCached"] = False
+                res.isCached = False
                 uncached_results.append(res)
 
     def get_ed_link(self, info_hash):
@@ -71,4 +81,3 @@ class EasyDebridHelper:
         info = {"files": files}
         set_cached(info, info_hash)
         return info
-
