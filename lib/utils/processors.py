@@ -109,14 +109,17 @@ class PreProcessBuilder:
         seen_values: List[str] = []
         unique_results: List[TorrentStream] = []
         for res in self.results:
-            if res.infoHash not in seen_values:
+            if res.infoHash not in seen_values or res.guid not in seen_values:
                 unique_results.append(res)
                 seen_values.append(res.infoHash)
+                seen_values.append(res.guid)
         self.results = unique_results
+        kodilog(f"Removed duplicates: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
     def filter_torrent_sources(self) -> "PreProcessBuilder":
         self.results = [res for res in self.results if res.infoHash or res.guid]
+        kodilog(f"Filtered torrent sources: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
     def filter_by_episode(
@@ -142,6 +145,7 @@ class PreProcessBuilder:
         self.results = [
             res for res in self.results if re.search(combined_pattern, res.title)
         ]
+        kodilog(f"Filtered by episode: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":
@@ -150,6 +154,7 @@ class PreProcessBuilder:
         }
 
         for res in self.results:
+            kodilog(f"Processing result: {res.title}")
             title = res.title
             matched_quality = False
             for quality in Quality:
@@ -170,9 +175,7 @@ class PreProcessBuilder:
             + quality_buckets[Quality.UNKNOWN]
         )
 
-        kodilog(
-            f"Quality buckets: {self.results}", level=xbmc.LOGDEBUG
-        )
+        kodilog(f"Quality buckets: {self.results}", level=xbmc.LOGDEBUG)
 
         return self
 
