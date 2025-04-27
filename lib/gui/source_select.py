@@ -1,10 +1,11 @@
 from typing import List, Optional, Dict
 from lib.api.jacktook.kodi import kodilog
 from lib.domain.torrent import TorrentStream
+from lib.gui.filter_type_window import FilterTypeWindow
+from lib.gui.filter_items_window import FilterWindow
 import xbmcgui
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
-import xbmc
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.debrid_utils import get_debrid_status
@@ -37,10 +38,13 @@ class SourceSelect(BaseWindow):
         )
         self.setProperty("instant_close", "false")
         self.setProperty("resolving", "false")
+        self.filtered_sources: Optional[List[TorrentStream]] = None
+        self.filter_applied: bool = False
 
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
         self.populate_sources_list()
+        
         self.set_default_focus(self.display_list, 1000, control_list_reset=True)
         super().onInit()
 
@@ -50,11 +54,13 @@ class SourceSelect(BaseWindow):
 
     def populate_sources_list(self) -> None:
         self.display_list.reset()
-
-        for source in self.sources:
+        sources = (
+            self.filtered_sources
+            if self.filter_applied and self.filtered_sources is not None
+            else self.sources
+        )
+        for source in sources:
             menu_item = xbmcgui.ListItem(label=source.title)
-
-            kodilog(f"Adding source: {source}")
 
             menu_item.setProperty("title", source.title)
             menu_item.setProperty("type", get_random_color(source.type))
@@ -81,7 +87,47 @@ class SourceSelect(BaseWindow):
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         self.position = self.display_list.getSelectedPosition()
 
-        if action_id == 117:  # Context menu action
+        # Show filter type popup on right arrow
+        if action_id == 1 and control_id == 1000:
+            filter_type_popup = FilterTypeWindow("filter_type.xml", ADDON_PATH)
+            filter_type_popup.doModal()
+            selected_type = filter_type_popup.selected_type
+            del filter_type_popup
+
+            if selected_type == "quality":
+                qualities = sorted(set(s.quality for s in self.sources if s.quality))
+                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=qualities)
+                popup.doModal()
+                selected = popup.selected_filter
+                del popup
+                if selected is not None:
+                    self.filtered_sources = [s for s in self.sources if s.quality == selected]
+                    self.filter_applied = True
+                else:
+                    self.filtered_sources = None
+                    self.filter_applied = False
+
+            elif selected_type == "provider":
+                providers = sorted(set(s.provider for s in self.sources if s.provider))
+                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=providers)
+                popup.doModal()
+                selected = popup.selected_filter
+                del popup
+                if selected is not None:
+                    self.filtered_sources = [s for s in self.sources if s.provider == selected]
+                    self.filter_applied = True
+                else:
+                    self.filtered_sources = None
+                    self.filter_applied = False
+            else:
+                self.filtered_sources = None
+                self.filter_applied = False
+
+            self.populate_sources_list()
+            self.set_default_focus(self.display_list, 1000, control_list_reset=True)
+
+            
+        elif action_id == 117:  # Context menu action
             selected_source = self.sources[self.position]
             if selected_source.type == "Torrent":
                 response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])

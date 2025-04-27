@@ -86,9 +86,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
     def add_item_information_to_window(self, item_information):
         self.item_information = deepcopy(item_information)
-        self.add_info_properties()
-
-    def add_info_properties(self):
         for i in self.item_information:
             value = self.item_information[i]
             try:
