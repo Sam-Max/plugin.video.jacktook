@@ -1,6 +1,6 @@
 import sys
 from urllib import parse
-from lib.downloader import handle_cancel_download, handle_download_file
+from lib.downloader import handle_cancel_download, handle_delete_file, handle_download_file
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
@@ -115,6 +115,7 @@ def addon_router():
         "titles": titles,
         "history": history,
         "donate": donate,
+        "delete_file": handle_delete_file,
         "clear_all_cached": clear_all_cached,
         "clear_history": clear_history,
         "cancel_download":handle_cancel_download,

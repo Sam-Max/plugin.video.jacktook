@@ -4,21 +4,24 @@ import ssl
 import threading
 from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl, urlparse
+from datetime import timedelta
 
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
     get_setting,
     notification,
-    bytes_to_human_readable,
     translatePath,
 )
+from lib.db.cached import cache, MemoryCache
 import xbmcplugin
 import xbmcgui
 from xbmcvfs import listdir
 import xbmcvfs
+import xbmc
 
-active_downloads = {}
+# Use MemoryCache for cancel flags
+cancel_flag_cache = MemoryCache()
 
 
 def handle_download_file(params):
@@ -27,17 +30,18 @@ def handle_download_file(params):
     """
     destination = params.get("destination")
     if not destination or not os.path.exists(destination):
-        notification("Download", "Invalid download destination.")
+        notification("Invalid download destination.")
         return
 
     # setup cancel flag and register by full filepath
-    cancel_flag = threading.Event()
     url = params.get("url", "")
-    kodilog(f"Download URL: {url}")
     file_name = os.path.basename(urlparse(url).path)
     key = os.path.join(destination, file_name)
-    active_downloads[key] = cancel_flag
 
+    cancel_flag = threading.Event()
+    kodilog(f"Cancel flag: {cancel_flag}")
+    kodilog(f"Key: {key}")
+    cancel_flag_cache.set(key, cancel_flag, timedelta(hours=1))
     downloader = Downloader(params, cancel_flag)
     downloader.run()
 
@@ -53,7 +57,7 @@ class Downloader:
 
     def run(self):
         if not self.url:
-            notification("Download", "No URL provided for download.")
+            notification("No URL provided for download.")
             return
 
         thread = threading.Thread(target=self._run_download_process)
@@ -63,7 +67,7 @@ class Downloader:
         self._prepare_download()
 
         if not self._validate_url():
-            notification("Download", "Invalid URL for download.")
+            notification("Invalid URL for download.")
             return
 
         self._start_download()
@@ -98,46 +102,72 @@ class Downloader:
             request = Request(self.url, headers=self.headers)
             response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
 
+            # Initialize the progress dialog
+            progress_dialog = xbmcgui.DialogProgress()
+            progress_dialog.create("Downloading", f"Starting download: {self.name}")
+
             with open(destination_path, "wb") as file:
                 downloaded = 0
                 while chunk := response.read(1024 * 1024):  # 1MB chunks
-                    # check for cancellation
                     if self.cancel_flag and self.cancel_flag.is_set():
-                        notification(f"Cancelled: {self.name}", "Download")
+                        progress_dialog.close()
+                        notification(f"Cancelled: {self.name}")
                         file.close()
                         try:
-                            os.remove(destination_path)
+                            xbmcvfs.delete(destination_path)
                         except:
                             pass
                         return
 
                     file.write(chunk)
                     downloaded += len(chunk)
-                    progress = (downloaded / self.file_size) * 100
-                    notification(
-                        f"{self.name}: {progress:.2f}% ({bytes_to_human_readable(downloaded)} of {bytes_to_human_readable(self.file_size)})",
-                        "Download Progress",
-                        time=1000,
-                        sound=False,
+                    progress = int((downloaded / self.file_size) * 100)
+                    progress_dialog.update(
+                        progress,
+                        f"{self.name}: {progress}% completed",
                     )
 
-            notification(f"Successfully downloaded {self.name}.", "Download")
+                    if progress_dialog.iscanceled():
+                        progress_dialog.close()
+
+            progress_dialog.close()
+            notification(f"Successfully downloaded {self.name}.")
         except Exception as e:
             kodilog(f"Download error: {str(e)}")
-            notification(f"Failed to download {self.name}: {str(e)}", "Download")
+            notification(f"Failed to download {self.name}: {str(e)}")
         finally:
-            # clean up registry
+            # Clean up registry
             key = os.path.join(self.destination, file_name)
-            active_downloads.pop(key, None)
+            cache.delete(key)
 
 
 def handle_cancel_download(params):
+    kodilog("Cancelling download")
     file_path = params.get("file")
-    flag = active_downloads.pop(file_path, None)
-    if flag:
-        flag.set()
+    cancel_flag = cancel_flag_cache.get(file_path, default=None)
+    kodilog(f"Cancel key: {file_path}")
+    kodilog(f"Cancel flag: {cancel_flag}")
+    if cancel_flag:
+        cancel_flag.set()
+        kodilog(f"Cancelled download for {file_path}")
     else:
-        notification("No active download found.", "Download")
+        notification("No active download found.")
+
+
+def handle_delete_file(params):
+    file_path = params.get("file")
+    kodilog(f"Deleting file: {file_path}")
+    if not xbmcvfs.exists(file_path):
+        notification("File not found.")
+        return
+    try:
+        xbmcvfs.delete(file_path)
+        cancel_flag_cache.delete(file_path)
+        notification(f"Deleted file: {os.path.basename(file_path)}")
+        xbmc.executebuiltin("Container.Refresh")
+    except Exception as e:
+        kodilog(f"Error deleting file {file_path}: {str(e)}")
+        notification(f"Failed to delete file: {str(e)}")
 
 
 def downloads_viewer(params):
@@ -160,7 +190,11 @@ def downloads_viewer(params):
                     (
                         "Cancel Download",
                         f"RunPlugin(plugin://plugin.video.jacktook?action=cancel_download&file={item_path})",
-                    )
+                    ),
+                    (
+                        "Delete File",
+                        f"RunPlugin(plugin://plugin.video.jacktook?action=delete_file&file={item_path})",
+                    ),
                 ]
                 list_item.addContextMenuItems(context_menu)
                 is_folder = False

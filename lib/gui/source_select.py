@@ -193,10 +193,6 @@ class SourceSelect(BaseWindow):
                     destination=translatePath(download_dir),
                 )
             )
-            xbmcgui.Dialog().notification(
-                "Download",
-                f"Started downloading {selected_source.title}",
-            )
         except Exception as e:
             kodilog(f"Failed to start download: {str(e)}")
             xbmcgui.Dialog().notification(
