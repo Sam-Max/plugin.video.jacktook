@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
-from lib.play import get_playback_info
+from lib.play import resolve_playback_source
 from lib.utils.debrid_utils import get_pack_info
 from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.utils import Indexer, IndexerType
@@ -50,64 +50,19 @@ class ResolverWindow(BaseWindow):
         self.resolve_source()
 
     def resolve_source(self) -> Optional[Dict[str, Any]]:
-        url, magnet, is_torrent = self._get_source_details()
-
         if self.source.isPack or self.pack_select:
             self.resolve_pack()
         else:
-            self.resolve_single_source(url, magnet, is_torrent)
+            self.resolve_single_source()
 
         self.close()
         return self.playback_info
 
-    def _get_source_details(self) -> tuple[str, str, bool]:
-        type = self.source.type
-        url, magnet, is_torrent = "", "", False
+    def resolve_single_source(self) -> None:
+        url, magnet, is_torrent = self.get_source_details(source=self.source)
+        source_data = self.prepare_source_data(self.source, url, magnet, is_torrent)
+        self.playback_info = resolve_playback_source(source_data)
 
-        if type == IndexerType.TORRENT:
-            url, magnet, is_torrent = self._handle_torrent_source()
-        elif type == IndexerType.DIRECT:
-            url, is_torrent = self.source.downloadUrl, False
-        elif type == IndexerType.STREMIO_DEBRID:
-            url, is_torrent = self.source.url, False
-
-        return url, magnet, is_torrent
-
-    def _handle_torrent_source(self) -> tuple[str, str, bool]:
-        guid = self.source.guid
-        magnet = ""
-        indexer = self.source.indexer
-        url = self.source.url or ""
-
-        if guid and guid.startswith("magnet:?"):
-            magnet = guid
-        elif indexer == Indexer.BURST:
-            url, magnet = guid, ""
-
-        if url.startswith("magnet:?") and not magnet:
-            magnet, url = url, ""
-
-        if not magnet:
-            magnet = resolve_to_magnet(url) or ""
-
-        return url, magnet, True
-
-    def resolve_single_source(self, url: str, magnet: str, is_torrent: bool) -> None:
-        self.playback_info = get_playback_info(
-            data={
-                "title": self.source.title,
-                "type": self.source.type,
-                "indexer": self.source.indexer,
-                "url": url,
-                "magnet": magnet,
-                "info_hash": self.source.infoHash,
-                "is_torrent": is_torrent,
-                "is_pack": self.pack_select,
-                "mode": self.item_information["mode"],
-                "ids": self.item_information["ids"],
-                "tv_data": self.item_information["tv_data"],
-            }
-        )
         if self.playback_info and self.playback_info.get("is_pack"):
             self.resolve_pack()
 
