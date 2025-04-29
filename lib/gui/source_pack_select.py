@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from lib.gui.source_pack_window import SourcePackWindow
-from lib.play import get_playback_info
+from lib.play import resolve_playback_source
 from lib.utils.utils import Debrids
 from lib.domain.torrent import TorrentStream
 
@@ -40,7 +40,7 @@ class SourcePackSelect(SourcePackWindow):
         if self.source and self.source.type in [Debrids.RD, Debrids.TB]:
             torrent_id = self.pack_info["id"]
             file_id, name = self.pack_info["files"][self.position]
-            self.playback_info = get_playback_info(
+            self.playback_info = resolve_playback_source(
                 data={
                     "title": name,
                     "type": self.source.type,
