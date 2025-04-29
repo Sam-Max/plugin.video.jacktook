@@ -4,15 +4,18 @@ from threading import Thread
 from lib.utils.kodi_utils import (
     get_kodi_version,
     get_property,
+    get_setting,
     set_property,
     clear_property,
     dialog_ok,
+    translatePath,
 )
 from time import time
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.settings import update_action, update_delay
 from lib.updater import updates_check_addon
-
+import xbmcaddon
+import xbmcvfs
 
 first_run_update_prop = "jacktook.first_run_update"
 pause_services_prop = "jacktook.pause_services"
@@ -70,9 +73,6 @@ class UpdateCheck:
 
 
 def TMDBHelperAutoInstall():
-    import xbmcaddon
-    import xbmcvfs
-
     try:
         _ = xbmcaddon.Addon("plugin.video.themoviedb.helper")
     except RuntimeError:
@@ -93,6 +93,12 @@ def TMDBHelperAutoInstall():
         kodilog("Error installing jacktook.select.json file!")
         return
 
+class DownloaderSetup():
+    def run():
+        download_dir = get_setting("download_dir")
+        translated_path = translatePath(download_dir)
+        if not xbmcvfs.exists(translated_path):
+            xbmcvfs.mkdirs(translated_path)
 
 class JacktookMOnitor(xbmc.Monitor):
     def __init__(self):
@@ -103,6 +109,7 @@ class JacktookMOnitor(xbmc.Monitor):
         CheckKodiVersion().run()
         DatabaseSetup().run()
         Thread(target=UpdateCheck().run).start()
+        DownloaderSetup().run()
         TMDBHelperAutoInstall()
 
     def onNotification(self, sender, method, data):
