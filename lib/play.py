@@ -19,14 +19,10 @@ from xbmcgui import Dialog
 from typing import Any, Dict, Optional
 
 
-def get_playback_info(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     title: str = data.get("title", "")
-    mode: str = data.get("mode", "")
     indexer_type: str = data.get("type", "")
-    url: str = data.get("url", "")
-    magnet: str = data.get("magnet", "")
     is_torrent: Any = data.get("is_torrent", "")
-    ids: Any = data.get("ids", "")
     is_pack: bool = data.get("is_pack", False)
 
     torrent_enable = get_setting("torrent_enable")
@@ -36,33 +32,32 @@ def get_playback_info(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         set_watched_file(title, data, is_direct=(indexer_type == IndexerType.DIRECT))
         return data
 
-    addon_url = None
-    _url = None
-
-    if torrent_enable:
-        addon_url = get_addon_url_for_client(torrent_client, magnet, url, mode, ids)
-        if not addon_url:
-            return None
+    addon_url = get_addon_url(data, torrent_enable, torrent_client)
+    if addon_url:
+        data["url"] = addon_url
     else:
-        if is_torrent:
-            addon_url = get_torrent_url(magnet, url, mode, ids)
-            if not addon_url:
-                return None
-        else:
-            if is_pack and indexer_type in [Debrids.RD, Debrids.TB]:
-                pack_info = data.get("pack_info", {})
-                file_id = pack_info.get("file_id", "")
-                torrent_id = pack_info.get("torrent_id", "")
-                _url = get_debrid_pack_direct_url(file_id, torrent_id, indexer_type)
-            else:
-                _url = get_debrid_direct_url(indexer_type, data)
+        data["url"] = get_debrid_url(data, indexer_type, is_pack)
 
-    data["url"] = _url if _url else addon_url
     set_watched_file(title, data, is_torrent=is_torrent)
     return data
 
 
-def get_addon_url_for_client(
+def get_addon_url(
+    data: Dict[str, Any], torrent_enable: bool, torrent_client: str
+) -> Optional[str]:
+    magnet: str = data.get("magnet", "")
+    url: str = data.get("url", "")
+    mode: str = data.get("mode", "")
+    ids: Any = data.get("ids", "")
+
+    if torrent_enable:
+        return get_torrent_addon_url_for_client(torrent_client, magnet, url, mode, ids)
+    elif data.get("is_torrent", False):
+        return get_torrent_addon_url_select(magnet, url, mode, ids)
+    return None
+
+
+def get_torrent_addon_url_for_client(
     client: str, magnet: str, url: str, mode: str, ids: Any
 ) -> Optional[str]:
     if client in [Players.TORREST]:
@@ -74,12 +69,25 @@ def get_addon_url_for_client(
     return None
 
 
-def get_torrent_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
+def get_torrent_addon_url_select(
+    magnet: str, url: str, mode: str, ids: Any
+) -> Optional[str]:
     chosen_client = Dialog().select(translation(30800), torrent_clients)
     if chosen_client < 0:
         return None
     selected_client = torrent_clients[chosen_client]
-    return get_addon_url_for_client(selected_client, magnet, url, mode, ids)
+    return get_torrent_addon_url_for_client(selected_client, magnet, url, mode, ids)
+
+
+def get_debrid_url(
+    data: Dict[str, Any], indexer_type: str, is_pack: bool
+) -> Optional[str]:
+    if is_pack and indexer_type in [Debrids.RD, Debrids.TB]:
+        pack_info = data.get("pack_info", {})
+        file_id = pack_info.get("file_id", "")
+        torrent_id = pack_info.get("torrent_id", "")
+        return get_debrid_pack_direct_url(file_id, torrent_id, indexer_type)
+    return get_debrid_direct_url(indexer_type, data)
 
 
 def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
