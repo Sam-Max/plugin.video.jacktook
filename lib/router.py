@@ -1,5 +1,6 @@
 import sys
 from urllib import parse
+from lib.downloader import handle_cancel_download, handle_download_file
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
@@ -14,6 +15,7 @@ from lib.navigation import (
     cloud_details,
     direct_menu,
     donate,
+    downloads_menu,
     files,
     get_rd_downloads,
     history,
@@ -50,7 +52,14 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.stremio.catalogs import list_stremio_catalog, list_stremio_episodes, list_stremio_seasons, list_stremio_tv, list_stremio_tv_streams, search_catalog
+from lib.stremio.catalogs import (
+    list_stremio_catalog,
+    list_stremio_episodes,
+    list_stremio_seasons,
+    list_stremio_tv,
+    list_stremio_tv_streams,
+    search_catalog,
+)
 from lib.telegram import (
     get_telegram_files,
     get_telegram_latest,
@@ -63,7 +72,14 @@ from lib.utils.torrent_utils import (
     torrent_action,
     torrent_files,
 )
-from lib.stremio.ui import stremio_login, stremio_toggle_addons, stremio_logout, stremio_toggle_catalogs, stremio_update
+from lib.stremio.ui import (
+    stremio_login,
+    stremio_toggle_addons,
+    stremio_logout,
+    stremio_toggle_catalogs,
+    stremio_update,
+)
+
 
 def addon_router():
     param_string = sys.argv[2][1:]
@@ -79,11 +95,12 @@ def addon_router():
         "anime_item": anime_item,
         "anime_search": anime_search,
         "search": search,
-        "search_tmdb":search_tmdb,
+        "search_tmdb": search_tmdb,
         "search_tmdb_year": search_tmdb_year,
         "search_tmdb_genres": search_tmdb_genres,
         "handle_tmdb_query": handle_tmdb_query,
         "search_direct": search_direct,
+        "download_file": handle_download_file,  # Call the function instead of directly invoking the class
         "search_item": search_item,
         "next_page_anime": next_page_anime,
         "play_torrent": play_torrent,
@@ -100,6 +117,7 @@ def addon_router():
         "donate": donate,
         "clear_all_cached": clear_all_cached,
         "clear_history": clear_history,
+        "cancel_download":handle_cancel_download,
         "addon_update": addon_update,
         "open_burst_config": open_burst_config,
         "rd_auth": rd_auth,
@@ -119,6 +137,7 @@ def addon_router():
         "telegram_menu": telegram_menu,
         "display_picture": display_picture,
         "display_text": display_text,
+        "downloads_menu": downloads_menu,
         "test_source_select": test_source_select,
         "test_run_next": test_run_next,
         "test_resume_dialog": test_resume_dialog,
@@ -133,8 +152,8 @@ def addon_router():
         "list_stremio_tv": list_stremio_tv,
         "search_catalog": search_catalog,
         "tv_menu": tv_menu,
-        'stremio_login': stremio_login,
-        'stremio_logout': stremio_logout,
+        "stremio_login": stremio_login,
+        "stremio_logout": stremio_logout,
         "stremio_update": stremio_update,
     }
 
