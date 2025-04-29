@@ -13,6 +13,7 @@ from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.db.bookmark_db import bookmark_db
 from lib.domain.torrent import TorrentStream
+from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
     CustomDialog,
     resume_dialog_mock,
@@ -32,7 +33,7 @@ from lib.api.trakt.trakt_api import (
 )
 from lib.clients.search import search_client
 from lib.files_history import last_files
-from lib.play import get_playback_info
+from lib.play import resolve_playback_source
 from lib.titles_history import last_titles
 
 from lib.trakt import (
@@ -198,6 +199,13 @@ def root_menu():
         ADDON_HANDLE,
         build_url("cloud"),
         list_item("Cloud", "cloud.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("downloads_menu"),
+        list_item("Downloads", "cloud.png"),
         isFolder=True,
     )
 
@@ -529,7 +537,7 @@ def search(params):
     tv_data = json.loads(params.get("tv_data", "{}"))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
-    
+
     kodilog(f"Search: {query} - {ids} - {mode} - {tv_data}")
 
     set_content_type(mode, media_type)
@@ -672,7 +680,7 @@ def play_torrent(params):
 
 def auto_play(results, ids, tv_data, mode):
     result = clean_auto_play_undesired(results)
-    playback_info = get_playback_info(
+    playback_info = resolve_playback_source(
         data={
             "title": result.get("title"),
             "mode": mode,
@@ -860,7 +868,7 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = json.loads(params.get("data"))
-    data = get_playback_info(data)
+    data = resolve_playback_source(data)
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
@@ -935,6 +943,10 @@ def download(magnet, type):
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
         )
     thread.start()
+
+
+def downloads_menu(params):
+    downloads_viewer(params)
 
 
 def addon_update(params):
