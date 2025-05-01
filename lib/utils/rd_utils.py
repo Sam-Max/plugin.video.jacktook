@@ -56,6 +56,21 @@ class RealDebridHelper:
         # Add uncached_results due to RD removing cached check endpoint
         cached_results.extend(uncached_results)
 
+    def _handle_torrent_status(
+        self, torrent_info: Dict, is_pack: bool = False
+    ) -> Optional[str]:
+        """Processes torrent_info status and handles errors or file selection."""
+        torrent_id = torrent_info["id"]
+        status = torrent_info["status"]
+        if status in ["magnet_error", "error", "virus", "dead"]:
+            self.client.delete_torrent(torrent_id)
+            raise Exception(f"Torrent cannot be downloaded due to status: {status}")
+        if status in ["queued", "downloading", "magnet_conversion"]:
+            return None
+        if status == "waiting_files_selection":
+            self.handle_file_selection(torrent_info, is_pack)
+        return torrent_id
+
     def add_rd_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
@@ -73,20 +88,7 @@ class RealDebridHelper:
 
                 torrent_info = self.client.get_torrent_info(torrent_id)
 
-            torrent_id = torrent_info["id"]
-            status = torrent_info["status"]
-
-            if status in ["magnet_error", "error", "virus", "dead"]:
-                self.client.delete_torrent(torrent_id)
-                raise Exception(f"Torrent cannot be downloaded due to status: {status}")
-
-            if status in ["queued", "downloading", "magnet_conversion"]:
-                return None
-
-            if status == "waiting_files_selection":
-                self.handle_file_selection(torrent_info, is_pack)
-
-            return torrent_id
+            return self._handle_torrent_status(torrent_info, is_pack)
 
         except ProviderException as e:
             notification(str(e))
@@ -123,19 +125,22 @@ class RealDebridHelper:
             return None
 
         torr_info = self.client.get_torrent_info(torrent_id)
+        links = torr_info.get("links")
+        if not links:
+            notification("No files available for this torrent.")
+            return None
 
-        if len(torr_info["links"]) > 1:
+        if len(links) > 1:
             data["is_pack"] = True
             return None
 
-        response = self.client.create_download_link(torr_info["links"][0])
-        url = response.get("download")
-
-        if not url:
+        response = self.client.create_download_link(links[0])
+        download_url = response.get("download")
+        if not download_url:
             notification("File not cached!")
             return None
 
-        return url
+        return download_url
 
     def get_rd_pack_link(self, file_id: int, torrent_id: str) -> Optional[str]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
