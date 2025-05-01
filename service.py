@@ -94,7 +94,7 @@ def TMDBHelperAutoInstall():
         return
 
 class DownloaderSetup():
-    def run():
+    def run(self):
         download_dir = get_setting("download_dir")
         translated_path = translatePath(download_dir)
         if not xbmcvfs.exists(translated_path):
