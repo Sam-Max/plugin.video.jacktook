@@ -1,6 +1,12 @@
 import sys
 from urllib import parse
-from lib.downloader import handle_cancel_download, handle_delete_file, handle_download_file
+import xbmc
+from lib.api.jacktook.kodi import kodilog
+from lib.downloader import (
+    handle_cancel_download,
+    handle_delete_file,
+    handle_download_file,
+)
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
@@ -100,7 +106,7 @@ def addon_router():
         "search_tmdb_genres": search_tmdb_genres,
         "handle_tmdb_query": handle_tmdb_query,
         "search_direct": search_direct,
-        "download_file": handle_download_file,  # Call the function instead of directly invoking the class
+        "download_file": handle_download_file,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
         "play_torrent": play_torrent,
@@ -118,7 +124,7 @@ def addon_router():
         "delete_file": handle_delete_file,
         "clear_all_cached": clear_all_cached,
         "clear_history": clear_history,
-        "cancel_download":handle_cancel_download,
+        "cancel_download": handle_cancel_download,
         "addon_update": addon_update,
         "open_burst_config": open_burst_config,
         "rd_auth": rd_auth,
@@ -159,7 +165,9 @@ def addon_router():
     }
 
     if param_string:
+        kodilog(f"Param string: {param_string}", level=xbmc.LOGDEBUG)
         params = dict(parse.parse_qsl(param_string))
+        kodilog(f"Parsed params: {params}", level=xbmc.LOGDEBUG)
         action = params.get("action")
         action_func = actions.get(action)
         if action_func:
