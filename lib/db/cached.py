@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from hashlib import sha256
 
+from lib.api.jacktook.kodi import kodilog
 import xbmcaddon
 import xbmcgui
 
@@ -108,15 +109,31 @@ class MemoryCache(_BaseCache):
         if key in self._object_store:
             return self._object_store[key]
         data = self._window.getProperty(self._database + key)
-        return self._load_func(b64decode(data)) if data else None
+        
+        kodilog(f"Getting property from window: {self._database + key}")
+        kodilog(f"Key: {key}")
+        
+        if data:
+            decoded_data = self._load_func(b64decode(data))
+            kodilog(f"Decoded data: {decoded_data}")
+            return decoded_data
+        else:
+            None
 
-    def _set(self, key, data, expires):
+    def _set(self, key, data):
         try:
-            blob = self._dump_func((data, expires))
+            blob = self._dump_func(data)
             self._window.setProperty(self._database + key, b64encode(blob).decode())
-        except Exception:
+            
+            kodilog("Setting property in window")
+            data = self._window.getProperty(self._database + key)
+            kodilog(f"Key: {key}, Data: {data}")
+            
+        except Exception as e:
             # fallback to raw in‑memory store
-            self._object_store[key] = (data, expires)
+            kodilog("Fallback to raw in-memory store")
+            kodilog(f"Error: {e}")
+            self._object_store[key] = data
 
     def delete(self, key):
         """Remove a single key from window properties."""
