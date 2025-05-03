@@ -2,7 +2,7 @@ from typing import Optional, Dict, Any
 from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
-from lib.play import get_playback_info
+from lib.playback import resolve_playback_source
 from lib.utils.debrid_utils import get_pack_info
 from lib.utils.kodi_utils import ADDON_PATH
 from lib.utils.utils import Indexer, IndexerType
@@ -93,7 +93,7 @@ class ResolverWindow(BaseWindow):
         return url, magnet, True
 
     def resolve_single_source(self, url: str, magnet: str, is_torrent: bool) -> None:
-        self.playback_info = get_playback_info(
+        self.playback_info = resolve_playback_source(
             data={
                 "title": self.source.title,
                 "type": self.source.type,

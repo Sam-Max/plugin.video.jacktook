@@ -21,6 +21,7 @@ from lib.gui.custom_dialogs import (
     source_select_mock,
 )
 
+from lib.playback import resolve_playback_source
 from lib.player import JacktookPLayer
 from lib.stremio.catalogs import list_stremio_catalogs
 from lib.utils.seasons import show_episode_info, show_season_info
@@ -32,7 +33,6 @@ from lib.api.trakt.trakt_api import (
 )
 from lib.clients.search import search_client
 from lib.files_history import last_files
-from lib.play import get_playback_info
 from lib.titles_history import last_titles
 
 from lib.trakt import (
@@ -672,7 +672,7 @@ def play_torrent(params):
 
 def auto_play(results, ids, tv_data, mode):
     result = clean_auto_play_undesired(results)
-    playback_info = get_playback_info(
+    playback_info = resolve_playback_source(
         data={
             "title": result.get("title"),
             "mode": mode,
@@ -860,7 +860,7 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = json.loads(params.get("data"))
-    data = get_playback_info(data)
+    data = resolve_playback_source(data)
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
