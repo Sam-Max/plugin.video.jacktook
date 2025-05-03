@@ -19,6 +19,7 @@ from lib.utils.kodi_utils import (
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     make_listing,
+    set_watched_file,
 )
 from xbmc import Monitor, getCondVisibility as get_visibility
 from lib.utils.kodi_utils import sleep
@@ -51,6 +52,7 @@ class JacktookPLayer(xbmc.Player):
         self.set_constants(data)
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()
+        self.mark_watched(data)
 
         close_busy_dialog()
 
@@ -282,6 +284,9 @@ class JacktookPLayer(xbmc.Player):
             if mode == "tv":
                 trakt_ids["tvdb"] = tvdb_id
             set_property("script.trakt.ids", json_dumps(trakt_ids))
+
+    def mark_watched(self, data):
+        set_watched_file(data)
 
     def cancel_playback(self):
         self.PLAYLIST.clear()
