@@ -16,6 +16,7 @@ from lib.domain.torrent import TorrentStream
 from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
     CustomDialog,
+    download_dialog_mock,
     resume_dialog_mock,
     run_next_mock,
     source_select,
@@ -230,12 +231,12 @@ def root_menu():
         isFolder=True,
     )
 
-    # addDirectoryItem(
-    #     ADDON_HANDLE,
-    #     build_url("test_resume_dialog"),
-    #     list_item("Test", ""),
-    #     isFolder=False,
-    # )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("test_download_dialog"),
+        list_item("Test", ""),
+        isFolder=False,
+    )
 
     endOfDirectory(ADDON_HANDLE, cacheToDisc=False)
 
@@ -1027,3 +1028,6 @@ def test_source_select(params):
 
 def test_resume_dialog(params):
     resume_dialog_mock()
+
+def test_download_dialog(params):
+    download_dialog_mock()
