@@ -46,7 +46,7 @@ def handle_download_file(params):
 
 
 class Downloader:
-    def __init__(self, params, cancel_flag_cache=None):
+    def __init__(self, params, cancel_flag_cache):
         self.url = params.get("url")
         self.name = params.get("title", "unknown")
         self.destination = params.get("destination", "")
@@ -116,6 +116,7 @@ class Downloader:
                     # Handle cancellation
                     if progress_dialog.cancelled or self.cancel_flag._get(destination_path):
                         notification(f"Cancelled: {self.name}")
+                        self.cancel_flag._set(destination_path, True)
                         file.close()
                         return
 
@@ -141,10 +142,16 @@ def handle_cancel_download(params):
     kodilog("Cancelling download")
     file_path = params.get("file")
     cancel_flag = cancel_flag_cache._get(file_path)
-    kodilog(f"Cancel flag: {cancel_flag}")
     kodilog(f"Cancel key: {file_path}")
+    kodilog(f"Cancel flag: {cancel_flag}")
     if cancel_flag is False:
+        kodilog(f"Setting cancel flag for {file_path}")
+        
+        kodilog(f"Cancel flag cache: {cancel_flag_cache}")
         cancel_flag_cache._set(file_path, True)
+        cancel_flag = cancel_flag_cache._get(file_path)
+        kodilog(f"Cancel flag set to: {cancel_flag}")
+
         kodilog(f"Cancelled download for {file_path}")
     else:
         notification("No active download found.")
@@ -152,7 +159,6 @@ def handle_cancel_download(params):
 
 def handle_delete_file(params):
     file_path = params.get("file", "")
-    kodilog(f"Deleting file: {file_path}")
     encoded_file_path = quote(file_path)
     if not xbmcvfs.exists(encoded_file_path):
         notification("File not found.")
