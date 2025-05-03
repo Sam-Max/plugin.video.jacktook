@@ -8,7 +8,7 @@ import unicodedata
 import requests
 from enum import Enum
 
-from typing import List, Dict, Any
+from typing import List
 
 from lib.api.fanart.fanarttv import FanartTv
 from lib.api.jacktook.kodi import kodilog
@@ -459,7 +459,11 @@ def set_cast_and_crew(info_tag, metadata):
     info_tag.setCast(cast_list)
 
 
-def set_watched_file(title, data, is_direct=False, is_torrent=False):
+def set_watched_file(data):
+    title = data.get("title", "")
+    is_torrent = data.get("is_torrent", False)
+    is_direct = data.get("type", "") == IndexerType.DIRECT
+    
     if title in main_db.database["jt:lfh"]:
         return
 
@@ -477,27 +481,29 @@ def set_watched_file(title, data, is_direct=False, is_torrent=False):
         main_db.database["jt:watch"][title] = True
 
     data["timestamp"] = datetime.now().strftime("%a, %d %b %Y %I:%M %p")
-    data["is_torrent"] = is_torrent
 
     main_db.set_data(key="jt:lfh", subkey=title, value=data)
     main_db.commit()
 
 
-def set_watched_title(title, ids, mode="", media_type=""):
+def set_watched_title(title, ids, mode, tg_data="", media_type=""):
+    kodilog(f"Setting watched title: {title}")
+    current_time = datetime.now()
+
     if mode == "multi":
         mode = media_type
-    if title != "None":
-        current_time = datetime.now()
-        main_db.set_data(
-            key="jt:lth",
-            subkey=title,
-            value={
-                "timestamp": current_time.strftime("%a, %d %b %Y %I:%M %p"),
-                "ids": ids,
-                "mode": mode,
-            },
-        )
-        main_db.commit()
+    
+    main_db.set_data(
+        key="jt:lth",
+        subkey=title,
+        value={
+            "timestamp": current_time.strftime("%a, %d %b %Y %I:%M %p"),
+            "ids": ids,
+            "mode": mode,
+            "tg_data": tg_data,
+        },
+    )
+    main_db.commit()
 
 
 def is_torrent_watched(title):
