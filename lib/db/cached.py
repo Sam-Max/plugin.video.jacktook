@@ -10,6 +10,7 @@ from hashlib import sha256
 from lib.api.jacktook.kodi import kodilog
 import xbmcaddon
 import xbmcgui
+import xbmc
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -108,17 +109,16 @@ class MemoryCache(_BaseCache):
     def _get(self, key):
         if key in self._object_store:
             return self._object_store[key]
+        
         data = self._window.getProperty(self._database + key)
         
-        kodilog(f"Getting property from window: {self._database + key}")
-        kodilog(f"Key: {key}")
+        kodilog(f"Getting property from window: {self._database + key}", level=xbmc.LOGDEBUG)
+        kodilog(f"Key: {key}", level=xbmc.LOGDEBUG)
         
         if data:
             decoded_data = self._load_func(b64decode(data))
-            kodilog(f"Decoded data: {decoded_data}")
+            kodilog(f"Decoded data: {decoded_data}", level=xbmc.LOGDEBUG)
             return decoded_data
-        else:
-            None
 
     def _set(self, key, data):
         try:
