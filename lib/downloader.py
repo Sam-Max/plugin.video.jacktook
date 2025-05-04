@@ -11,6 +11,7 @@ from lib.utils.kodi_utils import (
     ADDON_PATH,
     get_setting,
     notification,
+    open_file,
     translatePath,
 )
 from lib.db.cached import cache, MemoryCache
@@ -110,7 +111,7 @@ class Downloader:
             )
             progress_dialog.show_dialog()
 
-            with open(destination_path, "wb") as file:
+            with open_file(destination_path, "w") as file:
                 downloaded = 0
                 while not self.monitor.abortRequested():
                     chunk = response.read(1024 * 1024)  # 1MB chunks
@@ -158,13 +159,12 @@ def handle_cancel_download(params):
 
 def handle_delete_file(params):
     file_path = params.get("file", "")
-    encoded_file_path = quote(file_path)
-    if not xbmcvfs.exists(encoded_file_path):
+    if not xbmcvfs.exists(file_path):
         notification("File not found.")
         return
     try:
-        xbmcvfs.delete(encoded_file_path)
-        notification(f"Deleted file: {os.path.basename(file_path)}")
+        xbmcvfs.delete(file_path)
+        notification(f"File Deleted: {file_path}")
         xbmc.executebuiltin("Container.Refresh")
     except Exception as e:
         kodilog(f"Error deleting file {file_path}: {str(e)}")
@@ -180,7 +180,6 @@ def downloads_viewer(params):
         directories, files = listdir(translated_path)
         for item in directories + files:
             item_path = os.path.join(translated_path, item)
-            kodilog(f"Item path: {item_path}")
             list_item = xbmcgui.ListItem(label=item)
             if item in directories:
                 list_item.setInfo("video", {"title": item, "mediatype": "folder"})
