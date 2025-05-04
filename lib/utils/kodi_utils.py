@@ -14,7 +14,7 @@ import xbmcgui
 from xbmcgui import Window, ListItem
 import xbmcaddon
 from xbmcplugin import setResolvedUrl
-from xbmcvfs import translatePath as translate_path, delete as xbmc_delete, listdir
+from xbmcvfs import translatePath as translate_path, delete as xbmc_delete, listdir, File as xbmcvfs_File
 from xbmc import executeJSONRPC
 
 
@@ -406,6 +406,10 @@ def list_dirs(location):
 
 def translatePath(_path):
 	return translate_path(_path)
+
+
+def open_file(_file, mode='r'):
+    return xbmcvfs_File(_file, mode)
 
 
 def cancel_playback():
