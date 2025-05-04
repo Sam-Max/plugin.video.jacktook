@@ -280,8 +280,8 @@ msgid "Stop downloading"
 msgstr "Detener descarga"
 
 msgctxt "#30702"
-msgid "Download"
-msgstr "Descargar"
+msgid "Downloads"
+msgstr "Descargas"
 
 msgctxt "#30703"
 msgid "Resume"
@@ -1246,3 +1246,7 @@ msgstr "Actualizar Addons"
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr "Alternar complementos de catalogos"
+
+msgctxt "#30876"
+msgid "Download directory"
+msgstr "Directorio de Descarga"

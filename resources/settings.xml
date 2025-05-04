@@ -866,7 +866,7 @@
                 </setting>
             </group>
             <group id="downloads" label="30702">
-                <setting id="download_dir" type="path" label="30702" help="">
+                <setting id="download_dir" type="path" label="30876" help="">
                     <level>0</level>
 					<default>special://profile/addon_data/plugin.video.jacktook/Downloads/</default>
 					<constraints>
