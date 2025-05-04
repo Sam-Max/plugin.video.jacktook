@@ -3,7 +3,7 @@ import os
 import ssl
 import threading
 from urllib.request import Request, urlopen
-from urllib.parse import parse_qsl, urlparse, quote
+from urllib.parse import parse_qsl, quote
 
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
@@ -15,7 +15,12 @@ from lib.utils.kodi_utils import (
 )
 from lib.db.cached import cache, MemoryCache
 from lib.gui.custom_progress import CustomProgressDialog
-import xbmcplugin
+from xbmcplugin import (
+    addDirectoryItems,
+    setContent,
+    setPluginCategory,
+    endOfDirectory,
+)
 import xbmcgui
 from xbmcvfs import listdir
 import xbmcvfs
@@ -35,8 +40,7 @@ def handle_download_file(params):
         notification("Invalid download destination.")
         return
 
-    url = params.get("url", "")
-    file_name = os.path.basename(urlparse(url).path)
+    file_name = params.get("file_name", "")
     key = os.path.join(destination, file_name)
 
     kodilog(f"Cancel Key: {key}")
@@ -95,8 +99,7 @@ class Downloader:
 
     def _start_download(self):
         try:
-            file_name = os.path.basename(urlparse(self.url).path)
-            destination_path = os.path.join(self.destination, file_name)
+            destination_path = os.path.join(self.destination, self.name)
             kodilog(f"Destination path: {destination_path}")
 
             request = Request(self.url, headers=self.headers)
@@ -114,7 +117,9 @@ class Downloader:
                     if not chunk:
                         break
                     # Handle cancellation
-                    if progress_dialog.cancelled or self.cancel_flag._get(destination_path):
+                    if progress_dialog.cancelled or self.cancel_flag._get(
+                        destination_path
+                    ):
                         notification(f"Cancelled: {self.name}")
                         self.cancel_flag._set(destination_path, True)
                         file.close()
@@ -134,7 +139,7 @@ class Downloader:
             kodilog(f"Download error: {str(e)}")
             notification(f"Failed to download: {str(e)}")
         finally:
-            key = os.path.join(self.destination, file_name)
+            key = os.path.join(self.destination, self.name)
             cache.delete(key)
 
 
@@ -145,14 +150,8 @@ def handle_cancel_download(params):
     kodilog(f"Cancel key: {file_path}")
     kodilog(f"Cancel flag: {cancel_flag}")
     if cancel_flag is False:
-        kodilog(f"Setting cancel flag for {file_path}")
-        
-        kodilog(f"Cancel flag cache: {cancel_flag_cache}")
         cancel_flag_cache._set(file_path, True)
-        cancel_flag = cancel_flag_cache._get(file_path)
-        kodilog(f"Cancel flag set to: {cancel_flag}")
-
-        kodilog(f"Cancelled download for {file_path}")
+        xbmc.executebuiltin("Container.Refresh")
     else:
         notification("No active download found.")
 
@@ -205,7 +204,7 @@ def downloads_viewer(params):
                 context_menu.append(
                     (
                         "Delete File",
-                        f"RunPlugin(plugin://plugin.video.jacktook?action=delete_file&file={item_path})", 
+                        f"RunPlugin(plugin://plugin.video.jacktook?action=delete_file&file={item_path})",
                     )
                 )
 
@@ -213,11 +212,10 @@ def downloads_viewer(params):
                 is_folder = False
             item_list.append((item_path, list_item, is_folder))
 
-        xbmcplugin.addDirectoryItems(ADDON_HANDLE, item_list)
-        xbmcplugin.addSortMethod(ADDON_HANDLE, xbmcplugin.SORT_METHOD_FILE)
-        xbmcplugin.setContent(ADDON_HANDLE, "")
-        xbmcplugin.setPluginCategory(ADDON_HANDLE, params.get("name", "Downloads"))
-        xbmcplugin.endOfDirectory(ADDON_HANDLE)
+        addDirectoryItems(ADDON_HANDLE, item_list)
+        setContent(ADDON_HANDLE, "")
+        setPluginCategory(ADDON_HANDLE, params.get("name", "Downloads"))
+        endOfDirectory(ADDON_HANDLE)
     except Exception as e:
         notification(f"Error: {str(e)}", "Downloads Viewer")
-        xbmcplugin.endOfDirectory(ADDON_HANDLE, succeeded=False)
+        endOfDirectory(ADDON_HANDLE, succeeded=False)
