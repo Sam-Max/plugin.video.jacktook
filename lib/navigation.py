@@ -161,12 +161,12 @@ def root_menu():
         isFolder=True,
     )
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("animation_menu"),
-        list_item("Animation", "anime.png"),
-        isFolder=True,
-    )
+    # addDirectoryItem(
+    #     ADDON_HANDLE,
+    #     build_url("animation_menu"),
+    #     list_item("Animation", "anime.png"),
+    #     isFolder=True,
+    # )
 
     addDirectoryItem(
         ADDON_HANDLE,
