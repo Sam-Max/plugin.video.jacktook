@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from lib.gui.source_pack_window import SourcePackWindow
-from lib.play import resolve_playback_source
+from lib.playback import resolve_playback_source
 from lib.utils.utils import Debrids
 from lib.domain.torrent import TorrentStream
 

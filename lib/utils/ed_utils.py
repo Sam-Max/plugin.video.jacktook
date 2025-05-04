@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Dict, List, Any
 from lib.clients.debrid.easydebrid import EasyDebrid
-from lib.utils.kodi_utils import get_setting, notification
+from lib.utils.kodi_utils import dialog_text, get_setting, notification
 from lib.utils.utils import (
     Debrids,
     debrid_dialog_update,
@@ -81,3 +82,16 @@ class EasyDebridHelper:
         info = {"files": files}
         set_cached(info, info_hash)
         return info
+
+    def get_ed_info(self):
+        user = self.client.get_user_info()
+        expiration_timestamp = user["paid_until"]
+
+        expires = datetime.fromtimestamp(expiration_timestamp)
+        days_remaining = (expires - datetime.today()).days
+
+        body = [
+            f"[B]Expires:[/B] {expires}",
+            f"[B]Days Remaining:[/B] {days_remaining}",
+        ]
+        dialog_text("Easy-Debrid", "\n".join(body))

@@ -1,12 +1,9 @@
 from typing import Optional, Dict, Any
-from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
-from lib.play import resolve_playback_source
+from lib.playback import resolve_playback_source
 from lib.utils.debrid_utils import get_pack_info
 from lib.utils.kodi_utils import ADDON_PATH
-from lib.utils.utils import Indexer, IndexerType
-from lib.utils.resolve_to_magnet import resolve_to_magnet
 from lib.domain.torrent import TorrentStream
 
 

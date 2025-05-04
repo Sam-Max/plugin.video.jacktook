@@ -1,3 +1,4 @@
+import json
 import os
 from lib.db.main_db import main_db
 from lib.utils.kodi_utils import ADDON_HANDLE, ADDON_PATH, build_url
@@ -54,4 +55,15 @@ def last_titles():
                 list_item,
                 isFolder=False,
             )
+        elif mode == "tg_latest":
+             addDirectoryItem(
+                ADDON_HANDLE,
+                build_url(
+                    "get_telegram_latest_files",
+                    data=json.dumps(data.get("tg_data")),
+                ),
+                list_item,
+                isFolder=True,
+            )
+             
     endOfDirectory(ADDON_HANDLE)

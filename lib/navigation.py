@@ -23,8 +23,10 @@ from lib.gui.custom_dialogs import (
     source_select_mock,
 )
 
+from lib.playback import resolve_playback_source
 from lib.player import JacktookPLayer
 from lib.stremio.catalogs import list_stremio_catalogs
+from lib.utils.ed_utils import EasyDebridHelper
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
@@ -34,7 +36,6 @@ from lib.api.trakt.trakt_api import (
 )
 from lib.clients.search import search_client
 from lib.files_history import last_files
-from lib.play import resolve_playback_source
 from lib.titles_history import last_titles
 
 from lib.trakt import (
@@ -711,8 +712,8 @@ def cloud_details(params):
         notification("Not yet implemented")
         return
     elif type == Debrids.ED:
-        notification("Not yet implemented")
-        return
+        downloads_method = "get_ed_downloads"
+        info_method = "ed_info"
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -752,6 +753,10 @@ def cloud(params):
 
 def rd_info(params):
     RealDebridHelper().get_rd_info()
+
+
+def ed_info(params):
+    EasyDebridHelper().get_ed_info()
 
 
 def get_rd_downloads(params):

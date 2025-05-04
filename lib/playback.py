@@ -12,7 +12,6 @@ from lib.utils.utils import (
     Debrids,
     IndexerType,
     Players,
-    set_watched_file,
     torrent_clients,
 )
 from xbmcgui import Dialog
@@ -20,16 +19,13 @@ from typing import Any, Dict, Optional
 
 
 def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    title: str = data.get("title", "")
     indexer_type: str = data.get("type", "")
-    is_torrent: Any = data.get("is_torrent", "")
     is_pack: bool = data.get("is_pack", False)
 
     torrent_enable = get_setting("torrent_enable")
     torrent_client = get_setting("torrent_client")
 
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
-        set_watched_file(title, data, is_direct=(indexer_type == IndexerType.DIRECT))
         return data
 
     addon_url = get_addon_url(data, torrent_enable, torrent_client)
@@ -38,7 +34,6 @@ def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     else:
         data["url"] = get_debrid_url(data, indexer_type, is_pack)
 
-    set_watched_file(title, data, is_torrent=is_torrent)
     return data
 
 
