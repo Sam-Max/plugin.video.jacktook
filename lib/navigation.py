@@ -231,12 +231,12 @@ def root_menu():
         isFolder=True,
     )
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("test_download_dialog"),
-        list_item("Test", ""),
-        isFolder=False,
-    )
+    # addDirectoryItem(
+    #     ADDON_HANDLE,
+    #     build_url("test_download_dialog"),
+    #     list_item("Test", ""),
+    #     isFolder=False,
+    # )
 
     endOfDirectory(ADDON_HANDLE, cacheToDisc=False)
 
