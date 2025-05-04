@@ -98,7 +98,7 @@ class DownloaderSetup():
         download_dir = get_setting("download_dir")
         translated_path = translatePath(download_dir)
         if not xbmcvfs.exists(translated_path):
-            xbmcvfs.mkdirs(translated_path)
+            xbmcvfs.mkdir(translated_path)
 
 class JacktookMOnitor(xbmc.Monitor):
     def __init__(self):
