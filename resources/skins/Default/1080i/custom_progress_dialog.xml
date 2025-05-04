@@ -51,35 +51,41 @@
                 <height>20</height>
                 <info>percentage</info>
             </control>
-            <control type="button" id="12003">
+            <control type="grouplist" orientation="horizontal">
+                <orientation>horizontal</orientation>
                 <top>220</top>
                 <left>200</left>
-                <width>auto</width>
-                <height>56</height>
-                <label>Cancel</label>
-                <align>center</align>
-                <textoffsetx>20</textoffsetx>
-                <font>font14</font>
-                <textcolor>DDFFFFFF</textcolor>
-                <focusedcolor>EEFFFFFF</focusedcolor>
-				<selectedcolor>DDFFFFFF</selectedcolor>
-                <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-                <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
-            </control>
-            <control type="button" id="12005">
-                <top>220</top>
-                <left>450</left>
-                <width>auto</width>
-                <height>56</height>
-                <align>center</align>
-                <textoffsetx>20</textoffsetx>
-                <label>Close</label>
-                <font>font14</font>
-                <textcolor>DDFFFFFF</textcolor>
-                <focusedcolor>EEFFFFFF</focusedcolor>
-				<selectedcolor>DDFFFFFF</selectedcolor>
-                <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-                <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                <itemgap>100</itemgap> <!-- Adjust spacing between buttons -->
+                <!-- Cancel Button -->
+                <control type="button" id="12003">
+                    <width>auto</width>
+                    <height>56</height>
+                    <label>Cancel</label>
+                    <align>center</align>
+                    <textoffsetx>20</textoffsetx>
+                    <font>font14</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+                <!-- Close Button -->
+                <control type="button" id="12005">
+                    <width>auto</width>
+                    <height>56</height>
+                    <label>Close</label>
+                    <align>center</align>
+                    <textoffsetx>20</textoffsetx>
+                    <font>font14</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
             </control>
         </control>
     </controls>
