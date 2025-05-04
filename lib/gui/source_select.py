@@ -4,7 +4,7 @@ from lib.api.jacktook.kodi import kodilog
 from lib.domain.torrent import TorrentStream
 from lib.gui.filter_type_window import FilterTypeWindow
 from lib.gui.filter_items_window import FilterWindow
-from lib.play import resolve_playback_source
+from lib.playback import resolve_playback_source
 import xbmcgui
 import xbmc
 from lib.gui.base_window import BaseWindow
