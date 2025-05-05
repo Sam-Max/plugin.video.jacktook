@@ -111,7 +111,7 @@ class Downloader:
             )
             progress_dialog.show_dialog()
 
-            with open_file(destination_path, "w") as file:
+            with open_file(destination_path, "wb") as file:
                 downloaded = 0
                 while not self.monitor.abortRequested():
                     chunk = response.read(1024 * 1024)  # 1MB chunks
