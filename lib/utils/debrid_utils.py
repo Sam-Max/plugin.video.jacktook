@@ -189,15 +189,22 @@ def filter_results(results: List[TorrentStream], direct_results: List[dict]) -> 
 
 
 def extract_info_hash(res: TorrentStream) -> Optional[str]:
-    if res.infoHash:
-        return res.infoHash.lower()
+    try:
+        if res.infoHash:
+            return res.infoHash.lower()
 
-    if res.guid and (res.guid.startswith("magnet:?") or len(res.guid) == 40):
-        return get_info_hash_from_magnet(res.guid).lower()
+        if res.guid:
+            if res.guid.startswith("magnet:?") or len(res.guid) == 40:
+                info_hash = get_info_hash_from_magnet(res.guid)
+                if info_hash:
+                    return info_hash.lower()
 
-    url = res.url
-    if url.startswith("magnet:?"):
-        return get_info_hash_from_magnet(url).lower()
+        if res.url and res.url.startswith("magnet:?"):
+            info_hash = get_info_hash_from_magnet(res.url)
+            if info_hash:
+                return info_hash.lower()
+    except Exception as e:
+        kodilog(f"Error extracting info hash from TorrentStream: {e}")
 
     return None
 
