@@ -865,6 +865,17 @@
                     <control type="toggle" />
                 </setting>
             </group>
+            <group id="downloads" label="30702">
+                <setting id="download_dir" type="path" label="30876" help="">
+                    <level>0</level>
+					<default>special://profile/addon_data/plugin.video.jacktook/Downloads/</default>
+					<constraints>
+						<allowempty>true</allowempty>
+						<writable>true</writable>
+					</constraints>
+					<control type="button" format="path"/>
+                </setting>
+            </group>
         </category>
     </section>
 </settings>

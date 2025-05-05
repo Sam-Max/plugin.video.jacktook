@@ -13,8 +13,10 @@ from lib.api.jacktorr_api import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.db.bookmark_db import bookmark_db
 from lib.domain.torrent import TorrentStream
+from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
     CustomDialog,
+    download_dialog_mock,
     resume_dialog_mock,
     run_next_mock,
     source_select,
@@ -159,12 +161,12 @@ def root_menu():
         isFolder=True,
     )
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("animation_menu"),
-        list_item("Animation", "anime.png"),
-        isFolder=True,
-    )
+    # addDirectoryItem(
+    #     ADDON_HANDLE,
+    #     build_url("animation_menu"),
+    #     list_item("Animation", "anime.png"),
+    #     isFolder=True,
+    # )
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -204,6 +206,13 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
+        build_url("downloads_menu"),
+        list_item("Downloads", "cloud.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
         build_url("settings"),
         list_item("Settings", "settings.png"),
         isFolder=True,
@@ -225,7 +234,7 @@ def root_menu():
 
     # addDirectoryItem(
     #     ADDON_HANDLE,
-    #     build_url("test_resume_dialog"),
+    #     build_url("test_download_dialog"),
     #     list_item("Test", ""),
     #     isFolder=False,
     # )
@@ -530,7 +539,7 @@ def search(params):
     tv_data = json.loads(params.get("tv_data", "{}"))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
-    
+
     kodilog(f"Search: {query} - {ids} - {mode} - {tv_data}")
 
     set_content_type(mode, media_type)
@@ -942,6 +951,10 @@ def download(magnet, type):
     thread.start()
 
 
+def downloads_menu(params):
+    downloads_viewer(params)
+
+
 def addon_update(params):
     updates_check_addon()
 
@@ -1020,3 +1033,6 @@ def test_source_select(params):
 
 def test_resume_dialog(params):
     resume_dialog_mock()
+
+def test_download_dialog(params):
+    download_dialog_mock()

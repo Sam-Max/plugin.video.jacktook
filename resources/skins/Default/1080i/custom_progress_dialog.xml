@@ -1,0 +1,92 @@
+<window type="dialog" id="12000">
+    <coordinates>
+        <left>600</left>
+        <top>400</top>
+        <width>800</width>
+        <height>300</height>
+    </coordinates>
+    <defaultcontrol always="true">12005</defaultcontrol>
+    <animation type="WindowOpen" reversible="false">
+        <effect type="zoom" start="80" end="100" center="50%,50%" delay="160" tween="back" time="240"/>
+        <effect type="fade" delay="160" end="100" time="240"/>
+    </animation>
+    <animation type="WindowClose" reversible="false">
+        <effect type="zoom" start="100" end="80" center="50%,50%" easing="in" tween="back" time="240"/>
+        <effect type="fade" start="100" end="0" time="240"/>
+    </animation>
+    <depth>0.40</depth>
+    <controls>
+        <control type="group">
+            <width>800</width>
+            <height>300</height>
+            <control type="image">
+                <width>800</width>
+                <height>300</height>
+                <texture border="30">circle.png</texture>
+                <colordiffuse>CC000000</colordiffuse>
+            </control>
+            <control type="label" id="12001">
+                <top>30</top>
+                <width>780</width>
+                <height>40</height>
+                <align>center</align>
+                <font>font14</font>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+            </control>
+            <control type="label" id="12002">
+                <top>80</top>
+                <width>780</width>
+                <height>60</height>
+                <align>center</align>
+                <font>font12</font>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+                <wrapmultiline>true</wrapmultiline>
+            </control>
+            <control type="progress" id="12004">
+                <top>180</top>
+                <left>40</left>
+                <width>720</width>
+                <height>20</height>
+                <info>percentage</info>
+            </control>
+            <control type="grouplist" orientation="horizontal">
+                <orientation>horizontal</orientation>
+                <top>220</top>
+                <left>200</left>
+                <itemgap>100</itemgap> <!-- Adjust spacing between buttons -->
+                <!-- Cancel Button -->
+                <control type="button" id="12003">
+                    <width>auto</width>
+                    <height>56</height>
+                    <label>Cancel</label>
+                    <align>center</align>
+                    <textoffsetx>20</textoffsetx>
+                    <font>font14</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+                <!-- Close Button -->
+                <control type="button" id="12005">
+                    <width>auto</width>
+                    <height>56</height>
+                    <label>Close</label>
+                    <align>center</align>
+                    <textoffsetx>20</textoffsetx>
+                    <font>font14</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+            </control>
+        </control>
+    </controls>
+</window>

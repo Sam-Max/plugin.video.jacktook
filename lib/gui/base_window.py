@@ -1,6 +1,10 @@
 import abc
 from copy import deepcopy
 import json
+from typing import Any, Dict
+from lib.domain.torrent import TorrentStream
+from lib.utils.resolve_to_magnet import resolve_to_magnet
+from lib.utils.utils import Indexer, IndexerType
 import xbmcgui
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import ADDON
@@ -113,6 +117,61 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         if action_id != 7:  # Enter(7) also fires an onClick event
             self.handle_action(action_id, self.getFocusId())
 
+    def prepare_source_data(
+            self,
+            source: TorrentStream,
+            url: str,
+            magnet: str,
+            is_torrent: bool,
+            pack_select: bool = False,
+        ) -> Dict[str, Any]:
+            """Prepare the source data dictionary for resolving playback."""
+            return {
+                "title": source.title,
+                "type": source.type,
+                "indexer": source.indexer,
+                "url": url,
+                "magnet": magnet,
+                "info_hash": source.infoHash,
+                "is_torrent": is_torrent,
+                "is_pack": pack_select,
+                "mode": self.item_information.get("mode"),
+                "ids": self.item_information.get("ids"),
+                "tv_data": self.item_information.get("tv_data"),
+            }
+    
+    def _handle_torrent_source(self, source:TorrentStream) -> tuple[str, str, bool]:
+        guid = source.guid
+        magnet = ""
+        indexer = source.indexer
+        url = source.url or ""
+
+        if guid and guid.startswith("magnet:?"):
+            magnet = guid
+        elif indexer == Indexer.BURST:
+            url, magnet = guid, ""
+
+        if url.startswith("magnet:?") and not magnet:
+            magnet, url = url, ""
+
+        if not magnet:
+            magnet = resolve_to_magnet(url) or ""
+
+        return url, magnet, True
+
+    def get_source_details(self, source:TorrentStream) -> tuple[str, str, bool]:
+        type = source.type
+        url, magnet, is_torrent = "", "", False
+
+        if type == IndexerType.TORRENT:
+            url, magnet, is_torrent = self._handle_torrent_source(source)
+        elif type == IndexerType.DIRECT:
+            url, is_torrent = source.downloadUrl, False
+        elif type == IndexerType.STREMIO_DEBRID:
+            url, is_torrent = source.url, False
+
+        return url, magnet, is_torrent
+    
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):
         pass

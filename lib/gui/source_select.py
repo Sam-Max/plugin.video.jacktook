@@ -1,13 +1,16 @@
+import re
 from typing import List, Optional, Dict
 from lib.api.jacktook.kodi import kodilog
 from lib.domain.torrent import TorrentStream
 from lib.gui.filter_type_window import FilterTypeWindow
 from lib.gui.filter_items_window import FilterWindow
+from lib.playback import resolve_playback_source
 import xbmcgui
+import xbmc
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH
+from lib.utils.kodi_utils import ADDON_PATH, get_setting, translatePath
 from lib.utils.debrid_utils import get_debrid_status
 from lib.utils.kodi_utils import bytes_to_human_readable
 from lib.utils.utils import (
@@ -15,6 +18,7 @@ from lib.utils.utils import (
     get_colored_languages,
     get_random_color,
 )
+from lib.utils.kodi_utils import action_url_run
 
 
 class SourceSelect(BaseWindow):
@@ -44,7 +48,7 @@ class SourceSelect(BaseWindow):
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
         self.populate_sources_list()
-        
+
         self.set_default_focus(self.display_list, 1000, control_list_reset=True)
         super().onInit()
 
@@ -101,7 +105,9 @@ class SourceSelect(BaseWindow):
                 selected = popup.selected_filter
                 del popup
                 if selected is not None:
-                    self.filtered_sources = [s for s in self.sources if s.quality == selected]
+                    self.filtered_sources = [
+                        s for s in self.sources if s.quality == selected
+                    ]
                     self.filter_applied = True
                 else:
                     self.filtered_sources = None
@@ -114,7 +120,9 @@ class SourceSelect(BaseWindow):
                 selected = popup.selected_filter
                 del popup
                 if selected is not None:
-                    self.filtered_sources = [s for s in self.sources if s.provider == selected]
+                    self.filtered_sources = [
+                        s for s in self.sources if s.provider == selected
+                    ]
                     self.filter_applied = True
                 else:
                     self.filtered_sources = None
@@ -126,27 +134,71 @@ class SourceSelect(BaseWindow):
             self.populate_sources_list()
             self.set_default_focus(self.display_list, 1000, control_list_reset=True)
 
-            
         elif action_id == 117:  # Context menu action
             selected_source = self.sources[self.position]
             if selected_source.type == "Torrent":
-                response = xbmcgui.Dialog().contextmenu(["Download to Debrid"])
+                response = xbmcgui.Dialog().contextmenu(
+                    ["Download to Debrid", "Download file"]
+                )
                 if response == 0:
-                    self._download_into()
+                    self._download_to_debrid()
+                elif response == 1:
+                    self._download_file()
             elif selected_source.type == "Direct":
-                pass
+                response = xbmcgui.Dialog().contextmenu(["Download file"])
+                if response == 0:
+                    self._download_file()
             else:
-                response = xbmcgui.Dialog().contextmenu(["Browse into"])
+                response = xbmcgui.Dialog().contextmenu(
+                    ["Browse into", "Download file"]
+                )
                 if response == 0:
                     self._resolve_item(pack_select=True)
+                elif response == 1:
+                    self._download_file()
 
         elif action_id == 7 and control_id == 1000:  # Select action
             control_list = self.getControl(control_id)
             self.set_cached_focus(control_id, control_list.getSelectedPosition())
             self._resolve_item(pack_select=False)
 
-    def _download_into(self) -> None:
+    def _download_to_debrid(self) -> None:
         pass
+
+    def _download_file(self) -> None:
+        selected_source = self.sources[self.position]
+
+        url, magnet, is_torrent = self.get_source_details(source=selected_source)
+        source_data = self.prepare_source_data(
+            source=selected_source,
+            url=url,
+            magnet=magnet,
+            is_torrent=is_torrent,
+        )
+
+        playback_info = resolve_playback_source(source_data)
+        if not playback_info or "url" not in playback_info:
+            xbmcgui.Dialog().notification(
+                "Download", "Failed to resolve playback source."
+            )
+            return
+
+        download_dir = get_setting("download_dir")
+        try:
+            xbmc.executebuiltin(
+                action_url_run(
+                    "download_file",
+                    file_name=playback_info["title"],
+                    url=playback_info["url"],
+                    title=selected_source.title,
+                    destination=translatePath(download_dir),
+                )
+            )
+        except Exception as e:
+            kodilog(f"Failed to start download: {str(e)}")
+            xbmcgui.Dialog().notification(
+                "Download", f"Failed to start download: {str(e)}"
+            )
 
     def _resolve_item(self, pack_select: bool = False) -> None:
         self.setProperty("resolving", "true")

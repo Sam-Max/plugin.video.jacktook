@@ -1,10 +1,10 @@
 import json
 from typing import Dict, List
 from lib.domain.torrent import TorrentStream
+from lib.gui.custom_progress import CustomProgressDialog
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
 
-from lib.api.jacktook.kodi import kodilog
 from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
@@ -151,6 +151,14 @@ def source_select_mock():
     )
     window.doModal()
     del window
+
+
+def download_dialog_mock():
+    try:
+        progress_dialog = CustomProgressDialog("custom_progress_dialog.xml", ADDON_PATH)
+        progress_dialog.doModal()
+    finally:
+        pass
 
 
 def resume_dialog_mock():
