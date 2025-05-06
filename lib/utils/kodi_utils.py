@@ -14,7 +14,7 @@ import xbmcgui
 from xbmcgui import Window, ListItem
 import xbmcaddon
 from xbmcplugin import setResolvedUrl
-from xbmcvfs import translatePath as translate_path, delete as xbmc_delete
+from xbmcvfs import translatePath as translate_path, delete as xbmc_delete, listdir, File as xbmcvfs_File
 from xbmc import executeJSONRPC
 
 
@@ -398,6 +398,18 @@ def get_datetime(string=False, dt=False):
     if string:
         return d.strftime("%Y-%m-%d")
     return datetime.date(d)
+
+
+def list_dirs(location):
+	return listdir(location)
+
+
+def translatePath(_path):
+	return translate_path(_path)
+
+
+def open_file(_file, mode='r'):
+    return xbmcvfs_File(_file, mode)
 
 
 def cancel_playback():

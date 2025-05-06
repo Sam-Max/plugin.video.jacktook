@@ -10,6 +10,7 @@ from hashlib import sha256
 from lib.api.jacktook.kodi import kodilog
 import xbmcaddon
 import xbmcgui
+import xbmc
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -69,7 +70,7 @@ class _BaseCache(object):
     def set(self, key, data, expiry_time, hashed_key=False, identifier=""):
         if expiry_time == timedelta(0):
             return  # Do nothing, as it will expire immediately
-        
+
         self._set(
             self._generate_key(key, hashed_key, identifier),
             self._prepare(data),
@@ -103,15 +104,40 @@ class MemoryCache(_BaseCache):
     def __init__(self, database=ADDON_ID):
         self._window = xbmcgui.Window(10000)
         self._database = database + "."
+        self._object_store = {}  # store raw objects that can't be pickled
 
     def _get(self, key):
+        if key in self._object_store:
+            return self._object_store[key]
+        
         data = self._window.getProperty(self._database + key)
-        return self._load_func(b64decode(data)) if data else None
+        
+        kodilog(f"Getting property from window: {self._database + key}", level=xbmc.LOGDEBUG)
+        kodilog(f"Key: {key}", level=xbmc.LOGDEBUG)
+        
+        if data:
+            decoded_data = self._load_func(b64decode(data))
+            kodilog(f"Decoded data: {decoded_data}", level=xbmc.LOGDEBUG)
+            return decoded_data
 
-    def _set(self, key, data, expires):
-        self._window.setProperty(
-            self._database + key, b64encode(self._dump_func((data, expires))).decode()
-        )
+    def _set(self, key, data):
+        try:
+            blob = self._dump_func(data)
+            self._window.setProperty(self._database + key, b64encode(blob).decode())
+            
+            kodilog("Setting property in window")
+            data = self._window.getProperty(self._database + key)
+            kodilog(f"Key: {key}, Data: {data}")
+            
+        except Exception as e:
+            # fallback to raw in‑memory store
+            kodilog("Fallback to raw in-memory store")
+            kodilog(f"Error: {e}")
+            self._object_store[key] = data
+
+    def delete(self, key):
+        """Remove a single key from window properties."""
+        self._window.clearProperty(self._database + key)
 
 
 class Cache(_BaseCache):
@@ -138,6 +164,7 @@ class Cache(_BaseCache):
         self._cleanup_interval = cleanup_interval
         self._last_cleanup = datetime.utcnow()
         self.clean_up()
+        self._object_store = {}  # store raw objects that can't be pickled
 
     def _process(self, obj):
         return self._load_func(obj)
@@ -146,18 +173,24 @@ class Cache(_BaseCache):
         return self._dump_func(s)
 
     def _get(self, key):
+        if key in self._object_store:
+            return self._object_store[key]
         self.check_clean_up()
         return self._conn.execute(
             "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
         ).fetchone()
 
     def _set(self, key, data, expires):
-        self.check_clean_up()
-        self._conn.execute(
-            "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
-            (key, sqlite3.Binary(data), expires),
-        )
-    
+        try:
+            self.check_clean_up()
+            self._conn.execute(
+                "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
+                (key, sqlite3.Binary(data), expires),
+            )
+        except Exception:
+            # fallback to raw in‑memory store
+            self._object_store[key] = (data, expires)
+
     def add_to_list(self, key, item, expires):
         """Append an item to a list stored under the given key."""
         existing_data = self.get_list(key)  # Retrieve the existing list
@@ -175,15 +208,19 @@ class Cache(_BaseCache):
             data, expires = result
             if expires > datetime.utcnow():
                 return self._process(data)  # Deserialize the list
-        return []  
+        return []
 
     def clear_list(self, key):
         """Clear the list stored under the given key."""
         self._set(
             key,
-            self._prepare([]),  
+            self._prepare([]),
             datetime.utcnow(),  # Set an immediate expiry to clear the list
         )
+
+    def delete(self, key):
+        """Remove a single key from the SQLite store."""
+        self._conn.execute("DELETE FROM `cached` WHERE key = ?", (key,))
 
     def _set_version(self, version):
         self._conn.execute("PRAGMA user_version={}".format(version))

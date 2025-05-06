@@ -154,7 +154,7 @@ class PreProcessBuilder:
         }
 
         for res in self.results:
-            kodilog(f"Processing result: {res.title}")
+            kodilog(f"Processing result: {res.title}", level=xbmc.LOGDEBUG)
             title = res.title
             matched_quality = False
             for quality in Quality:
