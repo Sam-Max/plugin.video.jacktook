@@ -3,7 +3,7 @@ import os
 import ssl
 import threading
 from urllib.request import Request, urlopen
-from urllib.parse import parse_qsl, quote
+from urllib.parse import parse_qsl
 
 from lib.api.jacktook.kodi import kodilog
 from lib.utils.kodi_utils import (
@@ -14,7 +14,7 @@ from lib.utils.kodi_utils import (
     open_file,
     translatePath,
 )
-from lib.db.cached import cache, MemoryCache
+from lib.db.cached import MemoryCache
 from lib.gui.custom_progress import CustomProgressDialog
 from xbmcplugin import (
     addDirectoryItems,
@@ -53,7 +53,7 @@ def handle_download_file(params):
 class Downloader:
     def __init__(self, params, cancel_flag_cache):
         self.url = params.get("url")
-        self.name = params.get("title", "unknown")
+        self.name = params.get("file_name", "unknown")
         self.destination = params.get("destination", "")
         self.headers = {}
         self.monitor = xbmc.Monitor()
@@ -103,6 +103,10 @@ class Downloader:
             destination_path = os.path.join(self.destination, self.name)
             kodilog(f"Destination path: {destination_path}")
 
+            kodilog(f"Starting download from: {self.url}")
+            kodilog(f"Headers: {self.headers}")
+            kodilog(f"File size: {self.file_size} bytes")
+
             request = Request(self.url, headers=self.headers)
             response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
 
@@ -116,6 +120,7 @@ class Downloader:
                 while not self.monitor.abortRequested():
                     chunk = response.read(1024 * 1024)  # 1MB chunks
                     if not chunk:
+                        kodilog("No more data to read")
                         break
                     # Handle cancellation
                     if progress_dialog.cancelled or self.cancel_flag._get(
@@ -135,14 +140,12 @@ class Downloader:
 
                     self.monitor.waitForAbort(0.1)
 
-            notification(f"Successfully downloaded {self.name}.")
+                if downloaded == self.file_size or self.file_size == 0:
+                    notification(f"Download completed: {self.name}")
+
         except Exception as e:
             kodilog(f"Download error: {str(e)}")
             notification(f"Failed to download: {str(e)}")
-        finally:
-            key = os.path.join(self.destination, self.name)
-            cache.delete(key)
-
 
 def handle_cancel_download(params):
     kodilog("Cancelling download")
@@ -164,10 +167,10 @@ def handle_delete_file(params):
         return
     try:
         xbmcvfs.delete(file_path)
-        notification(f"File Deleted: {file_path}")
+        notification(f"File Deleted")
         xbmc.executebuiltin("Container.Refresh")
     except Exception as e:
-        kodilog(f"Error deleting file {file_path}: {str(e)}")
+        kodilog(f"Error deleting file: {str(e)}")
         notification(f"Failed to delete file: {str(e)}")
 
 
