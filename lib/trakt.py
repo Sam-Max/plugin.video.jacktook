@@ -1,19 +1,5 @@
 from lib.api.jacktook.kodi import kodilog
-from lib.api.trakt.trakt_api import (
-    get_trakt_list_contents,
-    trakt_anime_most_watched,
-    trakt_anime_trending,
-    trakt_movies_most_favorited,
-    trakt_movies_most_watched,
-    trakt_movies_top10_boxoffice,
-    trakt_movies_trending,
-    trakt_recommendations,
-    trakt_trending_popular_lists,
-    trakt_tv_most_favorited,
-    trakt_tv_most_watched,
-    trakt_tv_trending,
-    trakt_watchlist,
-)
+from lib.api.trakt.trakt_api import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     Anime,
@@ -55,46 +41,46 @@ def handle_trakt_query(query, category, mode, page, submode, api):
 
 def handle_trakt_movie_query(query, mode, page):
     if query == Trakt.TRENDING:
-        return trakt_movies_trending(page)
+        return TraktMovies().trakt_movies_trending(page)
     elif query == Trakt.TOP10:
-        return trakt_movies_top10_boxoffice()
+        return TraktMovies().trakt_movies_top10_boxoffice()
     elif query == Trakt.WATCHED:
-        return trakt_movies_most_watched(page)
+        return TraktMovies().trakt_movies_most_watched(page)
     elif query == Trakt.FAVORITED:
-        return trakt_movies_most_favorited(page)
+        return TraktMovies().trakt_movies_most_favorited(page)
     elif query == Trakt.RECOMENDATIONS:
-        return trakt_recommendations("movies")
+        return TraktMovies().trakt_recommendations("movies")
     elif query in Trakt.TRENDING_LISTS:
-        return trakt_trending_popular_lists(list_type="trending", page_no=page)
+        return TraktLists().trakt_trending_popular_lists(list_type="trending", page_no=page)
     elif query in Trakt.POPULAR_LISTS:
-        return trakt_trending_popular_lists(list_type="popular", page_no=page)
+        return TraktLists().trakt_trending_popular_lists(list_type="popular", page_no=page)
     elif query in Trakt.WATCHLIST:
-        return trakt_watchlist(mode)
+        return TraktLists().trakt_watchlist(mode)
 
 
 def handle_trakt_tv_query(query, mode, page):
     if query == Trakt.TRENDING:
-        return trakt_tv_trending(page)
+        return TraktTV().trakt_tv_trending(page)
     elif query == Trakt.WATCHED:
-        return trakt_tv_most_watched(page)
+        return TraktTV().trakt_tv_most_watched(page)
     elif query == Trakt.FAVORITED:
-        return trakt_tv_most_favorited(page)
+        return TraktTV().trakt_tv_most_favorited(page)
     elif query == Trakt.RECOMENDATIONS:
-        return trakt_recommendations("shows")
+        return TraktTV().trakt_recommendations("shows")
     elif query in Trakt.TRENDING_LISTS:
-        return trakt_trending_popular_lists(list_type="trending", page_no=page)
+        return TraktLists().trakt_trending_popular_lists(list_type="trending", page_no=page)
     elif query in Trakt.POPULAR_LISTS:
-        return trakt_trending_popular_lists(list_type="popular", page_no=page)
+        return TraktLists().trakt_trending_popular_lists(list_type="popular", page_no=page)
     elif query in Trakt.WATCHLIST:
-        return trakt_watchlist(mode)
+        return TraktLists().trakt_watchlist(mode)
 
 
 def handle_trakt_anime_query(query, page):
     kodilog("trakt::handle_trakt_anime_query")
     if query == Anime.TRENDING:
-        return trakt_anime_trending(page)
+        return TraktAPI().anime.trakt_anime_trending(page)
     elif query == Anime.MOST_WATCHED:
-        return trakt_anime_most_watched(page)
+        return TraktAPI().anime.trakt_anime_most_watched(page)
 
 
 def process_trakt_result(results, query, category, mode, submode, api, page):
@@ -270,7 +256,7 @@ def show_lists_content_items(res):
 
 
 def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
-    data = get_trakt_list_contents(list_type, user, slug, with_auth)
+    data = TraktAPI().lists.get_trakt_list_contents(list_type, user, slug, with_auth)
     paginator_db.initialize(data)
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)

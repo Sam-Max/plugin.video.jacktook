@@ -30,10 +30,7 @@ from lib.utils.ed_utils import EasyDebridHelper
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
-from lib.api.trakt.trakt_api import (
-    trakt_authenticate,
-    trakt_revoke_authentication,
-)
+from lib.api.trakt.trakt_api import TraktAPI
 from lib.clients.search import search_client
 from lib.files_history import last_files
 from lib.titles_history import last_titles
@@ -1008,11 +1005,11 @@ def pm_auth(params):
 
 
 def trakt_auth(params):
-    trakt_authenticate()
+    TraktAPI().auth.trakt_authenticate()
 
 
 def trakt_auth_revoke(params):
-    trakt_revoke_authentication()
+    TraktAPI().auth.trakt_revoke_authentication()
 
 
 def open_burst_config(params):
