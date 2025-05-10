@@ -190,7 +190,6 @@ class SourceSelect(BaseWindow):
                     "download_file",
                     file_name=playback_info["title"],
                     url=playback_info["url"],
-                    title=selected_source.title,
                     destination=translatePath(download_dir),
                 )
             )
