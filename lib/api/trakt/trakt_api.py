@@ -1,19 +1,16 @@
-# -*- coding: utf-8 -*-
 import json
 import random
 import time
 import requests
+from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
 from lib.api.trakt.main_cache import cache_object
-from lib.api.trakt.trakt_cache import (
-    cache_trakt_object,
-)
+from lib.api.trakt.trakt_cache import cache_trakt_object
 from lib.api.trakt.utils import sort_for_article, sort_list
 from lib.utils.kodi_utils import (
     copy2clip,
-    dialog_ok,
     get_datetime,
     get_setting,
     notification,
@@ -21,642 +18,694 @@ from lib.utils.kodi_utils import (
     sleep,
 )
 from lib.utils.settings import trakt_client, trakt_lists_sort_order, trakt_secret
-from xbmc import Player as player
 from lib.utils.kodi_utils import progressDialog
 
 
-empty_setting_check = (None, "empty_setting", "")
-standby_date = "2050-01-01T01:00:00.000Z"
-res_format = "%Y-%m-%dT%H:%M:%S.%fZ"
-timeout = 20
+class TraktBase:
+    def __init__(self):
+        self.api_endpoint = "https://api.trakt.tv/%s"
+        self.timeout = 20
+        self.empty_setting_check = (None, "empty_setting", "")
+        self.standby_date = "2050-01-01T01:00:00.000Z"
 
-API_ENDPOINT = "https://api.trakt.tv/%s"
+    def no_client_key(self):
+        notification("Please set a valid Trakt Client ID Key")
+        return None
 
+    def no_secret_key(self):
+        notification("Please set a valid Trakt Client Secret Key")
+        return None
 
-def no_client_key():
-    notification("Please set a valid Trakt Client ID Key")
-    return None
+    def call_trakt(
+        self,
+        path,
+        params=None,
+        data=None,
+        is_delete=False,
+        with_auth=True,
+        method=None,
+        pagination=False,
+        page_no=1,
+    ):
+        params = params or {}
+        headers = {
+            "Content-Type": "application/json",
+            "trakt-api-version": "2",
+            "trakt-api-key": trakt_client(),
+        }
 
+        if headers["trakt-api-key"] in self.empty_setting_check:
+            return self.no_client_key()
 
-def no_secret_key():
-    notification("Please set a valid Trakt Client Secret Key")
-    return None
-
-
-def call_trakt(
-    path,
-    params={},
-    data=None,
-    is_delete=False,
-    with_auth=True,
-    method=None,
-    pagination=False,
-    page_no=1,
-):
-    def send_query():
-        resp = None
         if with_auth:
-            try:
-                try:
-                    expires_at = float(get_setting("trakt_expires"))
-                except:
-                    expires_at = 0.0
-                if time.time() > expires_at:
-                    trakt_refresh_token()
-            except:
-                pass
             token = get_setting("trakt_token")
+            if not token or time.time() > float(get_setting("trakt_expires", 0)):
+                self.trakt_refresh_token()
+                token = get_setting("trakt_token")
             if token:
-                headers["Authorization"] = "Bearer " + token
+                headers["Authorization"] = f"Bearer {token}"
+
+        if pagination:
+            params["page"] = page_no
+
         try:
-            if method:
-                if method == "post":
-                    resp = requests.post(
-                        API_ENDPOINT % path, headers=headers, timeout=timeout
-                    )
-                elif method == "delete":
-                    resp = requests.delete(
-                        API_ENDPOINT % path, headers=headers, timeout=timeout
-                    )
-                elif method == "sort_by_headers":
-                    resp = requests.get(
-                        API_ENDPOINT % path,
-                        params=params,
-                        headers=headers,
-                        timeout=timeout,
-                    )
-            elif data is not None:
-                assert not params
-                resp = requests.post(
-                    API_ENDPOINT % path, json=data, headers=headers, timeout=timeout
-                )
-            elif is_delete:
-                resp = requests.delete(
-                    API_ENDPOINT % path, headers=headers, timeout=timeout
-                )
-            else:
-                resp = requests.get(
-                    API_ENDPOINT % path, params=params, headers=headers, timeout=timeout
-                )
-            resp.raise_for_status()
+            response = self._send_request(
+                path, params, data, headers, is_delete, method
+            )
+            response.raise_for_status()
         except requests.RequestException as error:
-            if error.response.status_code == 401:
+            kodilog("Trakt API error: %s" % error)
+            if error.response and error.response.status_code == 403:
+                notification("Trakt Error: Forbidden")
+                raise ProviderException("Trakt Error: Forbidden")
+            elif error.response and error.response.status_code == 404:
+                notification("Trakt Error: Not Found")
+                raise ProviderException("Trakt Error: Not Found")
+            elif error.response and error.response.status_code == 429:
+                notification("Trakt Error: Rate Limit Exceeded")
+                raise ProviderException("Trakt Error: Rate Limit Exceeded")
+            elif error.response and error.response.status_code == 500:
+                notification("Trakt Error: Internal Server Error")
+                raise ProviderException("Trakt Error: Internal Server Error")
+            elif error.response and error.response.status_code == 503:
+                notification("Trakt Error: Service Unavailable")
+                raise ProviderException("Trakt Error: Service Unavailable")
+            elif error.response and error.response.status_code == 504:
+                notification("Trakt Error: Gateway Timeout")
+                raise ProviderException("Trakt Error: Gateway Timeout")
+            elif error.response and error.response.status_code == 400:
+                notification("Trakt Error: Bad Request")
+                raise ProviderException("Trakt Error: Bad Request")
+            elif error.response and error.response.status_code == 401:
                 notification("Trakt Error: Unauthorized")
                 raise ProviderException("Trakt Error: Unauthorized")
-        return resp
+            elif error.response and error.response.status_code == 403:
+                notification("Trakt Error: Forbidden")
+                raise ProviderException("Trakt Error: Forbidden")
+            return None
 
-    CLIENT_ID = trakt_client()
-    if CLIENT_ID in empty_setting_check:
-        return no_client_key()
-    headers = {
-        "Content-Type": "application/json",
-        "trakt-api-version": "2",
-        "trakt-api-key": CLIENT_ID,
-    }
-    if pagination:
-        params["page"] = page_no
-    response = send_query()
-    try:
-        status_code = response.status_code
-    except:
-        return None
-    if status_code == 401:
-        if player().isPlaying() == False:
-            if (
-                with_auth
-                and dialog_ok(
-                    heading="Authorize Trakt",
-                    line1="You must authenticate with Trakt. Do you want to authenticate now?",
-                )
-                and trakt_authenticate()
-            ):
-                response = send_query()
-            else:
-                pass
+        return self._process_response(response, method, pagination)
+
+    def _send_request(self, path, params, data, headers, is_delete, method):
+        url = self.api_endpoint % path
+        if method == "post":
+            return requests.post(url, headers=headers, timeout=self.timeout)
+        elif method == "delete":
+            return requests.delete(url, headers=headers, timeout=self.timeout)
+        elif method == "sort_by_headers":
+            return requests.get(
+                url, params=params, headers=headers, timeout=self.timeout
+            )
+        elif data is not None:
+            return requests.post(url, json=data, headers=headers, timeout=self.timeout)
+        elif is_delete:
+            return requests.delete(url, headers=headers, timeout=self.timeout)
         else:
-            return
-    elif status_code == 429:
-        headers = response.headers
-        if "Retry-After" in headers:
-            time.sleep(1000 * int(headers["Retry-After"]))
-            response = send_query()
-    response.encoding = "utf-8"
-    try:
-        result = response.json()
-    except:
-        return None
-    headers = response.headers
-    if (
-        method == "sort_by_headers"
-        and "X-Sort-By" in headers
-        and "X-Sort-How" in headers
-    ):
+            return requests.get(
+                url, params=params, headers=headers, timeout=self.timeout
+            )
+
+    def _process_response(self, response, method, pagination):
+        response.encoding = "utf-8"
         try:
-            result = sort_list(headers["X-Sort-By"], headers["X-Sort-How"], result)
-        except:
-            pass
-    if pagination:
-        return (result, headers["X-Pagination-Page-Count"])
-    else:
+            result = response.json()
+        except ValueError:
+            return None
+
+        if method == "sort_by_headers":
+            headers = response.headers
+            if "X-Sort-By" in headers and "X-Sort-How" in headers:
+                try:
+                    result = sort_list(
+                        headers["X-Sort-By"], headers["X-Sort-How"], result
+                    )
+                except Exception:
+                    pass
+
+        if pagination:
+            return result, response.headers.get("X-Pagination-Page-Count")
         return result
 
-
-def trakt_get_device_code():
-    CLIENT_ID = trakt_client()
-    if CLIENT_ID in empty_setting_check:
-        return no_client_key()
-    data = {"client_id": CLIENT_ID}
-    return call_trakt("oauth/device/code", data=data, with_auth=False)
-
-
-def trakt_get_device_token(device_codes):
-    CLIENT_ID = trakt_client()
-    if CLIENT_ID in empty_setting_check:
-        return no_client_key()
-    CLIENT_SECRET = trakt_secret()
-    if CLIENT_SECRET in empty_setting_check:
-        return no_secret_key()
-    result = None
-    # try:
-    headers = {
-        "Content-Type": "application/json",
-        "trakt-api-version": "2",
-        "trakt-api-key": CLIENT_ID,
-    }
-    data = {
-        "code": device_codes["device_code"],
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-    }
-    start = time.time()
-    expires_in = device_codes["expires_in"]
-    sleep_interval = device_codes["interval"]
-    user_code = str(device_codes["user_code"])
-    try:
-        copy2clip(user_code)
-    except:
-        pass
-    content = "[CR]Navigate to: [B]%s[/B][CR]Enter the following code: [B]%s[/B]" % (
-        str(device_codes["verification_url"]),
-        user_code,
-    )
-    progressDialog.create("Trakt Authorize")
-    progressDialog.update(0, content)
-    try:
-        time_passed = 0
-        while not progressDialog.iscanceled() and time_passed < expires_in:
-            sleep(max(sleep_interval, 1) * 1000)
-            response = requests.post(
-                API_ENDPOINT % "oauth/device/token",
-                data=json.dumps(data),
-                headers=headers,
-                timeout=timeout,
-            )
-            status_code = response.status_code
-            if status_code == 200:
-                result = response.json()
-                break
-            elif status_code == 400:
-                time_passed = time.time() - start
-                progress = int(100 * time_passed / expires_in)
-                progressDialog.update(progress, content)
-            else:
-                break
-    except:
-        pass
-    try:
-        progressDialog.close()
-    except:
-        pass
-    # except:
-    #     pass
-    return result
-
-
-def trakt_refresh_token():
-    CLIENT_ID = trakt_client()
-    if CLIENT_ID in empty_setting_check:
-        return no_client_key()
-    CLIENT_SECRET = trakt_secret()
-    if CLIENT_SECRET in empty_setting_check:
-        return no_secret_key()
-    data = {
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-        "grant_type": "refresh_token",
-        "refresh_token": get_setting("trakt_refresh"),
-    }
-    response = call_trakt("oauth/token", data=data, with_auth=False)
-    if response:
-        set_setting("trakt_token", response["access_token"])
-        set_setting("trakt_refresh", response["refresh_token"])
-        set_setting("trakt_expires", str(time.time() + 7776000))
-
-
-def trakt_authenticate():
-    code = trakt_get_device_code()
-    token = trakt_get_device_token(code)
-    if token:
-        set_setting("trakt_token", token["access_token"])
-        set_setting("trakt_refresh", token["refresh_token"])
-        set_setting("trakt_expires", str(time.time() + 7776000))
-        sleep(1000)
+    def get_trakt(self, params):
         try:
-            user = call_trakt("/users/me")
-            set_setting("trakt_user", str(user["username"]))
+            kodilog(f"get_trakt params: {params}")
+
+            path_insert = params.get("path_insert", "")
+            if not isinstance(path_insert, (tuple, str)):
+                path_insert = (path_insert,)
+
+            kodilog(f"Path: {params['path']}")
+            kodilog(f"Path insert: {path_insert}")
+            formatted_path = params["path"] % path_insert
+            kodilog(f"Formatted path: {formatted_path}")
+
+            result = self.call_trakt(
+                formatted_path,
+                params=params.get("params", {}),
+                data=params.get("data"),
+                is_delete=params.get("is_delete", False),
+                with_auth=params.get("with_auth", False),
+                method=params.get("method"),
+                pagination=params.get("pagination", True),
+                page_no=params.get("page_no"),
+            )
+
+            return result[0] if params.get("pagination", True) else result
+
+        except KeyError as e:
+            kodilog(f"KeyError in get_trakt: {e}")
+            raise
+        except TypeError as e:
+            kodilog(f"TypeError in get_trakt: {e}")
+            raise
+
+
+class TraktAuthentication(TraktBase):
+    def trakt_get_device_code(self):
+        CLIENT_ID = trakt_client()
+        if CLIENT_ID in self.empty_setting_check:
+            return self.no_client_key()
+        data = {"client_id": CLIENT_ID}
+        return self.call_trakt("oauth/device/code", data=data, with_auth=False)
+
+    def trakt_get_device_token(self, device_codes):
+        CLIENT_ID = trakt_client()
+        if CLIENT_ID in self.empty_setting_check:
+            return self.no_client_key()
+        CLIENT_SECRET = trakt_secret()
+        if CLIENT_SECRET in self.empty_setting_check:
+            return self.no_secret_key()
+        result = None
+        headers = {
+            "Content-Type": "application/json",
+            "trakt-api-version": "2",
+            "trakt-api-key": CLIENT_ID,
+        }
+        data = {
+            "code": device_codes["device_code"],
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+        }
+        start = time.time()
+        expires_in = device_codes["expires_in"]
+        sleep_interval = device_codes["interval"]
+        user_code = str(device_codes["user_code"])
+        try:
+            copy2clip(user_code)
         except:
             pass
-        notification("Trakt Account Authorized", time=3000)
-        return True
-    notification("Trakt Error Authorizing", time=3000)
-    return False
-
-
-def trakt_revoke_authentication():
-    set_setting("trakt_user", "empty_setting")
-    set_setting("trakt_expires", "")
-    set_setting("trakt_token", "")
-    set_setting("trakt_refresh", "")
-    clear_all_trakt_cache_data()
-    CLIENT_ID = trakt_client()
-    if CLIENT_ID in empty_setting_check:
-        return no_client_key()
-    CLIENT_SECRET = trakt_secret()
-    if CLIENT_SECRET in empty_setting_check:
-        return no_secret_key()
-    data = {
-        "token": get_setting("trakt_token"),
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-    }
-    call_trakt("oauth/revoke", data=data, with_auth=False)
-    notification("You are now logged out from Trakt.tv", time=3000)
-
-
-def trakt_movies_trending(page_no):
-    string = "trakt_movies_trending_%s" % page_no
-    params = {"path": "movies/trending/%s", "params": {"limit": 20}, "page_no": page_no}
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_movies_trending_recent(page_no):
-    current_year = get_datetime().year
-    years = "%s-%s" % (str(current_year - 1), str(current_year))
-    string = "trakt_movies_trending_recent_%s" % page_no
-    params = {
-        "path": "movies/trending/%s",
-        "params": {"limit": 20, "years": years},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_movies_top10_boxoffice():
-    string = "trakt_movies_top10_boxoffice"
-    params = {"path": "movies/boxoffice/%s", "pagination": False}
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_movies_most_watched(page_no):
-    string = "trakt_movies_most_watched_%s" % page_no
-    params = {
-        "path": "movies/watched/daily/%s",
-        "params": {"limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_movies_most_favorited(page_no):
-    string = "trakt_movies_most_favorited%s" % page_no
-    params = {
-        "path": "movies/favorited/daily/%s",
-        "params": {"limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_recommendations(media_type):
-    string = "trakt_recommendations_%s" % (media_type)
-    params = {
-        "path": "/recommendations/%s",
-        "path_insert": media_type,
-        "with_auth": True,
-        "params": {
-            "limit": 50,
-            "ignore_collected": "true",
-            "ignore_watchlisted": "true",
-        },
-        "pagination": False,
-    }
-    return cache_trakt_object(get_trakt, string, params)
-
-
-def trakt_tv_trending(page_no):
-    string = "trakt_tv_trending_%s" % page_no
-    params = {"path": "shows/trending/%s", "params": {"limit": 20}, "page_no": page_no}
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_tv_trending_recent(page_no):
-    current_year = get_datetime().year
-    years = "%s-%s" % (str(current_year - 1), str(current_year))
-    string = "trakt_tv_trending_recent_%s" % page_no
-    params = {
-        "path": "shows/trending/%s",
-        "params": {"limit": 20, "years": years},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_tv_most_watched(page_no):
-    string = "trakt_tv_most_watched_%s" % page_no
-    params = {
-        "path": "shows/watched/daily/%s",
-        "params": {"limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_tv_most_favorited(page_no):
-    string = "trakt_tv_most_favorited_%s" % page_no
-    params = {
-        "path": "shows/favorited/daily/%s",
-        "params": {"limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_anime_trending(page_no):
-    string = "trakt_anime_trending_%s" % page_no
-    params = {
-        "path": "shows/trending/%s",
-        "params": {"genres": "anime", "limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_anime_trending_recent(page_no):
-    current_year = get_datetime().year
-    years = "%s-%s" % (str(current_year - 1), str(current_year))
-    string = "trakt_anime_trending_recent_%s" % page_no
-    params = {
-        "path": "shows/trending/%s",
-        "params": {"genres": "anime", "limit": 20, "years": years},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_anime_most_watched(page_no):
-    string = "trakt_anime_most_watched_%s" % page_no
-    params = {
-        "path": "shows/watched/daily/%s",
-        "params": {"genres": "anime", "limit": 20},
-        "page_no": page_no,
-    }
-    return lists_cache_object(get_trakt, string, params)
-
-
-def trakt_collection_lists(media_type, list_type):
-    limit = 20
-    data = trakt_fetch_collection_watchlist("collection", media_type)
-    if list_type == "recent":
-        data.sort(key=lambda k: k["collected_at"], reverse=True)
-    elif list_type == "random":
-        random.shuffle(data)
-    data = data[:limit]
-    return data
-
-
-def trakt_watchlist_lists(media_type, list_type):
-    limit = 20
-    data = trakt_fetch_collection_watchlist("watchlist", media_type)
-    if list_type == "recent":
-        data.sort(key=lambda k: k["collected_at"], reverse=True)
-    elif list_type == "random":
-        random.shuffle(data)
-    data = data[:limit]
-    return data
-
-
-def trakt_watchlist(media_type):
-    data = trakt_fetch_collection_watchlist("watchlist", media_type)
-    sort_order = trakt_lists_sort_order("watchlist")
-    if sort_order == 0:
-        data = sort_for_article(data, "title")
-    elif sort_order == 1:
-        data.sort(key=lambda k: k["collected_at"], reverse=True)
-    else:
-        data.sort(key=lambda k: k.get("released"), reverse=True)
-    return data
-
-
-def trakt_fetch_collection_watchlist(list_type, media_type):
-    def _process(params):
-        data = get_trakt(params)
-        if list_type == "watchlist":
-            data = [i for i in data if i["type"] == key]
-        return [
-            {
-                "media_ids": {
-                    "tmdb": i[key]["ids"].get("tmdb", ""),
-                    "imdb": i[key]["ids"].get("imdb", ""),
-                    "tvdb": i[key]["ids"].get("tvdb", ""),
-                },
-                "title": i[key]["title"],
-                "collected_at": i.get(collected_at),
-                "released": (
-                    i[key].get(r_key)
-                    if i[key].get(r_key)
-                    else (
-                        "2050-01-01"
-                        if media_type in ("movie", "movies")
-                        else standby_date
-                    )
-                ),
-            }
-            for i in data
-        ]
-
-    key, r_key, string_insert = (
-        ("movie", "released", "movie")
-        if media_type in ("movie", "movies")
-        else ("show", "first_aired", "tvshow")
-    )
-    collected_at = (
-        "listed_at"
-        if list_type == "watchlist"
-        else (
-            "collected_at" if media_type in ("movie", "movies") else "last_collected_at"
+        content = (
+            "[CR]Navigate to: [B]%s[/B][CR]Enter the following code: [B]%s[/B]"
+            % (
+                str(device_codes["verification_url"]),
+                user_code,
+            )
         )
-    )
-    string = "trakt_%s_%s" % (list_type, string_insert)
-    path = "sync/%s/%s?extended=full"
-    params = {
-        "path": path,
-        "path_insert": (list_type, media_type),
-        "with_auth": True,
-        "pagination": False,
-    }
-    return cache_trakt_object(_process, string, params)
+        progressDialog.create("Trakt Authorize")
+        progressDialog.update(0, content)
+        try:
+            time_passed = 0
+            while not progressDialog.iscanceled() and time_passed < expires_in:
+                sleep(max(sleep_interval, 1) * 1000)
+                response = requests.post(
+                    self.api_endpoint % "oauth/device/token",
+                    data=json.dumps(data),
+                    headers=headers,
+                    timeout=self.timeout,
+                )
+                status_code = response.status_code
+                if status_code == 200:
+                    result = response.json()
+                    break
+                elif status_code == 400:
+                    time_passed = time.time() - start
+                    progress = int(100 * time_passed / expires_in)
+                    progressDialog.update(progress, content)
+                else:
+                    break
+        except:
+            pass
+        try:
+            progressDialog.close()
+        except:
+            pass
+        return result
 
-
-def trakt_search_lists(search_title, page_no):
-    def _process(dummy_arg):
-        return call_trakt(
-            "search",
-            params={
-                "type": "list",
-                "fields": "name, description",
-                "query": search_title,
-                "limit": 50,
-            },
-            pagination=True,
-            page_no=page_no,
-        )
-
-    string = "trakt_search_lists_%s_%s" % (search_title, page_no)
-    return cache_object(_process, string, "dummy_arg", False, 4)
-
-
-def trakt_favorites(media_type):
-    def _process(params):
-        return [
-            {
-                "media_ids": {
-                    "tmdb": i[i["type"]]["ids"].get("tmdb", ""),
-                    "imdb": i[i["type"]]["ids"].get("imdb", ""),
-                    "tvdb": i[i["type"]]["ids"].get("tvdb", ""),
-                }
-            }
-            for i in get_trakt(params)
-        ]
-
-    media_type = "movies" if media_type in ("movie", "movies") else "shows"
-    string = "trakt_favorites_%s" % media_type
-    params = {
-        "path": "users/me/favorites/%s/%s",
-        "path_insert": (media_type, "title"),
-        "with_auth": True,
-        "pagination": False,
-    }
-    return cache_trakt_object(_process, string, params)
-
-
-def get_trakt_list_contents(list_type, user, slug, with_auth):
-    def _process(params):
-        return [
-            {
-                "media_ids": i[i["type"]]["ids"],
-                "title": i[i["type"]]["title"],
-                "type": i["type"],
-                "order": c,
-            }
-            for c, i in enumerate(get_trakt(params))
-            if i["type"] in ("movie", "show")
-        ]
-
-    string = "trakt_list_contents_%s_%s_%s" % (list_type, user, slug)
-    if user == "Trakt Official":
-        params = {
-            "path": "lists/%s/items",
-            "path_insert": slug,
-            "params": {"extended": "full"},
-            "method": "sort_by_headers",
+    def trakt_refresh_token(self):
+        CLIENT_ID = trakt_client()
+        if CLIENT_ID in self.empty_setting_check:
+            return self.no_client_key()
+        CLIENT_SECRET = trakt_secret()
+        if CLIENT_SECRET in self.empty_setting_check:
+            return self.no_secret_key()
+        data = {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+            "grant_type": "refresh_token",
+            "refresh_token": get_setting("trakt_refresh"),
         }
-    else:
-        params = {
-            "path": "users/%s/lists/%s/items",
-            "path_insert": (user, slug),
-            "params": {"extended": "full"},
-            "with_auth": with_auth,
-            "method": "sort_by_headers",
-        }
-    return cache_trakt_object(_process, string, params)
+        response = self.call_trakt("oauth/token", data=data, with_auth=False)
+        if response:
+            set_setting("trakt_token", response["access_token"])
+            set_setting("trakt_refresh", response["refresh_token"])
+            set_setting("trakt_expires", str(time.time() + 7776000))
 
-
-def trakt_trending_popular_lists(list_type, page_no):
-    string = "trakt_%s_user_lists_%s" % (list_type, page_no)
-    params = {
-        "path": "lists/%s",
-        "path_insert": list_type,
-        "params": {"limit": 50},
-        "page_no": page_no,
-    }
-    return cache_object(get_trakt, string, params, False)
-
-
-def trakt_get_lists(list_type):
-    if list_type == "my_lists":
-        string = "trakt_my_lists"
-        path = "users/me/lists%s"
-    elif list_type == "liked_lists":
-        string = "trakt_liked_lists"
-        path = "users/likes/lists%s"
-    params = {
-        "path": path,
-        "params": {"limit": 1000},
-        "pagination": False,
-        "with_auth": True,
-    }
-    return cache_trakt_object(get_trakt, string, params)
-
-
-def make_trakt_slug(name):
-    import re
-
-    name = name.strip()
-    name = name.lower()
-    name = re.sub("[^a-z0-9_]", "-", name)
-    name = re.sub("--+", "-", name)
-    return name
-
-
-def trakt_get_activity():
-    params = {"path": "sync/last_activities%s", "with_auth": True, "pagination": False}
-    return get_trakt(params)
-
-
-def get_trakt(params):
-    result = call_trakt(
-        params["path"] % params.get("path_insert", ""),
-        params=params.get("params", {}),
-        data=params.get("data"),
-        is_delete=params.get("is_delete", False),
-        with_auth=params.get("with_auth", False),
-        method=params.get("method"),
-        pagination=params.get("pagination", True),
-        page_no=params.get("page_no"),
-    )
-    return result[0] if params.get("pagination", True) else result
-
-
-def clear_all_trakt_cache_data():
-    try:
-        dbcon = connect_database("trakt_db")
-        for table in ("trakt_data", "progress", "watched", "watched_status"):
-            dbcon.execute(BASE_DELETE % table)
-        dbcon.execute("VACUUM")
-        return True
-    except:
+    def trakt_authenticate(self):
+        code = self.trakt_get_device_code()
+        token = self.trakt_get_device_token(code)
+        if token:
+            set_setting("trakt_token", token["access_token"])
+            set_setting("trakt_refresh", token["refresh_token"])
+            set_setting("trakt_expires", str(time.time() + 7776000))
+            sleep(1000)
+            try:
+                user = self.call_trakt("/users/me")
+                set_setting("trakt_user", str(user["username"]))
+            except:
+                pass
+            notification("Trakt Account Authorized", time=3000)
+            return True
+        notification("Trakt Error Authorizing", time=3000)
         return False
 
+    def trakt_revoke_authentication(self):
+        set_setting("trakt_user", "empty_setting")
+        set_setting("trakt_expires", "")
+        set_setting("trakt_token", "")
+        set_setting("trakt_refresh", "")
+        self.clear_all_trakt_cache_data()
+        CLIENT_ID = trakt_client()
+        if CLIENT_ID in self.empty_setting_check:
+            return self.no_client_key()
+        CLIENT_SECRET = trakt_secret()
+        if CLIENT_SECRET in self.empty_setting_check:
+            return self.no_secret_key()
+        data = {
+            "token": get_setting("trakt_token"),
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+        }
+        self.call_trakt("oauth/revoke", data=data, with_auth=False)
+        notification("You are now logged out from Trakt.tv", time=3000)
 
-def clear_cache(cache_type):
-    success = True
-    if cache_type == "trakt":
-        success = clear_all_trakt_cache_data()
-    elif cache_type == "list":
-        success = lists_cache.delete_all_lists()
-    if success:
-        return success
+
+class TraktMovies(TraktBase):
+    def trakt_movies_trending(self, page_no):
+        string = "trakt_movies_trending_%s" % page_no
+        params = {
+            "path": "movies/trending/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_movies_trending_recent(self, page_no):
+        current_year = get_datetime().year
+        years = "%s-%s" % (str(current_year - 1), str(current_year))
+        string = "trakt_movies_trending_recent_%s" % page_no
+        params = {
+            "path": "movies/trending/%s",
+            "params": {"limit": 20, "years": years},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_movies_top10_boxoffice(self):
+        string = "trakt_movies_top10_boxoffice"
+        params = {"path": "movies/boxoffice/%s", "pagination": False}
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_movies_most_watched(self, page_no):
+        string = "trakt_movies_most_watched_%s" % page_no
+        params = {
+            "path": "movies/watched/daily/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_movies_most_favorited(self, page_no):
+        string = "trakt_movies_most_favorited%s" % page_no
+        params = {
+            "path": "movies/favorited/daily/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+
+class TraktTV(TraktBase):
+    def trakt_tv_trending(self, page_no):
+        string = "trakt_tv_trending_%s" % page_no
+        params = {
+            "path": "shows/trending/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_tv_trending_recent(self, page_no):
+        current_year = get_datetime().year
+        years = "%s-%s" % (str(current_year - 1), str(current_year))
+        string = "trakt_tv_trending_recent_%s" % page_no
+        params = {
+            "path": "shows/trending/%s",
+            "params": {"limit": 20, "years": years},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_tv_most_watched(self, page_no):
+        string = "trakt_tv_most_watched_%s" % page_no
+        params = {
+            "path": "shows/watched/daily/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_tv_most_favorited(self, page_no):
+        string = "trakt_tv_most_favorited_%s" % page_no
+        params = {
+            "path": "shows/favorited/daily/%s",
+            "params": {"limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+
+class TraktAnime(TraktBase):
+    def trakt_anime_trending(self, page_no):
+        string = "trakt_anime_trending_%s" % page_no
+        params = {
+            "path": "shows/trending/%s",
+            "params": {"genres": "anime", "limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_anime_trending_recent(self, page_no):
+        current_year = get_datetime().year
+        years = "%s-%s" % (str(current_year - 1), str(current_year))
+        string = "trakt_anime_trending_recent_%s" % page_no
+        params = {
+            "path": "shows/trending/%s",
+            "params": {"genres": "anime", "limit": 20, "years": years},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_anime_most_watched(self, page_no):
+        string = "trakt_anime_most_watched_%s" % page_no
+        params = {
+            "path": "shows/watched/daily/%s",
+            "params": {"genres": "anime", "limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+
+class TraktLists(TraktBase):
+    def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=20):
+        data = self.trakt_fetch_collection_watchlist(list_type, media_type)
+
+        if sort_type == "recent":
+            data.sort(key=lambda k: k["collected_at"], reverse=True)
+        elif sort_type == "random":
+            random.shuffle(data)
+        elif sort_type is None and list_type == "watchlist":
+            sort_order = trakt_lists_sort_order("watchlist")
+            if sort_order == 0:
+                data = sort_for_article(data, "title")
+            elif sort_order == 1:
+                data.sort(key=lambda k: k["collected_at"], reverse=True)
+            else:
+                data.sort(key=lambda k: k.get("released"), reverse=True)
+
+        return data[:limit]
+
+    def trakt_collection_lists(self, media_type, list_type):
+        return self.trakt_fetch_sorted_list(
+            "collection", media_type, sort_type=list_type
+        )
+
+    def trakt_watchlist_lists(self, media_type, list_type):
+        return self.trakt_fetch_sorted_list(
+            "watchlist", media_type, sort_type=list_type
+        )
+
+    def trakt_watchlist(self, media_type):
+        return self.trakt_fetch_sorted_list("watchlist", media_type)
+
+    def trakt_fetch_collection_watchlist(self, list_type, media_type):
+        def _process(params):
+            raw_data = self.get_trakt(params)
+            kodilog("Raw data: %s" % raw_data)
+
+            if list_type == "watchlist":
+                raw_data = [item for item in raw_data if item["type"] == media_key]
+
+            return [
+                {
+                    "media_ids": {
+                        "tmdb": item[media_key]["ids"].get("tmdb", ""),
+                        "imdb": item[media_key]["ids"].get("imdb", ""),
+                        "tvdb": item[media_key]["ids"].get("tvdb", ""),
+                    },
+                    "title": item[media_key]["title"],
+                    "collected_at": item.get(collected_at_key),
+                    "released": item[media_key].get(
+                        release_date_key, default_release_date
+                    ),
+                }
+                for item in raw_data
+            ]
+
+        if media_type in ("movie", "movies"):
+            media_key = "movie"
+            release_date_key = "released"
+            collected_at_key = (
+                "listed_at" if list_type == "watchlist" else "collected_at"
+            )
+            default_release_date = "2050-01-01"
+        else:
+            media_key = "show"
+            release_date_key = "first_aired"
+            collected_at_key = (
+                "listed_at" if list_type == "watchlist" else "last_collected_at"
+            )
+            default_release_date = self.standby_date
+
+        cache_key = f"trakt_{list_type}_{media_key}"
+        api_path = "sync/{list_type}/{media_type}?extended=full%s"
+
+        params = {
+            "path": api_path,
+            "path_insert": (list_type, media_type),
+            "with_auth": True,
+            "pagination": False,
+        }
+
+        return cache_trakt_object(_process, cache_key, params)
+
+    def trakt_search_lists(self, search_title, page_no):
+        def _process(dummy_arg):
+            return self.call_trakt(
+                "search",
+                params={
+                    "type": "list",
+                    "fields": "name, description",
+                    "query": search_title,
+                    "limit": 50,
+                },
+                pagination=True,
+                page_no=page_no,
+            )
+
+        string = "trakt_search_lists_%s_%s" % (search_title, page_no)
+        return cache_object(_process, string, "dummy_arg", False, 4)
+
+    def trakt_favorites(self, media_type):
+        def _process(params):
+            return [
+                {
+                    "media_ids": {
+                        "tmdb": i[i["type"]]["ids"].get("tmdb", ""),
+                        "imdb": i[i["type"]]["ids"].get("imdb", ""),
+                        "tvdb": i[i["type"]]["ids"].get("tvdb", ""),
+                    }
+                }
+                for i in self.get_trakt(params)
+            ]
+
+        media_type = "movies" if media_type in ("movie", "movies") else "shows"
+        string = "trakt_favorites_%s" % media_type
+        params = {
+            "path": "users/me/favorites/%s/%s",
+            "path_insert": (media_type, "title"),
+            "with_auth": True,
+            "pagination": False,
+        }
+        return cache_trakt_object(_process, string, params)
+
+    def get_trakt_list_contents(self, list_type, user, slug, with_auth):
+        def _process(params):
+            return [
+                {
+                    "media_ids": i[i["type"]]["ids"],
+                    "title": i[i["type"]]["title"],
+                    "type": i["type"],
+                    "order": c,
+                }
+                for c, i in enumerate(self.get_trakt(params))
+                if i["type"] in ("movie", "show")
+            ]
+
+        string = "trakt_list_contents_%s_%s_%s" % (list_type, user, slug)
+        if user == "Trakt Official":
+            params = {
+                "path": "lists/%s/items",
+                "path_insert": slug,
+                "params": {"extended": "full"},
+                "method": "sort_by_headers",
+            }
+        else:
+            params = {
+                "path": "users/%s/lists/%s/items",
+                "path_insert": (user, slug),
+                "params": {"extended": "full"},
+                "with_auth": with_auth,
+                "method": "sort_by_headers",
+            }
+        return cache_trakt_object(_process, string, params)
+
+    def trakt_trending_popular_lists(self, list_type, page_no):
+        string = "trakt_%s_user_lists_%s" % (list_type, page_no)
+        params = {
+            "path": "lists/%s",
+            "path_insert": list_type,
+            "params": {"limit": 50},
+            "page_no": page_no,
+        }
+        return cache_object(self.get_trakt, string, params, False)
+
+    def trakt_get_lists(self, list_type):
+        if list_type == "my_lists":
+            string = "trakt_my_lists"
+            path = "users/me/lists%s"
+        elif list_type == "liked_lists":
+            string = "trakt_liked_lists"
+            path = "users/likes/lists%s"
+        params = {
+            "path": path,
+            "params": {"limit": 1000},
+            "pagination": False,
+            "with_auth": True,
+        }
+        return cache_trakt_object(self.get_trakt, string, params)
+
+    def make_trakt_slug(self, name):
+        import re
+
+        name = name.strip()
+        name = name.lower()
+        name = re.sub("[^a-z0-9_]", "-", name)
+        name = re.sub("--+", "-", name)
+        return name
+
+
+class TraktScrobble(TraktBase):
+    def trakt_start_scrobble(self, data):
+        kodilog("Starting scrobble")
+        progress = 0
+        payload = {
+            "progress": progress,
+        }
+        if data["mode"] == "movies":
+            payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+        elif data["mode"] == "tv":
+            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+
+        kodilog("Scrobble payload: %s" % payload)
+        self.call_trakt("scrobble/start", data=payload, with_auth=True)
+
+    def trakt_pause_scrobble(self, data):
+        progress = 0
+        payload = {
+            "progress": progress,
+        }
+        if data["mode"] == "movies":
+            payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+        elif data["mode"] == "tv":
+            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+
+        self.call_trakt("scrobble/pause", data=payload, with_auth=True)
+
+    def trakt_stop_scrobble(self, data):
+        kodilog("Stopping scrobble")
+
+        progress = data["progress"]
+        payload = {
+            "progress": progress,
+        }
+        if data["mode"] == "movies":
+            payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+        elif data["mode"] == "tv":
+            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+
+        self.call_trakt("scrobble/stop", data=payload, with_auth=True)
+
+    def trakt_get_last_tracked_position(self, data):
+        try:
+            media_type = "movies" if data["mode"] == "movies" else "shows"
+            ids = data["ids"]
+            tmdb_id = ids.get("tmdb_id")
+            path = f"sync/playback/{media_type}"
+            response = self.call_trakt(path, with_auth=True)
+            for item in response:
+                if item["type"] == "movie" and item["movie"]["ids"]["tmdb"] == tmdb_id:
+                    return item.get("progress", 0)
+                elif (
+                    item["type"] == "episode"
+                    and item["episode"]["ids"]["tmdb"] == tmdb_id
+                ):
+                    return item.get("progress", 0)
+        except Exception as e:
+            kodilog(f"Error fetching last tracked position: {e}")
+        return 0
+
+
+class TraktCache(TraktBase):
+    def clear_all_trakt_cache_data(self):
+        try:
+            dbcon = connect_database("trakt_db")
+            for table in ("trakt_data", "progress", "watched", "watched_status"):
+                dbcon.execute(BASE_DELETE % table)
+            dbcon.execute("VACUUM")
+            return True
+        except:
+            return False
+
+    def clear_cache(self, cache_type):
+        success = True
+        if cache_type == "trakt":
+            success = self.clear_all_trakt_cache_data()
+        elif cache_type == "list":
+            success = lists_cache.delete_all_lists()
+        if success:
+            return success
+
+
+class TraktAPI:
+    def __init__(self):
+        self.auth = TraktAuthentication()
+        self.movies = TraktMovies()
+        self.tv = TraktTV()
+        self.anime = TraktAnime()
+        self.lists = TraktLists()
+        self.scrobble = TraktScrobble()
+        self.cache = TraktCache()
 
 
 class ProviderException(Exception):
