@@ -806,6 +806,10 @@
 
                     </control>
                 </setting>
+                <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
             </group>
         </category>
         <category id="fanart" label="30200">

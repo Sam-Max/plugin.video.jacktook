@@ -1250,3 +1250,7 @@ msgstr "Alternar complementos de catalogos"
 msgctxt "#30876"
 msgid "Download directory"
 msgstr "Directorio de Descarga"
+
+msgctxt "#30877"
+msgid "Habilitar Trakt.tv Scrobbling"
+msgstr ""
