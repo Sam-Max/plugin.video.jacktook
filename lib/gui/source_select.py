@@ -58,12 +58,12 @@ class SourceSelect(BaseWindow):
 
     def populate_sources_list(self) -> None:
         self.display_list.reset()
-        sources = (
+        self.sources = (
             self.filtered_sources
             if self.filter_applied and self.filtered_sources is not None
             else self.sources
         )
-        for source in sources:
+        for source in self.sources:
             menu_item = xbmcgui.ListItem(label=source.title)
 
             menu_item.setProperty("title", source.title)
@@ -102,11 +102,11 @@ class SourceSelect(BaseWindow):
                 qualities = sorted(set(s.quality for s in self.sources if s.quality))
                 popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=qualities)
                 popup.doModal()
-                selected = popup.selected_filter
+                selected_filter = popup.selected_filter
                 del popup
-                if selected is not None:
+                if selected_filter is not None:
                     self.filtered_sources = [
-                        s for s in self.sources if s.quality == selected
+                        s for s in self.sources if s.quality == selected_filter
                     ]
                     self.filter_applied = True
                 else:
@@ -117,11 +117,11 @@ class SourceSelect(BaseWindow):
                 providers = sorted(set(s.provider for s in self.sources if s.provider))
                 popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=providers)
                 popup.doModal()
-                selected = popup.selected_filter
+                selected_filter = popup.selected_filter
                 del popup
-                if selected is not None:
+                if selected_filter is not None:
                     self.filtered_sources = [
-                        s for s in self.sources if s.provider == selected
+                        s for s in self.sources if s.provider == selected_filter
                     ]
                     self.filter_applied = True
                 else:
