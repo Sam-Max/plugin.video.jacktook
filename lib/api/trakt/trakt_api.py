@@ -156,6 +156,7 @@ class TraktBase:
 
             kodilog(f"Path: {params['path']}")
             kodilog(f"Path insert: {path_insert}")
+            
             formatted_path = params["path"] % path_insert
             kodilog(f"Formatted path: {formatted_path}")
 
@@ -427,6 +428,21 @@ class TraktAnime(TraktBase):
 
 
 class TraktLists(TraktBase):
+    def trakt_collection_lists(self, media_type, list_type):
+        return self.trakt_fetch_sorted_list(
+            "collection", media_type, sort_type=list_type
+        )
+
+    def trakt_watchlist_lists(self, media_type, list_type):
+        return self.trakt_fetch_sorted_list(
+            "watchlist", media_type, sort_type=list_type
+        )
+
+    def trakt_watchlist(self, media_type):
+        kodilog("Fetching trakt watchlist")
+        kodilog("Media type: %s" % media_type)
+        return self.trakt_fetch_sorted_list("watchlist", media_type)
+    
     def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=20):
         data = self.trakt_fetch_collection_watchlist(list_type, media_type)
 
@@ -444,19 +460,6 @@ class TraktLists(TraktBase):
                 data.sort(key=lambda k: k.get("released"), reverse=True)
 
         return data[:limit]
-
-    def trakt_collection_lists(self, media_type, list_type):
-        return self.trakt_fetch_sorted_list(
-            "collection", media_type, sort_type=list_type
-        )
-
-    def trakt_watchlist_lists(self, media_type, list_type):
-        return self.trakt_fetch_sorted_list(
-            "watchlist", media_type, sort_type=list_type
-        )
-
-    def trakt_watchlist(self, media_type):
-        return self.trakt_fetch_sorted_list("watchlist", media_type)
 
     def trakt_fetch_collection_watchlist(self, list_type, media_type):
         def _process(params):
@@ -490,7 +493,7 @@ class TraktLists(TraktBase):
             )
             default_release_date = "2050-01-01"
         else:
-            media_key = "show"
+            media_key = media_type = "show"
             release_date_key = "first_aired"
             collected_at_key = (
                 "listed_at" if list_type == "watchlist" else "last_collected_at"
@@ -498,7 +501,7 @@ class TraktLists(TraktBase):
             default_release_date = self.standby_date
 
         cache_key = f"trakt_{list_type}_{media_key}"
-        api_path = "sync/{list_type}/{media_type}?extended=full%s"
+        api_path = "sync/%s/%s?extended=full"
 
         params = {
             "path": api_path,
@@ -618,27 +621,30 @@ class TraktLists(TraktBase):
 class TraktScrobble(TraktBase):
     def trakt_start_scrobble(self, data):
         kodilog("Starting scrobble")
-        progress = 0
-        payload = {
-            "progress": progress,
-        }
+        payload = {"progress": 0}
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
-            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            kodilog("TV data: %s" % data.get("tv_data"))
+            payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            payload["episode"] = {
+                "season": data.get("tv_data").get("season"),
+                "number": data.get("tv_data").get("episode")
+            }
 
         kodilog("Scrobble payload: %s" % payload)
         self.call_trakt("scrobble/start", data=payload, with_auth=True)
 
     def trakt_pause_scrobble(self, data):
-        progress = 0
-        payload = {
-            "progress": progress,
-        }
+        payload = {"progress": 0}
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
-            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            payload["episode"] = {
+                "season": data.get("tv_data").get("season"),
+                "number": data.get("tv_data").get("episode")
+            }
 
         self.call_trakt("scrobble/pause", data=payload, with_auth=True)
 
@@ -652,23 +658,29 @@ class TraktScrobble(TraktBase):
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
-            payload["episode"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
+            payload["episode"] = {
+                "season": data.get("tv_data").get("season"),
+                "number": data.get("tv_data").get("episode")
+            }
 
         self.call_trakt("scrobble/stop", data=payload, with_auth=True)
 
     def trakt_get_last_tracked_position(self, data):
         try:
+            kodilog("Fetching last tracked position")   
             media_type = "movies" if data["mode"] == "movies" else "shows"
-            ids = data["ids"]
-            tmdb_id = ids.get("tmdb_id")
+            season = data.get("tv_data").get("season")
+            tmdb_id = data.get("ids").get("tmdb_id")
             path = f"sync/playback/{media_type}"
             response = self.call_trakt(path, with_auth=True)
+            kodilog(f"Response: {response}")    
             for item in response:
                 if item["type"] == "movie" and item["movie"]["ids"]["tmdb"] == tmdb_id:
                     return item.get("progress", 0)
                 elif (
-                    item["type"] == "episode"
-                    and item["episode"]["ids"]["tmdb"] == tmdb_id
+                    item["type"] == "show"
+                    and item["episode"]["season"] == season
                 ):
                     return item.get("progress", 0)
         except Exception as e:
