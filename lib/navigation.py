@@ -877,7 +877,6 @@ def play_from_pack(params):
 
 
 def search_item(params):
-    kodilog("search_item")
     query = params.get("query", "")
     category = params.get("category", None)
     api = params["api"]
@@ -1031,5 +1030,8 @@ def test_source_select(params):
 def test_resume_dialog(params):
     resume_dialog_mock()
 
+
 def test_download_dialog(params):
     download_dialog_mock()
+
+
