@@ -183,6 +183,17 @@ def clear_trakt_favorites():
         return
 
 
+def clear_trakt_watchlist():
+    """
+    Clear the cached Trakt.tv watchlist.
+    """
+    try:
+        dbcon = connect_database("trakt_db")
+        dbcon.execute(DELETE_LIKE % "trakt_watchlist_%")
+    except:
+        pass
+
+
 def default_activities():
     return {
         "all": "2024-01-22T00:22:21.000Z",

@@ -12,7 +12,7 @@ from typing import List
 
 from lib.api.fanart.fanarttv import FanartTv
 from lib.api.jacktook.kodi import kodilog
-from lib.api.trakt.trakt_api import clear_cache
+from lib.api.trakt.trakt_api import TraktAPI
 from lib.clients.base import TorrentStream
 from lib.db.bookmark_db import bookmark_db
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
@@ -463,7 +463,7 @@ def set_watched_file(data):
     title = data.get("title", "")
     is_torrent = data.get("is_torrent", False)
     is_direct = data.get("type", "") == IndexerType.DIRECT
-    
+
     if title in main_db.database["jt:lfh"]:
         return
 
@@ -492,7 +492,7 @@ def set_watched_title(title, ids, mode, tg_data="", media_type=""):
 
     if mode == "multi":
         mode = media_type
-    
+
     main_db.set_data(
         key="jt:lth",
         subkey=title,
@@ -674,8 +674,8 @@ def clear_cache_on_update():
 def clear_all_cache():
     cache.clean_all()
     bookmark_db.clear_bookmarks()
-    clear_cache(cache_type="trakt")
-    clear_cache(cache_type="list")
+    TraktAPI().cache.clear_cache(cache_type="trakt")
+    TraktAPI().cache.clear_cache(cache_type="list")
 
 
 def clear(type="", update=False):
@@ -904,3 +904,4 @@ def extract_publish_date(date):
         return ""
     match = re.search(r"\d{4}-\d{2}-\d{2}", date)
     return match.group() if match else ""
+

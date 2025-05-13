@@ -63,6 +63,13 @@ tv_items = [
         "icon": "trakt.png",
     },
     {
+        "name": "Trakt - Watched History",
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_watched_history",
+        "icon": "trakt.png",
+    },
+    {
         "name": "Trakt - Watchlist",
         "mode": "tv",
         "api": "trakt",
@@ -140,6 +147,13 @@ movie_items = [
         "mode": "movies",
         "api": "trakt",
         "query": "trakt_recommendations",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Trakt - Watched History",
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_watched_history",
         "icon": "trakt.png",
     },
     {

@@ -1,8 +1,7 @@
 from json import dumps as json_dumps
-from threading import Thread
 import traceback
 from lib.api.jacktook.kodi import kodilog
-from lib.api.trakt.trakt_api import make_trakt_slug
+from lib.api.trakt.trakt_api import TraktAPI, TraktLists
 from lib.utils.kodi_utils import (
     ADDON_HANDLE,
     PLAYLIST,
@@ -88,6 +87,12 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
 
         try:
+            if get_setting("trakt_scrobbling_enabled"):
+                last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
+                if last_position > 0:
+                    list_item.setProperty("StartPercent", str(last_position))
+                TraktAPI().scrobble.trakt_start_scrobble(self.data)  # Notify Trakt.tv about playback start
+
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.check_playback_start()
 
@@ -162,27 +167,22 @@ class JacktookPLayer(xbmc.Player):
                     self.watched_percentage = round(
                         float(self.current_time / self.total_time * 100), 1
                     )
+                    self.data["progress"] = self.watched_percentage  
 
                     time_left = int(self.total_time) - int(self.current_time)
-
                     if self.next_dialog and time_left <= self.playing_next_time:
                         xbmc.executebuiltin(
                             action_url_run(name="run_next_dialog", item_info=self.data)
                         )
                         self.next_dialog = False
 
-                    # if self.current_point >= set_watched:
-                    #     if not self.media_marked:
-                    #         self.media_watched_marker()
-
                 except Exception as e:
                     kodilog(f"Error in monitor: {e}")
                     sleep(250)
 
+            if get_setting("trakt_scrobbling_enabled"):
+                TraktAPI().scrobble.trakt_stop_scrobble(self.data)  # Notify Trakt.tv about playback stop
             close_busy_dialog()
-
-            # if not self.media_marked:
-            #     self.media_watched_marker()
 
         except Exception as e:
             kodilog(f"Monitor failed: {e}")
@@ -236,22 +236,6 @@ class JacktookPLayer(xbmc.Player):
 
                         self.PLAYLIST.add(url=url, listitem=list_item)
 
-    def media_watched_marker(self):
-        self.media_marked = True
-        try:
-            if self.watched_percentage >= set_resume:
-                self.set_bookmark()
-        except Exception as e:
-            kodilog(f"Error in media_watched_marker: {e}")
-
-    def set_bookmark(self):
-        Thread(
-            target=self.db.set_bookmark, args=(self.db_key, self.watched_percentage)
-        ).start()
-
-    def get_bookmark(self):
-        return self.db.get_bookmark(self.db_key)
-
     def kill_dialog(self):
         close_all_dialog()
 
@@ -265,7 +249,7 @@ class JacktookPLayer(xbmc.Player):
         self.url = self.data["url"]
         self.db_key = self.data.get("info_hash") or self.url
         self.kodi_monitor = Monitor()
-        self.watched_percentage = self.get_bookmark()
+        self.watched_percentage = self.data.get("progress", 0.0)
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")
@@ -279,7 +263,7 @@ class JacktookPLayer(xbmc.Player):
             trakt_ids = {
                 "tmdb": tmdb_id,
                 "imdb": imdb_id,
-                "slug": make_trakt_slug(self.data.get("title")),
+                "slug": TraktLists().make_trakt_slug(self.data.get("title")),
             }
             if mode == "tv":
                 trakt_ids["tvdb"] = tvdb_id
