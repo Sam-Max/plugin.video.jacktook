@@ -65,8 +65,9 @@ def tmdb_get(path, params=None):
 
     try:
         data = handlers.get(path, lambda _: None)(params)
-    except Exception:
-        return {}
+    except Exception as e:
+       kodilog(f"Error in tmdb_get for {path} with params {params}: {e}")
+       return {}
 
     if data is not None:
         cache.set(
