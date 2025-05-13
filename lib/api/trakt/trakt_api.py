@@ -156,7 +156,7 @@ class TraktBase:
 
             kodilog(f"Path: {params['path']}")
             kodilog(f"Path insert: {path_insert}")
-            
+
             formatted_path = params["path"] % path_insert
             kodilog(f"Formatted path: {formatted_path}")
 
@@ -442,7 +442,37 @@ class TraktLists(TraktBase):
         kodilog("Fetching trakt watchlist")
         kodilog("Media type: %s" % media_type)
         return self.trakt_fetch_sorted_list("watchlist", media_type)
-    
+
+    def add_to_watchlist(self, media_type, ids):
+        if media_type in ("movie", "movies"):
+            media_type = "movie"
+        else:
+            media_type = "show"
+
+        payload = {media_type: {"ids": ids}}
+        return self.call_trakt(
+            "sync/watchlist",
+            data=payload,
+            with_auth=True,
+            method="post",
+            pagination=False,
+        )
+
+    def remove_from_watchlist(self, media_type, ids):
+        if media_type in ("movie", "movies"):
+            media_type = "movie"
+        else:
+            media_type = "show"
+
+        payload = {media_type: {"ids": ids}}
+        return self.call_trakt(
+            "sync/watchlist/remove",
+            data=payload,
+            with_auth=True,
+            method="post",
+            pagination=False,
+        )
+
     def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=20):
         data = self.trakt_fetch_collection_watchlist(list_type, media_type)
 
@@ -617,6 +647,52 @@ class TraktLists(TraktBase):
         name = re.sub("--+", "-", name)
         return name
 
+    def get_watched_history(self, media_type, page_no):
+        def _process(params, media_type):
+            response = self.get_trakt(params)
+            kodilog(f"Response from get_trakt: {response}")
+            history = []
+            if media_type == "movies":
+                for item in response:
+                    if item["type"] == "movie":
+                        history.append(
+                            {
+                                "media_ids": item["movie"]["ids"],
+                                "title": item["movie"]["title"],
+                                "type": "movie",
+                                "watched_at": item.get("watched_at"),
+                            }
+                        )
+            elif media_type == "shows":
+                for item in response:
+                    if item["type"] == "episode":
+                        history.append(
+                            {
+                                "media_ids": item["show"]["ids"],
+                                "title": f"{item['show']['title']} - S{item['episode']['season']}E{item['episode']['number']} - {item['episode']['title']}",
+                                "type": "show",
+                                "watched_at": item.get("watched_at"),
+                                "show_title": item["show"]["title"],
+                                "ep_title": item["episode"]["title"],
+                                "season": item["episode"]["season"],
+                                "episode": item["episode"]["number"], 
+                            }
+                        )
+            return history
+
+        if media_type in ("movie", "movies"):
+            media_type = "movies"
+        else:
+            media_type = "shows"
+
+        params = {
+            "path": "sync/history/%s",
+            "path_insert": media_type,
+            "page_no": page_no,
+            "with_auth": True,
+        }
+        return _process(params, media_type)
+
 
 class TraktScrobble(TraktBase):
     def trakt_start_scrobble(self, data):
@@ -629,7 +705,7 @@ class TraktScrobble(TraktBase):
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),
-                "number": data.get("tv_data").get("episode")
+                "number": data.get("tv_data").get("episode"),
             }
 
         kodilog("Scrobble payload: %s" % payload)
@@ -643,7 +719,7 @@ class TraktScrobble(TraktBase):
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),
-                "number": data.get("tv_data").get("episode")
+                "number": data.get("tv_data").get("episode"),
             }
 
         self.call_trakt("scrobble/pause", data=payload, with_auth=True)
@@ -661,27 +737,24 @@ class TraktScrobble(TraktBase):
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),
-                "number": data.get("tv_data").get("episode")
+                "number": data.get("tv_data").get("episode"),
             }
 
         self.call_trakt("scrobble/stop", data=payload, with_auth=True)
 
     def trakt_get_last_tracked_position(self, data):
         try:
-            kodilog("Fetching last tracked position")   
+            kodilog("Fetching last tracked position")
             media_type = "movies" if data["mode"] == "movies" else "shows"
             season = data.get("tv_data").get("season")
             tmdb_id = data.get("ids").get("tmdb_id")
             path = f"sync/playback/{media_type}"
             response = self.call_trakt(path, with_auth=True)
-            kodilog(f"Response: {response}")    
+            kodilog(f"Response: {response}")
             for item in response:
                 if item["type"] == "movie" and item["movie"]["ids"]["tmdb"] == tmdb_id:
                     return item.get("progress", 0)
-                elif (
-                    item["type"] == "show"
-                    and item["episode"]["season"] == season
-                ):
+                elif item["type"] == "show" and item["episode"]["season"] == season:
                     return item.get("progress", 0)
         except Exception as e:
             kodilog(f"Error fetching last tracked position: {e}")
