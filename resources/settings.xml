@@ -794,10 +794,12 @@
                 </setting>
                 <setting id="trakt_client" type="string" label="30798" help="30818">
                     <default>1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb</default>
+                    <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_secret" type="string" label="30800" help="30811">
                     <default>8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1</default>
+                    <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_logout" type="action" label="30802" help="30856">
@@ -809,14 +811,6 @@
                 <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">
                     <default>true</default>
                     <control type="toggle" />
-                </setting>
-            </group>
-        </category>
-        <category id="fanart" label="30200">
-            <group id="fanart_tv" label="30202">
-                <setting id="fanart_tv_client_id" type="string" label="30203" help="30808">
-                    <default>fa836e1c874ba95ab08a14ee88e05565</default>
-                    <control type="edit" format="string" />
                 </setting>
             </group>
         </category>
