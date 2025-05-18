@@ -10,7 +10,7 @@ from enum import Enum
 
 from typing import List
 
-from lib.api.fanart.fanarttv import FanartTv
+from lib.api.fanart.fanart import FanartTv
 from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import TraktAPI
 from lib.clients.base import TorrentStream
@@ -518,7 +518,7 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     if data:
         return data
     else:
-        fanart = FanartTv(get_setting("fanart_tv_client_id"))
+        fanart = FanartTv(client_key="fa836e1c874ba95ab08a14ee88e05565")
         if mode == "tv":
             results = fanart.get_show(tvdb_id)
             data = get_fanart_data(results)

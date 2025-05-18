@@ -20,7 +20,7 @@ def fanart_guard_response(func):
                 return response
 
             if response.status_code == 404:
-                kodilog("FanartTv failed to find {response.url}")
+                kodilog(f"FanartTv failed to find {response.url}")
                 return None
             else:
                 kodilog(f"FanartTv returned a {response.status_code} ({FanartTv.http_codes[response.status_code]}")
