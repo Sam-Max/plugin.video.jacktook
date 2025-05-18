@@ -37,6 +37,7 @@ from lib.titles_history import last_titles
 
 from lib.trakt import (
     handle_trakt_query,
+    process_trakt_result,
     show_trakt_list_content,
     show_list_trakt_page,
 )
@@ -885,7 +886,9 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     if api == "trakt":
-        handle_trakt_query(query, category, mode, page, submode, api)
+        result = handle_trakt_query(query, category, mode, page, submode, api)
+        if result:
+            process_trakt_result(result, query, category, mode, submode, api, page)
     elif api == "tmdb":
         handle_tmdb_query(params)
 
