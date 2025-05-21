@@ -93,7 +93,7 @@ def search_catalog(params):
             imdb_id = meta.get("imdb_id")
 
             if tmdb_id or imdb_id:
-                ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
                     "tv_seasons_details",
                     ids=ids,
@@ -108,12 +108,12 @@ def search_catalog(params):
                     video_id=meta["id"],
                 )
         elif meta["type"] == "movie":
-            tmdb_id = None
+            tmdb_id = ""
             id = meta.get("id", "")
             if "tmdb" in id:
                 tmdb_id = id.split(":")[1]
 
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": meta.get("imdb_id")}
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": meta.get("imdb_id")}
             url = build_url("search", mode="movies", query=meta["name"], ids=ids)
         else:
             continue
@@ -213,7 +213,7 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
             imdb_id = video.get("imdb_id")
 
             if tmdb_id or imdb_id:
-                ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
                     "tv_seasons_details",
                     ids=ids,
@@ -238,12 +238,12 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
                     video_id=video["id"],
                 )
         elif video["type"] == "movie":
-            tmdb_id = None
+            tmdb_id = ""
             id = video.get("id", "")
             if "tmdb" in id:
                 tmdb_id = id.split(":")[1]
 
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": video.get("imdb_id")}
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": video.get("imdb_id")}
             url = build_url("search", mode="movies", query=video["name"], ids=ids)
         else:
             continue
@@ -367,7 +367,7 @@ def list_stremio_episodes(params):
             "season": season,
         }
 
-        ids = {"tmdb_id": None, "tvdb_id": None, "imdb_id": None}
+        ids = {"tmdb_id": "", "tvdb_id": "", "imdb_id": ""}
 
         if imdb_id := meta_data.get("imdb_id"):
             ids["imdb_id"] = imdb_id

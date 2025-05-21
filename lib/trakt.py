@@ -258,7 +258,7 @@ def show_recommendations(res, mode):
     title = res["title"]
     tmdb_id = res["ids"]["tmdb"]
     imdb_id = res["ids"]["imdb"]
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
 
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
@@ -275,7 +275,7 @@ def show_recommendations(res, mode):
 def show_watched_history_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
     imdb_id = res["media_ids"]["imdb"]
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
     title = res["title"]
 
     if res["type"] == "show":
@@ -324,7 +324,7 @@ def show_watched_history_content_items(res):
 def show_lists_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
     imdb_id = res["media_ids"]["imdb"]
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
     title = res["title"]
 
     if res["type"] == "show":
