@@ -1,6 +1,7 @@
 import json
 from lib.api.jacktook.kodi import kodilog
 from lib.api.trakt.trakt_api import TraktAPI, TraktLists, TraktMovies, TraktTV
+from lib.api.trakt.trakt_utils import add_trakt_watchlist_context_menu
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     Anime,
@@ -91,7 +92,6 @@ def handle_trakt_tv_query(query, mode, page):
     elif query in list_handlers:
         return list_handlers[query]()
 
-
 def handle_trakt_anime_query(query, page):
     if query == Anime.TRENDING:
         return TraktAPI().anime.trakt_anime_trending(page)
@@ -104,6 +104,7 @@ def trakt_add_to_watchlist(params):
     ids = json.loads(params.get("ids", "{}"))
     try:
         TraktAPI().lists.add_to_watchlist(media_type, ids)
+        notification("Added to Trakt watchlist", time=3000)
     except Exception as e:
         kodilog(f"Error adding to Trakt watchlist: {e}")
         notification("Failed to add to Trakt watchlist", time=3000)
@@ -114,6 +115,7 @@ def trakt_remove_from_watchlist(params):
     ids = json.loads(params.get("ids", "{}"))
     try:
         TraktAPI().lists.remove_from_watchlist(media_type, ids)
+        notification("Removed from Trakt watchlist", time=3000)
     except Exception as e:
         kodilog(f"Error removing from Trakt watchlist: {e}")
         notification("Failed to remove from Trakt watchlist", time=3000)
@@ -213,7 +215,7 @@ def show_watchlist(res, mode):
     tmdb_id = res["media_ids"]["tmdb"]
     imdb_id = res["media_ids"]["imdb"]
 
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
 
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
@@ -393,12 +395,15 @@ def extract_ids(res, mode="tv"):
 
 def add_dir_item(mode, list_item, ids, title):
     if mode == "tv":
+        list_item.addContextMenuItems(
+            add_trakt_watchlist_context_menu("tv", ids)
+        )
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "tv_seasons_details",
                 ids=ids,
-                mode="tv",
+                mode=mode,
             ),
             list_item,
             isFolder=True,
@@ -418,13 +423,14 @@ def add_dir_item(mode, list_item, ids, title):
                     ),
                 )
             ]
+            + add_trakt_watchlist_context_menu("movie", ids)
         )
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "search",
                 query=title,
-                mode="movies",
+                mode=mode,
                 ids=ids,
             ),
             list_item,

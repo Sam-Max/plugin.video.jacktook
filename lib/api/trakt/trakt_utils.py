@@ -2,7 +2,38 @@ from datetime import datetime
 import random
 import re
 import time
+import json
+from lib.utils.kodi_utils import action_url_run
 
+
+def add_trakt_watchlist_context_menu(media_type, ids):
+    filtered_ids = clean_ids({
+        "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
+        "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
+        "imdb": ids.get("imdb_id") or ids.get("imdb"),
+    })
+    return [
+        (
+            "Add to Trakt Watchlist",
+            action_url_run(
+                "trakt_add_to_watchlist",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+        ),
+        (
+            "Remove from Trakt Watchlist",
+            action_url_run(
+                "trakt_remove_from_watchlist",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+        ),
+    ]
+
+
+def clean_ids(ids_dict):
+    return {k: v for k, v in ids_dict.items() if v not in (None, "", "null")}
 
 
 def jsondate_to_datetime(jsondate_object, resformat, remove_time=False):
@@ -89,6 +120,3 @@ def title_key(title):
 def sort_for_article(_list, _key):
     _list.sort(key=lambda k: re.sub(r"(^the |^a |^an )", "", k[_key].lower()))
     return _list
-
-
-

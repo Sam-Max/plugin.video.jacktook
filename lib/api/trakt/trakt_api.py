@@ -8,7 +8,7 @@ from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
 from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.trakt_cache import cache_trakt_object
-from lib.api.trakt.utils import sort_for_article, sort_list
+from lib.api.trakt.trakt_utils import sort_for_article, sort_list
 from lib.utils.kodi_utils import (
     copy2clip,
     get_datetime,
@@ -64,50 +64,41 @@ class TraktBase:
                 token = get_setting("trakt_token")
             if token:
                 headers["Authorization"] = f"Bearer {token}"
+                kodilog("Trakt token: %s" % token)
 
         if pagination:
             params["page"] = page_no
 
+        response = self._send_request(path, params, data, headers, is_delete, method)
+        kodilog("Trakt response status code: %s" % response.status_code)
         try:
-            response = self._send_request(
-                path, params, data, headers, is_delete, method
-            )
             response.raise_for_status()
+        except requests.HTTPError as error:
+            status_code = error.response.status_code if error.response else None
+            error_messages = {
+                400: "Bad Request",
+                401: "Unauthorized",
+                403: "Forbidden",
+                404: "Not Found",
+                429: "Rate Limit Exceeded",
+                500: "Internal Server Error",
+                503: "Service Unavailable",
+                504: "Gateway Timeout",
+            }
+            message = error_messages.get(status_code, f"HTTP Error: {status_code}")
+            kodilog(f"Trakt API error: {error}")
+            notification(f"Trakt Error: {message}")
+            raise ProviderException(f"Trakt Error: {message}")
         except requests.RequestException as error:
-            kodilog("Trakt API error: %s" % error)
-            if error.response and error.response.status_code == 403:
-                notification("Trakt Error: Forbidden")
-                raise ProviderException("Trakt Error: Forbidden")
-            elif error.response and error.response.status_code == 404:
-                notification("Trakt Error: Not Found")
-                raise ProviderException("Trakt Error: Not Found")
-            elif error.response and error.response.status_code == 429:
-                notification("Trakt Error: Rate Limit Exceeded")
-                raise ProviderException("Trakt Error: Rate Limit Exceeded")
-            elif error.response and error.response.status_code == 500:
-                notification("Trakt Error: Internal Server Error")
-                raise ProviderException("Trakt Error: Internal Server Error")
-            elif error.response and error.response.status_code == 503:
-                notification("Trakt Error: Service Unavailable")
-                raise ProviderException("Trakt Error: Service Unavailable")
-            elif error.response and error.response.status_code == 504:
-                notification("Trakt Error: Gateway Timeout")
-                raise ProviderException("Trakt Error: Gateway Timeout")
-            elif error.response and error.response.status_code == 400:
-                notification("Trakt Error: Bad Request")
-                raise ProviderException("Trakt Error: Bad Request")
-            elif error.response and error.response.status_code == 401:
-                notification("Trakt Error: Unauthorized")
-                raise ProviderException("Trakt Error: Unauthorized")
-            elif error.response and error.response.status_code == 403:
-                notification("Trakt Error: Forbidden")
-                raise ProviderException("Trakt Error: Forbidden")
-            return None
+            kodilog(f"Trakt API error: {error}")
+            notification("Trakt Error: Request Exception")
+            raise ProviderException("Trakt Error: Request Exception")
 
         return self._process_response(response, method, pagination)
 
     def _send_request(self, path, params, data, headers, is_delete, method):
         url = self.api_endpoint % path
+        kodilog("Trakt URL: %s" % url)
         if method == "post":
             return requests.post(url, headers=headers, timeout=self.timeout)
         elif method == "delete":
@@ -129,6 +120,7 @@ class TraktBase:
         response.encoding = "utf-8"
         try:
             result = response.json()
+            kodilog("Response JSON: %s" % result)
         except ValueError:
             return None
 
@@ -171,14 +163,51 @@ class TraktBase:
                 page_no=params.get("page_no"),
             )
 
+            kodilog(f"Call trakt result: {result}")
             return result[0] if params.get("pagination", True) else result
-
         except KeyError as e:
             kodilog(f"KeyError in get_trakt: {e}")
             raise
         except TypeError as e:
             kodilog(f"TypeError in get_trakt: {e}")
             raise
+
+    def trakt_refresh_token(self):
+        CLIENT_ID = trakt_client()
+        if CLIENT_ID in self.empty_setting_check:
+            return self.no_client_key()
+        CLIENT_SECRET = trakt_secret()
+        if CLIENT_SECRET in self.empty_setting_check:
+            return self.no_secret_key()
+        data = {
+            "client_id": CLIENT_ID,
+            "client_secret": CLIENT_SECRET,
+            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+            "grant_type": "refresh_token",
+            "refresh_token": get_setting("trakt_refresh"),
+        }
+        response = self.call_trakt("oauth/token", data=data, with_auth=False)
+        if response:
+            set_setting("trakt_token", response["access_token"])
+            set_setting("trakt_refresh", response["refresh_token"])
+            set_setting("trakt_expires", str(time.time() + 7776000))
+
+    def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
+        params = {
+            "path": "search/tmdb/%s",
+            "path_insert": tmdb_id,
+            "params": {"type": media_type},
+            "with_auth": False,
+            "pagination": False,
+        }
+        kodilog(f"get_trakt_id_by_tmdb params: {params}")
+        results = self.get_trakt(params)
+        if results and isinstance(results, list) and len(results) > 0:
+            try:
+                return results[0][media_type]["ids"]["trakt"]
+            except (KeyError, IndexError, TypeError):
+                return None
+        return None
 
 
 class TraktAuthentication(TraktBase):
@@ -252,26 +281,6 @@ class TraktAuthentication(TraktBase):
             pass
         return result
 
-    def trakt_refresh_token(self):
-        CLIENT_ID = trakt_client()
-        if CLIENT_ID in self.empty_setting_check:
-            return self.no_client_key()
-        CLIENT_SECRET = trakt_secret()
-        if CLIENT_SECRET in self.empty_setting_check:
-            return self.no_secret_key()
-        data = {
-            "client_id": CLIENT_ID,
-            "client_secret": CLIENT_SECRET,
-            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
-            "grant_type": "refresh_token",
-            "refresh_token": get_setting("trakt_refresh"),
-        }
-        response = self.call_trakt("oauth/token", data=data, with_auth=False)
-        if response:
-            set_setting("trakt_token", response["access_token"])
-            set_setting("trakt_refresh", response["refresh_token"])
-            set_setting("trakt_expires", str(time.time() + 7776000))
-
     def trakt_authenticate(self):
         code = self.trakt_get_device_code()
         token = self.trakt_get_device_token(code)
@@ -295,7 +304,7 @@ class TraktAuthentication(TraktBase):
         set_setting("trakt_expires", "")
         set_setting("trakt_token", "")
         set_setting("trakt_refresh", "")
-        self.clear_all_trakt_cache_data()
+        TraktCache().clear_all_trakt_cache_data()
         CLIENT_ID = trakt_client()
         if CLIENT_ID in self.empty_setting_check:
             return self.no_client_key()
@@ -428,48 +437,39 @@ class TraktAnime(TraktBase):
 
 
 class TraktLists(TraktBase):
-    def trakt_collection_lists(self, media_type, list_type):
-        return self.trakt_fetch_sorted_list(
-            "collection", media_type, sort_type=list_type
-        )
-
-    def trakt_watchlist_lists(self, media_type, list_type):
-        return self.trakt_fetch_sorted_list(
-            "watchlist", media_type, sort_type=list_type
-        )
-
     def trakt_watchlist(self, media_type):
         kodilog("Fetching trakt watchlist")
-        kodilog("Media type: %s" % media_type)
-        return self.trakt_fetch_sorted_list("watchlist", media_type)
+        result = self.trakt_fetch_sorted_list("watchlist", media_type)
+        kodilog("Watchlist result: %s" % result)
+        return result
 
     def add_to_watchlist(self, media_type, ids):
         if media_type in ("movie", "movies"):
-            media_type = "movie"
+            media_type = "movies"
         else:
-            media_type = "show"
+            media_type = "shows"
 
-        payload = {media_type: {"ids": ids}}
+        payload = {media_type: [{'ids': {'tmdb': int(ids["tmdb"])}}]}
+        
+        kodilog("Payload: %s" % payload)
         return self.call_trakt(
             "sync/watchlist",
             data=payload,
             with_auth=True,
-            method="post",
             pagination=False,
         )
 
     def remove_from_watchlist(self, media_type, ids):
         if media_type in ("movie", "movies"):
-            media_type = "movie"
+            media_type = "movies"
         else:
-            media_type = "show"
+            media_type = "shows"
 
-        payload = {media_type: {"ids": ids}}
+        payload = {media_type: [{'ids': {'tmdb': int(ids["tmdb"])}}]}
         return self.call_trakt(
             "sync/watchlist/remove",
             data=payload,
             with_auth=True,
-            method="post",
             pagination=False,
         )
 
@@ -491,13 +491,15 @@ class TraktLists(TraktBase):
 
         return data[:limit]
 
+    def trakt_collection_lists(self, media_type, list_type):
+        return self.trakt_fetch_sorted_list(
+            "collection", media_type, sort_type=list_type
+        )
+
     def trakt_fetch_collection_watchlist(self, list_type, media_type):
         def _process(params):
             raw_data = self.get_trakt(params)
             kodilog("Raw data: %s" % raw_data)
-
-            if list_type == "watchlist":
-                raw_data = [item for item in raw_data if item["type"] == media_key]
 
             return [
                 {
@@ -523,24 +525,23 @@ class TraktLists(TraktBase):
             )
             default_release_date = "2050-01-01"
         else:
-            media_key = media_type = "show"
+            media_key = "show"
             release_date_key = "first_aired"
             collected_at_key = (
                 "listed_at" if list_type == "watchlist" else "last_collected_at"
             )
             default_release_date = self.standby_date
 
-        cache_key = f"trakt_{list_type}_{media_key}"
         api_path = "sync/%s/%s?extended=full"
 
         params = {
             "path": api_path,
-            "path_insert": (list_type, media_type),
+            "path_insert": (list_type, media_key),
             "with_auth": True,
             "pagination": False,
         }
 
-        return cache_trakt_object(_process, cache_key, params)
+        return _process(params)
 
     def trakt_search_lists(self, search_title, page_no):
         def _process(dummy_arg):
@@ -675,7 +676,7 @@ class TraktLists(TraktBase):
                                 "show_title": item["show"]["title"],
                                 "ep_title": item["episode"]["title"],
                                 "season": item["episode"]["season"],
-                                "episode": item["episode"]["number"], 
+                                "episode": item["episode"]["number"],
                             }
                         )
             return history
@@ -701,7 +702,8 @@ class TraktScrobble(TraktBase):
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
-            kodilog("TV data: %s" % data.get("tv_data"))
+            if data.get("tv_data") is None:
+                return  
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),

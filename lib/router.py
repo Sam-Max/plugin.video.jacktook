@@ -1,5 +1,6 @@
 import sys
 from urllib import parse
+from lib.trakt import trakt_add_to_watchlist, trakt_remove_from_watchlist
 import xbmc
 from lib.api.jacktook.kodi import kodilog
 from lib.downloader import (
@@ -136,6 +137,8 @@ def addon_router():
         "get_rd_downloads": get_rd_downloads,
         "trakt_auth": trakt_auth,
         "trakt_auth_revoke": trakt_auth_revoke,
+        "trakt_add_to_watchlist": trakt_add_to_watchlist,
+        "trakt_remove_from_watchlist": trakt_remove_from_watchlist,
         "pm_auth": pm_auth,
         "torrents": torrents,
         "torrent_action": torrent_action,
