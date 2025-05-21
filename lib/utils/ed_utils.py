@@ -56,10 +56,14 @@ class EasyDebridHelper:
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
         files = response_data.get("files", [])
+        if not files:
+            return None
+
         if len(files) > 1:
             data["is_pack"] = True
             return None
-        return files[0]["url"]
+
+        return files[0].get("url")
 
     def get_ed_pack_info(self, info_hash):
         info = get_cached(info_hash)
