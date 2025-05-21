@@ -38,7 +38,6 @@ class SourcePackSelect(SourcePackWindow):
         self.setProperty("resolving", "true")
 
         if self.source and self.source.type in [Debrids.RD, Debrids.TB]:
-            torrent_id = self.pack_info["id"]
             file_id, name = self.pack_info["files"][self.position]
             self.playback_info = resolve_playback_source(
                 data={
@@ -48,7 +47,7 @@ class SourcePackSelect(SourcePackWindow):
                     "is_pack": True,
                     "pack_info": {
                         "file_id": file_id,
-                        "torrent_id": torrent_id,
+                        "torrent_id": self.pack_info["id"],
                     },
                     "mode": self.item_information["mode"],
                     "ids": self.item_information["ids"],
@@ -56,10 +55,17 @@ class SourcePackSelect(SourcePackWindow):
                 }
             )
         else:
-            url, title = self.pack_info
-            self.source.url = url
-            self.source.title = title
-            self.playback_info = self.source
+            url, title = self.pack_info["files"][self.position]
+            self.playback_info = {
+                "title": title,
+                "type": self.source.type,
+                "is_torrent": False,
+                "is_pack": True,
+                "mode": self.item_information.get("mode"),
+                "ids": self.item_information.get("ids"),
+                "tv_data": self.item_information.get("tv_data"),
+                "url": url,
+            }
 
         if not self.playback_info:
             self.setProperty("resolving", "false")

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Any
+from lib.api.jacktook.kodi import kodilog
 from lib.clients.debrid.easydebrid import EasyDebrid
 from lib.utils.kodi_utils import dialog_text, get_setting, notification
 from lib.utils.utils import (
@@ -51,13 +52,14 @@ class EasyDebridHelper:
                 res.isCached = False
                 uncached_results.append(res)
 
-    def get_ed_link(self, info_hash):
+    def get_ed_link(self, info_hash, data):
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
         files = response_data.get("files", [])
-        if files:
-            file = max(files, key=lambda x: x.get("size", 0))
-            return file["url"]
+        if len(files) > 1:
+            data["is_pack"] = True
+            return None
+        return files[0]["url"]
 
     def get_ed_pack_info(self, info_hash):
         info = get_cached(info_hash)

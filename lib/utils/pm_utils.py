@@ -43,7 +43,7 @@ class PremiumizeHelper:
                 res.isCached = False
                 uncached_results.append(res)
 
-    def get_pm_link(self, info_hash):
+    def get_pm_link(self, info_hash, data):
         """Gets a direct download link for a Premiumize torrent."""
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
@@ -55,11 +55,13 @@ class PremiumizeHelper:
             return None
 
         content = response_data.get("content", [])
-        if not content:
+        
+        if len(content) > 1:
+            data["is_pack"] = True
             return None
+        
+        return content[0].get("stream_link")
 
-        selected_file = max(content, key=lambda x: x.get("size", 0))
-        return selected_file.get("stream_link")
 
     def get_pm_pack_info(self, info_hash):
         """Retrieves information about a torrent pack, including file names."""
@@ -89,9 +91,6 @@ class PremiumizeHelper:
             and item.get("link")
         ]
 
-        if files:
-            info = {"files": files}
-            set_cached(info, info_hash)
-            return info
-
-        return None
+        info = {"files": files}
+        set_cached(info, info_hash)
+        return info
