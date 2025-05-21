@@ -73,7 +73,6 @@ class SourceSelect(BaseWindow):
             menu_item.setProperty("infoHash", source.infoHash)
             menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))
             menu_item.setProperty("seeders", str(source.seeders))
-            menu_item.setProperty("languages", ", ".join(source.languages))
             menu_item.setProperty(
                 "fullLanguages", get_colored_languages(source.fullLanguages)
             )

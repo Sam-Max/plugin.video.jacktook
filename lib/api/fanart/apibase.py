@@ -1,6 +1,7 @@
 import traceback
 import types
 from functools import wraps
+from lib.api.fanart.utils import extend_array
 from lib.api.jacktook.kodi import kodilog
 
 

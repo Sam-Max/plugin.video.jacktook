@@ -30,16 +30,14 @@ from lib.utils.ed_utils import EasyDebridHelper
 from lib.utils.seasons import show_episode_info, show_season_info
 from lib.utils.tmdb_utils import get_tmdb_media_details
 from lib.utils.torrentio_utils import open_providers_selection
-from lib.api.trakt.trakt_api import (
-    trakt_authenticate,
-    trakt_revoke_authentication,
-)
+from lib.api.trakt.trakt_api import TraktAPI
 from lib.clients.search import search_client
 from lib.files_history import last_files
 from lib.titles_history import last_titles
 
 from lib.trakt import (
     handle_trakt_query,
+    process_trakt_result,
     show_trakt_list_content,
     show_list_trakt_page,
 )
@@ -880,7 +878,6 @@ def play_from_pack(params):
 
 
 def search_item(params):
-    kodilog("search_item")
     query = params.get("query", "")
     category = params.get("category", None)
     api = params["api"]
@@ -889,7 +886,9 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     if api == "trakt":
-        handle_trakt_query(query, category, mode, page, submode, api)
+        result = handle_trakt_query(query, category, mode, page, submode, api)
+        if result:
+            process_trakt_result(result, query, category, mode, submode, api, page)
     elif api == "tmdb":
         handle_tmdb_query(params)
 
@@ -1008,11 +1007,11 @@ def pm_auth(params):
 
 
 def trakt_auth(params):
-    trakt_authenticate()
+    TraktAPI().auth.trakt_authenticate()
 
 
 def trakt_auth_revoke(params):
-    trakt_revoke_authentication()
+    TraktAPI().auth.trakt_revoke_authentication()
 
 
 def open_burst_config(params):
@@ -1034,5 +1033,8 @@ def test_source_select(params):
 def test_resume_dialog(params):
     resume_dialog_mock()
 
+
 def test_download_dialog(params):
     download_dialog_mock()
+
+

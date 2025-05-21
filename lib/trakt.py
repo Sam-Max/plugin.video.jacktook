@@ -1,19 +1,7 @@
+import json
 from lib.api.jacktook.kodi import kodilog
-from lib.api.trakt.trakt_api import (
-    get_trakt_list_contents,
-    trakt_anime_most_watched,
-    trakt_anime_trending,
-    trakt_movies_most_favorited,
-    trakt_movies_most_watched,
-    trakt_movies_top10_boxoffice,
-    trakt_movies_trending,
-    trakt_recommendations,
-    trakt_trending_popular_lists,
-    trakt_tv_most_favorited,
-    trakt_tv_most_watched,
-    trakt_tv_trending,
-    trakt_watchlist,
-)
+from lib.api.trakt.trakt_api import TraktAPI, TraktLists, TraktMovies, TraktTV
+from lib.api.trakt.trakt_utils import add_trakt_watchlist_context_menu
 from lib.utils.tmdb_utils import tmdb_get
 from lib.utils.utils import (
     Anime,
@@ -23,7 +11,7 @@ from lib.utils.utils import (
     set_content_type,
     set_media_infoTag,
 )
-from lib.utils.kodi_utils import ADDON_HANDLE, build_url, play_media
+from lib.utils.kodi_utils import ADDON_HANDLE, build_url, notification, play_media
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 from lib.utils.paginator import paginator_db
@@ -38,83 +26,141 @@ class Trakt(Enum):
     RECOMENDATIONS = "trakt_recommendations"
     TRENDING_LISTS = "trakt_trending_lists"
     POPULAR_LISTS = "trakt_popular_lists"
+    WATCHED_HISTORY = "trakt_watched_history"
     WATCHLIST = "trakt_watchlist"
 
 
 def handle_trakt_query(query, category, mode, page, submode, api):
     set_content_type(mode)
-    if mode == "movies":
-        result = handle_trakt_movie_query(query, mode, page)
-    elif mode == "tv":
-        result = handle_trakt_tv_query(query, mode, page)
-    elif mode == "anime":
-        result = handle_trakt_anime_query(category, page)
-    if result:
-        process_trakt_result(result, query, category, mode, submode, api, page)
+    handlers = {
+        "movies": handle_trakt_movie_query,
+        "tv": handle_trakt_tv_query,
+        "anime": lambda q, m, p: handle_trakt_anime_query(category, p),
+    }
+    handler = handlers.get(mode)
+    if handler:
+        return handler(query, mode, page)
 
 
 def handle_trakt_movie_query(query, mode, page):
-    if query == Trakt.TRENDING:
-        return trakt_movies_trending(page)
-    elif query == Trakt.TOP10:
-        return trakt_movies_top10_boxoffice()
-    elif query == Trakt.WATCHED:
-        return trakt_movies_most_watched(page)
-    elif query == Trakt.FAVORITED:
-        return trakt_movies_most_favorited(page)
-    elif query == Trakt.RECOMENDATIONS:
-        return trakt_recommendations("movies")
-    elif query in Trakt.TRENDING_LISTS:
-        return trakt_trending_popular_lists(list_type="trending", page_no=page)
-    elif query in Trakt.POPULAR_LISTS:
-        return trakt_trending_popular_lists(list_type="popular", page_no=page)
-    elif query in Trakt.WATCHLIST:
-        return trakt_watchlist(mode)
+    query_handlers = {
+        Trakt.TRENDING: lambda: TraktMovies().trakt_movies_trending(page),
+        Trakt.TOP10: lambda: TraktMovies().trakt_movies_top10_boxoffice(),
+        Trakt.WATCHED: lambda: TraktMovies().trakt_movies_most_watched(page),
+        Trakt.WATCHED_HISTORY: lambda: TraktLists().get_watched_history(mode, page),
+        Trakt.FAVORITED: lambda: TraktMovies().trakt_movies_most_favorited(page),
+        Trakt.RECOMENDATIONS: lambda: TraktMovies().trakt_recommendations("movies"),
+    }
+
+    list_handlers = {
+        Trakt.TRENDING_LISTS: lambda: TraktLists().trakt_trending_popular_lists(
+            list_type="trending", page_no=page
+        ),
+        Trakt.POPULAR_LISTS: lambda: TraktLists().trakt_trending_popular_lists(
+            list_type="popular", page_no=page
+        ),
+        Trakt.WATCHLIST: lambda: TraktLists().trakt_watchlist(mode),
+    }
+
+    if query in query_handlers:
+        return query_handlers[query]()
+    elif query in list_handlers:
+        return list_handlers[query]()
 
 
 def handle_trakt_tv_query(query, mode, page):
-    if query == Trakt.TRENDING:
-        return trakt_tv_trending(page)
-    elif query == Trakt.WATCHED:
-        return trakt_tv_most_watched(page)
-    elif query == Trakt.FAVORITED:
-        return trakt_tv_most_favorited(page)
-    elif query == Trakt.RECOMENDATIONS:
-        return trakt_recommendations("shows")
-    elif query in Trakt.TRENDING_LISTS:
-        return trakt_trending_popular_lists(list_type="trending", page_no=page)
-    elif query in Trakt.POPULAR_LISTS:
-        return trakt_trending_popular_lists(list_type="popular", page_no=page)
-    elif query in Trakt.WATCHLIST:
-        return trakt_watchlist(mode)
+    query_handlers = {
+        Trakt.TRENDING: lambda: TraktTV().trakt_tv_trending(page),
+        Trakt.WATCHED: lambda: TraktTV().trakt_tv_most_watched(page),
+        Trakt.WATCHED_HISTORY: lambda: TraktLists().get_watched_history(mode, page),
+        Trakt.FAVORITED: lambda: TraktTV().trakt_tv_most_favorited(page),
+        Trakt.RECOMENDATIONS: lambda: TraktTV().trakt_recommendations("shows"),
+    }
 
+    list_handlers = {
+        Trakt.TRENDING_LISTS: lambda: TraktLists().trakt_trending_popular_lists(
+            list_type="trending", page_no=page
+        ),
+        Trakt.POPULAR_LISTS: lambda: TraktLists().trakt_trending_popular_lists(
+            list_type="popular", page_no=page
+        ),
+        Trakt.WATCHLIST: lambda: TraktLists().trakt_watchlist(mode),
+    }
+
+    if query in query_handlers:
+        return query_handlers[query]()
+    elif query in list_handlers:
+        return list_handlers[query]()
 
 def handle_trakt_anime_query(query, page):
-    kodilog("trakt::handle_trakt_anime_query")
     if query == Anime.TRENDING:
-        return trakt_anime_trending(page)
+        return TraktAPI().anime.trakt_anime_trending(page)
     elif query == Anime.MOST_WATCHED:
-        return trakt_anime_most_watched(page)
+        return TraktAPI().anime.trakt_anime_most_watched(page)
+
+
+def trakt_add_to_watchlist(params):
+    media_type = params.get("media_type")
+    ids = json.loads(params.get("ids", "{}"))
+    try:
+        TraktAPI().lists.add_to_watchlist(media_type, ids)
+        notification("Added to Trakt watchlist", time=3000)
+    except Exception as e:
+        kodilog(f"Error adding to Trakt watchlist: {e}")
+        notification("Failed to add to Trakt watchlist", time=3000)
+
+
+def trakt_remove_from_watchlist(params):
+    media_type = params.get("media_type")
+    ids = json.loads(params.get("ids", "{}"))
+    try:
+        TraktAPI().lists.remove_from_watchlist(media_type, ids)
+        notification("Removed from Trakt watchlist", time=3000)
+    except Exception as e:
+        kodilog(f"Error removing from Trakt watchlist: {e}")
+        notification("Failed to remove from Trakt watchlist", time=3000)
 
 
 def process_trakt_result(results, query, category, mode, submode, api, page):
-    kodilog("trakt::process_trakt_result")
-    if (
-        query == Trakt.TRENDING
-        or query == Trakt.WATCHED
-        or query == Trakt.FAVORITED
-        or query == Trakt.TOP10
-    ):
-        execute_thread_pool(results, show_common_categories, mode)
-    elif query == Trakt.RECOMENDATIONS:
-        execute_thread_pool(results, show_recommendations, mode)
-    elif query == Trakt.TRENDING_LISTS or query == Trakt.POPULAR_LISTS:
-        execute_thread_pool(results, show_trending_lists, mode)
-    elif query == Trakt.WATCHLIST:
-        execute_thread_pool(results, show_watchlist, mode)
+    query_handlers = {
+        Trakt.TRENDING: lambda: execute_thread_pool(
+            results, show_common_categories, mode
+        ),
+        Trakt.WATCHED: lambda: execute_thread_pool(
+            results, show_common_categories, mode
+        ),
+        Trakt.FAVORITED: lambda: execute_thread_pool(
+            results, show_common_categories, mode
+        ),
+        Trakt.TOP10: lambda: execute_thread_pool(results, show_common_categories, mode),
+        Trakt.RECOMENDATIONS: lambda: execute_thread_pool(
+            results, show_recommendations, mode
+        ),
+        Trakt.TRENDING_LISTS: lambda: execute_thread_pool(
+            results, show_trending_lists, mode
+        ),
+        Trakt.POPULAR_LISTS: lambda: execute_thread_pool(
+            results, show_trending_lists, mode
+        ),
+        Trakt.WATCHLIST: lambda: execute_thread_pool(results, show_watchlist, mode),
+        Trakt.WATCHED_HISTORY: lambda: execute_thread_pool(
+            results, show_watched_history_content_items
+        ),
+    }
 
-    if category == Anime.TRENDING or category == Anime.MOST_WATCHED:
-        execute_thread_pool(results, show_anime_common, submode)
+    anime_handlers = {
+        Anime.TRENDING: lambda: execute_thread_pool(
+            results, show_anime_common, submode
+        ),
+        Anime.MOST_WATCHED: lambda: execute_thread_pool(
+            results, show_anime_common, submode
+        ),
+    }
+
+    if query in query_handlers:
+        query_handlers[query]()
+    if category in anime_handlers:
+        anime_handlers[category]()
 
     add_next_button(
         "search_item",
@@ -168,8 +214,8 @@ def show_watchlist(res, mode):
     title = res["title"]
     tmdb_id = res["media_ids"]["tmdb"]
     imdb_id = res["media_ids"]["imdb"]
-   
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
 
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
@@ -212,7 +258,7 @@ def show_recommendations(res, mode):
     title = res["title"]
     tmdb_id = res["ids"]["tmdb"]
     imdb_id = res["ids"]["imdb"]
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
 
     if mode == "tv":
         details = tmdb_get("tv_details", tmdb_id)
@@ -226,10 +272,59 @@ def show_recommendations(res, mode):
     add_dir_item(mode, list_item, ids, title)
 
 
+def show_watched_history_content_items(res):
+    tmdb_id = res["media_ids"]["tmdb"]
+    imdb_id = res["media_ids"]["imdb"]
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+    title = res["title"]
+
+    if res["type"] == "show":
+        mode = "tv"
+        details = tmdb_get("tv_details", tmdb_id)
+    else:
+        mode = "movies"
+        details = tmdb_get("movie_details", tmdb_id)
+
+    list_item = ListItem(title)
+
+    set_media_infoTag(list_item, metadata=details, mode=mode)
+
+    if res["type"] == "show":
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "search",
+                ids=ids,
+                mode=mode,
+                query=res["show_title"],
+                tv_data={
+                    "name": res["ep_title"],
+                    "episode": res["episode"],
+                    "season": res["season"],
+                },
+            ),
+            list_item,
+            isFolder=True,
+        )
+    else:
+        list_item.setProperty("IsPlayable", "true")
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "search",
+                query=title,
+                mode=mode,
+                ids=ids,
+            ),
+            list_item,
+            isFolder=False,
+        )
+
+
 def show_lists_content_items(res):
     tmdb_id = res["media_ids"]["tmdb"]
     imdb_id = res["media_ids"]["imdb"]
-    ids = {"tmdb_id": tmdb_id, "tvdb_id": None, "imdb_id": imdb_id}
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
     title = res["title"]
 
     if res["type"] == "show":
@@ -270,7 +365,7 @@ def show_lists_content_items(res):
 
 
 def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
-    data = get_trakt_list_contents(list_type, user, slug, with_auth)
+    data = TraktAPI().lists.get_trakt_list_contents(list_type, user, slug, with_auth)
     paginator_db.initialize(data)
     items = paginator_db.get_page(page)
     execute_thread_pool(items, show_lists_content_items)
@@ -300,12 +395,15 @@ def extract_ids(res, mode="tv"):
 
 def add_dir_item(mode, list_item, ids, title):
     if mode == "tv":
+        list_item.addContextMenuItems(
+            add_trakt_watchlist_context_menu("tv", ids)
+        )
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "tv_seasons_details",
                 ids=ids,
-                mode="tv",
+                mode=mode,
             ),
             list_item,
             isFolder=True,
@@ -325,13 +423,14 @@ def add_dir_item(mode, list_item, ids, title):
                     ),
                 )
             ]
+            + add_trakt_watchlist_context_menu("movie", ids)
         )
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "search",
                 query=title,
-                mode="movies",
+                mode=mode,
                 ids=ids,
             ),
             list_item,

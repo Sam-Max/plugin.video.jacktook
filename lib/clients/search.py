@@ -7,6 +7,7 @@ from lib.clients.stremio_addon import StremioAddonClient
 import lib.stremio.ui as ui
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Optional, Any
+import xbmc
 
 
 def stremio_addon_generator(stremio_addons, dialog):
@@ -147,7 +148,7 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
-                kodilog(f"Results from {future}: {results}")
+                kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
                 if results:
                     total_results.extend(results)
             except Exception as e:
