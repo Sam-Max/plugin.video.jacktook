@@ -364,6 +364,21 @@ class TraktMovies(TraktBase):
         }
         return lists_cache_object(self.get_trakt, string, params)
 
+    def trakt_recommendations(self, media_type):
+        string = "trakt_recommendations_%s" % (media_type)
+        params = {
+            "path": "/recommendations/%s",
+            "path_insert": media_type,
+            "with_auth": True,
+            "params": {
+                "limit": 50,
+                "ignore_collected": "true",
+                "ignore_watchlisted": "true",
+            },
+            "pagination": False,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
 
 class TraktTV(TraktBase):
     def trakt_tv_trending(self, page_no):
@@ -401,6 +416,21 @@ class TraktTV(TraktBase):
             "path": "shows/favorited/daily/%s",
             "params": {"limit": 20},
             "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+    
+    def trakt_recommendations(self, media_type):
+        string = "trakt_recommendations_%s" % (media_type)
+        params = {
+            "path": "/recommendations/%s",
+            "path_insert": media_type,
+            "with_auth": True,
+            "params": {
+                "limit": 50,
+                "ignore_collected": "true",
+                "ignore_watchlisted": "true",
+            },
+            "pagination": False,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -449,8 +479,8 @@ class TraktLists(TraktBase):
         else:
             media_type = "shows"
 
-        payload = {media_type: [{'ids': {'tmdb': int(ids["tmdb"])}}]}
-        
+        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+
         kodilog("Payload: %s" % payload)
         return self.call_trakt(
             "sync/watchlist",
@@ -465,7 +495,7 @@ class TraktLists(TraktBase):
         else:
             media_type = "shows"
 
-        payload = {media_type: [{'ids': {'tmdb': int(ids["tmdb"])}}]}
+        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
         return self.call_trakt(
             "sync/watchlist/remove",
             data=payload,
@@ -703,7 +733,7 @@ class TraktScrobble(TraktBase):
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
             if data.get("tv_data") is None:
-                return  
+                return
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),
