@@ -234,11 +234,11 @@ def get_debrid_direct_url(type, data):
     if type == Debrids.RD:
         return RealDebridHelper().get_rd_link(info_hash, data)
     elif type == Debrids.PM:
-        return PremiumizeHelper().get_pm_link(info_hash)
+        return PremiumizeHelper().get_pm_link(info_hash, data)
     elif type == Debrids.TB:
         return TorboxHelper().get_torbox_link(info_hash)
     elif type == Debrids.ED:
-        return EasyDebridHelper().get_ed_link(info_hash)
+        return EasyDebridHelper().get_ed_link(info_hash, data)
 
 
 def get_debrid_pack_direct_url(file_id, torrent_id, type):
