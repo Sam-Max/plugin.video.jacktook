@@ -6,6 +6,7 @@ from lib.utils.kodi_utils import get_setting, notification
 from lib.utils.utils import (
     Debrids,
     debrid_dialog_update,
+    filter_debrid_episode,
     get_cached,
     info_hash_to_magnet,
     set_cached,
@@ -57,9 +58,15 @@ class PremiumizeHelper:
         content = response_data.get("content", [])
         
         if len(content) > 1:
-            data["is_pack"] = True
-            return None
-        
+            if not "tv_data" in data:
+                data["is_pack"] = True
+                return
+            season = data["tv_data"].get("season", "")
+            episode = data["tv_data"].get("episode", "")
+            content = filter_debrid_episode(content, episode_num=episode, season_num=season)
+            if not content:
+                return
+
         return content[0].get("stream_link")
 
 

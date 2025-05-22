@@ -8,7 +8,7 @@ import unicodedata
 import requests
 from enum import Enum
 
-from typing import List
+from typing import Dict, List
 
 from lib.api.fanart.fanart import FanartTv
 from lib.api.jacktook.kodi import kodilog
@@ -765,6 +765,34 @@ def filter_torrent_sources(results):
     return filtered_results
 
 
+def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Dict]:
+    episode_fill = f"{int(episode_num):02}"
+    season_fill = f"{int(season_num):02}"
+
+    patterns = [
+        rf"S{season_fill}E{episode_fill}",  # SXXEXX format
+        rf"{season_fill}x{episode_fill}",  # XXxXX format
+        rf"\s{season_fill}\s",  # season surrounded by spaces
+        rf"\.S{season_fill}",  # .SXX format
+        rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
+        rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
+        r"Cap\.",  # match "Cap."
+    ]
+
+    combined_pattern = "|".join(patterns)
+    kodilog(f"Combined regex pattern: {combined_pattern}", level=xbmc.LOGDEBUG)
+    kodilog("Results before filtering:", level=xbmc.LOGDEBUG)
+    kodilog(results, level=xbmc.LOGDEBUG)
+    results = [
+        res
+        for res in results
+        if re.search(combined_pattern, res.get("filename", ""))
+    ]
+    kodilog("Results after filtering:", level=xbmc.LOGDEBUG)
+    kodilog(results, level=xbmc.LOGDEBUG)
+    return results
+
+
 def clean_auto_play_undesired(results):
     undesired = ("SD", "CAM", "TELE", "SYNC", "480p")
     for res in copy.deepcopy(results):
@@ -904,4 +932,3 @@ def extract_publish_date(date):
         return ""
     match = re.search(r"\d{4}-\d{2}-\d{2}", date)
     return match.group() if match else ""
-

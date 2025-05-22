@@ -6,6 +6,7 @@ from lib.utils.kodi_utils import dialog_text, get_setting, notification
 from lib.utils.utils import (
     Debrids,
     debrid_dialog_update,
+    filter_debrid_episode,
     get_cached,
     get_public_ip,
     info_hash_to_magnet,
@@ -57,12 +58,18 @@ class EasyDebridHelper:
         response_data = self.client.create_download_link(magnet)
         files = response_data.get("files", [])
         if not files:
-            return None
+            return
 
         if len(files) > 1:
-            data["is_pack"] = True
-            return None
-
+            if not "tv_data" in data:
+                data["is_pack"] = True
+                return
+            season = data["tv_data"].get("season", "")
+            episode = data["tv_data"].get("episode", "")
+            files = filter_debrid_episode(files, episode_num=episode, season_num=season)
+            if not files:
+                return
+        
         return files[0].get("url")
 
     def get_ed_pack_info(self, info_hash):
