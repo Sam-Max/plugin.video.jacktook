@@ -1,6 +1,6 @@
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi_utils import translation
-from lib.utils.settings import get_prowlarr_timeout
+from lib.utils.kodi.utils import translation
+from lib.utils.kodi.settings import get_prowlarr_timeout
 from typing import List, Optional, Any
 
 

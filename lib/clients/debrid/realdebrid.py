@@ -1,16 +1,16 @@
 from time import time
-from lib.clients.debrid.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi_utils import sleep as ksleep
+from lib.clients.debrid.base import DebridClient, ProviderException
 from base64 import b64encode, b64decode
-from lib.utils.kodi_utils import (
+from lib.utils.general.utils import supported_video_extensions
+from lib.utils.kodi.utils import (
     copy2clip,
     dialog_ok,
     dialogyesno,
     notification,
     set_setting,
     progressDialog,
+    sleep as ksleep,
 )
-from lib.utils.utils import supported_video_extensions
 from xbmcgui import DialogProgress
 
 

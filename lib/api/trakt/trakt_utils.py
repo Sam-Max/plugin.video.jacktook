@@ -3,7 +3,7 @@ import random
 import re
 import time
 import json
-from lib.utils.kodi_utils import action_url_run
+from lib.utils.kodi.utils import action_url_run
 
 
 def add_trakt_watchlist_context_menu(media_type, ids):

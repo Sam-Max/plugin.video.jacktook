@@ -1,10 +1,9 @@
 import re
 from typing import List, Dict, Tuple, Optional, Any
-from lib.api.jacktook.kodi import kodilog
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.countries import find_language_by_unicode
-from lib.utils.kodi_utils import convert_size_to_bytes, translation
-from lib.utils.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
+from lib.utils.localization.countries import find_language_by_unicode
+from lib.utils.kodi.utils import convert_size_to_bytes, kodilog, translation
+from lib.utils.general.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
 
 
 class Torrentio(BaseClient):

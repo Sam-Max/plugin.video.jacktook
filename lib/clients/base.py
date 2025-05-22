@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from requests import Session
 from typing import List, Optional
-
 from lib.domain.torrent import TorrentStream
-
 
 
 class BaseClient(ABC):

@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict, Any, Optional
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi_utils import convert_size_to_bytes, translation
+from lib.utils.kodi.utils import convert_size_to_bytes, translation
 
 
 class Elfhosted(BaseClient):

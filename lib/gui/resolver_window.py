@@ -1,10 +1,10 @@
 from typing import Optional, Dict, Any
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
-from lib.playback import resolve_playback_source
-from lib.utils.debrid_utils import get_pack_info
-from lib.utils.kodi_utils import ADDON_PATH
+from lib.utils.debrid.debrid_utils import get_pack_info
+from lib.utils.kodi.utils import ADDON_PATH
 from lib.domain.torrent import TorrentStream
+from lib.utils.player.utils import resolve_playback_source
 
 
 class ResolverWindow(BaseWindow):

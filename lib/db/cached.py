@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from functools import wraps
 from hashlib import sha256
 
-from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi.utils import kodilog
 import xbmcaddon
 import xbmcgui
 import xbmc

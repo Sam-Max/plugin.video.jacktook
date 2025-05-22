@@ -1,8 +1,10 @@
 from lib.clients.base import BaseClient
-from lib.utils.kodi_utils import translation
-from lib import xmltodict
-from lib.utils.settings import get_jackett_timeout
 from lib.clients.base import TorrentStream
+
+from lib.utils.kodi.utils import translation
+from lib.utils.parsers import xmltodict
+from lib.utils.kodi.settings import get_jackett_timeout
+
 from typing import List, Optional, Callable, Any
 
 

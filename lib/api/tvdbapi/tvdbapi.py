@@ -1,8 +1,7 @@
-import json
 import requests
 from datetime import timedelta
 from lib.db.cached import cache
-from lib.utils.settings import is_cache_enabled, get_cache_expiration
+from lib.utils.kodi.settings import is_cache_enabled, get_cache_expiration
 
 class TVDBAPI:
     def __init__(self):

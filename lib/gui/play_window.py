@@ -1,6 +1,6 @@
 import abc
-from lib.api.jacktook.kodi import kodilog
 from lib.gui.base_window import BaseWindow
+from lib.utils.kodi.utils import kodilog
 import xbmc
 
 

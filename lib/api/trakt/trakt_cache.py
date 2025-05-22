@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# from modules.kodi_utils import logger
-
 from lib.api.trakt.base_cache import connect_database
 
 

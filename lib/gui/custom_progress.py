@@ -1,4 +1,4 @@
-from lib.api.jacktook.kodi import kodilog
+from lib.utils.kodi.utils import kodilog
 import xbmcgui
 
 

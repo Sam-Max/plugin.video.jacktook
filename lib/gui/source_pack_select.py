@@ -1,8 +1,8 @@
 from typing import Optional, Dict, Any
 from lib.gui.source_pack_window import SourcePackWindow
-from lib.playback import resolve_playback_source
-from lib.utils.utils import Debrids
+from lib.utils.general.utils import Debrids
 from lib.domain.torrent import TorrentStream
+from lib.utils.player.utils import resolve_playback_source
 
 
 class SourcePackSelect(SourcePackWindow):

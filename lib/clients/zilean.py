@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.utils import USER_AGENT_HEADER, info_hash_to_magnet
+from lib.utils.general.utils import USER_AGENT_HEADER, info_hash_to_magnet
 from typing import List, Optional, Dict, Any
 
 

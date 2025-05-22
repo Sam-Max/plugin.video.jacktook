@@ -1,12 +1,12 @@
-from lib.api.jacktook.kodi import kodilog
+from lib.clients.stremio import ui
+from lib.clients.stremio.stremio import StremioAddonClient
 from lib.clients.base import TorrentStream
-from lib.utils.client_utils import get_client, update_dialog
-from lib.utils.kodi_utils import get_setting
-from lib.utils.utils import Indexer, cache_results, get_cached_results
-from lib.clients.stremio_addon import StremioAddonClient
-import lib.stremio.ui as ui
+from lib.utils.clients.utils import get_client, update_dialog
+from lib.utils.kodi.utils import get_setting, kodilog
+from lib.utils.general.utils import Indexer, cache_results, get_cached_results
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Dict, Optional, Any
+
 import xbmc
 
 

@@ -1,13 +1,15 @@
 import sys
 from urllib import parse
-from lib.trakt import trakt_add_to_watchlist, trakt_remove_from_watchlist
-import xbmc
-from lib.api.jacktook.kodi import kodilog
-from lib.downloader import (
-    handle_cancel_download,
-    handle_delete_file,
-    handle_download_file,
+
+from lib.clients.jackgram.utils import (
+    get_telegram_files,
+    get_telegram_latest,
+    get_telegram_latest_files,
 )
+
+from lib.clients.tmdb.tmdb import handle_tmdb_query, search_tmdb
+from lib.clients.trakt.trakt import trakt_add_to_watchlist, trakt_remove_from_watchlist
+from lib.downloader import handle_cancel_download, handle_delete_file, handle_download_file
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
@@ -24,9 +26,9 @@ from lib.navigation import (
     donate,
     ed_info,
     downloads_menu,
-    files,
+    files_history,
     get_rd_downloads,
-    history,
+    history_menu,
     list_trakt_page,
     movies_items,
     next_page_anime,
@@ -42,6 +44,7 @@ from lib.navigation import (
     test_resume_dialog,
     test_run_next,
     test_source_select,
+    titles_history,
     torrentio_selection,
     play_torrent,
     rd_auth,
@@ -51,7 +54,6 @@ from lib.navigation import (
     search_direct,
     search_item,
     settings,
-    titles,
     torrents,
     trakt_auth,
     trakt_auth_revoke,
@@ -61,7 +63,7 @@ from lib.navigation import (
     tv_seasons_details,
     tv_shows_items,
 )
-from lib.stremio.catalogs import (
+from lib.clients.stremio.catalogs import (
     list_stremio_catalog,
     list_stremio_episodes,
     list_stremio_seasons,
@@ -69,25 +71,22 @@ from lib.stremio.catalogs import (
     list_stremio_tv_streams,
     search_catalog,
 )
-from lib.telegram import (
-    get_telegram_files,
-    get_telegram_latest,
-    get_telegram_latest_files,
-)
-from lib.tmdb import handle_tmdb_query, search_tmdb
-from lib.utils.torrent_utils import (
+from lib.utils.kodi.utils import kodilog
+from lib.utils.torrent.torrserver_utils import (
     display_picture,
     display_text,
     torrent_action,
     torrent_files,
 )
-from lib.stremio.ui import (
+from lib.clients.stremio.ui import (
     stremio_login,
     stremio_toggle_addons,
     stremio_logout,
     stremio_toggle_catalogs,
     stremio_update,
 )
+
+import xbmc
 
 
 def addon_router():
@@ -120,9 +119,9 @@ def addon_router():
         "cloud": cloud,
         "cloud_details": cloud_details,
         "settings": settings,
-        "files": files,
-        "titles": titles,
-        "history": history,
+        "files_history": files_history,
+        "titles_history": titles_history,
+        "history_menu": history_menu,
         "donate": donate,
         "delete_file": handle_delete_file,
         "clear_all_cached": clear_all_cached,

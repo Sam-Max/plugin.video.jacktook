@@ -1,7 +1,7 @@
 import re
 from lib.clients.base import BaseClient
-from lib.utils.kodi_utils import translation
-from lib.utils.utils import USER_AGENT_HEADER
+from lib.utils.general.utils import USER_AGENT_HEADER
+from lib.utils.kodi.utils import translation
 
 
 class Peerflix(BaseClient):

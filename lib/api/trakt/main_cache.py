@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from lib.api.trakt.base_cache import BaseCache, get_timestamp
 
 

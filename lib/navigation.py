@@ -5,13 +5,31 @@ from threading import Thread
 from typing import List
 from urllib.parse import quote
 
+from lib.api.jacktorr.jacktorr import TorrServer
+from lib.api.tmdbv3api.tmdb import TMDb
+from lib.api.trakt.trakt import TraktAPI
+
 from lib.clients.debrid.premiumize import Premiumize
 from lib.clients.debrid.realdebrid import RealDebrid
 from lib.clients.debrid.torbox import Torbox
-from lib.api.jacktook.kodi import kodilog
-from lib.api.jacktorr_api import TorrServer
-from lib.api.tmdbv3api.tmdb import TMDb
-from lib.db.bookmark_db import bookmark_db
+from lib.clients.stremio.catalogs import list_stremio_catalogs
+from lib.clients.tmdb.tmdb import (
+    handle_tmdb_anime_query,
+    handle_tmdb_query,
+    tmdb_search_genres,
+    tmdb_search_year,
+)
+from lib.clients.tmdb.utils import LANGUAGES, get_tmdb_media_details
+from lib.clients.trakt.trakt import (
+    handle_trakt_query,
+    process_trakt_result,
+    show_list_trakt_page,
+    show_trakt_list_content,
+)
+from lib.clients.search import search_client
+
+from lib.db.cached import cache
+
 from lib.domain.torrent import TorrentStream
 from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
@@ -23,84 +41,66 @@ from lib.gui.custom_dialogs import (
     source_select_mock,
 )
 
-from lib.playback import resolve_playback_source
 from lib.player import JacktookPLayer
-from lib.stremio.catalogs import list_stremio_catalogs
-from lib.utils.ed_utils import EasyDebridHelper
-from lib.utils.seasons import show_episode_info, show_season_info
-from lib.utils.tmdb_utils import get_tmdb_media_details
-from lib.utils.torrentio_utils import open_providers_selection
-from lib.api.trakt.trakt_api import TraktAPI
-from lib.clients.search import search_client
-from lib.files_history import last_files
-from lib.titles_history import last_titles
-
-from lib.trakt import (
-    handle_trakt_query,
-    process_trakt_result,
-    show_trakt_list_content,
-    show_list_trakt_page,
+from lib.utils.debrid.ed_utils import EasyDebridHelper
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    EPISODES_TYPE,
+    JACKTORR_ADDON,
+    SHOWS_TYPE,
+    action_url_run,
+    build_url,
+    burst_addon_settings,
+    cancel_playback,
+    container_update,
+    get_setting,
+    kodilog,
+    notification,
+    play_info_hash,
+    play_media,
+    set_view,
+    show_keyboard,
+    translation,
 )
-
-from lib.utils.rd_utils import RealDebridHelper
-from lib.utils.items_menus import tv_items, movie_items, anime_items, animation_items
-from lib.utils.debrid_utils import check_debrid_cached
-
-from lib.tmdb import (
-    handle_tmdb_anime_query,
-    handle_tmdb_query,
-    tmdb_search_genres,
-    tmdb_search_year,
-)
-from lib.utils.tmdb_consts import LANGUAGES
-
-from lib.db.cached import cache
-
-from lib.utils.utils import (
+from lib.utils.player.utils import resolve_playback_source
+from lib.utils.views.last_files import show_last_files
+from lib.utils.views.last_titles import show_last_titles
+from lib.utils.views.shows import show_episode_info, show_season_info
+from lib.utils.torrentio.utils import open_providers_selection
+from lib.utils.debrid.rd_utils import RealDebridHelper
+from lib.utils.debrid.debrid_utils import check_debrid_cached
+from lib.utils.kodi.settings import get_cache_expiration
+from lib.utils.kodi.settings import addon_settings
+from lib.utils.general.utils import (
     TMDB_POSTER_URL,
+    Debrids,
     DialogListener,
+    check_debrid_enabled,
     clean_auto_play_undesired,
     clear,
     clear_all_cache,
     get_fanart_details,
     get_password,
+    get_port,
     get_random_color,
     get_service_host,
     get_username,
+    list_item,
     make_listing,
     post_process,
     pre_process,
-    get_port,
-    list_item,
     set_content_type,
     set_watched_title,
     ssl_enabled,
-    check_debrid_enabled,
-    Debrids,
+)
+from lib.utils.general.items_menus import (
+    animation_items,
+    anime_items,
+    movie_items,
+    tv_items,
 )
 
-from lib.utils.kodi_utils import (
-    ADDON_HANDLE,
-    ADDON_PATH,
-    EPISODES_TYPE,
-    SHOWS_TYPE,
-    JACKTORR_ADDON,
-    action_url_run,
-    build_url,
-    cancel_playback,
-    container_update,
-    play_media,
-    show_keyboard,
-    burst_addon_settings,
-    get_setting,
-    notification,
-    play_info_hash,
-    set_view,
-    translation,
-)
-
-from lib.utils.settings import get_cache_expiration
-from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
 from xbmcgui import ListItem
@@ -113,10 +113,11 @@ from xbmcplugin import (
 )
 import xbmc
 
+
 paginator = None
 
 if JACKTORR_ADDON:
-    api = TorrServer(
+    torrserver_api = TorrServer(
         get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
     )
 
@@ -218,7 +219,7 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("history"),
+        build_url("history_menu"),
         list_item("History", "history.png"),
         isFolder=True,
     )
@@ -382,17 +383,17 @@ def anime_menu(params):
     endOfDirectory(ADDON_HANDLE)
 
 
-def history(params):
+def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("files"),
+        build_url("files_history"),
         list_item("Files History", "history.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("titles"),
+        build_url("titles_history"),
         list_item("Titles History", "history.png"),
         isFolder=True,
     )
@@ -623,7 +624,7 @@ def process_results(
 
 
 def play_data(data: dict):
-    player = JacktookPLayer(db=bookmark_db)
+    player = JacktookPLayer()
     player.run(data=data)
     del player
 
@@ -673,7 +674,7 @@ def handle_results(
 
 def play_torrent(params):
     data = json.loads(params["data"])
-    player = JacktookPLayer(db=bookmark_db)
+    player = JacktookPLayer()
     player.run(data=data)
     del player
 
@@ -692,7 +693,7 @@ def auto_play(results, ids, tv_data, mode):
             "is_torrent": False,
         },
     )
-    player = JacktookPLayer(db=bookmark_db)
+    player = JacktookPLayer()
     player.run(data=playback_info)
     del player
 
@@ -792,7 +793,7 @@ def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
 
-    for torrent in api.torrents():
+    for torrent in torrserver_api.torrents():
         info_hash = torrent.get("hash")
 
         context_menu_items = [(translation(30700), play_info_hash(info_hash))]
@@ -978,12 +979,12 @@ def clear_history(params):
     clear(type=params.get("type"))
 
 
-def titles(params):
-    last_titles()
+def files_history(params):
+    show_last_files()
 
 
-def files(params):
-    last_files()
+def titles_history(params):
+    show_last_titles()
 
 
 def clear_all_cached(params):
@@ -1036,5 +1037,3 @@ def test_resume_dialog(params):
 
 def test_download_dialog(params):
     download_dialog_mock()
-
-

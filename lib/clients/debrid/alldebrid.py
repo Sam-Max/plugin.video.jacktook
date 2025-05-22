@@ -1,5 +1,5 @@
 
-from lib.clients.debrid.debrid_client import DebridClient, ProviderException
+from lib.clients.debrid.base import DebridClient, ProviderException
 
 
 class AllDebrid(DebridClient):

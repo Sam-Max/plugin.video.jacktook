@@ -1,8 +1,9 @@
 import re
 from typing import List, Dict, Any, Optional
+
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi_utils import convert_size_to_bytes, get_setting, translation
-from lib.utils.utils import (
+from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, translation
+from lib.utils.general.utils import (
     MEDIA_FUSION_DEFAULT_KEY,
     USER_AGENT_HEADER,
     get_cached,

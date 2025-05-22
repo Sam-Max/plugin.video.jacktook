@@ -3,11 +3,10 @@ from copy import deepcopy
 import json
 from typing import Any, Dict
 from lib.domain.torrent import TorrentStream
-from lib.utils.resolve_to_magnet import resolve_to_magnet
-from lib.utils.utils import Indexer, IndexerType
+from lib.utils.torrent.resolve_to_magnet import resolve_to_magnet
+from lib.utils.general.utils import Indexer, IndexerType
+from lib.utils.kodi.utils import ADDON, kodilog
 import xbmcgui
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import ADDON
 
 
 ACTION_PREVIOUS_MENU = 10

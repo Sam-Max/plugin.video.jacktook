@@ -1,11 +1,11 @@
 from functools import cached_property
 from functools import wraps
 from urllib import parse
-from xbmc import getLanguage, ISO_639_1
-from lib.api.fanart.apibase import ApiBase, handle_single_item_or_list
+from lib.utils.kodi.utils import kodilog, notification
+from lib.api.fanart.base import ApiBase, handle_single_item_or_list
 from lib.api.fanart.utils import extend_array, md5_hash, valid_id_or_none
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import notification
+
+from xbmc import getLanguage, ISO_639_1
 
 
 def fanart_guard_response(func):

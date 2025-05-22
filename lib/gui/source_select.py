@@ -1,24 +1,28 @@
-import re
 from typing import List, Optional, Dict
-from lib.api.jacktook.kodi import kodilog
 from lib.domain.torrent import TorrentStream
 from lib.gui.filter_type_window import FilterTypeWindow
 from lib.gui.filter_items_window import FilterWindow
-from lib.playback import resolve_playback_source
-import xbmcgui
-import xbmc
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH, get_setting, translatePath
-from lib.utils.debrid_utils import get_debrid_status
-from lib.utils.kodi_utils import bytes_to_human_readable
-from lib.utils.utils import (
+from lib.utils.debrid.debrid_utils import get_debrid_status
+from lib.utils.kodi.utils import (
+    action_url_run,
+    bytes_to_human_readable,
+    ADDON_PATH,
+    get_setting,
+    kodilog,
+    translatePath,
+)
+from lib.utils.general.utils import (
     extract_publish_date,
     get_colored_languages,
     get_random_color,
 )
-from lib.utils.kodi_utils import action_url_run
+
+from lib.utils.player.utils import resolve_playback_source
+import xbmcgui
+import xbmc
 
 
 class SourceSelect(BaseWindow):

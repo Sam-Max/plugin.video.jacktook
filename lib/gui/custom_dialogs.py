@@ -2,15 +2,13 @@ import json
 from typing import Dict, List
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_progress import CustomProgressDialog
-from xbmcgui import WindowXMLDialog, WindowXML
-import xbmcgui
-
 from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
+from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
-
+from xbmcgui import WindowXMLDialog, WindowXML
+import xbmcgui
 
 class CustomWindow(WindowXML):
     def __init__(self, *args, **kwargs):

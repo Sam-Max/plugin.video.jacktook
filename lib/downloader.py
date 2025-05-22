@@ -1,21 +1,20 @@
-# -*- coding: utf-8 -*-
 import os
 import ssl
 import threading
 from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl
-
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import (
+from lib.utils.kodi.utils import (
     ADDON_HANDLE,
-    ADDON_PATH,
     get_setting,
+    kodilog,
+    translatePath,
+    ADDON_PATH,
     notification,
     open_file,
-    translatePath,
 )
 from lib.db.cached import MemoryCache
 from lib.gui.custom_progress import CustomProgressDialog
+
 from xbmcplugin import (
     addDirectoryItems,
     setContent,
@@ -23,7 +22,6 @@ from xbmcplugin import (
     endOfDirectory,
 )
 import xbmcgui
-from xbmcvfs import listdir
 import xbmcvfs
 import xbmc
 
@@ -147,6 +145,7 @@ class Downloader:
             kodilog(f"Download error: {str(e)}")
             notification(f"Failed to download: {str(e)}")
 
+
 def handle_cancel_download(params):
     kodilog("Cancelling download")
     file_path = params.get("file")
@@ -180,7 +179,7 @@ def downloads_viewer(params):
 
     item_list = []
     try:
-        directories, files = listdir(translated_path)
+        directories, files = xbmcvfs.listdir(translated_path)
         for item in directories + files:
             item_path = os.path.join(translated_path, item)
             list_item = xbmcgui.ListItem(label=item)
@@ -194,7 +193,6 @@ def downloads_viewer(params):
 
                 # Add "Cancel Download" only if the file is an active download
                 flag_cache = cancel_flag_cache._get(item_path)
-                kodilog(f"Flag cache: {flag_cache}")
                 if flag_cache is False:
                     context_menu.append(
                         (

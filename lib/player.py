@@ -1,8 +1,8 @@
 from json import dumps as json_dumps
 import traceback
-from lib.api.jacktook.kodi import kodilog
-from lib.api.trakt.trakt_api import TraktAPI, TraktLists
-from lib.utils.kodi_utils import (
+from lib.clients.tmdb.utils import tmdb_get
+from lib.api.trakt.trakt import TraktAPI, TraktLists
+from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     PLAYLIST,
     action_url_run,
@@ -12,17 +12,18 @@ from lib.utils.kodi_utils import (
     close_busy_dialog,
     execute_builtin,
     get_setting,
+    kodilog,
     notification,
     set_property,
+    sleep,
 )
-from lib.utils.tmdb_utils import tmdb_get
-from lib.utils.utils import (
+from lib.utils.general.utils import (
     make_listing,
     set_watched_file,
 )
-from xbmc import Monitor, getCondVisibility as get_visibility
-from lib.utils.kodi_utils import sleep
+
 import xbmc
+from xbmc import getCondVisibility as get_visibility
 from xbmcgui import ListItem
 from xbmcplugin import setResolvedUrl
 
@@ -33,10 +34,9 @@ video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 
 
 class JacktookPLayer(xbmc.Player):
-    def __init__(self, db):
+    def __init__(self):
         xbmc.Player.__init__(self)
         self.url = None
-        self.db = db
         self.kodi_monitor = None
         self.playback_percent = 0.0
         self.playing_filename = ""
@@ -247,8 +247,7 @@ class JacktookPLayer(xbmc.Player):
         self.PLAYLIST.clear()
         self.data = data
         self.url = self.data["url"]
-        self.db_key = self.data.get("info_hash") or self.url
-        self.kodi_monitor = Monitor()
+        self.kodi_monitor = xbmc.Monitor()
         self.watched_percentage = self.data.get("progress", 0.0)
 
     def clear_playback_properties(self):
