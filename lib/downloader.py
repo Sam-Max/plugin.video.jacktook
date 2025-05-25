@@ -1,6 +1,7 @@
 import os
 import ssl
 import threading
+import re
 from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl
 from lib.utils.kodi.utils import (
@@ -25,8 +26,17 @@ import xbmcgui
 import xbmcvfs
 import xbmc
 
-# Use MemoryCache for cancel flags
+
 cancel_flag_cache = MemoryCache()
+
+
+def normalize_file_name(file_name):
+    file_name = file_name.strip()
+    base, _ = os.path.splitext(file_name)
+    # Remove invalid characters and dots from base name
+    base = re.sub(r'[\\/*?:"<>|.]', "_", base)
+    base = re.sub(r"_+", "_", base)
+    return base
 
 
 def handle_download_file(params):
@@ -39,19 +49,19 @@ def handle_download_file(params):
         notification("Invalid download destination.")
         return
 
-    file_name = params.get("file_name", "")
+    file_name = normalize_file_name(params.get("file_name", ""))
     key = os.path.join(destination, file_name)
 
     kodilog(f"Cancel Key: {key}")
     cancel_flag_cache._set(key, False)
     downloader = Downloader(params, cancel_flag_cache)
+    downloader.name = file_name 
     downloader.run()
 
 
 class Downloader:
     def __init__(self, params, cancel_flag_cache):
         self.url = params.get("url")
-        self.name = params.get("file_name", "unknown")
         self.destination = params.get("destination", "")
         self.headers = {}
         self.monitor = xbmc.Monitor()
