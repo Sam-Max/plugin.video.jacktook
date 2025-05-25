@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Any
 from lib.clients.debrid.easydebrid import EasyDebrid
-from lib.utils.kodi.utils import dialog_text, get_setting, notification
+from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification
 from lib.utils.general.utils import (
     Debrids,
     debrid_dialog_update,
@@ -60,13 +60,14 @@ class EasyDebridHelper:
             return
 
         if len(files) > 1:
-            if not "tv_data" in data:
+            if data["tv_data"]:
+                season = data["tv_data"].get("season", "")
+                episode = data["tv_data"].get("episode", "")
+                files = filter_debrid_episode(files, episode_num=episode, season_num=season)
+                if not files:
+                    return
+            else:
                 data["is_pack"] = True
-                return
-            season = data["tv_data"].get("season", "")
-            episode = data["tv_data"].get("episode", "")
-            files = filter_debrid_episode(files, episode_num=episode, season_num=season)
-            if not files:
                 return
         
         return files[0].get("url")

@@ -57,15 +57,16 @@ class PremiumizeHelper:
         content = response_data.get("content", [])
         
         if len(content) > 1:
-            if not "tv_data" in data:
+            if data["tv_data"]:
+                season = data["tv_data"].get("season", "")
+                episode = data["tv_data"].get("episode", "")
+                content = filter_debrid_episode(content, episode_num=episode, season_num=season)
+                if not content:
+                    return
+            else:
                 data["is_pack"] = True
                 return
-            season = data["tv_data"].get("season", "")
-            episode = data["tv_data"].get("episode", "")
-            content = filter_debrid_episode(content, episode_num=episode, season_num=season)
-            if not content:
-                return
-
+            
         return content[0].get("stream_link")
 
 
