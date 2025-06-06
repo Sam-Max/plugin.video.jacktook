@@ -127,7 +127,7 @@ class TraktBase:
         response.encoding = "utf-8"
         try:
             result = response.json()
-            kodilog("Response JSON: %s" % result)
+            kodilog("Response JSON: %s" % result, level=xbmc.LOGDEBUG)
         except ValueError:
             return None
 

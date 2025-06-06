@@ -1234,6 +1234,30 @@ _countries = [{'alpha2': 'AD',
   'name': 'Zimbabwe',
   'unicode': 'U+1F1FF U+1F1FC'}]
 
+LANGUAGE_NAME_TO_CODE = {
+    "English": "en",
+    "Spanish": "es",
+    "German": "de",
+    "French": "fr",
+    "Italian": "it",
+    "Portuguese": "pt",
+    "Dutch": "nl",
+    "Polish": "pl",
+    "Russian": "ru",
+    "Turkish": "tr",
+    "Greek": "el",
+    "Hebrew": "he",
+    "Hindi": "hi",
+    "Indonesian": "id",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "Ukrainian": "uk",
+    "Vietnamese": "vi",
+    "Chinese": "zh",
+    "Persian": "fa",
+    "None": "None"
+}
+
 def _check_flag(flag, country):
 	if country['flag'] == flag: return True
 	return False

@@ -29,6 +29,45 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="auto_sub" type="boolean" label="30878" help=""> 
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="sub_language" type="string" label="30736" help="30873">
+                    <default>None</default>
+                    <neading>30736</neading>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_sub">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="None">None</option>
+                            <option label="English">en</option>
+                            <option label="Spanish">es</option>
+                            <option label="German">de</option>
+                            <option label="French">fr</option>
+                            <option label="Italian">it</option>
+                            <option label="Portuguese">pt</option>
+                            <option label="Dutch">nl</option>
+                            <option label="Polish">pl</option>
+                            <option label="Russian">ru</option>
+                            <option label="Turkish">tr</option>
+                            <option label="Greek">el</option>
+                            <option label="Hebrew">he</option>
+                            <option label="Hindi">hi</option>
+                            <option label="Indonesian">id</option>
+                            <option label="Japanese">ja</option>
+                            <option label="Korean">ko</option>
+                            <option label="Ukrainian">uk</option>
+                            <option label="Vietnamese">vi</option>
+                            <option label="Chinese">zh</option>
+                            <option label="Persian">fa</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
                 <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
@@ -351,190 +390,6 @@
                 <setting id="filter_by_episode" type="boolean" label="30710" help="30812">
                     <default>true</default>
                     <control type="toggle" />
-                </setting>
-                <setting id="priority_language" type="string" label="30736" help="30873">
-                    <default>None</default>
-                    <neading>30736</neading>
-                    <constraints>
-                        <options>
-                            <option>None</option>
-                            <option>aa</option> <!-- Afar -->
-                            <option>ab</option> <!-- Abkhazian -->
-                            <option>af</option> <!-- Afrikaans -->
-                            <option>ak</option> <!-- Akan -->
-                            <option>am</option> <!-- Amharic -->
-                            <option>ar</option> <!-- Arabic -->
-                            <option>as</option> <!-- Assamese -->
-                            <option>ay</option> <!-- Aymara -->
-                            <option>az</option> <!-- Azerbaijani -->
-                            <option>ba</option> <!-- Bashkir -->
-                            <option>be</option> <!-- Belarusian -->
-                            <option>bg</option> <!-- Bulgarian -->
-                            <option>bh</option> <!-- Bihari -->
-                            <option>bi</option> <!-- Bislama -->
-                            <option>bn</option> <!-- Bengali -->
-                            <option>bo</option> <!-- Tibetan -->
-                            <option>br</option> <!-- Breton -->
-                            <option>bs</option> <!-- Bosnian -->
-                            <option>ca</option> <!-- Catalan -->
-                            <option>ce</option> <!-- Chechen -->
-                            <option>co</option> <!-- Corsican -->
-                            <option>cs</option> <!-- Czech -->
-                            <option>cy</option> <!-- Welsh -->
-                            <option>da</option> <!-- Danish -->
-                            <option>de</option> <!-- German -->
-                            <option>dv</option> <!-- Divehi -->
-                            <option>dz</option> <!-- Dzongkha -->
-                            <option>el</option> <!-- Greek -->
-                            <option>en</option> <!-- English -->
-                            <option>eo</option> <!-- Esperanto -->
-                            <option>es</option> <!-- Spanish -->
-                            <option>et</option> <!-- Estonian -->
-                            <option>eu</option> <!-- Basque -->
-                            <option>fa</option> <!-- Persian -->
-                            <option>fi</option> <!-- Finnish -->
-                            <option>fj</option> <!-- Fijian -->
-                            <option>fo</option> <!-- Faroese -->
-                            <option>fr</option> <!-- French -->
-                            <option>fy</option> <!-- Western Frisian -->
-                            <option>ga</option> <!-- Irish -->
-                            <option>gd</option> <!-- Scottish Gaelic -->
-                            <option>gl</option> <!-- Galician -->
-                            <option>gn</option> <!-- Guarani -->
-                            <option>gu</option> <!-- Gujarati -->
-                            <option>gv</option> <!-- Manx -->
-                            <option>ha</option> <!-- Hausa -->
-                            <option>he</option> <!-- Hebrew -->
-                            <option>hi</option> <!-- Hindi -->
-                            <option>ho</option> <!-- Hiri Motu -->
-                            <option>hr</option> <!-- Croatian -->
-                            <option>ht</option> <!-- Haitian -->
-                            <option>hu</option> <!-- Hungarian -->
-                            <option>hy</option> <!-- Armenian -->
-                            <option>hz</option> <!-- Herero -->
-                            <option>ia</option> <!-- Interlingua -->
-                            <option>id</option> <!-- Indonesian -->
-                            <option>ie</option> <!-- Interlingue -->
-                            <option>ig</option> <!-- Igbo -->
-                            <option>ii</option> <!-- Sichuan Yi -->
-                            <option>ik</option> <!-- Inupiaq -->
-                            <option>io</option> <!-- Ido -->
-                            <option>is</option> <!-- Icelandic -->
-                            <option>it</option> <!-- Italian -->
-                            <option>iu</option> <!-- Inuktitut -->
-                            <option>ja</option> <!-- Japanese -->
-                            <option>jv</option> <!-- Javanese -->
-                            <option>ka</option> <!-- Georgian -->
-                            <option>kg</option> <!-- Kongo -->
-                            <option>ki</option> <!-- Kikuyu -->
-                            <option>kj</option> <!-- Kuanyama -->
-                            <option>kk</option> <!-- Kazakh -->
-                            <option>kl</option> <!-- Kalaallisut -->
-                            <option>km</option> <!-- Central Khmer -->
-                            <option>kn</option> <!-- Kannada -->
-                            <option>ko</option> <!-- Korean -->
-                            <option>kr</option> <!-- Kanuri -->
-                            <option>ks</option> <!-- Kashmiri -->
-                            <option>ku</option> <!-- Kurdish -->
-                            <option>kv</option> <!-- Komi -->
-                            <option>kw</option> <!-- Cornish -->
-                            <option>ky</option> <!-- Kirghiz -->
-                            <option>la</option> <!-- Latin -->
-                            <option>lb</option> <!-- Luxembourgish -->
-                            <option>lg</option> <!-- Ganda -->
-                            <option>li</option> <!-- Limburgan -->
-                            <option>ln</option> <!-- Lingala -->
-                            <option>lo</option> <!-- Lao -->
-                            <option>lt</option> <!-- Lithuanian -->
-                            <option>lu</option> <!-- Luba-Katanga -->
-                            <option>lv</option> <!-- Latvian -->
-                            <option>mg</option> <!-- Malagasy -->
-                            <option>mh</option> <!-- Marshallese -->
-                            <option>mi</option> <!-- Maori -->
-                            <option>mk</option> <!-- Macedonian -->
-                            <option>ml</option> <!-- Malayalam -->
-                            <option>mn</option> <!-- Mongolian -->
-                            <option>mr</option> <!-- Marathi -->
-                            <option>ms</option> <!-- Malay -->
-                            <option>mt</option> <!-- Maltese -->
-                            <option>my</option> <!-- Burmese -->
-                            <option>na</option> <!-- Nauru -->
-                            <option>nb</option> <!-- Norwegian Bokmål -->
-                            <option>nd</option> <!-- North Ndebele -->
-                            <option>ne</option> <!-- Nepali -->
-                            <option>ng</option> <!-- Ndonga -->
-                            <option>nl</option> <!-- Dutch -->
-                            <option>nn</option> <!-- Norwegian Nynorsk -->
-                            <option>no</option> <!-- Norwegian -->
-                            <option>nr</option> <!-- South Ndebele -->
-                            <option>nv</option> <!-- Navajo -->
-                            <option>ny</option> <!-- Chichewa -->
-                            <option>oc</option> <!-- Occitan -->
-                            <option>oj</option> <!-- Ojibwa -->
-                            <option>om</option> <!-- Oromo -->
-                            <option>or</option> <!-- Oriya -->
-                            <option>os</option> <!-- Ossetian -->
-                            <option>pa</option> <!-- Panjabi -->
-                            <option>pi</option> <!-- Pali -->
-                            <option>pl</option> <!-- Polish -->
-                            <option>ps</option> <!-- Pashto -->
-                            <option>pt</option> <!-- Portuguese -->
-                            <option>qu</option> <!-- Quechua -->
-                            <option>rm</option> <!-- Romansh -->
-                            <option>rn</option> <!-- Rundi -->
-                            <option>ro</option> <!-- Romanian -->
-                            <option>ru</option> <!-- Russian -->
-                            <option>rw</option> <!-- Kinyarwanda -->
-                            <option>sa</option> <!-- Sanskrit -->
-                            <option>sc</option> <!-- Sardinian -->
-                            <option>sd</option> <!-- Sindhi -->
-                            <option>se</option> <!-- Northern Sami -->
-                            <option>sg</option> <!-- Sango -->
-                            <option>si</option> <!-- Sinhala -->
-                            <option>sk</option> <!-- Slovak -->
-                            <option>sl</option> <!-- Slovenian -->
-                            <option>sm</option> <!-- Samoan -->
-                            <option>sn</option> <!-- Shona -->
-                            <option>so</option> <!-- Somali -->
-                            <option>sq</option> <!-- Albanian -->
-                            <option>sr</option> <!-- Serbian -->
-                            <option>ss</option> <!-- Swati -->
-                            <option>st</option> <!-- Southern Sotho -->
-                            <option>su</option> <!-- Sundanese -->
-                            <option>sv</option> <!-- Swedish -->
-                            <option>sw</option> <!-- Swahili -->
-                            <option>ta</option> <!-- Tamil -->
-                            <option>te</option> <!-- Telugu -->
-                            <option>tg</option> <!-- Tajik -->
-                            <option>th</option> <!-- Thai -->
-                            <option>ti</option> <!-- Tigrinya -->
-                            <option>tk</option> <!-- Turkmen -->
-                            <option>tl</option> <!-- Tagalog -->
-                            <option>tn</option> <!-- Tswana -->
-                            <option>to</option> <!-- Tonga -->
-                            <option>tr</option> <!-- Turkish -->
-                            <option>ts</option> <!-- Tsonga -->
-                            <option>tt</option> <!-- Tatar -->
-                            <option>tw</option> <!-- Twi -->
-                            <option>ty</option> <!-- Tahitian -->
-                            <option>ug</option> <!-- Uighur -->
-                            <option>uk</option> <!-- Ukrainian -->
-                            <option>ur</option> <!-- Urdu -->
-                            <option>uz</option> <!-- Uzbek -->
-                            <option>ve</option> <!-- Venda -->
-                            <option>vi</option> <!-- Vietnamese -->
-                            <option>vo</option> <!-- Volapük -->
-                            <option>wa</option> <!-- Walloon -->
-                            <option>wo</option> <!-- Wolof -->
-                            <option>xh</option> <!-- Xhosa -->
-                            <option>yi</option> <!-- Yiddish -->
-                            <option>yo</option> <!-- Yoruba -->
-                            <option>za</option> <!-- Zhuang -->
-                            <option>zh</option> <!-- Chinese -->
-                            <option>zu</option> <!-- Zulu -->
-                        </options>
-                    </constraints>
-                    <control type="list" format="string" />
                 </setting>
             </group>
         </category>

@@ -23,6 +23,7 @@ from lib.utils.general.utils import (
     set_watched_file,
 )
 
+from lib.utils.localization.countries import LANGUAGE_NAME_TO_CODE
 import xbmc
 from xbmc import getCondVisibility as get_visibility
 from xbmcgui import ListItem
@@ -102,6 +103,22 @@ class JacktookPLayer(xbmc.Player):
 
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.check_playback_start()
+
+            # --- Auto-select subtitles based on settings ---
+            try:
+                if get_setting("auto_sub"):
+                    kodilog("Auto subtitle selection enabled")
+                    kodilog(f"Selected subtitle language: {get_setting('sub_language')}")
+                    sub_lang = get_setting("sub_language")
+                    if sub_lang and sub_lang.lower() != "None":
+                        sub_lang_code = LANGUAGE_NAME_TO_CODE.get(sub_lang, "en")
+                        xbmc.executebuiltin(f"Player.SetSubtitleLanguage({sub_lang_code})")
+                        self.showSubtitles(True)
+                else:
+                    kodilog("Auto subtitle selection disabled")
+                    self.showSubtitles(False)
+            except Exception as e:
+                kodilog(f"Auto subtitle selection failed: {e}")
 
             if self.playback_successful:
                 self.monitor()
@@ -193,7 +210,7 @@ class JacktookPLayer(xbmc.Player):
                 and self.data.get("ids")
             ):
                 TraktAPI().scrobble.trakt_stop_scrobble(self.data)
-                
+
             close_busy_dialog()
 
         except Exception as e:

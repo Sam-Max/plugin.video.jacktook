@@ -416,7 +416,7 @@ msgid "Enable"
 msgstr "Habilitar"
 
 msgctxt "#30736"
-msgid "Priority Language"
+msgid "Subtitle Language"
 msgstr "Idioma prioritario"
 
 msgctxt "#30737"
@@ -1253,4 +1253,8 @@ msgstr "Directorio de Descarga"
 
 msgctxt "#30877"
 msgid "Habilitar Trakt.tv Scrobbling"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Auto-Select Subtitle"
 msgstr ""

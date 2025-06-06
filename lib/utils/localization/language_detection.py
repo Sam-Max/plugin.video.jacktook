@@ -1,4 +1,4 @@
-from lib.utils.localization.countries import find_language_by_unicode, _countries
+from lib.utils.localization.countries import find_language_by_unicode
 import re
 
 langsSet = {
