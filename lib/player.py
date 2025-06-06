@@ -91,7 +91,7 @@ class JacktookPLayer(xbmc.Player):
             if (
                 is_trakt_auth()
                 and get_setting("trakt_scrobbling_enabled")
-                and self.data.get("tmdb_id")
+                and self.data.get("ids")
             ):
                 last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(
                     self.data
@@ -190,7 +190,7 @@ class JacktookPLayer(xbmc.Player):
             if (
                 is_trakt_auth()
                 and get_setting("trakt_scrobbling_enabled")
-                and self.data.get("tmdb_id")
+                and self.data.get("ids")
             ):
                 TraktAPI().scrobble.trakt_stop_scrobble(self.data)
                 
