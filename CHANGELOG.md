@@ -1,3 +1,11 @@
+## 0.5.2
+- Added download functionality
+- Added Trakt scrobbling
+- Added new menu item to add to Trakt watchlist.
+- Added new menu item to mark as watched/unwatched on Trakt.
+- Added new window to filter fetched results (right arrow or button to show).
+- Many other improvements.
+
 ## 0.5.1
 - UI Improvements 
 - TMDB Helper json updated
