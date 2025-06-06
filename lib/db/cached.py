@@ -170,15 +170,15 @@ class Cache(_BaseCache):
         return None
 
     def set(self, key, data, expires):
+        from lib.utils.kodi.utils import kodilog
         try:
             self.check_clean_up()
             self._conn.execute(
                 "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
                 (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
             )
+            kodilog("Set cache for key '{}' with expiry {}".format(key, expires))
         except Exception as e:
-            from lib.utils.kodi.utils import kodilog
-
             kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
             # fallback to raw in‑memory store
             self._object_store[key] = (data, expires)
