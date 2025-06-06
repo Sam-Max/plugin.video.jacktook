@@ -1,5 +1,6 @@
 from json import dumps as json_dumps
 import traceback
+from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.tmdb.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.utils.kodi.utils import (
@@ -87,11 +88,17 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
 
         try:
-            if get_setting("trakt_scrobbling_enabled"):
-                last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
+            if (
+                is_trakt_auth()
+                and get_setting("trakt_scrobbling_enabled")
+                and self.data.get("tmdb_id")
+            ):
+                last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(
+                    self.data
+                )
                 if last_position > 0:
                     list_item.setProperty("StartPercent", str(last_position))
-                TraktAPI().scrobble.trakt_start_scrobble(self.data)  # Notify Trakt.tv about playback start
+                TraktAPI().scrobble.trakt_start_scrobble(self.data)
 
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.check_playback_start()
@@ -167,7 +174,7 @@ class JacktookPLayer(xbmc.Player):
                     self.watched_percentage = round(
                         float(self.current_time / self.total_time * 100), 1
                     )
-                    self.data["progress"] = self.watched_percentage  
+                    self.data["progress"] = self.watched_percentage
 
                     time_left = int(self.total_time) - int(self.current_time)
                     if self.next_dialog and time_left <= self.playing_next_time:
@@ -180,8 +187,13 @@ class JacktookPLayer(xbmc.Player):
                     kodilog(f"Error in monitor: {e}")
                     sleep(250)
 
-            if get_setting("trakt_scrobbling_enabled"):
-                TraktAPI().scrobble.trakt_stop_scrobble(self.data)  # Notify Trakt.tv about playback stop
+            if (
+                is_trakt_auth()
+                and get_setting("trakt_scrobbling_enabled")
+                and self.data.get("tmdb_id")
+            ):
+                TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+                
             close_busy_dialog()
 
         except Exception as e:
@@ -194,47 +206,58 @@ class JacktookPLayer(xbmc.Player):
             self.clear_playback_properties()
 
     def build_playlist(self):
-        if self.data["mode"] == "tv":
-            ids = self.data.get("ids")
-            if ids:
-                details = tmdb_get("tv_details", ids["tmdb_id"])
-                tv_data = self.data["tv_data"]
-                season = tv_data["season"]
-                episode = tv_data["episode"]
+        if self.data.get("mode") != "tv":
+            return
 
-                season_details = tmdb_get(
-                    "season_details", {"id": ids["tmdb_id"], "season": season}
-                )
+        ids = self.data.get("ids")
+        if not ids:
+            return
 
-                if season_details:
-                    for e in season_details.episodes:
-                        episode_name = e.name
-                        episode_number = e.episode_number
+        tmdb_id = ids.get("tmdb_id")
+        if not tmdb_id:
+            return
 
-                        if episode_number <= int(episode):
-                            continue
+        details = tmdb_get("tv_details", tmdb_id)
+        tv_data = self.data.get("tv_data", {})
+        season = tv_data.get("season")
+        episode = tv_data.get("episode")
 
-                        label = f"{season}x{episode_number}. {episode_name}"
-                        tv_data = {
-                            "name": episode_name,
-                            "episode": episode_number,
-                            "season": season,
-                        }
+        if season is None or episode is None:
+            return
 
-                        url = build_url(
-                            "search",
-                            mode=self.data["mode"],
-                            query=details.name,
-                            ids=ids,
-                            tv_data=tv_data,
-                            rescrape=True,
-                        )
+        season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
 
-                        list_item = ListItem(label=label)
-                        list_item.setPath(url)
-                        list_item.setProperty("IsPlayable", "true")
+        if not season_details or not hasattr(season_details, "episodes"):
+            return
 
-                        self.PLAYLIST.add(url=url, listitem=list_item)
+        for e in season_details.episodes:
+            episode_name = getattr(e, "name", "")
+            episode_number = getattr(e, "episode_number", 0)
+
+            if episode_number <= int(episode):
+                continue
+
+            label = f"{season}x{episode_number}. {episode_name}"
+            next_tv_data = {
+                "name": episode_name,
+                "episode": episode_number,
+                "season": season,
+            }
+
+            url = build_url(
+                "search",
+                mode=self.data["mode"],
+                query=getattr(details, "name", ""),
+                ids=ids,
+                tv_data=next_tv_data,
+                rescrape=True,
+            )
+
+            list_item = ListItem(label=label)
+            list_item.setPath(url)
+            list_item.setProperty("IsPlayable", "true")
+
+            self.PLAYLIST.add(url=url, listitem=list_item)
 
     def kill_dialog(self):
         close_all_dialog()
@@ -254,18 +277,18 @@ class JacktookPLayer(xbmc.Player):
         clear_property("script.trakt.ids")
 
     def add_external_trakt_scrolling(self):
-        ids = self.data.get("ids")
+        ids = self.data.get("ids", {})
         mode = self.data.get("mode")
+        title = self.data.get("title", "")
 
         if ids:
-            tmdb_id, tvdb_id, imdb_id = ids.values()
             trakt_ids = {
-                "tmdb": tmdb_id,
-                "imdb": imdb_id,
-                "slug": TraktLists().make_trakt_slug(self.data.get("title")),
+                "tmdb": ids.get("tmdb_id"),
+                "imdb": ids.get("imdb_id"),
+                "slug": TraktLists().make_trakt_slug(title),
             }
             if mode == "tv":
-                trakt_ids["tvdb"] = tvdb_id
+                trakt_ids["tvdb"] = ids.get("tvdb_id")
             set_property("script.trakt.ids", json_dumps(trakt_ids))
 
     def mark_watched(self, data):

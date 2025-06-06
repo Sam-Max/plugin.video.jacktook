@@ -2,6 +2,9 @@ from .utils import get_setting, get_property, ADDON_ID
 import xbmc
 
 
+EMPTY_USER = "unknown_user"
+
+
 def addon_settings():
     return xbmc.executebuiltin(f"Addon.OpenSettings({ADDON_ID})")
 
@@ -51,4 +54,4 @@ def trakt_secret():
 
 
 def trakt_lists_sort_order(setting):
-	return int(get_setting('trakt_sort_%s' % setting, '0'))
+    return int(get_setting("trakt_sort_%s" % setting, "0"))

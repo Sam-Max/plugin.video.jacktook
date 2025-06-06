@@ -42,7 +42,6 @@ import xbmc
 from zipfile import ZipFile
 
 
-
 PROVIDER_COLOR_MIN_BRIGHTNESS = 128
 
 URL_REGEX = r"^(?!\/)(rtmps?:\/\/|mms:\/\/|rtsp:\/\/|https?:\/\/|ftp:\/\/)?([^\/:]+:[^\/@]+@)?(www\.)?(?=[^\/:\s]+\.[^\/:\s]+)([^\/:\s]+\.[^\/:\s]+)(:\d+)?(\/[^#\s]*[\s\S]*)?(\?[^#\s]*)?(#.*)?$"
@@ -402,6 +401,8 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
 
     set_cast_and_crew(info_tag, metadata)
 
+    # set_cast_and_actors(info_tag, metadata)
+
     # Episode & Season Info (for TV shows/episodes)
     if mode in ["tv", "episode"]:
         info_tag.setTvShowTitle(metadata.get("tvshow_title", metadata.get("name", "")))
@@ -513,7 +514,7 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     identifier = "{}|{}".format(
         "fanart.tv", tvdb_id if tvdb_id and tvdb_id != "None" else tmdb_id
     )
-    data = cache.get(identifier, hashed_key=True)
+    data = cache.get(identifier)
     if data:
         return data
     else:
@@ -529,7 +530,6 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
                 identifier,
                 data,
                 timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-                hashed_key=True,
             )
     return data
 
@@ -569,7 +569,7 @@ def cache_results(results, query, mode, media_type, episode):
 
 def get_cached(path, params={}):
     identifier = "{}|{}".format(path, params)
-    return cache.get(identifier, hashed_key=True)
+    return cache.get(identifier)
 
 
 def set_cached(data, path, params={}):
@@ -578,13 +578,12 @@ def set_cached(data, path, params={}):
         identifier,
         data,
         timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-        hashed_key=True,
     )
 
 
 def db_get(name, func, path, params):
     identifier = "{}|{}".format(path, params)
-    data = cache.get(identifier, hashed_key=True)
+    data = cache.get(identifier)
     if not data:
         if name == "search_client":
             data = func()
@@ -592,14 +591,13 @@ def db_get(name, func, path, params):
             identifier,
             data,
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            hashed_key=True,
         )
     return data
 
 
 def tvdb_get(path, params={}):
     identifier = "{}|{}".format(path, params)
-    data = cache.get(identifier, hashed_key=True)
+    data = cache.get(identifier)
     if data:
         return data
     if path == "get_imdb_id":
@@ -608,7 +606,6 @@ def tvdb_get(path, params={}):
         identifier,
         data,
         timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-        hashed_key=True,
     )
     return data
 
@@ -778,15 +775,13 @@ def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Di
     ]
 
     combined_pattern = "|".join(patterns)
-    
+
     kodilog(f"Combined regex pattern: {combined_pattern}", level=xbmc.LOGDEBUG)
     kodilog("Results before filtering:", level=xbmc.LOGDEBUG)
     kodilog(results, level=xbmc.LOGDEBUG)
 
     results = [
-        res
-        for res in results
-        if re.search(combined_pattern, res.get("filename", ""))
+        res for res in results if re.search(combined_pattern, res.get("filename", ""))
     ]
     kodilog("Results after filtering:", level=xbmc.LOGDEBUG)
     kodilog(results, level=xbmc.LOGDEBUG)

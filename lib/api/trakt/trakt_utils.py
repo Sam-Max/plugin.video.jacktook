@@ -3,15 +3,27 @@ import random
 import re
 import time
 import json
-from lib.utils.kodi.utils import action_url_run
+import xbmc
+from lib.utils.kodi.utils import action_url_run, kodilog
+from lib.utils.kodi.settings import get_setting
+
+
+def is_trakt_auth():
+    if not get_setting("is_trakt_auth"):
+        kodilog("Trakt is not authenticated", level=xbmc.LOGDEBUG)
+        return False
+    kodilog("Trakt is authenticated", level=xbmc.LOGDEBUG)
+    return True
 
 
 def add_trakt_watchlist_context_menu(media_type, ids):
-    filtered_ids = clean_ids({
-        "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
-        "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
-        "imdb": ids.get("imdb_id") or ids.get("imdb"),
-    })
+    filtered_ids = clean_ids(
+        {
+            "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
+            "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
+            "imdb": ids.get("imdb_id") or ids.get("imdb"),
+        }
+    )
     return [
         (
             "Add to Trakt Watchlist",
@@ -27,6 +39,38 @@ def add_trakt_watchlist_context_menu(media_type, ids):
                 "trakt_remove_from_watchlist",
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
+            ),
+        ),
+    ]
+
+
+def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}):
+    filtered_ids = clean_ids(
+        {
+            "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
+            "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
+            "imdb": ids.get("imdb_id") or ids.get("imdb"),
+        }
+    )
+    return [
+        (
+            "Mark as Watched on Trakt",
+            action_url_run(
+                "trakt_mark_as_watched",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+                season=json.dumps(season),
+                episode=json.dumps(episode),
+            ),
+        ),
+        (
+            "Mark as Unwatched on Trakt",
+            action_url_run(
+                "trakt_mark_as_unwatched",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+                season=json.dumps(season),
+                episode=json.dumps(episode),
             ),
         ),
     ]

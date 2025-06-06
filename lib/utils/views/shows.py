@@ -1,3 +1,4 @@
+from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils import tmdb_get
 from lib.utils.kodi.utils import ADDON_HANDLE, build_url, play_media
 from lib.utils.general.utils import (
@@ -41,6 +42,11 @@ def show_season_info(ids, mode, media_type):
         )
 
         list_item.setProperty("IsPlayable", "false")
+
+        if is_trakt_auth():
+            list_item.addContextMenuItems(
+                add_trakt_watched_context_menu("shows", season=season_number, ids=ids)
+            )
 
         addDirectoryItem(
             ADDON_HANDLE,
@@ -90,7 +96,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                         rescrape=True,
                     ),
                 )
-            ]
+            ] + add_trakt_watched_context_menu(
+                    "shows", season=season, episode=episode_number, ids=ids
+                ) if is_trakt_auth() else []
         )
 
         addDirectoryItem(

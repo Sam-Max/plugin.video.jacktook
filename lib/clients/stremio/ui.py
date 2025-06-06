@@ -14,7 +14,7 @@ STREMIO_CATALOG_KEY = "stremio_catalog"
 
 
 def get_addons_catalog():
-    catalog = cache.get(STREMIO_CATALOG_KEY, hashed_key=True)
+    catalog = cache.get(STREMIO_CATALOG_KEY)
     if not catalog:
         stremio = Stremio()
         try:
@@ -23,39 +23,38 @@ def get_addons_catalog():
             kodilog(f"Failed to fetch catalog: {e}")
             return AddonManager([])
 
-        selected_keys = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
+        selected_keys = cache.get(STREMIO_ADDONS_KEY) or ""
         if not selected_keys:
             selected_keys = "com.stremio.torrentio.addon"
             cache.set(
                 STREMIO_ADDONS_KEY,
                 selected_keys,
                 timedelta(days=365 * 20),
-                hashed_key=True,
             )
 
-        cache.set(STREMIO_CATALOG_KEY, catalog, timedelta(days=1), hashed_key=True)
+        cache.set(STREMIO_CATALOG_KEY, catalog, timedelta(days=1))
     return AddonManager(catalog)
 
 
 def get_selected_addon_urls() -> List[str]:
-    selected_addons = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
+    selected_addons = cache.get(STREMIO_ADDONS_KEY) or ""
     return selected_addons.split(",")
 
 
 def get_selected_catalogs_addon_urls() -> List[str]:
-    selected_addons = cache.get(STREMIO_CATALOGS_ADDONS_KEY, hashed_key=True) or ""
+    selected_addons = cache.get(STREMIO_CATALOGS_ADDONS_KEY) or ""
     return selected_addons.split(",")
 
 
 def get_selected_addons() -> List[Addon]:
     catalog = get_addons_catalog()
-    selected_ids = cache.get(STREMIO_ADDONS_KEY, hashed_key=True) or ""
+    selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons_catalog()
-    selected_ids = cache.get(STREMIO_CATALOGS_ADDONS_KEY, hashed_key=True) or ""
+    selected_ids = cache.get(STREMIO_CATALOGS_ADDONS_KEY) or ""
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
@@ -105,9 +104,7 @@ def log_in(email, password, dialog):
 
     try:
         addons = stremio.get_my_addons()
-        cache.set(
-            STREMIO_CATALOG_KEY, addons, timedelta(days=365 * 20), hashed_key=True
-        )
+        cache.set(STREMIO_CATALOG_KEY, addons, timedelta(days=365 * 20))
         manager = AddonManager(addons).get_addons_with_resource_and_id_prefix(
             "stream", "tt"
         )
@@ -116,7 +113,6 @@ def log_in(email, password, dialog):
             STREMIO_ADDONS_KEY,
             ",".join(selected_addons),
             timedelta(days=365 * 20),
-            hashed_key=True,
         )
 
         dialog = xbmcgui.Dialog()
@@ -133,7 +129,6 @@ def log_in(email, password, dialog):
                 STREMIO_CATALOGS_ADDONS_KEY,
                 ",".join(selected_catalogs),
                 timedelta(days=365 * 20),
-                hashed_key=True,
             )
 
         set_setting("stremio_loggedin", "true")
@@ -162,11 +157,11 @@ def stremio_logout(params):
         yeslabel="Log Out",
     )
     if confirm:
-        cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True)
+        cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1))
         cache.set(
-            STREMIO_CATALOGS_ADDONS_KEY, None, timedelta(seconds=1), hashed_key=True
+            STREMIO_CATALOGS_ADDONS_KEY, None, timedelta(seconds=1)
         )
-        cache.set(STREMIO_CATALOG_KEY, None, timedelta(seconds=1), hashed_key=True)
+        cache.set(STREMIO_CATALOG_KEY, None, timedelta(seconds=1))
         settings = ADDON.getSettings()
         ADDON.setSetting("stremio_loggedin", "false")
         settings.setString("stremio_email", "")
@@ -217,7 +212,6 @@ def stremio_toggle_catalogs(params):
         STREMIO_CATALOGS_ADDONS_KEY,
         ",".join(selected_addon_ids),
         timedelta(days=365 * 20),
-        hashed_key=True,
     )
 
 
@@ -261,5 +255,4 @@ def stremio_toggle_addons(params):
         STREMIO_ADDONS_KEY,
         ",".join(selected_addon_ids),
         timedelta(days=365 * 20),
-        hashed_key=True,
     )

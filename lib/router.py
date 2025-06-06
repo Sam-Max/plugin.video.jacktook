@@ -7,9 +7,13 @@ from lib.clients.jackgram.utils import (
     get_telegram_latest_files,
 )
 
-from lib.clients.tmdb.tmdb import handle_tmdb_query, search_tmdb
-from lib.clients.trakt.trakt import trakt_add_to_watchlist, trakt_remove_from_watchlist
-from lib.downloader import handle_cancel_download, handle_delete_file, handle_download_file
+from lib.clients.tmdb.tmdb import TmdbClient
+from lib.clients.trakt.trakt import TraktClient
+from lib.downloader import (
+    handle_cancel_download,
+    handle_delete_file,
+    handle_download_file,
+)
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
     addon_update,
@@ -103,10 +107,10 @@ def addon_router():
         "anime_item": anime_item,
         "anime_search": anime_search,
         "search": search,
-        "search_tmdb": search_tmdb,
+        "handle_tmdb_search": TmdbClient.handle_tmdb_search,
         "search_tmdb_year": search_tmdb_year,
         "search_tmdb_genres": search_tmdb_genres,
-        "handle_tmdb_query": handle_tmdb_query,
+        "handle_tmdb_query": TmdbClient.handle_tmdb_query,
         "search_direct": search_direct,
         "download_file": handle_download_file,
         "search_item": search_item,
@@ -136,8 +140,10 @@ def addon_router():
         "get_rd_downloads": get_rd_downloads,
         "trakt_auth": trakt_auth,
         "trakt_auth_revoke": trakt_auth_revoke,
-        "trakt_add_to_watchlist": trakt_add_to_watchlist,
-        "trakt_remove_from_watchlist": trakt_remove_from_watchlist,
+        "trakt_add_to_watchlist": TraktClient.trakt_add_to_watchlist,
+        "trakt_remove_from_watchlist": TraktClient.trakt_remove_from_watchlist,
+        "trakt_mark_as_watched": TraktClient.trakt_mark_as_watched,
+        "trakt_mark_as_unwatched": TraktClient.trakt_mark_as_unwatched,
         "pm_auth": pm_auth,
         "torrents": torrents,
         "torrent_action": torrent_action,

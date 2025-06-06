@@ -772,24 +772,16 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="trakt_expires" type="string" label="30795" help="30842">
+                <setting id="is_trakt_auth" type="boolean" label="30783" help="">
                     <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="trakt_refresh" type="string" label="30796" help="30833">
-                    <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="trakt_token" type="string" label="30797" help="30844">
-                    <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
+                    <default>false</default>
+                    <control type="toggle" />
                 </setting>
                 <setting id="trakt_user" type="string" label="30782" help="30855">
-                    <visible>false</visible>
-                    <default>0</default>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_client" type="string" label="30798" help="30818">
@@ -805,7 +797,7 @@
                 <setting id="trakt_logout" type="action" label="30802" help="30856">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=trakt_auth_revoke)</data>
                     <control type="button" format="action">
-
+                        <close>false</close>
                     </control>
                 </setting>
                 <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">

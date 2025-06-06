@@ -7,7 +7,7 @@ from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 
 def catalogs_get_cache(path, params, *args, **kwargs):
     identifier = f"{path}{params}{args}"
-    data = cache.get(identifier, hashed_key=True)
+    data = cache.get(identifier)
     if data:
         return data
     
@@ -34,7 +34,6 @@ def catalogs_get_cache(path, params, *args, **kwargs):
             identifier,
             data,
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            hashed_key=True,
         )
 
     return data

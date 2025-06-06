@@ -13,21 +13,95 @@ from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.trending import Trending
 from lib.api.tmdbv3api.objs.tv import TV
 
-from lib.utils.kodi.utils import ADDON_PATH, kodilog
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, kodilog
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.general.utils import execute_thread_pool
 
 from lib.db.cached import cache
+from xbmcplugin import addDirectoryItem
+from xbmcgui import ListItem
 
 
 LANGUAGES = [
-    'ar-AE', 'ar-SA', 'be-BY', 'bg-BG', 'bn-BD', 'ca-ES', 'ch-GU', 'cs-CZ', 'da-DK', 'de-AT', 'de-CH',
-    'de-DE', 'el-GR', 'en-AU', 'en-CA', 'en-GB', 'en-IE', 'en-NZ', 'en-US', 'eo-EO', 'es-ES', 'es-MX',
-    'et-EE', 'eu-ES', 'fa-IR', 'fi-FI', 'fr-CA', 'fr-FR', 'gl-ES', 'he-IL', 'hi-IN', 'hu-HU', 'id-ID',
-    'it-IT', 'ja-JP', 'ka-GE', 'kk-KZ', 'kn-IN', 'ko-KR', 'lt-LT', 'lv-LV', 'ml-IN', 'ms-MY', 'ms-SG',
-    'nb-NO', 'nl-NL', 'no-NO', 'pl-PL', 'pt-BR', 'pt-PT', 'ro-RO', 'ru-RU', 'si-LK', 'sk-SK', 'sl-SI',
-    'sr-RS', 'sv-SE', 'ta-IN', 'te-IN', 'th-TH', 'tl-PH', 'tr-TR', 'uk-UA', 'vi-VN', 'zh-CN', 'zh-HK',
-    'zh-TW', 'zu-ZA']
+    "ar-AE",
+    "ar-SA",
+    "be-BY",
+    "bg-BG",
+    "bn-BD",
+    "ca-ES",
+    "ch-GU",
+    "cs-CZ",
+    "da-DK",
+    "de-AT",
+    "de-CH",
+    "de-DE",
+    "el-GR",
+    "en-AU",
+    "en-CA",
+    "en-GB",
+    "en-IE",
+    "en-NZ",
+    "en-US",
+    "eo-EO",
+    "es-ES",
+    "es-MX",
+    "et-EE",
+    "eu-ES",
+    "fa-IR",
+    "fi-FI",
+    "fr-CA",
+    "fr-FR",
+    "gl-ES",
+    "he-IL",
+    "hi-IN",
+    "hu-HU",
+    "id-ID",
+    "it-IT",
+    "ja-JP",
+    "ka-GE",
+    "kk-KZ",
+    "kn-IN",
+    "ko-KR",
+    "lt-LT",
+    "lv-LV",
+    "ml-IN",
+    "ms-MY",
+    "ms-SG",
+    "nb-NO",
+    "nl-NL",
+    "no-NO",
+    "pl-PL",
+    "pt-BR",
+    "pt-PT",
+    "ro-RO",
+    "ru-RU",
+    "si-LK",
+    "sk-SK",
+    "sl-SI",
+    "sr-RS",
+    "sv-SE",
+    "ta-IN",
+    "te-IN",
+    "th-TH",
+    "tl-PH",
+    "tr-TR",
+    "uk-UA",
+    "vi-VN",
+    "zh-CN",
+    "zh-HK",
+    "zh-TW",
+    "zu-ZA",
+]
+
+
+def add_kodi_dir_item(
+    list_item, url, is_folder=True, icon_path=None, set_playable=False
+):
+    if icon_path:
+        add_icon_tmdb(list_item, icon_path=icon_path)
+    if set_playable:
+        list_item.setProperty("IsPlayable", "true")
+    addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=is_folder)
 
 
 def add_icon_genre(item, icon_path="tmdb.png"):
@@ -50,7 +124,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
 
 def tmdb_get(path, params=None):
     identifier = f"{path}|{params}"
-    data = cache.get(identifier, hashed_key=True)
+    data = cache.get(identifier)
     if data:
         return data
 
@@ -78,61 +152,52 @@ def tmdb_get(path, params=None):
     try:
         data = handlers.get(path, lambda _: None)(params)
     except Exception as e:
-       kodilog(f"Error in tmdb_get for {path} with params {params}: {e}")
-       return {}
+        kodilog(f"Error in tmdb_get for {path} with params {params}: {e}")
+        return {}
 
     if data is not None:
         cache.set(
             identifier,
             data,
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            hashed_key=True,
         )
 
     return data
 
 
-def get_tmdb_media_details(id, mode):
-    if not id:
-        return
+def get_tmdb_media_details(tmdb_id, mode):
+    kodilog(f"Fetching TMDB details for ID: {tmdb_id} in mode: {mode}")
     if mode == "tv":
-        details = tmdb_get("tv_details", id)
+        return tmdb_get("tv_details", tmdb_id)
     elif mode == "movies":
-        details = tmdb_get("movie_details", id)
-    return details
+        return tmdb_get("movie_details", tmdb_id)
 
 
-def get_tmdb_movie_data(id):
-    details = tmdb_get("movie_details", id)
-    imdb_id = details.external_ids.get("imdb_id")
-    runtime = details.runtime
-    return imdb_id, runtime
+def get_tmdb_movie_details(id):
+    return tmdb_get("movie_details", id)
 
 
-def get_tmdb_tv_data(id):
-    details = tmdb_get("tv_details", id)
-    imdb_id = details.external_ids.get("imdb_id")
-    tvdb_id = details.external_ids.get("tvdb_id")
-    return imdb_id, tvdb_id
+def get_tmdb_tv_details(id):
+    return tmdb_get("tv_details", id)
 
 
-def anime_checker(results, mode):
-    anime_results = []
-    anime = TmdbAnime()
+def filter_anime_by_keyword(results, mode):
+    filtered_anime = []
+    anime_api = TmdbAnime()
     list_lock = threading.Lock()
 
-    def task(res, anime_results, list_lock):
-        results = anime.tmdb_keywords(mode, res["id"])
-        if mode == "tv":
-            keywords = results["results"]
-        else:
-            keywords = results["keywords"]
-        for i in keywords:
-            if i["id"] == 210024:
+    def check_and_append(item, filtered_anime, list_lock):
+        keywords_data = anime_api.tmdb_keywords(mode, item["id"])
+        keywords = (
+            keywords_data["results"] if mode == "tv" else keywords_data["keywords"]
+        )
+        for keyword in keywords:
+            if keyword["id"] == 210024:
                 with list_lock:
-                    anime_results.append(res)
+                    filtered_anime.append(item)
+                break
 
-    execute_thread_pool(results, task, anime_results, list_lock)
-    results["results"] = anime_results
-    results["total_results"] = len(anime_results)
+    execute_thread_pool(results["results"], check_and_append, filtered_anime, list_lock)
+    results["results"] = filtered_anime
+    results["total_results"] = len(filtered_anime)
     return results

@@ -12,14 +12,20 @@ from lib.api.trakt.trakt_utils import sort_for_article, sort_list
 from lib.utils.kodi.utils import (
     copy2clip,
     get_datetime,
-    get_setting,
+    get_property,
     kodilog,
     notification,
+    set_property,
     set_setting,
     sleep,
     progressDialog,
 )
-from lib.utils.kodi.settings import trakt_client, trakt_lists_sort_order, trakt_secret
+from lib.utils.kodi.settings import (
+    EMPTY_USER,
+    trakt_client,
+    trakt_lists_sort_order,
+    trakt_secret,
+)
 
 
 class TraktBase:
@@ -28,6 +34,7 @@ class TraktBase:
         self.timeout = 20
         self.empty_setting_check = (None, "empty_setting", "")
         self.standby_date = "2050-01-01T01:00:00.000Z"
+        self.trakt_user = EMPTY_USER
 
     def no_client_key(self):
         notification("Please set a valid Trakt Client ID Key")
@@ -59,10 +66,9 @@ class TraktBase:
             return self.no_client_key()
 
         if with_auth:
-            token = get_setting("trakt_token")
-            if not token or time.time() > float(get_setting("trakt_expires", 0)):
-                self.trakt_refresh_token()
-                token = get_setting("trakt_token")
+            token = get_property("trakt_token")
+            kodilog("Trakt token: %s" % token)
+
             if token:
                 headers["Authorization"] = f"Bearer {token}"
                 kodilog("Trakt token: %s" % token)
@@ -75,7 +81,7 @@ class TraktBase:
         try:
             response.raise_for_status()
         except requests.HTTPError as error:
-            status_code = error.response.status_code if error.response else None
+            status_code = response.status_code
             error_messages = {
                 400: "Bad Request",
                 401: "Unauthorized",
@@ -86,14 +92,14 @@ class TraktBase:
                 503: "Service Unavailable",
                 504: "Gateway Timeout",
             }
-            message = error_messages.get(status_code, f"HTTP Error: {status_code}")
-            kodilog(f"Trakt API error: {error}")
-            notification(f"Trakt Error: {message}")
-            raise ProviderException(f"Trakt Error: {message}")
+            error_message = error_messages.get(
+                status_code, f"HTTP Error: {status_code}"
+            )
+            kodilog(f"Trakt API error: {response.text}")
+            raise ProviderException(f"Trakt API error: {error_message}")
         except requests.RequestException as error:
-            kodilog(f"Trakt API error: {error}")
-            notification("Trakt Error: Request Exception")
-            raise ProviderException("Trakt Error: Request Exception")
+            error_message = f"Trakt API error: {error}"
+            raise ProviderException(error_message)
 
         return self._process_response(response, method, pagination)
 
@@ -121,7 +127,7 @@ class TraktBase:
         response.encoding = "utf-8"
         try:
             result = response.json()
-            kodilog("Response JSON: %s" % result, level=xbmc.LOGDEBUG)
+            kodilog("Response JSON: %s" % result)
         except ValueError:
             return None
 
@@ -185,13 +191,13 @@ class TraktBase:
             "client_secret": CLIENT_SECRET,
             "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
             "grant_type": "refresh_token",
-            "refresh_token": get_setting("trakt_refresh"),
+            "refresh_token": self.trakt_refresh,
         }
         response = self.call_trakt("oauth/token", data=data, with_auth=False)
         if response:
-            set_setting("trakt_token", response["access_token"])
-            set_setting("trakt_refresh", response["refresh_token"])
-            set_setting("trakt_expires", str(time.time() + 7776000))
+            set_property("trakt_token", str(response["access_token"]))
+            set_property("trakt_refresh", str(response["refresh_token"]))
+            set_property("trakt_expires", str(time.time() + 7776000))
 
     def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
         params = {
@@ -212,6 +218,9 @@ class TraktBase:
 
 
 class TraktAuthentication(TraktBase):
+    def __init__(self):
+        super().__init__()
+
     def trakt_get_device_code(self):
         CLIENT_ID = trakt_client()
         if CLIENT_ID in self.empty_setting_check:
@@ -285,26 +294,27 @@ class TraktAuthentication(TraktBase):
     def trakt_authenticate(self):
         code = self.trakt_get_device_code()
         token = self.trakt_get_device_token(code)
-        if token:
-            set_setting("trakt_token", token["access_token"])
-            set_setting("trakt_refresh", token["refresh_token"])
-            set_setting("trakt_expires", str(time.time() + 7776000))
-            sleep(1000)
-            try:
-                user = self.call_trakt("/users/me")
-                set_setting("trakt_user", str(user["username"]))
-            except:
-                pass
+        if not token:
+            kodilog("Trakt authentication failed, no token received")
+            notification("Trakt Error Authorizing", time=3000)
+            return False
+        set_property("trakt_token", str(token["access_token"]))
+        set_property("trakt_refresh", str(token["refresh_token"]))
+        set_property("trakt_expires", str(time.time() + 7776000))
+        try:
+            user = self.call_trakt("users/me")
+            set_setting("trakt_user", str(user["username"]))
+            set_setting("is_trakt_auth", "true")
             notification("Trakt Account Authorized", time=3000)
             return True
-        notification("Trakt Error Authorizing", time=3000)
-        return False
+        except:
+            kodilog("Trakt user not found, setting to empty user")
+            set_setting("is_trakt_auth", "false")
+            notification("Trakt Error Authorizing", time=3000)
+            return False
 
     def trakt_revoke_authentication(self):
-        set_setting("trakt_user", "empty_setting")
-        set_setting("trakt_expires", "")
-        set_setting("trakt_token", "")
-        set_setting("trakt_refresh", "")
+        kodilog("Revoking Trakt authentication")
         TraktCache().clear_all_trakt_cache_data()
         CLIENT_ID = trakt_client()
         if CLIENT_ID in self.empty_setting_check:
@@ -313,10 +323,15 @@ class TraktAuthentication(TraktBase):
         if CLIENT_SECRET in self.empty_setting_check:
             return self.no_secret_key()
         data = {
-            "token": get_setting("trakt_token"),
+            "token": get_property("trakt_token"),
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
         }
+        set_property("trakt_token", "")
+        set_property("trakt_refresh", "")
+        set_property("trakt_expires", "")
+        set_setting("trakt_user", EMPTY_USER)
+        set_setting("is_trakt_auth", "false")
         self.call_trakt("oauth/revoke", data=data, with_auth=False)
         notification("You are now logged out from Trakt.tv", time=3000)
 
@@ -471,7 +486,7 @@ class TraktLists(TraktBase):
     def trakt_watchlist(self, media_type):
         kodilog("Fetching trakt watchlist")
         result = self.trakt_fetch_sorted_list("watchlist", media_type)
-        kodilog("Watchlist result: %s" % result)
+        kodilog("Watchlist result: %s" % result, level=xbmc.LOGDEBUG)
         return result
 
     def add_to_watchlist(self, media_type, ids):
@@ -482,7 +497,6 @@ class TraktLists(TraktBase):
 
         payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
 
-        kodilog("Payload: %s" % payload)
         return self.call_trakt(
             "sync/watchlist",
             data=payload,
@@ -504,8 +518,114 @@ class TraktLists(TraktBase):
             pagination=False,
         )
 
+    def trakt_watched_history(self, media_type, page_no, sort_type="recent"):
+        def _process(params, media_type):
+            response = self.get_trakt(params)
+            kodilog(f"Response from get_trakt: {response}", level=xbmc.LOGDEBUG)
+            history = []
+            if media_type == "movies":
+                for item in response:
+                    if item["type"] == "movie":
+                        history.append(
+                            {
+                                "media_ids": item["movie"]["ids"],
+                                "title": item["movie"]["title"],
+                                "type": "movie",
+                                "watched_at": item.get("watched_at"),
+                            }
+                        )
+            elif media_type == "shows":
+                for item in response:
+                    if item["type"] == "episode":
+                        history.append(
+                            {
+                                "media_ids": item["show"]["ids"],
+                                "title": f"{item['show']['title']} - S{item['episode']['season']}E{item['episode']['number']} - {item['episode']['title']}",
+                                "type": "show",
+                                "watched_at": item.get("watched_at"),
+                                "show_title": item["show"]["title"],
+                                "ep_title": item["episode"]["title"],
+                                "season": item["episode"]["season"],
+                                "episode": item["episode"]["number"],
+                            }
+                        )
+            # --- Sorting logic similar to trakt_fetch_sorted_list ---
+            if sort_type == "recent":
+                history.sort(key=lambda k: k.get("watched_at") or "", reverse=True)
+            elif sort_type == "random":
+                random.shuffle(history)
+            elif sort_type is None:
+                # Default: sort by watched_at descending
+                history.sort(key=lambda k: k.get("watched_at") or "", reverse=True)
+            return history
+
+        if media_type in ("movie", "movies"):
+            media_type = "movies"
+        else:
+            media_type = "shows"
+
+        params = {
+            "path": "sync/history/%s",
+            "path_insert": media_type,
+            "page_no": page_no,
+            "with_auth": True,
+        }
+        return _process(params, media_type)
+
+    def mark_as_watched(self, media_type, season, episode, ids):
+        if media_type in ("movie", "movies"):
+            media_type_key = "movies"
+            payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        else:
+            media_type_key = "shows"
+            show_item = {"ids": {"tmdb": int(ids["tmdb"])}}
+
+            if season:
+                show_item["seasons"] = [{"number": int(season)}]
+
+            if season and episode:
+                show_item["seasons"] = [
+                    {"number": int(season), "episodes": [{"number": int(episode)}]}
+                ]
+
+            payload = {media_type_key: [show_item]}
+
+        kodilog("Payload: %s" % payload)
+
+        response = self.call_trakt(
+            "sync/history",
+            data=payload,
+            with_auth=True,
+            pagination=False,
+        )
+
+        if (
+            "added" in response
+            and response["added"].get("movies", 0) == 0
+            and response["added"].get("episodes", 0) == 0
+        ):
+            notification("Failed to mark as watched", time=3000)
+        else:
+            notification("Marked as watched", time=3000)
+
+        return response
+
+    def mark_as_unwatched(self, media_type, season, episode, ids):
+        if media_type in ("movie", "movies"):
+            media_type_key = "movies"
+        else:
+            media_type_key = "shows"
+
+        payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        return self.call_trakt(
+            "sync/history/remove",
+            data=payload,
+            with_auth=True,
+            pagination=False,
+        )
+
     def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=20):
-        data = self.trakt_fetch_collection_watchlist(list_type, media_type)
+        data = self.trakt_fetch_watchlist(list_type, media_type)
 
         if sort_type == "recent":
             data.sort(key=lambda k: k["collected_at"], reverse=True)
@@ -522,16 +642,9 @@ class TraktLists(TraktBase):
 
         return data[:limit]
 
-    def trakt_collection_lists(self, media_type, list_type):
-        return self.trakt_fetch_sorted_list(
-            "collection", media_type, sort_type=list_type
-        )
-
-    def trakt_fetch_collection_watchlist(self, list_type, media_type):
+    def trakt_fetch_watchlist(self, list_type, media_type):
         def _process(params):
             raw_data = self.get_trakt(params)
-            kodilog("Raw data: %s" % raw_data)
-
             return [
                 {
                     "media_ids": {
@@ -551,16 +664,12 @@ class TraktLists(TraktBase):
         if media_type in ("movie", "movies"):
             media_key = "movie"
             release_date_key = "released"
-            collected_at_key = (
-                "listed_at" if list_type == "watchlist" else "collected_at"
-            )
+            collected_at_key = "listed_at"
             default_release_date = "2050-01-01"
         else:
             media_key = "show"
             release_date_key = "first_aired"
-            collected_at_key = (
-                "listed_at" if list_type == "watchlist" else "last_collected_at"
-            )
+            collected_at_key = "listed_at"
             default_release_date = self.standby_date
 
         api_path = "sync/%s/%s?extended=full"
@@ -679,52 +788,6 @@ class TraktLists(TraktBase):
         name = re.sub("--+", "-", name)
         return name
 
-    def get_watched_history(self, media_type, page_no):
-        def _process(params, media_type):
-            response = self.get_trakt(params)
-            kodilog(f"Response from get_trakt: {response}")
-            history = []
-            if media_type == "movies":
-                for item in response:
-                    if item["type"] == "movie":
-                        history.append(
-                            {
-                                "media_ids": item["movie"]["ids"],
-                                "title": item["movie"]["title"],
-                                "type": "movie",
-                                "watched_at": item.get("watched_at"),
-                            }
-                        )
-            elif media_type == "shows":
-                for item in response:
-                    if item["type"] == "episode":
-                        history.append(
-                            {
-                                "media_ids": item["show"]["ids"],
-                                "title": f"{item['show']['title']} - S{item['episode']['season']}E{item['episode']['number']} - {item['episode']['title']}",
-                                "type": "show",
-                                "watched_at": item.get("watched_at"),
-                                "show_title": item["show"]["title"],
-                                "ep_title": item["episode"]["title"],
-                                "season": item["episode"]["season"],
-                                "episode": item["episode"]["number"],
-                            }
-                        )
-            return history
-
-        if media_type in ("movie", "movies"):
-            media_type = "movies"
-        else:
-            media_type = "shows"
-
-        params = {
-            "path": "sync/history/%s",
-            "path_insert": media_type,
-            "page_no": page_no,
-            "with_auth": True,
-        }
-        return _process(params, media_type)
-
 
 class TraktScrobble(TraktBase):
     def trakt_start_scrobble(self, data):
@@ -779,11 +842,11 @@ class TraktScrobble(TraktBase):
         try:
             kodilog("Fetching last tracked position")
             media_type = "movies" if data["mode"] == "movies" else "shows"
-            season = data.get("tv_data").get("season")
-            tmdb_id = data.get("ids").get("tmdb_id")
+            season = data.get("tv_data", {}).get("season")
+            tmdb_id = data.get("ids", {}).get("tmdb_id")
             path = f"sync/playback/{media_type}"
             response = self.call_trakt(path, with_auth=True)
-            kodilog(f"Response: {response}")
+            kodilog(f"Response: {response}", level=xbmc.LOGDEBUG)
             for item in response:
                 if item["type"] == "movie" and item["movie"]["ids"]["tmdb"] == tmdb_id:
                     return item.get("progress", 0)

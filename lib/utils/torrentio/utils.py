@@ -29,7 +29,7 @@ items = [
 
 
 def open_providers_selection(identifier="torrentio_providers"):
-    cached_providers = cache.get(identifier, hashed_key=True)
+    cached_providers = cache.get(identifier)
     if cached_providers:
         choice = xbmcgui.Dialog().yesno(
             "Providers Selection Dialog",
@@ -52,7 +52,6 @@ def providers_selection(identifier="torrentio_providers"):
             identifier,
             providers,
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            hashed_key=True,
         )
         xbmcgui.Dialog().ok(
             "Selection Dialog", f"Successfully selected: {',' .join(providers)}"
@@ -64,7 +63,7 @@ def providers_selection(identifier="torrentio_providers"):
 
 
 def filter_torrentio_provider(results, identifier="torrentio_providers"):
-    selected_providers = cache.get(identifier, hashed_key=True)
+    selected_providers = cache.get(identifier)
     if not selected_providers:
         return results
 

@@ -8,24 +8,17 @@ from urllib.parse import quote
 from lib.api.jacktorr.jacktorr import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
+from lib.clients.trakt.trakt import TraktClient
 
 from lib.clients.debrid.premiumize import Premiumize
 from lib.clients.debrid.realdebrid import RealDebrid
 from lib.clients.debrid.torbox import Torbox
 from lib.clients.stremio.catalogs import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
-    handle_tmdb_anime_query,
-    handle_tmdb_query,
-    tmdb_search_genres,
-    tmdb_search_year,
+    TmdbClient,
+    TmdbAnimeClient,
 )
 from lib.clients.tmdb.utils import LANGUAGES, get_tmdb_media_details
-from lib.clients.trakt.trakt import (
-    handle_trakt_query,
-    process_trakt_result,
-    show_list_trakt_page,
-    show_trakt_list_content,
-)
 from lib.clients.search import search_client
 
 from lib.db.cached import cache
@@ -137,7 +130,7 @@ def root_menu():
     setPluginCategory(ADDON_HANDLE, "Main Menu")
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_tmdb", mode="multi", page=1),
+        build_url("handle_tmdb_search", mode="multi", page=1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
@@ -321,7 +314,7 @@ def search_tmdb_year(params):
 
     set_content_type(mode)
 
-    tmdb_search_year(mode, submode, year, page)
+    TmdbClient.tmdb_search_year(mode, submode, year, page)
 
 
 def search_tmdb_genres(params):
@@ -332,7 +325,7 @@ def search_tmdb_genres(params):
 
     set_content_type(mode)
 
-    tmdb_search_genres(mode, genre_id, page, submode=submode)
+    TmdbClient.tmdb_search_genres(mode, genre_id, page, submode=submode)
 
 
 def tv_shows_items(params):
@@ -636,34 +629,23 @@ def handle_results(
     tv_data: dict,
     direct: bool = False,
 ) -> dict:
-    if ids:
-        tmdb_id, tvdb_id, _ = ids.values()
-    else:
-        tmdb_id = None
+    item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
-    if direct or not tmdb_id:
-        item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
-    else:
+    if not direct and ids:
+        tmdb_id = ids.get("tmdb_id")
+        tvdb_id = ids.get("tvdb_id")
         details = get_tmdb_media_details(tmdb_id, mode)
-        poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-        overview = details.overview or ""
-
+        poster = f"{TMDB_POSTER_URL}{getattr(details, 'poster_path', '') or ''}"
+        overview = getattr(details, "overview", "") or ""
         fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
-
-        item_info = {
+        item_info.update({
             "poster": poster,
-            "fanart": fanart_data["fanart"] or poster,
-            "clearlogo": fanart_data["clearlogo"],
+            "fanart": fanart_data.get("fanart") or poster,
+            "clearlogo": fanart_data.get("clearlogo"),
             "plot": overview,
-            "tv_data": tv_data,
-            "ids": ids,
-            "mode": mode,
-        }
+        })
 
-    if mode == "direct":
-        xml_file_string = "source_select_direct.xml"
-    else:
-        xml_file_string = "source_select.xml"
+    xml_file_string = "source_select_direct.xml" if mode == "direct" else "source_select.xml"
 
     return source_select(
         item_info,
@@ -887,17 +869,21 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     if api == "trakt":
-        result = handle_trakt_query(query, category, mode, page, submode, api)
+        result = TraktClient.handle_trakt_query(
+            query, category, mode, page, submode, api
+        )
         if result:
-            process_trakt_result(result, query, category, mode, submode, api, page)
+            TraktClient.process_trakt_result(
+                result, query, category, mode, submode, api, page
+            )
     elif api == "tmdb":
-        handle_tmdb_query(params)
+        TmdbClient.handle_tmdb_query(params)
 
 
 def trakt_list_content(params):
     mode = params.get("mode")
     set_content_type(mode)
-    show_trakt_list_content(
+    TraktClient.show_trakt_list_content(
         params.get("list_type"),
         mode,
         params.get("user"),
@@ -910,7 +896,7 @@ def trakt_list_content(params):
 def list_trakt_page(params):
     mode = params.get("mode")
     set_content_type(mode)
-    show_list_trakt_page(int(params.get("page", "")), mode)
+    TraktClient.show_list_trakt_page(int(params.get("page", "")), mode)
 
 
 def anime_search(params):
@@ -919,14 +905,14 @@ def anime_search(params):
     category = params.get("category")
     set_content_type(mode)
 
-    handle_tmdb_anime_query(category, mode, submode=mode, page=page)
+    TmdbAnimeClient.handle_tmdb_anime_query(category, mode, submode=mode, page=page)
 
 
 def next_page_anime(params):
     mode = params.get("mode")
     set_content_type(mode)
 
-    handle_tmdb_anime_query(
+    TmdbAnimeClient.handle_tmdb_anime_query(
         params.get("category"),
         mode,
         params.get("submode"),

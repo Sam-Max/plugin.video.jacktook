@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
 import sys
 import time
 import sqlite3 as database
-
+from lib.db.cached import cache
 from urllib import parse
 from urllib.parse import quote, urlencode
 
@@ -71,29 +71,35 @@ def get_jacktorr_setting(value, default=None):
 
 
 def get_setting(value, default=None):
-    value = ADDON.getSetting(value)
-    if not value:
+    val = ADDON.getSetting(value)
+    if not val:
         return default
-
-    if value == "true":
+    if val.lower() == "true":
         return True
-    elif value == "false":
+    if val.lower() == "false":
         return False
-    else:
-        return value
+    return val
 
 
 def set_setting(id, value):
     ADDON.setSetting(id=id, value=value)
 
 
-def get_property(prop):
-    return Window(10000).getProperty(prop)
+def get_property(prop: str):
+    value = Window(10000).getProperty(prop)
+    kodilog(f"Get property: {prop} = {value}", xbmc.LOGDEBUG)
+    if not value:
+        value = cache.get(prop)
+        kodilog(f"Get property from cache: {prop} = {value}", xbmc.LOGDEBUG)
+        if not value:
+            return None
+    return value    
 
 
 def set_property(prop, value):
-    return Window(10000).setProperty(prop, value)
-
+    Window(10000).setProperty(prop, value)
+    cache.set(prop, value, timedelta(days=30))
+    
 
 def clear_property(prop):
     return Window(10000).clearProperty(prop)
