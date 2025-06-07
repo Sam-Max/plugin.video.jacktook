@@ -63,7 +63,7 @@ from lib.utils.views.shows import show_episode_info, show_season_info
 from lib.utils.torrentio.utils import open_providers_selection
 from lib.utils.debrid.rd_utils import RealDebridHelper
 from lib.utils.debrid.debrid_utils import check_debrid_cached
-from lib.utils.kodi.settings import get_cache_expiration
+from lib.utils.kodi.settings import auto_play_enabled, get_cache_expiration
 from lib.utils.kodi.settings import addon_settings
 from lib.utils.general.utils import (
     TMDB_POSTER_URL,
@@ -559,6 +559,10 @@ def search(params):
         notification("No cached results found")
         return
 
+    if auto_play_enabled():
+        auto_play(post_results, ids, tv_data, mode)
+        return
+
     data = handle_results(post_results, mode, ids, tv_data, direct)
     if not data:
         cancel_playback()
@@ -638,14 +642,18 @@ def handle_results(
         poster = f"{TMDB_POSTER_URL}{getattr(details, 'poster_path', '') or ''}"
         overview = getattr(details, "overview", "") or ""
         fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
-        item_info.update({
-            "poster": poster,
-            "fanart": fanart_data.get("fanart") or poster,
-            "clearlogo": fanart_data.get("clearlogo"),
-            "plot": overview,
-        })
+        item_info.update(
+            {
+                "poster": poster,
+                "fanart": fanart_data.get("fanart") or poster,
+                "clearlogo": fanart_data.get("clearlogo"),
+                "plot": overview,
+            }
+        )
 
-    xml_file_string = "source_select_direct.xml" if mode == "direct" else "source_select.xml"
+    xml_file_string = (
+        "source_select_direct.xml" if mode == "direct" else "source_select.xml"
+    )
 
     return source_select(
         item_info,
@@ -661,20 +669,40 @@ def play_torrent(params):
     del player
 
 
-def auto_play(results, ids, tv_data, mode):
-    result = clean_auto_play_undesired(results)
+def auto_play(results: List[TorrentStream], ids, tv_data, mode):
+    filtered_results = clean_auto_play_undesired(results)
+    if not filtered_results:
+        notification("No suitable source found for auto play.")
+        cancel_playback()
+        return
+
+    preferred_quality = get_setting("auto_play_quality")
+    quality_matches = [
+        r for r in filtered_results if preferred_quality.lower() in r.quality.lower()
+    ]
+    
+    if not quality_matches:
+        notification("No sources found with the preferred quality.")
+        cancel_playback()
+        return
+    
+    selected_result = quality_matches[0]
+
+    kodilog(f"Selected result for auto play: {selected_result}")
+
     playback_info = resolve_playback_source(
         data={
-            "title": result.get("title"),
+            "title": selected_result.title,
             "mode": mode,
-            "indexer": result.get("indexer"),
-            "type": result.get("type"),
+            "indexer": selected_result.indexer,
+            "type": selected_result.type,
             "ids": ids,
-            "info_hash": result.get("infoHash"),
+            "info_hash": selected_result.infoHash,
             "tv_data": tv_data,
             "is_torrent": False,
         },
     )
+
     player = JacktookPLayer()
     player.run(data=playback_info)
     del player

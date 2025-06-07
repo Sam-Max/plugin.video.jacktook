@@ -29,6 +29,23 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="auto_play_quality" type="string" label="30879" help="">
+                    <default>1080p</default>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_play">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="30882">4K</option>
+                            <option label="30880">1080p</option>
+                            <option label="30881">720p</option>
+                            <option label="30883">480p</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string" />
+                </setting>
                 <setting id="auto_sub" type="boolean" label="30878" help=""> 
                     <default>false</default>
                     <control type="toggle" />

@@ -56,6 +56,19 @@ MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FN
 
 dialog_update = {"count": -1, "percent": 50}
 
+UNDESIRED_QUALITIES = (
+    "SD",
+    "CAM",
+    "TELE",
+    "SYNC",
+    "TS",
+    "HDTV",
+    "HDCAM",
+    "HDTS",
+    "HDTC",
+    "HDTVRip",
+)
+
 video_extensions = (
     ".001",
     ".3g2",
@@ -788,15 +801,13 @@ def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Di
     return results
 
 
-def clean_auto_play_undesired(results):
-    undesired = ("SD", "CAM", "TELE", "SYNC", "480p")
-    for res in copy.deepcopy(results):
-        if res.get("isPack"):
-            results.remove(res)
-        else:
-            if any(u in res["title"] for u in undesired):
-                results.remove(res)
-    return results[0]
+def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStream]:
+    return [
+        r
+        for r in results
+        if not getattr(r, "isPack", False)
+        and not any(u.lower() in r.title.lower() for u in UNDESIRED_QUALITIES)
+    ]
 
 
 def is_torrent_url(uri):

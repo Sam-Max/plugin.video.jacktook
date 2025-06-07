@@ -1272,5 +1272,26 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto-Select Subtitle"
+msgid "Auto-select subtitle"
 msgstr ""
+
+msgctxt "#30879"
+msgid "Auto-play quality"
+msgstr ""
+
+msgctxt "#30880"
+msgid "1080p"
+msgstr ""
+
+msgctxt "#30881"
+msgid "720p"
+msgstr ""
+
+msgctxt "#30882"
+msgid "4k"
+msgstr ""
+
+msgctxt "#30883"
+msgid "480p"
+msgstr ""
+

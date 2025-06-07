@@ -9,7 +9,7 @@ def addon_settings():
     return xbmc.executebuiltin(f"Addon.OpenSettings({ADDON_ID})")
 
 
-def is_auto_play():
+def auto_play_enabled():
     return get_setting("auto_play")
 
 
