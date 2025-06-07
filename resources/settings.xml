@@ -565,7 +565,7 @@
                     </dependencies>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="subitle_language" type="string" label="30887" help="">
+                <setting id="opensub_language" type="string" label="30887" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
@@ -610,7 +610,7 @@
                     </dependencies>
                     <control type="list" format="string" />
                 </setting>
-                <setting id="subitle_fallback_language" type="string" label="30888" help="">
+                <setting id="opensub_fallback_language" type="string" label="30888" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
