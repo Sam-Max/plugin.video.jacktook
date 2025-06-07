@@ -1295,39 +1295,38 @@ msgctxt "#30883"
 msgid "480p"
 msgstr ""
 
-
-msgctxt "#30876"
+msgctxt "#30884"
 msgid "Subtitles Configuration"
 msgstr ""
 
-msgctxt "#30878"
+msgctxt "#30885"
 msgid "Addon Host"
 msgstr ""
 
-msgctxt "#30879"
+msgctxt "#30886"
 msgid "Subtitles"
 msgstr ""
 
-msgctxt "#30882"
+msgctxt "#30887"
 msgid "Primary Language"
 msgstr ""
 
-msgctxt "#30883"
+msgctxt "#30888"
 msgid "Secondary Language"
 msgstr ""
 
-msgctxt "#30884"
+msgctxt "#30889"
 msgid "Deepl Enabled"
 msgstr ""
 
-msgctxt "#30885"
+msgctxt "#30890"
 msgid "Deepl Api key"
 msgstr ""
 
-msgctxt "#30886"
+msgctxt "#30891"
 msgid "Translator Configuration"
 msgstr ""
 
-msgctxt "#30887"
+msgctxt "#30892"
 msgid "Deepl Target Language"
 msgstr ""

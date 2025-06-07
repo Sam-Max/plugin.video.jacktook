@@ -547,13 +547,13 @@
                 </setting>
             </group>
         </category>
-        <category id="subtitle_cateogy" label="30879">
-            <group id="opensubtitles" label="30876">
+        <category id="subtitle_cateogy" label="30886">
+            <group id="opensubtitles" label="30884">
                 <setting id="subtitle_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="subtitle_addon_host" type="string" label="30878" help="">
+                <setting id="subtitle_addon_host" type="string" label="30885" help="">
                     <default>https://opensubtitles-v3.strem.io/</default>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -565,7 +565,7 @@
                     </dependencies>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="subitle_language" type="string" label="30882" help="">
+                <setting id="subitle_language" type="string" label="30887" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
@@ -610,7 +610,7 @@
                     </dependencies>
                     <control type="list" format="string" />
                 </setting>
-                <setting id="subitle_fallback_language" type="string" label="30883" help="">
+                <setting id="subitle_fallback_language" type="string" label="30888" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
@@ -656,12 +656,12 @@
                     <control type="list" format="string" />
                 </setting>
             </group>
-            <group id="deepl_translator" label="30886">
-                <setting id="deepl_enabled" type="boolean" label="30884" help="">
+            <group id="deepl_translator" label="30891">
+                <setting id="deepl_enabled" type="boolean" label="30889" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="deepl_api_key" type="string" label="30885" help="">
+                <setting id="deepl_api_key" type="string" label="30890" help="">
                     <default></default>
                     <constraints>
                         <allowempty>true</allowempty>
@@ -673,7 +673,7 @@
                     </dependencies>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="deepl_target_language" type="string" label="30887" help="">
+                <setting id="deepl_target_language" type="string" label="30892" help="">
                     <default>None</default>
                     <neading>30736</neading>
                     <constraints>
