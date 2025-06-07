@@ -6,7 +6,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
 )
-from os import ospath, makedirs, stat
+from os import path as ospath, makedirs, stat
 from time import sleep
 
 
