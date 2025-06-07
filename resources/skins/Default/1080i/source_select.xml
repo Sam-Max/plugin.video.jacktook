@@ -8,6 +8,8 @@
 
     <controls>
 
+		
+
         <!-- Background -->
         <control type="group">
             <top>0</top>

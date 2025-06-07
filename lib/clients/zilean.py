@@ -3,12 +3,13 @@ import logging
 from types import SimpleNamespace
 from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
-from lib.clients.base import BaseClient
-from lib.utils.utils import USER_AGENT_HEADER, info_hash_to_magnet
+from lib.clients.base import BaseClient, TorrentStream
+from lib.utils.general.utils import USER_AGENT_HEADER, info_hash_to_magnet
+from typing import List, Optional, Dict, Any
 
 
 class Zilean(BaseClient):
-    def __init__(self, host, timeout, notification):
+    def __init__(self, host: str, timeout: int, notification: callable) -> None:
         super().__init__(host, notification)
         self.timeout = timeout
         self.initialized = self.validate()
@@ -23,7 +24,14 @@ class Zilean(BaseClient):
             self._notification(f"Zilean failed to initialize: {e}")
             return False
 
-    def search(self, query, mode, media_type, season, episode):
+    def search(
+        self,
+        query: str,
+        mode: str,
+        media_type: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> Optional[List[TorrentStream]]:
         try:
             data = self.api_scrape(query, mode, media_type, season, episode)
             return self.parse_response(data)
@@ -38,7 +46,14 @@ class Zilean(BaseClient):
         except Exception as e:
             logging.error(f"Zilean exception thrown: {e}")
 
-    def api_scrape(self, query, mode, media_type, season, episode):
+    def api_scrape(
+        self,
+        query: str,
+        mode: str,
+        media_type: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> Optional[List[Dict[str, Any]]]:
         filtered_url = f"{self.host}/dmm/filtered"
         search_url = f"{self.host}/dmm/search"
 
@@ -79,28 +94,28 @@ class Zilean(BaseClient):
 
         return torrents
 
-    def parse_response(self, data):
+    def parse_response(self, data: List[Dict[str, Any]]) -> List[TorrentStream]:
         results = []
         for item in data:
             results.append(
-                {
-                    "title": item["filename"],
-                    "type": "Torrent",
-                    "indexer": "Zilean",
-                    "guid": item["infoHash"],
-                    "magnet": info_hash_to_magnet(item["infoHash"]),
-                    "infoHash": item["infoHash"],
-                    "size": item["filesize"],
-                    "seeders": 0,
-                    "languages": item["languages"],
-                    "fullLanguages": "",
-                    "publishDate": "",
-                    "peers": 0,
-                }
+                TorrentStream(
+                    title=item["filename"],
+                    type="Torrent",
+                    indexer="Zilean",
+                    guid=info_hash_to_magnet(item["infoHash"]),
+                    infoHash=item["infoHash"],
+                    size=item["filesize"],
+                    seeders=0,
+                    languages=item["languages"],
+                    fullLanguages="",
+                    publishDate="",
+                    peers=0,
+                    provider="",
+                )
             )
         return results
 
-    def ping(self, additional_headers=None):
+    def ping(self, additional_headers: Optional[Dict[str, str]] = None) -> Any:
         return self.session.get(
             f"{self.host}/healthchecks/ping",
             headers=additional_headers,

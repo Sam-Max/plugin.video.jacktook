@@ -1,4 +1,3 @@
-from lib.api.jacktook.kodi import kodilog
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.tmdbv3api.utils import get_current_date, get_dates, years_tvshows
 

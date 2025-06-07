@@ -1,6 +1,5 @@
-from lib.api.jacktook.kodi import kodilog
-from lib.clients.debrid.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi_utils import notification
+from lib.clients.debrid.base import DebridClient, ProviderException
+from lib.utils.kodi.utils import notification
 
 
 class Torbox(DebridClient):

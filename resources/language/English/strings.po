@@ -300,7 +300,7 @@ msgid "Stop downloading"
 msgstr ""
 
 msgctxt "#30702"
-msgid "Download"
+msgid "Downloads"
 msgstr ""
 
 msgctxt "#30703"
@@ -432,7 +432,7 @@ msgid "Enable"
 msgstr ""
 
 msgctxt "#30736"
-msgid "Priority Language"
+msgid "Subtitle Language"
 msgstr ""
 
 msgctxt "#30737"
@@ -1216,7 +1216,7 @@ msgid "Specify the torrent client"
 msgstr ""
 
 msgctxt "#30864"
-msgid "Search"
+msgid "Sources"
 msgstr ""
 
 msgctxt "#30865"
@@ -1262,6 +1262,39 @@ msgstr ""
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr "Alternar complementos de catalogos"
+
+msgctxt "#30876"
+msgid "Download directory"
+msgstr ""
+
+msgctxt "#30877"
+msgid "Enable Trakt.tv Scrobbling"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Auto-select subtitle"
+msgstr ""
+
+msgctxt "#30879"
+msgid "Auto-play quality"
+msgstr ""
+
+msgctxt "#30880"
+msgid "1080p"
+msgstr ""
+
+msgctxt "#30881"
+msgid "720p"
+msgstr ""
+
+msgctxt "#30882"
+msgid "4k"
+msgstr ""
+
+msgctxt "#30883"
+msgid "480p"
+msgstr ""
+
 
 msgctxt "#30876"
 msgid "Subtitles Configuration"

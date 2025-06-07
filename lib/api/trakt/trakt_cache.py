@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-
-# from modules.kodi_utils import logger
-
 from lib.api.trakt.base_cache import connect_database
 
 
@@ -181,6 +177,17 @@ def clear_trakt_favorites():
         dbcon.execute(DELETE_LIKE % "trakt_favorites_%")
     except:
         return
+
+
+def clear_trakt_watchlist():
+    """
+    Clear the cached Trakt.tv watchlist.
+    """
+    try:
+        dbcon = connect_database("trakt_db")
+        dbcon.execute(DELETE_LIKE % "trakt_watchlist_%")
+    except:
+        pass
 
 
 def default_activities():

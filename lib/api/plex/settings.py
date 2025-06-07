@@ -1,6 +1,5 @@
 from uuid import uuid4
 
-
 class Settings():
     identifier: str = str(uuid4())
     product_name: str = 'Jacktook'

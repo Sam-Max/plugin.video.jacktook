@@ -1,5 +1,4 @@
 import requests
-from lib.api.jacktook.kodi import kodilog
 
 
 class AniZipApi:

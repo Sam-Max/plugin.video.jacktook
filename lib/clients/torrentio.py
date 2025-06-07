@@ -1,22 +1,33 @@
-import json
 import re
-from lib.api.jacktook.kodi import kodilog
-from lib.clients.base import BaseClient
-from lib.utils.countries import find_language_by_unicode
-from lib.utils.kodi_utils import convert_size_to_bytes, translation
-from lib.utils.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
+from typing import List, Dict, Tuple, Optional, Any
+from lib.clients.base import BaseClient, TorrentStream
+from lib.utils.localization.countries import find_language_by_unicode
+from lib.utils.kodi.utils import convert_size_to_bytes, kodilog, translation
+from lib.utils.general.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
 
 
 class Torrentio(BaseClient):
-    def __init__(self, host, notification):
+    def __init__(self, host: str, notification: callable) -> None:
         super().__init__(host, notification)
 
-    def search(self, imdb_id, mode, media_type, season, episode):
+    def search(
+        self,
+        imdb_id: str,
+        mode: str,
+        media_type: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> Optional[List[TorrentStream]]:
         try:
+            kodilog(f"Searching for {imdb_id} on Torrentio")
+
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
+
+            kodilog(f"URL: {url}")
+            
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
@@ -24,30 +35,30 @@ class Torrentio(BaseClient):
         except Exception as e:
             self.handle_exception(f"{translation(30228)}: {str(e)}")
 
-    def parse_response(self, res):
+    def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()
         results = []
         for item in res["streams"]:
             parsed_item = self.parse_stream_title(item["title"])
             results.append(
-                {
-                    "title": parsed_item["title"],
-                    "type": "Torrent",
-                    "indexer": "Torrentio",
-                    "guid": item["infoHash"],
-                    "infoHash": item["infoHash"],
-                    "size": parsed_item["size"],
-                    "seeders": parsed_item["seeders"],
-                    "languages": parsed_item["languages"],
-                    "fullLanguages": parsed_item["full_languages"],
-                    "provider": parsed_item["provider"],
-                    "publishDate": "",
-                    "peers": 0,
-                }
+                TorrentStream(
+                    title=parsed_item["title"],
+                    type="Torrent",
+                    indexer="Torrentio",
+                    guid=item["infoHash"],
+                    infoHash=item["infoHash"],
+                    size=parsed_item["size"],
+                    seeders=parsed_item["seeders"],
+                    languages=parsed_item["languages"],
+                    fullLanguages=parsed_item["full_languages"],
+                    provider=parsed_item["provider"],
+                    publishDate="",
+                    peers=0,
+                )
             )
         return results
 
-    def parse_stream_title(self, title):
+    def parse_stream_title(self, title: str) -> Dict[str, Any]:
         name = title.splitlines()[0]
 
         size_match = re.search(r"💾 (\d+(?:\.\d+)?\s*(GB|MB))", title, re.IGNORECASE)
@@ -70,7 +81,7 @@ class Torrentio(BaseClient):
             "provider": provider,
         }
 
-    def extract_languages(self, title):
+    def extract_languages(self, title: str) -> Tuple[List[str], List[str]]:
         languages = []
         full_languages = []
         # Regex to match unicode country flag emojis
@@ -83,6 +94,6 @@ class Torrentio(BaseClient):
                     full_languages.append(full_lang)
         return languages, full_languages
 
-    def extract_provider(self, title):
+    def extract_provider(self, title: str) -> str:
         match = re.search(r"⚙.* ([^ \n]+)", title)
         return match.group(1) if match else ""

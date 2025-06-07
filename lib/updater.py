@@ -2,8 +2,7 @@
 import shutil
 import requests
 from os import path as ospath
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.kodi_utils import (
+from lib.utils.kodi.utils import (
     ADDON_VERSION,
     notification,
     dialog_ok,
@@ -16,9 +15,11 @@ from lib.utils.kodi_utils import (
     update_kodi_addons_db,
     dialog_text,
 )
-from lib.utils.utils import clear_cache_on_update, unzip
-from lib.utils.settings import cache_clear_update
+from lib.utils.general.utils import clear_cache_on_update, unzip
+from lib.utils.kodi.settings import cache_clear_update
+
 from xbmcvfs import translatePath as translate_path
+
 
 packages_dir = translate_path("special://home/addons/packages/")
 home_addons_dir = translate_path("special://home/addons/")
@@ -31,14 +32,13 @@ jacktook_url = "https://raw.githubusercontent.com/Sam-Max/repository.jacktook/ma
 heading = "Jacktook Updater"
 
 
-# Taken from Fen Update Mechanism
+# Took from Fen Update Mechanism
 def get_versions():
     try:
         result = requests.get(f"{repo_url}/jacktook_version")
         if result.status_code != 200:
             notification(f"Error: {result.status_code}"),
             return None, None
-        kodilog(result.text)
         online_version = result.text.replace("\n", "")
         current_version = ADDON_VERSION
         return current_version, online_version

@@ -1,4 +1,4 @@
-from lib.api.plex.media_server_api import convert_to_plex_id, get_media
+from lib.api.plex.media_server import convert_to_plex_id, get_media
 
 
 class Plex:

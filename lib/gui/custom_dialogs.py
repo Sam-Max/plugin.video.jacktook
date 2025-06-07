@@ -1,14 +1,14 @@
 import json
-from xbmcgui import WindowXMLDialog, WindowXML
-import xbmcgui
-
-from lib.api.jacktook.kodi import kodilog
+from typing import Dict, List
+from lib.domain.torrent import TorrentStream
+from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi_utils import ADDON_PATH, PLAYLIST
+from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
-
+from xbmcgui import WindowXMLDialog, WindowXML
+import xbmcgui
 
 class CustomWindow(WindowXML):
     def __init__(self, *args, **kwargs):
@@ -84,7 +84,9 @@ _mock_information = {
 }
 
 
-def source_select(item_info, xml_file, sources):
+def source_select(
+    item_info: Dict[str, str], xml_file: str, sources: List[TorrentStream]
+) -> Dict:
     window = SourceSelect(
         xml_file,
         ADDON_PATH,
@@ -147,6 +149,14 @@ def source_select_mock():
     )
     window.doModal()
     del window
+
+
+def download_dialog_mock():
+    try:
+        progress_dialog = CustomProgressDialog("custom_progress_dialog.xml", ADDON_PATH)
+        progress_dialog.doModal()
+    finally:
+        pass
 
 
 def resume_dialog_mock():

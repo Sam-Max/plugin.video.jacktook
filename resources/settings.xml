@@ -29,6 +29,62 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="auto_play_quality" type="string" label="30879" help="">
+                    <default>1080p</default>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_play">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="30882">4K</option>
+                            <option label="30880">1080p</option>
+                            <option label="30881">720p</option>
+                            <option label="30883">480p</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string" />
+                </setting>
+                <setting id="auto_sub" type="boolean" label="30878" help=""> 
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="sub_language" type="string" label="30736" help="30873">
+                    <default>None</default>
+                    <neading>30736</neading>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_sub">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="None">None</option>
+                            <option label="English">en</option>
+                            <option label="Spanish">es</option>
+                            <option label="German">de</option>
+                            <option label="French">fr</option>
+                            <option label="Italian">it</option>
+                            <option label="Portuguese">pt</option>
+                            <option label="Dutch">nl</option>
+                            <option label="Polish">pl</option>
+                            <option label="Russian">ru</option>
+                            <option label="Turkish">tr</option>
+                            <option label="Greek">el</option>
+                            <option label="Hebrew">he</option>
+                            <option label="Hindi">hi</option>
+                            <option label="Indonesian">id</option>
+                            <option label="Japanese">ja</option>
+                            <option label="Korean">ko</option>
+                            <option label="Ukrainian">uk</option>
+                            <option label="Vietnamese">vi</option>
+                            <option label="Chinese">zh</option>
+                            <option label="Persian">fa</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
                 <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
@@ -351,190 +407,6 @@
                 <setting id="filter_by_episode" type="boolean" label="30710" help="30812">
                     <default>true</default>
                     <control type="toggle" />
-                </setting>
-                <setting id="priority_language" type="string" label="30736" help="30873">
-                    <default>None</default>
-                    <neading>30736</neading>
-                    <constraints>
-                        <options>
-                            <option>None</option>
-                            <option>aa</option> <!-- Afar -->
-                            <option>ab</option> <!-- Abkhazian -->
-                            <option>af</option> <!-- Afrikaans -->
-                            <option>ak</option> <!-- Akan -->
-                            <option>am</option> <!-- Amharic -->
-                            <option>ar</option> <!-- Arabic -->
-                            <option>as</option> <!-- Assamese -->
-                            <option>ay</option> <!-- Aymara -->
-                            <option>az</option> <!-- Azerbaijani -->
-                            <option>ba</option> <!-- Bashkir -->
-                            <option>be</option> <!-- Belarusian -->
-                            <option>bg</option> <!-- Bulgarian -->
-                            <option>bh</option> <!-- Bihari -->
-                            <option>bi</option> <!-- Bislama -->
-                            <option>bn</option> <!-- Bengali -->
-                            <option>bo</option> <!-- Tibetan -->
-                            <option>br</option> <!-- Breton -->
-                            <option>bs</option> <!-- Bosnian -->
-                            <option>ca</option> <!-- Catalan -->
-                            <option>ce</option> <!-- Chechen -->
-                            <option>co</option> <!-- Corsican -->
-                            <option>cs</option> <!-- Czech -->
-                            <option>cy</option> <!-- Welsh -->
-                            <option>da</option> <!-- Danish -->
-                            <option>de</option> <!-- German -->
-                            <option>dv</option> <!-- Divehi -->
-                            <option>dz</option> <!-- Dzongkha -->
-                            <option>el</option> <!-- Greek -->
-                            <option>en</option> <!-- English -->
-                            <option>eo</option> <!-- Esperanto -->
-                            <option>es</option> <!-- Spanish -->
-                            <option>et</option> <!-- Estonian -->
-                            <option>eu</option> <!-- Basque -->
-                            <option>fa</option> <!-- Persian -->
-                            <option>fi</option> <!-- Finnish -->
-                            <option>fj</option> <!-- Fijian -->
-                            <option>fo</option> <!-- Faroese -->
-                            <option>fr</option> <!-- French -->
-                            <option>fy</option> <!-- Western Frisian -->
-                            <option>ga</option> <!-- Irish -->
-                            <option>gd</option> <!-- Scottish Gaelic -->
-                            <option>gl</option> <!-- Galician -->
-                            <option>gn</option> <!-- Guarani -->
-                            <option>gu</option> <!-- Gujarati -->
-                            <option>gv</option> <!-- Manx -->
-                            <option>ha</option> <!-- Hausa -->
-                            <option>he</option> <!-- Hebrew -->
-                            <option>hi</option> <!-- Hindi -->
-                            <option>ho</option> <!-- Hiri Motu -->
-                            <option>hr</option> <!-- Croatian -->
-                            <option>ht</option> <!-- Haitian -->
-                            <option>hu</option> <!-- Hungarian -->
-                            <option>hy</option> <!-- Armenian -->
-                            <option>hz</option> <!-- Herero -->
-                            <option>ia</option> <!-- Interlingua -->
-                            <option>id</option> <!-- Indonesian -->
-                            <option>ie</option> <!-- Interlingue -->
-                            <option>ig</option> <!-- Igbo -->
-                            <option>ii</option> <!-- Sichuan Yi -->
-                            <option>ik</option> <!-- Inupiaq -->
-                            <option>io</option> <!-- Ido -->
-                            <option>is</option> <!-- Icelandic -->
-                            <option>it</option> <!-- Italian -->
-                            <option>iu</option> <!-- Inuktitut -->
-                            <option>ja</option> <!-- Japanese -->
-                            <option>jv</option> <!-- Javanese -->
-                            <option>ka</option> <!-- Georgian -->
-                            <option>kg</option> <!-- Kongo -->
-                            <option>ki</option> <!-- Kikuyu -->
-                            <option>kj</option> <!-- Kuanyama -->
-                            <option>kk</option> <!-- Kazakh -->
-                            <option>kl</option> <!-- Kalaallisut -->
-                            <option>km</option> <!-- Central Khmer -->
-                            <option>kn</option> <!-- Kannada -->
-                            <option>ko</option> <!-- Korean -->
-                            <option>kr</option> <!-- Kanuri -->
-                            <option>ks</option> <!-- Kashmiri -->
-                            <option>ku</option> <!-- Kurdish -->
-                            <option>kv</option> <!-- Komi -->
-                            <option>kw</option> <!-- Cornish -->
-                            <option>ky</option> <!-- Kirghiz -->
-                            <option>la</option> <!-- Latin -->
-                            <option>lb</option> <!-- Luxembourgish -->
-                            <option>lg</option> <!-- Ganda -->
-                            <option>li</option> <!-- Limburgan -->
-                            <option>ln</option> <!-- Lingala -->
-                            <option>lo</option> <!-- Lao -->
-                            <option>lt</option> <!-- Lithuanian -->
-                            <option>lu</option> <!-- Luba-Katanga -->
-                            <option>lv</option> <!-- Latvian -->
-                            <option>mg</option> <!-- Malagasy -->
-                            <option>mh</option> <!-- Marshallese -->
-                            <option>mi</option> <!-- Maori -->
-                            <option>mk</option> <!-- Macedonian -->
-                            <option>ml</option> <!-- Malayalam -->
-                            <option>mn</option> <!-- Mongolian -->
-                            <option>mr</option> <!-- Marathi -->
-                            <option>ms</option> <!-- Malay -->
-                            <option>mt</option> <!-- Maltese -->
-                            <option>my</option> <!-- Burmese -->
-                            <option>na</option> <!-- Nauru -->
-                            <option>nb</option> <!-- Norwegian Bokmål -->
-                            <option>nd</option> <!-- North Ndebele -->
-                            <option>ne</option> <!-- Nepali -->
-                            <option>ng</option> <!-- Ndonga -->
-                            <option>nl</option> <!-- Dutch -->
-                            <option>nn</option> <!-- Norwegian Nynorsk -->
-                            <option>no</option> <!-- Norwegian -->
-                            <option>nr</option> <!-- South Ndebele -->
-                            <option>nv</option> <!-- Navajo -->
-                            <option>ny</option> <!-- Chichewa -->
-                            <option>oc</option> <!-- Occitan -->
-                            <option>oj</option> <!-- Ojibwa -->
-                            <option>om</option> <!-- Oromo -->
-                            <option>or</option> <!-- Oriya -->
-                            <option>os</option> <!-- Ossetian -->
-                            <option>pa</option> <!-- Panjabi -->
-                            <option>pi</option> <!-- Pali -->
-                            <option>pl</option> <!-- Polish -->
-                            <option>ps</option> <!-- Pashto -->
-                            <option>pt</option> <!-- Portuguese -->
-                            <option>qu</option> <!-- Quechua -->
-                            <option>rm</option> <!-- Romansh -->
-                            <option>rn</option> <!-- Rundi -->
-                            <option>ro</option> <!-- Romanian -->
-                            <option>ru</option> <!-- Russian -->
-                            <option>rw</option> <!-- Kinyarwanda -->
-                            <option>sa</option> <!-- Sanskrit -->
-                            <option>sc</option> <!-- Sardinian -->
-                            <option>sd</option> <!-- Sindhi -->
-                            <option>se</option> <!-- Northern Sami -->
-                            <option>sg</option> <!-- Sango -->
-                            <option>si</option> <!-- Sinhala -->
-                            <option>sk</option> <!-- Slovak -->
-                            <option>sl</option> <!-- Slovenian -->
-                            <option>sm</option> <!-- Samoan -->
-                            <option>sn</option> <!-- Shona -->
-                            <option>so</option> <!-- Somali -->
-                            <option>sq</option> <!-- Albanian -->
-                            <option>sr</option> <!-- Serbian -->
-                            <option>ss</option> <!-- Swati -->
-                            <option>st</option> <!-- Southern Sotho -->
-                            <option>su</option> <!-- Sundanese -->
-                            <option>sv</option> <!-- Swedish -->
-                            <option>sw</option> <!-- Swahili -->
-                            <option>ta</option> <!-- Tamil -->
-                            <option>te</option> <!-- Telugu -->
-                            <option>tg</option> <!-- Tajik -->
-                            <option>th</option> <!-- Thai -->
-                            <option>ti</option> <!-- Tigrinya -->
-                            <option>tk</option> <!-- Turkmen -->
-                            <option>tl</option> <!-- Tagalog -->
-                            <option>tn</option> <!-- Tswana -->
-                            <option>to</option> <!-- Tonga -->
-                            <option>tr</option> <!-- Turkish -->
-                            <option>ts</option> <!-- Tsonga -->
-                            <option>tt</option> <!-- Tatar -->
-                            <option>tw</option> <!-- Twi -->
-                            <option>ty</option> <!-- Tahitian -->
-                            <option>ug</option> <!-- Uighur -->
-                            <option>uk</option> <!-- Ukrainian -->
-                            <option>ur</option> <!-- Urdu -->
-                            <option>uz</option> <!-- Uzbek -->
-                            <option>ve</option> <!-- Venda -->
-                            <option>vi</option> <!-- Vietnamese -->
-                            <option>vo</option> <!-- Volapük -->
-                            <option>wa</option> <!-- Walloon -->
-                            <option>wo</option> <!-- Wolof -->
-                            <option>xh</option> <!-- Xhosa -->
-                            <option>yi</option> <!-- Yiddish -->
-                            <option>yo</option> <!-- Yoruba -->
-                            <option>za</option> <!-- Zhuang -->
-                            <option>zh</option> <!-- Chinese -->
-                            <option>zu</option> <!-- Zulu -->
-                        </options>
-                    </constraints>
-                    <control type="list" format="string" />
                 </setting>
             </group>
         </category>
@@ -950,47 +822,37 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="trakt_expires" type="string" label="30795" help="30842">
+                <setting id="is_trakt_auth" type="boolean" label="30783" help="">
                     <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="trakt_refresh" type="string" label="30796" help="30833">
-                    <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="trakt_token" type="string" label="30797" help="30844">
-                    <visible>false</visible>
-                    <default>0</default>
-                    <control type="edit" format="string" />
+                    <default>false</default>
+                    <control type="toggle" />
                 </setting>
                 <setting id="trakt_user" type="string" label="30782" help="30855">
-                    <visible>false</visible>
-                    <default>0</default>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_client" type="string" label="30798" help="30818">
                     <default>1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb</default>
+                    <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_secret" type="string" label="30800" help="30811">
                     <default>8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1</default>
+                    <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_logout" type="action" label="30802" help="30856">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=trakt_auth_revoke)</data>
                     <control type="button" format="action">
-
+                        <close>false</close>
                     </control>
                 </setting>
-            </group>
-        </category>
-        <category id="fanart" label="30200">
-            <group id="fanart_tv" label="30202">
-                <setting id="fanart_tv_client_id" type="string" label="30203" help="30808">
-                    <default>fa836e1c874ba95ab08a14ee88e05565</default>
-                    <control type="edit" format="string" />
+                <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">
+                    <default>true</default>
+                    <control type="toggle" />
                 </setting>
             </group>
         </category>
@@ -1041,6 +903,17 @@
                 <setting id="clear_cache_update" type="boolean" label="30806" help="30846"> 
                     <default>true</default>
                     <control type="toggle" />
+                </setting>
+            </group>
+            <group id="downloads" label="30702">
+                <setting id="download_dir" type="path" label="30876" help="">
+                    <level>0</level>
+					<default>special://profile/addon_data/plugin.video.jacktook/Downloads/</default>
+					<constraints>
+						<allowempty>true</allowempty>
+						<writable>true</writable>
+					</constraints>
+					<control type="button" format="path"/>
                 </setting>
             </group>
         </category>

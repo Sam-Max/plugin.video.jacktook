@@ -1,125 +1,171 @@
-
 # Jacktook
 
-A Kodi addon for torrent finding and streaming. 
+A Kodi addon for torrent finding and streaming.
 
-## Features.
+---
 
-**Torrent Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Zilean.
+## Features
 
-**Torrent Engines**: Jacktorr, Torrest and Elementum.
+- **Torrent Sources**:  
+  Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Zilean.
 
-**Telegram Engines**: Jackgram.
+- **Torrent Engines**:  
+  Jacktorr, Torrest, and Elementum.
 
-**Debrid Services**: RealDebrid, Premiumize, Torbox, EasyDebrid + Debrid Services configured with Stremio Addons.
+- **Telegram Engines**:  
+  Jackgram.
 
-**Metadata**: TMDB, Trakt and Fanart.tv. 
+- **Debrid Services**:  
+  RealDebrid, Premiumize, Torbox, EasyDebrid, and Debrid Services configured with Stremio Addons.
 
-## Requirements.
+- **Metadata**:  
+  TMDB, Trakt, and Fanart.tv.
 
-- Kodi 20+
+---
 
-## Installation of this addon (Jacktook)
+## Requirements
 
-The recommended way of installing the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), so that any updates will be automatically installed.
+- **Kodi Version**: 20+
 
-**Note**:
+---
 
-- After each update, it is recommended that you clear cache to make sure changes takes effect.
+## Installation
 
-- Optional install either [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr), [Torrest](https://github.com/i96751414/plugin.video.torrest) or [Elementum](https://elementumorg.github.io/), for torrent p2p streaming.
+The recommended way to install the addon is through its [repository](https://github.com/Sam-Max/repository.jacktook), ensuring automatic updates.
 
+### Notes:
 
-**Notes**:
-1. Jacktorr|Jackgram|Torrest|Elementum are optional if using Debrid.
-2. When using Jackett or Prowlarr: select only a few trackers (3-4 max), avoid trackers with cloudflare protection (unless you configure FlareSolverr), and select if available on trackers options to retrieve magnets as priority and not torrent files, to get more results.
-3. Prowlarr Indexers-Ids field is space separated ids of the indexers you have on your Prowlarr instance configured. Ex. 25 27 14. By default this field is empty, which means it will search on all your indexers.
-4. You can install on a remote server the TorrServer Engine (torrent client that uses Jacktorr Addon) using Docker or you can also install the Android App. After that, you need to configure Jacktorr Addon with the TorrServer Engine IP/Domain and Port.
-5. You can install on a remote server the Torrest Engine (torrent client that uses Torrest Addon). After that, you need to configure Torrest Addon with the Torrest Engine IP/Domain and Port.
-5. To use TMDB Helper Addon use: [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
+- After each update, clear the cache to ensure changes take effect.
+- Optional: Install one of the following for torrent P2P streaming:
+  - [Jacktorr](https://github.com/Sam-Max/plugin.video.jacktorr)
+  - [Torrest](https://github.com/i96751414/plugin.video.torrest)
+  - [Elementum](https://elementumorg.github.io/)
 
+---
 
-## How to use Jacktook Burst:
+## Usage Notes
 
-Install addon to use it. [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst) 
+1. **Optional Engines**:  
+   Jacktorr, Jackgram, Torrest, and Elementum are optional if using Debrid services.
 
-## How to run Jackett service using Docker:
+2. **Jackett or Prowlarr Configuration**:
 
-Detailed instructions are available at [LinuxServer.io Jackett Docker](https://hub.docker.com/r/linuxserver/jackett/) 
+   - Select only a few trackers (3-4 max).
+   - Avoid trackers with Cloudflare protection unless configured with FlareSolverr.
+   - Prioritize retrieving magnets over torrent files for better results.
 
-## How to run Prowlarr service using Docker:
+3. **Prowlarr Indexers-Ids Field**:
 
-Detailed instructions are available at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker) 
+   - Space-separated IDs of the indexers configured in your Prowlarr instance (e.g., `25 27 14`).
+   - Leave empty to search all indexers.
 
-## How to run self-hosted Zilean service using Docker:
+4. **TorrServer Engine**:
 
-Detailed instructions for self-hosting are available at [Zilean](https://github.com/iPromKnight/zilean) 
+   - Install on a remote server using Docker or the Android Apk.
+   - Configure Jacktorr Addon with the TorrServer Engine's IP/Domain and Port.
 
+5. **Torrest Engine**:
 
-## How to run Jackgram service using Docker:
+   - Install on a remote server using Docker or use the built-in Torrest Addon Engine.
+   - Configure Torrest Addon with the Torrest Engine's IP/Domain and Port.
 
-Detailed instructions are available at [Jackgram](https://github.com/sam-max/Jackgram) 
+6. **TMDB Helper Addon**:  
+   Use the following configuration file:  
+   [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
-## How to run Jacktorr Torrent Engine on Android (optional):
+---
 
-Install the app from: [TorrServer](https://github.com/YouROK/TorrServer/releases) or from PlayStore.
+## Additional Guides
 
-## How to run Jacktorr Torrent Engine using Docker Compose (optional):
+### Jacktook Burst
 
-```
-version: '3.3'
+Install the addon: [Jacktook Burst](https://github.com/Sam-Max/script.jacktook.burst)
+
+### Jackett Service (Docker)
+
+Follow instructions at [LinuxServer.io Jackett Docker](https://hub.docker.com/r/linuxserver/jackett/)
+
+### Prowlarr Service (Docker)
+
+Follow instructions at [Prowlarr Website](https://prowlarr.com/#downloads-v3-docker)
+
+### Zilean Service (Docker)
+
+Follow instructions at [Zilean GitHub](https://github.com/iPromKnight/zilean)
+
+### Jackgram Service (Docker)
+
+Follow instructions at [Jackgram GitHub](https://github.com/sam-max/Jackgram)
+
+---
+
+## Optional Torrent Engines
+
+### Jacktorr on Android
+
+Install the app: [TorrServer](https://github.com/YouROK/TorrServer/releases) or from the Play Store.
+
+### Jacktorr using Docker Compose
+
+```yaml
+version: "3.3"
 services:
-    torrserver:
-        image: ghcr.io/yourok/torrserver
-        container_name: torrserver
-        environment:
-            - TS_PORT=5665
-            - TS_DONTKILL=1
-            - TS_HTTPAUTH=0
-            - TS_CONF_PATH=/opt/ts/config
-            - TS_TORR_DIR=/opt/ts/torrents
-        volumes:
-            - './CACHE:/opt/ts/torrents'
-            - './CONFIG:/opt/ts/config'
-        ports:
-            - '5665:5665'
-        restart: unless-stopped
+  torrserver:
+    image: ghcr.io/yourok/torrserver
+    container_name: torrserver
+    environment:
+      - TS_PORT=5665
+      - TS_DONTKILL=1
+      - TS_HTTPAUTH=0
+      - TS_CONF_PATH=/opt/ts/config
+      - TS_TORR_DIR=/opt/ts/torrents
+    volumes:
+      - "./CACHE:/opt/ts/torrents"
+      - "./CONFIG:/opt/ts/config"
+    ports:
+      - "5665:5665"
+    restart: unless-stopped
 ```
 
+### Torrest Engine using Docker
 
-## How to run Torrest Engine using Docker (optional):
+1. Create a `Dockerfile`:
 
-1. Create a Dockerfile with the following content (make sure to check before the latest `VERSION` of the binary and your `OS` and `ARCH` and update accordingly).
+   ```dockerfile
+   FROM ubuntu:22.04
 
-```
-FROM ubuntu:22.04
+   RUN apt-get update && apt-get install -y curl unzip
 
-RUN apt-get update && apt-get install -y curl unzip
+   ARG VERSION=0.0.5 OS=linux ARCH=x64
 
-ARG VERSION=0.0.5 OS=linux ARCH=x64
+   RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSION}/torrest.${VERSION}.${OS}_${ARCH}.zip -o torrest.zip \
+       && unzip torrest.zip -d /usr/local/lib \
+       && rm torrest.zip
 
-RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSION}/torrest.${VERSION}.${OS}_${ARCH}.zip -o torrest.zip \
-    && unzip torrest.zip -d /usr/local/lib \
-    && rm torrest.zip
+   RUN chmod +x /usr/local/lib/torrest
 
-RUN chmod +x /usr/local/lib/torrest
+   CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
+   ```
 
-CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
-```
+2. Build the Docker image:
 
-2. Build the Dockerfile
+   ```bash
+   docker build -t torrest-cpp .
+   ```
 
-    docker build -t torrest-cpp .
+3. Run the container:
+   ```bash
+   docker run -p 8080:8080 --name torrest-service torrest-cpp
+   ```
 
-3. Run the container on port 8080 (default port).
-    
-    docker run -p 8080:8080 --name torrest-service torrest-cpp
+---
 
-## Screenshots:
+## Screenshots
 
-![](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
+![Settings Screenshot](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png)
 
+---
 
-## Disclaimer:
+## Disclaimer
 
-This addon doesn't get sources by itself on torrent websites for legal reason and it should only be used to access movies and TV shows not protected by copyright.
+This addon does not scrape torrent websites for legal reasons. It should only be used to access movies and TV shows not protected by copyright.

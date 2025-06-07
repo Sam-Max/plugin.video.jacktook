@@ -1,7 +1,9 @@
 import re
-from lib.clients.base import BaseClient
-from lib.utils.kodi_utils import convert_size_to_bytes, get_setting, translation
-from lib.utils.utils import (
+from typing import List, Dict, Any, Optional
+
+from lib.clients.base import BaseClient, TorrentStream
+from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, translation
+from lib.utils.general.utils import (
     MEDIA_FUSION_DEFAULT_KEY,
     USER_AGENT_HEADER,
     get_cached,
@@ -11,12 +13,12 @@ from requests.utils import urlparse
 
 
 class MediaFusion(BaseClient):
-    def __init__(self, host, notification):
+    def __init__(self, host: str, notification: callable) -> None:
         super().__init__(host, notification)
         self.encryption_url = "https://mediafusion.elfhosted.com/encrypt-user-data"
         self.api_key = self.extract_api_key()
 
-    def extract_api_key(self):
+    def extract_api_key(self) -> str:
         if get_setting("real_debrid_enabled"):
             api_key = get_cached(path="md.rd.key")
             if api_key:
@@ -37,7 +39,7 @@ class MediaFusion(BaseClient):
         else:
             return MEDIA_FUSION_DEFAULT_KEY
 
-    def get_config_json(self):
+    def get_config_json(self) -> Dict[str, Any]:
         return {
             "streaming_provider": {
                 "token": "",
@@ -51,7 +53,14 @@ class MediaFusion(BaseClient):
             "nudity_filter": ["Disable"],
         }
 
-    def search(self, imdb_id, mode, media_type, season, episode):
+    def search(
+        self,
+        imdb_id: str,
+        mode: str,
+        media_type: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> Optional[List[TorrentStream]]:
         try:
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/{self.api_key}/stream/series/{imdb_id}:{season}:{episode}.json"
@@ -64,30 +73,30 @@ class MediaFusion(BaseClient):
         except Exception as e:
             self.handle_exception(f"{translation(30233)}: {str(e)}")
 
-    def parse_response(self, res):
+    def parse_response(self, res: Dict[str, Any]) -> List[TorrentStream]:
         results = []
         for item in res["streams"]:
             info_hash = self.extract_info_hash(item)
             parsed_item = self.parse_stream_title(item)
             results.append(
-                {
-                    "title": parsed_item["title"],
-                    "type": "Torrent",
-                    "indexer": "MediaFusion",
-                    "guid": info_hash,
-                    "infoHash": info_hash,
-                    "size": parsed_item["size"],
-                    "seeders": parsed_item["seeders"],
-                    "languages": parsed_item["languages"],
-                    "fullLanguages": "",
-                    "provider": parsed_item["provider"],
-                    "publishDate": "",
-                    "peers": 0,
-                }
+                TorrentStream(
+                    title=parsed_item["title"],
+                    type="Torrent",
+                    indexer="MediaFusion",
+                    guid=info_hash,
+                    infoHash=info_hash,
+                    size=parsed_item["size"],
+                    seeders=parsed_item["seeders"],
+                    languages=parsed_item["languages"],
+                    provider=parsed_item["provider"],
+                    publishDate="",
+                    peers=0,
+                    fullLanguages="",
+                )
             )
         return results
 
-    def extract_info_hash(self, item):
+    def extract_info_hash(self, item: Dict[str, Any]) -> str:
         if "url" in item:
             path = urlparse(item["url"]).path.split("/")
             info_hash = path[path.index("stream") + 1]
@@ -95,7 +104,7 @@ class MediaFusion(BaseClient):
             info_hash = item["infoHash"]
         return info_hash
 
-    def parse_stream_title(self, item):
+    def parse_stream_title(self, item: Dict[str, Any]) -> Dict[str, Any]:
         description = item["description"].splitlines()
         title = description[0]
         provider = item["name"].split()[0].title()
@@ -110,7 +119,7 @@ class MediaFusion(BaseClient):
             "provider": provider,
         }
 
-    def extract_size_string(self, details: str):
+    def extract_size_string(self, details: str) -> str:
         size_match = re.search(r"💾 (\d+(?:\.\d+)?\s*(GB|MB))", details, re.IGNORECASE)
         return size_match.group(1) if size_match else ""
 

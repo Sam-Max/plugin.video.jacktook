@@ -2,12 +2,12 @@ import os
 import pickle
 import sqlite3
 import sys
+
 from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
-from functools import wraps
 from hashlib import sha256
 
-from lib.api.jacktook.kodi import kodilog
+
 import xbmcaddon
 import xbmcgui
 
@@ -57,7 +57,7 @@ class _BaseCache(object):
             cls.__instance = cls()
         return cls.__instance
 
-    def get(self, key, default=None, hashed_key=False, identifier=""):
+    def _get(self, key, default=None, hashed_key=False, identifier=""):
         result = self._get(self._generate_key(key, hashed_key, identifier))
         ret = default
         if result:
@@ -66,10 +66,10 @@ class _BaseCache(object):
                 ret = self._process(data)
         return ret
 
-    def set(self, key, data, expiry_time, hashed_key=False, identifier=""):
+    def _set(self, key, data, expiry_time, hashed_key=False, identifier=""):
         if expiry_time == timedelta(0):
             return  # Do nothing, as it will expire immediately
-        
+
         self._set(
             self._generate_key(key, hashed_key, identifier),
             self._prepare(data),
@@ -92,26 +92,36 @@ class _BaseCache(object):
     def _prepare(self, s):
         return s
 
-    def _get(self, key):
-        raise NotImplementedError("_get needs to be implemented")
-
-    def _set(self, key, data, expires):
-        raise NotImplementedError("_set needs to be implemented")
-
 
 class MemoryCache(_BaseCache):
     def __init__(self, database=ADDON_ID):
         self._window = xbmcgui.Window(10000)
         self._database = database + "."
+        self._object_store = {}  # store raw objects that can't be pickled
 
     def _get(self, key):
-        data = self._window.getProperty(self._database + key)
-        return self._load_func(b64decode(data)) if data else None
+        if key in self._object_store:
+            return self._object_store[key]
 
-    def _set(self, key, data, expires):
-        self._window.setProperty(
-            self._database + key, b64encode(self._dump_func((data, expires))).decode()
-        )
+        data = self._window.getProperty(self._database + key)
+        if data:
+            decoded_data = self._load_func(b64decode(data))
+            return decoded_data
+
+    def _set(self, key, data):
+        try:
+            blob = self._dump_func(data)
+            self._window.setProperty(self._database + key, b64encode(blob).decode())
+
+            data = self._window.getProperty(self._database + key)
+
+        except Exception as e:
+            # fallback to raw in‑memory store
+            self._object_store[key] = data
+
+    def delete(self, key):
+        """Remove a single key from window properties."""
+        self._window.clearProperty(self._database + key)
 
 
 class Cache(_BaseCache):
@@ -138,6 +148,7 @@ class Cache(_BaseCache):
         self._cleanup_interval = cleanup_interval
         self._last_cleanup = datetime.utcnow()
         self.clean_up()
+        self._object_store = {}  # store raw objects that can't be pickled
 
     def _process(self, obj):
         return self._load_func(obj)
@@ -145,45 +156,63 @@ class Cache(_BaseCache):
     def _prepare(self, s):
         return self._dump_func(s)
 
-    def _get(self, key):
+    def get(self, key):
+        if key in self._object_store:
+            return self._object_store[key]
         self.check_clean_up()
-        return self._conn.execute(
+        result = self._conn.execute(
             "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
         ).fetchone()
+        if result:
+            data, expires = result
+            if expires > datetime.utcnow():
+                return self._process(data)
+        return None
 
-    def _set(self, key, data, expires):
-        self.check_clean_up()
-        self._conn.execute(
-            "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
-            (key, sqlite3.Binary(data), expires),
-        )
-    
+    def set(self, key, data, expires):
+        from lib.utils.kodi.utils import kodilog
+        try:
+            self.check_clean_up()
+            self._conn.execute(
+                "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
+                (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
+            )
+            kodilog("Set cache for key '{}' with expiry {}".format(key, expires))
+        except Exception as e:
+            kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
+            # fallback to raw in‑memory store
+            self._object_store[key] = (data, expires)
+
     def add_to_list(self, key, item, expires):
         """Append an item to a list stored under the given key."""
         existing_data = self.get_list(key)  # Retrieve the existing list
         existing_data.append(item)  # Add the new item
-        self._set(
+        self.set(
             key,
-            self._prepare(existing_data),
+            existing_data,
             datetime.utcnow() + expires,
         )
 
     def get_list(self, key):
         """Retrieve the list stored under the given key."""
-        result = self._get(key)
+        result = self.get(key)
         if result:
             data, expires = result
             if expires > datetime.utcnow():
                 return self._process(data)  # Deserialize the list
-        return []  
+        return []
 
     def clear_list(self, key):
         """Clear the list stored under the given key."""
-        self._set(
+        self.set(
             key,
-            self._prepare([]),  
+            self._prepare([]),
             datetime.utcnow(),  # Set an immediate expiry to clear the list
         )
+
+    def delete(self, key):
+        """Remove a single key from the SQLite store."""
+        self._conn.execute("DELETE FROM `cached` WHERE key = ?", (key,))
 
     def _set_version(self, version):
         self._conn.execute("PRAGMA user_version={}".format(version))
@@ -213,33 +242,6 @@ class Cache(_BaseCache):
 
     def close(self):
         self._conn.close()
-
-
-# A decorator for applying caching to functions
-def cached(expiry_time, ignore_self=False, identifier="", cache_type=Cache):
-    def decorator(func):
-        sentinel = object()
-        cache = cache_type.get_instance()
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            key_args = args[1:] if ignore_self else args
-            key = cache._generate_key((key_args, kwargs), identifier=identifier)
-            result = cache.get(key, default=sentinel, hashed_key=True)
-            if result is sentinel:
-                result = func(*args, **kwargs)
-                cache.set(key, result, expiry_time, hashed_key=True)
-
-            return result
-
-        return wrapper
-
-    return decorator
-
-
-# A shortcut decorator for using in-memory caching.
-def memory_cached(expiry_time, instance_method=False, identifier=""):
-    return cached(expiry_time, instance_method, identifier, MemoryCache)
 
 
 cache = Cache()

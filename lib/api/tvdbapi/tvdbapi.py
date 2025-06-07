@@ -1,8 +1,7 @@
-import json
 import requests
 from datetime import timedelta
 from lib.db.cached import cache
-from lib.utils.settings import is_cache_enabled, get_cache_expiration
+from lib.utils.kodi.settings import is_cache_enabled, get_cache_expiration
 
 class TVDBAPI:
     def __init__(self):
@@ -15,7 +14,7 @@ class TVDBAPI:
 
     def get_token(self):
         identifier = "tvdb_token"
-        token = cache.get(identifier, hashed_key=True)
+        token = cache.get(identifier)
         if token: 
             return token
         else:
@@ -26,7 +25,6 @@ class TVDBAPI:
                 identifier,
                 token,
                 timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-                hashed_key=True,
             )
         return token
 

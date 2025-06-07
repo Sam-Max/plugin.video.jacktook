@@ -24,8 +24,8 @@ class SourcePackWindow(BaseWindow):
             _, title= file_tuple
             menu_item = xbmcgui.ListItem(label=title)
             menu_item.setProperty("title", title)
-            menu_item.setProperty("type", self.source["type"])
-            menu_item.setProperty("quality", self.source["quality"])
+            menu_item.setProperty("type", self.source.type)
+            menu_item.setProperty("quality", self.source.quality)
             self.display_list.addItem(menu_item)
 
     @abc.abstractmethod

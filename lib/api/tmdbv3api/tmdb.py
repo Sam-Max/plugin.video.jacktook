@@ -5,7 +5,6 @@ import os
 import time
 
 import requests
-import requests.exceptions
 
 from .as_obj import AsObj
 from .exceptions import TMDbException

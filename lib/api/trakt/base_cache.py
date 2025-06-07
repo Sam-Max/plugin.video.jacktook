@@ -2,17 +2,18 @@
 import os
 import time
 import sqlite3 as database
-import xbmcaddon
-from xbmcvfs import translatePath
-from lib.utils.kodi_utils import (
-    clear_property,
+from lib.utils.kodi.utils import (
     delete_file,
     dialog_ok,
     get_property,
     notification,
     set_property,
     sleep,
+    clear_property
 )
+
+import xbmcaddon
+from xbmcvfs import translatePath
 
 userdata_path = translatePath(xbmcaddon.Addon().getAddonInfo("profile"))
 databases_path = os.path.join(userdata_path, "databases/")

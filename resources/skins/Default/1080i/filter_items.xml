@@ -1,0 +1,108 @@
+<window id="1200" type="dialog">
+  <coordinates>
+    <left>635</left>   <!-- (1920 - 650)/2 -->
+    <top>215</top>     <!-- (1080 - 650)/2 -->
+    <width>650</width>
+    <height>650</height>
+  </coordinates>
+  <defaultcontrol always="true">2000</defaultcontrol>
+  <animation type="WindowOpen" reversible="false">
+    <effect type="fade"    start="0"   end="100" time="200" />
+    <effect type="zoom"    start="80"  end="100" center="50%,50%" time="200" />
+  </animation>
+  <animation type="WindowClose" reversible="false">
+    <effect type="fade"    start="100" end="0"   time="200" />
+    <effect type="zoom"    start="100" end="80"  center="50%,50%" time="200" />
+  </animation>
+  <depth>0.40</depth>
+
+  <controls>
+    <!-- Background Card -->
+    <control type="image">
+      <left>0</left>
+      <top>0</top>
+      <width>650</width>
+      <height>650</height>
+      <texture border="30">circle.png</texture>
+      <colordiffuse>CC000000</colordiffuse>
+    </control>
+
+    <!-- Title -->
+    <control type="label" id="2100">
+      <left>0</left>
+      <top>30</top>
+      <width>650</width>
+      <height>60</height>
+      <font>font16_title</font>
+      <textcolor>white</textcolor>
+      <align>center</align>
+      <label>Select Filter</label>
+    </control>
+
+    <!-- Filter Items List -->
+    <control type="list" id="2000">
+      <left>25</left>
+      <top>110</top>
+      <width>600</width>
+      <height>510</height>
+      <onleft>2000</onleft>
+      <onright>2000</onright>
+      <onup>2000</onup>
+      <ondown>2000</ondown>
+      <itemgap>20</itemgap>
+
+      <!-- Normal item -->
+      <itemlayout height="70">
+        <control type="group">
+          <width>600</width>
+          <height>70</height>
+          <control type="image">
+            <left>0</left>
+            <top>10</top>
+            <width>600</width>
+            <height>50</height>
+            <texture border="30">circle.png</texture>
+            <colordiffuse>CC222222</colordiffuse>
+          </control>
+          <control type="label">
+            <left>0</left>
+            <top>10</top>
+            <width>600</width>
+            <height>50</height>
+            <font>font14</font>
+            <textcolor>white</textcolor>
+            <align>center</align>
+            <label>$INFO[ListItem.Label]</label>
+          </control>
+        </control>
+      </itemlayout>
+
+      <!-- Focused item -->
+      <focusedlayout height="70">
+        <control type="group">
+          <width>600</width>
+          <height>70</height>
+          <control type="image">
+            <left>0</left>
+            <top>10</top>
+            <width>600</width>
+            <height>50</height>
+            <texture border="30">circle.png</texture>
+            <colordiffuse>FF12A0C7</colordiffuse>
+          </control>
+          <control type="label">
+            <left>0</left>
+            <top>10</top>
+            <width>600</width>
+            <height>50</height>
+            <font>font14</font>
+            <textcolor>white</textcolor>
+            <align>center</align>
+            <label>$INFO[ListItem.Label]</label>
+          </control>
+        </control>
+      </focusedlayout>
+
+    </control>
+  </controls>
+</window>

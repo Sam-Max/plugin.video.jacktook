@@ -1,63 +1,104 @@
 from lib.clients.base import BaseClient
-from lib.utils.kodi_utils import translation
-from lib import xmltodict
-from lib.utils.settings import get_jackett_timeout
+from lib.clients.base import TorrentStream
+
+from lib.utils.kodi.utils import translation
+from lib.utils.parsers import xmltodict
+from lib.utils.kodi.settings import get_jackett_timeout
+
+from typing import List, Optional, Callable, Any
 
 
 class Jackett(BaseClient):
-    def __init__(self, host, apikey, notification):
+    def __init__(
+        self, host: str, apikey: str, notification: Callable[[str], None]
+    ) -> None:
         super().__init__(host, notification)
         self.apikey = apikey
         self.base_url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}"
 
-    def search(self, query, mode, season, episode):
+    def _build_url(
+        self,
+        query: str,
+        mode: str,
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        categories: Optional[List[int]] = None,
+        additional_params: Optional[dict] = None,
+    ) -> str:
+        url = f"{self.base_url}&q={query}"
+        if mode == "tv":
+            url += f"&t=tvsearch&season={season}&ep={episode}"
+        elif mode == "movies":
+            url += "&t=movie"
+        else:
+            url += "&t=search"
+
+        if categories:
+            url += f"&cat={','.join(map(str, categories))}"
+
+        if additional_params:
+            for key, value in additional_params.items():
+                url += f"&{key}={value}"
+
+        return url
+
+    def search(
+        self,
+        query: str,
+        mode: str,
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        categories: Optional[List[int]] = None,
+        additional_params: Optional[dict] = None,
+    ) -> Optional[List[TorrentStream]]:
         try:
-            if mode == "tv":
-                url = f"{self.base_url}&t=tvsearch&q={query}&season={season}&ep={episode}"
-            elif mode == "movies":
-                url = f"{self.base_url}&q={query}"
-            else:
-                url = f"{self.base_url}&t=search&q={query}"
-
-            response = self.session.get(
-                url,
-                timeout=get_jackett_timeout(),
+            url = self._build_url(
+                query, mode, season, episode, categories, additional_params
             )
-
+            response = self.session.get(url, timeout=get_jackett_timeout())
             if response.status_code != 200:
                 self.notification(f"{translation(30229)} ({response.status_code})")
-                return
+                return None
             return self.parse_response(response)
         except Exception as e:
             self.handle_exception(f"{translation(30229)}: {str(e)}")
+            return None
 
-    def parse_response(self, res):
-        res = xmltodict.parse(res.content)
-        if "item" in res["rss"]["channel"]:
-            item = res["rss"]["channel"]["item"]
-            results = []
-            for i in item if isinstance(item, list) else [item]:
-                extract_result(results, i)
+    def parse_response(self, res: Any) -> Optional[List[TorrentStream]]:
+        try:
+            res_dict = xmltodict.parse(res.content)
+            channel = res_dict.get("rss", {}).get("channel", {})
+            items = channel.get("item")
+            if not items:
+                return []
+            results: List[TorrentStream] = []
+            for item in items if isinstance(items, list) else [items]:
+                self.extract_result(results, item)
             return results
+        except Exception as e:
+            self.handle_exception(f"Error parsing Jackett response: {str(e)}")
+            return None
 
 
-def extract_result(results, item):
-    attributes = {
-        attr["@name"]: attr["@value"] for attr in item.get("torznab:attr", [])
-    }
-    results.append(
-        {
-            "title": item.get("title", ""),
-            "type": "Torrent",
-            "indexer": "Jackett",
-            "publishDate": item.get("pubDate", ""),
-            "provider": item.get("jackettindexer", {}).get("#text", ""),
-            "guid": item.get("guid", ""),
-            "downloadUrl": item.get("link", ""),
-            "size": item.get("size", ""),
-            "magnetUrl": attributes.get("magneturl", ""),
-            "seeders": int(attributes.get("seeders", 0)),
-            "peers": int(attributes.get("peers", 0)),
-            "infoHash": attributes.get("infohash", ""),
-        }
-    )
+    def extract_result(self, results: List[TorrentStream], item: dict) -> None:
+        attrs = item.get("torznab:attr", [])
+        if isinstance(attrs, dict):
+            attrs = [attrs]
+        attributes = {attr.get("@name"): attr.get("@value") for attr in attrs}
+        results.append(
+            TorrentStream(
+                title=item.get("title", ""),
+                type="Torrent",
+                indexer="Jackett",
+                publishDate=item.get("pubDate", ""),
+                provider=item.get("jackettindexer", {}).get("#text", ""),
+                guid=item.get("guid", ""),
+                url=item.get("link", ""),
+                size=item.get("size", ""),
+                seeders=int(attributes.get("seeders", 0) or 0),
+                peers=int(attributes.get("peers", 0) or 0),
+                infoHash=attributes.get("infohash", ""),
+                languages=[],
+                fullLanguages="",
+            )
+        )

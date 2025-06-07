@@ -1,10 +1,13 @@
-from lib.api.jacktook.kodi import kodilog
-from lib.utils.client_utils import get_client, update_dialog
-from lib.utils.kodi_utils import get_setting
-from lib.utils.utils import Indexer, get_cached, set_cached
-from lib.clients.stremio_addon import StremioAddonClient
-import lib.stremio.ui as ui
+from lib.clients.stremio import ui
+from lib.clients.stremio.stremio import StremioAddonClient
+from lib.clients.base import TorrentStream
+from lib.utils.clients.utils import get_client, update_dialog
+from lib.utils.kodi.utils import get_setting, kodilog
+from lib.utils.general.utils import Indexer, cache_results, get_cached_results
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List, Dict, Optional, Any
+
+import xbmc
 
 
 def stremio_addon_generator(stremio_addons, dialog):
@@ -13,9 +16,24 @@ def stremio_addon_generator(stremio_addons, dialog):
         yield StremioAddonClient(addon)
 
 
-def search_client(
-    query, ids, mode, media_type, dialog, rescrape=False, season=1, episode=1
+def add_task_if_enabled(
+    executor, tasks, setting_key, indexer_key, perform_search, dialog, *args
 ):
+    """Add a search task to the task list if the corresponding setting is enabled."""
+    if get_setting(setting_key):
+        tasks.append(executor.submit(perform_search, indexer_key, dialog, *args))
+
+
+def search_client(
+    query: str,
+    ids: Optional[Dict[str, str]],
+    mode: str,
+    media_type: str,
+    dialog: Any,
+    rescrape: bool = False,
+    season: int = 1,
+    episode: int = 1,
+) -> List[TorrentStream]:
     def perform_search(indexer_key, dialog, *args, **kwargs):
         if indexer_key == Indexer.STREMIO:
             stremio_addons = ui.get_selected_addons()
@@ -27,61 +45,52 @@ def search_client(
 
         if indexer_key != Indexer.BURST:
             update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
+        
         client = get_client(indexer_key)
         if not client:
             return []
         return client.search(*args, **kwargs)
 
     if not rescrape:
-        if mode == "tv" or media_type == "tv" or mode == "anime":
-            cached_results = get_cached(query, params=(episode, "index"))
-        else:
-            cached_results = get_cached(query, params=("index"))
-
+        cached_results = get_cached_results(query, mode, media_type, episode)
         if cached_results:
             dialog.create("")
             return cached_results
 
-    if ids:
-        tmdb_id, _, imdb_id = ids.values()
-    else:
-        tmdb_id = imdb_id = None
+    tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
 
     dialog.create("")
     total_results = []
-
     tasks = []
 
     with ThreadPoolExecutor() as executor:
-        if get_setting("zilean_enabled"):
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.ZILEAN,
-                    dialog,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("jacktookburst_enabled"):
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.BURST,
-                    dialog,
-                    tmdb_id,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "zilean_enabled",
+            Indexer.ZILEAN,
+            perform_search,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jacktookburst_enabled",
+            Indexer.BURST,
+            perform_search,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
         if get_setting("prowlarr_enabled"):
             indexers_ids = get_setting("prowlarr_indexer_ids")
             tasks.append(
@@ -96,35 +105,32 @@ def search_client(
                     indexers_ids,
                 )
             )
-
-        if get_setting("jackett_enabled"):
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.JACKETT,
-                    dialog,
-                    query,
-                    mode,
-                    season,
-                    episode,
-                )
-            )
-
-        if get_setting("jackgram_enabled"):
-            tasks.append(
-                executor.submit(
-                    perform_search,
-                    Indexer.JACKGRAM,
-                    dialog,
-                    tmdb_id,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-            )
-
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jackett_enabled",
+            Indexer.JACKETT,
+            perform_search,
+            dialog,
+            query,
+            mode,
+            season,
+            episode,
+        )
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jackgram_enabled",
+            Indexer.JACKGRAM,
+            perform_search,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+        )
         if get_setting("stremio_enabled") and imdb_id:
             tasks.append(
                 executor.submit(
@@ -142,14 +148,14 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
+                kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
                 if results:
                     total_results.extend(results)
             except Exception as e:
-                kodilog(f"Error: {e}")
+                import traceback
 
-    if mode == "tv" or media_type == "tv" or mode == "anime":
-        set_cached(total_results, query, params=(episode, "index"))
-    else:
-        set_cached(total_results, query, params=("index"))
+                error_details = traceback.format_exc()
+                kodilog(f"Error: {e}\n{error_details}")
 
+    cache_results(total_results, query, mode, media_type, episode)
     return total_results

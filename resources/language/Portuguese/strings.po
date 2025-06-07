@@ -272,8 +272,8 @@ msgid "Stop downloading"
 msgstr "Parar o download"
 
 msgctxt "#30702"
-msgid "Download"
-msgstr "Download"
+msgid "Downloads"
+msgstr "Downloads"
 
 msgctxt "#30703"
 msgid "Resume"
@@ -540,7 +540,7 @@ msgid "Specify the torrent client"
 msgstr "Especificar o cliente de torrent"
 
 msgctxt "#30864"
-msgid "Search"
+msgid "Sources"
 msgstr "Pesquisar"
 
 msgctxt "#30865"
@@ -582,3 +582,7 @@ msgstr "Priorizar resultados no idioma selecionado"
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
 msgstr ""
+
+msgctxt "#30876"
+msgid "Download directory"
+msgstr "Download directory"

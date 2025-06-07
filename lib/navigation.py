@@ -2,17 +2,32 @@ from datetime import timedelta
 import json
 import os
 from threading import Thread
+from typing import List
 from urllib.parse import quote
+
+from lib.api.jacktorr.jacktorr import TorrServer
+from lib.api.tmdbv3api.tmdb import TMDb
+from lib.api.trakt.trakt import TraktAPI
+from lib.clients.trakt.trakt import TraktClient
 
 from lib.clients.debrid.premiumize import Premiumize
 from lib.clients.debrid.realdebrid import RealDebrid
 from lib.clients.debrid.torbox import Torbox
-from lib.api.jacktook.kodi import kodilog
-from lib.api.jacktorr_api import TorrServer
-from lib.api.tmdbv3api.tmdb import TMDb
-from lib.db.bookmark_db import bookmark_db
+from lib.clients.stremio.catalogs import list_stremio_catalogs
+from lib.clients.tmdb.tmdb import (
+    TmdbClient,
+    TmdbAnimeClient,
+)
+from lib.clients.tmdb.utils import LANGUAGES, get_tmdb_media_details
+from lib.clients.search import search_client
+
+from lib.db.cached import cache
+
+from lib.domain.torrent import TorrentStream
+from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
     CustomDialog,
+    download_dialog_mock,
     resume_dialog_mock,
     run_next_mock,
     source_select,
@@ -20,85 +35,65 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
-from lib.stremio.catalogs import list_stremio_catalogs
-from lib.subtitles import SubtitleManager
-from lib.utils.seasons import show_episode_info, show_season_info
-from lib.utils.tmdb_utils import get_tmdb_media_details
-from lib.utils.torrentio_utils import open_providers_selection
-from lib.api.trakt.trakt_api import (
-    trakt_authenticate,
-    trakt_revoke_authentication,
+from lib.utils.debrid.ed_utils import EasyDebridHelper
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    EPISODES_TYPE,
+    JACKTORR_ADDON,
+    SHOWS_TYPE,
+    action_url_run,
+    build_url,
+    burst_addon_settings,
+    cancel_playback,
+    container_update,
+    get_setting,
+    kodilog,
+    notification,
+    play_info_hash,
+    play_media,
+    set_view,
+    show_keyboard,
+    translation,
 )
-from lib.clients.search import search_client
-from lib.files_history import last_files
-from lib.play import get_playback_info
-from lib.titles_history import last_titles
-
-from lib.trakt import (
-    handle_trakt_query,
-    show_trakt_list_content,
-    show_list_trakt_page,
-)
-
-from lib.utils.rd_utils import RealDebridHelper
-from lib.utils.items_menus import tv_items, movie_items, anime_items, animation_items
-from lib.utils.debrid_utils import check_debrid_cached
-
-from lib.tmdb import (
-    handle_tmdb_anime_query,
-    handle_tmdb_query,
-    tmdb_search_genres,
-    tmdb_search_year,
-)
-from lib.utils.tmdb_consts import LANGUAGES
-
-from lib.db.cached import cache
-
-from lib.utils.utils import (
+from lib.utils.player.utils import resolve_playback_source
+from lib.utils.views.last_files import show_last_files
+from lib.utils.views.last_titles import show_last_titles
+from lib.utils.views.shows import show_episode_info, show_season_info
+from lib.utils.torrentio.utils import open_providers_selection
+from lib.utils.debrid.rd_utils import RealDebridHelper
+from lib.utils.debrid.debrid_utils import check_debrid_cached
+from lib.utils.kodi.settings import auto_play_enabled, get_cache_expiration
+from lib.utils.kodi.settings import addon_settings
+from lib.utils.general.utils import (
     TMDB_POSTER_URL,
+    Debrids,
     DialogListener,
+    check_debrid_enabled,
     clean_auto_play_undesired,
     clear,
     clear_all_cache,
     get_fanart_details,
     get_password,
+    get_port,
     get_random_color,
     get_service_host,
     get_username,
+    list_item,
     make_listing,
     post_process,
     pre_process,
-    get_port,
-    list_item,
     set_content_type,
     set_watched_title,
     ssl_enabled,
-    check_debrid_enabled,
-    Debrids,
+)
+from lib.utils.general.items_menus import (
+    animation_items,
+    anime_items,
+    movie_items,
+    tv_items,
 )
 
-from lib.utils.kodi_utils import (
-    ADDON_HANDLE,
-    ADDON_PATH,
-    EPISODES_TYPE,
-    SHOWS_TYPE,
-    JACKTORR_ADDON,
-    action_url_run,
-    build_url,
-    cancel_playback,
-    container_update,
-    play_media,
-    show_keyboard,
-    burst_addon_settings,
-    get_setting,
-    notification,
-    play_info_hash,
-    set_view,
-    translation,
-)
-
-from lib.utils.settings import get_cache_expiration, is_auto_play
-from lib.utils.settings import addon_settings
 from lib.updater import updates_check_addon
 
 from xbmcgui import ListItem
@@ -109,11 +104,13 @@ from xbmcplugin import (
     setPluginCategory,
     setContent,
 )
+import xbmc
+
 
 paginator = None
 
 if JACKTORR_ADDON:
-    api = TorrServer(
+    torrserver_api = TorrServer(
         get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
     )
 
@@ -133,7 +130,7 @@ def root_menu():
     setPluginCategory(ADDON_HANDLE, "Main Menu")
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_tmdb", mode="multi", page=1),
+        build_url("handle_tmdb_search", mode="multi", page=1),
         list_item("Search", "search.png"),
         isFolder=True,
     )
@@ -156,12 +153,12 @@ def root_menu():
         isFolder=True,
     )
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("animation_menu"),
-        list_item("Animation", "anime.png"),
-        isFolder=True,
-    )
+    # addDirectoryItem(
+    #     ADDON_HANDLE,
+    #     build_url("animation_menu"),
+    #     list_item("Animation", "anime.png"),
+    #     isFolder=True,
+    # )
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -201,6 +198,13 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
+        build_url("downloads_menu"),
+        list_item("Downloads", "cloud.png"),
+        isFolder=True,
+    )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
         build_url("settings"),
         list_item("Settings", "settings.png"),
         isFolder=True,
@@ -208,7 +212,7 @@ def root_menu():
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("history"),
+        build_url("history_menu"),
         list_item("History", "history.png"),
         isFolder=True,
     )
@@ -222,7 +226,7 @@ def root_menu():
 
     # addDirectoryItem(
     #     ADDON_HANDLE,
-    #     build_url("test_resume_dialog"),
+    #     build_url("test_download_dialog"),
     #     list_item("Test", ""),
     #     isFolder=False,
     # )
@@ -283,6 +287,12 @@ def animation_item(params):
 def telegram_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
+        build_url("search_direct", mode="direct"),
+        list_item("Search", "search.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
         build_url("get_telegram_latest", page=1),
         list_item("Latest", "cloud.png"),
         isFolder=True,
@@ -304,7 +314,7 @@ def search_tmdb_year(params):
 
     set_content_type(mode)
 
-    tmdb_search_year(mode, submode, year, page)
+    TmdbClient.tmdb_search_year(mode, submode, year, page)
 
 
 def search_tmdb_genres(params):
@@ -315,7 +325,7 @@ def search_tmdb_genres(params):
 
     set_content_type(mode)
 
-    tmdb_search_genres(mode, genre_id, page, submode=submode)
+    TmdbClient.tmdb_search_genres(mode, genre_id, page, submode=submode)
 
 
 def tv_shows_items(params):
@@ -347,25 +357,7 @@ def movies_items(params):
 
 
 def direct_menu(params):
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("Search", "search.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("TV Search", "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        list_item("Movie Search", "movies.png"),
-        isFolder=True,
-    )
-    endOfDirectory(ADDON_HANDLE)
+    search_direct({"mode": "direct"})
 
 
 def anime_menu(params):
@@ -384,17 +376,17 @@ def anime_menu(params):
     endOfDirectory(ADDON_HANDLE)
 
 
-def history(params):
+def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("files"),
+        build_url("files_history"),
         list_item("Files History", "history.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("titles"),
+        build_url("titles_history"),
         list_item("Titles History", "history.png"),
         isFolder=True,
     )
@@ -540,98 +532,128 @@ def search(params):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
+    kodilog(f"Search: {query} - {ids} - {mode} - {tv_data}")
+
     set_content_type(mode, media_type)
     set_watched_title(query, ids, mode, media_type)
 
-    episode, season, ep_name = (0, 0, "")
-    if tv_data:
-        ep_name, episode, season = tv_data.values()
+    ep_name, episode, season = extract_tv_data(tv_data)
 
-    with DialogListener() as listener:
-        results = search_client(
-            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
-        )
-        if not results:
-            notification("No results found")
-            return
+    results = perform_search(query, ids, mode, media_type, rescrape, season, episode)
+    kodilog(f"Search results: {results}", level=xbmc.LOGDEBUG)
+    if not results:
+        notification("No results found")
+        return
 
-        pre_results = pre_process(
-            results,
-            mode,
-            ep_name,
-            episode,
-            season,
-        )
-        if not pre_results:
-            notification("No results found")
-            return
+    pre_results = pre_process_results(results, mode, ep_name, episode, season)
+    kodilog(f"Pre-processed results: {pre_results}", level=xbmc.LOGDEBUG)
+    if not pre_results:
+        notification("No results found")
+        return
 
-    if get_setting("torrent_enable"):
-        post_results = post_process(pre_results)
-    else:
-        with DialogListener() as listener:
-            cached_results = handle_debrid_client(
-                query,
-                pre_results,
-                mode,
-                media_type,
-                listener.dialog,
-                rescrape,
-                episode,
-            )
-            if not cached_results:
-                notification("No cached results found")
-                return
+    post_results = process_results(
+        pre_results, query, mode, media_type, rescrape, episode, season
+    )
+    kodilog(f"Post-processed results: {post_results}", level=xbmc.LOGDEBUG)
+    if not post_results:
+        notification("No cached results found")
+        return
 
-            if is_auto_play():
-                auto_play(cached_results, ids, tv_data, mode)
-                return
-
-            post_results = post_process(cached_results, season)
+    if auto_play_enabled():
+        auto_play(post_results, ids, tv_data, mode)
+        return
 
     data = handle_results(post_results, mode, ids, tv_data, direct)
-
     if not data:
         cancel_playback()
         return
 
-    player = JacktookPLayer(bookmark_db)
-    subtitle_manager = SubtitleManager(player, notification)
-    player.set_subtitle_manager(subtitle_manager) 
-    player.run(data)
-    
+    play_data(data)
+
+
+def extract_tv_data(tv_data):
+    if tv_data:
+        return (
+            tv_data.get("name", ""),
+            tv_data.get("episode", 0),
+            tv_data.get("season", 0),
+        )
+    return "", 0, 0
+
+
+def perform_search(
+    query: str,
+    ids: dict,
+    mode: str,
+    media_type: str,
+    rescrape: bool,
+    season: int,
+    episode: int,
+) -> List[TorrentStream]:
+    with DialogListener() as listener:
+        return search_client(
+            query, ids, mode, media_type, listener.dialog, rescrape, season, episode
+        )
+
+
+def pre_process_results(
+    results: List[TorrentStream], mode: str, ep_name: str, episode: int, season: int
+) -> List[TorrentStream]:
+    return pre_process(results, mode, ep_name, episode, season)
+
+
+def process_results(
+    pre_results: List[TorrentStream],
+    query: str,
+    mode: str,
+    media_type: str,
+    rescrape: bool,
+    episode: int,
+    season: int,
+) -> List[TorrentStream]:
+    if get_setting("torrent_enable"):
+        return post_process(pre_results)
+    else:
+        with DialogListener() as listener:
+            return check_debrid_cached(
+                query, pre_results, mode, media_type, listener.dialog, rescrape, episode
+            )
+
+
+def play_data(data: dict):
+    player = JacktookPLayer()
+    player.run(data=data)
     del player
 
 
-def handle_results(results, mode, ids, tv_data, direct=False):
-    if ids:
-        tmdb_id, tvdb_id, _ = ids.values()
-    else:
-        tmdb_id = None
+def handle_results(
+    results: List[TorrentStream],
+    mode: str,
+    ids: dict,
+    tv_data: dict,
+    direct: bool = False,
+) -> dict:
+    item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
-    if direct or not tmdb_id:
-        item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
-    else:
+    if not direct and ids:
+        tmdb_id = ids.get("tmdb_id")
+        tvdb_id = ids.get("tvdb_id")
         details = get_tmdb_media_details(tmdb_id, mode)
-        poster = f"{TMDB_POSTER_URL}{details.poster_path or ''}"
-        overview = details.overview or ""
-
+        poster = f"{TMDB_POSTER_URL}{getattr(details, 'poster_path', '') or ''}"
+        overview = getattr(details, "overview", "") or ""
         fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
+        item_info.update(
+            {
+                "poster": poster,
+                "fanart": fanart_data.get("fanart") or poster,
+                "clearlogo": fanart_data.get("clearlogo"),
+                "plot": overview,
+            }
+        )
 
-        item_info = {
-            "poster": poster,
-            "fanart": fanart_data["fanart"] or poster,
-            "clearlogo": fanart_data["clearlogo"],
-            "plot": overview,
-            "tv_data": tv_data,
-            "ids": ids,
-            "mode": mode,
-        }
-
-    if mode == "direct":
-        xml_file_string = "source_select_direct.xml"
-    else:
-        xml_file_string = "source_select.xml"
+    xml_file_string = (
+        "source_select_direct.xml" if mode == "direct" else "source_select.xml"
+    )
 
     return source_select(
         item_info,
@@ -640,50 +662,48 @@ def handle_results(results, mode, ids, tv_data, direct=False):
     )
 
 
-def handle_debrid_client(
-    query,
-    proc_results,
-    mode,
-    media_type,
-    p_dialog,
-    rescrape,
-    episode,
-):
-    return check_debrid_cached(
-        query,
-        proc_results,
-        mode,
-        media_type,
-        p_dialog,
-        rescrape,
-        episode,
-    )
-
-
 def play_torrent(params):
     data = json.loads(params["data"])
-    player = JacktookPLayer(bookmark_db)
-    subtitle_manager = SubtitleManager(player, notification)
-    player.set_subtitle_manager(subtitle_manager) 
-    player.run(data)
+    player = JacktookPLayer()
+    player.run(data=data)
     del player
 
 
-def auto_play(results, ids, tv_data, mode):
-    result = clean_auto_play_undesired(results)
-    playback_info = get_playback_info(
+def auto_play(results: List[TorrentStream], ids, tv_data, mode):
+    filtered_results = clean_auto_play_undesired(results)
+    if not filtered_results:
+        notification("No suitable source found for auto play.")
+        cancel_playback()
+        return
+
+    preferred_quality = get_setting("auto_play_quality")
+    quality_matches = [
+        r for r in filtered_results if preferred_quality.lower() in r.quality.lower()
+    ]
+    
+    if not quality_matches:
+        notification("No sources found with the preferred quality.")
+        cancel_playback()
+        return
+    
+    selected_result = quality_matches[0]
+
+    kodilog(f"Selected result for auto play: {selected_result}")
+
+    playback_info = resolve_playback_source(
         data={
-            "title": result.get("title"),
+            "title": selected_result.title,
             "mode": mode,
-            "indexer": result.get("indexer"),
-            "type": result.get("type"),
+            "indexer": selected_result.indexer,
+            "type": selected_result.type,
             "ids": ids,
-            "info_hash": result.get("infoHash"),
+            "info_hash": selected_result.infoHash,
             "tv_data": tv_data,
             "is_torrent": False,
         },
     )
-    player = JacktookPLayer(db=bookmark_db)
+
+    player = JacktookPLayer()
     player.run(data=playback_info)
     del player
 
@@ -701,8 +721,8 @@ def cloud_details(params):
         notification("Not yet implemented")
         return
     elif type == Debrids.ED:
-        notification("Not yet implemented")
-        return
+        downloads_method = "get_ed_downloads"
+        info_method = "ed_info"
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -744,10 +764,14 @@ def rd_info(params):
     RealDebridHelper().get_rd_info()
 
 
+def ed_info(params):
+    EasyDebridHelper().get_ed_info()
+
+
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
     type = Debrids.RD
-    debrid_color = get_random_color(type)
+    debrid_color = get_random_color(type, formatted=False)
     formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
@@ -779,7 +803,7 @@ def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
 
-    for torrent in api.torrents():
+    for torrent in torrserver_api.torrents():
         info_hash = torrent.get("hash")
 
         context_menu_items = [(translation(30700), play_info_hash(info_hash))]
@@ -859,13 +883,12 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = json.loads(params.get("data"))
-    data = get_playback_info(data)
+    data = resolve_playback_source(data)
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
 def search_item(params):
-    kodilog("search_item")
     query = params.get("query", "")
     category = params.get("category", None)
     api = params["api"]
@@ -874,15 +897,21 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     if api == "trakt":
-        handle_trakt_query(query, category, mode, page, submode, api)
+        result = TraktClient.handle_trakt_query(
+            query, category, mode, page, submode, api
+        )
+        if result:
+            TraktClient.process_trakt_result(
+                result, query, category, mode, submode, api, page
+            )
     elif api == "tmdb":
-        handle_tmdb_query(params)
+        TmdbClient.handle_tmdb_query(params)
 
 
 def trakt_list_content(params):
     mode = params.get("mode")
     set_content_type(mode)
-    show_trakt_list_content(
+    TraktClient.show_trakt_list_content(
         params.get("list_type"),
         mode,
         params.get("user"),
@@ -895,7 +924,7 @@ def trakt_list_content(params):
 def list_trakt_page(params):
     mode = params.get("mode")
     set_content_type(mode)
-    show_list_trakt_page(int(params.get("page", "")), mode)
+    TraktClient.show_list_trakt_page(int(params.get("page", "")), mode)
 
 
 def anime_search(params):
@@ -904,14 +933,14 @@ def anime_search(params):
     category = params.get("category")
     set_content_type(mode)
 
-    handle_tmdb_anime_query(category, mode, submode=mode, page=page)
+    TmdbAnimeClient.handle_tmdb_anime_query(category, mode, submode=mode, page=page)
 
 
 def next_page_anime(params):
     mode = params.get("mode")
     set_content_type(mode)
 
-    handle_tmdb_anime_query(
+    TmdbAnimeClient.handle_tmdb_anime_query(
         params.get("category"),
         mode,
         params.get("submode"),
@@ -934,6 +963,10 @@ def download(magnet, type):
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
         )
     thread.start()
+
+
+def downloads_menu(params):
+    downloads_viewer(params)
 
 
 def addon_update(params):
@@ -960,12 +993,12 @@ def clear_history(params):
     clear(type=params.get("type"))
 
 
-def titles(params):
-    last_titles()
+def files_history(params):
+    show_last_files()
 
 
-def files(params):
-    last_files()
+def titles_history(params):
+    show_last_titles()
 
 
 def clear_all_cached(params):
@@ -989,11 +1022,11 @@ def pm_auth(params):
 
 
 def trakt_auth(params):
-    trakt_authenticate()
+    TraktAPI().auth.trakt_authenticate()
 
 
 def trakt_auth_revoke(params):
-    trakt_revoke_authentication()
+    TraktAPI().auth.trakt_revoke_authentication()
 
 
 def open_burst_config(params):
@@ -1014,3 +1047,7 @@ def test_source_select(params):
 
 def test_resume_dialog(params):
     resume_dialog_mock()
+
+
+def test_download_dialog(params):
+    download_dialog_mock()

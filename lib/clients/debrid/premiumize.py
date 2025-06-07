@@ -1,13 +1,11 @@
 import time
-from lib.api.jacktook.kodi import kodilog
-from lib.clients.debrid.debrid_client import DebridClient, ProviderException
-from lib.utils.kodi_utils import copy2clip
-from lib.utils.kodi_utils import sleep as ksleep
-from lib.utils.kodi_utils import (
-    copy2clip,
+from lib.clients.debrid.base import DebridClient, ProviderException
+from lib.utils.kodi.utils import (
     dialog_ok,
     set_setting,
     progressDialog,
+    copy2clip,
+    sleep as ksleep,
 )
 
 
@@ -132,7 +130,6 @@ class Premiumize(DebridClient):
 
         folder_data = self.create_folder(info_hash)
         if folder_data.get("status") != "success":
-            kodilog("Folder already created in meanwhile")
             return
         return folder_data.get("id")
 
