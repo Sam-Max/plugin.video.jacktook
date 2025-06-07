@@ -138,7 +138,7 @@ def tmdb_get(path, params=None):
             p["id"], p["season"], p["episode"]
         ),
         "movie_genres": lambda _: Genre().movie_list(),
-        "tv_genres": lambda _: Genre().tv_list(),
+        "show_genres": lambda _: Genre().tv_list(),
         "discover_movie": lambda p: Discover().discover_movies(p),
         "discover_tv": lambda p: Discover().discover_tv_shows(p),
         "trending_movie": lambda p: Trending().movie_week(page=p),
@@ -177,7 +177,7 @@ def get_tmdb_movie_details(id):
     return tmdb_get("movie_details", id)
 
 
-def get_tmdb_tv_details(id):
+def get_tmdb_show_details(id):
     return tmdb_get("tv_details", id)
 
 

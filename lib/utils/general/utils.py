@@ -11,6 +11,7 @@ from enum import Enum
 from typing import Dict, List
 
 from lib.api.fanart.fanart import FanartTv
+
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.base import TorrentStream
@@ -303,6 +304,8 @@ def make_listing(metadata):
 
 
 def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
+    kodilog(f"Setting media infoTag for mode: {mode}")
+
     info_tag = list_item.getVideoInfoTag()
 
     # General Video Info
@@ -340,7 +343,7 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
     # Media Type
     if mode == "movies":
         info_tag.setMediaType("movie")
-    if mode == "tv":
+    elif mode == "tv":
         info_tag.setMediaType("tvshow")
     elif mode == "episode":
         info_tag.setMediaType("episode")
@@ -349,7 +352,7 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
 
     # Classification
     genres = metadata.get("genre_ids", metadata.get("genres", []))
-    final_genres = extract_genres(genres)
+    final_genres = extract_genres(genres, mode)
     info_tag.setGenres(final_genres)
 
     # Countries
@@ -369,6 +372,133 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
         info_tag.setUniqueIDs(unique_ids, "tmdb")
 
     # Artwork
+    set_listitem_artwork(list_item, metadata, fanart_details)
+
+    if "seasons" in metadata:
+        seasons = list(metadata["seasons"])
+        if isinstance(seasons, list):
+            named_seasons = [
+                (season.get("season_number", 0), season.get("name", ""))
+                for season in seasons
+            ]
+            info_tag.addSeasons(named_seasons)
+        else:
+            info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
+
+    set_cast_and_actors(info_tag, metadata)
+
+    # Episode & Season Info (for TV shows/episodes)
+    if mode in ["tv", "episode"]:
+        info_tag.setTvShowTitle(metadata.get("tvshow_title", metadata.get("name", "")))
+    if mode == "episode":
+        info_tag.setSeason(metadata.get("season", metadata.get("season_number", 0)))
+        info_tag.setEpisode(metadata.get("episode", metadata.get("episode_number", 0)))
+
+
+def extract_genres(genres, media_type="movies"):
+    genre_list = []
+    path = "movie_genres" if media_type == "movies" else "show_genres"
+
+    from lib.clients.tmdb.utils import tmdb_get
+
+    genre_response = tmdb_get(path=path)
+    genre_mapping = {g["id"]: g["name"] for g in genre_response.get("genres", [])}
+
+    kodilog(f"Genre mapping for {media_type}: {genre_mapping}", level=xbmc.LOGDEBUG)
+
+    for g in genres:
+        if isinstance(g, dict) and "name" in g:  # Case: { "id": 28, "name": "Action" }
+            genre_list.append(g["name"])
+        elif isinstance(g, int):
+            genre_list.append(genre_mapping.get(g, str(g)))
+        elif isinstance(g, str):
+            try:
+                genre_id = int(g)
+                genre_list.append(genre_mapping.get(genre_id, g))
+            except ValueError:
+                genre_list.append(g)
+
+    return genre_list
+
+
+def set_cast_and_actors(info_tag, metadata):
+    cast_list = []
+    casts = []
+
+    kodilog(f"Setting cast and actors for metadata: {metadata}", level=xbmc.LOGDEBUG)
+
+    if "credits" in metadata:
+        credits = metadata["credits"]
+        if "cast" in credits:
+            casts = credits["cast"]
+    elif "casts" in metadata:
+        casts_obj = metadata["casts"]
+        casts = casts_obj.get("cast", [])
+        if not casts:
+            kodilog(f"Extracted casts from list: {casts}")
+            try:
+                casts = list(casts_obj)
+            except Exception:
+                casts = []
+    elif "cast" in metadata:
+        casts = metadata["cast"]
+    elif "actors" in metadata:
+        casts = metadata["actors"]
+
+    kodilog(f"Extracted casts: {casts}", level=xbmc.LOGDEBUG)
+
+    for cast_member in casts:
+        actor = xbmc.Actor(
+            name=cast_member.get("name", ""),
+            role=cast_member.get("character", ""),
+            thumbnail=(
+                f"http://image.tmdb.org/t/p/w185{cast_member['profile_path']}"
+                if cast_member.get("profile_path")
+                else ""
+            ),
+            order=cast_member.get("order", 0),
+        )
+        cast_list.append(actor)
+
+    if "credits" in metadata and "crew" in metadata["credits"]:
+        set_cast_and_crew({"crew": metadata["credits"]["crew"]}, cast_list)
+    elif "crew" in metadata:
+        set_cast_and_crew(metadata, cast_list)
+
+    info_tag.setCast(cast_list)
+
+
+def set_cast_and_crew(metadata, cast_list):
+    if "crew" in metadata:
+        for crew_member in metadata["crew"]:
+            actor = xbmc.Actor(
+                name=crew_member["name"],
+                role=crew_member["job"],  # Director, Writer, etc.
+                thumbnail=(
+                    f"http://image.tmdb.org/t/p/w185{crew_member['profile_path']}"
+                    if crew_member.get("profile_path")
+                    else ""
+                ),
+                order=0,  # No specific order for crew members
+            )
+            cast_list.append(actor)
+
+    if "guest_stars" in metadata:
+        for guest in metadata["guest_stars"]:
+            actor = xbmc.Actor(
+                name=guest["name"],
+                role=guest["character"],  # Role = Character name
+                thumbnail=(
+                    f"http://image.tmdb.org/t/p/w185{guest['profile_path']}"
+                    if guest.get("profile_path")
+                    else ""
+                ),
+                order=guest.get("order", 0),  # Preserve the order from TMDB
+            )
+            cast_list.append(actor)
+
+
+def set_listitem_artwork(list_item, metadata, fanart_details={}):
     list_item.setArt(
         {
             "thumb": (
@@ -400,76 +530,6 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
             ),
         }
     )
-
-    if "seasons" in metadata:
-        seasons = list(metadata["seasons"])
-        if isinstance(seasons, list):
-            named_seasons = [
-                (season.get("season_number", 0), season.get("name", ""))
-                for season in seasons
-            ]
-            info_tag.addSeasons(named_seasons)
-        else:
-            info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
-
-    set_cast_and_crew(info_tag, metadata)
-
-    # set_cast_and_actors(info_tag, metadata)
-
-    # Episode & Season Info (for TV shows/episodes)
-    if mode in ["tv", "episode"]:
-        info_tag.setTvShowTitle(metadata.get("tvshow_title", metadata.get("name", "")))
-    if mode == "episode":
-        info_tag.setSeason(metadata.get("season", metadata.get("season_number", 0)))
-        info_tag.setEpisode(metadata.get("episode", metadata.get("episode_number", 0)))
-
-
-def extract_genres(genres):
-    genre_list = []
-
-    for g in genres:
-        if isinstance(g, dict) and "name" in g:  # Case: { "id": 28, "name": "Action" }
-            genre_list.append(g["name"])
-        elif isinstance(g, int):
-            genre_list.append(str(g))
-        elif isinstance(g, str):
-            genre_list.append(g)
-
-    return genre_list
-
-
-def set_cast_and_crew(info_tag, metadata):
-    cast_list = []
-
-    if "crew" in metadata:
-        for crew_member in metadata["crew"]:
-            actor = xbmc.Actor(
-                name=crew_member["name"],
-                role=crew_member["job"],  # Director, Writer, etc.
-                thumbnail=(
-                    f"http://image.tmdb.org/t/p/w185{crew_member['profile_path']}"
-                    if crew_member.get("profile_path")
-                    else ""
-                ),
-                order=0,  # No specific order for crew members
-            )
-            cast_list.append(actor)
-
-    if "guest_stars" in metadata:
-        for guest in metadata["guest_stars"]:
-            actor = xbmc.Actor(
-                name=guest["name"],
-                role=guest["character"],  # Role = Character name
-                thumbnail=(
-                    f"http://image.tmdb.org/t/p/w185{guest['profile_path']}"
-                    if guest.get("profile_path")
-                    else ""
-                ),
-                order=guest.get("order", 0),  # Preserve the order from TMDB
-            )
-            cast_list.append(actor)
-
-    info_tag.setCast(cast_list)
 
 
 def set_watched_file(data):

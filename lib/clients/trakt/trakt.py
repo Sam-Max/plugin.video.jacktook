@@ -13,6 +13,7 @@ from lib.utils.general.utils import (
     add_next_button,
     execute_thread_pool,
     set_content_type,
+    set_media_infoTag,
 )
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
@@ -24,6 +25,7 @@ from lib.utils.kodi.utils import (
 from .paginator import paginator_db
 
 from xbmcplugin import endOfDirectory
+from xbmcgui import ListItem
 
 
 class Trakt(Enum):
@@ -39,13 +41,66 @@ class Trakt(Enum):
     WATCHLIST = "trakt_watchlist"
 
 
+class BaseTraktClient:
+    @staticmethod
+    def _add_media_directory_item(list_item, mode, title, ids, media_type=None):
+        if mode == "movies":
+            list_item.addContextMenuItems(
+                [
+                    (
+                        "Rescrape item",
+                        play_media(
+                            name="search",
+                            mode=mode,
+                            query=title,
+                            ids=ids,
+                            rescrape=True,
+                        ),
+                    ),
+                ]
+                + (
+                    add_trakt_watchlist_context_menu("movies", ids)
+                    + add_trakt_watched_context_menu("movies", ids=ids)
+                    if is_trakt_auth()
+                    else []
+                )
+            )
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "search",
+                    mode=mode,
+                    query=title,
+                    ids=ids,
+                ),
+                is_folder=False,
+                is_playable=True,
+            )
+        else:
+            if is_trakt_auth():
+                list_item.addContextMenuItems(
+                    add_trakt_watchlist_context_menu("shows", ids)
+                    + add_trakt_watched_context_menu("shows", ids=ids)
+                )
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "tv_seasons_details",
+                    ids=ids,
+                    mode=mode,
+                    media_type=media_type,
+                ),
+                is_folder=True,
+            )
+
+
 class TraktClient:
     @staticmethod
     def handle_trakt_query(query, category, mode, page, submode, api):
         set_content_type(mode)
         handlers = {
             "movies": TraktClient.handle_trakt_movie_query,
-            "tv": TraktClient.handle_trakt_tv_query,
+            "tv": TraktClient.handle_trakt_show_query,
             "anime": lambda q, m, p: TraktClient.handle_trakt_anime_query(category, p),
         }
         handler = handlers.get(mode)
@@ -58,7 +113,9 @@ class TraktClient:
             Trakt.TRENDING: lambda: TraktMovies().trakt_movies_trending(page),
             Trakt.TOP10: lambda: TraktMovies().trakt_movies_top10_boxoffice(),
             Trakt.WATCHED: lambda: TraktMovies().trakt_movies_most_watched(page),
-            Trakt.WATCHED_HISTORY: lambda: TraktLists().trakt_watched_history(mode, page),
+            Trakt.WATCHED_HISTORY: lambda: TraktLists().trakt_watched_history(
+                mode, page
+            ),
             Trakt.FAVORITED: lambda: TraktMovies().trakt_movies_most_favorited(page),
             Trakt.RECOMENDATIONS: lambda: TraktMovies().trakt_recommendations("movies"),
         }
@@ -79,11 +136,13 @@ class TraktClient:
             return list_handlers[query]()
 
     @staticmethod
-    def handle_trakt_tv_query(query, mode, page):
+    def handle_trakt_show_query(query, mode, page):
         query_handlers = {
             Trakt.TRENDING: lambda: TraktTV().trakt_tv_trending(page),
             Trakt.WATCHED: lambda: TraktTV().trakt_tv_most_watched(page),
-            Trakt.WATCHED_HISTORY: lambda: TraktLists().trakt_watched_history(mode, page),
+            Trakt.WATCHED_HISTORY: lambda: TraktLists().trakt_watched_history(
+                mode, page
+            ),
             Trakt.FAVORITED: lambda: TraktTV().trakt_tv_most_favorited(page),
             Trakt.RECOMENDATIONS: lambda: TraktTV().trakt_recommendations("shows"),
         }
@@ -185,7 +244,7 @@ class TraktClient:
                 results, TraktPresentation.show_watchlist, mode
             ),
             Trakt.WATCHED_HISTORY: lambda: execute_thread_pool(
-                results, TraktPresentation.show_watched_history_content_items
+                results, TraktPresentation.show_watched_history
             ),
         }
 
@@ -245,23 +304,22 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        add_kodi_dir_item(
-            label=title,
-            url=build_url(
-                "tv_seasons_details" if mode == "tv" else "search",
-                ids=ids,
-                mode=mode,
-                query=title,
-            ),
-            is_folder=(mode == "tv"),
-            metadata=details,
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
             mode=mode,
-            context_menu=None,
-            is_playable=(mode != "tv"),
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
         )
 
     @staticmethod
     def show_common_categories(res, mode):
+        kodilog(f"Processing common categories for mode: {mode}")
+        kodilog(f"Result: {res}")
+
         if mode == "tv":
             title = res["show"]["title"]
             ids = extract_ids(res, mode)
@@ -273,19 +331,15 @@ class TraktPresentation:
             tmdb_id = ids["tmdb_id"]
             details = tmdb_get("movie_details", tmdb_id)
 
-        add_kodi_dir_item(
-            label=title,
-            url=build_url(
-                "tv_seasons_details" if mode == "tv" else "search",
-                ids=ids,
-                mode=mode,
-                query=title,
-            ),
-            is_folder=(mode == "tv"),
-            metadata=details,
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
             mode=mode,
-            context_menu=None,
-            is_playable=(mode != "tv"),
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
         )
 
     @staticmethod
@@ -301,19 +355,15 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        add_kodi_dir_item(
-            label=title,
-            url=build_url(
-                "tv_seasons_details" if mode == "tv" else "search",
-                ids=ids,
-                mode=mode,
-                query=title,
-            ),
-            is_folder=(mode == "tv"),
-            metadata=details,
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
             mode=mode,
-            context_menu=None,
-            is_playable=(mode != "tv"),
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
         )
 
     @staticmethod
@@ -325,17 +375,22 @@ class TraktPresentation:
             "title": list_title,
             "plot": description,
         }
+
+        url = build_url(
+            "trakt_list_content",
+            list_type=res["list"]["type"],
+            mode=mode,
+            user=res["list"]["user"]["ids"]["slug"],
+            slug=res["list"]["ids"]["slug"],
+        )
+
+        list_item = ListItem(list_title)
+        list_item.setInfo("video", info_labels)
+
         add_kodi_dir_item(
-            label=list_title,
-            url=build_url(
-                "trakt_list_content",
-                list_type=res["list"]["type"],
-                mode=mode,
-                user=res["list"]["user"]["ids"]["slug"],
-                slug=res["list"]["ids"]["slug"],
-            ),
+            list_item,
+            url=url,
             is_folder=True,
-            info_labels=info_labels,
         )
 
     @staticmethod
@@ -350,23 +405,19 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        add_kodi_dir_item(
-            label=title,
-            url=build_url(
-                "tv_seasons_details" if mode == "tv" else "search",
-                ids=ids,
-                mode=mode,
-                query=title,
-            ),
-            is_folder=(mode == "tv"),
-            metadata=details,
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
             mode=mode,
-            context_menu=None,
-            is_playable=(mode != "tv"),
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
         )
 
     @staticmethod
-    def show_watched_history_content_items(res):
+    def show_watched_history(res):
         tmdb_id = res["media_ids"]["tmdb"]
         imdb_id = res["media_ids"]["imdb"]
         ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
@@ -400,12 +451,13 @@ class TraktPresentation:
             is_folder = False
             is_playable = True
 
+        list_item = ListItem(title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
         add_kodi_dir_item(
-            label=title,
+            list_item,
             url=url,
             is_folder=is_folder,
-            metadata=details,
-            mode=mode,
             is_playable=is_playable,
         )
 
@@ -419,82 +471,17 @@ class TraktPresentation:
         if res["type"] == "show":
             mode = "tv"
             details = tmdb_get("tv_details", tmdb_id)
-            url = build_url(
-                "tv_seasons_details",
-                ids=ids,
-                mode="tv",
-            )
-            is_folder = True
-            is_playable = False
         else:
             mode = "movies"
             details = tmdb_get("movie_details", tmdb_id)
-            url = build_url(
-                "search",
-                query=title,
-                mode="movies",
-                ids=ids,
-            )
-            is_folder = False
-            is_playable = True
 
-        add_kodi_dir_item(
-            label=title,
-            url=url,
-            is_folder=is_folder,
-            metadata=details,
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, metadata=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
             mode=mode,
-            is_playable=is_playable,
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
         )
-
-    @staticmethod
-    def add_dir_item(mode, list_item, title, season, episode, ids):
-        if mode == "tv":
-            context_menu = (
-                add_trakt_watchlist_context_menu("shows", ids)
-                + add_trakt_watched_context_menu("shows", season, episode, ids)
-                if is_trakt_auth()
-                else None
-            )
-            add_kodi_dir_item(
-                label=title,
-                url=build_url(
-                    "tv_seasons_details",
-                    ids=ids,
-                    mode=mode,
-                ),
-                is_folder=True,
-                context_menu=context_menu,
-                mode=mode,
-            )
-        else:
-            context_menu = [
-                (
-                    "Rescrape item",
-                    play_media(
-                        name="search",
-                        mode=mode,
-                        query=title,
-                        ids=ids,
-                        rescrape=True,
-                    ),
-                )
-            ] + (
-                add_trakt_watchlist_context_menu("movies", ids)
-                + add_trakt_watched_context_menu("movies", ids)
-                if is_trakt_auth()
-                else []
-            )
-            add_kodi_dir_item(
-                label=title,
-                url=build_url(
-                    "search",
-                    query=title,
-                    mode=mode,
-                    ids=ids,
-                ),
-                is_folder=False,
-                context_menu=context_menu,
-                mode=mode,
-                is_playable=True,
-            )

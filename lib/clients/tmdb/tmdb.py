@@ -8,7 +8,7 @@ from lib.clients.tmdb.utils import (
     add_kodi_dir_item,
     filter_anime_by_keyword,
     get_tmdb_movie_details,
-    get_tmdb_tv_details,
+    get_tmdb_show_details,
     tmdb_get,
 )
 from lib.db.main import main_db
@@ -43,7 +43,6 @@ class BaseTmdbClient:
     @staticmethod
     def _add_media_directory_item(list_item, mode, title, ids, media_type=None):
         if mode == "movies":
-            list_item.setProperty("IsPlayable", "true")
             list_item.addContextMenuItems(
                 [
                     (
@@ -127,11 +126,12 @@ class TmdbClient(BaseTmdbClient):
         category = params.get("category")
         page = int(params.get("page", 1))
 
+        kodilog(f"Handling TMDB query: mode: {mode}, page: {page}")
         set_content_type(mode)
 
         handlers = {
             "movies": lambda: TmdbClient.handle_tmdb_movie_query(query, page, mode),
-            "tv": lambda: TmdbClient.handle_tmdb_tv_query(query, page, mode),
+            "tv": lambda: TmdbClient.handle_tmdb_show_query(query, page, mode),
             "anime": lambda: TmdbAnimeClient.handle_tmdb_anime_query(
                 category, mode, submode, page
             ),
@@ -176,7 +176,7 @@ class TmdbClient(BaseTmdbClient):
         endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
-    def handle_tmdb_tv_query(query, page, mode):
+    def handle_tmdb_show_query(query, page, mode):
         if query == "tmdb_trending":
             data = tmdb_get("trending_tv", page)
             if not data or data.total_results == 0:
@@ -277,23 +277,17 @@ class TmdbClient(BaseTmdbClient):
         if mode == "anime":
             mode = submode
 
-        try:
-            result = TmdbClient._get_tmdb_result_metadata(
-                res, mode, media_type, tmdb_id
-            )
-            if result is None:
-                return
-
-            title, label_title, mode, ids = result
-            list_item = ListItem(label=label_title)
-            set_media_infoTag(list_item, metadata=res, mode=mode)
-
-            TmdbClient._add_media_directory_item(
-                list_item, mode, title, ids, media_type
-            )
-        except Exception as e:
-            kodilog(f"Error setting media info: {e}")
+        result = TmdbClient._get_tmdb_result_metadata(
+            res, mode, media_type, tmdb_id
+        )
+        if result is None:
             return
+        title, label_title, mode, ids = result
+        
+        list_item = ListItem(label=label_title)
+        set_media_infoTag(list_item, metadata=res, mode=mode)
+
+        TmdbClient._add_media_directory_item(list_item, mode, title, ids, media_type)
 
     @staticmethod
     def _get_tmdb_result_metadata(res, mode, media_type, tmdb_id):
@@ -310,7 +304,7 @@ class TmdbClient(BaseTmdbClient):
         elif mode == "tv":
             title = getattr(res, "name", "")
             label_title = title
-            show_details = get_tmdb_tv_details(tmdb_id)
+            show_details = get_tmdb_show_details(tmdb_id)
             setattr(res, "casts", show_details.credits.get("cast", []))
             imdb_id = show_details.external_ids.get("imdb_id", "")
             tvdb_id = show_details.external_ids.get("tvdb_id", "")
@@ -325,7 +319,7 @@ class TmdbClient(BaseTmdbClient):
                 label_title = f"[B]MOVIE -[/B] {title}"
             elif media_type == "tv":
                 mode = "tv"
-                show_details = get_tmdb_tv_details(tmdb_id)
+                show_details = get_tmdb_show_details(tmdb_id)
                 setattr(res, "casts", show_details.credits.get("cast", []))
                 imdb_id = show_details.external_ids.get("imdb_id", "")
                 tvdb_id = show_details.external_ids.get("tvdb_id", "")
@@ -359,7 +353,7 @@ class TmdbClient(BaseTmdbClient):
     @staticmethod
     def show_genres_items(mode, page, submode=None):
         path = (
-            "tv_genres"
+            "show_genres"
             if mode == "tv" or (mode == "anime" and submode == "tv")
             else "movie_genres"
         )
@@ -466,7 +460,7 @@ class TmdbAnimeClient(BaseTmdbClient):
         elif mode == "tv":
             title = res.name
             title = res["name"]
-            show_details = get_tmdb_tv_details(tmdb_id)
+            show_details = get_tmdb_show_details(tmdb_id)
             imdb_id = show_details.external_ids.get("imdb_id", "")
             tvdb_id = show_details.external_ids.get("tvdb_id", "")
 
