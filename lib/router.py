@@ -1,12 +1,12 @@
 import sys
 from urllib import parse
 
-from lib.clients.jackgram.utils import (
-    get_telegram_files,
-    get_telegram_latest,
-    get_telegram_latest_files,
-)
 
+from lib.clients.jackgram.utils import (
+    list_telegram_files,
+    list_telegram_latest,
+    list_telegram_latest_files,
+)
 from lib.clients.tmdb.tmdb import TmdbClient
 from lib.clients.trakt.trakt import TraktClient
 from lib.downloader import (
@@ -149,9 +149,9 @@ def addon_router():
         "torrent_action": torrent_action,
         "torrent_files": torrent_files,
         "torrentio_selection": torrentio_selection,
-        "get_telegram_files": get_telegram_files,
-        "get_telegram_latest": get_telegram_latest,
-        "get_telegram_latest_files": get_telegram_latest_files,
+        "list_telegram_files": list_telegram_files,
+        "list_telegram_latest": list_telegram_latest,
+        "list_telegram_latest_files": list_telegram_latest_files,
         "telegram_menu": telegram_menu,
         "display_picture": display_picture,
         "display_text": display_text,

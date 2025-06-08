@@ -293,8 +293,8 @@ def make_listing(metadata):
     list_item.setLabel(title)
     list_item.setContentLookup(False)
 
-    metadata["episode"] = tv_data.get("episode", "")
-    metadata["season"] = tv_data.get("season", "")
+    metadata["episode"] = tv_data.get("episode", metadata.get("episode", ""))
+    metadata["season"] = tv_data.get("season", metadata.get("season", ""))
     metadata["name"] = tv_data.get("name", "")
     metadata["id"] = ids.get("tmdb_id")
     metadata["imdb_id"] = ids.get("imdb_id")

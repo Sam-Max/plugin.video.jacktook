@@ -293,13 +293,13 @@ def telegram_menu(params):
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("get_telegram_latest", page=1),
+        build_url("list_telegram_latest", page=1),
         list_item("Latest", "cloud.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("get_telegram_files", page=1),
+        build_url("list_telegram_files", page=1),
         list_item("Files", "cloud.png"),
         isFolder=True,
     )
@@ -620,10 +620,7 @@ def process_results(
             )
 
 
-def play_data(data: dict):
-    player = JacktookPLayer()
-    player.run(data=data)
-    del player
+
 
 
 def handle_results(
@@ -668,6 +665,12 @@ def play_torrent(params):
     player.run(data=data)
     del player
 
+
+def play_data(data: dict):
+    player = JacktookPLayer()
+    player.run(data=data)
+    del player
+    
 
 def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     filtered_results = clean_auto_play_undesired(results)

@@ -9,13 +9,14 @@ from lib.utils.general.utils import (
     list_item,
     set_content_type,
     set_media_infoTag,
-    set_watched_title
+    set_watched_title,
 )
 
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
     get_setting,
+    kodilog,
     notification,
     set_view,
 )
@@ -48,87 +49,98 @@ def process_results(results, callback, next_button_action, page):
     set_view("widelist")
 
 
-def get_telegram_files(params):
-    page = int(params.get("page"))
+def list_telegram_files(query):
+    page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         return
     results = jackgram_client.get_files(page=page)
-    process_results(results, telegram_files, "get_telegram_files", page)
+    process_results(results, add_telegram_file_item, "list_telegram_files", page)
 
 
-def telegram_files(res):
-    item = list_item(res["file_name"], icon="trending.png")
-    item.setProperty("IsPlayable", "true")
+def add_telegram_file_item(item):
+    li = list_item(item["file_name"], icon="trending.png")
+    li.setProperty("IsPlayable", "true")
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("play_torrent", data=res),
-        item,
+        build_url("play_torrent", data=item),
+        li,
         isFolder=False,
     )
 
 
-def get_telegram_latest(params):
-    page = int(params.get("page"))
+def list_telegram_latest(query):
+    page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         return
     results = jackgram_client.get_latest(page=page)
-    process_results(results, telegram_latest_items, "get_telegram_latest", page)
+    process_results(results, add_telegram_latest_item, "list_telegram_latest", page)
 
 
-def telegram_latest_items(res):
-    mode = res["type"]
-    title = res["title"]
-    details = tmdb_get(f"{mode}_details", res["tmdb_id"])
+def add_telegram_latest_item(entry):
+    mode = entry["type"]
+    title = entry["title"]
+    details = tmdb_get(f"{mode}_details", entry["tmdb_id"])
 
-    tmdb_id = res["tmdb_id"]
+    tmdb_id = entry["tmdb_id"]
     imdb_id = details.external_ids.get("imdb_id")
     tvdb_id = details.external_ids.get("tvdb_id")
-    res["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+    entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-    list_item = ListItem(label=title)
-    set_media_infoTag(list_item, metadata=details, mode=mode)
+    li = ListItem(label=title)
+    set_media_infoTag(li, metadata=details, mode=mode)
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("get_telegram_latest_files", data=json.dumps(res)),
-        list_item,
+        build_url("list_telegram_latest_files", data=json.dumps(entry)),
+        li,
         isFolder=True,
     )
 
 
-def get_telegram_latest_files(params):
-    res = json.loads(params["data"])
-    set_watched_title(title=res["title"], ids=res["ids"], tg_data=res, mode="tg_latest")
-    set_content_type(res["type"])
-    execute_thread_pool(res["files"], telegram_latest_files, res)
+def list_telegram_latest_files(query):
+    parent_data = json.loads(query["data"])
+    set_watched_title(
+        title=parent_data["title"],
+        ids=parent_data["ids"],
+        tg_data=parent_data,
+        mode="tg_latest",
+    )
+    set_content_type(parent_data["type"])
+    execute_thread_pool(
+        parent_data["files"], add_telegram_latest_file_item, parent_data
+    )
     endOfDirectory(ADDON_HANDLE)
 
 
-def telegram_latest_files(file, data):
-    mode = file["mode"]
-    title = file["title"]
+def add_telegram_latest_file_item(file_entry, parent_data):
+    mode = file_entry["mode"]
+    title = file_entry["title"]
 
-    list_item = ListItem(label=title)
+    li = ListItem(label=title)
     if mode == "tv":
         details = tmdb_get(
             "episode_details",
             params={
-                "id": data["tmdb_id"],
-                "season": file["season"],
-                "episode": file["episode"],
+                "id": parent_data["tmdb_id"],
+                "season": file_entry["season"],
+                "episode": file_entry["episode"],
             },
         )
     else:
-        details = tmdb_get("movie_details", data["tmdb_id"])
+        details = tmdb_get("movie_details", parent_data["tmdb_id"])
 
-    list_item.setProperty("IsPlayable", "true")
-    set_media_infoTag(list_item, metadata=details, mode=mode)
+    li.setProperty("IsPlayable", "true")
+    set_media_infoTag(li, metadata=details, mode=mode)
+
+    merged_data = {**parent_data, **file_entry}
+
+    kodilog(f"Adding Telegram file item: {merged_data}")
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("play_torrent", data=file),
-        list_item,
+        build_url("play_torrent", data=json.dumps(merged_data)),
+        li,
         isFolder=False,
     )

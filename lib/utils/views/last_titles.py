@@ -59,7 +59,7 @@ def show_last_titles():
             addDirectoryItem(
                 ADDON_HANDLE,
                 build_url(
-                    "get_telegram_latest_files",
+                    "list_telegram_latest_files",
                     data=json.dumps(data.get("tg_data")),
                 ),
                 list_item,
