@@ -45,7 +45,9 @@ try:
     ADDON_HANDLE = int(sys.argv[1])
 except IndexError:
     ADDON_HANDLE = 0
+
 ADDON_PATH = ADDON.getAddonInfo("path")
+ADDON_PROFILE_PATH = translate_path(ADDON.getAddonInfo("profile"))
 IMAGES_PATH = f"{ADDON_PATH}/resources/images/"
 DEFAULT_LOGO = f"{IMAGES_PATH}tv.png"
 ADDON_ICON = ADDON.getAddonInfo("icon")
@@ -307,6 +309,7 @@ def disable_enable_addon(addon_name=ADDON_NAME):
         )
     except:
         pass
+
 
 
 def update_kodi_addons_db(addon_name=ADDON_NAME):

@@ -1278,3 +1278,43 @@ msgstr ""
 msgctxt "#30883"
 msgid "480p"
 msgstr ""
+
+msgctxt "#30884"
+msgid "Subtitles Configuration"
+msgstr ""
+
+msgctxt "#30885"
+msgid "Addon Host"
+msgstr ""
+
+msgctxt "#30886"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30887"
+msgid "Primary Language"
+msgstr "Idioma primario"
+
+msgctxt "#30888"
+msgid "Secondary Language"
+msgstr "Idioma secundario"
+
+msgctxt "#30889"
+msgid "Deepl Enabled"
+msgstr "Deepl habilitado"
+
+msgctxt "#30890"
+msgid "Deepl Api key"
+msgstr "Clave API de Deepl"
+
+msgctxt "#30891"
+msgid "Translator Configuration"
+msgstr "Configuración del traductor"
+
+msgctxt "#30892"
+msgid "Deepl Target Language"
+msgstr "Idioma de destino de Deepl"
+
+msgctxt "#30893"
+msgid "Stremio Subtitle Configuration"
+msgstr "Configuración de subtítulos de Stremio"

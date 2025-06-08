@@ -586,3 +586,71 @@ msgstr ""
 msgctxt "#30876"
 msgid "Download directory"
 msgstr "Download directory"
+
+msgctxt "#30877"
+msgid "Habilitar Trakt.tv Scrobbling"
+msgstr "Ativar Scrobbling do Trakt.tv"
+
+msgctxt "#30878"
+msgid "Auto-select subtitle"
+msgstr "Selecionar legenda automaticamente"
+
+msgctxt "#30879"
+msgid "Auto-play quality"
+msgstr "Qualidade de reprodução automática"
+
+msgctxt "#30880"
+msgid "1080p"
+msgstr "1080p"
+
+msgctxt "#30881"
+msgid "720p"
+msgstr "720p"
+
+msgctxt "#30882"
+msgid "4k"
+msgstr "4k"
+
+msgctxt "#30883"
+msgid "480p"
+msgstr "480p"
+
+msgctxt "#30884"
+msgid "Subtitles Configuration"
+msgstr "Configuração de legendas"
+
+msgctxt "#30885"
+msgid "Addon Host"
+msgstr "Host do addon"
+
+msgctxt "#30886"
+msgid "Subtitles"
+msgstr "Legendas"
+
+msgctxt "#30887"
+msgid "Primary Language"
+msgstr "Idioma principal"
+
+msgctxt "#30888"
+msgid "Secondary Language"
+msgstr "Idioma secundário"
+
+msgctxt "#30889"
+msgid "Deepl Enabled"
+msgstr "Deepl ativado"
+
+msgctxt "#30890"
+msgid "Deepl Api key"
+msgstr "Chave API do Deepl"
+
+msgctxt "#30891"
+msgid "Translator Configuration"
+msgstr "Configuração do tradutor"
+
+msgctxt "#30892"
+msgid "Deepl Target Language"
+msgstr "Idioma de destino do Deepl"
+
+msgctxt "#30893"
+msgid "Stremio Subtitle Configuration"
+msgstr "Configuração de legendas do Stremio"

@@ -1272,7 +1272,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto-select subtitle"
+msgid "Auto select subtitle when playing"
 msgstr ""
 
 msgctxt "#30879"
@@ -1295,3 +1295,42 @@ msgctxt "#30883"
 msgid "480p"
 msgstr ""
 
+msgctxt "#30884"
+msgid "Subtitles Configuration"
+msgstr ""
+
+msgctxt "#30885"
+msgid "Addon Host"
+msgstr ""
+
+msgctxt "#30886"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30887"
+msgid "Primary Language"
+msgstr ""
+
+msgctxt "#30888"
+msgid "Secondary Language"
+msgstr ""
+
+msgctxt "#30889"
+msgid "Deepl Enabled"
+msgstr ""
+
+msgctxt "#30890"
+msgid "Deepl Api key"
+msgstr ""
+
+msgctxt "#30891"
+msgid "Translator Configuration"
+msgstr ""
+
+msgctxt "#30892"
+msgid "Deepl Target Language"
+msgstr ""
+
+msgctxt "#30893"
+msgid "Stremio Subtitle Configuration"
+msgstr ""
