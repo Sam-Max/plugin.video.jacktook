@@ -21,6 +21,12 @@ A Kodi addon for torrent finding and streaming.
 - **Metadata**:  
   TMDB, Trakt, and Fanart.tv.
 
+- **Stremio Subtitle Download**:  
+  Download subtitles directly from Stremio sources.
+
+- **Deepl Integration**:  
+  Translate subtitles using Deepl API.
+
 ---
 
 ## Requirements
@@ -97,6 +103,23 @@ Follow instructions at [Zilean GitHub](https://github.com/iPromKnight/zilean)
 
 Follow instructions at [Jackgram GitHub](https://github.com/sam-max/Jackgram)
 
+## Deepl Integration
+
+Jacktook supports subtitle and metadata translation using the Deepl API.
+
+### How to Get a Deepl API Key
+
+1. Go to the [Deepl API Signup Page](https://www.deepl.com/pro-api?cta=header-pro-api/).
+2. Register for a free account (the "DeepL API Free" plan).
+3. After registration, you will find your API authentication key in your Deepl account dashboard.
+
+### Free Usage
+
+- The Deepl API Free plan allows up to **500,000 characters per month** for translation at no cost.
+- For higher limits, you can upgrade to a paid plan.
+
+**Note:** Enter your Deepl API key in the Jacktook addon settings to enable translation features.
+
 ---
 
 ## Optional Torrent Engines
@@ -169,3 +192,6 @@ services:
 ## Disclaimer
 
 This addon does not scrape torrent websites for legal reasons. It should only be used to access movies and TV shows not protected by copyright.
+
+---
+
