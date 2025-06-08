@@ -47,10 +47,7 @@ class DeepLTranslator:
             f"Unexpected error occurred (status code: {response.status_code}).",
         )
 
-        msg = (
-            f"DeepL API error during {context}.\n"
-            f"{user_message}\n\n"
-        )
+        msg = f"DeepL API error during {context}.\n" f"{user_message}\n\n"
         self.notification(heading="DeepL API Error", message=msg)
         return False
 
@@ -244,21 +241,50 @@ class DeepLTranslator:
         estimated_cost = (total_characters / 1_000_000) * PRICE_PER_MILLION
         return total_characters, estimated_cost
 
+    def get_free_characters_left(self):
+        """
+        Query DeepL API for remaining free characters.
+        Returns the number of free characters left, or 0 if unavailable.
+        """
+        url = f"{self.base_url}/usage"
+        headers = {"Authorization": f"DeepL-Auth-Key {self.api_key}"}
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                # For free accounts, 'character_limit' and 'character_count' are present
+                limit = data.get("character_limit", 0)
+                used = data.get("character_count", 0)
+                return max(0, limit - used)
+        except Exception as e:
+            kodilog(f"Error fetching DeepL usage: {e}")
+        return 0
+
     def prompt_user_for_cost(self, subtitle_paths):
         """
         Show a dialog to the user with the estimated translation cost and ask for confirmation.
+        Only show cost if free usage is exhausted.
         Returns True if user confirms, False otherwise.
         """
+        free_chars_left = self.get_free_characters_left()
         total_characters, estimated_cost = self.calculate_translation_cost(
             subtitle_paths
         )
+
+        if free_chars_left > total_characters:
+            message = (
+                f"Free DeepL usage available!\n"
+                f"Characters left in free quota: {free_chars_left}\n"
+                f"Characters to translate: {total_characters}\n\n"
+                "Do you want to proceed with the translation?"
+            )
+            return show_dialog("Free DeepL Usage", message)
+
         message = (
             f"Total characters to translate: {total_characters}\n"
             f"Estimated cost: ${estimated_cost:.2f} USD\n\n"
             "Do you want to proceed with the translation?"
         )
-        # Replace this with your actual dialog function
-        # For example, show_dialog returns True if user clicks Yes, False otherwise
         return show_dialog("Translation Cost", message)
 
     def translate_file(self, filepath, imdbid, season, episode):
