@@ -1,3 +1,9 @@
+## 0.5.3
+- Added support to downloasd subtitles using Stremio OpenSubtitle addon.
+- Added support for subtitle translation using DeepL (AI translation).
+- Added auto-play with quality selection.
+- Added auto-subtitle activation and selection on playback.
+
 ## 0.5.2
 - Added download functionality
 - Added Trakt scrobbling
