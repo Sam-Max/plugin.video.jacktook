@@ -76,3 +76,45 @@ def get_language_code(language_name):
     }
 
     return language_map.get(language_name, None)
+
+
+def language_code_to_name(code):
+    """
+    Convert ISO 639-1 or 639-2 language codes to full language names.
+    """
+    lang_map = {
+        "eng": "English",
+        "fre": "French",
+        "fra": "French",
+        "ger": "German",
+        "deu": "German",
+        "spa": "Spanish",
+        "spl": "Spanish (Latin)",
+        "srp": "Serbian",
+        "hrv": "Croatian",
+        "slo": "Slovak",
+        "slk": "Slovak",
+        "slv": "Slovenian",
+        "ell": "Greek",
+        "gre": "Greek",
+        "ara": "Arabic",
+        "jpn": "Japanese",
+        "vie": "Vietnamese",
+        "ron": "Romanian",
+        "rum": "Romanian",
+        "kur": "Kurdish",
+        "ind": "Indonesian",
+        "tur": "Turkish",
+        "mal": "Malayalam",
+        "per": "Persian",
+        "fas": "Persian",
+        "ita": "Italian",
+        "nld": "Dutch",
+        "dut": "Dutch",
+        "por": "Portuguese",
+        "zho": "Chinese",
+        "chi": "Chinese",
+        # Add more as needed
+    }
+
+    return lang_map.get(code.lower(), f"Unknown ({code})")
