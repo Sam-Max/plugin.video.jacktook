@@ -93,34 +93,10 @@ class JacktookPLayer(xbmc.Player):
                     list_item.setProperty("StartPercent", str(last_position))
                 TraktAPI().scrobble.trakt_start_scrobble(self.data)
 
+            self.handle_subtitles(list_item)
+
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.check_playback_start()
-            
-            if get_setting("subtitle_enabled"):
-                kodilog("Subtitle enabled")
-                subs_paths = self.subtitle_manager.fetch_subtitles()
-                kodilog(f"Subtitles paths: {subs_paths}")
-                if not subs_paths:
-                    return
-                self.list_item.setSubtitles(subs_paths)
-                self.setSubtitleStream(1)
-                self.showSubtitles(True)
-                self.notification("Subtitles loaded...")
-            else:
-                try:
-                    if get_setting("auto_sub"):
-                        kodilog("Auto subtitle selection enabled")
-                        kodilog(f"Selected subtitle language: {get_setting('sub_language')}")
-                        sub_lang = get_setting("sub_language")
-                        if sub_lang and sub_lang.lower() != "None":
-                            sub_lang_code = LANGUAGE_NAME_TO_CODE.get(sub_lang, "en")
-                            xbmc.executebuiltin(f"Player.SetSubtitleLanguage({sub_lang_code})")
-                            self.showSubtitles(True)
-                    else:
-                        kodilog("Auto subtitle selection disabled")
-                        self.showSubtitles(False)
-                except Exception as e:
-                    kodilog(f"Auto subtitle selection failed: {e}")
 
             if self.playback_successful:
                 self.monitor()
@@ -138,6 +114,27 @@ class JacktookPLayer(xbmc.Player):
                 del self.kodi_monitor
             except:
                 pass
+
+    def handle_subtitles(self, list_item):
+        if get_setting("stremio_sub_enabled"):
+            subs_paths = self.subtitle_manager.fetch_subtitles()
+            if not subs_paths:
+                kodilog("No subtitles found, skipping subtitle loading")
+            else:
+                list_item.setSubtitles(subs_paths)
+                self.setSubtitleStream(1)
+                self.showSubtitles(True)
+                self.notification("Subtitles loaded")
+        else:
+            if get_setting("auto_subtitle"):
+                sub_lang = get_setting("auto_sub_language")
+                if sub_lang and sub_lang.lower() != "None":
+                    sub_lang_code = LANGUAGE_NAME_TO_CODE.get(sub_lang, "en")
+                    xbmc.executebuiltin(f"Player.SetSubtitleLanguage({sub_lang_code})")
+                    self.showSubtitles(True)
+            else:
+                kodilog("Auto subtitle selection disabled")
+                self.showSubtitles(False)
 
     def check_playback_start(self):
         resolve_percent = 0
@@ -324,4 +321,3 @@ class JacktookPLayer(xbmc.Player):
         self.clear_playback_properties()
         self.cancel_playback()
         notification("Playback Failed", time=3500)
-
