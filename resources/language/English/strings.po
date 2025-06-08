@@ -1272,7 +1272,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto-select subtitle"
+msgid "Auto select subtitle when playing"
 msgstr ""
 
 msgctxt "#30879"
@@ -1329,4 +1329,8 @@ msgstr ""
 
 msgctxt "#30892"
 msgid "Deepl Target Language"
+msgstr ""
+
+msgctxt "#30893"
+msgid "Stremio Subtitle Configuration"
 msgstr ""

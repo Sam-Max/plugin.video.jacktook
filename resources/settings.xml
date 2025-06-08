@@ -46,45 +46,6 @@
                     </constraints>
                     <control type="spinner" format="string" />
                 </setting>
-                <setting id="auto_sub" type="boolean" label="30878" help=""> 
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="sub_language" type="string" label="30736" help="30873">
-                    <default>None</default>
-                    <neading>30736</neading>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="auto_sub">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <constraints>
-                        <options>
-                            <option label="None">None</option>
-                            <option label="English">en</option>
-                            <option label="Spanish">es</option>
-                            <option label="German">de</option>
-                            <option label="French">fr</option>
-                            <option label="Italian">it</option>
-                            <option label="Portuguese">pt</option>
-                            <option label="Dutch">nl</option>
-                            <option label="Polish">pl</option>
-                            <option label="Russian">ru</option>
-                            <option label="Turkish">tr</option>
-                            <option label="Greek">el</option>
-                            <option label="Hebrew">he</option>
-                            <option label="Hindi">hi</option>
-                            <option label="Indonesian">id</option>
-                            <option label="Japanese">ja</option>
-                            <option label="Korean">ko</option>
-                            <option label="Ukrainian">uk</option>
-                            <option label="Vietnamese">vi</option>
-                            <option label="Chinese">zh</option>
-                            <option label="Persian">fa</option>
-                        </options>
-                    </constraints>
-                    <control type="list" format="string" />
-                </setting>
                 <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
@@ -547,113 +508,64 @@
                 </setting>
             </group>
         </category>
-        <category id="subtitle_cateogy" label="30886">
-            <group id="opensubtitles" label="30884">
-                <setting id="subtitle_enabled" type="boolean" label="30734" help="">
+        <category id="subtitle_category" label="30886">
+            <group id="general_settings" label="30884">
+                <setting id="auto_subtitle" type="boolean" label="30878" help=""> 
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="subtitle_addon_host" type="string" label="30885" help="">
+                <setting id="auto_sub_language" type="string" label="30736" help="30873">
+                    <default>None</default>
+                    <neading>30736</neading>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_subtitle">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="None">None</option>
+                            <option label="English">en</option>
+                            <option label="Spanish">es</option>
+                            <option label="German">de</option>
+                            <option label="French">fr</option>
+                            <option label="Italian">it</option>
+                            <option label="Portuguese">pt</option>
+                            <option label="Dutch">nl</option>
+                            <option label="Polish">pl</option>
+                            <option label="Russian">ru</option>
+                            <option label="Turkish">tr</option>
+                            <option label="Greek">el</option>
+                            <option label="Hebrew">he</option>
+                            <option label="Hindi">hi</option>
+                            <option label="Indonesian">id</option>
+                            <option label="Japanese">ja</option>
+                            <option label="Korean">ko</option>
+                            <option label="Ukrainian">uk</option>
+                            <option label="Vietnamese">vi</option>
+                            <option label="Chinese">zh</option>
+                            <option label="Persian">fa</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
+            </group>   
+            <group id="stremio_subtitle" label="30893">
+                <setting id="stremio_sub_enabled" type="boolean" label="30734" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="stremio_sub_addon_host" type="string" label="30885" help="">
                     <default>https://opensubtitles-v3.strem.io/</default>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="subtitle_enabled">true</condition>
+                            <condition operator="is" setting="stremio_sub_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <control type="edit" format="string" />
-                </setting>
-                <setting id="opensub_language" type="string" label="30887" help="">
-                    <default>None</default>
-                    <neading>30736</neading>
-                    <constraints>
-                        <options>
-                            <option value="None">None</option>
-                            <option value="ara">Arabic</option>
-                            <option value="bul">Bulgarian</option>
-                            <option value="ces">Czech</option>
-                            <option value="dan">Danish</option>
-                            <option value="deu">German</option>
-                            <option value="ell">Greek</option>
-                            <option value="eng">English</option>
-                            <option value="spa">Spanish</option>
-                            <option value="est">Estonian</option>
-                            <option value="fin">Finnish</option>
-                            <option value="fra">French</option>
-                            <option value="hun">Hungarian</option>
-                            <option value="ind">Indonesian</option>
-                            <option value="ita">Italian</option>
-                            <option value="jpn">Japanese</option>
-                            <option value="kor">Korean</option>
-                            <option value="lit">Lithuanian</option>
-                            <option value="lav">Latvian</option>
-                            <option value="nob">Norwegian Bokmål</option>
-                            <option value="nld">Dutch</option>
-                            <option value="pol">Polish</option>
-                            <option value="por">Portuguese</option>
-                            <option value="ron">Romanian</option>
-                            <option value="rus">Russian</option>
-                            <option value="slk">Slovak</option>
-                            <option value="slv">Slovenian</option>
-                            <option value="swe">Swedish</option>
-                            <option value="tur">Turkish</option>
-                            <option value="ukr">Ukrainian</option>
-                            <option value="zho">Chinese</option>
-                        </options>
-                    </constraints>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="subtitle_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <control type="list" format="string" />
-                </setting>
-                <setting id="opensub_fallback_language" type="string" label="30888" help="">
-                    <default>None</default>
-                    <neading>30736</neading>
-                    <constraints>
-                        <options>
-                            <option value="None">None</option>
-                            <option value="ara">Arabic</option>
-                            <option value="bul">Bulgarian</option>
-                            <option value="ces">Czech</option>
-                            <option value="dan">Danish</option>
-                            <option value="deu">German</option>
-                            <option value="ell">Greek</option>
-                            <option value="eng">English</option>
-                            <option value="spa">Spanish</option>
-                            <option value="est">Estonian</option>
-                            <option value="fin">Finnish</option>
-                            <option value="fra">French</option>
-                            <option value="hun">Hungarian</option>
-                            <option value="ind">Indonesian</option>
-                            <option value="ita">Italian</option>
-                            <option value="jpn">Japanese</option>
-                            <option value="kor">Korean</option>
-                            <option value="lit">Lithuanian</option>
-                            <option value="lav">Latvian</option>
-                            <option value="nob">Norwegian Bokmål</option>
-                            <option value="nld">Dutch</option>
-                            <option value="pol">Polish</option>
-                            <option value="por">Portuguese</option>
-                            <option value="ron">Romanian</option>
-                            <option value="rus">Russian</option>
-                            <option value="slk">Slovak</option>
-                            <option value="slv">Slovenian</option>
-                            <option value="swe">Swedish</option>
-                            <option value="tur">Turkish</option>
-                            <option value="ukr">Ukrainian</option>
-                            <option value="zho">Chinese</option>
-                        </options>
-                    </constraints>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="subtitle_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <control type="list" format="string" />
                 </setting>
             </group>
             <group id="deepl_translator" label="30891">
