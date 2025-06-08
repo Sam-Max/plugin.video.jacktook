@@ -1,11 +1,10 @@
 import json
 import os
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional
 
 from lib.clients.aisubtrans.deepl import DeepLTranslator
 from lib.clients.aisubtrans.opensubstremio import OpenSubtitleStremioClient
-from lib.clients.aisubtrans.utils import get_language_code
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
@@ -13,6 +12,7 @@ from lib.utils.kodi.utils import (
 )
 
 import xbmc
+import xbmcgui
 
 
 class KodiJsonRpcClient:
@@ -58,20 +58,22 @@ class SubtitleManager(KodiJsonRpcClient):
             return value
         return self.convert_language_iso(value) if iso_format else value
 
+    def get_downloaded_subtitle_paths(self, folder_path: str) -> List[str]:
+        """
+        Recursively find all .srt subtitle files in the given folder_path.
+        """
+        subtitle_files = []
+        for root, _, files in os.walk(folder_path):
+            for f in files:
+                if f.endswith(".srt"):
+                    subtitle_files.append(os.path.join(root, f))
+        return subtitle_files
+
     def fetch_subtitles(self) -> Optional[List[str]]:
         """
         Download subtitles for the current video.
         Returns a list of subtitle file paths.
         """
-
-        primary_language = get_setting("opensub_language")
-        if primary_language == "None":
-            kodilog("No primary language set for subtitles")
-            return
-
-        lang_code = get_language_code(primary_language)
-        kodilog(f"Language: {lang_code}")
-
         data = self.player.data
         mode = data.get("mode")
         imdb_id = data.get("imdb_id")
@@ -83,38 +85,40 @@ class SubtitleManager(KodiJsonRpcClient):
             return
 
         folder_path = (
-            f"{ADDON_PROFILE_PATH}/{imdb_id}/{season}"
+            os.path.join(ADDON_PROFILE_PATH, imdb_id, str(season))
             if mode == "tv"
-            else f"{ADDON_PROFILE_PATH}/{imdb_id}"
+            else os.path.join(ADDON_PROFILE_PATH, imdb_id)
         )
-
-        if os.path.exists(folder_path):
-            kodilog("Loading subtitles from local folder...")
-            return [
-                os.path.join(folder_path, f)
-                for f in os.listdir(folder_path)
-                if f.endswith(".srt")
-            ]
-
-        subtitles = self.opensub_client.get_subtitles(
-            mode, imdb_id, season, episode, lang_code
-        )
-        if not subtitles:
-            kodilog("No subtitles found for the current video")
-            return
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
-        for count, sub in enumerate(subtitles):
-            file_path = self.opensub_client.download_subtitle(
-                sub, count, imdb_id, season=season, episode=episode
-            )
-            sub["url"] = file_path
+        subtitle_files = self.get_downloaded_subtitle_paths(folder_path)
+        if subtitle_files:
+            return subtitle_files
+
+        subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
+        kodilog(f"Subtitles: {subtitles}")
+        if not subtitles:
+            kodilog("No subtitles found for the current video")
+            return
+
+        subtitle_paths = self.opensub_client.download_subtitles_batch(
+            subtitles, imdb_id, season=season, episode=episode
+        )
 
         if get_setting("deepl_enabled"):
-            return self.translator.process_subtitles(
-                subtitles, imdb_id, season, episode
+            dialog = xbmcgui.Dialog()
+            yes = dialog.yesno(
+                "Translate Subtitles",
+                "Do you want to also translate the selected subtitles?",
             )
+            if yes:
+                translated_subtitles_paths = (
+                    self.translator.translate_multiple_subtitles(
+                        subtitle_paths, imdb_id, season, episode
+                    )
+                )
+                return translated_subtitles_paths
 
-        return [sub["path"] for sub in subtitles]
+        return subtitle_paths
