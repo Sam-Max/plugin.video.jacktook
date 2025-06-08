@@ -95,7 +95,16 @@ class SubtitleManager(KodiJsonRpcClient):
 
         subtitle_files = self.get_downloaded_subtitle_paths(folder_path)
         if subtitle_files:
-            return subtitle_files
+            dialog = xbmcgui.Dialog()
+            use_existing = dialog.yesno(
+                "Subtitles Found",
+                "There are already downloaded subtitles for this video.\n"
+                "Do you want to use the existing subtitles?",
+                yeslabel="Use Existing",
+                nolabel="Download New",
+            )
+            if use_existing:
+                return subtitle_files
 
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
         kodilog(f"Subtitles: {subtitles}")
