@@ -53,6 +53,7 @@ class JacktookPLayer(xbmc.Player):
         self.notification = notification
         self.subtitle_manager = SubtitleManager(self, self.notification)
         self.lang_code = "en"
+        self.subtitles_found = False
 
     def run(self, data=None):
         self.set_constants(data)
@@ -117,13 +118,16 @@ class JacktookPLayer(xbmc.Player):
                 pass
 
     def handle_subtitles(self, list_item):
+        self.subtitles_found = False  # Reset flag each time
         if get_setting("stremio_sub_enabled"):
             subs_paths = self.subtitle_manager.fetch_subtitles()
             if not subs_paths:
                 kodilog("No subtitles found, skipping subtitle loading")
+                self.subtitles_found = False
             else:
                 list_item.setSubtitles(subs_paths)
                 self.setSubtitleStream(0)
+                self.subtitles_found = True
         else:
             if get_setting("auto_subtitle"):
                 sub_lang_code = get_setting("auto_sub_language")
@@ -176,13 +180,16 @@ class JacktookPLayer(xbmc.Player):
             if stremio_sub_enabled or auto_sub_enabled:
                 if stremio_sub_enabled:
                     self.showSubtitles(True)
-                    self.notification("Subtitles Loaded", time=2000)
+                    if self.subtitles_found:
+                        self.notification("Subtitles Loaded", time=2000)
                 if auto_sub_enabled:
                     kodilog("Auto subtitle selection enabled")
                     # Wait a bit to ensure subtitle streams are loaded
                     sleep(500)
                     kodilog(f"Trying to set subtitles to: {self.lang_code}")
-                    xbmc.executebuiltin(f'Player.SetSubtitleLanguage("{self.lang_code}")')
+                    xbmc.executebuiltin(
+                        f'Player.SetSubtitleLanguage("{self.lang_code}")'
+                    )
                     self.showSubtitles(True)
                     kodilog(f"Subtitles set to {self.lang_code}")
             else:
