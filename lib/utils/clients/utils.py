@@ -1,9 +1,9 @@
 from typing import Optional
-from lib.clients.burst.client import Burst
 from lib.clients.jackett import Jackett
 from lib.clients.jackgram.client import Jackgram
 from lib.clients.prowlarr import Prowlarr
 from lib.clients.zilean import Zilean
+from lib.jacktook.client import Burst
 from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.general.utils import Indexer
 from lib.utils.kodi.settings import get_int_setting

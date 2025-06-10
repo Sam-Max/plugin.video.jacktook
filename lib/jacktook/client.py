@@ -1,5 +1,5 @@
 from lib.clients.base import BaseClient, TorrentStream
-from lib.clients.burst.providers import (
+from .providers import (
     burst_search,
     burst_search_episode,
     burst_search_movie,
@@ -36,7 +36,7 @@ class Burst(BaseClient):
 
     def parse_response(self, res: List[Dict[str, Any]]) -> List[TorrentStream]:
         results = []
-        for _, r in res:
+        for r in res:
             results.append(
                 TorrentStream(
                     title=r.title,

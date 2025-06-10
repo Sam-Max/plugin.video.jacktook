@@ -259,10 +259,6 @@ def show_picture(url):
     xbmc.executebuiltin('ShowPicture("{}")'.format(url))
 
 
-def container_refresh():
-    execute_builtin("Container.Refresh")
-
-
 def close_busy_dialog():
     execute_builtin("Dialog.Close(busydialognocancel)")
     execute_builtin("Dialog.Close(busydialog)")
@@ -328,7 +324,7 @@ def update_kodi_addons_db(addon_name=ADDON_NAME):
 
 
 def bytes_to_human_readable(size: int, unit: str = "B") -> str:
-    units: dict[str, int] = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5}
+    units = {"B": 0, "KB": 1, "MB": 2, "GB": 3, "TB": 4, "PB": 5}
 
     while size >= 1024 and unit != "PB":
         size /= 1024
@@ -437,30 +433,9 @@ def kodilog(message, level=xbmc.LOGINFO):
     xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
 
 
-def get_installed_addons(addon_type="", content="unknown", enabled="all"):
-    data = execute_json_rpc(
-        "Addons.GetAddons", type=addon_type, content=content, enabled=enabled
-    )
-    addons = data["result"].get("addons")
-    return [(a["addonid"], a["type"]) for a in addons] if addons else []
 
 
-def execute_json_rpc(method, rpc_version="2.0", rpc_id=1, **params):
-    return json.loads(
-        xbmc.executeJSONRPC(
-            json.dumps(
-                dict(jsonrpc=rpc_version, method=method, params=params, id=rpc_id)
-            )
-        )
-    )
 
 
-def run_script(script_id, *args):
-    xbmc.executebuiltin("RunScript({})".format(",".join((script_id,) + args)))
 
 
-def notify_all(sender, message, data=None):
-    params = {"sender": sender, "message": message}
-    if data is not None:
-        params["data"] = data
-    return execute_json_rpc("JSONRPC.NotifyAll", **params).get("result") == "OK"
