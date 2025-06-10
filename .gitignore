@@ -9,6 +9,7 @@ test2/
 build
 htmlcov
 venv/
+.venv/
 __pycache__
 
 
