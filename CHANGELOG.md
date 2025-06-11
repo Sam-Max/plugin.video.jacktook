@@ -1,3 +1,6 @@
+## 0.5.4
+- HOTFIX: Fix Burst client not working.
+
 ## 0.5.3
 - Added support to downloasd subtitles using Stremio OpenSubtitle addon.
 - Added support for subtitle translation using DeepL (AI translation).
