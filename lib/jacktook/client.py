@@ -44,7 +44,7 @@ class Burst(BaseClient):
                     indexer="Burst",
                     guid=r.guid,
                     infoHash="",
-                    size=convert_size_to_bytes(r.size),
+                    size=convert_size_to_bytes(str(r.size)),
                     seeders=int(r.seeders),
                     peers=int(r.peers),
                     languages=[],
