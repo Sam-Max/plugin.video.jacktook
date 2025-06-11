@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from hashlib import sha256
 
 
+from lib.jacktook.utils import kodilog
 import xbmcaddon
 import xbmcgui
 
@@ -156,9 +157,33 @@ class Cache(_BaseCache):
     def _prepare(self, s):
         return self._dump_func(s)
 
+    def add_to_list(self, key, item, expires):
+        """Append an item to a list stored under the given key."""
+        existing_data = self.get_list(key)
+        existing_data.append(item)
+        self.set(
+            key,
+            existing_data,
+            datetime.utcnow() + expires,
+        )
+
+    def get_list(self, key):
+        """Retrieve the list stored under the given key."""
+        result = self.get(key)
+        if result:
+            kodilog("Retrieved list for key '{}'".format(key))
+            kodilog("List content: {}".format(result))
+            return [tuple(item) for item in result]
+        return []
+
     def get(self, key):
         if key in self._object_store:
-            return self._object_store[key]
+            data, expires = self._object_store[key]
+            if expires > datetime.utcnow():
+                return data
+            else:
+                del self._object_store[key]
+                return None
         self.check_clean_up()
         result = self._conn.execute(
             "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
@@ -171,6 +196,7 @@ class Cache(_BaseCache):
 
     def set(self, key, data, expires):
         from lib.utils.kodi.utils import kodilog
+
         try:
             self.check_clean_up()
             self._conn.execute(
@@ -182,25 +208,6 @@ class Cache(_BaseCache):
             kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
             # fallback to raw in‑memory store
             self._object_store[key] = (data, expires)
-
-    def add_to_list(self, key, item, expires):
-        """Append an item to a list stored under the given key."""
-        existing_data = self.get_list(key)  # Retrieve the existing list
-        existing_data.append(item)  # Add the new item
-        self.set(
-            key,
-            existing_data,
-            datetime.utcnow() + expires,
-        )
-
-    def get_list(self, key):
-        """Retrieve the list stored under the given key."""
-        result = self.get(key)
-        if result:
-            data, expires = result
-            if expires > datetime.utcnow():
-                return self._process(data)  # Deserialize the list
-        return []
 
     def clear_list(self, key):
         """Clear the list stored under the given key."""
