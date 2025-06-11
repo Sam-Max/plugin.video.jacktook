@@ -1,11 +1,11 @@
 import re
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Callable
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import convert_size_to_bytes, translation
 
 
 class Elfhosted(BaseClient):
-    def __init__(self, host: str, notification: callable) -> None:
+    def __init__(self, host: str, notification: Callable) -> None:
         super().__init__(host, notification)
 
     def search(

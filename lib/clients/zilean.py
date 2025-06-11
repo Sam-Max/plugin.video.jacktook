@@ -5,11 +5,11 @@ from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import USER_AGENT_HEADER, info_hash_to_magnet
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Callable
 
 
 class Zilean(BaseClient):
-    def __init__(self, host: str, timeout: int, notification: callable) -> None:
+    def __init__(self, host: str, timeout: int, notification: Callable) -> None:
         super().__init__(host, notification)
         self.timeout = timeout
         self.initialized = self.validate()

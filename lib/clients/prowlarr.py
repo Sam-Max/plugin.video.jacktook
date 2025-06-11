@@ -1,11 +1,11 @@
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import translation
 from lib.utils.kodi.settings import get_prowlarr_timeout
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Callable
 
 
 class Prowlarr(BaseClient):
-    def __init__(self, host: str, apikey: str, notification: callable) -> None:
+    def __init__(self, host: str, apikey: str, notification: Callable) -> None:
         super().__init__(host, notification)
         self.base_url = f"{self.host}/api/v1/search"
         self.apikey = apikey

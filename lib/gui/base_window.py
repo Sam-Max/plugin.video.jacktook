@@ -1,7 +1,7 @@
 import abc
 from copy import deepcopy
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 from lib.domain.torrent import TorrentStream
 from lib.utils.torrent.resolve_to_magnet import resolve_to_magnet
 from lib.utils.general.utils import Indexer, IndexerType
@@ -139,7 +139,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                 "tv_data": self.item_information.get("tv_data"),
             }
     
-    def _handle_torrent_source(self, source:TorrentStream) -> tuple[str, str, bool]:
+    def _handle_torrent_source(self, source:TorrentStream) -> Tuple[str, str, bool]:
         guid = source.guid
         magnet = ""
         indexer = source.indexer
@@ -158,7 +158,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
         return url, magnet, True
 
-    def get_source_details(self, source:TorrentStream) -> tuple[str, str, bool]:
+    def get_source_details(self, source:TorrentStream) -> Tuple[str, str, bool]:
         type = source.type
         url, magnet, is_torrent = "", "", False
 

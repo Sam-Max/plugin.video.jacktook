@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from requests import Session
-from typing import List, Optional
+from typing import List, Optional, Callable
 from lib.domain.torrent import TorrentStream
 
 
 class BaseClient(ABC):
-    def __init__(self, host: Optional[str], notification: Optional[callable]) -> None:
+    def __init__(self, host: Optional[str], notification: Optional[Callable]) -> None:
         self.host = host.rstrip("/") if host else ""
         self.notification = notification
         self.session = Session()

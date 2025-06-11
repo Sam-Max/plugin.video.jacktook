@@ -5,11 +5,11 @@ from .providers import (
     burst_search_movie,
 )
 from lib.utils.kodi.utils import convert_size_to_bytes
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Callable
 
 
 class Burst(BaseClient):
-    def __init__(self, notification: callable) -> None:
+    def __init__(self, notification: Callable) -> None:
         super().__init__("", notification)
 
     def search(
