@@ -96,7 +96,6 @@ class Provider(object):
         return ADDON_ID
 
     def register(self):
-        kodilog(f"Running with args: {sys.argv}")
         if len(sys.argv) != 4:
             kodilog("Expecting 4 arguments")
             kodilog("Providers can't be called")
@@ -133,7 +132,8 @@ class ProviderListener(xbmc.Monitor):
 
     def onNotification(self, sender, method, data):
         kodilog(
-            f"Received notification with sender={sender}, method={method}, data={data}"
+            f"Received notification with sender={sender}, method={method}, data={data}",
+            level=xbmc.LOGDEBUG,
         )
         with self._lock:
             if method == self._method and self._waiting.get(sender, False):

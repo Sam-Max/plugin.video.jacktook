@@ -11,6 +11,7 @@ from hashlib import sha256
 from lib.jacktook.utils import kodilog
 import xbmcaddon
 import xbmcgui
+import xbmc
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -203,7 +204,7 @@ class Cache(_BaseCache):
                 "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
                 (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
             )
-            kodilog("Set cache for key '{}' with expiry {}".format(key, expires))
+            kodilog("Set cache for key '{}' with expiry {}".format(key, expires), level=xbmc.LOGDEBUG)
         except Exception as e:
             kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
             # fallback to raw in‑memory store

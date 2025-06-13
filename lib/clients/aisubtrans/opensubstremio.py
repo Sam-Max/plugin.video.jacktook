@@ -8,6 +8,7 @@ from lib.utils.kodi.utils import (
     kodilog,
 )
 import xbmcgui
+import xbmc
 
 
 class OpenSubtitleStremioClient:
@@ -38,7 +39,7 @@ class OpenSubtitleStremioClient:
                 )
                 return None
             data = response.json()
-            kodilog(f"OpenSubtitles Subtitles Response: {data}")
+            kodilog(f"OpenSubtitles Subtitles Response: {data}", level=xbmc.LOGDEBUG) 
             return data.get("subtitles", [])
         except Exception as e:
             self.notification(f"Failed to fetch subtitles: {e}")
