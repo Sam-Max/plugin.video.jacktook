@@ -96,9 +96,12 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
                         rescrape=True,
                     ),
                 )
-            ] + add_trakt_watched_context_menu(
+            ] + (
+                add_trakt_watched_context_menu(
                     "shows", season=season, episode=episode_number, ids=ids
-                ) if is_trakt_auth() else []
+                )
+                if is_trakt_auth() else []
+            ) 
         )
 
         addDirectoryItem(
