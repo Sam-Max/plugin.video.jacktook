@@ -12,6 +12,7 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     get_setting,
     kodilog,
+    notification,
     translatePath,
 )
 from lib.utils.general.utils import (
@@ -181,9 +182,7 @@ class SourceSelect(BaseWindow):
 
         playback_info = resolve_playback_source(source_data)
         if not playback_info or "url" not in playback_info:
-            xbmcgui.Dialog().notification(
-                "Download", "Failed to resolve playback source."
-            )
+            notification("Failed to resolve playback source")
             return
 
         download_dir = get_setting("download_dir")

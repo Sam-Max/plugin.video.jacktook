@@ -2,7 +2,7 @@ from datetime import timedelta
 import json
 import os
 from threading import Thread
-from typing import List
+from typing import Dict, List, Optional
 from urllib.parse import quote
 
 from lib.api.jacktorr.jacktorr import TorrServer
@@ -629,7 +629,7 @@ def handle_results(
     ids: dict,
     tv_data: dict,
     direct: bool = False,
-) -> dict:
+) -> Optional[Dict]:
     item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
     if not direct and ids:
@@ -705,6 +705,10 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
             "is_torrent": False,
         },
     )
+
+    if not playback_info:   
+        cancel_playback()
+        return
 
     player = JacktookPLayer()
     player.run(data=playback_info)
@@ -887,6 +891,8 @@ def tv_episodes_details(params):
 def play_from_pack(params):
     data = json.loads(params.get("data"))
     data = resolve_playback_source(data)
+    if not data or "url" not in data:
+        return
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 

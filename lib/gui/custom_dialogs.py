@@ -9,6 +9,7 @@ from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
+from typing import Optional
 
 class CustomWindow(WindowXML):
     def __init__(self, *args, **kwargs):
@@ -86,7 +87,7 @@ _mock_information = {
 
 def source_select(
     item_info: Dict[str, str], xml_file: str, sources: List[TorrentStream]
-) -> Dict:
+) -> Optional[Dict]:
     window = SourceSelect(
         xml_file,
         ADDON_PATH,

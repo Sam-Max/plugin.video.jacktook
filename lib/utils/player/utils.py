@@ -34,10 +34,14 @@ def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     addon_url = get_addon_url(data, torrent_enable, torrent_client)
     if addon_url:
         data["url"] = addon_url
-    else:
-        data["url"] = get_debrid_url(data, indexer_type, is_pack)
-
-    return data
+        return data
+    
+    debrid_url = get_debrid_url(data, indexer_type, is_pack)
+    if debrid_url:
+        data["url"] = debrid_url
+        return data
+    
+    return None
 
 
 def get_addon_url(

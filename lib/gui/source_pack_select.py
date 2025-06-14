@@ -70,6 +70,7 @@ class SourcePackSelect(SourcePackWindow):
         if not self.playback_info:
             self.setProperty("resolving", "false")
             self.close()
+            return
 
         self.setProperty("instant_close", "true")
         self.close()

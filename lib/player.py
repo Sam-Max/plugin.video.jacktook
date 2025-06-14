@@ -191,7 +191,7 @@ class JacktookPLayer(xbmc.Player):
                         f'Player.SetSubtitleLanguage("{self.lang_code}")'
                     )
                     self.showSubtitles(True)
-                    kodilog(f"Subtitles set to {self.lang_code}")
+                    kodilog(f"Subtitles set to {self.lang_code}", level=xbmc.LOGDEBUG)
             else:
                 kodilog("Auto subtitle selection disabled")
                 self.showSubtitles(False)
