@@ -136,6 +136,24 @@ video_extensions = (
     ".xvid",
 )
 
+non_direct_exts = {
+    ".zip",
+    ".rar",
+    ".001",
+    ".002",
+    ".strm",
+    ".ifo",
+    ".vob",
+    ".bdat",
+    ".pvr",
+    ".dvr-ms",
+    ".disc",
+    ".nrg",
+    ".img",
+    ".bin",
+    ".iso",
+}
+
 
 class Enum:
     @classmethod
@@ -306,7 +324,7 @@ def make_listing(metadata):
 
 
 def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
-    kodilog(f"Setting media infoTag for mode: {mode}")
+    kodilog(f"Setting media infoTag for mode: {mode}", level=xbmc.LOGDEBUG)
 
     info_tag = list_item.getVideoInfoTag()
 
@@ -562,7 +580,7 @@ def set_watched_file(data):
 
 
 def set_watched_title(title, ids, mode, tg_data="", media_type=""):
-    kodilog(f"Setting watched title: {title}")
+    kodilog(f"Setting watched title: {title}", level=xbmc.LOGDEBUG)
     current_time = datetime.now()
 
     if mode == "multi":
@@ -884,8 +902,8 @@ def is_torrent_url(uri):
 
 
 def supported_video_extensions():
-    media_types = getSupportedMedia("video")
-    return media_types.split("|")
+    media_types = getSupportedMedia("video").split("|")
+    return [ext for ext in media_types if ext not in non_direct_exts]
 
 
 def add_next_button(func_name, page=1, **kwargs):

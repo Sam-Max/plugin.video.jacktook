@@ -55,22 +55,33 @@ class EasyDebridHelper:
     def get_ed_link(self, info_hash, data):
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
-        files = response_data.get("files", [])
-        if not files:
+        torrent_files = response_data.get("files", [])
+
+        extensions = supported_video_extensions()[:-1]
+        torrent_files = [
+            item
+            for item in torrent_files
+            if any(item["filename"].lower().endswith(x) for x in extensions)
+        ]
+
+        if not torrent_files:
+            notification("No valid files found in torrent")
             return
 
-        if len(files) > 1:
+        if len(torrent_files) > 1:
             if data["tv_data"]:
                 season = data["tv_data"].get("season", "")
                 episode = data["tv_data"].get("episode", "")
-                files = filter_debrid_episode(files, episode_num=episode, season_num=season)
-                if not files:
+                torrent_files = filter_debrid_episode(
+                    torrent_files, episode_num=episode, season_num=season
+                )
+                if not torrent_files:
                     return
             else:
                 data["is_pack"] = True
                 return
-        
-        return files[0].get("url")
+
+        return torrent_files[0].get("url")
 
     def get_ed_pack_info(self, info_hash):
         info = get_cached(info_hash)
