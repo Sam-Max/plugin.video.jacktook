@@ -10,9 +10,9 @@ from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.trakt.trakt import TraktClient
 
-from lib.clients.debrid.premiumize import Premiumize
-from lib.clients.debrid.realdebrid import RealDebrid
-from lib.clients.debrid.torbox import Torbox
+from lib.api.debrid.premiumize import Premiumize
+from lib.api.debrid.realdebrid import RealDebrid
+from lib.api.debrid.torbox import Torbox
 from lib.clients.stremio.catalogs import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,

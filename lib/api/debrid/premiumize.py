@@ -1,5 +1,5 @@
 import time
-from lib.clients.debrid.base import DebridClient, ProviderException
+from lib.api.debrid.base import DebridClient, ProviderException
 from lib.utils.kodi.utils import (
     dialog_ok,
     set_setting,

@@ -1,4 +1,4 @@
-from lib.clients.debrid.base import DebridClient, ProviderException
+from lib.api.debrid.base import DebridClient, ProviderException
 
 
 class EasyDebrid(DebridClient):

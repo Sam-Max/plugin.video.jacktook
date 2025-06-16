@@ -1,5 +1,5 @@
-from lib.clients.debrid.alldebrid import AllDebrid
-from lib.clients.debrid.base import ProviderException
+from lib.api.debrid.alldebrid import AllDebrid
+from lib.api.debrid.base import ProviderException
 from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.general.utils import (
     get_cached,

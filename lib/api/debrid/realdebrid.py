@@ -1,5 +1,5 @@
 from time import time
-from lib.clients.debrid.base import DebridClient, ProviderException
+from lib.api.debrid.base import DebridClient, ProviderException
 from base64 import b64encode, b64decode
 from lib.utils.general.utils import supported_video_extensions
 from lib.utils.kodi.utils import (

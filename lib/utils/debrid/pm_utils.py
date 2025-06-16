@@ -1,6 +1,6 @@
 import copy
 from typing import Dict, List, Any
-from lib.clients.debrid.premiumize import Premiumize
+from lib.api.debrid.premiumize import Premiumize
 from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.general.utils import (
     Debrids,

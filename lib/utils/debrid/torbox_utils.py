@@ -1,6 +1,6 @@
 import copy
 from typing import Dict, List, Any
-from lib.clients.debrid.torbox import Torbox
+from lib.api.debrid.torbox import Torbox
 from lib.utils.kodi.utils import get_setting, notification
 from lib.utils.general.utils import (
     Debrids,

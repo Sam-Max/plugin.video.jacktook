@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Any
-from lib.clients.debrid.easydebrid import EasyDebrid
+from lib.api.debrid.easydebrid import EasyDebrid
 from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification
 from lib.utils.general.utils import (
     Debrids,

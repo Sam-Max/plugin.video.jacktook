@@ -2,8 +2,8 @@ import copy
 import time
 from datetime import datetime
 from typing import List, Dict, Optional, Union
-from lib.clients.debrid.base import ProviderException
-from lib.clients.debrid.realdebrid import RealDebrid
+from lib.api.debrid.base import ProviderException
+from lib.api.debrid.realdebrid import RealDebrid
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
