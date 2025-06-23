@@ -165,7 +165,7 @@ class Cache(_BaseCache):
         self.set(
             key,
             existing_data,
-            datetime.utcnow() + expires,
+            expires,
         )
 
     def get_list(self, key):
