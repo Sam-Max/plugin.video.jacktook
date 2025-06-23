@@ -70,7 +70,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             else:
                 raise ValueError("Neither valid control list nor control ID provided.")
         except (RuntimeError, ValueError) as e:
-            kodilog(f"Could not set focus: {e}", "debug")
+            kodilog(f"Could not set focus: {e}")
             if control_id:
                 self.setFocusId(control_id)
 

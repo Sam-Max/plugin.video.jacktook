@@ -39,6 +39,7 @@ class SourceSelect(BaseWindow):
         self.uncached_sources: List[TorrentStream] = uncached or []
         self.position: int = -1
         self.sources: List[TorrentStream] = sources or []
+        self.list_sources: List[TorrentStream] = []
         self.item_information: Dict = item_information or {}
         self.playback_info: Optional[Dict] = None
         self.resume: Optional[bool] = None
@@ -52,81 +53,97 @@ class SourceSelect(BaseWindow):
 
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
+        self.populate_qualities_header()
         self.populate_sources_list()
-
         self.set_default_focus(self.display_list, 1000, control_list_reset=True)
         super().onInit()
+
+    def populate_qualities_header(self):
+        from collections import Counter
+
+        fixed_qualities = [
+            ("[B][COLOR yellow]4k[/COLOR][/B]", "4k"),
+            ("[B][COLOR blue]1080p[/COLOR][/B]", "1080p"),
+            ("[B][COLOR orange]720p[/COLOR][/B]", "720p"),
+            ("[B][COLOR yellow]N/A[/COLOR][/B]", "N/A"),
+        ]
+
+        qualities = [s.quality for s in self.sources if s.quality]
+        counts = Counter(qualities)
+        qualities_list = self.getControl(1300)
+        qualities_list.reset()
+
+        # Set fixed width for 4 items
+        self.setProperty("quality_item_width", str(int(800 / 4)))
+
+        for display, key in fixed_qualities:
+            count = counts.get(display, 0)
+            label = f"{display} ({count})"
+            list_item = xbmcgui.ListItem(label)
+            list_item.setProperty("quality", key)
+            qualities_list.addItem(list_item)
 
     def doModal(self) -> Optional[Dict]:
         super().doModal()
         return self.playback_info
 
-    def populate_sources_list(self) -> None:
-        self.display_list.reset()
-        self.sources = (
-            self.filtered_sources
-            if self.filter_applied and self.filtered_sources is not None
-            else self.sources
-        )
-        for source in self.sources:
-            menu_item = xbmcgui.ListItem(label=source.title)
-
-            menu_item.setProperty("title", source.title)
-            menu_item.setProperty("type", get_random_color(source.type))
-            menu_item.setProperty("indexer", get_random_color(source.indexer))
-            menu_item.setProperty("guid", source.guid)
-            menu_item.setProperty("infoHash", source.infoHash)
-            menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))
-            menu_item.setProperty("seeders", str(source.seeders))
-            menu_item.setProperty(
-                "fullLanguages", get_colored_languages(source.fullLanguages)
-            )
-            menu_item.setProperty("provider", get_random_color(source.provider))
-            menu_item.setProperty(
-                "publishDate", extract_publish_date(source.publishDate)
-            )
-            menu_item.setProperty("peers", str(source.peers))
-            menu_item.setProperty("quality", source.quality)
-            menu_item.setProperty("status", get_debrid_status(source))
-            menu_item.setProperty("isPack", str(source.isPack))
-
-            self.display_list.addItem(menu_item)
-
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         self.position = self.display_list.getSelectedPosition()
 
-        # Show filter type popup on right arrow
         if action_id == 1 and control_id == 1000:
             filter_type_popup = FilterTypeWindow("filter_type.xml", ADDON_PATH)
             filter_type_popup.doModal()
             selected_type = filter_type_popup.selected_type
             del filter_type_popup
 
-            if selected_type == "quality":
-                qualities = sorted(set(s.quality for s in self.sources if s.quality))
-                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=qualities)
-                popup.doModal()
-                selected_filter = popup.selected_filter
-                del popup
-                if selected_filter is not None:
-                    self.filtered_sources = [
-                        s for s in self.sources if s.quality == selected_filter
-                    ]
-                    self.filter_applied = True
-                else:
-                    self.filtered_sources = None
-                    self.filter_applied = False
+            def get_unique(attr):
+                return sorted(
+                    set(getattr(s, attr) for s in self.sources if getattr(s, attr))
+                )
 
-            elif selected_type == "provider":
-                providers = sorted(set(s.provider for s in self.sources if s.provider))
-                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=providers)
+            filter_map = {
+                "quality": {
+                    "items": lambda: get_unique("quality"),
+                    "filter": lambda val: [s for s in self.sources if s.quality == val],
+                },
+                "provider": {
+                    "items": lambda: get_unique("provider"),
+                    "filter": lambda val: [
+                        s for s in self.sources if s.provider == val
+                    ],
+                },
+                "type": {
+                    "items": lambda: get_unique("type"),
+                    "filter": lambda val: [s for s in self.sources if s.type == val],
+                },
+                "indexer": {
+                    "items": lambda: get_unique("indexer"),
+                    "filter": lambda val: [s for s in self.sources if s.indexer == val],
+                },
+                "language": {
+                    "items": self._get_all_languages,
+                    "filter": lambda val: [
+                        s
+                        for s in self.sources
+                        if val in getattr(s, "languages", [])
+                        or val in getattr(s, "fullLanguages", [])
+                    ],
+                },
+            }
+
+            if selected_type in filter_map:
+                items = filter_map[selected_type]["items"]()
+                if selected_type == "language" and not items:
+                    notification("No languages found")
+                    return
+                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=items)
                 popup.doModal()
                 selected_filter = popup.selected_filter
                 del popup
                 if selected_filter is not None:
-                    self.filtered_sources = [
-                        s for s in self.sources if s.provider == selected_filter
-                    ]
+                    self.filtered_sources = filter_map[selected_type]["filter"](
+                        selected_filter
+                    )
                     self.filter_applied = True
                 else:
                     self.filtered_sources = None
@@ -161,16 +178,58 @@ class SourceSelect(BaseWindow):
                 elif response == 1:
                     self._download_file()
 
+        elif control_id == 1300:
+            quality_list = self.getControl(1300)
+            selected_item = quality_list.getSelectedItem()
+            if selected_item:
+                selected_quality = selected_item.getProperty("quality")
+                self.filtered_sources = [
+                    s for s in self.sources if selected_quality in s.quality
+                ]
+                self.filter_applied = True
+                self.populate_sources_list()
+
         elif action_id == 7 and control_id == 1000:  # Select action
             control_list = self.getControl(control_id)
             self.set_cached_focus(control_id, control_list.getSelectedPosition())
             self._resolve_item(pack_select=False)
 
+    def populate_sources_list(self) -> None:
+        self.display_list.reset()
+        self.list_sources = (
+            self.filtered_sources
+            if self.filter_applied and self.filtered_sources is not None
+            else self.sources
+        )
+        for source in self.list_sources:
+            menu_item = xbmcgui.ListItem(label=source.title)
+
+            menu_item.setProperty("title", source.title)
+            menu_item.setProperty("type", get_random_color(source.type))
+            menu_item.setProperty("indexer", get_random_color(source.indexer))
+            menu_item.setProperty("guid", source.guid)
+            menu_item.setProperty("infoHash", source.infoHash)
+            menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))
+            menu_item.setProperty("seeders", str(source.seeders))
+            menu_item.setProperty(
+                "fullLanguages", get_colored_languages(source.fullLanguages)
+            )
+            menu_item.setProperty("provider", get_random_color(source.provider))
+            menu_item.setProperty(
+                "publishDate", extract_publish_date(source.publishDate)
+            )
+            menu_item.setProperty("peers", str(source.peers))
+            menu_item.setProperty("quality", source.quality)
+            menu_item.setProperty("status", get_debrid_status(source))
+            menu_item.setProperty("isPack", str(source.isPack))
+
+            self.display_list.addItem(menu_item)
+
     def _download_to_debrid(self) -> None:
         pass
 
     def _download_file(self) -> None:
-        selected_source = self.sources[self.position]
+        selected_source = self.list_sources[self.position]
 
         url, magnet, is_torrent = self.get_source_details(source=selected_source)
         source_data = self.prepare_source_data(
@@ -204,7 +263,7 @@ class SourceSelect(BaseWindow):
     def _resolve_item(self, pack_select: bool = False) -> None:
         self.setProperty("resolving", "true")
 
-        selected_source = self.sources[self.position]
+        selected_source = self.list_sources[self.position]
 
         resolver_window = ResolverWindow(
             "resolver.xml",
@@ -231,3 +290,10 @@ class SourceSelect(BaseWindow):
             return resume_window.resume
         finally:
             del resume_window
+
+    def _get_all_languages(self):
+        all_languages = set()
+        for s in self.sources:
+            all_languages.update(getattr(s, "languages", []))
+            all_languages.update(getattr(s, "fullLanguages", []))
+        return sorted(all_languages)

@@ -3,7 +3,7 @@
     <left>710</left>
     <top>290</top>
     <width>500</width>
-    <height>400</height>
+    <height>500</height>
   </coordinates>
   <defaultcontrol always="true">2000</defaultcontrol>
   <animation type="WindowOpen" reversible="false">
@@ -22,7 +22,7 @@
       <left>0</left>
       <top>0</top>
       <width>500</width>
-      <height>400</height>
+      <height>500</height>
       <texture border="30">circle.png</texture>
       <colordiffuse>CC000000</colordiffuse>
     </control>
@@ -36,15 +36,15 @@
       <font>font16_title</font>
       <textcolor>white</textcolor>
       <align>center</align>
-      <label>Choose Filter Type</label>
+      <label>Choose Filter</label>
     </control>
 
     <!-- Filter Types List -->
     <control type="list" id="2000">
       <left>50</left>
-      <top>150</top>
+      <top>120</top>
       <width>400</width>
-      <height>200</height>
+      <height>400</height>
       <onleft>2000</onleft>
       <onright>2000</onright>
       <onup>2000</onup>

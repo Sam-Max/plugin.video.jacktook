@@ -18,10 +18,17 @@ class FilterTypeWindow(BaseWindow):
         provider_item = xbmcgui.ListItem(label="Filter by Provider")
         provider_item.setProperty("type", "provider")
         self.list_control.addItem(provider_item)
+
+        source_item = xbmcgui.ListItem(label="Filter by Source")
+        source_item.setProperty("type", "indexer")
+        self.list_control.addItem(source_item)
+
+        language_item = xbmcgui.ListItem(label="Filter by Language")
+        language_item.setProperty("type", "language")
+        self.list_control.addItem(language_item)
         
         reset_item = xbmcgui.ListItem(label="Reset Filter")
         reset_item.setProperty("type", "reset")
-        
         self.list_control.addItem(reset_item)
 
         self.set_default_focus(self.list_control, 2000, control_list_reset=True)
@@ -33,6 +40,10 @@ class FilterTypeWindow(BaseWindow):
                 self.selected_type = "quality"
             elif pos == 1:
                 self.selected_type = "provider"
+            elif pos == 2:
+                self.selected_type = "indexer"
+            elif pos == 3:
+                self.selected_type = "language"
             else:
                 self.selected_type = None  # Reset
             self.close()

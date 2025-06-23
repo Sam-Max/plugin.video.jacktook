@@ -5,9 +5,7 @@
 		<width>1920</width>
 		<height>1080</height>
     </coordinates>
-
     <controls>
-
         <!-- Background -->
         <control type="group">
             <top>0</top>
@@ -61,6 +59,61 @@
 			<colordiffuse>CCFFFFFF</colordiffuse>
 			<visible>!String.IsEmpty(Window().Property(info.clearlogo)) + !String.IsEqual(Window().Property(instant_close),true)</visible>
 		</control>
+
+		<!-- Qualities Header as a horizontal list -->
+		<control type="list" id="1300">
+            <top>40</top>
+            <left>500</left> <!-- Centered above sources list -->
+            <width>800</width>
+            <height>60</height>
+            <orientation>horizontal</orientation>
+			<ondown>1000</ondown> 
+			<itemgap>0</itemgap>
+            <itemlayout width="200" height="60">
+                <control type="group">
+                    <control type="label">
+                        <width>200</width>
+                        <height>60</height>
+                        <font>font25</font>
+                        <textcolor>AAAAAAAA</textcolor>
+                        <align>center</align>
+                        <label>$INFO[ListItem.Label]</label>
+                    </control>
+                    <!-- Separator: only show if not last item -->
+                    <control type="label">
+                        <left>200</left>
+                        <width>20</width>
+                        <height>60</height>
+                        <font>font25</font>
+                        <textcolor>80FFFFFF</textcolor>
+                        <align>center</align>
+                        <label>|</label>
+                    </control>
+                </control>
+            </itemlayout>
+            <focusedlayout width="200" height="60">
+                <control type="group">
+                    <control type="label">
+                        <width>200</width>
+                        <height>60</height>
+                        <font>font25</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <align>center</align>
+                        <label>$INFO[ListItem.Label]</label>
+                    </control>
+                    <control type="label">
+                        <left>200</left>
+                        <width>20</width>
+                        <height>60</height>
+                        <font>font25</font>
+                        <textcolor>80FFFFFF</textcolor>
+                        <align>center</align>
+                        <label>|</label>
+                    </control>
+                </control>
+            </focusedlayout>
+            <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
+        </control>
 
 		<!-- Scrollbar -->
 		<control type="scrollbar" id="1111">
