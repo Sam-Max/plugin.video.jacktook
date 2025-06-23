@@ -809,6 +809,7 @@ def get_rd_downloads(params):
 def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
+        return
 
     for torrent in torrserver_api.torrents():
         info_hash = torrent.get("hash")
