@@ -23,6 +23,7 @@ from lib.utils.kodi.utils import (
 
 from xbmcplugin import addDirectoryItem, endOfDirectory
 from xbmcgui import ListItem
+import xbmc
 
 
 def check_jackgram_active():
@@ -136,7 +137,8 @@ def add_telegram_latest_file_item(file_entry, parent_data):
 
     merged_data = {**parent_data, **file_entry}
 
-    kodilog(f"Adding Telegram file item: {merged_data}")
+
+    kodilog(f"Adding Telegram file item: {merged_data}", level=xbmc.LOGDEBUG)
 
     addDirectoryItem(
         ADDON_HANDLE,
