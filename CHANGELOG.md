@@ -1,3 +1,8 @@
+## 0.6.0
+- Improve source select layout with clickable quality header. 
+- Add more filtering options on source select window (languages, sources)
+- Minor improvements and fixes
+
 ## 0.5.4
 - HOTFIX: Fix Burst client not working.
 
