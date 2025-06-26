@@ -41,6 +41,9 @@ def get_deepl_language_code(language_name):
 
 
 def get_language_code(language_name):
+    """
+    Convert full language names to ISO 639-1 or 639-2 language codes.
+    """
     language_map = {
         "None": "None",
         "Arabic": "ara",
@@ -61,7 +64,6 @@ def get_language_code(language_name):
         "Korean": "kor",
         "Lithuanian": "lit",
         "Latvian": "lav",
-        "Norwegian Bokmål": "nob",
         "Dutch": "nld",
         "Polish": "pol",
         "Portuguese": "por",

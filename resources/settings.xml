@@ -525,26 +525,23 @@
                     <constraints>
                         <options>
                             <option label="None">None</option>
-                            <option label="English">en</option>
-                            <option label="Spanish">es</option>
-                            <option label="German">de</option>
-                            <option label="French">fr</option>
-                            <option label="Italian">it</option>
-                            <option label="Portuguese">pt</option>
-                            <option label="Dutch">nl</option>
-                            <option label="Polish">pl</option>
-                            <option label="Russian">ru</option>
-                            <option label="Turkish">tr</option>
-                            <option label="Greek">el</option>
-                            <option label="Hebrew">he</option>
-                            <option label="Hindi">hi</option>
-                            <option label="Indonesian">id</option>
-                            <option label="Japanese">ja</option>
-                            <option label="Korean">ko</option>
-                            <option label="Ukrainian">uk</option>
-                            <option label="Vietnamese">vi</option>
-                            <option label="Chinese">zh</option>
-                            <option label="Persian">fa</option>
+                            <option label="English">English</option>
+                            <option label="Spanish">Spanish</option>
+                            <option label="Portuguese">Portuguese</option>
+                            <option label="German">German</option>
+                            <option label="French">French</option>
+                            <option label="Italian">Italian</option>
+                            <option label="Dutch">Dutch</option>
+                            <option label="Polish">Polish</option>
+                            <option label="Russian">Russian</option>
+                            <option label="Turkish">Turkish</option>
+                            <option label="Greek">Greek</option>
+                            <option label="Hindi">Hindi</option>
+                            <option label="Indonesian">Indonesia</option>
+                            <option label="Japanese">Japanese</option>
+                            <option label="Korean">Korean</option>
+                            <option label="Ukrainian">Ukrainian</option>
+                            <option label="Chinese">Chinese</option>
                         </options>
                     </constraints>
                     <control type="list" format="string" />
