@@ -59,7 +59,12 @@ class Jackett(BaseClient):
             if response.status_code != 200:
                 self.notification(f"{translation(30229)} ({response.status_code})")
                 return None
-            return self.parse_response(response)
+            if ((mode == "tv") and (episode != None)):
+                episode_list=self.parse_response(response)
+                season_list=self.search(query, mode, season, None, categories, additional_params)
+                return season_list + episode_list
+            else:
+                return self.parse_response(response)
         except Exception as e:
             self.handle_exception(f"{translation(30229)}: {str(e)}")
             return None

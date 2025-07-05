@@ -131,6 +131,8 @@ class PreProcessBuilder:
             rf"{season_fill}x{episode_fill}",  # XXxXX format
             rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
             rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
+            rf"\sS{season_fill}\s",  # season surrounded by spaces
+            rf"\.S{season_fill}\.",  # season surrounded by dots
             r"Cap\.",  # match "Cap."
         ]
 
