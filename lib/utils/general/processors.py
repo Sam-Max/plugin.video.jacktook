@@ -39,6 +39,8 @@ class BaseProcessBuilder:
             r"season",
             r"the\.complete",
             r"complete",
+            r"integrale",
+            rf"Saison {season_num}"
             r"S(\d{2})E(\d{2})-(\d{2})",
             rf"\.season\.{season_num}\.",
             rf"\.season{season_num}\.",
