@@ -365,7 +365,7 @@
                     </constraints>
                     <control type="spinner" format="string" />
                 </setting>
-                <setting id="filter_by_episode" type="boolean" label="30710" help="30812">
+                <setting id="include_season_packs" type="boolean" label="30710" help="">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>

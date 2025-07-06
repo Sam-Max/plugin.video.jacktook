@@ -3,8 +3,9 @@ from .providers import (
     burst_search,
     burst_search_episode,
     burst_search_movie,
+    burst_search_season,
 )
-from lib.utils.kodi.utils import convert_size_to_bytes
+from lib.utils.kodi.utils import convert_size_to_bytes, get_setting
 from typing import List, Optional, Dict, Any, Callable
 
 
@@ -23,7 +24,10 @@ class Burst(BaseClient):
     ) -> Optional[List[TorrentStream]]:
         try:
             if mode == "tv" or media_type == "tv":
-                results = burst_search_episode(tmdb_id, query, season, episode)
+                if get_setting("include_season_packs"):
+                    results = burst_search_season(tmdb_id, query, season)
+                else:
+                    results = burst_search_episode(tmdb_id, query, season, episode)
             elif mode == "movies" or media_type == "movies":
                 results = burst_search_movie(tmdb_id, query)
             else:

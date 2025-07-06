@@ -829,8 +829,8 @@ def pre_process(
     if get_setting("stremio_enabled") and get_setting("torrent_enable"):
         kodilog("Filtering torrent sources")
         builder.filter_torrent_sources()
-    if mode == "tv" and get_setting("filter_by_episode"):
-        builder.filter_by_episode(episode_name, episode, season)
+    if mode == "tv":
+        builder.filter_sources(episode_name, episode, season)
     builder.filter_by_quality()
     return builder.get_results()
 
