@@ -1,7 +1,7 @@
 from lib.clients.base import BaseClient
 from lib.clients.base import TorrentStream
 
-from lib.utils.kodi.utils import translation
+from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.parsers import xmltodict
 from lib.utils.kodi.settings import get_jackett_timeout
 
@@ -27,7 +27,11 @@ class Jackett(BaseClient):
     ) -> str:
         url = f"{self.base_url}&q={query}"
         if mode == "tv":
-            url += f"&t=tvsearch&season={season}&ep={episode}"
+            url += "&t=tvsearch"
+            if get_setting("include_season_packs"):
+                url += f"&season={season}"
+            else:
+                url += f"&season={season}&ep={episode}"
         elif mode == "movies":
             url += "&t=movie"
         else:

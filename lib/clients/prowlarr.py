@@ -1,5 +1,5 @@
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi.utils import translation
+from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.kodi.settings import get_prowlarr_timeout
 from typing import List, Optional, Any, Callable
 
@@ -27,7 +27,9 @@ class Prowlarr(BaseClient):
             params = {"query": query, "type": "search"}
             if mode == "tv":
                 params["categories"] = [5000, 8000]
-                if season is not None and episode is not None:
+                if get_setting("include_season_packs"):
+                    params["query"] = f"{query} S{int(season):02d}"
+                else:
                     params["query"] = f"{query} S{int(season):02d}E{int(episode):02d}"
             elif mode == "movies":
                 params["categories"] = [2000, 8000]

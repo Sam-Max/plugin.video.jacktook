@@ -332,7 +332,7 @@ msgid "Drop torrent"
 msgstr ""
 
 msgctxt "#30710"
-msgid "Filter TV Shows by Season and Episode"
+msgid "Include Season Packs"
 msgstr ""
 
 msgctxt "#30711"

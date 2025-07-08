@@ -6,6 +6,7 @@ from lib.clients.base import TorrentStream
 
 import xbmc
 
+
 class Quality(Enum):
     LOW = ("480p", "[B][COLOR orange]480p[/COLOR][/B]")
     MEDIUM = ("720p", "[B][COLOR orange]720p[/COLOR][/B]")
@@ -22,40 +23,28 @@ class SortField(Enum):
     CACHED = "isCached"
 
 
-class PostProcessBuilder:
+class BaseProcessBuilder:
     def __init__(self, results: List[TorrentStream]):
         self.results: List[TorrentStream] = results
 
-    def check_season_pack(self, season: int) -> "PostProcessBuilder":
-        season_patterns = self._generate_season_patterns(season)
-        for res in self.results:
-            res.isPack = self._matches_any_pattern(res.title, season_patterns)
-        return self
-
-    def _generate_season_patterns(self, season_num: int) -> List[str]:
+    def get_season_pack_patterns(self, season_num: int) -> list:
         season_fill = f"{int(season_num):02}"
-
         return [
-            # Season as ".S{season_num}." or ".S{season_fill}."
             rf"\.S{season_num}\.",
             rf"\.S{season_fill}\.",
-            # Season as " S{season_num} " or " S{season_fill} "
             rf"\sS{season_num}\s",
             rf"\sS{season_fill}\s",
-            # Season as ".{season_num}.season" (like .1.season, .01.season)
             rf"\.{season_num}\.season",
-            # "total.season" or "season" or "the.complete"
             r"total\.season",
             r"season",
             r"the\.complete",
             r"complete",
-            # Pattern to detect episode ranges like S02E01-02
+            r"integrale",
+            rf"Saison {season_num}"
             r"S(\d{2})E(\d{2})-(\d{2})",
-            # Season as ".season.{season_num}." or ".season.{season_fill}."
             rf"\.season\.{season_num}\.",
             rf"\.season{season_num}\.",
             rf"\.season\.{season_fill}\.",
-            # Handle cases "s1 to {season_num}", "s1 thru {season_num}", etc.
             rf"s1 to {season_num}",
             rf"s1 to s{season_num}",
             rf"s01 to {season_fill}",
@@ -66,9 +55,19 @@ class PostProcessBuilder:
             rf"s01 thru s{season_fill}",
         ]
 
-    def _matches_any_pattern(self, title: str, patterns: List[str]) -> bool:
-        combined_pattern = "|".join(patterns)
-        return bool(re.search(combined_pattern, title))
+    def get_results(self) -> List[TorrentStream]:
+        return self.results
+
+
+class PostProcessBuilder(BaseProcessBuilder):
+    def __init__(self, results: List[TorrentStream]):
+        super().__init__(results)
+
+    def check_season_pack(self, season: int) -> "PostProcessBuilder":
+        season_patterns = self.get_season_pack_patterns(season)
+        for res in self.results:
+            res.isPack = bool(re.search("|".join(season_patterns), res.title))
+        return self
 
     def sort_results(self) -> "PostProcessBuilder":
         sort_by = get_setting("indexers_sort_by")
@@ -85,34 +84,20 @@ class PostProcessBuilder:
         self.results = self.results[:limit]
         return self
 
-    def remove_duplicates(self) -> "PostProcessBuilder":
-        seen_values: List[str] = []
-        unique_results: List[TorrentStream] = []
-        for res in self.results:
-            if res.infoHash not in seen_values:
-                unique_results.append(res)
-                seen_values.append(res.infoHash)
-        self.results = unique_results
-        return self
 
-    def get_results(self) -> List[TorrentStream]:
-        return self.results
-
-
-class PreProcessBuilder:
+class PreProcessBuilder(BaseProcessBuilder):
     def __init__(self, results: List[TorrentStream]):
-        self.results: List[TorrentStream] = results
+        super().__init__(results)
 
     def remove_duplicates(self) -> "PreProcessBuilder":
         seen_values: List[str] = []
         unique_results: List[TorrentStream] = []
         for res in self.results:
-            if res.infoHash not in seen_values or res.guid not in seen_values:
+            key = getattr(res, "infoHash", None) or getattr(res, "guid", None)
+            if key and key not in seen_values:
                 unique_results.append(res)
-                seen_values.append(res.infoHash)
-                seen_values.append(res.guid)
+                seen_values.append(key)
         self.results = unique_results
-        kodilog(f"Removed duplicates: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
     def filter_torrent_sources(self) -> "PreProcessBuilder":
@@ -120,9 +105,25 @@ class PreProcessBuilder:
         kodilog(f"Filtered torrent sources: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
-    def filter_by_episode(
+    def filter_season_packs(self, season_num: int) -> List[TorrentStream]:
+        season_patterns = self.get_season_pack_patterns(season_num)
+        return [
+            res
+            for res in self.results
+            if re.search("|".join(season_patterns), res.title)
+        ]
+
+    def filter_sources(
         self, episode_name: str, episode_num: int, season_num: int
     ) -> "PreProcessBuilder":
+
+        include_season_packs = get_setting("include_season_packs")
+        season_pack_results: List[TorrentStream] = []
+
+        if include_season_packs:
+            kodilog("Including season packs in filtering")
+            season_pack_results = self.filter_season_packs(season_num)
+
         episode_fill = f"{int(episode_num):02}"
         season_fill = f"{int(season_num):02}"
 
@@ -137,11 +138,16 @@ class PreProcessBuilder:
         if episode_name:
             patterns.append(episode_name)
 
-        combined_pattern = "|".join(patterns)
-        self.results = [
-            res for res in self.results if re.search(combined_pattern, res.title)
+        episode_results = [
+            res for res in self.results if re.search("|".join(patterns), res.title)
         ]
-        kodilog(f"Filtered by episode: {self.results}", level=xbmc.LOGDEBUG)
+
+        # Combine both lists
+        self.results = season_pack_results + episode_results
+
+        kodilog(
+            f"Filtered by episode and season packs: {self.results}", level=xbmc.LOGDEBUG
+        )
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":
@@ -174,6 +180,3 @@ class PreProcessBuilder:
         kodilog(f"Quality buckets: {self.results}", level=xbmc.LOGDEBUG)
 
         return self
-
-    def get_results(self) -> List[TorrentStream]:
-        return self.results
