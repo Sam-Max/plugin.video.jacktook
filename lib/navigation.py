@@ -620,9 +620,6 @@ def process_results(
             )
 
 
-
-
-
 def handle_results(
     results: List[TorrentStream],
     mode: str,
@@ -670,7 +667,7 @@ def play_data(data: dict):
     player = JacktookPLayer()
     player.run(data=data)
     del player
-    
+
 
 def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     filtered_results = clean_auto_play_undesired(results)
@@ -683,12 +680,12 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     quality_matches = [
         r for r in filtered_results if preferred_quality.lower() in r.quality.lower()
     ]
-    
+
     if not quality_matches:
         notification("No sources found with the preferred quality.")
         cancel_playback()
         return
-    
+
     selected_result = quality_matches[0]
 
     kodilog(f"Selected result for auto play: {selected_result}")
@@ -706,7 +703,7 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
         },
     )
 
-    if not playback_info:   
+    if not playback_info:
         cancel_playback()
         return
 

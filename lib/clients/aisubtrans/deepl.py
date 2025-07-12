@@ -1,12 +1,12 @@
 import traceback
 import requests
-from lib.clients.aisubtrans.utils import get_deepl_language_code
+from lib.clients.aisubtrans.utils import get_deepl_language_code, slugify
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
     kodilog,
 )
-from os import path as ospath, makedirs, stat
+from os import path as ospath, stat
 from time import sleep
 
 import xbmcgui
@@ -53,22 +53,35 @@ class DeepLTranslator:
 
     def download_and_save_translation(
         self,
-        imdbid,
+        idx,
+        imdb_id,
         season,
         episode,
-        document_id,
-        document_key,
+        lang_name="en",
+        document_id=None,
+        document_key=None,
     ):
         """
         Download the translated document from DeepL and save it as an .srt file.
         The file path is determined based on whether season/episode info is provided.
         """
         if season and episode:
-            new_subtitle_file_path = f"{ADDON_PROFILE_PATH}/{imdbid}/{season}/subtitle.translated.{episode}.srt"
-        else:
             new_subtitle_file_path = (
-                f"{ADDON_PROFILE_PATH}/{imdbid}/subtitle.translated.srt"
+                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"Translated_Subtitle No.{idx}.S{season}E{episode}.{lang_name}.srt"
             )
+        elif season:
+            new_subtitle_file_path = (
+                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"Translated_Subtitle No.{idx}.S{season}.{lang_name}.srt"
+            )
+        else:
+            new_subtitle_file_path = f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/Translated_Subtitle No.{idx}.{lang_name}.srt"
+
+        # Ensure the file path is safe
+        new_subtitle_file_path = slugify(new_subtitle_file_path)
+
+        kodilog(f"Saving translated subtitle to: {new_subtitle_file_path}")
 
         url = f"{self.base_url}/document/{document_id}/result"
         headers = {
@@ -81,8 +94,6 @@ class DeepLTranslator:
         )
         if not self._handle_deepl_response(response, "result download"):
             raise Exception("DeepL API error during result download")
-
-        makedirs(ospath.dirname(new_subtitle_file_path), exist_ok=True)
 
         with open(new_subtitle_file_path, "wb") as f:
             f.write(response.content)
@@ -287,7 +298,7 @@ class DeepLTranslator:
         )
         return show_dialog("Translation Cost", message)
 
-    def translate_file(self, filepath, imdbid, season, episode):
+    def translate_file(self, filepath, idx, imdbid, season, episode):
         """
         Upload a document for translation, wait for completion, then download and save the result.
         """
@@ -328,7 +339,13 @@ class DeepLTranslator:
             self.notification("Translation done.")
 
             return self.download_and_save_translation(
-                imdbid, season, episode, document_id, document_key
+                idx,
+                imdbid,
+                season,
+                episode,
+                lang_name=self.target_lang,
+                document_id=document_id,
+                document_key=document_key,
             )
         except Exception as error:
             kodilog(f"Error in translate_file: {error}")
@@ -351,9 +368,9 @@ class DeepLTranslator:
             return []
         translated_subtitles = []
 
-        for path in valid_sub_paths:
+        for idx, path in enumerate(valid_sub_paths):
             try:
-                translated_sub = self.translate_file(path, imdbid, season, episode)
+                translated_sub = self.translate_file(path, idx, imdbid, season, episode)
                 if translated_sub:
                     translated_subtitles.append(translated_sub)
             except Exception as error:

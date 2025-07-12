@@ -1,6 +1,6 @@
 import requests
 from typing import Callable, List, Optional, Dict, Any
-from lib.clients.aisubtrans.utils import language_code_to_name
+from lib.clients.aisubtrans.utils import language_code_to_name, slugify_title
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
@@ -9,6 +9,7 @@ from lib.utils.kodi.utils import (
 )
 import xbmcgui
 import xbmc
+import re
 
 
 class OpenSubtitleStremioClient:
@@ -39,7 +40,7 @@ class OpenSubtitleStremioClient:
                 )
                 return None
             data = response.json()
-            kodilog(f"OpenSubtitles Subtitles Response: {data}", level=xbmc.LOGDEBUG) 
+            kodilog(f"OpenSubtitles Subtitles Response: {data}", level=xbmc.LOGDEBUG)
             return data.get("subtitles", [])
         except Exception as e:
             self.notification(f"Failed to fetch subtitles: {e}")
@@ -69,12 +70,12 @@ class OpenSubtitleStremioClient:
         ]
 
         dialog = xbmcgui.Dialog()
-        selected_indices =  dialog.multiselect(
+        selected_indices = dialog.multiselect(
             "Select Subtitle to Download",
             items,
             useDetails=True,
         )
-    
+
         if selected_indices is None:
             return []
 
@@ -84,6 +85,7 @@ class OpenSubtitleStremioClient:
         self,
         subtitles: List[Dict[str, Any]],
         imdb_id: str,
+        title: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
     ) -> List[str]:
@@ -91,12 +93,12 @@ class OpenSubtitleStremioClient:
         for idx, subtitle in enumerate(subtitles):
             try:
                 file_path = self.download_subtitle(
-                    subtitle, idx, imdb_id, season, episode
+                    subtitle, idx, imdb_id, title, season, episode
                 )
                 if file_path:
                     file_paths.append(file_path)
-            except Exception:
-                # Notification already handled in download_subtitle
+            except Exception as e:
+                kodilog(f"Failed to download subtitle: {e}")
                 continue
         return file_paths
 
@@ -105,19 +107,33 @@ class OpenSubtitleStremioClient:
         subtitle: Dict[str, Any],
         index: int,
         imdb_id: str,
+        title: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
     ) -> Optional[str]:
         url = subtitle.get("url")
         lang = subtitle.get("lang")
+        lang_name = language_code_to_name(lang)
 
-        if season is not None and episode is not None:
-            file_path = f"{ADDON_PROFILE_PATH}{imdb_id}/{season}/subtitle.E{episode}.{index}.{lang}.srt"
+        title = slugify_title(title)
+
+        if season and episode:
+            file_path = (
+                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt"
+            )
+        elif season:
+            file_path = (
+                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt"
+            )
         else:
-            file_path = f"{ADDON_PROFILE_PATH}{imdb_id}/subtitle.{index}.{lang}.srt"
+            file_path = f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/Subtitle No.{index}.{title}.{lang_name}.srt"
 
         try:
-            response = requests.get(url, stream=True, headers=USER_AGENT_HEADER, timeout=15)
+            response = requests.get(
+                url, stream=True, headers=USER_AGENT_HEADER, timeout=15
+            )
             if response.status_code != 200:
                 self.notification(
                     f"Failed to download {url}, status code {response.status_code}"
@@ -129,5 +145,6 @@ class OpenSubtitleStremioClient:
                         file.write(chunk)
             return file_path
         except Exception as e:
+            kodilog(f"Subtitle download error for {url}: {e}")
             self.notification(f"Subtitle download error for {url}: {e}")
             raise
