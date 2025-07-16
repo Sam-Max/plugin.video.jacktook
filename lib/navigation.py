@@ -380,14 +380,14 @@ def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("files_history"),
-        list_item("Files History", "history.png"),
+        list_item("Recent Files", "history.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_history"),
-        list_item("Titles History", "history.png"),
+        list_item("Recent Titles", "history.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
