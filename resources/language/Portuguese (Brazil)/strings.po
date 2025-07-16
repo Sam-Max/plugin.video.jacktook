@@ -428,8 +428,8 @@ msgid "Authorize add-on to access Real-Debrid account."
 msgstr "Autorizar a extensão a acessar a conta Real-Debrid."
 
 msgctxt "#30836"
-msgid "Enable torrent-based downloads for media content."
-msgstr "Habilitar downloads via torrent para conteúdo de mídia."
+msgid "Enable torrent-based media content. Disabling this restricts the addon to cached debrid content only."
+msgstr "Habilitar conteúdo de mídia via torrent. Desabilitar isso restringe o addon apenas ao conteúdo em cache do debrid."
 
 msgctxt "#30837"
 msgid "Indicates if Real-Debrid account is linked."

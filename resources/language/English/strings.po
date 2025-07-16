@@ -1104,7 +1104,7 @@ msgid "Authorize add-on to access Real-Debrid account."
 msgstr ""
 
 msgctxt "#30836"
-msgid "Enable torrent-based downloads for media content."
+msgid "Enable torrent-based media content. Disabling this restricts the addon to cached debrid content only."
 msgstr ""
 
 msgctxt "#30837"
