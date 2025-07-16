@@ -383,6 +383,7 @@
                         <textcolor>FFFFFFFF</textcolor>
                         <align>left</align>
                         <label>[B]$INFO[ListItem.Property(title)][/B]</label>
+						<scroll>true</scroll>
                     </control>
 
 					<control type="group">
