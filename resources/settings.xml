@@ -809,6 +809,12 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="show_changelog" type="action" label="30894" help="30895">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=show_changelog)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="clear_cache_update" type="boolean" label="30806" help="30846"> 
                     <default>true</default>
                     <control type="toggle" />

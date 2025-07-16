@@ -699,6 +699,14 @@ msgctxt "#30807"
 msgid "Peerfix Configuration"
 msgstr ""
 
+msgctxt "#30894"
+msgid "Show Changelog"
+msgstr "Show Changelog"
+
+msgctxt "#30895"
+msgid "View the latest changes and updates to the addon."
+msgstr "View the latest changes and updates to the addon."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

@@ -56,6 +56,10 @@ ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 PLAYLIST = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
+CHANGELOG_PATH = translate_path(
+    "special://home/addons/plugin.video.jacktook/CHANGELOG.md"
+)
+
 progressDialog = xbmcgui.DialogProgress()
 
 
@@ -95,13 +99,13 @@ def get_property(prop: str):
         kodilog(f"Get property from cache: {prop} = {value}", xbmc.LOGDEBUG)
         if not value:
             return None
-    return value    
+    return value
 
 
 def set_property(prop, value):
     Window(10000).setProperty(prop, value)
     cache.set(prop, value, timedelta(days=30))
-    
+
 
 def clear_property(prop):
     return Window(10000).clearProperty(prop)
@@ -307,7 +311,6 @@ def disable_enable_addon(addon_name=ADDON_NAME):
         pass
 
 
-
 def update_kodi_addons_db(addon_name=ADDON_NAME):
     try:
         date = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -431,11 +434,3 @@ def cancel_playback():
 
 def kodilog(message, level=xbmc.LOGINFO):
     xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
-
-
-
-
-
-
-
-

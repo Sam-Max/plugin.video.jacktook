@@ -39,6 +39,7 @@ from lib.utils.debrid.ed_utils import EasyDebridHelper
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    CHANGELOG_PATH,
     EPISODES_TYPE,
     JACKTORR_ADDON,
     SHOWS_TYPE,
@@ -47,6 +48,7 @@ from lib.utils.kodi.utils import (
     burst_addon_settings,
     cancel_playback,
     container_update,
+    dialog_text,
     get_setting,
     kodilog,
     notification,
@@ -978,6 +980,10 @@ def downloads_menu(params):
 
 def addon_update(params):
     updates_check_addon()
+
+
+def show_changelog(params):
+    dialog_text("Changelog", file=CHANGELOG_PATH)
 
 
 def donate(params):

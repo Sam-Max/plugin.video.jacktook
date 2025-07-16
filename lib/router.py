@@ -43,6 +43,7 @@ from lib.navigation import (
     rd_info,
     search_tmdb_genres,
     search_tmdb_year,
+    show_changelog,
     telegram_menu,
     test_download_dialog,
     test_resume_dialog,
@@ -174,6 +175,7 @@ def addon_router():
         "stremio_login": stremio_login,
         "stremio_logout": stremio_logout,
         "stremio_update": stremio_update,
+        "show_changelog":show_changelog,
     }
 
     if param_string:
