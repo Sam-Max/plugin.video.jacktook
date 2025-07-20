@@ -40,8 +40,7 @@ class BaseProcessBuilder:
             r"the\.complete",
             r"complete",
             r"integrale",
-            rf"Saison {season_num}"
-            r"S(\d{2})E(\d{2})-(\d{2})",
+            rf"Saison {season_num}" r"S(\d{2})E(\d{2})-(\d{2})",
             rf"\.season\.{season_num}\.",
             rf"\.season{season_num}\.",
             rf"\.season\.{season_fill}\.",
@@ -93,7 +92,11 @@ class PreProcessBuilder(BaseProcessBuilder):
         seen_values: List[str] = []
         unique_results: List[TorrentStream] = []
         for res in self.results:
-            key = getattr(res, "infoHash", None) or getattr(res, "guid", None)
+            key = (
+                getattr(res, "infoHash", None)
+                or getattr(res, "title", None)
+                or getattr(res, "guid", None)
+            )
             if key and key not in seen_values:
                 unique_results.append(res)
                 seen_values.append(key)

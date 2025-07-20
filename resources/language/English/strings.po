@@ -1342,3 +1342,11 @@ msgstr ""
 msgctxt "#30893"
 msgid "Stremio Subtitle Configuration"
 msgstr ""
+
+msgctxt "#90001"
+msgid "Add Custom Addon"
+msgstr "Add Custom Addon"
+
+msgctxt "#90002"
+msgid "Add a custom Stremio addon by entering its URL"
+msgstr "Add a custom Stremio addon by entering its URL"

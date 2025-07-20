@@ -36,7 +36,7 @@ def search_client(
 ) -> List[TorrentStream]:
     def perform_search(indexer_key, dialog, *args, **kwargs):
         if indexer_key == Indexer.STREMIO:
-            stremio_addons = ui.get_selected_addons()
+            stremio_addons = ui.get_selected_stream_addons()
             return [
                 result
                 for client in stremio_addon_generator(stremio_addons, dialog)
@@ -45,7 +45,7 @@ def search_client(
 
         if indexer_key != Indexer.BURST:
             update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
-        
+
         client = get_client(indexer_key)
         if not client:
             return []
@@ -148,7 +148,7 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
-                kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
+                kodilog(f"Results from {future}: {results}")
                 if results:
                     total_results.extend(results)
             except Exception as e:

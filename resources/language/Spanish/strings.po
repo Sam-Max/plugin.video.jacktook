@@ -1253,7 +1253,7 @@ msgstr "Actualizar Addons"
 
 msgctxt "#30875"
 msgid "Toggle Catalogs Add-ons"
-msgstr "Alternar complementos de catalogos"
+msgstr "Activar/desactivar complementos de catalogos"
 
 msgctxt "#30876"
 msgid "Download directory"
@@ -1326,3 +1326,11 @@ msgstr "Idioma de destino de Deepl"
 msgctxt "#30893"
 msgid "Stremio Subtitle Configuration"
 msgstr "Configuración de subtítulos de Stremio"
+
+msgctxt "#90001"
+msgid "Add Custom Addon"
+msgstr "Agregar Complemento Personalizado"
+
+msgctxt "#90002"
+msgid "Add a custom Stremio addon by entering its URL"
+msgstr "Agrega un complemento personalizado de Stremio ingresando su URL"

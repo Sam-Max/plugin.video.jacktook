@@ -111,6 +111,7 @@ class StremioAddonClient(BaseClient):
                     provider=parsed["provider"],
                     publishDate="",
                     peers=0,
+                    url=stream.url
                 )
             )
         return results

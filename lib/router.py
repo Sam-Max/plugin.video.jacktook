@@ -84,6 +84,7 @@ from lib.utils.torrent.torrserver_utils import (
     torrent_files,
 )
 from lib.clients.stremio.ui import (
+    add_custom_stremio_addon,
     stremio_login,
     stremio_toggle_addons,
     stremio_logout,
@@ -176,6 +177,7 @@ def addon_router():
         "stremio_logout": stremio_logout,
         "stremio_update": stremio_update,
         "show_changelog":show_changelog,
+        "add_custom_stremio_addon": add_custom_stremio_addon,
     }
 
     if param_string:

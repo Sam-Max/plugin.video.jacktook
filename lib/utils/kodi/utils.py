@@ -76,10 +76,12 @@ def get_jacktorr_setting(value, default=None):
         return value
 
 
-def get_setting(value, default=None):
-    val = ADDON.getSetting(value)
+def get_setting(id, default=None):
+    val = Window(10000).getProperty(id)
     if not val:
-        return default
+        val = ADDON.getSetting(id)
+        if not val:
+            return default
     if val.lower() == "true":
         return True
     if val.lower() == "false":
@@ -88,7 +90,8 @@ def get_setting(value, default=None):
 
 
 def set_setting(id, value):
-    ADDON.setSetting(id=id, value=value)
+    ADDON.setSetting(id, value)
+    Window(10000).setProperty(id, value)
 
 
 def get_property(prop: str):

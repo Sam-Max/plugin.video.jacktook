@@ -3,58 +3,75 @@ from lib.clients.stremio.addons_manager import Addon, AddonManager
 from lib.clients.stremio.client import Stremio
 from lib.db.cached import cache
 from datetime import timedelta
+from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import ADDON, get_setting, kodilog, set_setting
-
+import requests
 import xbmcgui
 
 
 STREMIO_ADDONS_KEY = "stremio_addons"
-STREMIO_CATALOGS_ADDONS_KEY = "stremio_catalog_addons"
-STREMIO_CATALOG_KEY = "stremio_catalog"
+STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
+STREMIO_USER_ADDONS = "stremio_user_addons"
 
 
-def get_addons_catalog():
-    catalog = cache.get(STREMIO_CATALOG_KEY)
-    if not catalog:
+def merge_addons_lists(*lists):
+    seen = set()
+    merged = []
+    for addon_list in lists:
+        for addon in addon_list:
+            key = addon.get("manifest", {}).get("id") or addon.get("id")
+            if key and key not in seen:
+                seen.add(key)
+                merged.append(addon)
+    return merged
+
+
+def get_addons():
+    # Always get custom addons from STREMIO_USER_ADDONS
+    all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
+    custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
+
+    logged_in = get_setting("stremio_loggedin")
+    if logged_in:
         stremio = Stremio()
         try:
-            catalog = stremio.get_community_addons()
+            email = get_setting("stremio_email")
+            password = get_setting("stremio_pass")
+            if email and password:
+                stremio.login(email, password)
+                user_addons = stremio.get_my_addons() or []
+            else:
+                kodilog("Stremio credentials missing, cannot fetch user addons.")
+                user_addons = []
         except Exception as e:
-            kodilog(f"Failed to fetch catalog: {e}")
-            return AddonManager([])
+            kodilog(f"Failed to fetch user addons: {e}")
+            user_addons = []
+        merged_addons = merge_addons_lists(user_addons, custom_addons)
+    else:
+        community_addons = cache.get("stremio_community_addons")
+        if community_addons is None:
+            stremio = Stremio()
+            try:
+                community_addons = stremio.get_community_addons()
+            except Exception as e:
+                kodilog(f"Failed to fetch community addons: {e}")
+                community_addons = []
+            cache.set("stremio_community_addons", community_addons, timedelta(hours=12))
+        merged_addons = merge_addons_lists(community_addons, custom_addons)
 
-        selected_keys = cache.get(STREMIO_ADDONS_KEY) or ""
-        if not selected_keys:
-            selected_keys = "com.stremio.torrentio.addon"
-            cache.set(
-                STREMIO_ADDONS_KEY,
-                selected_keys,
-                timedelta(days=365 * 20),
-            )
-
-        cache.set(STREMIO_CATALOG_KEY, catalog, timedelta(days=1))
-    return AddonManager(catalog)
-
-
-def get_selected_addon_urls() -> List[str]:
-    selected_addons = cache.get(STREMIO_ADDONS_KEY) or ""
-    return selected_addons.split(",")
+    kodilog(f"Loaded {len(merged_addons)} addons from catalog")
+    return AddonManager(merged_addons)
 
 
-def get_selected_catalogs_addon_urls() -> List[str]:
-    selected_addons = cache.get(STREMIO_CATALOGS_ADDONS_KEY) or ""
-    return selected_addons.split(",")
-
-
-def get_selected_addons() -> List[Addon]:
-    catalog = get_addons_catalog()
-    selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
+def get_selected_stream_addons() -> List[Addon]:
+    catalog = get_addons()
+    selected_ids = cache.get(STREMIO_ADDONS_KEY)
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
-    catalog = get_addons_catalog()
-    selected_ids = cache.get(STREMIO_CATALOGS_ADDONS_KEY) or ""
+    catalog = get_addons()
+    selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
     return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
@@ -77,6 +94,40 @@ def stremio_login(params):
     log_in(email, password, dialog)
 
 
+def log_in(email, password, dialog):
+    try:
+        stremio = Stremio()
+        stremio.login(email, password)
+    except Exception as e:
+        dialog.ok("Login Failed", f"Failed to login: {e}")
+        return
+
+    try:
+        # Only merge user account addons with custom addons
+        user_account_addons = stremio.get_my_addons() or []
+        all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
+        custom_addons = [
+            a for a in all_user_addons if a.get("transportName") == "custom"
+        ]
+        all_addons = merge_addons_lists(user_account_addons, custom_addons)
+        cache.set(STREMIO_USER_ADDONS, all_addons, timedelta(days=365 * 20))
+       
+        set_setting("stremio_email", email)
+        set_setting("stremio_pass", password)
+        set_setting("stremio_loggedin", "true")
+
+        kodilog(f"Stremio addons imported: {len(all_addons)}")
+    except Exception as e:
+        dialog.ok(
+            "Add-ons Import Failed",
+            "Please try again later and report the issue if the problem persists. For more details, check the log file.",
+        )
+        kodilog(f"Failed to import addons: {e}")
+        return
+
+    dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
+
+
 def stremio_update(params):
     dialog = xbmcgui.Dialog()
     confirm = dialog.yesno(
@@ -94,59 +145,6 @@ def stremio_update(params):
     log_in(email, password, dialog)
 
 
-def log_in(email, password, dialog):
-    try:
-        stremio = Stremio()
-        stremio.login(email, password)
-    except Exception as e:
-        dialog.ok("Login Failed", f"Failed to login: {e}")
-        return
-
-    try:
-        addons = stremio.get_my_addons()
-        cache.set(STREMIO_CATALOG_KEY, addons, timedelta(days=365 * 20))
-        manager = AddonManager(addons).get_addons_with_resource_and_id_prefix(
-            "stream", "tt"
-        )
-        selected_addons = [addon.key() for addon in manager]
-        cache.set(
-            STREMIO_ADDONS_KEY,
-            ",".join(selected_addons),
-            timedelta(days=365 * 20),
-        )
-
-        dialog = xbmcgui.Dialog()
-        confirm = dialog.yesno(
-            "Stremio Add-ons Import",
-            "Do you want also to import catalogs?",
-            nolabel="Cancel",
-            yeslabel="Yes",
-        )
-        if confirm:
-            catalogs = AddonManager(addons).get_addons_with_resource("catalog")
-            selected_catalogs = [catalog.key() for catalog in catalogs]
-            cache.set(
-                STREMIO_CATALOGS_ADDONS_KEY,
-                ",".join(selected_catalogs),
-                timedelta(days=365 * 20),
-            )
-
-        set_setting("stremio_loggedin", "true")
-        set_setting("stremio_email", email)
-        set_setting("stremio_pass", password)
-    except Exception as e:
-        dialog.ok(
-            "Add-ons Import Failed",
-            "Please try again later and report the issue if the problem persists. For more details, check the log file.",
-        )
-        kodilog(f"Failed to import addons: {e} Response ")
-        return
-
-    dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
-
-    stremio_toggle_addons(None)
-
-
 def stremio_logout(params):
     dialog = xbmcgui.Dialog()
 
@@ -158,24 +156,68 @@ def stremio_logout(params):
     )
     if confirm:
         cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1))
-        cache.set(
-            STREMIO_CATALOGS_ADDONS_KEY, None, timedelta(seconds=1)
+        cache.set(STREMIO_ADDONS_CATALOGS_KEY, None, timedelta(seconds=1))
+        # Do not clear custom addons, only clear login state and user (login) addons
+        all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
+        custom_addons = [
+            a for a in all_user_addons if a.get("transportName") == "custom"
+        ]
+        cache.set(STREMIO_USER_ADDONS, custom_addons, timedelta(days=365 * 20))
+
+        set_setting("stremio_loggedin", "false")
+        set_setting("stremio_email", "")
+        set_setting("stremio_pass", "")
+
+def stremio_toggle_addons(params):
+    kodilog("stremio_toggle_addons called")
+
+    selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
+    addon_manager = get_addons()
+    addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
+
+    dialog = xbmcgui.Dialog()
+    selected_addon_ids = [
+        addons.index(addon) for addon in addons if addon.key() in selected_ids
+    ]
+
+    options = []
+    for addon in addons:
+        option = xbmcgui.ListItem(
+            label=addon.manifest.name, label2=f"{addon.manifest.description}"
         )
-        cache.set(STREMIO_CATALOG_KEY, None, timedelta(seconds=1))
-        settings = ADDON.getSettings()
-        ADDON.setSetting("stremio_loggedin", "false")
-        settings.setString("stremio_email", "")
-        settings.setString("stremio_pass", "")
-        _ = get_addons_catalog()
-        stremio_toggle_addons(None)
-        stremio_toggle_catalogs(None)
+
+        logo = addon.manifest.logo
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+
+        option.setArt({"icon": logo})
+        options.append(option)
+
+    settings = ADDON.getSettings()
+    stremio_email = settings.getString("stremio_email")
+    title = stremio_email or "Stremio Community Addons List"
+
+    selected_indexes = dialog.multiselect(
+        title, options, preselect=selected_addon_ids, useDetails=True
+    )
+
+    if selected_indexes is None:
+        return
+
+    selected_addon_ids = [addons[index].key() for index in selected_indexes]
+
+    cache.set(
+        STREMIO_ADDONS_KEY,
+        ",".join(selected_addon_ids),
+        timedelta(days=365 * 20),
+    )
 
 
 def stremio_toggle_catalogs(params):
-    kodilog("stremio_toggle_catalogs")
-    selected_ids = get_selected_catalogs_addon_urls()
+    kodilog("stremio_toggle_catalogs called")
 
-    addon_manager = get_addons_catalog()
+    selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY) or ""
+    addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource("catalog")
 
     dialog = xbmcgui.Dialog()
@@ -209,50 +251,111 @@ def stremio_toggle_catalogs(params):
     selected_addon_ids = [addons[index].key() for index in selected_indexes]
 
     cache.set(
-        STREMIO_CATALOGS_ADDONS_KEY,
+        STREMIO_ADDONS_CATALOGS_KEY,
         ",".join(selected_addon_ids),
         timedelta(days=365 * 20),
     )
 
 
-def stremio_toggle_addons(params):
-    selected_ids = get_selected_addon_urls()
-    addon_manager = get_addons_catalog()
-
-    addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
-
+def add_custom_stremio_addon(params):
     dialog = xbmcgui.Dialog()
-    selected_addon_ids = [
-        addons.index(addon) for addon in addons if addon.key() in selected_ids
-    ]
-
-    options = []
-    for addon in addons:
-        option = xbmcgui.ListItem(
-            label=addon.manifest.name, label2=f"{addon.manifest.description}"
-        )
-
-        logo = addon.manifest.logo
-        if not logo or logo.endswith(".svg"):
-            logo = "DefaultAddon.png"
-
-        option.setArt({"icon": logo})
-        options.append(option)
-
-    settings = ADDON.getSettings()
-    stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Community Addons List"
-    selected_indexes = dialog.multiselect(
-        title, options, preselect=selected_addon_ids, useDetails=True
+    url = dialog.input(
+        "Enter the custom Stremio addon URL", type=xbmcgui.INPUT_ALPHANUM
     )
-
-    if selected_indexes is None:
+    if not url:
+        dialog.ok("Custom Addon", "No URL provided.")
         return
 
-    selected_addon_ids = [addons[index].key() for index in selected_indexes]
+    # Try to fetch the manifest from the URL
+    try:
+        response = requests.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        response.raise_for_status()
+        manifest = response.json()
+    except Exception as e:
+        kodilog(f"Failed to fetch custom addon manifest: {e}")
+        dialog.ok("Custom Addon", f"Failed to fetch manifest: {e}")
+        return
 
-    cache.set(
-        STREMIO_ADDONS_KEY,
-        ",".join(selected_addon_ids),
-        timedelta(days=365 * 20),
-    )
+    try:
+        addon_key = manifest.get("id") or manifest.get("name")
+        if not addon_key:
+            dialog.ok("Custom Addon", "Manifest missing 'id' or 'name'.")
+            return
+
+        resources = manifest.get("resources", [])
+        # Normalize resources to list of dicts or strings
+        if isinstance(resources, dict):
+            resources = [resources]
+        elif isinstance(resources, str):
+            resources = [resources]
+
+        # Determine capabilities
+        is_stream = False
+        is_catalog = False
+        for res in resources:
+            if isinstance(res, dict):
+                if res.get("name") == "stream":
+                    id_prefixes = res.get("idPrefixes", [])
+                    if "tt" in id_prefixes:
+                        is_stream = True
+                if res.get("name") == "catalog":
+                    is_catalog = True
+            elif isinstance(res, str):
+                if res == "stream":
+                    is_stream = True
+                if res == "catalog":
+                    is_catalog = True
+
+        # Add to selected addons if stream
+        if is_stream:
+            selected_addons = cache.get(STREMIO_ADDONS_KEY)
+            selected_keys = selected_addons.split(",") if selected_addons else []
+            if addon_key not in selected_keys:
+                selected_keys.append(addon_key)
+                cache.set(
+                    STREMIO_ADDONS_KEY,
+                    ",".join(selected_keys),
+                    timedelta(days=365 * 20),
+                )
+
+        # Add to selected catalogs if catalog
+        if is_catalog:
+            selected_catalogs = cache.get(STREMIO_ADDONS_CATALOGS_KEY) or ""
+            selected_catalog_keys = (
+                selected_catalogs.split(",") if selected_catalogs else []
+            )
+            if addon_key not in selected_catalog_keys:
+                selected_catalog_keys.append(addon_key)
+                cache.set(
+                    STREMIO_ADDONS_CATALOGS_KEY,
+                    ",".join(selected_catalog_keys),
+                    timedelta(days=365 * 20),
+                )
+
+        # Always add custom addon to user addons catalog
+        user_addons = cache.get(STREMIO_USER_ADDONS) or []
+
+        custom_addon = {
+            "manifest": manifest,
+            "transportUrl": response.url,
+            "transportName": "custom",
+        }
+        if not any(
+            (a.get("manifest", {}).get("id") or a.get("manifest", {}).get("name"))
+            == addon_key
+            for a in user_addons
+        ):
+            user_addons.append(custom_addon)
+            cache.set(STREMIO_USER_ADDONS, user_addons, timedelta(days=365 * 20))
+
+            if is_stream or is_catalog:
+                dialog.ok("Custom Addon", "Custom Stremio addon added successfully!")
+            else:
+                dialog.ok(
+                    "Custom Addon",
+                    "Addon does not provide 'stream' or 'catalog' resources.",
+                )
+        else:
+            dialog.ok("Custom Addon", "This addon is already added to your list.")
+    except Exception as e:
+        dialog.ok("Custom Addon", f"Failed to add custom addon: {e}")

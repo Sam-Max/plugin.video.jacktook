@@ -69,9 +69,9 @@
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="stremio_loggedin" type="boolean">
+                <setting id="stremio_loggedin" type="string">
                     <default>false</default>
-                    <control type="toggle" />
+                    <control type="edit" format="string" />
                     <visible>false</visible>
                 </setting>
                 <setting id="stremio_email" type="string">
@@ -106,6 +106,17 @@
                         </dependency>
                     </dependencies>
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_catalogs)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+                <setting id="stremio_add_custom_addon" type="action" label="90001" help="90002">
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=add_custom_stremio_addon)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
@@ -152,6 +163,7 @@
                         <close>false</close>
                     </control>
                 </setting>
+                
             </group>
             <group id="jackgram" label="30767">
                 <setting id="jackgram_enabled" type="boolean" label="30734" help="30850">
