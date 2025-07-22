@@ -25,7 +25,6 @@ from lib.utils.general.utils import (
     set_watched_file,
 )
 
-from lib.utils.localization.countries import LANGUAGE_NAME_TO_CODE
 import xbmc
 from xbmc import getCondVisibility as get_visibility
 from xbmcgui import ListItem
@@ -162,6 +161,64 @@ class JacktookPLayer(xbmc.Player):
             resolve_percent = round(resolve_percent + 26.0 / 100, 1)
             sleep(50)
 
+    def handle_subtitle_selection(self):
+        """
+        Handles subtitle activation and selection logic after playback starts.
+        """
+        auto_sub_enabled = get_setting("auto_subtitle")
+        stremio_sub_enabled = get_setting("stremio_sub_enabled")
+        if stremio_sub_enabled or auto_sub_enabled:
+            if stremio_sub_enabled:
+                self.showSubtitles(True)
+                if self.subtitles_found:
+                    self.notification("Subtitles Loaded", time=2000)
+            if auto_sub_enabled:
+                kodilog("Auto subtitle selection enabled")
+                kodilog(f"Trying to set subtitles to: {self.lang_code}")
+                _, _, subtitles = self.get_player_streams()
+                kodilog(f"Available subtitles: {subtitles}")
+                for sub in subtitles:
+                    if (
+                        self.lang_code == sub.get("language")
+                        and sub.get("isforced") is False
+                    ):
+                        self.setSubtitleStream(sub["index"])
+                        self.showSubtitles(True)
+                        kodilog(
+                            f"Subtitles set to {self.lang_code}",
+                        )
+                        break
+        else:
+            kodilog("Auto subtitle selection disabled")
+            self.showSubtitles(False)
+
+    def select_audio_stream(self):
+        """
+        Handles automatic audio stream selection based on user settings.
+        """
+        auto_audio_enabled = get_setting("auto_audio")
+        auto_audio_language = get_setting("auto_audio_language")
+        if (
+            auto_audio_enabled
+            and auto_audio_language
+            and auto_audio_language.lower() != "none"
+        ):
+            kodilog(f"Auto audio selection enabled: {auto_audio_language}")
+            sleep(500)
+            # Get audio streams
+            audio_streams = self.getAvailableAudioStreams()
+            kodilog(f"Available audio streams: {audio_streams}")
+            if audio_streams or len(audio_streams) > 0:
+                lang_code = get_language_code(auto_audio_language)
+                kodilog(f"Selected audio language code: {lang_code}")
+                for stream_lang in audio_streams:
+                    if stream_lang == lang_code:
+                        self.setAudioStream(audio_streams.index(stream_lang))
+                        kodilog(
+                            f"Audio stream set to {auto_audio_language} ({stream_lang})"
+                        )
+                        break
+
     def monitor(self):
         ensure_dialog_dead = False
         total_check_time = 0
@@ -174,32 +231,8 @@ class JacktookPLayer(xbmc.Player):
             close_busy_dialog()
             sleep(1000)
 
-            # Activate subtitles after playback starts
-            auto_sub_enabled = get_setting("auto_subtitle")
-            stremio_sub_enabled = get_setting("stremio_sub_enabled")
-
-            if stremio_sub_enabled or auto_sub_enabled:
-                if stremio_sub_enabled:
-                    self.showSubtitles(True)
-                    if self.subtitles_found:
-                        self.notification("Subtitles Loaded", time=2000)
-                if auto_sub_enabled:
-                    kodilog("Auto subtitle selection enabled")
-                    # Wait a bit to ensure subtitle streams are loaded
-                    sleep(500)
-                    kodilog(f"Trying to set subtitles to: {self.lang_code}")
-                    _, _, subtitles = self.get_player_streams()
-                    for sub in subtitles:
-                        if self.lang_code == sub.get("language"):
-                            self.setSubtitleStream(sub["index"])
-                            self.showSubtitles(True)
-                            kodilog(
-                                f"Subtitles set to {self.lang_code}",
-                            )
-                            break
-            else:
-                kodilog("Auto subtitle selection disabled")
-                self.showSubtitles(False)
+            self.select_audio_stream()
+            self.handle_subtitle_selection()
 
             while self.isPlayingVideo():
                 try:

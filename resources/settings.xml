@@ -61,6 +61,42 @@
                         <popup>false</popup>
                     </control>
                 </setting>
+                <setting id="auto_audio" type="boolean" label="90003" help=""> 
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="auto_audio_language" type="string" label="90004" help="90005">
+                    <default>None</default>
+                    <neading>90004</neading>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="auto_audio">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <constraints>
+                        <options>
+                            <option label="None">None</option>
+                            <option label="English">English</option>
+                            <option label="Spanish">Spanish</option>
+                            <option label="Portuguese">Portuguese</option>
+                            <option label="German">German</option>
+                            <option label="French">French</option>
+                            <option label="Italian">Italian</option>
+                            <option label="Dutch">Dutch</option>
+                            <option label="Polish">Polish</option>
+                            <option label="Russian">Russian</option>
+                            <option label="Turkish">Turkish</option>
+                            <option label="Greek">Greek</option>
+                            <option label="Hindi">Hindi</option>
+                            <option label="Indonesian">Indonesia</option>
+                            <option label="Japanese">Japanese</option>
+                            <option label="Korean">Korean</option>
+                            <option label="Ukrainian">Ukrainian</option>
+                            <option label="Chinese">Chinese</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
             </group>
         </category>
         <category id="indexers_category" label="30864">

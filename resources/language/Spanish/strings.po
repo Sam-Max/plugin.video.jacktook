@@ -1244,8 +1244,8 @@ msgid "Enable or disable Stremio add-ons."
 msgstr "Habilita o deshabilita los complementos de Stremio."
 
 msgctxt "#30873"
-msgid "Prioritize results in the selected language"
-msgstr "Priorizar resultados en el idioma seleccionado"
+msgid "Select language for player subtitle selection"
+msgstr "Seleccionar el idioma del subtitlulo al reproducir"
 
 msgctxt "#30874"
 msgid "Update Addons"
@@ -1334,3 +1334,15 @@ msgstr "Agregar Complemento Personalizado"
 msgctxt "#90002"
 msgid "Add a custom Stremio addon by entering its URL"
 msgstr "Agrega un complemento personalizado de Stremio ingresando su URL"
+
+msgctxt "#90003"
+msgid "Auto-select audio when playing"
+msgstr "Auto-seleccionar audio"
+
+msgctxt "#90004"
+msgid "Audio Language"
+msgstr "Idioma de Audio"
+
+msgctxt "#90005"
+msgid "Select audio language for playing the video"
+msgstr "Seleccionar el idioma del audio para la reproduccion"
