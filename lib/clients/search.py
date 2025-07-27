@@ -148,7 +148,7 @@ def search_client(
         for future in as_completed(tasks):
             try:
                 results = future.result()
-                kodilog(f"Results from {future}: {results}")
+                kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
                 if results:
                     total_results.extend(results)
             except Exception as e:

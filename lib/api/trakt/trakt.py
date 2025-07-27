@@ -36,6 +36,19 @@ class TraktBase:
         self.standby_date = "2050-01-01T01:00:00.000Z"
         self.trakt_user = EMPTY_USER
 
+    def ensure_token_valid(self):
+        expires = get_property("trakt_expires")
+        refresh_token = get_property("trakt_refresh")
+        if expires and refresh_token:
+            try:
+                expires = float(expires)
+                # Refresh if less than 1 hour left
+                if expires - time.time() < 3600:
+                    self.trakt_refresh = refresh_token
+                    self.trakt_refresh_token()
+            except Exception as e:
+                kodilog(f"Error checking token expiry: {e}")
+
     def no_client_key(self):
         notification("Please set a valid Trakt Client ID Key")
         return None
@@ -66,6 +79,7 @@ class TraktBase:
             return self.no_client_key()
 
         if with_auth:
+            self.ensure_token_valid()
             token = get_property("trakt_token")
             kodilog("Trakt token: %s" % token)
 
@@ -197,7 +211,7 @@ class TraktBase:
         if response:
             set_property("trakt_token", str(response["access_token"]))
             set_property("trakt_refresh", str(response["refresh_token"]))
-            set_property("trakt_expires", str(time.time() + 7776000))
+            set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
 
     def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
         params = {
@@ -300,7 +314,7 @@ class TraktAuthentication(TraktBase):
             return False
         set_property("trakt_token", str(token["access_token"]))
         set_property("trakt_refresh", str(token["refresh_token"]))
-        set_property("trakt_expires", str(time.time() + 7776000))
+        set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
         try:
             user = self.call_trakt("users/me")
             set_setting("trakt_user", str(user["username"]))
