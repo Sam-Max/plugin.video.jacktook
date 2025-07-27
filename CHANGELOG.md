@@ -1,3 +1,14 @@
+## 0.7.0
+- Add audio language selection for playback.
+- Add functionality to add custom Stremio addons via URL.
+- Add support for searching and filtering season packs (Jackett & Prowlarr).
+- Add 'Show Changelog' setting and functionality to display addon updates.
+- Renamed history menu items for clarity.
+- Enabled scrolling for the title label in source selection.
+- Implement token validation and adjust expiration time for Trakt authentication.
+- Enhance subtitle file naming and slugify paths for better organization.
+- Other minor improvements and fixes.
+
 ## 0.6.0
 - Improve source select layout with clickable quality header. 
 - Add more filtering options on source select window (languages, sources)
