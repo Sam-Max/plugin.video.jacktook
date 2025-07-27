@@ -443,7 +443,7 @@
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="real_debrid_enabled">true</condition>
+                            <condition operator="is" setting="real_debid_authorized">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
