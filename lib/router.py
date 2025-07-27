@@ -110,9 +110,11 @@ def addon_router():
         "anime_search": anime_search,
         "search": search,
         "handle_tmdb_search": TmdbClient.handle_tmdb_search,
+        "handle_tmdb_query": TmdbClient.handle_tmdb_query,
         "search_tmdb_year": search_tmdb_year,
         "search_tmdb_genres": search_tmdb_genres,
-        "handle_tmdb_query": TmdbClient.handle_tmdb_query,
+        "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
+        "search_tmdb_similar": TmdbClient.search_tmdb_similar,
         "search_direct": search_direct,
         "download_file": handle_download_file,
         "search_item": search_item,
@@ -178,6 +180,7 @@ def addon_router():
         "stremio_update": stremio_update,
         "show_changelog":show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
+        
     }
 
     if param_string:

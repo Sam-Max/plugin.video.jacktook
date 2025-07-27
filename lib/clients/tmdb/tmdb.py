@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from lib.api.trakt.trakt_utils import (
     add_trakt_watched_context_menu,
     add_trakt_watchlist_context_menu,
@@ -6,13 +7,19 @@ from lib.api.trakt.trakt_utils import (
 )
 from lib.clients.tmdb.utils import (
     add_kodi_dir_item,
+    add_tmdb_movie_context_menu,
+    add_tmdb_show_context_menu,
     filter_anime_by_keyword,
     get_tmdb_movie_details,
     get_tmdb_show_details,
     tmdb_get,
 )
 from lib.db.main import main_db
+
 from lib.api.tmdbv3api.objs.search import Search
+from lib.api.tmdbv3api.objs.movie import Movie
+from lib.api.tmdbv3api.objs.tv import TV
+
 from lib.utils.general.utils import (
     Animation,
     Anime,
@@ -37,32 +44,19 @@ from lib.utils.kodi.utils import (
 
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
+import xbmc
 
 
 class BaseTmdbClient:
     @staticmethod
     def _add_media_directory_item(list_item, mode, title, ids, media_type=None):
         if mode == "movies":
-            list_item.addContextMenuItems(
-                [
-                    (
-                        "Rescrape item",
-                        play_media(
-                            name="search",
-                            mode=mode,
-                            query=title,
-                            ids=ids,
-                            rescrape=True,
-                        ),
-                    ),
-                ]
-                + (
-                    add_trakt_watchlist_context_menu("movies", ids)
-                    + add_trakt_watched_context_menu("movies", ids=ids)
-                    if is_trakt_auth()
-                    else []
-                )
-            )
+            context_menu = add_tmdb_movie_context_menu(mode, title=title, ids=ids)
+            if is_trakt_auth():
+                context_menu += add_trakt_watchlist_context_menu(
+                    "movies", ids
+                ) + add_trakt_watched_context_menu("movies", ids=ids)
+            list_item.addContextMenuItems(context_menu)
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
@@ -75,11 +69,12 @@ class BaseTmdbClient:
                 set_playable=True,
             )
         else:
+            context_menu = add_tmdb_show_context_menu(mode, ids=ids)
             if is_trakt_auth():
-                list_item.addContextMenuItems(
-                    add_trakt_watchlist_context_menu("shows", ids)
-                    + add_trakt_watched_context_menu("shows", ids=ids)
-                )
+                context_menu += add_trakt_watchlist_context_menu(
+                    "shows", ids
+                ) + add_trakt_watched_context_menu("shows", ids=ids)
+            list_item.addContextMenuItems(context_menu)
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
@@ -155,6 +150,7 @@ class TmdbClient(BaseTmdbClient):
             "tmdb_trending": lambda: TmdbClient.handle_trending_movies(page, mode),
             "tmdb_genres": lambda: TmdbClient.show_genres_items(mode, page),
             "tmdb_years": lambda: TmdbClient.show_years_items(mode, page),
+            "tmdb_keywords": lambda: TmdbClient.show_keywords_items(query, page, mode),
         }
 
         handler = query_handlers.get(query)
@@ -187,6 +183,8 @@ class TmdbClient(BaseTmdbClient):
             endOfDirectory(ADDON_HANDLE)
         elif query == "tmdb_genres":
             TmdbClient.show_genres_items(mode, page)
+        elif query == "tmdb_keywords":
+            TmdbClient.show_keywords_items(query, page, mode)
         elif query == "tmdb_years":
             TmdbClient.show_years_items(mode, page)
 
@@ -277,13 +275,11 @@ class TmdbClient(BaseTmdbClient):
         if mode == "anime":
             mode = submode
 
-        result = TmdbClient._get_tmdb_result_metadata(
-            res, mode, media_type, tmdb_id
-        )
+        result = TmdbClient._get_tmdb_result_metadata(res, mode, media_type, tmdb_id)
         if result is None:
             return
         title, label_title, mode, ids = result
-        
+
         list_item = ListItem(label=label_title)
         set_media_infoTag(list_item, metadata=res, mode=mode)
 
@@ -377,6 +373,112 @@ class TmdbClient(BaseTmdbClient):
             )
         endOfDirectory(ADDON_HANDLE)
         set_view("widelist")
+
+    @staticmethod
+    def show_keywords_items(query, page, mode):
+        keywords_data = Search().keywords(query, page=page)
+        kodilog(f"Keywords search results: {keywords_data}")
+        if not keywords_data or len(keywords_data) == 0:
+            notification("No keywords found")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        for keyword in keywords_data:
+            keyword_id = keyword.get("id")
+            keyword_name = keyword.get("name")
+            if not keyword_id or not keyword_name:
+                continue
+
+            list_item = ListItem(label=keyword_name)
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "search_tmdb_keywords",
+                    mode=mode,
+                    keyword_id=keyword_id,
+                    page=1,
+                ),
+                is_folder=True,
+                icon_path=None,
+            )
+
+        add_next_button(
+            "handle_tmdb_movie_query", query="tmdb_keywords", page=page + 1, mode=mode
+        )
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def search_tmdb_recommendations(params):
+        ids = json.loads(params.get("ids", "{}"))
+        mode = params.get("mode", "tv")
+        tmdb_id = ids.get("tmdb_id")
+        page = int(params.get("page", 1))
+
+        if not tmdb_id:
+            notification("No TMDB ID found")
+            return
+
+        if mode == "tv":
+            results = TV().recommendations(tmdb_id, page=page)
+        elif mode == "movies":
+            results = Movie().recommendations(tmdb_id, page=page)
+        else:
+            notification("Invalid mode")
+            return
+
+        kodilog(f"TMDB Recommendations: {results.results}", level=xbmc.LOGDEBUG)
+
+        if not results:
+            notification("No recommendations found")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        execute_thread_pool(results.results, TmdbClient.show_tmdb_results, mode)
+
+        if results.total_pages > page:
+            add_next_button(
+                "search_tmdb_recommendations",
+                ids=ids,
+                mode=mode,
+                page=page,
+            )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def search_tmdb_similar(params):
+        ids = json.loads(params.get("ids", "{}"))
+        mode = params.get("mode", "tv")
+        tmdb_id = ids.get("tmdb_id")
+        page = int(params.get("page", 1))
+
+        if not tmdb_id:
+            notification("No TMDB ID found")
+            return
+
+        if mode == "tv":
+            results = TV().similar(tmdb_id, page=page)
+        elif mode == "movies":
+            results = Movie().similar(tmdb_id, page=page)
+        else:
+            notification("Invalid mode")
+            return
+
+        if not results:
+            notification("No similar items found")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        execute_thread_pool(results.results, TmdbClient.show_tmdb_results, mode)
+
+        if results.total_pages > page:
+            add_next_button(
+                "search_tmdb_similar",
+                ids=ids,
+                mode=mode,
+                page=page,
+            )
+        endOfDirectory(ADDON_HANDLE)
 
 
 class TmdbAnimeClient(BaseTmdbClient):

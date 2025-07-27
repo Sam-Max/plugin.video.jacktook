@@ -1,6 +1,10 @@
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
-from lib.clients.tmdb.utils import tmdb_get
-from lib.utils.kodi.utils import ADDON_HANDLE, build_url, play_media
+from lib.clients.tmdb.utils import (
+    add_tmdb_episode_context_menu,
+    add_tmdb_show_context_menu,
+    tmdb_get,
+)
+from lib.utils.kodi.utils import ADDON_HANDLE, build_url
 from lib.utils.general.utils import (
     get_fanart_details,
     set_media_infoTag,
@@ -43,10 +47,14 @@ def show_season_info(ids, mode, media_type):
 
         list_item.setProperty("IsPlayable", "false")
 
+        context_menu = add_tmdb_show_context_menu(mode, ids)
+
         if is_trakt_auth():
-            list_item.addContextMenuItems(
-                add_trakt_watched_context_menu("shows", season=season_number, ids=ids)
+            context_menu += add_trakt_watched_context_menu(
+                "shows", season=season_number, ids=ids
             )
+
+        list_item.addContextMenuItems(context_menu)
 
         addDirectoryItem(
             ADDON_HANDLE,
@@ -83,26 +91,15 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         )
 
         list_item.setProperty("IsPlayable", "true")
-        list_item.addContextMenuItems(
-            [
-                (
-                    "Rescrape item",
-                    play_media(
-                        name="search",
-                        mode=mode,
-                        query=tv_name,
-                        ids=ids,
-                        tv_data=tv_data,
-                        rescrape=True,
-                    ),
-                )
-            ] + (
-                add_trakt_watched_context_menu(
-                    "shows", season=season, episode=episode_number, ids=ids
-                )
-                if is_trakt_auth() else []
-            ) 
-        )
+
+        context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids)
+
+        if is_trakt_auth():
+            context_menu += add_trakt_watched_context_menu(
+                "shows", season=season, episode=episode_number, ids=ids
+            )
+
+        list_item.addContextMenuItems(context_menu)
 
         addDirectoryItem(
             ADDON_HANDLE,

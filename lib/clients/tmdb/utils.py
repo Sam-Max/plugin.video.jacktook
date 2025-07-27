@@ -13,7 +13,13 @@ from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.trending import Trending
 from lib.api.tmdbv3api.objs.tv import TV
 
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, kodilog
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    container_update,
+    kodilog,
+    play_media,
+)
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.general.utils import execute_thread_pool
 
@@ -201,3 +207,87 @@ def filter_anime_by_keyword(results, mode):
     results["results"] = filtered_anime
     results["total_results"] = len(filtered_anime)
     return results
+
+
+def add_tmdb_movie_context_menu(mode, title=None, ids={}):
+    return [
+        (
+            "Rescrape item",
+            play_media(
+                name="search",
+                mode=mode,
+                query=title,
+                ids=ids,
+                rescrape=True,
+            ),
+        ),
+        (
+            "Search Recommendations",
+            container_update(
+                name="search_tmdb_recommendations",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+        (
+            "Search Similar",
+            container_update(
+                name="search_tmdb_similar",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+    ]
+
+
+def add_tmdb_show_context_menu(mode, ids={}):
+    return [
+        (
+            "Search Recommendations",
+            container_update(
+                name="search_tmdb_recommendations",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+        (
+            "Search Similar",
+            container_update(
+                name="search_tmdb_similar",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+    ]
+
+
+def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
+    return [
+        (
+            "Rescrape item",
+            play_media(
+                name="search",
+                mode=mode,
+                query=tv_name,
+                ids=ids,
+                tv_data=tv_data,
+                rescrape=True,
+            ),
+        ),
+        (
+            "Search Recommendations",
+            container_update(
+                name="search_tmdb_recommendations",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+        (
+            "Search Similar",
+            container_update(
+                name="search_tmdb_similar",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+    ]

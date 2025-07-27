@@ -455,7 +455,7 @@ def set_cast_and_actors(info_tag, metadata):
         casts_obj = metadata["casts"]
         casts = casts_obj.get("cast", [])
         if not casts:
-            kodilog(f"Extracted casts from list: {casts}")
+            kodilog(f"Extracted casts from list: {casts}", level=xbmc.LOGDEBUG)
             try:
                 casts = list(casts_obj)
             except Exception:
