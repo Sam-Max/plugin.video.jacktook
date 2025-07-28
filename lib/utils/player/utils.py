@@ -4,6 +4,7 @@ from lib.utils.debrid.debrid_utils import (
     get_debrid_pack_direct_url,
 )
 from lib.utils.kodi.utils import (
+    execute_builtin,
     get_setting,
     is_elementum_addon,
     is_jacktorr_addon,
@@ -35,12 +36,12 @@ def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if addon_url:
         data["url"] = addon_url
         return data
-    
+
     debrid_url = get_debrid_url(data, indexer_type, is_pack)
     if debrid_url:
         data["url"] = debrid_url
         return data
-    
+
     return None
 
 
@@ -94,8 +95,16 @@ def get_debrid_url(
 
 def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
     if not is_elementum_addon():
-        notification(translation(30252))
-        return None
+        if Dialog().yesno(
+            translation(30252),
+            translation(30254),
+            yeslabel="Ok",
+            nolabel="No",
+        ):
+            execute_builtin("InstallAddon(plugin.video.elementum)")
+        else:
+            notification(translation(30252))
+            return None
 
     if ids:
         tmdb_id = ids["tmdb_id"]
@@ -108,8 +117,16 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
 def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
     if not is_jacktorr_addon():
-        notification(translation(30253))
-        return None
+        if Dialog().yesno(
+            translation(30253),
+            translation(30255),
+            yeslabel="Ok",
+            nolabel="No",
+        ):
+            execute_builtin("InstallAddon(plugin.video.jacktorr)")
+        else:
+            notification(translation(30253))
+            return None
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
     else:
@@ -119,8 +136,16 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
 
 def get_torrest_url(magnet: str, url: str) -> Optional[str]:
     if not is_torrest_addon():
-        notification(translation(30250))
-        return None
+        if Dialog().yesno(
+            translation(30250),
+            translation(30256),
+            yeslabel="Ok",
+            nolabel="No",
+        ):
+            execute_builtin("InstallAddon(plugin.video.torrest)")
+        else:
+            notification(translation(30250))
+            return None
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
     else:

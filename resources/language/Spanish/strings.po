@@ -227,6 +227,18 @@ msgctxt "#30253"
 msgid "Addon Jacktorr not found - (plugin.video.jacktorr)"
 msgstr "El Addon Jacktorr no esta instalado - (plugin.video.jacktorr)"
 
+msgctxt "#30254"
+msgid "Do you want to install Elementum?"
+msgstr "¿Quieres instalar Elementum?"
+5
+msgctxt "#30255"
+msgid "Do you want to install Jacktorr?"
+msgstr "¿Quieres instalar Jacktorr?"
+
+msgctxt "#30256"
+msgid "Do you want to instalar Torrest?"
+msgstr "¿Quieres instalar Torrest?"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "Encolado"
