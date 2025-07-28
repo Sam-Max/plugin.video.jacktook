@@ -66,13 +66,15 @@ def get_addons():
 def get_selected_stream_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids = cache.get(STREMIO_ADDONS_KEY)
-    return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    if selected_ids:
+        return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
-    return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    if selected_ids:
+        return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def stremio_login(params):
@@ -111,7 +113,7 @@ def log_in(email, password, dialog):
         ]
         all_addons = merge_addons_lists(user_account_addons, custom_addons)
         cache.set(STREMIO_USER_ADDONS, all_addons, timedelta(days=365 * 20))
-       
+
         set_setting("stremio_email", email)
         set_setting("stremio_pass", password)
         set_setting("stremio_loggedin", "true")
@@ -167,6 +169,7 @@ def stremio_logout(params):
         set_setting("stremio_loggedin", "false")
         set_setting("stremio_email", "")
         set_setting("stremio_pass", "")
+
 
 def stremio_toggle_addons(params):
     kodilog("stremio_toggle_addons called")
