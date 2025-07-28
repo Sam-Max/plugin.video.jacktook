@@ -125,7 +125,7 @@
 			<font>font12</font>
 			<textcolor>80FFFFFF</textcolor>
 			<align>center</align>
-			<label>Press [RIGHT] for more filtering options</label>
+			<label>Press [LEFT] for more filtering options</label>
 			<visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
 		</control>
 
