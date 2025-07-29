@@ -2,10 +2,12 @@ import os
 import pickle
 import sqlite3
 import sys
+import threading
 
 from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
 from hashlib import sha256
+import traceback
 
 
 from lib.jacktook.utils import kodilog
@@ -151,6 +153,7 @@ class Cache(_BaseCache):
         self._last_cleanup = datetime.utcnow()
         self.clean_up()
         self._object_store = {}  # store raw objects that can't be pickled
+        self._lock = threading.Lock()
 
     def _process(self, obj):
         return self._load_func(obj)
@@ -178,37 +181,42 @@ class Cache(_BaseCache):
         return []
 
     def get(self, key):
-        if key in self._object_store:
-            data, expires = self._object_store[key]
-            if expires > datetime.utcnow():
-                return data
-            else:
-                del self._object_store[key]
+        with self._lock:
+            if key in self._object_store:
+                data, expires = self._object_store[key]
+                if expires > datetime.utcnow():
+                    return data
+                else:
+                    del self._object_store[key]
+                    return None
+            self.check_clean_up()
+            try:
+                result = self._conn.execute(
+                    "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
+                ).fetchone()
+            except Exception as e:
+                kodilog(f"SQL error for key {key!r}: {e}")
+                kodilog(traceback.format_exc())
                 return None
-        self.check_clean_up()
-        result = self._conn.execute(
-            "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
-        ).fetchone()
-        if result:
-            data, expires = result
-            if expires > datetime.utcnow():
-                return self._process(data)
-        return None
+            if result:
+                data, expires = result
+                if expires > datetime.utcnow():
+                    return self._process(data)
+            return None
 
     def set(self, key, data, expires):
-        from lib.utils.kodi.utils import kodilog
-
-        try:
-            self.check_clean_up()
-            self._conn.execute(
-                "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
-                (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
-            )
-            kodilog("Set cache for key '{}' with expiry {}".format(key, expires), level=xbmc.LOGDEBUG)
-        except Exception as e:
-            kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
-            # fallback to raw in‑memory store
-            self._object_store[key] = (data, expires)
+        with self._lock:
+            try:
+                self.check_clean_up()
+                self._conn.execute(
+                    "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
+                    (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
+                )
+                kodilog("Set cache for key '{}' with expiry {}".format(key, expires), level=xbmc.LOGDEBUG)
+            except Exception as e:
+                kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
+                # fallback to raw in‑memory store
+                self._object_store[key] = (data, expires)
 
     def clear_list(self, key):
         """Clear the list stored under the given key."""
@@ -241,6 +249,7 @@ class Cache(_BaseCache):
 
     def clean_all(self):
         self._conn.execute("DELETE FROM cached")
+        self._object_store.clear()
 
     def check_clean_up(self):
         clean_up = self.needs_cleanup
