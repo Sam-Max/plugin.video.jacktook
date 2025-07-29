@@ -1,14 +1,17 @@
 from datetime import datetime, date
 import os
+from lib.clients.tmdb.utils import tmdb_get
 from lib.db.main import main_db
+from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
-from lib.api.tmdbv3api.objs.tv import TV
-from lib.api.tmdbv3api.objs.season import Season
-from lib.utils.general.utils import execute_thread_pool, set_media_infoTag, translate_weekday
+from lib.utils.general.utils import (
+    execute_thread_pool,
+    set_media_infoTag,
+    translate_weekday,
+)
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
-
 
 
 def show_weekly_calendar():
@@ -37,11 +40,13 @@ def show_weekly_calendar():
 
     # Add fixed item showing current date at the top
     current_date = datetime.now().strftime("%A, %d %B %Y")
-    date_item = ListItem(label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]")
+    date_item = ListItem(
+        label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
+    )
     date_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
     )
-    addDirectoryItem(ADDON_HANDLE, "",  date_item,isFolder=False)
+    addDirectoryItem(ADDON_HANDLE, "", date_item, isFolder=False)
 
     today_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -53,11 +58,13 @@ def show_weekly_calendar():
         air_date_obj = datetime.strptime(ep["air_date"], "%Y-%m-%d")
         weekday_name = air_date_obj.strftime("%A")
         weekday_name_translated = translate_weekday(weekday_name)
-        
+
         # Mark if episode is released today
         is_today = ep["air_date"] == today_str
-        mark = f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
-        
+        mark = (
+            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
+        )
+
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
         list_item = ListItem(label=ep_title)
@@ -83,18 +90,17 @@ def show_weekly_calendar():
 def get_episodes_for_show(ids):
     tmdb_id = ids.get("tmdb_id")
 
-    tv_api = TV()
-    season_api = Season()
-
     try:
-        show_details = tv_api.details(tmdb_id)
+        show_details = tmdb_get("tv_details", tmdb_id)
         seasons = show_details.get("seasons", [])
         seasons = [s for s in seasons if s.get("season_number", 0) > 0]
         if not seasons:
             return show_details, []
         latest_season = max(seasons, key=lambda s: s.get("season_number", 0))
         season_number = latest_season.get("season_number")
-        season_details = season_api.details(tmdb_id, season_number)
+        season_details = tmdb_get(
+            "season_details", {"id": tmdb_id, "season": season_number}
+        )
 
         episodes = []
         for ep in season_details.get("episodes", []):
@@ -108,7 +114,8 @@ def get_episodes_for_show(ids):
                     }
                 )
         return show_details, episodes
-    except Exception:
+    except Exception as e:
+        kodilog(f"Error fetching episodes for TMDB ID {tmdb_id}: {e}")
         return {}, []
 
 
