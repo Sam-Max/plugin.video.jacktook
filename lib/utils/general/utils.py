@@ -12,6 +12,7 @@ from typing import Dict, List
 
 from lib.api.fanart.fanart import FanartTv
 
+from lib.clients.aisubtrans.utils import get_language_code
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.base import TorrentStream
@@ -1015,3 +1016,43 @@ def extract_publish_date(date):
         return ""
     match = re.search(r"\d{4}-\d{2}-\d{2}", date)
     return match.group() if match else ""
+
+
+def translate_weekday(weekday_name, lang="eng"):
+    sub_language = get_setting("auto_sub_language")
+    if sub_language and sub_language.lower() != "None":
+        lang = get_language_code(sub_language)
+    return WEEKDAY_TRANSLATIONS.get(lang, WEEKDAY_TRANSLATIONS["eng"]).get(
+        weekday_name, weekday_name
+    )
+
+
+WEEKDAY_TRANSLATIONS = {
+    "eng": {
+        "Monday": "Monday",
+        "Tuesday": "Tuesday",
+        "Wednesday": "Wednesday",
+        "Thursday": "Thursday",
+        "Friday": "Friday",
+        "Saturday": "Saturday",
+        "Sunday": "Sunday",
+    },
+    "spa": {
+        "Monday": "Lunes",
+        "Tuesday": "Martes",
+        "Wednesday": "Miércoles",
+        "Thursday": "Jueves",
+        "Friday": "Viernes",
+        "Saturday": "Sábado",
+        "Sunday": "Domingo",
+    },
+    "por": {
+        "Monday": "Segunda-feira",
+        "Tuesday": "Terça-feira",
+        "Wednesday": "Quarta-feira",
+        "Thursday": "Quinta-feira",
+        "Friday": "Sexta-feira",
+        "Saturday": "Sábado",
+        "Sunday": "Domingo",
+    },
+}

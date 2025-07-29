@@ -1,0 +1,124 @@
+from datetime import datetime, date
+import os
+from lib.db.main import main_db
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
+from lib.api.tmdbv3api.objs.tv import TV
+from lib.api.tmdbv3api.objs.season import Season
+from lib.utils.general.utils import execute_thread_pool, set_media_infoTag, translate_weekday
+
+from xbmcgui import ListItem
+from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
+
+
+
+def show_weekly_calendar():
+    setPluginCategory(ADDON_HANDLE, "Weekly TV Calendar")
+
+    tv_shows = [
+        (title, data)
+        for title, data in main_db.database["jt:lth"].items()
+        if data.get("mode") == "tv"
+    ]
+
+    results = []
+
+    def fetch_episodes_for_show(item):
+        title, data = item
+        details, episodes = get_episodes_for_show(data.get("ids"))
+        for ep in episodes:
+            air_date = ep.get("air_date")
+            if air_date and is_this_week(air_date):
+                results.append((title, data, ep, details))
+
+    # Use thread pool to fetch episodes in parallel
+    execute_thread_pool(tv_shows, fetch_episodes_for_show)
+
+    results = sorted(results, key=lambda x: x[2].get("air_date", ""), reverse=False)
+
+    # Add fixed item showing current date at the top
+    current_date = datetime.now().strftime("%A, %d %B %Y")
+    date_item = ListItem(label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]")
+    date_item.setArt(
+        {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
+    )
+    addDirectoryItem(ADDON_HANDLE, "",  date_item,isFolder=False)
+
+    today_str = datetime.now().strftime("%Y-%m-%d")
+
+    # Add items to Kodi UI
+    for title, data, ep, details in results:
+        tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
+
+        # Get the day of the week from air_date
+        air_date_obj = datetime.strptime(ep["air_date"], "%Y-%m-%d")
+        weekday_name = air_date_obj.strftime("%A")
+        weekday_name_translated = translate_weekday(weekday_name)
+        
+        # Mark if episode is released today
+        is_today = ep["air_date"] == today_str
+        mark = f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
+        
+        ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
+
+        list_item = ListItem(label=ep_title)
+        set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
+
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "search",
+                mode=data.get("mode"),
+                media_type=data.get("mode"),
+                query=title,
+                ids=data.get("ids"),
+                tv_data=tv_data,
+            ),
+            list_item,
+            isFolder=False,
+        )
+
+    endOfDirectory(ADDON_HANDLE)
+
+
+def get_episodes_for_show(ids):
+    tmdb_id = ids.get("tmdb_id")
+
+    tv_api = TV()
+    season_api = Season()
+
+    try:
+        show_details = tv_api.details(tmdb_id)
+        seasons = show_details.get("seasons", [])
+        seasons = [s for s in seasons if s.get("season_number", 0) > 0]
+        if not seasons:
+            return show_details, []
+        latest_season = max(seasons, key=lambda s: s.get("season_number", 0))
+        season_number = latest_season.get("season_number")
+        season_details = season_api.details(tmdb_id, season_number)
+
+        episodes = []
+        for ep in season_details.get("episodes", []):
+            air_date = ep.get("air_date")
+            if air_date:
+                episodes.append(
+                    {
+                        "season": season_number,
+                        "number": ep.get("episode_number"),
+                        "air_date": air_date,
+                    }
+                )
+        return show_details, episodes
+    except Exception:
+        return {}, []
+
+
+def is_this_week(date_str):
+    """Check if the date_str (YYYY-MM-DD) is in the current week."""
+    today = date.today()
+    year, week, _ = today.isocalendar()
+    try:
+        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        d_year, d_week, _ = d.isocalendar()
+        return (d_year, d_week) == (year, week)
+    except Exception:
+        return False

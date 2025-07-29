@@ -14,6 +14,13 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": "Tmdb - Calendar",
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_calendar",
+        "icon": "tmdb.png",
+    },
+    {
         "name": "Tmdb - Years",
         "mode": "tv",
         "api": "tmdb",

@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 import threading
 
+from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.api.tmdbv3api.objs.episode import Episode
 from lib.api.tmdbv3api.objs.find import Find
@@ -128,7 +129,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
     )
 
 
-def tmdb_get(path, params=None):
+def tmdb_get(path, params=None) -> AsObj:
     identifier = f"{path}|{params}"
     data = cache.get(identifier)
     if data:
@@ -147,6 +148,8 @@ def tmdb_get(path, params=None):
         "show_genres": lambda _: Genre().tv_list(),
         "discover_movie": lambda p: Discover().discover_movies(p),
         "discover_tv": lambda p: Discover().discover_tv_shows(p),
+        "tv_calendar": lambda p: Discover().discover_tv_calendar(page=p),
+        "tv_week": lambda p: Trending().tv_week(page=p),
         "trending_movie": lambda p: Trending().movie_week(page=p),
         "trending_tv": lambda p: Trending().tv_week(page=p),
         "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),

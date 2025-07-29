@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import os
 from lib.api.trakt.trakt_utils import (
     add_trakt_watched_context_menu,
     add_trakt_watchlist_context_menu,
@@ -28,19 +29,23 @@ from lib.utils.general.utils import (
     execute_thread_pool,
     set_content_type,
     set_media_infoTag,
+    translate_weekday,
 )
 
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.db.main import main_db
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    ADDON_PATH,
     build_url,
     kodilog,
-    play_media,
     set_view,
     show_keyboard,
     notification,
 )
+
+from lib.utils.views.weekly_calendar import is_this_week
+from lib.utils.views.weekly_calendar import get_episodes_for_show
 
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
@@ -103,7 +108,7 @@ class TmdbClient(BaseTmdbClient):
             main_db.set_query("search_query", query)
 
         data = Search().multi(query, page=page)
-        kodilog(f"TMDB Search Results: {data}")
+        kodilog(f"TMDB Search Results: {data}", level=xbmc.LOGDEBUG)
 
         if not data or data.total_results == 0:
             notification("No results found")
@@ -183,8 +188,8 @@ class TmdbClient(BaseTmdbClient):
             endOfDirectory(ADDON_HANDLE)
         elif query == "tmdb_genres":
             TmdbClient.show_genres_items(mode, page)
-        elif query == "tmdb_keywords":
-            TmdbClient.show_keywords_items(query, page, mode)
+        elif query == "tmdb_calendar":
+            TmdbClient.show_calendar_items(query, page, mode)
         elif query == "tmdb_years":
             TmdbClient.show_years_items(mode, page)
 
@@ -373,6 +378,88 @@ class TmdbClient(BaseTmdbClient):
             )
         endOfDirectory(ADDON_HANDLE)
         set_view("widelist")
+
+    @staticmethod
+    def show_calendar_items(query, page, mode):
+        trending_data = tmdb_get("tv_week", page)
+        kodilog(f"Trending TV shows: {len(trending_data.results)}")
+        if not trending_data or trending_data.total_results == 0:
+            notification("No TV shows found")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        results = []
+
+        def fetch_episodes_for_trending_show(show):
+            tmdb_id = getattr(show, "id", None)
+            if not tmdb_id:
+                return
+            ids = {"tmdb_id": tmdb_id}
+            details, episodes = get_episodes_for_show(ids)
+            for ep in episodes:
+                air_date = ep.get("air_date")
+                if air_date and is_this_week(air_date):
+                    results.append((getattr(show, "name", ""), show, ep, details))
+
+        execute_thread_pool(trending_data.results, fetch_episodes_for_trending_show)
+
+        results = sorted(results, key=lambda x: x[2].get("air_date", ""), reverse=False)
+
+        # Add fixed item showing current date at the top
+        current_date = datetime.now().strftime("%A, %d %B %Y")
+        date_item = ListItem(
+            label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
+        )
+        date_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
+        )
+        add_kodi_dir_item(date_item, "", is_folder=False)
+
+        today_str = datetime.now().strftime("%Y-%m-%d")
+
+        for title, show, ep, details in results:
+            tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
+
+            air_date_obj = datetime.strptime(ep["air_date"], "%Y-%m-%d")
+            weekday_name = air_date_obj.strftime("%A")
+            weekday_name_translated = translate_weekday(weekday_name)
+            
+            # Mark if episode is released today
+            is_today = ep["air_date"] == today_str
+            mark = f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
+
+            ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
+
+            tmdb_id = getattr(show, "id")
+            show_details = get_tmdb_show_details(tmdb_id)
+            imdb_id = show_details.external_ids.get("imdb_id", "")
+            tvdb_id = show_details.external_ids.get("tvdb_id", "")
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+
+            list_item = ListItem(label=ep_title)
+            set_media_infoTag(list_item, metadata=details, mode="tv")
+
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "search",
+                    mode="tv",
+                    media_type="tv",
+                    query=title,
+                    ids=ids,
+                    tv_data=tv_data,
+                ),
+                is_folder=False,
+            )
+
+        if trending_data.total_pages > page:
+            add_next_button(
+                "handle_tmdb_query",
+                query=query,
+                page=page + 1,
+                mode=mode,
+            )
+        endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
     def show_keywords_items(query, page, mode):

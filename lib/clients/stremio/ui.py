@@ -7,6 +7,7 @@ from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import ADDON, get_setting, kodilog, set_setting
 import requests
 import xbmcgui
+import xbmc
 
 
 STREMIO_ADDONS_KEY = "stremio_addons"
@@ -59,7 +60,7 @@ def get_addons():
             cache.set("stremio_community_addons", community_addons, timedelta(hours=12))
         merged_addons = merge_addons_lists(community_addons, custom_addons)
 
-    kodilog(f"Loaded {len(merged_addons)} addons from catalog")
+    kodilog(f"Loaded {len(merged_addons)} addons from catalog", level=xbmc.LOGDEBUG)
     return AddonManager(merged_addons)
 
 

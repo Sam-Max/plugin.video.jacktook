@@ -1,7 +1,11 @@
 import json
 import os
+from lib.api.tmdbv3api.objs.movie import Movie
+from lib.api.tmdbv3api.objs.tv import TV
+from lib.clients.tmdb.utils import tmdb_get
 from lib.db.main import main_db
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
+from lib.utils.general.utils import set_media_infoTag
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, kodilog
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -22,14 +26,19 @@ def show_last_titles():
 
     for title, data in reversed(main_db.database["jt:lth"].items()):
         formatted_time = data["timestamp"]
+        mode = data["mode"]
+        ids = data.get("ids")
+        
+        if mode == "tv":
+            details = tmdb_get("tv_details", ids.get("tmdb_id"))
+        else:
+            details = tmdb_get("movie_details", ids.get("tmdb_id"))
 
         list_item = ListItem(label=f"{title}— {formatted_time}")
+        set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
-
-        mode = data["mode"]
-        ids = data.get("ids")
 
         if mode == "tv":
             addDirectoryItem(

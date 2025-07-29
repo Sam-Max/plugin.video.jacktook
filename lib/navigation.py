@@ -61,6 +61,7 @@ from lib.utils.kodi.utils import (
 from lib.utils.player.utils import resolve_playback_source
 from lib.utils.views.last_files import show_last_files
 from lib.utils.views.last_titles import show_last_titles
+from lib.utils.views.weekly_calendar import show_weekly_calendar
 from lib.utils.views.shows import show_episode_info, show_season_info
 from lib.utils.torrentio.utils import open_providers_selection
 from lib.utils.debrid.rd_utils import RealDebridHelper
@@ -154,13 +155,6 @@ def root_menu():
         list_item("Anime", "anime.png"),
         isFolder=True,
     )
-
-    # addDirectoryItem(
-    #     ADDON_HANDLE,
-    #     build_url("animation_menu"),
-    #     list_item("Animation", "anime.png"),
-    #     isFolder=True,
-    # )
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -382,14 +376,19 @@ def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("files_history"),
-        list_item("Recent Files", "history.png"),
+        list_item("Recently Watched Files", "history.png"),
         isFolder=True,
     )
-
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_history"),
-        list_item("Recent Titles", "history.png"),
+        list_item("Recently Watched Titles", "history.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("titles_calendar"),
+        list_item("TV Calendar", "history.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -1012,6 +1011,10 @@ def files_history(params):
 
 def titles_history(params):
     show_last_titles()
+
+
+def titles_calendar(params):
+    show_weekly_calendar()
 
 
 def clear_all_cached(params):
