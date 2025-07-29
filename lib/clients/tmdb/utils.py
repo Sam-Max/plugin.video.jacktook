@@ -131,7 +131,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
 
 def tmdb_get(path, params=None) -> AsObj:
     identifier = f"{path}|{params}"
-    data = cache.get(identifier)
+    data = cache.get(key=identifier)
     if data:
         return data
 
@@ -166,9 +166,11 @@ def tmdb_get(path, params=None) -> AsObj:
 
     if data is not None:
         cache.set(
-            identifier,
-            data,
-            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+            key=identifier,
+            data=data,
+            expires=timedelta(
+                hours=get_cache_expiration() if is_cache_enabled() else 0
+            ),
         )
 
     return data

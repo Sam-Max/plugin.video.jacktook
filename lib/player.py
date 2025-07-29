@@ -176,7 +176,7 @@ class JacktookPLayer(xbmc.Player):
                 kodilog("Auto subtitle selection enabled")
                 kodilog(f"Trying to set subtitles to: {self.lang_code}")
                 _, _, subtitles = self.get_player_streams()
-                kodilog(f"Available subtitles: {subtitles}")
+                kodilog(f"Available subtitles: {subtitles}", level=xbmc.LOGDEBUG)
                 for sub in subtitles:
                     if (
                         self.lang_code == sub.get("language")

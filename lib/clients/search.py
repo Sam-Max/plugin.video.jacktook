@@ -37,6 +37,8 @@ def search_client(
     def perform_search(indexer_key, dialog, *args, **kwargs):
         if indexer_key == Indexer.STREMIO:
             stremio_addons = ui.get_selected_stream_addons()
+            if not stremio_addons:
+                return []
             return [
                 result
                 for client in stremio_addon_generator(stremio_addons, dialog)

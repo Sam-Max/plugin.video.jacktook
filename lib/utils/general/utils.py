@@ -767,7 +767,7 @@ def clear_all_cache():
     TraktAPI().cache.clear_cache(cache_type="list")
 
 
-def clear(type="", update=False):
+def clear(type="all", update=False):
     if update:
         msg = "Do you want to clear your cached history?."
     else:
