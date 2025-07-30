@@ -746,7 +746,7 @@ def get_colored_languages(languages):
 
 
 def execute_thread_pool(results, func, *args, **kwargs):
-    max_workers = min(8, (os.cpu_count() or 1) * 2)
+    max_workers = min(3, (os.cpu_count() or 1))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         [executor.submit(func, res, *args, **kwargs) for res in results]
         executor.shutdown(wait=True)
