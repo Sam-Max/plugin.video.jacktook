@@ -11,5 +11,4 @@ htmlcov
 venv/
 .venv/
 __pycache__
-
-
+.aider*
