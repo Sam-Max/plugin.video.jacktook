@@ -1,5 +1,6 @@
 from datetime import datetime, date
 import os
+import re
 from lib.clients.tmdb.utils import tmdb_get
 from lib.db.main import main_db
 from lib.jacktook.utils import kodilog
@@ -27,7 +28,7 @@ def show_weekly_calendar():
 
     def fetch_episodes_for_show(item):
         title, data = item
-        details, episodes = get_episodes_for_show(data.get("ids"))
+        episodes, details = get_episodes_for_show(data.get("ids"))
         for ep in episodes:
             air_date = ep.get("air_date")
             if air_date and is_this_week(air_date):
@@ -51,18 +52,20 @@ def show_weekly_calendar():
     today_str = datetime.now().strftime("%Y-%m-%d")
 
     # Add items to Kodi UI
-    for title, data, ep, details in results:
+    for title, data, ep, details, in results:
         tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
 
         # Get the day of the week from air_date
-        air_date_obj = datetime.strptime(ep["air_date"], "%Y-%m-%d")
+        air_date_obj = parse_date_str(ep["air_date"])
         weekday_name = air_date_obj.strftime("%A")
         weekday_name_translated = translate_weekday(weekday_name)
 
         # Mark if episode is released today
         is_today = ep["air_date"] == today_str
         mark = (
-            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
+            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]"
+            if is_today
+            else ""
         )
 
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
@@ -95,7 +98,7 @@ def get_episodes_for_show(ids):
         seasons = show_details.get("seasons", [])
         seasons = [s for s in seasons if s.get("season_number", 0) > 0]
         if not seasons:
-            return show_details, []
+            return [], show_details
         latest_season = max(seasons, key=lambda s: s.get("season_number", 0))
         season_number = latest_season.get("season_number")
         season_details = tmdb_get(
@@ -113,7 +116,7 @@ def get_episodes_for_show(ids):
                         "air_date": air_date,
                     }
                 )
-        return show_details, episodes
+        return episodes, show_details
     except Exception as e:
         kodilog(f"Error fetching episodes for TMDB ID {tmdb_id}: {e}")
         return {}, []
@@ -121,11 +124,22 @@ def get_episodes_for_show(ids):
 
 def is_this_week(date_str):
     """Check if the date_str (YYYY-MM-DD) is in the current week."""
-    today = date.today()
-    year, week, _ = today.isocalendar()
     try:
-        d = datetime.strptime(date_str, "%Y-%m-%d").date()
+        d = parse_date_str(date_str)
+        today = date.today()
+        year, week, _ = today.isocalendar()
         d_year, d_week, _ = d.isocalendar()
         return (d_year, d_week) == (year, week)
-    except Exception:
-        return False
+    except Exception as e:
+        kodilog(f"Error: {str(e)}")
+
+
+def parse_date_str(date_str: str) -> date:
+    """Parse a date string (YYYY-MM-DD or similar) into a date object without using datetime.strptime."""
+    date_str_cleaned = date_str.strip().split("T")[0]
+    match = re.search(r"(\d{4})[\-\/]?(\d{1,2})[\-\/]?(\d{1,2})", date_str_cleaned)
+    if match:
+        year, month, day = map(int, match.groups())
+        return date(year, month, day)
+    else:
+        raise ValueError(f"Invalid date format: {date_str}")

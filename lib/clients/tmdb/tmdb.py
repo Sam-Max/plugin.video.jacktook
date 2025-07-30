@@ -44,7 +44,7 @@ from lib.utils.kodi.utils import (
     notification,
 )
 
-from lib.utils.views.weekly_calendar import is_this_week
+from lib.utils.views.weekly_calendar import is_this_week, parse_date_str
 from lib.utils.views.weekly_calendar import get_episodes_for_show
 
 from xbmcgui import ListItem
@@ -381,8 +381,8 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_calendar_items(query, page, mode):
+        kodilog("Fetching TV calendar items for this week")
         trending_data = tmdb_get("tv_week", page)
-        kodilog(f"Trending TV shows: {len(trending_data.results)}")
         if not trending_data or trending_data.total_results == 0:
             notification("No TV shows found")
             endOfDirectory(ADDON_HANDLE)
@@ -395,7 +395,7 @@ class TmdbClient(BaseTmdbClient):
             if not tmdb_id:
                 return
             ids = {"tmdb_id": tmdb_id}
-            details, episodes = get_episodes_for_show(ids)
+            episodes, details = get_episodes_for_show(ids)
             for ep in episodes:
                 air_date = ep.get("air_date")
                 if air_date and is_this_week(air_date):
@@ -420,13 +420,17 @@ class TmdbClient(BaseTmdbClient):
         for title, show, ep, details in results:
             tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
 
-            air_date_obj = datetime.strptime(ep["air_date"], "%Y-%m-%d")
+            air_date_obj = parse_date_str(ep["air_date"])
             weekday_name = air_date_obj.strftime("%A")
             weekday_name_translated = translate_weekday(weekday_name)
-            
+
             # Mark if episode is released today
             is_today = ep["air_date"] == today_str
-            mark = f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
+            mark = (
+                f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]"
+                if is_today
+                else ""
+            )
 
             ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
