@@ -93,6 +93,7 @@ from lib.clients.stremio.ui import (
     stremio_update,
 )
 
+from lib.utils.views.last_titles import delete_last_title_entry
 import xbmc
 
 
@@ -182,7 +183,7 @@ def addon_router():
         "stremio_update": stremio_update,
         "show_changelog":show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
-        
+        "delete_last_title_entry": delete_last_title_entry,
     }
 
     if param_string:

@@ -3,14 +3,14 @@ import pickle
 import sqlite3
 import sys
 import threading
+import traceback
 
 from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
 from hashlib import sha256
-import traceback
-
 
 from lib.jacktook.utils import kodilog
+
 import xbmcaddon
 import xbmcgui
 import xbmc
@@ -210,9 +210,16 @@ class Cache(_BaseCache):
                 self.check_clean_up()
                 self._conn.execute(
                     "INSERT OR REPLACE INTO `cached` (key, data, expires) VALUES(?, ?, ?)",
-                    (key, sqlite3.Binary(self._prepare(data)), datetime.utcnow() + expires),
+                    (
+                        key,
+                        sqlite3.Binary(self._prepare(data)),
+                        datetime.utcnow() + expires,
+                    ),
                 )
-                kodilog("Set cache for key '{}' with expiry {}".format(key, expires), level=xbmc.LOGDEBUG)
+                kodilog(
+                    "Set cache for key '{}' with expiry {}".format(key, expires),
+                    level=xbmc.LOGDEBUG,
+                )
             except Exception as e:
                 kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
                 # fallback to raw in‑memory store

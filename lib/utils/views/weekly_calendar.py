@@ -2,7 +2,7 @@ from datetime import datetime, date
 import os
 import re
 from lib.clients.tmdb.utils import tmdb_get
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
 from lib.utils.general.utils import (
@@ -15,12 +15,14 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 
 
+
+
 def show_weekly_calendar():
     setPluginCategory(ADDON_HANDLE, "Weekly TV Calendar")
 
     tv_shows = [
         (title, data)
-        for title, data in main_db.database["jt:lth"].items()
+        for title, data in PickleDatabase().get_key("jt:lth").items()
         if data.get("mode") == "tv"
     ]
 
@@ -52,11 +54,17 @@ def show_weekly_calendar():
     results_today = [r for r in results if r[2].get("air_date") == today_str]
     results_other = [r for r in results if r[2].get("air_date") != today_str]
 
-    results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + \
-            sorted(results_other, key=lambda x: x[2].get("air_date", ""))
+    results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + sorted(
+        results_other, key=lambda x: x[2].get("air_date", "")
+    )
 
     # Add items to Kodi UI
-    for title, data, ep, details, in results:
+    for (
+        title,
+        data,
+        ep,
+        details,
+    ) in results:
         tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
 
         # Get the day of the week from air_date
@@ -67,9 +75,7 @@ def show_weekly_calendar():
         # Mark if episode is released today
         is_today = ep["air_date"] == today_str
         mark = (
-            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]"
-            if is_today
-            else ""
+            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
         )
 
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"

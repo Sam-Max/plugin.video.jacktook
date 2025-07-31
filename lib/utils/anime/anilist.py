@@ -10,7 +10,7 @@ from lib.utils.general.utils import (
     set_cached,
     set_media_infotag,
 )
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -22,6 +22,9 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 
 
+pickle_db = PickleDatabase()
+
+
 def search_anilist(category, page, plugin):
     client = anilist_client()
     if category == "SearchAnime":
@@ -29,9 +32,9 @@ def search_anilist(category, page, plugin):
             text = show_keyboard(id=30242)
             if not text:
                 return
-            main_db.set_query("query", text)
+            pickle_db.set_key("query", text)
         else:
-            text = main_db.get_query("query")
+            text = pickle_db.get_key("query")
         data = client.search(str(text), page)
     elif category == "Trending":
         data = search_anilist_api(type="Trending", client=client, page=page)

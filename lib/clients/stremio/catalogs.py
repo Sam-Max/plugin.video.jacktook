@@ -2,9 +2,15 @@ import json
 from lib.clients.stremio.ui import get_selected_catalogs_addons
 from lib.clients.tmdb.utils import tmdb_get
 from lib.utils.general.utils import add_next_button
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.stremio.catalogs_utils import catalogs_get_cache
-from lib.utils.kodi.utils import ADDON_HANDLE, build_url, kodilog, notification, show_keyboard
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    build_url,
+    kodilog,
+    notification,
+    show_keyboard,
+)
 
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
@@ -72,13 +78,15 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
 def search_catalog(params):
     page = int(params["page"])
 
+    pickle_db = PickleDatabase()
+
     if page == 1:
         query = show_keyboard(id=30241)
         if not query:
             return
-        main_db.set_query("search_catalog_query", query)
+        pickle_db.set_key("search_catalog_query", query)
     else:
-        query = main_db.get_query("search_catalog_query")
+        query = pickle_db.get_key("search_catalog_query")
 
     response = catalogs_get_cache("search_catalog", params, query)
     if not response:

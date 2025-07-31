@@ -15,8 +15,6 @@ from lib.clients.tmdb.utils import (
     get_tmdb_show_details,
     tmdb_get,
 )
-from lib.db.main import main_db
-
 from lib.api.tmdbv3api.objs.search import Search
 from lib.api.tmdbv3api.objs.movie import Movie
 from lib.api.tmdbv3api.objs.tv import TV
@@ -33,7 +31,7 @@ from lib.utils.general.utils import (
 )
 
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -50,6 +48,9 @@ from lib.utils.views.weekly_calendar import get_episodes_for_show
 from xbmcgui import ListItem
 from xbmcplugin import endOfDirectory
 import xbmc
+
+
+pickle_db = PickleDatabase()
 
 
 class BaseTmdbClient:
@@ -99,13 +100,13 @@ class TmdbClient(BaseTmdbClient):
         page = int(params.get("page", 1))
 
         query = (
-            show_keyboard(id=30241) if page == 1 else main_db.get_query("search_query")
+            show_keyboard(id=30241) if page == 1 else pickle_db.get_key("search_query")
         )
         if not query:
             return
 
         if page == 1:
-            main_db.set_query("search_query", query)
+            pickle_db.set_key("search_query", query)
 
         data = Search().multi(query, page=page)
         kodilog(f"TMDB Search Results: {data}", level=xbmc.LOGDEBUG)
@@ -418,8 +419,9 @@ class TmdbClient(BaseTmdbClient):
         results_today = [r for r in results if r[2].get("air_date") == today_str]
         results_other = [r for r in results if r[2].get("air_date") != today_str]
 
-        results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + \
-                sorted(results_other, key=lambda x: x[2].get("air_date", ""))
+        results = sorted(
+            results_today, key=lambda x: x[2].get("air_date", "")
+        ) + sorted(results_other, key=lambda x: x[2].get("air_date", ""))
 
         for title, show, ep, details in results:
             tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
@@ -607,10 +609,10 @@ class TmdbAnimeClient(BaseTmdbClient):
         if page == 1:
             query = show_keyboard(id=30242)
             if query:
-                main_db.set_query("anime_query", query)
+                pickle_db.set_key("anime_query", query)
                 return query
             return None
-        return main_db.get_query("anime_query")
+        return pickle_db.get_key("anime_query")
 
     @staticmethod
     def handle_anime_category_query(tmdb_anime, category, submode, page):

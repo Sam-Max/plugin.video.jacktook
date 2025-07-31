@@ -1,5 +1,5 @@
 import os
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
 from xbmcgui import ListItem
 from xbmcplugin import (
@@ -7,6 +7,7 @@ from xbmcplugin import (
     endOfDirectory,
     setPluginCategory,
 )
+
 
 
 def show_last_files():
@@ -22,7 +23,7 @@ def show_last_files():
         list_item,
     )
 
-    for title, data in reversed(main_db.database["jt:lfh"].items()):
+    for title, data in reversed(PickleDatabase().get_key("jt:lfh").items()):
         formatted_time = data["timestamp"]
         label = f"{title}—{formatted_time}"
         list_item = ListItem(label=label)

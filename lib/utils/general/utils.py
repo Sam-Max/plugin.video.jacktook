@@ -18,7 +18,7 @@ from lib.api.trakt.trakt import TraktAPI
 from lib.clients.base import TorrentStream
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -43,6 +43,8 @@ import xbmc
 
 from zipfile import ZipFile
 
+
+pickle_db = PickleDatabase()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 128
 
@@ -558,7 +560,7 @@ def set_watched_file(data):
     is_torrent = data.get("is_torrent", False)
     is_direct = data.get("type", "") == IndexerType.DIRECT
 
-    if title in main_db.database["jt:lfh"]:
+    if title in pickle_db.get_key("jt:lfh"):
         return
 
     if is_direct:
@@ -571,13 +573,12 @@ def set_watched_file(data):
         color = get_random_color("Cached", formatted=False)
         title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
 
-    if title not in main_db.database["jt:watch"]:
-        main_db.database["jt:watch"][title] = True
+    if title not in pickle_db.get_key("jt:watch"):
+        pickle_db.set_item(key="jt:watch", subkey=title, value=True)
 
     data["timestamp"] = datetime.now().strftime("%a, %d %b %Y %I:%M %p")
 
-    main_db.set_data(key="jt:lfh", subkey=title, value=data)
-    main_db.commit()
+    pickle_db.set_item(key="jt:lfh", subkey=title, value=data)
 
 
 def set_watched_title(title, ids, mode, tg_data="", media_type=""):
@@ -587,7 +588,7 @@ def set_watched_title(title, ids, mode, tg_data="", media_type=""):
     if mode == "multi":
         mode = media_type
 
-    main_db.set_data(
+    pickle_db.set_item(
         key="jt:lth",
         subkey=title,
         value={
@@ -597,11 +598,6 @@ def set_watched_title(title, ids, mode, tg_data="", media_type=""):
             "tg_data": tg_data,
         },
     )
-    main_db.commit()
-
-
-def is_torrent_watched(title):
-    return main_db.database["jt:watch"].get(title, False)
 
 
 def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
@@ -772,17 +768,15 @@ def clear(type="all", update=False):
         msg = "Do you want to clear your cached history?."
     else:
         msg = "Do you want to clear this history?."
-    dialog = Dialog()
-    confirmed = dialog.yesno("Clear History", msg)
+    confirmed = Dialog().yesno("Clear History", msg)
     if confirmed:
         if type == "lth":
-            main_db.database["jt:lth"] = {}
+            pickle_db.set_key("jt:lth", {})
         elif type == "lfh":
-            main_db.database["jt:lfh"] = {}
+            pickle_db.set_key("jt:lfh", {})
         else:
-            main_db.database["jt:lth"] = {}
-            main_db.database["jt:lfh"] = {}
-        main_db.commit()
+            pickle_db.set_key("jt:lth", {})
+            pickle_db.set_key("jt:lfh", {})
         container_refresh()
 
 

@@ -1,17 +1,23 @@
 import json
 import os
-from lib.api.tmdbv3api.objs.movie import Movie
-from lib.api.tmdbv3api.objs.tv import TV
 from lib.clients.tmdb.utils import tmdb_get
-from lib.db.main import main_db
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import set_media_infoTag
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, kodilog
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, container_refresh
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
     setPluginCategory,
 )
+
+
+pickle_db = PickleDatabase()
+
+
+def delete_last_title_entry(params):
+    pickle_db.delete_item(key="jt:lth", subkey=params.get("title"))
+    container_refresh()
 
 
 def show_last_titles():
@@ -24,11 +30,11 @@ def show_last_titles():
 
     addDirectoryItem(ADDON_HANDLE, build_url("clear_history", type="lth"), list_item)
 
-    for title, data in reversed(main_db.database["jt:lth"].items()):
+    for title, data in reversed(pickle_db.get_key("jt:lth").items()):
         formatted_time = data["timestamp"]
         mode = data["mode"]
         ids = data.get("ids")
-        
+
         if mode == "tv":
             details = tmdb_get("tv_details", ids.get("tmdb_id"))
         else:
@@ -38,6 +44,15 @@ def show_last_titles():
         set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
+        )
+
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Delete from history",
+                    f'RunPlugin({build_url("delete_last_title_entry", title=title)})',
+                )
+            ]
         )
 
         if mode == "tv":
