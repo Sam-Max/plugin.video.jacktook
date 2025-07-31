@@ -1292,7 +1292,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto select subtitle when playing"
+msgid "Auto-select subtitle when playing"
 msgstr ""
 
 msgctxt "#30879"
@@ -1373,4 +1373,156 @@ msgstr ""
 
 msgctxt "#90005"
 msgid "Select audio language for playing the video"
+msgstr ""
+
+msgctxt "#90006"
+msgid "Search"
+msgstr ""
+
+msgctxt "#90007"
+msgid "TV Shows"
+msgstr ""
+
+msgctxt "#90008"
+msgid "Movies"
+msgstr ""
+
+msgctxt "#90009"
+msgid "Anime"
+msgstr ""
+
+msgctxt "#90010"
+msgid "Live TV"
+msgstr ""
+
+msgctxt "#90011"
+msgid "Direct Search"
+msgstr ""
+
+msgctxt "#90012"
+msgid "Torrents"
+msgstr ""
+
+msgctxt "#90013"
+msgid "Telegram"
+msgstr ""
+
+msgctxt "#90014"
+msgid "Cloud"
+msgstr ""
+
+msgctxt "#90015"
+msgid "Downloads"
+msgstr ""
+
+msgctxt "#90016"
+msgid "Settings"
+msgstr ""
+
+msgctxt "#90017"
+msgid "History"
+msgstr ""
+
+msgctxt "#90018"
+msgid "Donate"
+msgstr ""
+
+msgctxt "#90019"
+msgid "Recently Watched Files"
+msgstr ""
+
+msgctxt "#90020"
+msgid "Recently Watched Titles"
+msgstr ""
+
+msgctxt "#90021"
+msgid "TV Calendar"
+msgstr ""
+
+msgctxt "#90022"
+msgid "If you enjoy using Jacktook and appreciate the time and effort I put into developing this addon, consider supporting me with a contribution at:"
+msgstr ""
+
+msgctxt "#90023"
+msgid "Support Jacktook"
+msgstr ""
+
+msgctxt "#90024"
+msgid "Tmdb - Trending"
+msgstr ""
+
+msgctxt "#90025"
+msgid "Tmdb - Genres"
+msgstr ""
+
+msgctxt "#90026"
+msgid "Tmdb - Calendar"
+msgstr ""
+
+msgctxt "#90027"
+msgid "Tmdb - Years"
+msgstr ""
+
+msgctxt "#90028"
+msgid "Trakt - Trending"
+msgstr ""
+
+msgctxt "#90029"
+msgid "Trakt - Most Watched"
+msgstr ""
+
+msgctxt "#90030"
+msgid "Trakt - Most Favorited"
+msgstr ""
+
+msgctxt "#90031"
+msgid "Trakt - Popular Lists"
+msgstr ""
+
+msgctxt "#90032"
+msgid "Trakt - Trending Lists"
+msgstr ""
+
+msgctxt "#90033"
+msgid "Trakt - Recomendations"
+msgstr ""
+
+msgctxt "#90034"
+msgid "Trakt - Watched History"
+msgstr ""
+
+msgctxt "#90035"
+msgid "Trakt - Watchlist"
+msgstr ""
+
+msgctxt "#90036"
+msgid "Trakt - Top 10 BoxOffice"
+msgstr ""
+
+msgctxt "#90037"
+msgid "Anime Popular"
+msgstr ""
+
+msgctxt "#90038"
+msgid "Anime Popular Recent"
+msgstr ""
+
+msgctxt "#90039"
+msgid "Anime Airing"
+msgstr ""
+
+msgctxt "#90040"
+msgid "Anime Years"
+msgstr ""
+
+msgctxt "#90041"
+msgid "Anime Genres"
+msgstr ""
+
+msgctxt "#90042"
+msgid "Trakt - Anime Trending"
+msgstr ""
+
+msgctxt "#90043"
+msgid "Trakt - Anime Most Watched"
 msgstr ""

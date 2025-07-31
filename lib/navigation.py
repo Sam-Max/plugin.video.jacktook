@@ -134,46 +134,46 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("handle_tmdb_search", mode="multi", page=1),
-        list_item("Search", "search.png"),
+        list_item(translation(90006), "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("tv_shows_items"),
-        list_item("TV Shows", "tv.png"),
+        list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("movies_items"),
-        list_item("Movies", "movies.png"),
+        list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_menu"),
-        list_item("Anime", "anime.png"),
+        list_item(translation(90009), "anime.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("tv_menu"),
-        list_item("Live TV", "tv.png"),
+        list_item(translation(90010), "tv.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("direct_menu"),
-        list_item("Direct Search", "search.png"),
+        list_item(translation(90011), "search.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("torrents"),
-        list_item("Torrents", "magnet2.png"),
+        list_item(translation(90012), "magnet2.png"),
         isFolder=True,
     )
 
@@ -181,42 +181,42 @@ def root_menu():
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("telegram_menu"),
-            list_item("Telegram", "cloud.png"),
+            list_item(translation(90013), "cloud.png"),
             isFolder=True,
         )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("cloud"),
-        list_item("Cloud", "cloud.png"),
+        list_item(translation(90014), "cloud.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("downloads_menu"),
-        list_item("Downloads", "cloud.png"),
+        list_item(translation(90015), "cloud.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("settings"),
-        list_item("Settings", "settings.png"),
+        list_item(translation(90016), "settings.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("history_menu"),
-        list_item("History", "history.png"),
+        list_item(translation(90017), "history.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("donate"),
-        list_item("Donate", "donate.png"),
+        list_item(translation(90018), "donate.png"),
         isFolder=True,
     )
 
@@ -234,13 +234,13 @@ def animation_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("animation_item", mode="tv"),
-        list_item("TV Shows", "tv.png"),
+        list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("animation_item", mode="movies"),
-        list_item("Movies", "movies.png"),
+        list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -284,7 +284,7 @@ def telegram_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("search_direct", mode="direct"),
-        list_item("Search", "search.png"),
+        list_item(translation(90006), "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
@@ -360,13 +360,13 @@ def anime_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_item", mode="tv"),
-        list_item("Tv Shows", "tv.png"),
+        list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_item", mode="movies"),
-        list_item("Movies", "movies.png"),
+        list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -376,19 +376,19 @@ def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("files_history"),
-        list_item("Recently Watched Files", "history.png"),
+        list_item(translation(90019), "history.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_history"),
-        list_item("Recently Watched Titles", "history.png"),
+        list_item(translation(90020), "history.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_calendar"),
-        list_item("TV Calendar", "history.png"),
+        list_item(translation(90021), "history.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -399,7 +399,7 @@ def anime_item(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_search", mode=mode, category="Anime_Search"),
-        list_item("Search", "search.png"),
+        list_item(translation(90006), "search.png"),
         isFolder=True,
     )
 
@@ -466,7 +466,7 @@ def search_direct(params):
                 expires=timedelta(hours=get_cache_expiration()),
             )
 
-    list_item = ListItem(label=f"Search")
+    list_item = ListItem(label=translation(90006))
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
     )
@@ -986,12 +986,11 @@ def show_changelog(params):
 
 
 def donate(params):
-    msg = "If you enjoy using Jacktook and appreciate the time and effort we are investing in developing this addon, you can support us with a contribution at:"
     dialog = CustomDialog(
         "customdialog.xml",
         ADDON_PATH,
-        heading="Support Jacktook",
-        text=msg,
+        heading=translation(90023),
+        text=translation(90022),
         url="[COLOR snow]https://ko-fi.com/sammax09[/COLOR]",
     )
     dialog.doModal()

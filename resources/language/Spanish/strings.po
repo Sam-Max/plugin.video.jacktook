@@ -45,11 +45,11 @@ msgstr "Clave Api"
 
 msgctxt "#30025"
 msgid "Host"
-msgstr "Host"
+msgstr "Servidor"
 
 msgctxt "#30026"
 msgid "Description length"
-msgstr "Longitud de Descripcion"
+msgstr "Longitud de la Descripcion"
 
 msgctxt "#30027"
 msgid "Insecured connection"
@@ -81,7 +81,7 @@ msgstr "Clave Api"
 
 msgctxt "#30052"
 msgid "Host"
-msgstr "Host"
+msgstr "Servidor"
 
 msgctxt "#30053"
 msgid "Indexers-Ids"
@@ -105,7 +105,7 @@ msgstr "TMDB Api Key"
 
 msgctxt "#30104"
 msgid "Clear tmdb cache"
-msgstr "Borrar la cache de tmdb"
+msgstr "Borrar la cache de TMDB"
 
 msgctxt "#30105"
 msgid "Cache expiration hours"
@@ -153,7 +153,7 @@ msgstr "API key no provista para"
 
 msgctxt "#30223"
 msgid "You need to configure"
-msgstr "Necesitas configuar"
+msgstr "Necesitas configurar"
 
 msgctxt "#30228"
 msgid "The request to Torrentio failed."
@@ -208,8 +208,8 @@ msgid "Search for torrents:"
 msgstr "Buscar torrents"
 
 msgctxt "#30244"
-msgid "Cache limpiada"
-msgstr ""
+msgid "Cache cleared"
+msgstr "Cache limpiada"
 
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"
@@ -230,7 +230,7 @@ msgstr "El Addon Jacktorr no esta instalado - (plugin.video.jacktorr)"
 msgctxt "#30254"
 msgid "Do you want to install Elementum?"
 msgstr "¿Quieres instalar Elementum?"
-5
+
 msgctxt "#30255"
 msgid "Do you want to install Jacktorr?"
 msgstr "¿Quieres instalar Jacktorr?"
@@ -264,8 +264,8 @@ msgid "Seeding"
 msgstr "Seeding"
 
 msgctxt "#30656"
-msgid "Asignando"
-msgstr ""
+msgid "Allocating"
+msgstr "Asignando"
 
 msgctxt "#30657"
 msgid "Checking resume data"
@@ -981,7 +981,7 @@ msgstr "Idioma y país"
 
 msgctxt "#42419"
 msgid "The language and country settings used when looking up data from TMDb"
-msgstr "La configuración de idioma y país utilizada al buscar datos de TMDb"
+msgstr "La configuración de idioma y país utilizada al buscar datos de TMDB"
 
 msgctxt "#42420"
 msgid "EN"
@@ -1272,44 +1272,44 @@ msgid "Download directory"
 msgstr "Directorio de Descarga"
 
 msgctxt "#30877"
-msgid "Habilitar Trakt.tv Scrobbling"
-msgstr ""
+msgid "Enable Trakt.tv Scrobbling"
+msgstr "Habilitar Trakt.tv Scrobbling"
 
 msgctxt "#30878"
-msgid "Auto-select subtitle"
-msgstr ""
+msgid "Auto-select subtitle when playing"
+msgstr "Auto habilitar subtitulo al reproducir"
 
 msgctxt "#30879"
 msgid "Auto-play quality"
-msgstr ""
+msgstr "Calidad de reproducción automática"
 
 msgctxt "#30880"
 msgid "1080p"
-msgstr ""
+msgstr "1080p"
 
 msgctxt "#30881"
 msgid "720p"
-msgstr ""
+msgstr "1080p"
 
 msgctxt "#30882"
 msgid "4k"
-msgstr ""
+msgstr "4k"
 
 msgctxt "#30883"
 msgid "480p"
-msgstr ""
+msgstr "480p"
 
 msgctxt "#30884"
 msgid "Subtitles Configuration"
-msgstr ""
+msgstr "Configuracion de Subtitulos"
 
 msgctxt "#30885"
 msgid "Addon Host"
-msgstr ""
+msgstr "Host del Addon"
 
 msgctxt "#30886"
 msgid "Subtitles"
-msgstr ""
+msgstr "Subtitulos"
 
 msgctxt "#30887"
 msgid "Primary Language"
@@ -1358,3 +1358,155 @@ msgstr "Idioma de Audio"
 msgctxt "#90005"
 msgid "Select audio language for playing the video"
 msgstr "Seleccionar el idioma del audio para la reproduccion"
+
+msgctxt "#90006"
+msgid "Search"
+msgstr "Buscar"
+
+msgctxt "#90007"
+msgid "TV Shows"
+msgstr "Series"
+
+msgctxt "#90008"
+msgid "Movies"
+msgstr "Peliculas"
+
+msgctxt "#90009"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#90010"
+msgid "Live TV"
+msgstr "Television en vivo"
+
+msgctxt "#90011"
+msgid "Direct Search"
+msgstr "Busqueda Directa"
+
+msgctxt "#90012"
+msgid "Torrents"
+msgstr "Torrents"
+
+msgctxt "#90013"
+msgid "Telegram"
+msgstr "Telegram"
+
+msgctxt "#90014"
+msgid "Cloud"
+msgstr "Nube"
+
+msgctxt "#90015"
+msgid "Downloads"
+msgstr "Descargas"
+
+msgctxt "#90016"
+msgid "Settings"
+msgstr "Ajustes"
+
+msgctxt "#90017"
+msgid "History"
+msgstr "Historial"
+
+msgctxt "#90018"
+msgid "Donate"
+msgstr "Donar"
+
+msgctxt "#90019"
+msgid "Recently Watched Files"
+msgstr "Archivos Recientemente Reproducidos"
+
+msgctxt "#90020"
+msgid "Recently Watched Titles"
+msgstr "Titulos Recientemente Reproducidos"
+
+msgctxt "#90021"
+msgid "TV Calendar"
+msgstr "Calendario de TV"
+
+msgctxt "#90022"
+msgid "If you enjoy using Jacktook and appreciate the time and effort I put into developing this addon, consider supporting me with a contribution at:"
+msgstr "Si disfrutas usando Jacktook y valoras el tiempo y esfuerzo que dedico al desarrollo de este addon, considera apoyarme con una contribución en:"
+
+msgctxt "#90023"
+msgid "Support Jacktook"
+msgstr "Apoya a Jacktook"
+
+msgctxt "#90024"
+msgid "Tmdb - Trending"
+msgstr "Tmdb - Tendencias"
+
+msgctxt "#90025"
+msgid "Tmdb - Genres"
+msgstr "Tmdb - Géneros"
+
+msgctxt "#90026"
+msgid "Tmdb - Calendar"
+msgstr "Tmdb - Calendario"
+
+msgctxt "#90027"
+msgid "Tmdb - Years"
+msgstr "Tmdb - Años"
+
+msgctxt "#90028"
+msgid "Trakt - Trending"
+msgstr "Trakt - Tendencias"
+
+msgctxt "#90029"
+msgid "Trakt - Most Watched"
+msgstr "Trakt - Más vistos"
+
+msgctxt "#90030"
+msgid "Trakt - Most Favorited"
+msgstr "Trakt - Más favoritos"
+
+msgctxt "#90031"
+msgid "Trakt - Popular Lists"
+msgstr "Trakt - Listas populares"
+
+msgctxt "#90032"
+msgid "Trakt - Trending Lists"
+msgstr "Trakt - Listas en tendencia"
+
+msgctxt "#90033"
+msgid "Trakt - Recomendations"
+msgstr "Trakt - Recomendaciones"
+
+msgctxt "#90034"
+msgid "Trakt - Watched History"
+msgstr "Trakt - Historial de vistos"
+
+msgctxt "#90035"
+msgid "Trakt - Watchlist"
+msgstr "Trakt - Lista para ver"
+
+msgctxt "#90036"
+msgid "Trakt - Top 10 BoxOffice"
+msgstr "Trakt - Top 10 en taquilla"
+
+msgctxt "#90037"
+msgid "Anime Popular"
+msgstr "Anime Popular"
+
+msgctxt "#90038"
+msgid "Anime Popular Recent"
+msgstr "Anime Popular Reciente"
+
+msgctxt "#90039"
+msgid "Anime Airing"
+msgstr "Anime en Emisión"
+
+msgctxt "#90040"
+msgid "Anime Years"
+msgstr "Años de Anime"
+
+msgctxt "#90041"
+msgid "Anime Genres"
+msgstr "Géneros de Anime"
+
+msgctxt "#90042"
+msgid "Trakt - Anime Trending"
+msgstr "Trakt - Anime en Tendencia"
+
+msgctxt "#90043"
+msgid "Trakt - Anime Most Watched"
+msgstr "Trakt - Anime Más Visto"
