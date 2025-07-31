@@ -403,8 +403,6 @@ class TmdbClient(BaseTmdbClient):
 
         execute_thread_pool(trending_data.results, fetch_episodes_for_trending_show)
 
-        results = sorted(results, key=lambda x: x[2].get("air_date", ""), reverse=False)
-
         # Add fixed item showing current date at the top
         current_date = datetime.now().strftime("%A, %d %B %Y")
         date_item = ListItem(
@@ -416,6 +414,12 @@ class TmdbClient(BaseTmdbClient):
         add_kodi_dir_item(date_item, "", is_folder=False)
 
         today_str = datetime.now().strftime("%Y-%m-%d")
+
+        results_today = [r for r in results if r[2].get("air_date") == today_str]
+        results_other = [r for r in results if r[2].get("air_date") != today_str]
+
+        results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + \
+                sorted(results_other, key=lambda x: x[2].get("air_date", ""))
 
         for title, show, ep, details in results:
             tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}

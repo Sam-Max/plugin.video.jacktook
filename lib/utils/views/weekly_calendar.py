@@ -37,8 +37,6 @@ def show_weekly_calendar():
     # Use thread pool to fetch episodes in parallel
     execute_thread_pool(tv_shows, fetch_episodes_for_show)
 
-    results = sorted(results, key=lambda x: x[2].get("air_date", ""), reverse=False)
-
     # Add fixed item showing current date at the top
     current_date = datetime.now().strftime("%A, %d %B %Y")
     date_item = ListItem(
@@ -50,6 +48,12 @@ def show_weekly_calendar():
     addDirectoryItem(ADDON_HANDLE, "", date_item, isFolder=False)
 
     today_str = datetime.now().strftime("%Y-%m-%d")
+
+    results_today = [r for r in results if r[2].get("air_date") == today_str]
+    results_other = [r for r in results if r[2].get("air_date") != today_str]
+
+    results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + \
+            sorted(results_other, key=lambda x: x[2].get("air_date", ""))
 
     # Add items to Kodi UI
     for title, data, ep, details, in results:
