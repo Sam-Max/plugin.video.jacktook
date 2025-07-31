@@ -81,6 +81,8 @@ def show_weekly_calendar():
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
         list_item = ListItem(label=ep_title)
+        list_item.setProperty("IsPlayable", "true")
+
         set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
 
         addDirectoryItem(

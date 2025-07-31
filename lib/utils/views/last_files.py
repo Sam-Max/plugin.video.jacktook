@@ -26,6 +26,7 @@ def show_last_files():
     for title, data in reversed(PickleDatabase().get_key("jt:lfh").items()):
         formatted_time = data["timestamp"]
         label = f"{title}—{formatted_time}"
+        
         list_item = ListItem(label=label)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}

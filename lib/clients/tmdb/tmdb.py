@@ -447,6 +447,8 @@ class TmdbClient(BaseTmdbClient):
             ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
             list_item = ListItem(label=ep_title)
+            list_item.setProperty("IsPlayable", "true")
+
             set_media_infoTag(list_item, metadata=details, mode="tv")
 
             add_kodi_dir_item(
