@@ -1,3 +1,16 @@
+## 0.8.0
+Features:
+- Implement TV calendar on History and TV Shows menus, to show weekly episodes.
+- Add context menu items for TMDB recommendations and similar content.
+- Add installation prompts for missing addons: Elementum, Jacktorr, and Torrest. 
+- Update filter options label to indicate usage of the left key.
+- Adjust thread pool max workers calculation for better performance on low end devices.
+Refactors:
+- Replace usage of main_db with PickleDatabase across the addon. 
+Fixes:
+- Handle empty Stremio addons to prevent crashes. 
+- Make Cache class thread-safe and more robust. 
+
 ## 0.7.0
 - Add audio language selection for playback.
 - Add functionality to add custom Stremio addons via URL.
