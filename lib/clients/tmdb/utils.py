@@ -20,6 +20,7 @@ from lib.utils.kodi.utils import (
     container_update,
     kodilog,
     play_media,
+    translation,
 )
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.general.utils import execute_thread_pool
@@ -217,7 +218,7 @@ def filter_anime_by_keyword(results, mode):
 def add_tmdb_movie_context_menu(mode, title=None, ids={}):
     return [
         (
-            "Rescrape item",
+            translation(90049),
             play_media(
                 name="search",
                 mode=mode,
@@ -227,7 +228,7 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
             ),
         ),
         (
-            "Search Recommendations",
+            translation(90050),
             container_update(
                 name="search_tmdb_recommendations",
                 mode=mode,
@@ -235,7 +236,7 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
             ),
         ),
         (
-            "Search Similar",
+            translation(90051),
             container_update(
                 name="search_tmdb_similar",
                 mode=mode,
@@ -248,7 +249,7 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
 def add_tmdb_show_context_menu(mode, ids={}):
     return [
         (
-            "Search Recommendations",
+            translation(90050),
             container_update(
                 name="search_tmdb_recommendations",
                 mode=mode,
@@ -256,7 +257,7 @@ def add_tmdb_show_context_menu(mode, ids={}):
             ),
         ),
         (
-            "Search Similar",
+            translation(90051),
             container_update(
                 name="search_tmdb_similar",
                 mode=mode,
@@ -269,7 +270,7 @@ def add_tmdb_show_context_menu(mode, ids={}):
 def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
     return [
         (
-            "Rescrape item",
+            translation(90049),
             play_media(
                 name="search",
                 mode=mode,
@@ -280,7 +281,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
             ),
         ),
         (
-            "Search Recommendations",
+            translation(90050),
             container_update(
                 name="search_tmdb_recommendations",
                 mode=mode,
@@ -288,7 +289,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
             ),
         ),
         (
-            "Search Similar",
+            translation(90051),
             container_update(
                 name="search_tmdb_similar",
                 mode=mode,

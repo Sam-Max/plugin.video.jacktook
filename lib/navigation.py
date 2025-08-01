@@ -486,7 +486,7 @@ def search_direct(params):
         list_item.addContextMenuItems(
             [
                 (
-                    "Rescrape Item",
+                    translation(90049),
                     play_media(
                         name="search",
                         mode=mode,

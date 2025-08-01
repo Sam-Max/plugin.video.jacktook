@@ -1546,3 +1546,19 @@ msgstr ""
 msgctxt "#90048"
 msgid "Choose which providers to include in the stream request."
 msgstr ""
+
+# Context menus
+
+msgctxt "#90049"
+msgid "Scrape Again"
+msgstr ""
+
+msgctxt "#90050"
+msgid "Search Recommendations"
+msgstr ""
+
+msgctxt "#90051"
+msgid "Search Similar"
+msgstr ""
+
+

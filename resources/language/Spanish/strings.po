@@ -1530,3 +1530,17 @@ msgstr "Seleccionar proveedores de Torrentio"
 msgctxt "#90048"
 msgid "Choose which providers to include in the stream request."
 msgstr "Elige qué proveedores incluir en las peticiones de reproducción."
+
+# Context menus
+
+msgctxt "#90049"
+msgid "Scrape Again"
+msgstr "Volver a escanear"
+
+msgctxt "#90050"
+msgid "Search Recommendations"
+msgstr "Buscar recomendaciones"
+
+msgctxt "#90051"
+msgid "Search Similar"
+msgstr "Buscar similares"

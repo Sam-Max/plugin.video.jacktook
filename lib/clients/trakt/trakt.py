@@ -21,6 +21,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     play_media,
+    translation,
 )
 from .paginator import paginator_db
 
@@ -48,7 +49,7 @@ class BaseTraktClient:
             list_item.addContextMenuItems(
                 [
                     (
-                        "Rescrape item",
+                        translation(90049),
                         play_media(
                             name="search",
                             mode=mode,

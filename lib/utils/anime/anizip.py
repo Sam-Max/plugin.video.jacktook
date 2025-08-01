@@ -1,8 +1,8 @@
 import os
 from lib.clients.anizip import AniZipApi
 from lib.db.anime import get_all_ids
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, play_media
-from lib.utils.general.utils import get_cached, set_cached, set_media_infotag
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, play_media, translation
+from lib.utils.general.utils import get_cached, set_cached
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
@@ -75,7 +75,7 @@ def anizip_parse_show_results(response, title, anilist_id, plugin):
         list_item.addContextMenuItems(
             [
                 (
-                    "Rescrape item",
+                    translation(90049),
                     play_media(
                         name="search",
                         mode="anime",
