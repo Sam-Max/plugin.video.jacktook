@@ -1,3 +1,14 @@
+## 0.9.0
+- Added Torrentio providers selection and settings UI. 
+- Episodes are now marked as playable in TMDB and calendar views. 
+- Replaced hardcoded context menu labels with translation entries (English and Spanish).
+- Replaced hardcoded menus labels with translation entries. (English and Spanish).
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.8.0
 Features:
 - Implement TV calendar on History and TV Shows menus, to show weekly episodes.
