@@ -2,11 +2,15 @@ from lib.clients.stremio.addons_manager import Addon
 from lib.clients.stremio.stream import Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
-from lib.utils.kodi.utils import convert_size_to_bytes, kodilog
+from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
+from lib.db.cached import cache
 
 import re
 from typing import List, Dict, Optional, Any
+
+
+TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
 
 
 class StremioAddonCatalogsClient(BaseClient):
@@ -26,8 +30,8 @@ class StremioAddonCatalogsClient(BaseClient):
     ) -> None:
         pass
 
-    def parse_response(self, res: any) -> None:
-        pass
+    def parse_response(self, res: Any) -> List[TorrentStream]:
+        return []
 
     def get_catalog_info(self, skip: int) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}/skip={skip}.json"
@@ -66,7 +70,7 @@ class StremioAddonClient(BaseClient):
     ) -> List[TorrentStream]:
         try:
             kodilog(f"Searching for {imdb_id} on {self.addon.manifest.name}")
-            
+
             if mode == "tv" or media_type == "tv":
                 if not self.addon.isSupported("stream", "series", "tt"):
                     return []
@@ -75,17 +79,25 @@ class StremioAddonClient(BaseClient):
                 if not self.addon.isSupported("stream", "movie", "tt"):
                     return []
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
+            else:
+                return []
 
-            kodilog(f"URL: {url}")
-            
+            if get_setting("torrentio_enabled"):
+                if "torrentio" in self.addon.url():
+                    providers = cache.get(TORRENTIO_PROVIDERS_KEY)
+                    if providers:
+                        url = url.replace("/stream/", f"/providers={providers}/stream/")
+                        kodilog(f"URL with providers: {url}")
+
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return []
             return self.parse_response(res)
         except Exception as e:
             self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
+            return []
 
-    def parse_response(self, res: any) -> List[TorrentStream]:
+    def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()
         results = []
         for item in res["streams"]:
@@ -111,7 +123,7 @@ class StremioAddonClient(BaseClient):
                     provider=parsed["provider"],
                     publishDate="",
                     peers=0,
-                    url=stream.url
+                    url=stream.url,
                 )
             )
         return results

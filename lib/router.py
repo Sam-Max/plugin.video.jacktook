@@ -91,6 +91,7 @@ from lib.clients.stremio.ui import (
     stremio_logout,
     stremio_toggle_catalogs,
     stremio_update,
+    torrentio_toggle_providers,
 )
 
 from lib.utils.views.last_titles import delete_last_title_entry
@@ -171,6 +172,7 @@ def addon_router():
         "animation_item": animation_item,
         "stremio_toggle_addons": stremio_toggle_addons,
         "stremio_toggle_catalogs": stremio_toggle_catalogs,
+        "torrentio_toggle_providers": torrentio_toggle_providers,
         "list_stremio_catalog": list_stremio_catalog,
         "list_stremio_seasons": list_stremio_seasons,
         "list_stremio_episodes": list_stremio_episodes,

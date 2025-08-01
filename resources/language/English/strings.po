@@ -1526,3 +1526,23 @@ msgstr ""
 msgctxt "#90043"
 msgid "Trakt - Anime Most Watched"
 msgstr ""
+
+msgctxt "#90044"
+msgid "Torrentio Settings"
+msgstr ""
+
+msgctxt "#90045"
+msgid "Enable"
+msgstr ""
+
+msgctxt "#90046"
+msgid "Enable or disable the Torrentio settings"
+msgstr ""
+
+msgctxt "#90047"
+msgid "Select Torrentio Providers"
+msgstr ""
+
+msgctxt "#90048"
+msgid "Choose which providers to include in the stream request."
+msgstr ""

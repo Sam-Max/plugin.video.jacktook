@@ -1,11 +1,15 @@
+
+import os
+import requests
 from typing import List
+from datetime import timedelta
+
 from lib.clients.stremio.addons_manager import Addon, AddonManager
 from lib.clients.stremio.client import Stremio
 from lib.db.cached import cache
-from datetime import timedelta
 from lib.utils.general.utils import USER_AGENT_HEADER
-from lib.utils.kodi.utils import ADDON, get_setting, kodilog, set_setting
-import requests
+from lib.utils.kodi.utils import ADDON, ADDON_PATH, get_setting, kodilog, set_setting
+
 import xbmcgui
 import xbmc
 
@@ -13,7 +17,32 @@ import xbmc
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
 STREMIO_USER_ADDONS = "stremio_user_addons"
+TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
 
+
+all_torrentio_providers = [
+    ("yts", "YTS", "torrentio.png"),
+    ("nyaasi", "Nyaa", "torrentio.png"),
+    ("eztv", "EZTV", "torrentio.png"),
+    ("rarbg", "RARBG", "torrentio.png"),
+    ("mejortorrent", "MejorTorrent", "torrentio.png"),
+    ("wolfmax4k", "WolfMax4K", "torrentio.png"),
+    ("cinecalidad", "CineCalidad", "torrentio.png"),
+    ("1337x", "1337x", "torrentio.png"),
+    ("thepiratebay", "The Pirate Bay", "torrentio.png"),
+    ("kickasstorrents", "Kickass", "torrentio.png"),
+    ("torrentgalaxy", "TorrentGalaxy", "torrentio.png"),
+    ("magnetdl", "MagnetDL", "torrentio.png"),
+    ("horriblesubs", "HorribleSubs", "torrentio.png"),
+    ("tokyotosho", "Tokyotosho", "torrentio.png"),
+    ("anidex", "Anidex", "torrentio.png"),
+    ("rutracker", "Rutracker", "torrentio.png"),
+    ("comando", "Comando", "torrentio.png"),
+    ("torrent9", "Torrent9", "torrentio.png"),
+    ("ilcorsaronero", "Il Corsaro Nero", "torrentio.png"),
+    ("besttorrents", "BestTorrents", "torrentio.png"),
+    ("bludv", "BluDV", "torrentio.png")
+    ]
 
 def merge_addons_lists(*lists):
     seen = set()
@@ -67,15 +96,17 @@ def get_addons():
 def get_selected_stream_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids = cache.get(STREMIO_ADDONS_KEY)
-    if selected_ids:
-        return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    if not selected_ids:
+        return []
+    return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
-    if selected_ids:
-        return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    if not selected_ids:
+        return []
+    return [addon for addon in catalog.addons if addon.key() in selected_ids]
 
 
 def stremio_login(params):
@@ -363,3 +394,34 @@ def add_custom_stremio_addon(params):
             dialog.ok("Custom Addon", "This addon is already added to your list.")
     except Exception as e:
         dialog.ok("Custom Addon", f"Failed to add custom addon: {e}")
+
+
+def torrentio_toggle_providers(params):
+    selected_ids = cache.get(TORRENTIO_PROVIDERS_KEY) or ""
+    selected_ids = selected_ids.split(",") if selected_ids else []
+
+    options = []
+    selected_indexes = []
+    for i, (key, name, logo) in enumerate(all_torrentio_providers):
+        item = xbmcgui.ListItem(label=name)
+        item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "torrentio.png")}
+        )
+        options.append(item)
+        if key in selected_ids:
+            selected_indexes.append(i)
+
+    dialog = xbmcgui.Dialog()
+    title = "Seleccionar proveedores de Torrentio"
+
+    selected = dialog.multiselect(
+        title, options, preselect=selected_indexes, useDetails=True
+    )
+
+    if selected is None:
+        return
+
+    new_selected_ids = [all_torrentio_providers[i][0] for i in selected]
+    cache.set(
+        TORRENTIO_PROVIDERS_KEY, ",".join(new_selected_ids), timedelta(days=365 * 20)
+    )

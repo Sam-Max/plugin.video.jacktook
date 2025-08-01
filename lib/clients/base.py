@@ -26,7 +26,7 @@ class BaseClient(ABC):
     def parse_response(self, res: any) -> List[TorrentStream]:
         pass
 
-    def handle_exception(self, exception: Exception) -> None:
+    def handle_exception(self, exception: str) -> None:
         exception_message = str(exception)
         if len(exception_message) > 70:
             exception_message = exception_message[:70] + "..."
