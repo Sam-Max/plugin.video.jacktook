@@ -56,6 +56,7 @@ from lib.utils.kodi.utils import (
     play_media,
     set_view,
     show_keyboard,
+    translatePath,
     translation,
 )
 from lib.utils.player.utils import resolve_playback_source
@@ -1002,6 +1003,16 @@ def settings(params):
 
 def clear_history(params):
     clear(type=params.get("type"))
+
+
+def kodi_logs(params):
+    log_file = params.get("log_file")
+    kodi_log_path = os.path.join(translatePath("special://logpath"), log_file)
+    if os.path.exists(kodi_log_path):
+        kodi_log_content = open(kodi_log_path, "r", encoding="utf-8").read()
+        dialog_text("Kodi Logs", kodi_log_content)
+    else:
+        notification("Kodi log file not found.")
 
 
 def files_history(params):

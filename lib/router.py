@@ -33,6 +33,7 @@ from lib.navigation import (
     files_history,
     get_rd_downloads,
     history_menu,
+    kodi_logs,
     list_trakt_page,
     movies_items,
     next_page_anime,
@@ -186,6 +187,7 @@ def addon_router():
         "show_changelog":show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
         "delete_last_title_entry": delete_last_title_entry,
+        "kodi_logs": kodi_logs,
     }
 
     if param_string:

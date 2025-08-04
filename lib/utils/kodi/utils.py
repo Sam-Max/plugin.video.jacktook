@@ -189,9 +189,14 @@ def dialog_ok(heading, line1, line2="", line3=""):
 def dialog_text(heading, content="", file=None):
     dialog = xbmcgui.Dialog()
     if file:
-        with open(file, encoding="utf-8") as r:
-            content = r.readlines()
-            content = "".join(content)
+        try:
+            with open(file, encoding="utf-8") as r:
+                content = r.readlines()
+                content = "".join(content)
+        except Exception as e:
+            logger(f"Error reading file {file}: {e}", xbmc.LOGERROR)
+            notification("Error reading file.")
+            return
     dialog.textviewer(heading, str(content), False)
     return dialog
 

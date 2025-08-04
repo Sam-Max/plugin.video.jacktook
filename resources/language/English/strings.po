@@ -1569,5 +1569,18 @@ msgctxt "#90053"
 msgid "Select the number of threads (1-30)"
 msgstr ""
 
+msgctxt "#90054"
+msgid "Kodi logs"
+msgstr ""
+
+msgctxt "#90055"
+msgid "Kodi old logs"
+msgstr ""
+
+msgctxt "#90056"
+msgid "Displays Kodi logs to help diagnose issues."
+msgstr ""
+
+
 
 
