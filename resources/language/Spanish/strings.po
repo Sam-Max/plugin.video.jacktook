@@ -1544,3 +1544,11 @@ msgstr "Buscar recomendaciones"
 msgctxt "#90051"
 msgid "Search Similar"
 msgstr "Buscar similares"
+
+msgctxt "#90052"
+msgid "Thread Number"
+msgstr "Numero de hilos"
+
+msgctxt "#90053"
+msgid "Select the number of threads (1-30)"
+msgstr "Selecciona el numero de hilos (1-30)"

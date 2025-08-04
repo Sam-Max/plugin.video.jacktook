@@ -1561,4 +1561,13 @@ msgctxt "#90051"
 msgid "Search Similar"
 msgstr ""
 
+msgctxt "#90052"
+msgid "Thread Number"
+msgstr ""
+
+msgctxt "#90053"
+msgid "Select the number of threads (1-30)"
+msgstr ""
+
+
 

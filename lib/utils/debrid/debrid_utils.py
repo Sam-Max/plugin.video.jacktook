@@ -29,7 +29,6 @@ from lib.domain.torrent import TorrentStream
 from xbmcgui import Dialog
 
 
-
 def check_debrid_cached(
     query: Optional[str],
     results: List[TorrentStream],
@@ -96,7 +95,9 @@ def execute_debrid_checks(
     dialog: Dialog,
     lock: Lock,
 ):
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(
+        max_workers=int(get_setting("thread_number", 8))
+    ) as executor:
         futures = [
             executor.submit(
                 fn,
@@ -114,8 +115,8 @@ def execute_debrid_checks(
 
 
 def should_include_uncached() -> bool:
-    return any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and get_setting(
-        "show_uncached"
+    return any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and bool(
+        get_setting("show_uncached")
     )
 
 
@@ -173,6 +174,9 @@ def get_pack_info(type, info_hash):
         info = RealDebridHelper().get_rd_pack_info(info_hash)
     elif type == Debrids.ED:
         info = EasyDebridHelper().get_ed_pack_info(info_hash)
+    else:
+        kodilog(f"Unknown debrid type: {type}")
+        info = {}
     return info
 
 
@@ -221,7 +225,7 @@ def get_magnet_from_uri(uri):
             if res.status_code == 200:
                 if res.is_redirect:
                     uri = res.headers.get("Location")
-                    if uri.startswith("magnet:"):
+                    if uri and uri.startswith("magnet:"):
                         magnet = uri
                         info_hash = get_info_hash_from_magnet(uri).lower()
                 elif res.headers.get("Content-Type") == "application/octet-stream":

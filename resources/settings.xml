@@ -838,6 +838,19 @@
             </group>
         </category>
         <category id="others_category" label="30860">
+            <group id="others" label="90052">
+                <setting id="thread_number" type="integer" label="90052" help="90053">
+                    <default>8</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
+            </group>
             <group id="cache" label="30723">
                 <setting id="cache_enabled" type="boolean" label="30721" help="30809"> 
                     <default>true</default>

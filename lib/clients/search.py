@@ -65,7 +65,9 @@ def search_client(
     total_results = []
     tasks = []
 
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(
+        max_workers=int(get_setting("thread_number", 8))
+    ) as executor:
         add_task_if_enabled(
             executor,
             tasks,
