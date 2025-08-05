@@ -13,21 +13,25 @@ class Stremio:
 
     def _request(self, method, url, data=None):
         try:
-            if method == 'GET':
+            if method == "GET":
                 resp = self.session.get(url, timeout=10)
-            elif method == 'POST':
+            elif method == "POST":
                 resp = self.session.post(url, json=data, timeout=10)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
-            
+
             if resp.status_code != 200:
-                kodilog(f"Status code {resp.status_code} received for URL: {url}. Response: {resp.text}")
+                kodilog(
+                    f"Status code {resp.status_code} received for URL: {url}. Response: {resp.text}"
+                )
                 resp.raise_for_status()
 
             try:
                 return resp.json()
             except JSONDecodeError:
-                kodilog(f"Failed to decode JSON response for URL: {url}. Response: {resp.text}")
+                kodilog(
+                    f"Failed to decode JSON response for URL: {url}. Response: {resp.text}"
+                )
                 raise
         except Timeout:
             kodilog(f"Request timed out for URL: {url}")
@@ -40,10 +44,10 @@ class Stremio:
             raise
 
     def _get(self, url):
-        return self._request('GET', url)
+        return self._request("GET", url)
 
     def _post(self, url, data):
-        return self._request('POST', url, data)
+        return self._request("POST", url, data)
 
     def login(self, email, password):
         """Login to Stremio account."""
@@ -71,7 +75,9 @@ class Stremio:
 
     def get_community_addons(self):
         """Get community addons."""
-        response = self._get("https://stremio-addons.com/catalog.json")
+        response = self._get(
+            "https://beta.stremio-addons.net/api/addon_catalog/all/stremio-addons.net.json"
+        )
         return response
 
     def get_my_addons(self):

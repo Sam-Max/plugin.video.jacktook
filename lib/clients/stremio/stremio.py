@@ -32,9 +32,16 @@ class StremioAddonCatalogsClient(BaseClient):
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
         return []
+    
+    def search_catalog(self, query: str) -> List[TorrentStream]:
+        return []
 
-    def get_catalog_info(self, skip: int) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}/skip={skip}.json"
+    def get_catalog_info(self, skip: Optional[int]) -> Optional[Dict[str, Any]]:
+        if skip:
+            skip_append = f"/skip={skip}.json"
+        else:
+            skip_append = ".json"
+        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}{skip_append}"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
@@ -81,6 +88,8 @@ class StremioAddonClient(BaseClient):
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
             else:
                 return []
+            
+            kodilog(f"Requesting URL: {url}")
 
             if get_setting("torrentio_enabled"):
                 if "torrentio" in self.addon.url():

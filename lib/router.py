@@ -71,7 +71,7 @@ from lib.navigation import (
     tv_shows_items,
 )
 from lib.clients.stremio.catalogs import (
-    list_stremio_catalog,
+    list_catalog,
     list_stremio_episodes,
     list_stremio_seasons,
     list_stremio_tv,
@@ -174,7 +174,7 @@ def addon_router():
         "stremio_toggle_addons": stremio_toggle_addons,
         "stremio_toggle_catalogs": stremio_toggle_catalogs,
         "torrentio_toggle_providers": torrentio_toggle_providers,
-        "list_stremio_catalog": list_stremio_catalog,
+        "list_catalog": list_catalog,
         "list_stremio_seasons": list_stremio_seasons,
         "list_stremio_episodes": list_stremio_episodes,
         "list_stremio_tv_streams": list_stremio_tv_streams,
@@ -184,7 +184,7 @@ def addon_router():
         "stremio_login": stremio_login,
         "stremio_logout": stremio_logout,
         "stremio_update": stremio_update,
-        "show_changelog":show_changelog,
+        "show_changelog": show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
         "delete_last_title_entry": delete_last_title_entry,
         "kodi_logs": kodi_logs,

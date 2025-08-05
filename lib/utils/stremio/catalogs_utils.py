@@ -10,21 +10,27 @@ def catalogs_get_cache(path, params, *args, **kwargs):
     data = cache.get(identifier)
     if data:
         return data
-    
+
     handlers = {
-        "search_catalog": lambda p:  StremioAddonCatalogsClient(params).search(p),
-        "list_stremio_catalog": lambda p:  StremioAddonCatalogsClient(params).get_catalog_info(p),
-        "list_stremio_seasons": lambda:  StremioAddonCatalogsClient(params).get_meta_info(),
-        "list_stremio_episodes": lambda:  StremioAddonCatalogsClient(params).get_meta_info(),
-        "list_stremio_tv": lambda:  StremioAddonCatalogsClient(params).get_stream_info(),
+        "search_catalog": lambda p: StremioAddonCatalogsClient(params).search_catalog(p),
+        "list_catalog": lambda p: StremioAddonCatalogsClient(params).get_catalog_info(
+            p
+        ),
+        "list_stremio_seasons": lambda: StremioAddonCatalogsClient(
+            params
+        ).get_meta_info(),
+        "list_stremio_episodes": lambda: StremioAddonCatalogsClient(
+            params
+        ).get_meta_info(),
+        "list_stremio_tv": lambda: StremioAddonCatalogsClient(params).get_stream_info(),
     }
 
     try:
         handler = handlers.get(path, lambda: None)
-        if args or kwargs: 
-            data = handler(*args, **kwargs)  
+        if args or kwargs:
+            data = handler(*args, **kwargs)
         else:
-            data = handler() 
+            data = handler()
     except Exception as e:
         kodilog(f"Error: {e}")
         return {}

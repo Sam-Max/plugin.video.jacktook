@@ -1,4 +1,3 @@
-
 import os
 import requests
 from typing import List
@@ -41,14 +40,20 @@ all_torrentio_providers = [
     ("torrent9", "Torrent9", "torrentio.png"),
     ("ilcorsaronero", "Il Corsaro Nero", "torrentio.png"),
     ("besttorrents", "BestTorrents", "torrentio.png"),
-    ("bludv", "BluDV", "torrentio.png")
-    ]
+    ("bludv", "BluDV", "torrentio.png"),
+]
+
 
 def merge_addons_lists(*lists):
     seen = set()
     merged = []
-    for addon_list in lists:
-        for addon in addon_list:
+
+    for addon_source in lists:
+        if isinstance(addon_source, dict):
+            addons = addon_source.get("addons", [])
+        else:
+            addons = addon_source
+        for addon in addons:
             key = addon.get("manifest", {}).get("id") or addon.get("id")
             if key and key not in seen:
                 seen.add(key)
@@ -204,11 +209,11 @@ def stremio_logout(params):
 
 
 def stremio_toggle_addons(params):
-    kodilog("stremio_toggle_addons called")
-
     selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
+
+    addons = list(reversed(addons))
 
     dialog = xbmcgui.Dialog()
     selected_addon_ids = [

@@ -14,17 +14,16 @@ from lib.utils.kodi.utils import (
 
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from xbmcgui import ListItem
+import xbmc
 
-
-
-def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
+def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     selected_addons = get_selected_catalogs_addons()
     if not selected_addons:
         return
 
     for addon in selected_addons:
-        for catalog in addon.manifest.catalogs:
-            if catalog["type"] == menu_type:
+        if menu_type in addon.manifest.types:
+            for catalog in addon.manifest.catalogs:
                 catalog_name = catalog.get("name")
                 catalog_id = catalog.get("id")
 
@@ -50,7 +49,6 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                     )
 
                 if catalog_name or catalog_id:
-                    action = "list_stremio_catalog"
                     addon_name = addon.manifest.name
                     if addon_name == "Cinemeta":
                         label = f"{addon_name} - {catalog_name or catalog_id}"
@@ -63,7 +61,7 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                     addDirectoryItem(
                         ADDON_HANDLE,
                         build_url(
-                            action,
+                            action="list_catalog",
                             addon_url=addon.url(),
                             menu_type=menu_type,
                             sub_menu_type=sub_menu_type,
@@ -75,9 +73,42 @@ def list_stremio_catalogs(menu_type=None, sub_menu_type=None):
                     )
 
 
+def list_catalog(params):
+    content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
+    setContent(ADDON_HANDLE, content_type)
+
+    skip = int(params.get("skip", 0))
+    response = catalogs_get_cache("list_catalog", params, skip)
+    if not response:
+        return
+
+    videos = response.get("metas", [])
+    if not videos:
+        notification("No videos available")
+        return
+
+    add_meta_items(videos, params)
+
+    if len(videos) >= 25:
+        next_url = build_url(
+            "list_catalog",
+            addon_url=params["addon_url"],
+            menu_type=params["menu_type"],
+            sub_menu_type=params.get("sub_menu_type", ""),
+            catalog_type=params["catalog_type"],
+            catalog_id=params["catalog_id"],
+            skip=skip + len(videos),
+        )
+        list_item = ListItem(label="Next Page")
+        addDirectoryItem(
+            handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
+        )
+
+    endOfDirectory(ADDON_HANDLE)
+
+
 def search_catalog(params):
     page = int(params["page"])
-
     pickle_db = PickleDatabase()
 
     if page == 1:
@@ -93,9 +124,6 @@ def search_catalog(params):
         return
 
     meta_data = response.get("metas", {})
-
-    kodilog(f"Catalog response: {meta_data}")
-
     for meta in meta_data:
         if meta["type"] == "series":
             tmdb_id = meta.get("moviedb_id")
@@ -128,7 +156,6 @@ def search_catalog(params):
             continue
 
         list_item = ListItem(label=f"{meta['name']}")
-
         tags = list_item.getVideoInfoTag()
         tags.setUniqueID(
             meta["id"], type="imdb" if meta["id"].startswith("tt") else "mf"
@@ -164,79 +191,65 @@ def search_catalog(params):
     endOfDirectory(ADDON_HANDLE)
 
 
-def list_stremio_catalog(params):
-    content_type = "movies" if params["catalog_type"] == "movie" else "tvshows"
+def add_meta_items(videos, params):
+    catalog_type = params["catalog_type"]
+    menu_type = params["menu_type"]
+    sub_menu_type = params.get("sub_menu_type", "")
+    addon_url = params["addon_url"]
+
+    content_type = "movies" if menu_type == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
-    skip = int(params.get("skip", 0))
+    # Filtrado por tipo de video según el menú
+    def should_include(video):
+        video_type = video["type"]
+        if menu_type in ["anime", "movie"] and sub_menu_type == "movie":
+            kodilog(f"Filtering video: {video_type} for menu type: {menu_type}")
+            return video_type == "movie"
+        if menu_type in ["anime", "series"] and sub_menu_type == "series":
+            return video_type == "series"
+        if menu_type == "tv":
+            return video_type == "tv"
+        return True
 
-    response = catalogs_get_cache("list_stremio_catalog", params, skip)
-    if not response:
-        return
+    videos = [v for v in videos if should_include(v)]
 
-    videos = response.get("metas", [])
+    kodilog(f"Filtered videos: {videos}", level=xbmc.LOGDEBUG)
+
     if not videos:
-        notification("No videos available")
+        notification(f"No content available for {menu_type}")
+        endOfDirectory(ADDON_HANDLE)
         return
-
-    process_videos(
-        videos,
-        params["menu_type"],
-        params["sub_menu_type"],
-        params["addon_url"],
-        params["catalog_type"],
-    )
-
-    if len(videos) >= 25:
-        next_url = build_url(
-            "list_stremio_catalog",
-            addon_url=params["addon_url"],
-            menu_type=params["menu_type"],
-            sub_menu_type=params["sub_menu_type"],
-            catalog_type=params["catalog_type"],
-            catalog_id=params["catalog_id"],
-            skip=skip + len(videos),
-        )
-        list_item = ListItem(label="Next Page")
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
-        )
-
-    endOfDirectory(ADDON_HANDLE)
-
-
-def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
-    content_type = "movies" if catalog_type == "movie" else "tvshows"
-    setContent(ADDON_HANDLE, content_type)
-
-    if menu_type in ["anime", "movie"] and sub_menu_type == "movie":
-        videos = [video for video in videos if video["type"] == "movie"]
-    elif menu_type in ["anime", "series"] and sub_menu_type == "series":
-        videos = [video for video in videos if video["type"] == "series"]
-    elif menu_type in ["tv"]:
-        videos = [video for video in videos if video["type"] == "tv"]
 
     for video in videos:
-        if video["type"] == "series":
-            tmdb_id = video.get("moviedb_id")
-            imdb_id = video.get("imdb_id")
+        name = video.get("name", "")
+        video_type = video["type"]
+        video_id = video.get("id", "")
+        tmdb_id = video.get("moviedb_id", "")
+        imdb_id = video.get("imdb_id", "")
 
+        if "tmdb" in video_id:
+            tmdb_id = video_id.split(":")[1]
+        elif video_id.startswith("tt"):
+            imdb_id = video_id
+            tmdb_id = ""
+
+        # Construcción de la URL según tipo
+        if video_type == "series":
             if tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
-                    "tv_seasons_details",
-                    ids=ids,
-                    mode="tv",
-                    media_type="tv",
+                    "tv_seasons_details", ids=ids, mode="tv", media_type="tv"
                 )
             else:
                 url = build_url(
                     "list_stremio_seasons",
                     addon_url=addon_url,
                     catalog_type=catalog_type,
-                    video_id=video["id"],
+                    video_id=video_id,
                 )
-        elif video["type"] == "tv":
+
+        elif video_type == "tv":
             if video.get("streams"):
                 url = build_url("list_stremio_tv_streams", streams=video["streams"])
             else:
@@ -244,55 +257,49 @@ def process_videos(videos, menu_type, sub_menu_type, addon_url, catalog_type):
                     "list_stremio_tv",
                     addon_url=addon_url,
                     catalog_type=catalog_type,
-                    video_id=video["id"],
+                    video_id=video_id,
                 )
-        elif video["type"] == "movie":
-            tmdb_id = ""
-            id = video.get("id", "")
-            if "tmdb" in id:
-                tmdb_id = id.split(":")[1]
 
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": video.get("imdb_id")}
-            url = build_url("search", mode="movies", query=video["name"], ids=ids)
+        elif video_type == "movie":
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+            url = build_url("search", mode="movies", query=name, ids=ids)
         else:
             continue
 
-        list_item = ListItem(label=f"{video['name']}")
-
+        # Creación del ListItem
+        list_item = ListItem(label=name)
         tags = list_item.getVideoInfoTag()
-        tags.setUniqueID(
-            video["id"], type="imdb" if video["id"].startswith("tt") else "mf"
-        )
-        tags.setTitle(video["name"])
+        tags.setUniqueID(video_id, type="imdb" if video_id.startswith("tt") else "mf")
+        tags.setTitle(name)
         tags.setPlot(video.get("description", ""))
-        # tags.setRating(float(video.get("imdbRating", 0) or 0))
         tags.setGenres(video.get("genres", []))
         tags.setMediaType("video")
 
-        if video["type"] == "movie":
+        # Marcar como reproducible si es película
+        is_folder = video_type != "movie"
+        if not is_folder:
             list_item.setProperty("IsPlayable", "true")
-            isFolder = False
-        else:
-            isFolder = True
 
+        # Setear arte
+        poster = video.get("poster", "")
+        background = video.get("background", "")
         list_item.setArt(
             {
-                "thumb": video.get("poster", ""),
-                "poster": video.get("poster", ""),
-                "fanart": video.get("poster", ""),
-                "icon": video.get("poster", ""),
-                "banner": video.get("background", ""),
-                "landscape": video.get("background", ""),
+                "thumb": poster,
+                "poster": poster,
+                "fanart": poster,
+                "icon": poster,
+                "banner": background,
+                "landscape": background,
             }
         )
 
         addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=isFolder
+            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder
         )
 
 
 def list_stremio_seasons(params):
-    kodilog("catalogs::list_stremio_seasons")
     response = catalogs_get_cache("list_stremio_seasons", params)
     if not response:
         return
@@ -341,7 +348,6 @@ def list_stremio_seasons(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=True
         )
-
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -429,7 +435,6 @@ def list_stremio_episodes(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
-
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -457,7 +462,6 @@ def list_stremio_tv(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
-
     endOfDirectory(ADDON_HANDLE)
 
 
