@@ -1581,6 +1581,9 @@ msgctxt "#90056"
 msgid "Displays Kodi logs to help diagnose issues."
 msgstr ""
 
+msgctxt "#90057"
+msgid "Logs"
+msgstr ""
 
 
 

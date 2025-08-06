@@ -878,18 +878,6 @@
                         <close>true</close>
                     </control>
                 </setting>
-                <setting id="kodi_logs" type="action" label="90054" help="90056"> 
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.log)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                 <setting id="kodi_logs_old" type="action" label="90055" help="90056"> 
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.old.log)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
             </group>
             <group id="update" label="30724">
                 <setting id="addon_update" type="action" label="30724" help="30839"> 
@@ -918,6 +906,20 @@
 						<writable>true</writable>
 					</constraints>
 					<control type="button" format="path"/>
+                </setting>
+            </group>
+            <group id="logs" label="90057">
+                <setting id="kodi_logs" type="action" label="90054" help="90056"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.log)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
+                 <setting id="kodi_logs_old" type="action" label="90055" help="90056"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.old.log)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
                 </setting>
             </group>
         </category>

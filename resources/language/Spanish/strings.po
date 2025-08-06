@@ -1564,3 +1564,7 @@ msgstr "Registro antiguos de Kodi"
 msgctxt "#90056"
 msgid "Displays Kodi logs to help diagnose issues."
 msgstr "Muestra los registros de Kodi para ayudar a diagnosticar problemas"
+
+msgctxt "#90057"
+msgid "Logs"
+msgstr "Registros"
