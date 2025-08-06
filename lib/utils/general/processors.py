@@ -1,10 +1,9 @@
 from enum import Enum
 import re
-from typing import List, Dict
+from typing import List, Dict, Optional
+
 from lib.utils.kodi.utils import get_setting, kodilog
 from lib.clients.base import TorrentStream
-
-import xbmc
 
 
 class Quality(Enum):
@@ -79,7 +78,7 @@ class PostProcessBuilder(BaseProcessBuilder):
         return self
 
     def limit_results(self) -> "PostProcessBuilder":
-        limit = int(get_setting("indexers_total_results"))
+        limit = int(get_setting("indexers_total_results", 10))
         self.results = self.results[:limit]
         return self
 
@@ -105,7 +104,6 @@ class PreProcessBuilder(BaseProcessBuilder):
 
     def filter_torrent_sources(self) -> "PreProcessBuilder":
         self.results = [res for res in self.results if res.infoHash or res.guid]
-        kodilog(f"Filtered torrent sources: {self.results}", level=xbmc.LOGDEBUG)
         return self
 
     def filter_season_packs(self, season_num: int) -> List[TorrentStream]:
@@ -122,14 +120,12 @@ class PreProcessBuilder(BaseProcessBuilder):
 
         include_season_packs = get_setting("include_season_packs")
         season_pack_results: List[TorrentStream] = []
-
         if include_season_packs:
             kodilog("Including season packs in filtering")
             season_pack_results = self.filter_season_packs(season_num)
 
         episode_fill = f"{int(episode_num):02}"
         season_fill = f"{int(season_num):02}"
-
         patterns = [
             rf"S{season_fill}E{episode_fill}",  # SXXEXX format
             rf"{season_fill}x{episode_fill}",  # XXxXX format
@@ -137,29 +133,20 @@ class PreProcessBuilder(BaseProcessBuilder):
             rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
             r"Cap\.",  # match "Cap."
         ]
-
         if episode_name:
             patterns.append(episode_name)
 
         episode_results = [
             res for res in self.results if re.search("|".join(patterns), res.title)
         ]
-
-        # Combine both lists
         self.results = season_pack_results + episode_results
-
-        kodilog(
-            f"Filtered by episode and season packs: {self.results}", level=xbmc.LOGDEBUG
-        )
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":
         quality_buckets: Dict[Quality, List[TorrentStream]] = {
             quality: [] for quality in Quality
         }
-
         for res in self.results:
-            kodilog(f"Processing result: {res.title}", level=xbmc.LOGDEBUG)
             title = res.title
             matched_quality = False
             for quality in Quality:
@@ -179,7 +166,26 @@ class PreProcessBuilder(BaseProcessBuilder):
             + quality_buckets[Quality.LOW]
             + quality_buckets[Quality.UNKNOWN]
         )
+        return self
 
-        kodilog(f"Quality buckets: {self.results}", level=xbmc.LOGDEBUG)
+    def filter_by_size(self) -> "PreProcessBuilder":
+        min_size = int(get_setting("minimum_size") or 0)
+        max_size = int(get_setting("maximum_size") or 100000)
 
+        def parse_size(res: TorrentStream) -> Optional[int]:
+            size_bytes = getattr(res, "size", None)
+            if size_bytes is None:
+                return None
+            try:
+                return int(size_bytes) // (1024 * 1024)  # Convert bytes → MB
+            except (ValueError, TypeError):
+                return None
+
+        filtered = []
+        for res in self.results:
+            size = parse_size(res)
+            if size is not None and min_size <= size <= max_size:
+                filtered.append(res)
+
+        self.results = filtered
         return self

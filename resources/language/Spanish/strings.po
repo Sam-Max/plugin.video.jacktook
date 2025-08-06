@@ -1568,3 +1568,20 @@ msgstr "Muestra los registros de Kodi para ayudar a diagnosticar problemas"
 msgctxt "#90057"
 msgid "Logs"
 msgstr "Registros"
+
+msgctxt "#90058"
+msgid "Filter by Size"
+msgstr "Filtrar por tamaño"
+
+msgctxt "#90059"
+msgid "Enable Size Filter"
+msgstr "Habilitar"
+
+msgctxt "#90060"
+msgid "Minimum Size (MB)"
+msgstr "Tamaño minimo (MB)"
+
+msgctxt "#90061"
+msgid "Maximum Size (MB)"
+msgstr "Tamaño Maximo (MB)"
+

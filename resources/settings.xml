@@ -434,6 +434,44 @@
                     <control type="toggle" />
                 </setting>
             </group>
+            <group id="size_filter" label="90058">
+                <setting id="filter_size_enabled" type="boolean" label="90059" help="">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="minimum_size" type="integer" label="90060" help="">
+                    <default>100</default>
+                    <constraints>
+                        <minimum>100</minimum>
+                        <maximum>100000</maximum>
+                        <step>10</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="filter_size_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="maximum_size" type="integer" label="90061" help="">
+                    <default>5000</default>
+                    <constraints>
+                        <minimum>100</minimum>
+                        <maximum>100000</maximum>
+                        <step>10</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="filter_size_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
         </category>
         <category id="debrid" label="30150">
             <group id="real_debrid" label="30152">

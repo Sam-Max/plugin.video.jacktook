@@ -1240,7 +1240,7 @@ msgid "Sources"
 msgstr ""
 
 msgctxt "#30865"
-msgid "Result Filters and Sorting"
+msgid "Filters and Sorting"
 msgstr ""
 
 msgctxt "#30866"
@@ -1583,6 +1583,22 @@ msgstr ""
 
 msgctxt "#90057"
 msgid "Logs"
+msgstr ""
+
+msgctxt "#90058"
+msgid "Filter by Size"
+msgstr ""
+
+msgctxt "#90059"
+msgid "Enable Size Filter"
+msgstr ""
+
+msgctxt "#90060"
+msgid "Minimum Size (MB)"
+msgstr ""
+
+msgctxt "#90061"
+msgid "Maximum Size (MB)"
 msgstr ""
 
 

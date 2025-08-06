@@ -826,6 +826,8 @@ def pre_process(
     if mode == "tv":
         builder.filter_sources(episode_name, episode, season)
     builder.filter_by_quality()
+    if get_setting("filter_size_enabled"):
+        builder.filter_by_size()
     return builder.get_results()
 
 
