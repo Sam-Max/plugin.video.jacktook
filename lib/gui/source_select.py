@@ -248,7 +248,7 @@ class SourceSelect(BaseWindow):
         try:
             xbmc.executebuiltin(
                 action_url_run(
-                    "download_file",
+                    "handle_download_file",
                     file_name=playback_info["title"],
                     url=playback_info["url"],
                     destination=translatePath(download_dir),

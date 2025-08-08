@@ -1,3 +1,4 @@
+import json
 import os
 import ssl
 import threading
@@ -6,6 +7,8 @@ from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    action_url_run,
+    bytes_to_human_readable,
     get_setting,
     kodilog,
     translatePath,
@@ -30,147 +33,175 @@ import xbmc
 cancel_flag_cache = MemoryCache()
 
 
-def normalize_file_name(file_name):
-    file_name = file_name.strip()
-    base, _ = os.path.splitext(file_name)
-    # Remove invalid characters and dots from base name
-    base = re.sub(r'[\\/*?:"<>|.]', "_", base)
-    base = re.sub(r"_+", "_", base)
-    return base
-
-
 def handle_download_file(params):
-    """
-    Handles the download process for a file using the Downloader class.
-    """
-    kodilog("Starting download process")
     destination = params.get("destination")
     if not destination or not os.path.exists(destination):
         notification("Invalid download destination.")
         return
 
     file_name = normalize_file_name(params.get("file_name", ""))
-    key = os.path.join(destination, file_name)
+    cancel_key = os.path.join(destination, file_name)
+    kodilog(f"Setting cancel event cache key: {cancel_key}")
 
-    kodilog(f"Cancel Key: {key}")
-    cancel_flag_cache._set(key, False)
-    downloader = Downloader(params, cancel_flag_cache)
-    downloader.name = file_name 
+    downloader = Downloader(
+        url=params.get("url"),
+        destination=destination,
+        name=file_name,
+    )
+    cancel_flag_cache.set(cancel_key, downloader.is_cancelled)
     downloader.run()
 
 
+class ProgressHandler:
+    def update(self, percent: int, message: str):
+        pass
+
+    def cancelled(self) -> bool:
+        return False
+
+    def close(self):
+        pass
+
+
+class KodiProgressHandler(ProgressHandler):
+    def __init__(self, title: str, addon_path: str):
+        self.dialog = CustomProgressDialog("custom_progress_dialog.xml", addon_path)
+        self.dialog.show_dialog()
+
+    def update(self, percent: int, message: str):
+        self.dialog.update_progress(percent, message)
+
+    def cancelled(self) -> bool:
+        return self.dialog.cancelled
+
+    def close(self):
+        self.dialog.close()
+
+
 class Downloader:
-    def __init__(self, params, cancel_flag_cache):
-        self.url = params.get("url")
-        self.destination = params.get("destination", "")
+    def __init__(
+        self,
+        url: str,
+        destination: str,
+        name: str,
+    ):
+        self.url = url
+        self.destination = destination
+        self.name = name
         self.headers = {}
-        self.monitor = xbmc.Monitor()
         self.file_size = 0
-        self.cancel_flag = cancel_flag_cache
+        self.monitor = xbmc.Monitor()
+        self.progress_handler = None
+        self.is_cancelled = False
+        self.dest_path = os.path.join(destination, name)
 
     def run(self):
         if not self.url:
             notification("No URL provided for download.")
             return
-
-        thread = threading.Thread(target=self._run_download_process)
+        thread = threading.Thread(target=self._run, daemon=True)
         thread.start()
 
-    def _run_download_process(self):
-        self._prepare_download()
-
+    def _run(self):
+        self._prepare_url()
         if not self._validate_url():
             notification("Invalid URL for download.")
             return
-
         self._start_download()
 
-    def _prepare_download(self):
+    def _prepare_url(self):
         try:
-            self.headers = dict(parse_qsl(self.url.rsplit("|", 1)[1]))
-        except:
-            pass
-        try:
-            self.url = self.url.split("|")[0]
-        except:
-            pass
+            if "|" in self.url:
+                self.headers = dict(parse_qsl(self.url.rsplit("|", 1)[1]))
+                self.url = self.url.split("|")[0]
+        except Exception as e:
+            kodilog(f"[Downloader] Failed to parse headers: {str(e)}")
 
     def _validate_url(self):
         try:
-            kodilog(f"Validating URL: {self.url}")
             request = Request(self.url, headers=self.headers)
             response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
             self.file_size = int(response.headers.get("Content-Length", 0))
             return self.file_size > 0
         except Exception as e:
-            kodilog(f"Error validating URL: {str(e)}")
+            kodilog(f"[Downloader] Validation error: {str(e)}")
             return False
 
     def _start_download(self):
-        try:
-            destination_path = os.path.join(self.destination, self.name)
-            kodilog(f"Destination path: {destination_path}")
+        downloaded = 0
+        file_mode = "wb"
 
-            kodilog(f"Starting download from: {self.url}")
-            kodilog(f"Headers: {self.headers}")
-            kodilog(f"File size: {self.file_size} bytes")
+        self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+
+        try:
+            # Resume support
+            if os.path.exists(self.dest_path):
+                downloaded = os.path.getsize(self.dest_path)
+                if downloaded < self.file_size:
+                    self.headers["Range"] = f"bytes={downloaded}-"
+                    file_mode = "ab"
+                elif downloaded >= self.file_size:
+                    notification(f"File already downloaded: {self.name}")
+                    return
 
             request = Request(self.url, headers=self.headers)
             response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
 
-            progress_dialog = CustomProgressDialog(
-                "custom_progress_dialog.xml", ADDON_PATH
-            )
-            progress_dialog.show_dialog()
-
-            with open_file(destination_path, "wb") as file:
-                downloaded = 0
+            with open_file(self.dest_path, file_mode) as file:
                 while not self.monitor.abortRequested():
                     chunk = response.read(1024 * 1024)  # 1MB chunks
                     if not chunk:
                         kodilog("No more data to read")
                         break
-                    # Handle cancellation
-                    if progress_dialog.cancelled or self.cancel_flag._get(
-                        destination_path
-                    ):
-                        notification(f"Cancelled: {self.name}")
-                        self.cancel_flag._set(destination_path, True)
-                        file.close()
-                        return
 
                     file.write(chunk)
                     downloaded += len(chunk)
-                    progress = int((downloaded / self.file_size) * 100)
-                    progress_dialog.update_progress(
-                        progress, f"{self.name}: {progress}% completed"
+
+                    if self.file_size:
+                        percent = int((downloaded / self.file_size) * 100)
+                    else:
+                        percent = 0
+
+                    self.progress_handler.update(
+                        percent,
+                        f"{self.name} - {percent}% - {bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
                     )
+
+                    kodilog(f"Downloaded {downloaded} bytes, {percent}% complete")
+
+                    # Handle cancellation
+                    if (
+                        self.progress_handler.cancelled()
+                        or cancel_flag_cache.get(self.dest_path) is True
+                    ):
+                        cancel_flag_cache.set(self.dest_path, True)
+                        self.is_cancelled = True
+                        file.close()
+                        break
 
                     self.monitor.waitForAbort(0.1)
 
-                if downloaded == self.file_size or self.file_size == 0:
+                if self.is_cancelled:
+                    notification(f"Download cancelled: {self.name}")
+                else:
                     notification(f"Download completed: {self.name}")
-
         except Exception as e:
-            kodilog(f"Download error: {str(e)}")
-            notification(f"Failed to download: {str(e)}")
+            notification(f"Download error: {str(e)}")
+        finally:
+            self.progress_handler.close()
 
 
 def handle_cancel_download(params):
-    kodilog("Cancelling download")
-    file_path = params.get("file")
-    cancel_flag = cancel_flag_cache._get(file_path)
-    kodilog(f"Cancel key: {file_path}")
-    kodilog(f"Cancel flag: {cancel_flag}")
-    if cancel_flag is False:
-        cancel_flag_cache._set(file_path, True)
+    file_path = json.loads(params.get("file_path"))
+    if file_path:
+        cancel_flag_cache.set(file_path, True)
         xbmc.executebuiltin("Container.Refresh")
     else:
         notification("No active download found.")
 
 
 def handle_delete_file(params):
-    file_path = params.get("file", "")
+    file_path = json.loads(params.get("file_path"))
     if not xbmcvfs.exists(file_path):
         notification("File not found.")
         return
@@ -184,12 +215,23 @@ def handle_delete_file(params):
 
 
 def downloads_viewer(params):
-    download_dir = get_setting("download_dir")
-    translated_path = translatePath(download_dir)
-
+    translated_path = translatePath(get_setting("download_dir"))
     item_list = []
+
     try:
         directories, files = xbmcvfs.listdir(translated_path)
+        active_downloads = [
+            f for f in files if is_active_download(os.path.join(translated_path, f))
+        ]
+
+        active_label = f"[COLOR red]Active Downloads: {len(active_downloads)}[/COLOR]"
+        active_item = xbmcgui.ListItem(label=active_label)
+        active_item.setProperty("IsPlayable", "false")
+        active_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "download.png")}
+        )
+        item_list.append(("", active_item, False))
+
         for item in directories + files:
             item_path = os.path.join(translated_path, item)
             list_item = xbmcgui.ListItem(label=item)
@@ -201,20 +243,20 @@ def downloads_viewer(params):
                 list_item.setInfo("video", {"title": item, "mediatype": "file"})
                 context_menu = []
 
-                # Add "Cancel Download" only if the file is an active download
-                flag_cache = cancel_flag_cache._get(item_path)
-                if flag_cache is False:
+                if is_active_download(item_path):
                     context_menu.append(
                         (
                             "Cancel Download",
-                            f"RunPlugin(plugin://plugin.video.jacktook?action=cancel_download&file={item_path})",
+                            action_url_run("handle_cancel_download", file_path=json.dumps(item_path)),
                         )
                     )
 
                 context_menu.append(
                     (
                         "Delete File",
-                        f"RunPlugin(plugin://plugin.video.jacktook?action=delete_file&file={item_path})",
+                        action_url_run(
+                            "handle_delete_file", file_path=json.dumps(item_path)
+                        ),
                     )
                 )
 
@@ -229,3 +271,17 @@ def downloads_viewer(params):
     except Exception as e:
         notification(f"Error: {str(e)}", "Downloads Viewer")
         endOfDirectory(ADDON_HANDLE, succeeded=False)
+
+
+def is_active_download(path):
+    cancel_flag = cancel_flag_cache.get(path)
+    return cancel_flag is not True
+
+
+def normalize_file_name(file_name):
+    file_name = file_name.strip()
+    base, _ = os.path.splitext(file_name)
+    # Remove invalid characters and dots from base name
+    base = re.sub(r'[\\/*?:"<>|.]', "_", base)
+    base = re.sub(r"_+", "_", base)
+    return base

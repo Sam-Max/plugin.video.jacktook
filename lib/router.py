@@ -120,7 +120,7 @@ def addon_router():
         "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
         "search_tmdb_similar": TmdbClient.search_tmdb_similar,
         "search_direct": search_direct,
-        "download_file": handle_download_file,
+        "handle_download_file": handle_download_file,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
         "play_torrent": play_torrent,
@@ -136,10 +136,10 @@ def addon_router():
         "titles_calendar": titles_calendar,
         "history_menu": history_menu,
         "donate": donate,
-        "delete_file": handle_delete_file,
+        "handle_delete_file": handle_delete_file,
+        "handle_cancel_download": handle_cancel_download,
         "clear_all_cached": clear_all_cached,
         "clear_history": clear_history,
-        "cancel_download": handle_cancel_download,
         "addon_update": addon_update,
         "open_burst_config": open_burst_config,
         "rd_auth": rd_auth,
@@ -194,7 +194,7 @@ def addon_router():
         kodilog(f"Param string: {param_string}", level=xbmc.LOGDEBUG)
         params = dict(parse.parse_qsl(param_string))
         kodilog(f"Parsed params: {params}", level=xbmc.LOGDEBUG)
-        action = params.get("action")
+        action = params.get("action", "")
         action_func = actions.get(action)
         if action_func:
             action_func(params)

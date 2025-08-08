@@ -12,8 +12,8 @@ from hashlib import sha256
 from lib.jacktook.utils import kodilog
 
 import xbmcaddon
-import xbmcgui
 import xbmc
+import xbmcgui
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -97,38 +97,51 @@ class _BaseCache(object):
         return s
 
 
+class RuntimeCache:
+    _store = {}
+
+    @classmethod
+    def set(cls, key, value):
+        cls._store[key] = value
+
+    @classmethod
+    def get(cls, key):
+        return cls._store.get(key)
+
+    @classmethod
+    def delete(cls, key):
+        if key in cls._store:
+            del cls._store[key]
+
+    @classmethod
+    def clear(cls):
+        cls._store.clear()
+
+
 class MemoryCache(_BaseCache):
     def __init__(self, database=ADDON_ID):
         self._window = xbmcgui.Window(10000)
         self._database = database + "."
-        self._object_store = {}  # store raw objects that can't be pickled
 
-    def _get(self, key):
-        if key in self._object_store:
-            return self._object_store[key]
-
+    def get(self, key):
         data = self._window.getProperty(self._database + key)
         if data:
             decoded_data = self._load_func(b64decode(data))
             return decoded_data
 
-    def _set(self, key, data):
+    def set(self, key, data):
         try:
             blob = self._dump_func(data)
             self._window.setProperty(self._database + key, b64encode(blob).decode())
-
-            data = self._window.getProperty(self._database + key)
-
         except Exception as e:
-            # fallback to raw in‑memory store
-            self._object_store[key] = data
+            kodilog(f"[MemoryCache] Error storing key {key!r}: {str(e)}")
+            kodilog(traceback.format_exc())
 
     def delete(self, key):
-        """Remove a single key from window properties."""
         self._window.clearProperty(self._database + key)
 
 
-class Cache(_BaseCache):
+class SQLiteCache(_BaseCache):
     def __init__(
         self,
         database=os.path.join(ADDON_DATA, ADDON_ID + ".cached.sqlite"),
@@ -268,4 +281,4 @@ class Cache(_BaseCache):
         self._conn.close()
 
 
-cache = Cache()
+cache = SQLiteCache()
