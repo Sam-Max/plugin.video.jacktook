@@ -1,6 +1,7 @@
 from datetime import timedelta
 import os
 import threading
+from typing import Optional
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
@@ -27,7 +28,6 @@ from lib.utils.general.utils import execute_thread_pool
 
 from lib.db.cached import cache
 from xbmcplugin import addDirectoryItem
-from xbmcgui import ListItem
 
 
 LANGUAGES = [
@@ -130,7 +130,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
     )
 
 
-def tmdb_get(path, params=None) -> AsObj:
+def tmdb_get(path, params=None) -> Optional[AsObj]:
     identifier = f"{path}|{params}"
     data = cache.get(key=identifier)
     if data:
@@ -163,7 +163,7 @@ def tmdb_get(path, params=None) -> AsObj:
         data = handlers.get(path, lambda _: None)(params)
     except Exception as e:
         kodilog(f"Error in tmdb_get for {path} with params {params}: {e}")
-        return {}
+        return None
 
     if data is not None:
         cache.set(
@@ -185,11 +185,11 @@ def get_tmdb_media_details(tmdb_id, mode):
         return tmdb_get("movie_details", tmdb_id)
 
 
-def get_tmdb_movie_details(id):
+def get_tmdb_movie_details(id: str) -> Optional[AsObj]:
     return tmdb_get("movie_details", id)
 
 
-def get_tmdb_show_details(id):
+def get_tmdb_show_details(id: str) -> Optional[AsObj]:
     return tmdb_get("tv_details", id)
 
 

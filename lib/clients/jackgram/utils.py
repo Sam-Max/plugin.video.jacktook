@@ -37,7 +37,7 @@ def check_jackgram_active():
 def check_and_get_jackgram_client():
     if not check_jackgram_active():
         return None
-    host = get_setting("jackgram_host")
+    host = str(get_setting("jackgram_host"))
     if not validate_host(host, Indexer.TELEGRAM):
         return None
     return Jackgram(host, notification)
@@ -83,10 +83,12 @@ def add_telegram_latest_item(entry):
     mode = entry["type"]
     title = entry["title"]
     details = tmdb_get(f"{mode}_details", entry["tmdb_id"])
-
+    if details is None:
+        kodilog(f"Failed to get details for {mode} with ID {entry['tmdb_id']}")
+        return
     tmdb_id = entry["tmdb_id"]
-    imdb_id = details.external_ids.get("imdb_id")
-    tvdb_id = details.external_ids.get("tvdb_id")
+    imdb_id = getattr(details, "external_ids").get("imdb_id")
+    tvdb_id = getattr(details, "external_ids").get("tvdb_id")
     entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     li = ListItem(label=title)
@@ -136,7 +138,6 @@ def add_telegram_latest_file_item(file_entry, parent_data):
     set_media_infoTag(li, metadata=details, mode=mode)
 
     merged_data = {**parent_data, **file_entry}
-
 
     kodilog(f"Adding Telegram file item: {merged_data}", level=xbmc.LOGDEBUG)
 

@@ -22,8 +22,9 @@ def resolve_to_magnet(url):
         is_redirect = response.is_redirect or response.is_permanent_redirect
         redirect_location = response.headers.get('Location') if is_redirect else None
         
-        if is_redirect and redirect_location.startswith('magnet:?'):
-            return redirect_location
+        if is_redirect and redirect_location:
+            if redirect_location.startswith('magnet:?'):
+                return redirect_location
     except requests.RequestException as e:
         return None
     finally:

@@ -81,7 +81,7 @@ class Torbox(DebridClient):
             params={"hash": torrent_hashes, "format": "object"},
         )
 
-    def create_download_link(self, torrent_id, filename, user_ip):
+    def create_download_link(self, torrent_id, filename, user_ip=None):
         params = {
             "token": self.token,
             "torrent_id": torrent_id,
@@ -96,7 +96,7 @@ class Torbox(DebridClient):
             params=params,
             is_expected_to_fail=True,
         )
-        if "successfully" in response.get("detail"):
+        if "successfully" in response.get("detail", ""):
             return response
         raise ProviderException(
             f"Failed to create download link from Torbox {response}",

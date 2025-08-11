@@ -8,12 +8,12 @@ from lib.utils.kodi.utils import (
     get_property,
     notification,
     set_property,
-    sleep,
-    clear_property
+    clear_property,
 )
 
 import xbmcaddon
 from xbmcvfs import translatePath
+
 
 userdata_path = translatePath(xbmcaddon.Addon().getAddonInfo("profile"))
 databases_path = os.path.join(userdata_path, "databases/")
@@ -23,6 +23,7 @@ lists_db = translatePath(os.path.join(database_path_raw, "lists.db"))
 maincache_db = translatePath(os.path.join(database_path_raw, "maincache.db"))
 paginator_db = translatePath(os.path.join(database_path_raw, "paginator.db"))
 database_timeout = 20
+
 
 database_locations = {
     "trakt_db": trakt_db,
@@ -126,25 +127,6 @@ def check_databases_integrity():
         )
     else:
         notification("No Corrupt or Missing Databases", time=3000)
-
-
-def clear_all_cache():
-    line = "Clearing....[CR]%s"
-    caches = (
-        ("trakt", "Trakt Cache"),
-        (
-            "list",
-            "List Data Cache",
-        ),
-    )
-    for count, cache_type in enumerate(caches, 1):
-        try:
-            clear_cache(cache_type[0])
-            sleep(1000)
-        except:
-            pass
-    sleep(100)
-    dialog_ok(heading="", line1="Success")
 
 
 class BaseCache(object):

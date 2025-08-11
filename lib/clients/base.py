@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from requests import Session
-from typing import List, Optional, Callable
+from typing import Any, List, Optional, Callable
 from lib.domain.torrent import TorrentStream
 
 
@@ -23,7 +23,7 @@ class BaseClient(ABC):
         pass
 
     @abstractmethod
-    def parse_response(self, res: any) -> List[TorrentStream]:
+    def parse_response(self, res: Any) -> List[TorrentStream]:
         pass
 
     def handle_exception(self, exception: str) -> None:

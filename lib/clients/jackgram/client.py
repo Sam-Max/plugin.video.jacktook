@@ -31,7 +31,7 @@ class Jackgram(BaseClient):
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
-            
+
             if mode in ["tv", "movies"]:
                 return self.parse_response(res)
             else:
@@ -65,6 +65,13 @@ class Jackgram(BaseClient):
                     size=item["size"],
                     publishDate=item["date"],
                     url=item["url"],
+                    guid=item.get("guid", ""),
+                    infoHash=item.get("infoHash", ""),
+                    seeders=item.get("seeders", 0),
+                    languages=item.get("languages", []),
+                    fullLanguages=item.get("fullLanguages", ""),
+                    provider=item.get("provider", ""),
+                    peers=item.get("peers", 0),
                 )
             )
         return results

@@ -19,12 +19,13 @@ def show_season_info(ids, mode, media_type):
 
     if imdb_id:
         res = tmdb_get("find_by_imdb_id", imdb_id)
-        tmdb_id = res["tv_results"][0]["id"]
+        if res and "tv_results" in res:
+            tmdb_id = res["tv_results"][0]["id"]
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     details = tmdb_get("tv_details", tmdb_id)
-    name = details.name
-    seasons = details.seasons
+    name = getattr(details, "name")
+    seasons = getattr(details, "seasons")
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     for season in seasons:
@@ -75,10 +76,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     season_details = tmdb_get(
         "season_details", {"id": ids.get("tmdb_id"), "season": season}
     )
-
     fanart_data = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
-    for episode in season_details.episodes:
+    for episode in getattr(season_details, "episodes"):
         ep_name = episode.name
         episode_number = episode.episode_number
 

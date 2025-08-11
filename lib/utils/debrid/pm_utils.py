@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, List, Any
+from typing import List, Any
 from lib.api.debrid.premiumize import Premiumize
 from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.general.utils import (
@@ -21,8 +21,8 @@ class PremiumizeHelper:
     def check_pm_cached(
         self,
         results: List[TorrentStream],
-        cached_results: List[Dict],
-        uncached_results: List[Dict],
+        cached_results: List[TorrentStream],
+        uncached_results: List[TorrentStream],
         total: int,
         dialog: Any,
         lock: Any,

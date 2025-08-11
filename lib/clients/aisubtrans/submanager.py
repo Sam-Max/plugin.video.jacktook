@@ -53,7 +53,7 @@ class SubtitleManager(KodiJsonRpcClient):
             "Settings.GetSettingValue", {"setting": "locale.subtitlelanguage"}
         )
 
-        value = subtitle_language.get("value")
+        value = subtitle_language.get("value", "")
         if value in ["forced_only", "original", "default", "none"]:
             return value
         return self.convert_language_iso(value) if iso_format else value
@@ -108,10 +108,6 @@ class SubtitleManager(KodiJsonRpcClient):
                 return subtitle_files
 
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
-        
-        kodilog(f"Selected Subtitles fetched: {len(subtitles)}", level=xbmc.LOGDEBUG)
-        kodilog(f"Selected Subtitles: {subtitles}", level=xbmc.LOGDEBUG)
-
         if not subtitles:
             kodilog("No subtitles found for the current video")
             return

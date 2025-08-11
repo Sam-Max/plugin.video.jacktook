@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 import json
 import re
 import sys
 import time
 import sqlite3 as database
-from lib.db.cached import cache
+from typing import Any, Union
+
 from urllib import parse
 from urllib.parse import quote, urlencode
 
+from lib.db.cached import cache
+
 import xbmc
-import xbmcgui
 import xbmcaddon
+import xbmcgui
 
 from xbmcgui import Window, ListItem
 from xbmcplugin import setResolvedUrl
@@ -34,6 +37,7 @@ TORREST_ADDON_ID = "plugin.video.torrest"
 JACKTORR_ADDON_ID = "plugin.video.jacktorr"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
 JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
+
 
 try:
     JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
@@ -64,10 +68,12 @@ progressDialog = xbmcgui.DialogProgress()
 
 
 def get_jacktorr_setting(value, default=None):
+    if not JACKTORR_ADDON:
+        notification(translation(30253))
+        return 
     value = JACKTORR_ADDON.getSetting(value)
     if not value:
         return default
-
     if value == "true":
         return True
     elif value == "false":
@@ -105,7 +111,7 @@ def get_property(prop: str):
     return value
 
 
-def set_property(prop, value):
+def set_property(prop: str, value: Any):
     Window(10000).setProperty(prop, value)
     cache.set(prop, value, timedelta(days=30))
 
@@ -135,6 +141,10 @@ def is_jacktorr_addon():
 
 def is_elementum_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
+
+
+def is_burst_addon():
+    return xbmc.getCondVisibility(f"System.HasAddon({JACKTOOK_BURST_ADOON_ID})")
 
 
 def translation(id_value):
@@ -412,13 +422,18 @@ def copy2clip(txt):
             pass
 
 
-def get_datetime(string=False, dt=False):
-    d = datetime.now()
+def get_datetime(string: bool = False, dt: bool = False) -> Union[date, datetime]:
+    """
+    Returns the current date/time in various formats.
+
+    :param dt: If True, returns the full datetime object.
+    :return: By default, returns a date object.
+    """
+    now = datetime.now()
     if dt:
-        return d
-    if string:
-        return d.strftime("%Y-%m-%d")
-    return datetime.date(d)
+        return now
+    else:
+        return now.date()
 
 
 def list_dirs(location):

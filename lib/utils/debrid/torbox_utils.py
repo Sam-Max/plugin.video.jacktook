@@ -1,5 +1,5 @@
 import copy
-from typing import Dict, List, Any
+from typing import List, Any
 from lib.api.debrid.torbox import Torbox
 from lib.utils.kodi.utils import get_setting, notification
 from lib.utils.general.utils import (
@@ -29,8 +29,8 @@ class TorboxHelper:
     def check_torbox_cached(
         self,
         results: List[TorrentStream],
-        cached_results: List[Dict],
-        uncached_results: List[Dict],
+        cached_results: List[TorrentStream],
+        uncached_results: List[TorrentStream],
         total: int,
         dialog: Any,
         lock: Any,

@@ -14,6 +14,7 @@ class PlayWindow(BaseWindow):
             self.closed = False
         except Exception as e:
             kodilog(f"Error PlayWindow: {e}")
+            self.player = None
 
     def __del__(self):
         self.player = None

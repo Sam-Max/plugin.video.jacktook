@@ -40,16 +40,16 @@ class JacktookPLayer(xbmc.Player):
     def __init__(self):
         xbmc.Player.__init__(self)
         self.url = None
-        self.kodi_monitor = None
+        self.kodi_monitor = xbmc.Monitor()
         self.playback_percent = 0.0
         self.playing_filename = ""
         self.media_marked = False
         self.playback_successful = None
         self.cancel_all_playback = False
         self.next_dialog = get_setting("playnext_dialog_enabled")
-        self.playing_next_time = int(get_setting("playnext_time"))
+        self.playing_next_time = int(get_setting("playnext_time", 50))
         self.PLAYLIST = PLAYLIST
-        self.data = None
+        self.data = {}
         self.notification = notification
         self.subtitle_manager = SubtitleManager(self, self.notification)
         self.lang_code = "en"
@@ -130,7 +130,7 @@ class JacktookPLayer(xbmc.Player):
                 self.subtitles_found = True
         else:
             if get_setting("auto_subtitle"):
-                sub_language = get_setting("auto_sub_language")
+                sub_language = str(get_setting("auto_sub_language"))
                 kodilog(f"Selected subtitle language: {sub_language}")
                 if sub_language and sub_language.lower() != "None":
                     self.lang_code = get_language_code(sub_language)
@@ -197,7 +197,7 @@ class JacktookPLayer(xbmc.Player):
         Handles automatic audio stream selection based on user settings.
         """
         auto_audio_enabled = get_setting("auto_audio")
-        auto_audio_language = get_setting("auto_audio_language")
+        auto_audio_language = str(get_setting("auto_audio_language"))
         if (
             auto_audio_enabled
             and auto_audio_language
@@ -261,6 +261,7 @@ class JacktookPLayer(xbmc.Player):
 
                 except Exception as e:
                     kodilog(f"Error in monitor: {e}")
+                    kodilog(traceback.format_exc())
                     sleep(250)
 
             if (
@@ -306,7 +307,7 @@ class JacktookPLayer(xbmc.Player):
         if not season_details or not hasattr(season_details, "episodes"):
             return
 
-        for e in season_details.episodes:
+        for e in getattr(season_details, "episodes"):
             episode_name = getattr(e, "name", "")
             episode_number = getattr(e, "episode_number", 0)
 
@@ -346,7 +347,6 @@ class JacktookPLayer(xbmc.Player):
         self.PLAYLIST.clear()
         self.data = data
         self.url = self.data["url"]
-        self.kodi_monitor = xbmc.Monitor()
         self.watched_percentage = self.data.get("progress", 0.0)
 
     def clear_playback_properties(self):

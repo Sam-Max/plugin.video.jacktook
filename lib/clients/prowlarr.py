@@ -1,7 +1,8 @@
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi.utils import get_setting, translation
+from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.kodi.settings import get_prowlarr_timeout
-from typing import List, Optional, Any, Callable
+
+from typing import Dict, List, Optional, Any, Callable
 
 
 class Prowlarr(BaseClient):
@@ -24,7 +25,7 @@ class Prowlarr(BaseClient):
             "X-Api-Key": self.apikey,
         }
         try:
-            params = {"query": query, "type": "search"}
+            params: Dict[str, Any] = {"query": query, "type": "search"}
             if mode == "tv":
                 params["categories"] = [5000, 8000]
                 if get_setting("include_season_packs"):
@@ -49,7 +50,7 @@ class Prowlarr(BaseClient):
                 headers=headers,
             )
             if response.status_code != 200:
-                self.notification(f"{translation(30230)} {response.status_code}")
+                notification(f"{translation(30230)} {response.status_code}")
                 return None
             return self.parse_response(response)
         except Exception as e:

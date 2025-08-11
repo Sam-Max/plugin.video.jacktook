@@ -12,7 +12,7 @@ class SIMKL:
     def _to_url(self, url=""):
         if url.startswith("/"):
             url = url[1:]
-        return "%s/%s" % (self.baseUrl[:-1], url)
+        return "%s/%s" % (self.base_url[:-1], url)
 
     def make_request(self, endpoint, params):
         res = requests.get(

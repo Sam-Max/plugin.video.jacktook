@@ -425,9 +425,11 @@ def extract_genres(genres, media_type="movies"):
     from lib.clients.tmdb.utils import tmdb_get
 
     genre_response = tmdb_get(path=path)
+    if not genre_response or "genres" not in genre_response:
+        kodilog(f"Failed to fetch genres for {media_type}")
+        return genre_list
+    
     genre_mapping = {g["id"]: g["name"] for g in genre_response.get("genres", [])}
-
-    kodilog(f"Genre mapping for {media_type}: {genre_mapping}", level=xbmc.LOGDEBUG)
 
     for g in genres:
         if isinstance(g, dict) and "name" in g:  # Case: { "id": 28, "name": "Action" }
@@ -781,12 +783,12 @@ def clear(type="all", update=False):
 
 
 def limit_results(results):
-    limit = int(get_setting("indexers_total_results"))
+    limit = int(get_setting("indexers_total_results", 10))
     return results[:limit]
 
 
 def get_description_length():
-    return int(get_setting("indexers_desc_length"))
+    return int(get_setting("indexers_desc_length", 10))
 
 
 def remove_duplicate(results):
@@ -955,7 +957,7 @@ def get_password():
 
 
 def ssl_enabled():
-    return get_jacktorr_setting("ssl_connection")
+    return bool(get_jacktorr_setting("ssl_connection"))
 
 
 def get_port():
@@ -1015,8 +1017,8 @@ def extract_publish_date(date):
 
 
 def translate_weekday(weekday_name, lang="eng"):
-    sub_language = get_setting("auto_sub_language")
-    if sub_language and sub_language.lower() != "None":
+    sub_language = str(get_setting("auto_sub_language"))
+    if sub_language and sub_language.lower() != "none":
         lang = get_language_code(sub_language)
     return WEEKDAY_TRANSLATIONS.get(lang, WEEKDAY_TRANSLATIONS["eng"]).get(
         weekday_name, weekday_name

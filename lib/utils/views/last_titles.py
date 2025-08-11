@@ -1,9 +1,12 @@
 import json
 import os
+
 from lib.clients.tmdb.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
+from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import set_media_infoTag
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, container_refresh
+
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
@@ -39,6 +42,10 @@ def show_last_titles():
             details = tmdb_get("tv_details", ids.get("tmdb_id"))
         else:
             details = tmdb_get("movie_details", ids.get("tmdb_id"))
+
+        if not details:
+            kodilog(f"Failed to get details for {mode} with ID {ids.get('tmdb_id')}")
+            continue
 
         list_item = ListItem(label=f"{title}— {formatted_time}")
         set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))

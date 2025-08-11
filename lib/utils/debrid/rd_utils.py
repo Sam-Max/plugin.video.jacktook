@@ -1,7 +1,8 @@
 import copy
+import threading
 import time
 from datetime import datetime
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.utils.kodi.utils import (
@@ -32,11 +33,11 @@ class RealDebridHelper:
     def check_rd_cached(
         self,
         results: List[TorrentStream],
-        cached_results: List[Dict],
-        uncached_results: List[Dict],
+        cached_results: List[TorrentStream],
+        uncached_results: List[TorrentStream],
         total: int,
         dialog: object,
-        lock: object,
+        lock: threading.Lock,
     ) -> None:
         """Checks if torrents are cached in Real-Debrid."""
         torr_available = self.client.get_user_torrent_list()

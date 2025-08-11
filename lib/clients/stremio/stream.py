@@ -13,15 +13,15 @@ class Stream:
             raise ValueError("Input must be a JSON string or a dictionary.")
 
         # Initialize required attributes
-        self.url = data.get("url")
+        self.url = data.get("url", "")
         self.ytId = data.get("ytId")
-        self.infoHash = data.get("infoHash")
+        self.infoHash = data.get("infoHash", "")
         self.fileIdx = data.get("fileIdx")
         self.externalUrl = data.get("externalUrl")
 
         # Initialize optional attributes
         self.name = data.get("name")
-        self.title = data.get("title")  # deprecated
+        self.title = data.get("title", "")  # deprecated
         self.description = data.get(
             "description", self.title
         )  # Use `title` as fallback

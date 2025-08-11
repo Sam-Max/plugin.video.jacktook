@@ -2,8 +2,6 @@ import json
 import requests
 
 from http import HTTPStatus
-from http.client import HTTPException
-
 from requests.exceptions import ConnectionError, Timeout
 from lib.api.plex.settings import settings
 from lib.api.plex.models.plex_models import (
@@ -191,13 +189,7 @@ def get_json(url, params=None):
         if response.status_code in (401, 403):
             raise PlexUnauthorizedError()
         if response.status_code >= 400:
-            raise HTTPException(
-                status_code=502,
-                detail="Received error from plex server",
-            )
+            kodilog("Received error from plex server")
         return json.loads(response.content)
     except TimeoutError:
-        raise HTTPException(
-            status_code=504,
-            detail="Plex server timeout error",
-        )
+        kodilog("Plex server timeout error")

@@ -23,5 +23,3 @@ class AniZipApi:
         )
         if res.status_code == 200:
             return res.json()
-        else:
-            kodilog(f"Error::{res.text}")

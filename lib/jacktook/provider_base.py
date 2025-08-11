@@ -22,9 +22,7 @@ __all__ = ["ProviderResult", "Provider"]
 def get_providers():
     return [
         p_id
-        for p_id, _ in get_installed_addons(
-            addon_type="xbmc.python.script", enabled=True
-        )
+        for p_id, _ in get_installed_addons(addon_type="xbmc.python.script")
         if p_id.startswith("script.jacktook.") and p_id != ADDON_ID
     ]
 
@@ -92,7 +90,7 @@ class Provider(object):
         raise NotImplementedError("'resolve' method must be implemented")
 
     def ping(self):
-        self.logger.debug("Ping method called")
+        kodilog("Ping method called")
         return ADDON_ID
 
     def register(self):

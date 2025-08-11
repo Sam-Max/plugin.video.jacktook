@@ -16,7 +16,6 @@ from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
 
 
 
-
 def show_weekly_calendar():
     setPluginCategory(ADDON_HANDLE, "Weekly TV Calendar")
 
@@ -107,7 +106,7 @@ def get_episodes_for_show(ids):
 
     try:
         show_details = tmdb_get("tv_details", tmdb_id)
-        seasons = show_details.get("seasons", [])
+        seasons = getattr(show_details, "seasons")
         seasons = [s for s in seasons if s.get("season_number", 0) > 0]
         if not seasons:
             return [], show_details
@@ -118,7 +117,7 @@ def get_episodes_for_show(ids):
         )
 
         episodes = []
-        for ep in season_details.get("episodes", []):
+        for ep in getattr(season_details, "episodes"):
             air_date = ep.get("air_date")
             if air_date:
                 episodes.append(

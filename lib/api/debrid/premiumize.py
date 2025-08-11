@@ -46,19 +46,6 @@ class Premiumize(DebridClient):
             is_expected_to_fail=is_expected_to_fail,
         )
 
-    def get_token(self, code):
-        return self._make_request(
-            "POST",
-            self.OAUTH_TOKEN_URL,
-            data={
-                "client_id": self.OAUTH_CLIENT_ID,
-                "client_secret": self.OAUTH_CLIENT_SECRET,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": self.REDIRECT_URI,
-            },
-        )
-
     def get_device_code(self):
         return self._make_request(
             "POST",
@@ -122,8 +109,11 @@ class Premiumize(DebridClient):
         except:
             pass
 
-    def create_or_get_folder_id(self, info_hash):
-        folder_data = self.get_folder_list()
+    def download(self):
+        pass
+
+    def create_or_get_folder_id(self, info_hash, folder_id: str):
+        folder_data = self.get_folder_list(folder_id)
         for folder in folder_data["content"]:
             if folder["name"] == info_hash:
                 return folder["id"]
@@ -133,7 +123,7 @@ class Premiumize(DebridClient):
             return
         return folder_data.get("id")
 
-    def add_magnet_link(self, magnet_link: str, folder_id: str = None):
+    def add_magnet_link(self, magnet_link: str, folder_id: str):
         return self._make_request(
             "POST",
             f"{self.BASE_URL}/transfer/create",
@@ -169,7 +159,7 @@ class Premiumize(DebridClient):
         )
         return torrent_info
 
-    def get_folder_list(self, folder_id: str = None):
+    def get_folder_list(self, folder_id: str):
         return self._make_request(
             "GET",
             f"{self.BASE_URL}/folder/list",

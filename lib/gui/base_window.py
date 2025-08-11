@@ -53,7 +53,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         try:
             # Retrieve cached focus if available
             control_id, item_id = self.get_cached_focus()
-            if control_id:
+            if control_id and item_id:
                 control = self.getControl(control_id)
                 if isinstance(control, xbmcgui.ControlList):
                     control.selectItem(int(item_id))
@@ -78,13 +78,13 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         try:
             control = self.getControl(control_id)
         except RuntimeError as e:
-            kodilog(f"Control does not exist {control_id}", "error")
-            kodilog(e)
+            kodilog(f"Control does not exist {control_id}", {e})
+            raise ValueError(f"Control with Id {control_id} does not exist")
+        
         if not isinstance(control, xbmcgui.ControlList):
             raise AttributeError(
                 f"Control with Id {control_id} should be of type ControlList"
             )
-
         return control
 
     def add_item_information_to_window(self, item_information):
@@ -165,7 +165,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         if type == IndexerType.TORRENT:
             url, magnet, is_torrent = self._handle_torrent_source(source)
         elif type == IndexerType.DIRECT:
-            url, is_torrent = source.downloadUrl, False
+            url, is_torrent = source.url, False
         elif type == IndexerType.STREMIO_DEBRID:
             url, is_torrent = source.url, False
 

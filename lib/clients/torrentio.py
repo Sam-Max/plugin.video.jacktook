@@ -21,13 +21,13 @@ class Torrentio(BaseClient):
     ) -> Optional[List[TorrentStream]]:
         try:
             kodilog(f"Searching for {imdb_id} on Torrentio")
-
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/stream/{mode}/{imdb_id}.json"
-
-            kodilog(f"URL: {url}")
+            else:
+                self.handle_exception(translation(30228))
+                return None
             
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:

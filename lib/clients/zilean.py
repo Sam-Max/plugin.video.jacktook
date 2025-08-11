@@ -6,6 +6,7 @@ from requests.exceptions import RequestException
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import USER_AGENT_HEADER, info_hash_to_magnet
 from typing import List, Optional, Dict, Any, Callable
+from lib.utils.kodi.utils import notification
 
 
 class Zilean(BaseClient):
@@ -21,7 +22,7 @@ class Zilean(BaseClient):
             response = self.ping()
             return response.ok
         except Exception as e:
-            self._notification(f"Zilean failed to initialize: {e}")
+            notification(f"Zilean failed to initialize: {e}")
             return False
 
     def search(
@@ -34,6 +35,8 @@ class Zilean(BaseClient):
     ) -> Optional[List[TorrentStream]]:
         try:
             data = self.api_scrape(query, mode, media_type, season, episode)
+            if not data:
+                return None
             return self.parse_response(data)
         except RateLimitExceeded:
             logging.warning(f"Zilean ratelimit exceeded for query: {query}")
@@ -58,7 +61,7 @@ class Zilean(BaseClient):
         search_url = f"{self.host}/dmm/search"
 
         if mode in {"tv", "movies"} or media_type in {"tv", "movies"}:
-            params = {"Query": query}
+            params: Dict[str, Any] = {"Query": query}
             if mode == "tv" or media_type == "tv":
                 params.update({"Season": season, "Episode": episode})
 
@@ -73,14 +76,11 @@ class Zilean(BaseClient):
                 headers=USER_AGENT_HEADER,
                 timeout=self.timeout,
             )
-
         if res.status_code != 200:
             return
-
         response = json.loads(
             res.content, object_hook=lambda item: SimpleNamespace(**item)
         )
-
         torrents = []
         for result in response:
             torrents.append(
@@ -91,7 +91,6 @@ class Zilean(BaseClient):
                     "languages": result.languages,
                 }
             )
-
         return torrents
 
     def parse_response(self, data: List[Dict[str, Any]]) -> List[TorrentStream]:

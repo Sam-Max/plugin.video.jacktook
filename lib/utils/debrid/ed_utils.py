@@ -24,13 +24,16 @@ class EasyDebridHelper:
     def check_ed_cached(
         self,
         results: List[TorrentStream],
-        cached_results: List[Dict],
-        uncached_results: List[Dict],
+        cached_results: List[TorrentStream],
+        uncached_results: List[TorrentStream],
         total: int,
         dialog: Any,
         lock: Any,
     ) -> None:
+        # Filter results that have an infoHash
         filtered_results = [res for res in results if res.infoHash]
+
+        cached_response = []
         if filtered_results:
             magnets = [info_hash_to_magnet(res.infoHash) for res in filtered_results]
             torrents_info = self.client.get_torrent_instant_availability(magnets)
@@ -41,12 +44,15 @@ class EasyDebridHelper:
             res.type = Debrids.ED
 
             if res in filtered_results:
+                # Get index in filtered results for matching cached response
                 index = filtered_results.index(res)
-                if cached_response[index] is True:
-                    res.isCached = True
+                is_cached = (
+                    cached_response[index] if index < len(cached_response) else False
+                )
+                res.isCached = bool(is_cached)
+                if res.isCached:
                     cached_results.append(res)
                 else:
-                    res.isCached = False
                     uncached_results.append(res)
             else:
                 res.isCached = False

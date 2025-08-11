@@ -1,5 +1,6 @@
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional
+
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.next_window import PlayNext
@@ -7,9 +8,9 @@ from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST
 from lib.gui.source_select import SourceSelect
+
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
-from typing import Optional
 
 class CustomWindow(WindowXML):
     def __init__(self, *args, **kwargs):
@@ -33,6 +34,8 @@ class MyWindow(WindowXML):
 
     def onClick(self, control_id):
         if control_id == 32503:  # List control
+            if not self.list_control:
+                return
             selected_item = self.list_control.getSelectedItem()
             if selected_item:
                 xbmcgui.Dialog().notification(
@@ -65,17 +68,25 @@ class CustomDialog(WindowXMLDialog):
             self.close()
 
 
-mock_source = {
-    "type": "torrent",
-    "info": {"HEVC", "DV", "HDR", "HYBRID", "REMUX", "ATMOS", "TRUEHD", "7.1"},
-    "quality": "1080p",
-    "hash": "hash",
-    "size": 1400,
-    "provider": "Test Provider",
-    "title": "Test.Source.1999.UHD.BDRemux.TrueHD.Atmos.7.1.HYBRID.DoVi.mkv",
-    "debrid_provider": "premiumize",
-    "seeds": 123,
-}
+fake_torrent = TorrentStream(
+    title="Example Movie 2025",
+    type="movie",
+    indexer="FakeIndexer",
+    guid="1234567890abcdef",
+    infoHash="abcdef1234567890abcdef1234567890abcdef12",
+    size=2_147_483_648,  # 2 GB
+    seeders=150,
+    languages=["en", "es"],
+    fullLanguages="English, Spanish",
+    provider="FakeProvider",
+    publishDate="2025-08-11T12:00:00Z",
+    peers=200,
+    quality="1080p",
+    url="magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890abcdef12",
+    isPack=False,
+    isCached=True
+)
+
 
 _mock_information = {
     "fanart": "https://assets.fanart.tv/fanart/tv/453280/showbackground/secret-level-674c531a09534.jpg",
@@ -102,6 +113,7 @@ def source_select(
 
 def run_next_dialog(params):
     if PLAYLIST.size() > 0 and PLAYLIST.getposition() != (PLAYLIST.size() - 1):
+        window = None
         try:
             window = PlayNext(
                 "playing_next.xml",
@@ -110,10 +122,12 @@ def run_next_dialog(params):
             )
             window.doModal()
         finally:
-            del window
+            if window is not None:
+                del window
 
 
 def run_resume_dialog(params):
+    resume_window = None
     try:
         resume_window = ResumeDialog(
             "resume_dialog.xml",
@@ -123,10 +137,12 @@ def run_resume_dialog(params):
         resume_window.doModal()
         return resume_window.resume
     finally:
-        del resume_window
+        if resume_window is not None:
+            del resume_window
 
 
 def run_next_mock():
+    window = None
     try:
         window = PlayNext(
             "playing_next.xml",
@@ -135,12 +151,12 @@ def run_next_mock():
         )
         window.doModal()
     finally:
-        del window
+        if window is not None:
+            del window
 
 
 def source_select_mock():
-    sources = [mock_source for _ in range(10)]
-
+    sources = [fake_torrent for _ in range(10)]
     window = SourceSelect(
         "source_select.xml",
         ADDON_PATH,
@@ -161,6 +177,7 @@ def download_dialog_mock():
 
 
 def resume_dialog_mock():
+    window = None
     try:
         window = ResumeDialog(
             "resume_dialog.xml",
@@ -170,14 +187,15 @@ def resume_dialog_mock():
         window.doModal()
         return window.resume
     finally:
-        del window
+        if window is not None:
+            del window
 
 
 def resolver_mock():
     window = ResolverWindow(
         "resolver.xml",
         ADDON_PATH,
-        source=mock_source,
+        source=fake_torrent,
         item_information=_mock_information,
     )
     window.doModal()

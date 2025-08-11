@@ -1,8 +1,10 @@
 import json
 import random
 import time
+from typing import Any, Dict
 import requests
 import xbmc
+
 from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
@@ -162,14 +164,12 @@ class TraktBase:
     def get_trakt(self, params):
         try:
             kodilog(f"get_trakt params: {params}")
-
             path_insert = params.get("path_insert", "")
             if not isinstance(path_insert, (tuple, str)):
                 path_insert = (path_insert,)
 
             kodilog(f"Path: {params['path']}")
             kodilog(f"Path insert: {path_insert}")
-
             formatted_path = params["path"] % path_insert
             kodilog(f"Formatted path: {formatted_path}")
 
@@ -183,9 +183,9 @@ class TraktBase:
                 pagination=params.get("pagination", True),
                 page_no=params.get("page_no"),
             )
-
-            kodilog(f"Call trakt result: {result}", level=xbmc.LOGDEBUG)
-            return result[0] if params.get("pagination", True) else result
+            if result:
+                kodilog(f"Call trakt result: {result}", level=xbmc.LOGDEBUG)
+                return result[0] if params.get("pagination", True) else result
         except KeyError as e:
             kodilog(f"KeyError in get_trakt: {e}")
             raise
@@ -208,9 +208,9 @@ class TraktBase:
             "refresh_token": self.trakt_refresh,
         }
         response = self.call_trakt("oauth/token", data=data, with_auth=False)
-        if response:
-            set_property("trakt_token", str(response["access_token"]))
-            set_property("trakt_refresh", str(response["refresh_token"]))
+        if response and isinstance(response, dict):
+            set_property("trakt_token", response["access_token"])
+            set_property("trakt_refresh", response["refresh_token"])
             set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
 
     def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
@@ -317,10 +317,11 @@ class TraktAuthentication(TraktBase):
         set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
         try:
             user = self.call_trakt("users/me")
-            set_setting("trakt_user", str(user["username"]))
-            set_setting("is_trakt_auth", "true")
-            notification("Trakt Account Authorized", time=3000)
-            return True
+            if user and isinstance(user, dict):
+                set_setting("trakt_user", str(user["username"]))
+                set_setting("is_trakt_auth", "true")
+                notification("Trakt Account Authorized", time=3000)
+                return True
         except:
             kodilog("Trakt user not found, setting to empty user")
             set_setting("is_trakt_auth", "false")
@@ -592,7 +593,8 @@ class TraktLists(TraktBase):
             payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
         else:
             media_type_key = "shows"
-            show_item = {"ids": {"tmdb": int(ids["tmdb"])}}
+
+            show_item: Dict[str, Any] = {"ids": {"tmdb": int(ids["tmdb"])}}
 
             if season:
                 show_item["seasons"] = [{"number": int(season)}]
@@ -614,7 +616,9 @@ class TraktLists(TraktBase):
         )
 
         if (
-            "added" in response
+            response
+            and isinstance(response, dict)
+            and "added" in response
             and response["added"].get("movies", 0) == 0
             and response["added"].get("episodes", 0) == 0
         ):
@@ -652,7 +656,7 @@ class TraktLists(TraktBase):
             elif sort_order == 1:
                 data.sort(key=lambda k: k["collected_at"], reverse=True)
             else:
-                data.sort(key=lambda k: k.get("released"), reverse=True)
+                data.sort(key=lambda k: k["released"], reverse=True)
 
         return data[:limit]
 
@@ -785,6 +789,9 @@ class TraktLists(TraktBase):
         elif list_type == "liked_lists":
             string = "trakt_liked_lists"
             path = "users/likes/lists%s"
+        else:
+            return []
+
         params = {
             "path": path,
             "params": {"limit": 1000},
@@ -805,8 +812,8 @@ class TraktLists(TraktBase):
 
 class TraktScrobble(TraktBase):
     def trakt_start_scrobble(self, data):
-        kodilog("Starting scrobble")
-        payload = {"progress": 0}
+        payload: Dict[str, Any] = {"progress": 0}
+
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
@@ -818,11 +825,11 @@ class TraktScrobble(TraktBase):
                 "number": data.get("tv_data").get("episode"),
             }
 
-        kodilog("Scrobble payload: %s" % payload)
         self.call_trakt("scrobble/start", data=payload, with_auth=True)
 
     def trakt_pause_scrobble(self, data):
-        payload = {"progress": 0}
+        payload: Dict[str, Any] = {"progress": 0}
+
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
@@ -854,18 +861,20 @@ class TraktScrobble(TraktBase):
 
     def trakt_get_last_tracked_position(self, data):
         try:
-            kodilog("Fetching last tracked position")
             media_type = "movies" if data["mode"] == "movies" else "shows"
             season = data.get("tv_data", {}).get("season")
             tmdb_id = data.get("ids", {}).get("tmdb_id")
             path = f"sync/playback/{media_type}"
             response = self.call_trakt(path, with_auth=True)
-            kodilog(f"Response: {response}", level=xbmc.LOGDEBUG)
-            for item in response:
-                if item["type"] == "movie" and item["movie"]["ids"]["tmdb"] == tmdb_id:
-                    return item.get("progress", 0)
-                elif item["type"] == "show" and item["episode"]["season"] == season:
-                    return item.get("progress", 0)
+            if response:
+                for item in response:
+                    if (
+                        item["type"] == "movie"
+                        and item["movie"]["ids"]["tmdb"] == tmdb_id
+                    ):
+                        return item.get("progress", 0)
+                    elif item["type"] == "show" and item["episode"]["season"] == season:
+                        return item.get("progress", 0)
         except Exception as e:
             kodilog(f"Error fetching last tracked position: {e}")
         return 0

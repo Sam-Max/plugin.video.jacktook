@@ -1,7 +1,7 @@
 from lib.clients.base import BaseClient
 from lib.clients.base import TorrentStream
 
-from lib.utils.kodi.utils import get_setting, translation
+from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.parsers import xmltodict
 from lib.utils.kodi.settings import get_jackett_timeout
 
@@ -61,7 +61,7 @@ class Jackett(BaseClient):
             )
             response = self.session.get(url, timeout=get_jackett_timeout())
             if response.status_code != 200:
-                self.notification(f"{translation(30229)} ({response.status_code})")
+                notification(f"{translation(30229)} ({response.status_code})")
                 return None
             return self.parse_response(response)
         except Exception as e:
@@ -71,14 +71,15 @@ class Jackett(BaseClient):
     def parse_response(self, res: Any) -> Optional[List[TorrentStream]]:
         try:
             res_dict = xmltodict.parse(res.content)
-            channel = res_dict.get("rss", {}).get("channel", {})
-            items = channel.get("item")
-            if not items:
-                return []
-            results: List[TorrentStream] = []
-            for item in items if isinstance(items, list) else [items]:
-                self.extract_result(results, item)
-            return results
+            if res_dict:
+                channel = res_dict.get("rss", {}).get("channel", {})
+                items = channel.get("item")
+                if not items:
+                    return []
+                results: List[TorrentStream] = []
+                for item in items if isinstance(items, list) else [items]:
+                    self.extract_result(results, item)
+                return results
         except Exception as e:
             self.handle_exception(f"Error parsing Jackett response: {str(e)}")
             return None
@@ -101,7 +102,7 @@ class Jackett(BaseClient):
                 size=item.get("size", ""),
                 seeders=int(attributes.get("seeders", 0) or 0),
                 peers=int(attributes.get("peers", 0) or 0),
-                infoHash=attributes.get("infohash", ""),
+                infoHash=str(attributes.get("infohash", "")),
                 languages=[],
                 fullLanguages="",
             )

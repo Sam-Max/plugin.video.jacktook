@@ -211,6 +211,10 @@ msgctxt "#30244"
 msgid "Cache cleared"
 msgstr "Cache limpiada"
 
+msgctxt #30249"
+msgid "Addon Jacktook Burst not found - (script.jacktook.burst)"
+msgstr "El Addon Jacktook Burst no esta instalado - (script.jacktook.burst)"
+
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"
 msgstr "El Addon de Torrest no esta instalado - (plugin.video.torrest)"
@@ -238,6 +242,10 @@ msgstr "¿Quieres instalar Jacktorr?"
 msgctxt "#30256"
 msgid "Do you want to instalar Torrest?"
 msgstr "¿Quieres instalar Torrest?"
+
+msgctxt "#30257"
+msgid "Do you want to install Jacktook Burst?"
+msgstr "¿Quieres instalar Jacktook Burst?"
 
 msgctxt "#30650"
 msgid "Queued"
@@ -1369,7 +1377,7 @@ msgstr "Series"
 
 msgctxt "#90008"
 msgid "Movies"
-msgstr "Peliculas"
+msgstr "Películas"
 
 msgctxt "#90009"
 msgid "Anime"
@@ -1377,11 +1385,11 @@ msgstr "Anime"
 
 msgctxt "#90010"
 msgid "Live TV"
-msgstr "Television en vivo"
+msgstr "TV en vivo"
 
 msgctxt "#90011"
 msgid "Direct Search"
-msgstr "Busqueda Directa"
+msgstr "Búsqueda Directa"
 
 msgctxt "#90012"
 msgid "Torrents"
@@ -1534,15 +1542,15 @@ msgstr "Elige qué proveedores incluir en las peticiones de reproducción."
 # Context menus
 
 msgctxt "#90049"
-msgid "Scrape Again"
+msgid "Scrape again"
 msgstr "Volver a escanear"
 
 msgctxt "#90050"
-msgid "Search Recommendations"
+msgid "Search recommendations"
 msgstr "Buscar recomendaciones"
 
 msgctxt "#90051"
-msgid "Search Similar"
+msgid "Search similar"
 msgstr "Buscar similares"
 
 msgctxt "#90052"

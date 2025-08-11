@@ -146,10 +146,10 @@ def extract_magnet_from_url(url: str):
             content = response.content
             return extract_torrent_metadata(content)
         else:
-            kodilog.error(f"Failed to fetch content from URL: {url}")
+            kodilog(f"Failed to fetch content from URL: {url}")
             return ""
     except Exception as e:
-        kodilog.error(f"Failed to fetch content from URL: {url}, Error: {e}")
+        kodilog(f"Failed to fetch content from URL: {url}, Error: {e}")
         return ""
 
 
@@ -163,7 +163,7 @@ def extract_torrent_metadata(content: bytes):
         info_hash = m.hexdigest()
         return convert_info_hash_to_magnet(info_hash)
     except Exception as e:
-        kodilog.error(f"Error occurred extracting torrent metadata: {e}")
+        kodilog(f"Error occurred extracting torrent metadata: {e}")
         return ""
 
 

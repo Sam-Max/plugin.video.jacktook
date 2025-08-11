@@ -66,6 +66,10 @@ class MediaFusion(BaseClient):
                 url = f"{self.host}/{self.api_key}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
                 url = f"{self.host}/{self.api_key}/stream/movie/{imdb_id}.json"
+            else:
+                self.handle_exception(translation(30233))
+                return None
+            
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return

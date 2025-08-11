@@ -48,34 +48,30 @@ class DebridClient(ABC):
             if is_expected_to_fail:
                 return
 
+            status_code = getattr(error.response, "status_code", None)
+
             if response.headers.get("Content-Type") == "application/json":
                 error_content = response.json()
-                self._handle_service_specific_errors(
-                    error_content, error.response.status_code
-                )
+                self._handle_service_specific_errors(error_content, status_code)
             else:
                 error_content = response.text()
 
-            if error.response.status_code == 401:
+            if status_code == 401:
                 raise ProviderException("Invalid token")
 
-            if error.response.status_code == 403:
+            if status_code == 403:
                 raise ProviderException("Forbidden")
 
             formatted_traceback = "".join(traceback.format_exception(error))
-
-            kodilog(formatted_traceback)
-            kodilog(error_content)
-            kodilog(error.response.status_code)
-
+            kodilog(f"Error: {formatted_traceback}")
             raise ProviderException(f"API Error: {error_content}")
 
     @abstractmethod
-    async def initialize_headers(self):
+    def initialize_headers(self):
         raise NotImplementedError
 
     @abstractmethod
-    async def disable_access_token(self):
+    def disable_access_token(self):
         raise NotImplementedError
 
     @staticmethod
@@ -90,7 +86,7 @@ class DebridClient(ABC):
             )
 
     @abstractmethod
-    def _handle_service_specific_errors(self, error_data: dict, status_code: int):
+    def _handle_service_specific_errors(self, error_data: dict, status_code):
         """
         Service specific errors on api requests.
         """
@@ -102,4 +98,3 @@ class ProviderException(Exception):
         self.message = message
         super().__init__(self.message)
         notification(self.message)
-        

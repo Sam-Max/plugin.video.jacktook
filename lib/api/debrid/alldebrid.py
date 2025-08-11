@@ -21,9 +21,9 @@ class AllDebrid(DebridClient):
         self,
         method: str,
         url: str,
-        data,
-        json,
-        params,
+        data=None,
+        params=None,
+        json=None,
         is_return_none: bool = False,
         is_expected_to_fail: bool = False,
     ):
@@ -84,7 +84,7 @@ class AllDebrid(DebridClient):
                 return torrent
         return None
 
-    def create_download_link(self, link):
+    def create_download_link(self, link: str):
         response = self._make_request(
             "GET",
             "/link/unlock",
@@ -95,7 +95,6 @@ class AllDebrid(DebridClient):
             return response
         raise ProviderException(
             f"Failed to create download link from AllDebrid {response}",
-            "transfer_error.mp4",
         )
 
     def delete_torrent(self, magnet_id):

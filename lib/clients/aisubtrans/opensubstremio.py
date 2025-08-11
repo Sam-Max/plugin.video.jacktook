@@ -9,7 +9,6 @@ from lib.utils.kodi.utils import (
 )
 import xbmcgui
 import xbmc
-import re
 
 
 class OpenSubtitleStremioClient:
@@ -111,7 +110,7 @@ class OpenSubtitleStremioClient:
         season: Optional[int] = None,
         episode: Optional[int] = None,
     ) -> Optional[str]:
-        url = subtitle.get("url")
+        url = subtitle.get("url", "")
         lang = subtitle.get("lang")
         lang_name = language_code_to_name(lang)
 

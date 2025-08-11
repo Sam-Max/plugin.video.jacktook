@@ -26,8 +26,8 @@ def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     indexer_type: str = data.get("type", "")
     is_pack: bool = data.get("is_pack", False)
 
-    torrent_enable = get_setting("torrent_enable")
-    torrent_client = get_setting("torrent_client")
+    torrent_enable = bool(get_setting("torrent_enable"))
+    torrent_client = str(get_setting("torrent_client"))
 
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
         return data

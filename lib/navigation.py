@@ -122,7 +122,7 @@ tmdb = TMDb()
 tmdb.api_key = get_setting("tmdb_api_key", "b70756b7083d9ee60f849d82d94a0d80")
 
 try:
-    language_index = get_setting("language")
+    language_index = get_setting("language", 18)
     tmdb.language = LANGUAGES[int(language_index)]
 except IndexError:
     tmdb.language = "en-US"
@@ -632,8 +632,8 @@ def handle_results(
     item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
     if not direct and ids:
-        tmdb_id = ids.get("tmdb_id")
-        tvdb_id = ids.get("tvdb_id")
+        tmdb_id = ids.get("tmdb_id", "")
+        tvdb_id = ids.get("tvdb_id", "")
         details = get_tmdb_media_details(tmdb_id, mode)
         poster = f"{TMDB_POSTER_URL}{getattr(details, 'poster_path', '') or ''}"
         overview = getattr(details, "overview", "") or ""
@@ -678,7 +678,7 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
         cancel_playback()
         return
 
-    preferred_quality = get_setting("auto_play_quality")
+    preferred_quality = str(get_setting("auto_play_quality"))
     quality_matches = [
         r for r in filtered_results if preferred_quality.lower() in r.quality.lower()
     ]
@@ -729,6 +729,9 @@ def cloud_details(params):
     elif type == Debrids.ED:
         downloads_method = "get_ed_downloads"
         info_method = "ed_info"
+    else:
+        notification("Unsupported debrid type")
+        return
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -971,6 +974,10 @@ def download(magnet, type):
         thread = Thread(
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
         )
+    else:
+        notification("Unsupported debrid type")
+        return
+
     thread.start()
 
 

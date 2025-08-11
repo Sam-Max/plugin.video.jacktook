@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import os
+from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.trakt.trakt_utils import (
     add_trakt_watched_context_menu,
     add_trakt_watchlist_context_menu,
@@ -111,11 +112,13 @@ class TmdbClient(BaseTmdbClient):
         data = Search().multi(query, page=page)
         kodilog(f"TMDB Search Results: {data}", level=xbmc.LOGDEBUG)
 
-        if not data or data.total_results == 0:
+        if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
 
-        execute_thread_pool(data.results, TmdbClient.show_tmdb_results, mode)
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
         add_next_button("handle_tmdb_search", page=page, mode=mode)
         endOfDirectory(ADDON_HANDLE)
 
@@ -168,10 +171,12 @@ class TmdbClient(BaseTmdbClient):
     @staticmethod
     def handle_trending_movies(page, mode):
         data = tmdb_get("trending_movie", page)
-        if not data or data.total_results == 0:
+        if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
-        execute_thread_pool(data.results, TmdbClient.show_tmdb_results, mode)
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
         add_next_button(
             "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
         )
@@ -181,10 +186,12 @@ class TmdbClient(BaseTmdbClient):
     def handle_tmdb_show_query(query, page, mode):
         if query == "tmdb_trending":
             data = tmdb_get("trending_tv", page)
-            if not data or data.total_results == 0:
+            if not data or getattr(data, "total_results", 0) == 0:
                 notification("No results found")
                 return
-            execute_thread_pool(data.results, TmdbClient.show_tmdb_results, mode)
+            execute_thread_pool(
+                getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+            )
             add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
             endOfDirectory(ADDON_HANDLE)
         elif query == "tmdb_genres":
@@ -220,11 +227,13 @@ class TmdbClient(BaseTmdbClient):
 
         data = tmdb_get(path=path, params=params)
 
-        if not data or data.total_results == 0:
+        if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
 
-        execute_thread_pool(data.results, TmdbClient.show_tmdb_results, mode, submode)
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode, submode
+        )
 
         add_next_button(
             "search_tmdb_genres",
@@ -259,12 +268,12 @@ class TmdbClient(BaseTmdbClient):
         if not results:
             return
 
-        if results.total_results == 0:
+        if getattr(results, "total_results", 0) == 0:
             notification("No results found")
             return
 
         execute_thread_pool(
-            results.results, TmdbClient.show_tmdb_results, mode, submode
+            getattr(results, "results"), TmdbClient.show_tmdb_results, mode, submode
         )
 
         add_next_button(
@@ -300,34 +309,43 @@ class TmdbClient(BaseTmdbClient):
             title = getattr(res, "title", "")
             label_title = title
             movie_details = get_tmdb_movie_details(tmdb_id)
-            setattr(res, "runtime", movie_details.runtime)
-            setattr(res, "casts", movie_details.casts)
-            imdb_id = movie_details.external_ids.get("imdb_id", "")
+            if movie_details:
+                setattr(res, "runtime", movie_details.get("runtime"))
+                setattr(res, "casts", movie_details.get("casts"))
+                imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
         elif mode == "tv":
             title = getattr(res, "name", "")
             label_title = title
             show_details = get_tmdb_show_details(tmdb_id)
-            setattr(res, "casts", show_details.credits.get("cast", []))
-            imdb_id = show_details.external_ids.get("imdb_id", "")
-            tvdb_id = show_details.external_ids.get("tvdb_id", "")
+            if show_details:
+                external_ids = getattr(show_details, "external_ids")
+                setattr(res, "casts", getattr(show_details, "credits").get("cast", []))
+                imdb_id = external_ids.get("imdb_id", "")
+                tvdb_id = external_ids.get("tvdb_id", "")
         elif mode == "multi":
             title = getattr(res, "name", "") or getattr(res, "title", "")
             if media_type == "movie":
                 mode = "movies"
                 movie_details = get_tmdb_movie_details(tmdb_id)
-                setattr(res, "runtime", movie_details.runtime)
-                setattr(res, "casts", movie_details.casts)
-                imdb_id = movie_details.external_ids.get("imdb_id", "")
+                if movie_details:
+                    setattr(res, "runtime", movie_details.get("runtime"))
+                    setattr(res, "casts", movie_details.get("casts"))
+                    imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
                 label_title = f"[B]MOVIE -[/B] {title}"
             elif media_type == "tv":
                 mode = "tv"
                 show_details = get_tmdb_show_details(tmdb_id)
-                setattr(res, "casts", show_details.credits.get("cast", []))
-                imdb_id = show_details.external_ids.get("imdb_id", "")
-                tvdb_id = show_details.external_ids.get("tvdb_id", "")
+                if show_details:
+                    external_ids = getattr(show_details, "external_ids")
+                    setattr(
+                        res, "casts", getattr(show_details, "credits").get("cast", [])
+                    )
+                    imdb_id = external_ids.get("imdb_id", "")
+                    tvdb_id = external_ids.get("tvdb_id", "")
                 label_title = f"[B]TV -[/B] {title}"
             else:
-                return None  # Not movie or tv, skip
+                kodilog(f"Invalid media type: {media_type}", level=xbmc.LOGERROR)
+                return None
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
         return title, label_title, mode, ids
@@ -360,31 +378,35 @@ class TmdbClient(BaseTmdbClient):
             else "movie_genres"
         )
         genres = tmdb_get(path=path)
+        if genres is None or len(genres) == 0:
+            notification("No genres found")
+            endOfDirectory(ADDON_HANDLE)
+            return
 
         for genre in genres:
-            if genre.get("name") == "TV Movie":
-                continue
-            list_item = ListItem(label=genre["name"])
-            add_kodi_dir_item(
-                list_item=list_item,
-                url=build_url(
-                    "search_tmdb_genres",
-                    mode=mode,
-                    submode=submode,
-                    genre_id=genre["id"],
-                    page=page,
-                ),
-                is_folder=True,
-                icon_path=None,
-            )
+            if isinstance(genre, AsObj):
+                if genre.get("name") == "TV Movie":
+                    continue
+                list_item = ListItem(label=genre["name"])
+                add_kodi_dir_item(
+                    list_item=list_item,
+                    url=build_url(
+                        "search_tmdb_genres",
+                        mode=mode,
+                        submode=submode,
+                        genre_id=genre["id"],
+                        page=page,
+                    ),
+                    is_folder=True,
+                    icon_path=None,
+                )
         endOfDirectory(ADDON_HANDLE)
         set_view("widelist")
 
     @staticmethod
     def show_calendar_items(query, page, mode):
-        kodilog("Fetching TV calendar items for this week")
         trending_data = tmdb_get("tv_week", page)
-        if not trending_data or trending_data.total_results == 0:
+        if not trending_data or getattr(trending_data, "total_results") == 0:
             notification("No TV shows found")
             endOfDirectory(ADDON_HANDLE)
             return
@@ -402,7 +424,9 @@ class TmdbClient(BaseTmdbClient):
                 if air_date and is_this_week(air_date):
                     results.append((getattr(show, "name", ""), show, ep, details))
 
-        execute_thread_pool(trending_data.results, fetch_episodes_for_trending_show)
+        execute_thread_pool(
+            getattr(trending_data, "results"), fetch_episodes_for_trending_show
+        )
 
         # Add fixed item showing current date at the top
         current_date = datetime.now().strftime("%A, %d %B %Y")
@@ -442,8 +466,14 @@ class TmdbClient(BaseTmdbClient):
 
             tmdb_id = getattr(show, "id")
             show_details = get_tmdb_show_details(tmdb_id)
-            imdb_id = show_details.external_ids.get("imdb_id", "")
-            tvdb_id = show_details.external_ids.get("tvdb_id", "")
+            if show_details is None:
+                kodilog(f"Show details not found for TMDB ID: {tmdb_id}")
+                continue
+
+            external_ids = getattr(show_details, "external_ids")
+            imdb_id = external_ids.get("imdb_id", "")
+            tvdb_id = external_ids.get("tvdb_id", "")
+
             ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
             list_item = ListItem(label=ep_title)
@@ -464,7 +494,7 @@ class TmdbClient(BaseTmdbClient):
                 is_folder=False,
             )
 
-        if trending_data.total_pages > page:
+        if getattr(trending_data, "total_pages", 0) > page:
             add_next_button(
                 "handle_tmdb_query",
                 query=query,
@@ -476,31 +506,30 @@ class TmdbClient(BaseTmdbClient):
     @staticmethod
     def show_keywords_items(query, page, mode):
         keywords_data = Search().keywords(query, page=page)
-        kodilog(f"Keywords search results: {keywords_data}")
         if not keywords_data or len(keywords_data) == 0:
             notification("No keywords found")
             endOfDirectory(ADDON_HANDLE)
             return
 
         for keyword in keywords_data:
-            keyword_id = keyword.get("id")
-            keyword_name = keyword.get("name")
-            if not keyword_id or not keyword_name:
-                continue
+            if isinstance(keyword, AsObj):
+                keyword_id = keyword.get("id")
+                keyword_name = keyword.get("name")
+                if not keyword_id or not keyword_name:
+                    continue
 
-            list_item = ListItem(label=keyword_name)
-            add_kodi_dir_item(
-                list_item=list_item,
-                url=build_url(
-                    "search_tmdb_keywords",
-                    mode=mode,
-                    keyword_id=keyword_id,
-                    page=1,
-                ),
-                is_folder=True,
-                icon_path=None,
-            )
-
+                list_item = ListItem(label=keyword_name)
+                add_kodi_dir_item(
+                    list_item=list_item,
+                    url=build_url(
+                        "search_tmdb_keywords",
+                        mode=mode,
+                        keyword_id=keyword_id,
+                        page=1,
+                    ),
+                    is_folder=True,
+                    icon_path=None,
+                )
         add_next_button(
             "handle_tmdb_movie_query", query="tmdb_keywords", page=page + 1, mode=mode
         )
@@ -526,16 +555,16 @@ class TmdbClient(BaseTmdbClient):
             notification("Invalid mode")
             return
 
-        kodilog(f"TMDB Recommendations: {results.results}", level=xbmc.LOGDEBUG)
-
         if not results:
             notification("No recommendations found")
             endOfDirectory(ADDON_HANDLE)
             return
 
-        execute_thread_pool(results.results, TmdbClient.show_tmdb_results, mode)
+        execute_thread_pool(
+            getattr(results, "results"), TmdbClient.show_tmdb_results, mode
+        )
 
-        if results.total_pages > page:
+        if getattr(results, "total_pages") > page:
             add_next_button(
                 "search_tmdb_recommendations",
                 ids=ids,
@@ -568,9 +597,11 @@ class TmdbClient(BaseTmdbClient):
             endOfDirectory(ADDON_HANDLE)
             return
 
-        execute_thread_pool(results.results, TmdbClient.show_tmdb_results, mode)
+        execute_thread_pool(
+            getattr(results, "results"), TmdbClient.show_tmdb_results, mode
+        )
 
-        if results.total_pages > page:
+        if getattr(results, "total_pages") > page:
             add_next_button(
                 "search_tmdb_similar",
                 ids=ids,
@@ -656,19 +687,20 @@ class TmdbAnimeClient(BaseTmdbClient):
         if mode == "movies":
             title = res.title
             movie_details = get_tmdb_movie_details(tmdb_id)
-            imdb_id = movie_details.external_ids.get("imdb_id", "")
+            imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
             tvdb_id = ""
         elif mode == "tv":
             title = res.name
             title = res["name"]
             show_details = get_tmdb_show_details(tmdb_id)
-            imdb_id = show_details.external_ids.get("imdb_id", "")
-            tvdb_id = show_details.external_ids.get("tvdb_id", "")
+            external_ids = getattr(show_details, "external_ids")
+            imdb_id = external_ids.get("imdb_id", "")
+            tvdb_id = external_ids.get("tvdb_id", "")
+        else:
+            kodilog(f"Invalid mode: {mode}")
+            return
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
-
         list_item = ListItem(label=title)
-
         set_media_infoTag(list_item, metadata=res, mode=mode)
-
         TmdbClient._add_media_directory_item(list_item, mode, title, ids)
