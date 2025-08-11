@@ -17,12 +17,14 @@
             <!-- Fallback -->
             <control type="image">
                 <texture background="true">jtk_fanart.png</texture>
+                <aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
                 <visible>String.IsEmpty(Window().Property(info.fanart))</visible>
             </control>
 
             <!-- Fanart -->
             <control type="image">
                 <texture background="true">$INFO[Window().Property(info.fanart)]</texture>
+                <aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
                 <visible>!String.IsEmpty(Window().Property(info.fanart))</visible>
             </control>
 

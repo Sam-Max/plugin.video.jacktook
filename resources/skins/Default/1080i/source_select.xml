@@ -17,6 +17,7 @@
             <control type="image">
                 <texture>white.png</texture>
                 <colordiffuse>8000000</colordiffuse>
+				<aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
                 <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
                 <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
             </control>
@@ -25,6 +26,7 @@
             <control type="image">
                 <texture background="true">$INFO[Window().Property(info.fanart)]</texture>
                 <colordiffuse>FFFFFFFF</colordiffuse>
+				<aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
                 <animation effect="fade" end="0" time="350" tween="cubic" easing="in" condition="String.IsEqual(Window().Property(resolving),true)">Conditional</animation>
                 <visible>!String.IsEqual(Window().Property(instant_close),true)</visible>
             </control>
