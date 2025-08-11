@@ -645,11 +645,11 @@ msgstr "Configuración de EasyDebrid"
 
 msgctxt "#30790"
 msgid "Uncached"
-msgstr "Uncached"
+msgstr "No cacheado"
 
 msgctxt "#30791"
 msgid "Show uncached torrents"
-msgstr "Mostrar torrents sin caché"
+msgstr "Mostrar torrents no cacheados"
 
 msgctxt "#30792"
 msgid "Use Kodi Language"
@@ -1593,3 +1593,10 @@ msgctxt "#90061"
 msgid "Maximum Size (MB)"
 msgstr "Tamaño Maximo (MB)"
 
+msgctxt "#90062"
+msgid "Enable Cached Search"
+msgstr "Habilitar búsqueda en caché"
+
+msgctxt "#90063"
+msgid "Only show cached streams from external services"
+msgstr "Mostrar solo streams en caché de servicios externos"

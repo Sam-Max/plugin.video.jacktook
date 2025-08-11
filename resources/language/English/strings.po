@@ -1609,5 +1609,11 @@ msgctxt "#90061"
 msgid "Maximum Size (MB)"
 msgstr ""
 
+msgctxt "#90062"
+msgid "Enable Cached Search"
+msgstr ""
 
+msgctxt "#90063"
+msgid "Only show cached streams from external services"
+msgstr ""
 

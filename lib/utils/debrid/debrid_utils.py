@@ -1,5 +1,7 @@
+import base64
 from concurrent.futures import ThreadPoolExecutor
 import copy
+import json
 import requests
 from threading import Lock
 from typing import List, Optional
@@ -180,7 +182,9 @@ def get_pack_info(type, info_hash):
     return info
 
 
-def filter_results(results: List[TorrentStream], direct_results: List[dict]) -> None:
+def filter_results(
+    results: List[TorrentStream], direct_results: List[TorrentStream]
+) -> None:
     filtered_results = []
 
     for res in copy.deepcopy(results):
@@ -252,3 +256,85 @@ def get_debrid_pack_direct_url(file_id, torrent_id, type):
         return RealDebridHelper().get_rd_pack_link(file_id, torrent_id)
     elif type == Debrids.TB:
         return TorboxHelper().get_torbox_pack_link(file_id, torrent_id)
+
+
+def process_external_cache(data: dict, debrid: str, token: str, url: str):
+    try:
+        imdb_id = data.get("imdb_id")
+        season = data.get("season")
+        episode = data.get("episode")
+        mode = data.get("mode", data.get("media_type", "movie"))
+
+        if "torrentio" in url:
+            service = "torrentio"
+        elif "mediafusion" in url:
+            service = "mediafusion"
+        elif "comet" in url:
+            service = "comet"
+        else:
+            return None
+
+        if not imdb_id:
+            raise ValueError("Missing IMDb ID in input data")
+
+        if service == "mediafusion":
+            base_link = f"https://mediafusion.elfhosted.com/{debrid}={token}"
+            params = {
+                "enable_catalogs": False,
+                "max_streams_per_resolution": 99,
+                "torrent_sorting_priority": [],
+                "certification_filter": ["Disable"],
+                "nudity_filter": ["Disable"],
+                "streaming_provider": {
+                    "token": token,
+                    "service": debrid,
+                    "only_show_cached_streams": True,
+                },
+            }
+            headers = {
+                "encoded_user_data": base64.b64encode(
+                    json.dumps(params).encode("utf-8")
+                ).decode("utf-8")
+            }
+
+        elif service == "comet":
+            params = {
+                "maxResultsPerResolution": 0,
+                "maxSize": 0,
+                "cachedOnly": True,
+                "removeTrash": True,
+                "resultFormat": ["title", "size"],
+                "debridService": debrid,
+                "debridApiKey": token,
+                "debridStreamProxyPassword": "",
+                "languages": {"required": [], "exclude": [], "preferred": []},
+                "resolutions": {},
+                "options": {
+                    "remove_ranks_under": -10000000000,
+                    "allow_english_in_languages": False,
+                    "remove_unknown_languages": False,
+                },
+            }
+            params_encoded = base64.b64encode(
+                json.dumps(params).encode("utf-8")
+            ).decode("utf-8")
+            base_link = f"https://comet.elfhosted.com/{params_encoded}"
+            headers = {}
+
+        else:  # torrentio fallback
+            base_link = f"https://torrentio.strem.fun/{debrid}={token}"
+            headers = {"User-Agent": "Mozilla/5.0"}
+
+        # Choose endpoint based on media type
+        if mode == "tv":
+            endpoint = f"/stream/series/{imdb_id}:{season}:{episode}.json"
+        else:
+            endpoint = f"/stream/movie/{imdb_id}.json"
+
+        url = f"{base_link}{endpoint}"
+        response = requests.get(url, headers=headers, timeout=9)
+        response.raise_for_status()
+        return response
+    except Exception as e:
+        kodilog(f"Error checking cache for {url}: {e}")
+        return None

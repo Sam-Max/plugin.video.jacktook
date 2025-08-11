@@ -1,6 +1,7 @@
 from lib.clients.stremio.addons_manager import Addon
 from lib.clients.stremio.stream import Stream
 from lib.clients.base import BaseClient, TorrentStream
+from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
@@ -32,7 +33,7 @@ class StremioAddonCatalogsClient(BaseClient):
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
         return []
-    
+
     def search_catalog(self, query: str) -> List[TorrentStream]:
         return []
 
@@ -77,7 +78,6 @@ class StremioAddonClient(BaseClient):
     ) -> List[TorrentStream]:
         try:
             kodilog(f"Searching for {imdb_id} on {self.addon.manifest.name}")
-
             if mode == "tv" or media_type == "tv":
                 if not self.addon.isSupported("stream", "series", "tt"):
                     return []
@@ -88,8 +88,24 @@ class StremioAddonClient(BaseClient):
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
             else:
                 return []
-            
-            kodilog(f"Requesting URL: {url}")
+
+            if get_setting("real_debrid_enabled") and get_setting(
+                "real_debrid_cached_check"
+            ):
+                cached_results = process_external_cache(
+                    data={
+                        "imdb_id": imdb_id,
+                        "season": season,
+                        "episode": episode,
+                        "mode": mode,
+                    },
+                    debrid="realdebrid",
+                    token=str(get_setting("real_debrid_token")),
+                    url=self.addon.url(),
+                )
+                if not cached_results:
+                    return []
+                return self.parse_response(cached_results)
 
             if get_setting("torrentio_enabled"):
                 if "torrentio" in self.addon.url():
@@ -106,12 +122,22 @@ class StremioAddonClient(BaseClient):
             self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
             return []
 
-    def parse_response(self, res: Any) -> List[TorrentStream]:
+    def parse_response(self, res: Any, is_cached: bool = False) -> List[TorrentStream]:
         res = res.json()
         results = []
+
         for item in res["streams"]:
             stream = Stream(item)
             parsed = self.parse_torrent_description(stream.description)
+
+            if is_cached:
+                match = re.search(r"\b\w{40}\b", stream.url)
+                info_hash = match.group() if match else item.get("infoHash")
+                url = ""
+            else:
+                info_hash = stream.infoHash
+                url = stream.url
+
             results.append(
                 TorrentStream(
                     title=stream.get_parsed_title(),
@@ -121,8 +147,8 @@ class StremioAddonClient(BaseClient):
                         else IndexerType.TORRENT
                     ),
                     indexer=self.addon.manifest.name.split(" ")[0],
-                    guid=info_hash_to_magnet(stream.infoHash),
-                    infoHash=stream.infoHash,
+                    guid=info_hash_to_magnet(info_hash),
+                    infoHash=info_hash,
                     size=stream.get_parsed_size()
                     or item.get("sizebytes")
                     or parsed["size"],
@@ -132,7 +158,8 @@ class StremioAddonClient(BaseClient):
                     provider=parsed["provider"],
                     publishDate="",
                     peers=0,
-                    url=stream.url,
+                    url=url,
+                    isCached=is_cached,
                 )
             )
         return results

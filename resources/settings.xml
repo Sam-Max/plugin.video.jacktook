@@ -536,6 +536,10 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="real_debrid_cached_check" type="boolean" label="90062" help="90063">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
             </group>
             <group id="premiumize" label="30785">
                 <setting id="premiumize_enabled" type="boolean" label="30734" help="30824">

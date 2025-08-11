@@ -46,16 +46,18 @@ class RealDebridHelper:
         for res in copy.deepcopy(results):
             debrid_dialog_update("RD", total, dialog, lock)
             res.type = Debrids.RD
-
             with lock:
                 if res.infoHash in torr_available_hashes:
                     res.isCached = True
                     cached_results.append(res)
+                elif res.isCached == True:
+                    cached_results.append(res)
                 else:
                     res.isCached = False
                     uncached_results.append(res)
-        # Add uncached_results due to RD removing cached check endpoint
-        cached_results.extend(uncached_results)
+
+        if get_setting("show_uncached"):
+            cached_results.extend(uncached_results)
 
     def _handle_torrent_status(
         self, torrent_info: Dict, is_pack: bool = False
