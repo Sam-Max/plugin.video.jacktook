@@ -1,3 +1,28 @@
+## 0.10.0
+- Added external cached search support for Real-Debrid.
+- Updated URL for fetching community addons (migrated to beta.stremio-addons.net).
+- Added resumable downloads and active download status.
+- Added option for size range filtering.
+- Added option to view Kodi logs and Kodi old logs.
+- Added option to adjust number of threads.
+- Improved Stremio catalog fetching to shows more catalogs.
+- Other minor improvements and fixes.
+
+Spanish: 
+- Se añadió compatibilidad con búsqueda externa en caché para Real-Debrid.
+- Se actualizó la URL para obtener addons de la comunidad (migracion a beta.stremio-addons.net).
+- Se añadieron descargas reanudables y estado de descarga activa.
+- Se añadió la opción de filtrado por rango de tamaño.
+- Se añadió la opción de ver los registros de Kodi y los registros antiguos de Kodi.
+- Se añadió la opción de ajustar el número de hilos.
+- Se mejoró la obtención de catálogos de Stremio para mostrar más catálogos.
+- Otras mejoras y correcciones menores.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.9.0
 - Added Torrentio providers selection and settings UI. 
 - Episodes are now marked as playable in TMDB and calendar views. 
