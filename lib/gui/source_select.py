@@ -16,6 +16,7 @@ from lib.utils.kodi.utils import (
     translatePath,
 )
 from lib.utils.general.utils import (
+    IndexerType,
     extract_publish_date,
     get_colored_languages,
     get_random_color,
@@ -205,7 +206,10 @@ class SourceSelect(BaseWindow):
             menu_item = xbmcgui.ListItem(label=source.title)
 
             menu_item.setProperty("title", source.title)
-            menu_item.setProperty("type", get_random_color(source.type))
+            if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
+                menu_item.setProperty("type", get_random_color(source.type))
+            else:
+                menu_item.setProperty("type", get_random_color(source.debridType))
             menu_item.setProperty("indexer", get_random_color(source.indexer))
             menu_item.setProperty("guid", source.guid)
             menu_item.setProperty("infoHash", source.infoHash)
@@ -220,7 +224,10 @@ class SourceSelect(BaseWindow):
             )
             menu_item.setProperty("peers", str(source.peers))
             menu_item.setProperty("quality", source.quality)
-            menu_item.setProperty("status", get_debrid_status(source))
+            if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
+                menu_item.setProperty("status", "****")
+            else:
+                menu_item.setProperty("status", get_debrid_status(source))
             menu_item.setProperty("isPack", str(source.isPack))
 
             self.display_list.addItem(menu_item)

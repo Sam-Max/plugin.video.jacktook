@@ -65,7 +65,7 @@ class ResolverWindow(BaseWindow):
 
     def resolve_pack(self) -> None:
         self.pack_data = get_pack_info(
-            type=self.source.type,
+            debrid_type=self.source.debridType,
             info_hash=self.source.infoHash,
         )
 

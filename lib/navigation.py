@@ -71,7 +71,7 @@ from lib.utils.kodi.settings import auto_play_enabled, get_cache_expiration
 from lib.utils.kodi.settings import addon_settings
 from lib.utils.general.utils import (
     TMDB_POSTER_URL,
-    Debrids,
+    DebridType,
     DialogListener,
     check_debrid_enabled,
     clean_auto_play_undesired,
@@ -698,6 +698,7 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
             "mode": mode,
             "indexer": selected_result.indexer,
             "type": selected_result.type,
+            "debrid_type": selected_result.debridType,
             "ids": ids,
             "info_hash": selected_result.infoHash,
             "tv_data": tv_data,
@@ -715,18 +716,18 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
 
 
 def cloud_details(params):
-    type = params.get("type")
+    debrid_name = params.get("debrid_name")
 
-    if type == Debrids.RD:
+    if debrid_name == DebridType.RD:
         downloads_method = "get_rd_downloads"
         info_method = "rd_info"
-    elif type == Debrids.PM:
+    elif debrid_name == DebridType.PM:
         notification("Not yet implemented")
         return
-    elif type == Debrids.TB:
+    elif debrid_name == DebridType.TB:
         notification("Not yet implemented")
         return
-    elif type == Debrids.ED:
+    elif debrid_name == DebridType.ED:
         downloads_method = "get_ed_downloads"
         info_method = "ed_info"
     else:
@@ -750,7 +751,7 @@ def cloud_details(params):
 
 def cloud(params):
     activated_debrids = [
-        debrid for debrid in Debrids.values() if check_debrid_enabled(debrid)
+        debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)
     ]
     if not activated_debrids:
         return notification("No debrid services activated")
@@ -761,7 +762,7 @@ def cloud(params):
             ADDON_HANDLE,
             build_url(
                 "cloud_details",
-                type=debrid_name,
+                debrid_name=debrid_name,
             ),
             torrent_li,
             isFolder=True,
@@ -779,7 +780,7 @@ def ed_info(params):
 
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
-    type = Debrids.RD
+    type = DebridType.RD
     debrid_color = get_random_color(type, formatted=False)
     formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
@@ -894,7 +895,7 @@ def tv_episodes_details(params):
 def play_from_pack(params):
     data = json.loads(params.get("data"))
     data = resolve_playback_source(data)
-    if not data or "url" not in data:
+    if not data:
         return
     list_item = make_listing(data)
     setResolvedUrl(ADDON_HANDLE, True, list_item)

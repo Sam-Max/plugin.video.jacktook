@@ -1,9 +1,10 @@
 from datetime import datetime
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from lib.api.debrid.easydebrid import EasyDebrid
-from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification
+from lib.utils.kodi.utils import dialog_text, get_setting, notification
 from lib.utils.general.utils import (
-    Debrids,
+    DebridType,
+    IndexerType,
     debrid_dialog_update,
     filter_debrid_episode,
     get_cached,
@@ -41,7 +42,8 @@ class EasyDebridHelper:
 
         for res in results:
             debrid_dialog_update("ED", total, dialog, lock)
-            res.type = Debrids.ED
+            res.type = IndexerType.DEBRID
+            res.debridType = DebridType.ED
 
             if res in filtered_results:
                 # Get index in filtered results for matching cached response
@@ -58,7 +60,7 @@ class EasyDebridHelper:
                 res.isCached = False
                 uncached_results.append(res)
 
-    def get_ed_link(self, info_hash, data):
+    def get_ed_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
         torrent_files = response_data.get("files", [])
@@ -83,11 +85,14 @@ class EasyDebridHelper:
                 )
                 if not torrent_files:
                     return
+                data["url"] = torrent_files[0].get("url")
+                return data
             else:
                 data["is_pack"] = True
-                return
-
-        return torrent_files[0].get("url")
+                return data
+        else:
+            data["url"] = torrent_files[0].get("url")
+            return data
 
     def get_ed_pack_info(self, info_hash):
         info = get_cached(info_hash)

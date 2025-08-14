@@ -1,9 +1,10 @@
 import copy
-from typing import List, Any
+from typing import Dict, List, Any, Optional
 from lib.api.debrid.premiumize import Premiumize
 from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.general.utils import (
-    Debrids,
+    DebridType,
+    IndexerType,
     debrid_dialog_update,
     filter_debrid_episode,
     get_cached,
@@ -34,7 +35,8 @@ class PremiumizeHelper:
 
         for index, res in enumerate(copy.deepcopy(results)):
             debrid_dialog_update("PM", total, dialog, lock)
-            res.type = Debrids.PM
+            res.type = IndexerType.DEBRID
+            res.debridType = DebridType.PM
 
             if index < len(cached_response) and cached_response[index] is True:
                 res.isCached = True
@@ -43,7 +45,7 @@ class PremiumizeHelper:
                 res.isCached = False
                 uncached_results.append(res)
 
-    def get_pm_link(self, info_hash, data):
+    def get_pm_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a Premiumize torrent."""
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
@@ -55,20 +57,23 @@ class PremiumizeHelper:
             return None
 
         content = response_data.get("content", [])
-        
         if len(content) > 1:
             if data["tv_data"]:
                 season = data["tv_data"].get("season", "")
                 episode = data["tv_data"].get("episode", "")
-                content = filter_debrid_episode(content, episode_num=episode, season_num=season)
+                content = filter_debrid_episode(
+                    content, episode_num=episode, season_num=season
+                )
                 if not content:
                     return
+                data["url"] = content[0].get("stream_link")
+                return data
             else:
                 data["is_pack"] = True
-                return
-            
-        return content[0].get("stream_link")
-
+                return data
+        else:
+            data["url"] = content[0].get("stream_link")
+            return data
 
     def get_pm_pack_info(self, info_hash):
         """Retrieves information about a torrent pack, including file names."""

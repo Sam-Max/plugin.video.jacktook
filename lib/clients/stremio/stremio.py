@@ -89,9 +89,12 @@ class StremioAddonClient(BaseClient):
             else:
                 return []
 
-            if get_setting("real_debrid_enabled") and get_setting(
-                "real_debrid_cached_check"
+            if (
+                get_setting("real_debrid_enabled")
+                and get_setting("real_debrid_cached_check")
+                and get_setting("torrent_enable") is False
             ):
+                kodilog("Using Real-Debrid cached results")
                 cached_results = process_external_cache(
                     data={
                         "imdb_id": imdb_id,
@@ -105,7 +108,7 @@ class StremioAddonClient(BaseClient):
                 )
                 if not cached_results:
                     return []
-                return self.parse_response(cached_results)
+                return self.parse_response(cached_results, is_cached=True)
 
             if get_setting("torrentio_enabled"):
                 if "torrentio" in self.addon.url():
@@ -141,11 +144,7 @@ class StremioAddonClient(BaseClient):
             results.append(
                 TorrentStream(
                     title=stream.get_parsed_title(),
-                    type=(
-                        IndexerType.STREMIO_DEBRID
-                        if stream.url
-                        else IndexerType.TORRENT
-                    ),
+                    type=(IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT),
                     indexer=self.addon.manifest.name.split(" ")[0],
                     guid=info_hash_to_magnet(info_hash),
                     infoHash=info_hash,

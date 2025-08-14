@@ -13,7 +13,7 @@ from lib.utils.kodi.utils import (
     translation,
 )
 from lib.utils.general.utils import (
-    Debrids,
+    DebridType,
     IndexerType,
     Players,
     torrent_clients,
@@ -24,6 +24,7 @@ from typing import Any, Dict, Optional
 
 def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     indexer_type: str = data.get("type", "")
+    debrid_type: str = data.get("debrid_type", "")
     is_pack: bool = data.get("is_pack", False)
 
     torrent_enable = bool(get_setting("torrent_enable"))
@@ -37,9 +38,8 @@ def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         data["url"] = addon_url
         return data
 
-    debrid_url = get_debrid_url(data, indexer_type, is_pack)
-    if debrid_url:
-        data["url"] = debrid_url
+    source_data = get_debrid_url(data, debrid_type, is_pack)
+    if source_data:
         return data
 
     return None
@@ -83,14 +83,11 @@ def get_torrent_addon_url_select(
 
 
 def get_debrid_url(
-    data: Dict[str, Any], indexer_type: str, is_pack: bool
-) -> Optional[str]:
-    if is_pack and indexer_type in [Debrids.RD, Debrids.TB]:
-        pack_info = data.get("pack_info", {})
-        file_id = pack_info.get("file_id", "")
-        torrent_id = pack_info.get("torrent_id", "")
-        return get_debrid_pack_direct_url(file_id, torrent_id, indexer_type)
-    return get_debrid_direct_url(indexer_type, data)
+    data: Dict[str, Any], debrid_type: str, is_pack: bool
+) -> Optional[Dict[str, Any]]:
+    if is_pack and debrid_type in [DebridType.RD, DebridType.TB]:
+        return get_debrid_pack_direct_url(debrid_type, data)
+    return get_debrid_direct_url(debrid_type, data)
 
 
 def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:

@@ -164,11 +164,18 @@ class Enum:
         return [value for name, value in vars(cls).items() if not name.startswith("_")]
 
 
-class Debrids(Enum):
+class DebridType(Enum):
     RD = "RealDebrid"
     PM = "Premiumize"
     TB = "Torbox"
     ED = "EasyDebrid"
+
+
+class IndexerType(Enum):
+    TORRENT = "Torrent"
+    DIRECT = "Direct"
+    DEBRID = "Debrid"
+    STREMIO_DEBRID = "Stremio"
 
 
 class Indexer(Enum):
@@ -183,13 +190,6 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
     ZILEAN = "Zilean"
-
-
-class IndexerType(Enum):
-    TORRENT = "Torrent"
-    DIRECT = "Direct"
-    DEBRID = "Debrid"
-    STREMIO_DEBRID = "Stremio"
 
 
 class Players(Enum):
@@ -265,13 +265,13 @@ def is_debrid_activated():
 
 
 def check_debrid_enabled(type):
-    if type == Debrids.RD:
+    if type == DebridType.RD:
         return is_rd_enabled()
-    elif type == Debrids.PM:
+    elif type == DebridType.PM:
         return is_pm_enabled()
-    elif type == Debrids.TB:
+    elif type == DebridType.TB:
         return is_tb_enabled()
-    elif type == Debrids.ED:
+    elif type == DebridType.ED:
         return is_ed_enabled()
 
 
@@ -428,7 +428,7 @@ def extract_genres(genres, media_type="movies"):
     if not genre_response or "genres" not in genre_response:
         kodilog(f"Failed to fetch genres for {media_type}")
         return genre_list
-    
+
     genre_mapping = {g["id"]: g["name"] for g in genre_response.get("genres", [])}
 
     for g in genres:

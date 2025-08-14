@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any
 from lib.gui.source_pack_window import SourcePackWindow
-from lib.utils.general.utils import Debrids
+from lib.utils.general.utils import DebridType
 from lib.domain.torrent import TorrentStream
 from lib.utils.player.utils import resolve_playback_source
 
@@ -37,35 +37,39 @@ class SourcePackSelect(SourcePackWindow):
     def _resolve_item(self) -> None:
         self.setProperty("resolving", "true")
 
-        if self.source and self.source.type in [Debrids.RD, Debrids.TB]:
-            file_id, name = self.pack_info["files"][self.position]
-            self.playback_info = resolve_playback_source(
-                data={
-                    "title": name,
+        if self.source and self.source.debridType in [DebridType.RD, DebridType.TB]:
+            if self.pack_info:
+                file_id, name = self.pack_info["files"][self.position]
+                self.playback_info = resolve_playback_source(
+                    data={
+                        "title": name,
+                        "type": self.source.type,
+                        "debrid_type": self.source.debridType,
+                        "is_torrent": False,
+                        "is_pack": True,
+                        "pack_info": {
+                            "file_id": file_id,
+                            "torrent_id": self.pack_info["id"],
+                        },
+                        "mode": self.item_information["mode"],
+                        "ids": self.item_information["ids"],
+                        "tv_data": self.item_information["tv_data"],
+                    }
+                )
+        else:
+            if self.pack_info:
+                url, title = self.pack_info["files"][self.position]
+                self.playback_info = {
+                    "title": title,
                     "type": self.source.type,
+                    "debrid_type": self.source.debridType,
                     "is_torrent": False,
                     "is_pack": True,
-                    "pack_info": {
-                        "file_id": file_id,
-                        "torrent_id": self.pack_info["id"],
-                    },
-                    "mode": self.item_information["mode"],
-                    "ids": self.item_information["ids"],
-                    "tv_data": self.item_information["tv_data"],
+                    "mode": self.item_information.get("mode"),
+                    "ids": self.item_information.get("ids"),
+                    "tv_data": self.item_information.get("tv_data"),
+                    "url": url,
                 }
-            )
-        else:
-            url, title = self.pack_info["files"][self.position]
-            self.playback_info = {
-                "title": title,
-                "type": self.source.type,
-                "is_torrent": False,
-                "is_pack": True,
-                "mode": self.item_information.get("mode"),
-                "ids": self.item_information.get("ids"),
-                "tv_data": self.item_information.get("tv_data"),
-                "url": url,
-            }
 
         if not self.playback_info:
             self.setProperty("resolving", "false")

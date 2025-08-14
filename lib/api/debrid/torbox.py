@@ -96,11 +96,12 @@ class Torbox(DebridClient):
             params=params,
             is_expected_to_fail=True,
         )
-        if "successfully" in response.get("detail", ""):
+        detail = response.get("detail", "")
+        if "successfully" in detail:
             return response
-        raise ProviderException(
-            f"Failed to create download link from Torbox {response}",
-        )
+        else:
+            notification(f"Failed to create download link: {detail}")
+            return None
 
     def download(self, magnet):
         response_data = self.add_magnet_link(magnet)

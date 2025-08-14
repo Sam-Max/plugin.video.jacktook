@@ -1,9 +1,10 @@
 import copy
-from typing import List, Any
+from typing import Dict, List, Any, Optional
 from lib.api.debrid.torbox import Torbox
 from lib.utils.kodi.utils import get_setting, notification
 from lib.utils.general.utils import (
-    Debrids,
+    DebridType,
+    IndexerType,
     debrid_dialog_update,
     get_cached,
     get_public_ip,
@@ -41,7 +42,8 @@ class TorboxHelper:
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("TB", total, dialog, lock)
-            res.type = Debrids.TB
+            res.type = IndexerType.DEBRID
+            res.debridType = DebridType.TB
 
             with lock:
                 if res.infoHash in cached_response:
@@ -69,18 +71,28 @@ class TorboxHelper:
         if "Found Cached" in response.get("detail", ""):
             return self.client.get_available_torrent(info_hash)
 
-    def get_torbox_link(self, info_hash):
+    def get_torbox_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         torrent_info = self.add_torbox_torrent(info_hash)
-        if torrent_info:
-            file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
-            response_data = self.client.create_download_link(
-                torrent_info.get("id"), file.get("id"), get_public_ip()
-            )
-            return response_data.get("data")
+        if not torrent_info:
+            return None
 
-    def get_torbox_pack_link(self, file_id, torrent_id):
-        response = self.client.create_download_link(torrent_id, file_id)
-        return response.get("data")
+        file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
+        response_data = self.client.create_download_link(
+            torrent_info.get("id"), file.get("id"), get_public_ip()
+        )
+        if response_data:
+            data["url"] = response_data.get("data", {})
+            return data
+
+    def get_torbox_pack_link(self, data) -> Optional[Dict[str, Any]]:
+        pack_info = data.get("pack_info", {})
+        file_id = pack_info.get("file_id", "")
+        torrent_id = pack_info.get("torrent_id", "")
+
+        response_data = self.client.create_download_link(torrent_id, file_id)
+        if response_data:
+            data["url"] = response_data.get("data", {})
+            return data
 
     def get_torbox_pack_info(self, info_hash):
         info = get_cached(info_hash)

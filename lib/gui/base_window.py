@@ -80,7 +80,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         except RuntimeError as e:
             kodilog(f"Control does not exist {control_id}", {e})
             raise ValueError(f"Control with Id {control_id} does not exist")
-        
+
         if not isinstance(control, xbmcgui.ControlList):
             raise AttributeError(
                 f"Control with Id {control_id} should be of type ControlList"
@@ -117,29 +117,30 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             self.handle_action(action_id, self.getFocusId())
 
     def prepare_source_data(
-            self,
-            source: TorrentStream,
-            url: str,
-            magnet: str,
-            is_torrent: bool,
-            pack_select: bool = False,
-        ) -> Dict[str, Any]:
-            """Prepare the source data dictionary for resolving playback."""
-            return {
-                "title": source.title,
-                "type": source.type,
-                "indexer": source.indexer,
-                "url": url,
-                "magnet": magnet,
-                "info_hash": source.infoHash,
-                "is_torrent": is_torrent,
-                "is_pack": pack_select,
-                "mode": self.item_information.get("mode"),
-                "ids": self.item_information.get("ids"),
-                "tv_data": self.item_information.get("tv_data"),
-            }
-    
-    def _handle_torrent_source(self, source:TorrentStream) -> Tuple[str, str, bool]:
+        self,
+        source: TorrentStream,
+        url: str,
+        magnet: str,
+        is_torrent: bool,
+        pack_select: bool = False,
+    ) -> Dict[str, Any]:
+        """Prepare the source data dictionary for resolving playback."""
+        return {
+            "title": source.title,
+            "type": source.type,
+            "debrid_type": source.debridType,
+            "indexer": source.indexer,
+            "url": url,
+            "magnet": magnet,
+            "info_hash": source.infoHash,
+            "is_torrent": is_torrent,
+            "is_pack": pack_select,
+            "mode": self.item_information.get("mode"),
+            "ids": self.item_information.get("ids"),
+            "tv_data": self.item_information.get("tv_data"),
+        }
+
+    def _handle_torrent_source(self, source: TorrentStream) -> Tuple[str, str]:
         guid = source.guid
         magnet = ""
         indexer = source.indexer
@@ -156,21 +157,22 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         if not magnet:
             magnet = resolve_to_magnet(url) or ""
 
-        return url, magnet, True
+        return url, magnet
 
-    def get_source_details(self, source:TorrentStream) -> Tuple[str, str, bool]:
+    def get_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
         type = source.type
         url, magnet, is_torrent = "", "", False
 
         if type == IndexerType.TORRENT:
-            url, magnet, is_torrent = self._handle_torrent_source(source)
-        elif type == IndexerType.DIRECT:
-            url, is_torrent = source.url, False
-        elif type == IndexerType.STREMIO_DEBRID:
-            url, is_torrent = source.url, False
+            url, magnet = self._handle_torrent_source(source)
+            is_torrent = True
+        elif type == IndexerType.DEBRID:
+            url, magnet = self._handle_torrent_source(source)
+        elif type == IndexerType.DIRECT or IndexerType.STREMIO_DEBRID:
+            url = source.url
 
         return url, magnet, is_torrent
-    
+
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):
         pass
