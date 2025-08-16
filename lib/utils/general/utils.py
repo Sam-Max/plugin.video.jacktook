@@ -470,8 +470,8 @@ def set_cast_and_actors(info_tag, metadata):
 
     for cast_member in casts:
         actor = xbmc.Actor(
-            name=cast_member.get("name", ""),
-            role=cast_member.get("character", ""),
+            name=cast_member.get("name", "Unknown"),
+            role=cast_member.get("character", "Unknown"),
             thumbnail=(
                 f"http://image.tmdb.org/t/p/w185{cast_member['profile_path']}"
                 if cast_member.get("profile_path")
@@ -507,8 +507,8 @@ def set_cast_and_crew(metadata, cast_list):
     if "guest_stars" in metadata:
         for guest in metadata["guest_stars"]:
             actor = xbmc.Actor(
-                name=guest["name"],
-                role=guest["character"],  # Role = Character name
+                name=guest.get("name", "Unknown"),
+                role=guest.get("character", "Unknown"),  # Role = Character name
                 thumbnail=(
                     f"http://image.tmdb.org/t/p/w185{guest['profile_path']}"
                     if guest.get("profile_path")

@@ -387,15 +387,15 @@ def list_stremio_episodes(params):
         if imdb_id := meta_data.get("imdb_id"):
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
-            if res["tv_results"]:
-                ids["tmdb_id"] = res["tv_results"][0]["id"]
+            if getattr(res, "tv_results", []):
+                ids["tmdb_id"] = getattr(res, "tv_results")[0]["id"]
 
         if video["id"].startswith("tt") and not imdb_id:
             imdb_id = meta_data["id"].split(":")[0]
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
-            if res["tv_results"]:
-                ids["tmdb_id"] = res["tv_results"][0]["id"]
+            if getattr(res, "tv_results", []):
+                ids["tmdb_id"] = getattr(res, "tv_results")[0]["id"]
 
         url = build_url(
             "search",
