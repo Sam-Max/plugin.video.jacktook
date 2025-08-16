@@ -1,17 +1,14 @@
-from concurrent.futures import ThreadPoolExecutor
-import copy
-from datetime import datetime, timedelta
-import hashlib
 import os
 import re
+import hashlib
 import unicodedata
 import requests
-from enum import Enum
-
 from typing import Dict, List
+from zipfile import ZipFile
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 
 from lib.api.fanart.fanart import FanartTv
-
 from lib.clients.aisubtrans.utils import get_language_code
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.api.trakt.trakt import TraktAPI
@@ -33,15 +30,14 @@ from lib.utils.kodi.utils import (
 )
 
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
-
 from lib.vendor.torf._magnet import Magnet
+
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent
 from xbmc import getSupportedMedia
 import xbmc
 
-from zipfile import ZipFile
 
 
 pickle_db = PickleDatabase()
@@ -291,7 +287,7 @@ def is_ed_enabled():
     return get_setting("easydebrid_enabled")
 
 
-def list_item(label, icon="", poster_path=""):
+def build_list_item(label, icon="", poster_path=""):
     item = ListItem(label)
     item.setArt(
         {
@@ -746,8 +742,12 @@ def get_colored_languages(languages):
 def execute_thread_pool(results, func, *args, **kwargs):
     thread_number = get_setting("thread_number", 8)
     with ThreadPoolExecutor(max_workers=int(thread_number)) as executor:
-        [executor.submit(func, res, *args, **kwargs) for res in results]
-        executor.shutdown(wait=True)
+        futures = [executor.submit(func, res, *args, **kwargs) for res in results]
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                kodilog(f"Thread pool error: {e}")
 
 
 def paginate_list(data, page_size=10):
