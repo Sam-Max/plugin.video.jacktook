@@ -15,11 +15,11 @@ from lib.utils.kodi.utils import (
 )
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
+    build_list_item,
     get_password,
     get_port,
     get_service_host,
     get_username,
-    list_item,
     ssl_enabled,
 )
 from lib.vendor.bencodepy import bencodepy
@@ -33,7 +33,7 @@ if JACKTORR_ADDON:
         get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
     )
 
-    
+
 def torrent_status(info_hash):
     status = torrserver_api.get_torrent_info(link=info_hash)
     notification(
@@ -52,8 +52,10 @@ def torrent_files(params):
     for f in file_stats:
         name = f.get("path")
         id = f.get("id")
-        serve_url = torrserver_api.get_stream_url(link=info_hash, path=f.get("path"), file_id=id)
-        file_li = list_item(name, "download.png")
+        serve_url = torrserver_api.get_stream_url(
+            link=info_hash, path=f.get("path"), file_id=id
+        )
+        file_li = build_list_item(name, "download.png")
         file_li.setPath(serve_url)
 
         context_menu_items = []

@@ -73,6 +73,7 @@ from lib.utils.general.utils import (
     TMDB_POSTER_URL,
     DebridType,
     DialogListener,
+    build_list_item,
     check_debrid_enabled,
     clean_auto_play_undesired,
     clear,
@@ -83,7 +84,6 @@ from lib.utils.general.utils import (
     get_random_color,
     get_service_host,
     get_username,
-    list_item,
     make_listing,
     post_process,
     pre_process,
@@ -135,46 +135,46 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("handle_tmdb_search", mode="multi", page=1),
-        list_item(translation(90006), "search.png"),
+        build_list_item(translation(90006), "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("tv_shows_items"),
-        list_item(translation(90007), "tv.png"),
+        build_list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("movies_items"),
-        list_item(translation(90008), "movies.png"),
+        build_list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_menu"),
-        list_item(translation(90009), "anime.png"),
+        build_list_item(translation(90009), "anime.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("tv_menu"),
-        list_item(translation(90010), "tv.png"),
+        build_list_item(translation(90010), "tv.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("direct_menu"),
-        list_item(translation(90011), "search.png"),
+        build_list_item(translation(90011), "search.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("torrents"),
-        list_item(translation(90012), "magnet2.png"),
+        build_list_item(translation(90012), "magnet2.png"),
         isFolder=True,
     )
 
@@ -182,49 +182,49 @@ def root_menu():
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("telegram_menu"),
-            list_item(translation(90013), "cloud.png"),
+            build_list_item(translation(90013), "cloud.png"),
             isFolder=True,
         )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("cloud"),
-        list_item(translation(90014), "cloud.png"),
+        build_list_item(translation(90014), "cloud.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("downloads_menu"),
-        list_item(translation(90015), "cloud.png"),
+        build_list_item(translation(90015), "cloud.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("settings"),
-        list_item(translation(90016), "settings.png"),
+        build_list_item(translation(90016), "settings.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("history_menu"),
-        list_item(translation(90017), "history.png"),
+        build_list_item(translation(90017), "history.png"),
         isFolder=True,
     )
 
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("donate"),
-        list_item(translation(90018), "donate.png"),
+        build_list_item(translation(90018), "donate.png"),
         isFolder=True,
     )
 
     # addDirectoryItem(
     #     ADDON_HANDLE,
     #     build_url("test_download_dialog"),
-    #     list_item("Test", ""),
+    #     build_list_item("Test", ""),
     #     isFolder=False,
     # )
 
@@ -235,13 +235,13 @@ def animation_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("animation_item", mode="tv"),
-        list_item(translation(90007), "tv.png"),
+        build_list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("animation_item", mode="movies"),
-        list_item(translation(90008), "movies.png"),
+        build_list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -260,7 +260,7 @@ def animation_item(params):
                     submode=mode,
                     api=item["api"],
                 ),
-                list_item(item["name"], item["icon"]),
+                build_list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
     if mode == "movies":
@@ -275,7 +275,7 @@ def animation_item(params):
                         submode=mode,
                         api=item["api"],
                     ),
-                    list_item(item["name"], item["icon"]),
+                    build_list_item(item["name"], item["icon"]),
                     isFolder=True,
                 )
     endOfDirectory(ADDON_HANDLE)
@@ -285,19 +285,19 @@ def telegram_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("search_direct", mode="direct"),
-        list_item(translation(90006), "search.png"),
+        build_list_item(translation(90006), "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_telegram_latest", page=1),
-        list_item("Latest", "cloud.png"),
+        build_list_item("Latest", "cloud.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_telegram_files", page=1),
-        list_item("Files", "cloud.png"),
+        build_list_item("Video Files", "cloud.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -332,7 +332,7 @@ def tv_shows_items(params):
             build_url(
                 "search_item", mode=item["mode"], query=item["query"], api=item["api"]
             ),
-            list_item(item["name"], item["icon"]),
+            build_list_item(item["name"], item["icon"]),
             isFolder=True,
         )
     list_stremio_catalogs(menu_type="series", sub_menu_type="series")
@@ -346,7 +346,7 @@ def movies_items(params):
             build_url(
                 "search_item", mode=item["mode"], query=item["query"], api=item["api"]
             ),
-            list_item(item["name"], item["icon"]),
+            build_list_item(item["name"], item["icon"]),
             isFolder=True,
         )
     list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
@@ -361,13 +361,13 @@ def anime_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_item", mode="tv"),
-        list_item(translation(90007), "tv.png"),
+        build_list_item(translation(90007), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_item", mode="movies"),
-        list_item(translation(90008), "movies.png"),
+        build_list_item(translation(90008), "movies.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -377,19 +377,19 @@ def history_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("files_history"),
-        list_item(translation(90019), "history.png"),
+        build_list_item(translation(90019), "history.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_history"),
-        list_item(translation(90020), "history.png"),
+        build_list_item(translation(90020), "history.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("titles_calendar"),
-        list_item(translation(90021), "history.png"),
+        build_list_item(translation(90021), "history.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -400,7 +400,7 @@ def anime_item(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_search", mode=mode, category="Anime_Search"),
-        list_item(translation(90006), "search.png"),
+        build_list_item(translation(90006), "search.png"),
         isFolder=True,
     )
 
@@ -415,7 +415,7 @@ def anime_item(params):
                     submode=mode,
                     api=item["api"],
                 ),
-                list_item(item["name"], item["icon"]),
+                build_list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
@@ -431,7 +431,7 @@ def anime_item(params):
                         submode=mode,
                         api=item["api"],
                     ),
-                    list_item(item["name"], item["icon"]),
+                    build_list_item(item["name"], item["icon"]),
                     isFolder=True,
                 )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
@@ -737,13 +737,13 @@ def cloud_details(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(downloads_method),
-        list_item("Downloads", "download.png"),
+        build_list_item("Downloads", "download.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(info_method),
-        list_item("Account Info", "download.png"),
+        build_list_item("Account Info", "download.png"),
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
@@ -757,7 +757,7 @@ def cloud(params):
         return notification("No debrid services activated")
 
     for debrid_name in activated_debrids:
-        torrent_li = list_item(debrid_name, "download.png")
+        torrent_li = build_list_item(debrid_name, "download.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -789,7 +789,9 @@ def get_rd_downloads(params):
 
     sorted_downloads = sorted(downloads, key=lambda x: x["filename"], reverse=False)
     for d in sorted_downloads:
-        torrent_li = list_item(f"{formated_type} - {d['filename']}", "download.png")
+        torrent_li = build_list_item(
+            f"{formated_type} - {d['filename']}", "download.png"
+        )
         torrent_li.setProperty("IsPlayable", "true")
         addDirectoryItem(
             ADDON_HANDLE,
@@ -799,7 +801,7 @@ def get_rd_downloads(params):
         )
 
     page = page + 1
-    next_li = list_item("Next", icon="nextpage.png")
+    next_li = build_list_item("Next", icon="nextpage.png")
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("get_rd_downloads", page=page),
@@ -850,7 +852,7 @@ def torrents(params):
             ]
         )
 
-        torrent_li = list_item(torrent.get("title", ""), "download.png")
+        torrent_li = build_list_item(torrent.get("title", ""), "download.png")
         torrent_li.addContextMenuItems(context_menu_items)
         addDirectoryItem(
             ADDON_HANDLE,
