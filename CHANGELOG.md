@@ -1,3 +1,7 @@
+## 0.11.0 
+- Added support for Debrider (https://debrider.app/)
+- Other minor improvements and fixes.
+
 ## 0.10.0
 - Added external cached search support for Real-Debrid.
 - Updated URL for fetching community addons (migrated to beta.stremio-addons.net).
