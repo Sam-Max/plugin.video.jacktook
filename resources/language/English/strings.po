@@ -656,7 +656,7 @@ msgid "TorBox Configuration"
 msgstr ""
 
 msgctxt "#30789"
-msgid "EasyDebrid Configuration"
+msgid "Debrider Configuration"
 msgstr ""
 
 msgctxt "#30790"
@@ -1100,7 +1100,7 @@ msgid "Jackgram server URL (e.g., http://localhost:9117)."
 msgstr ""
 
 msgctxt "#30828"
-msgid "EasyDebrid API key for authentication."
+msgid "Debrider API key for authentication."
 msgstr ""
 
 msgctxt "#30829"
@@ -1112,7 +1112,7 @@ msgid "Specify the torrent client."
 msgstr ""
 
 msgctxt "#30831"
-msgid "Enable EasyDebrid cached torrent support."
+msgid "Enable Debrider cached torrent support."
 msgstr ""
 
 msgctxt "#30832"

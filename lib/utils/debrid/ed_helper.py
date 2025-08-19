@@ -22,7 +22,7 @@ class EasyDebridHelper:
             token=get_setting("easydebrid_token"), user_ip=get_public_ip()
         )
 
-    def check_ed_cached(
+    def check_cached(
         self,
         results: List[TorrentStream],
         cached_results: List[TorrentStream],
@@ -60,7 +60,7 @@ class EasyDebridHelper:
                 res.isCached = False
                 uncached_results.append(res)
 
-    def get_ed_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
+    def get_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         magnet = info_hash_to_magnet(info_hash)
         response_data = self.client.create_download_link(magnet)
         torrent_files = response_data.get("files", [])
@@ -94,7 +94,7 @@ class EasyDebridHelper:
             data["url"] = torrent_files[0].get("url")
             return data
 
-    def get_ed_pack_info(self, info_hash):
+    def get_pack_info(self, info_hash):
         info = get_cached(info_hash)
         if info:
             return info
@@ -118,7 +118,7 @@ class EasyDebridHelper:
         set_cached(info, info_hash)
         return info
 
-    def get_ed_info(self):
+    def get_info(self):
         user = self.client.get_user_info()
         expiration_timestamp = user["paid_until"]
 

@@ -16,7 +16,7 @@ A Kodi addon for torrent finding and streaming.
   Jackgram.
 
 - **Debrid Services**:  
-  RealDebrid, Premiumize, Torbox, EasyDebrid, and Debrid Services configured with Stremio Addons.
+  Debrider, RealDebrid, Premiumize, Torbox, and Debrid Services configured with Stremio Addons.
 
 - **Metadata**:  
   TMDB, Trakt, and Fanart.tv.

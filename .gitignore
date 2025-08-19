@@ -12,3 +12,4 @@ venv/
 .venv/
 __pycache__
 .aider*
+settings.json

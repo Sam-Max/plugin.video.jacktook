@@ -27,7 +27,7 @@ class TorboxHelper:
     def __init__(self):
         self.client = Torbox(token=get_setting("torbox_token"))
 
-    def check_torbox_cached(
+    def check_cached(
         self,
         results: List[TorrentStream],
         cached_results: List[TorrentStream],
@@ -71,7 +71,7 @@ class TorboxHelper:
         if "Found Cached" in response.get("detail", ""):
             return self.client.get_available_torrent(info_hash)
 
-    def get_torbox_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
+    def get_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         torrent_info = self.add_torbox_torrent(info_hash)
         if not torrent_info:
             return None
@@ -84,7 +84,7 @@ class TorboxHelper:
             data["url"] = response_data.get("data", {})
             return data
 
-    def get_torbox_pack_link(self, data) -> Optional[Dict[str, Any]]:
+    def get_pack_link(self, data) -> Optional[Dict[str, Any]]:
         pack_info = data.get("pack_info", {})
         file_id = pack_info.get("file_id", "")
         torrent_id = pack_info.get("torrent_id", "")
@@ -94,7 +94,7 @@ class TorboxHelper:
             data["url"] = response_data.get("data", {})
             return data
 
-    def get_torbox_pack_info(self, info_hash):
+    def get_pack_info(self, info_hash):
         info = get_cached(info_hash)
         if info:
             return info

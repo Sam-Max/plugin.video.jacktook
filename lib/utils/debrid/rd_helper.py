@@ -31,7 +31,7 @@ class RealDebridHelper:
     def __init__(self) -> None:
         self.client = RealDebrid(token=get_setting("real_debrid_token"))
 
-    def check_rd_cached(
+    def check_cached(
         self,
         results: List[TorrentStream],
         cached_results: List[TorrentStream],
@@ -76,7 +76,7 @@ class RealDebridHelper:
             self.handle_file_selection(torrent_info, is_pack)
         return torrent_id
 
-    def add_rd_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
+    def add_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
             torrent_info = self.client.get_available_torrent(info_hash)
@@ -123,11 +123,11 @@ class RealDebridHelper:
                 kodilog(",".join(torrents_ids))
                 self.client.select_files(torrent_info["id"], ",".join(torrents_ids))
 
-    def get_rd_link(
+    def get_link(
         self, info_hash: str, data: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a Real-Debrid torrent."""
-        torrent_id = self.add_rd_magnet(info_hash)
+        torrent_id = self.add_magnet(info_hash)
         if not torrent_id:
             return None
 
@@ -150,7 +150,7 @@ class RealDebridHelper:
             notification("File not cached!")
             return None
 
-    def get_rd_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
 
         pack_info = data.get("pack_info", {})
@@ -187,13 +187,13 @@ class RealDebridHelper:
         }
         return data
 
-    def get_rd_pack_info(self, info_hash: str) -> Optional[Dict]:
+    def get_pack_info(self, info_hash: str) -> Optional[Dict]:
         """Retrieves information about a torrent pack, including file names."""
         info = get_cached(info_hash)
         if info:
             return info
 
-        torrent_id = self.add_rd_magnet(info_hash, is_pack=True)
+        torrent_id = self.add_magnet(info_hash, is_pack=True)
         if not torrent_id:
             return None
 
@@ -211,7 +211,7 @@ class RealDebridHelper:
         set_cached(info, info_hash)
         return info
 
-    def get_rd_info(self) -> None:
+    def get_info(self) -> None:
         """Fetches Real-Debrid account details and displays them."""
         user = self.client.get_user()
         expiration = user["expiration"]

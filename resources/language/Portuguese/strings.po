@@ -396,8 +396,8 @@ msgid "Jackgram server URL (e.g., http://localhost:9117)."
 msgstr "URL do servidor Jackgram (ex.: http://localhost:9117)."
 
 msgctxt "#30828"
-msgid "EasyDebrid API key for authentication."
-msgstr "Chave da API EasyDebrid para autenticação."
+msgid "Debrider API key for authentication."
+msgstr "Chave da API Debrider para autenticação."
 
 msgctxt "#30829"
 msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."

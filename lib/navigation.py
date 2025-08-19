@@ -5,6 +5,7 @@ from threading import Thread
 from typing import Dict, List, Optional
 from urllib.parse import quote
 
+from lib.api.debrid.debrider import Debrider
 from lib.api.jacktorr.jacktorr import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
@@ -35,7 +36,7 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
-from lib.utils.debrid.ed_utils import EasyDebridHelper
+from lib.utils.debrid.debrider_helper import DebriderHelper
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -65,7 +66,7 @@ from lib.utils.views.last_titles import show_last_titles
 from lib.utils.views.weekly_calendar import show_weekly_calendar
 from lib.utils.views.shows import show_episode_info, show_season_info
 from lib.utils.torrentio.utils import open_providers_selection
-from lib.utils.debrid.rd_utils import RealDebridHelper
+from lib.utils.debrid.rd_helper import RealDebridHelper
 from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.kodi.settings import auto_play_enabled, get_cache_expiration
 from lib.utils.kodi.settings import addon_settings
@@ -727,9 +728,9 @@ def cloud_details(params):
     elif debrid_name == DebridType.TB:
         notification("Not yet implemented")
         return
-    elif debrid_name == DebridType.ED:
-        downloads_method = "get_ed_downloads"
-        info_method = "ed_info"
+    elif debrid_name == DebridType.DB:
+        downloads_method = "get_db_downloads"
+        info_method = "debrider_info"
     else:
         notification("Unsupported debrid type")
         return
@@ -770,12 +771,12 @@ def cloud(params):
     endOfDirectory(ADDON_HANDLE)
 
 
-def rd_info(params):
-    RealDebridHelper().get_rd_info()
+def real_debrid_info(params):
+    RealDebridHelper().get_info()
 
 
-def ed_info(params):
-    EasyDebridHelper().get_ed_info()
+def debrider_info(params):
+    DebriderHelper().get_info()
 
 
 def get_rd_downloads(params):
@@ -1050,6 +1051,16 @@ def rd_auth(params):
 def rd_remove_auth(params):
     rd_client = RealDebrid(token=get_setting("real_debrid_token"))
     rd_client.remove_auth()
+
+
+def debrider_auth(params):
+    debrider_client = Debrider(token=get_setting("debrider_token"))
+    debrider_client.auth()
+
+
+def debrider_remove_auth(params):
+    debrider_client = Debrider(token=get_setting("debrider_token"))
+    debrider_client.remove_auth()
 
 
 def pm_auth(params):

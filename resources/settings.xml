@@ -474,6 +474,47 @@
             </group>
         </category>
         <category id="debrid" label="30150">
+            <group id="debrider" label="30789">
+                <setting id="debrider_enabled" type="boolean" label="30734" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="debrider_token" type="string" label="30787" help="">
+                    <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="debrider_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="debrider_auth" type="action" label="30783" help="">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=debrider_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="debrider_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="debrider_remove_auth" type="action" label="30784" help="">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=debrider_remove_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="debrider_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="real_debrid" label="30152">
                 <setting id="real_debrid_enabled" type="boolean" label="30734" help="30837">
                     <default>false</default>
@@ -585,24 +626,6 @@
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="torbox_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-            </group>
-            <group id="easydebrid" label="30789">
-                <setting id="easydebrid_enabled" type="boolean" label="30734" help="30831">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="easydebrid_token" type="string" label="30787" help="30828">
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="easydebrid_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>

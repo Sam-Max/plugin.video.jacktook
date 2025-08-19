@@ -640,8 +640,8 @@ msgid "TorBox Configuration"
 msgstr "Configuración de TorBox"
 
 msgctxt "#30789"
-msgid "EasyDebrid Configuration"
-msgstr "Configuración de EasyDebrid"
+msgid "Debrider Configuration"
+msgstr "Configuración de Debrider"
 
 msgctxt "#30790"
 msgid "Uncached"
@@ -1084,8 +1084,8 @@ msgid "Jackgram server URL (e.g., http://localhost:9117)."
 msgstr "URL del servidor Jackgram (ej. http://localhost:9117)."
 
 msgctxt "#30828"
-msgid "EasyDebrid API key for authentication."
-msgstr "Clave API de EasyDebrid para autenticación."
+msgid "Debrider API key for authentication."
+msgstr "Clave API de Debrider para autenticación."
 
 msgctxt "#30829"
 msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."

@@ -39,7 +39,6 @@ from xbmc import getSupportedMedia
 import xbmc
 
 
-
 pickle_db = PickleDatabase()
 
 PROVIDER_COLOR_MIN_BRIGHTNESS = 128
@@ -165,6 +164,7 @@ class DebridType(Enum):
     PM = "Premiumize"
     TB = "Torbox"
     ED = "EasyDebrid"
+    DB = "Debrider"
 
 
 class IndexerType(Enum):
@@ -256,19 +256,21 @@ def is_debrid_activated():
         get_setting("real_debrid_enabled")
         or get_setting("premiumize_enabled")
         or get_setting("torbox_enabled")
-        or get_setting("easydebrid_enabled")
+        or get_setting("debrider_enabled")
     )
 
 
-def check_debrid_enabled(type):
-    if type == DebridType.RD:
+def check_debrid_enabled(debrid_type):
+    if debrid_type == DebridType.RD:
         return is_rd_enabled()
-    elif type == DebridType.PM:
+    elif debrid_type == DebridType.PM:
         return is_pm_enabled()
-    elif type == DebridType.TB:
+    elif debrid_type == DebridType.TB:
         return is_tb_enabled()
-    elif type == DebridType.ED:
-        return is_ed_enabled()
+    elif debrid_type == DebridType.DB:
+        return is_debrider_enabled()
+    else:
+        kodilog(f"Unknown debrid type: {debrid_type}", level=xbmc.LOGERROR)
 
 
 def is_rd_enabled():
@@ -277,6 +279,10 @@ def is_rd_enabled():
 
 def is_pm_enabled():
     return get_setting("premiumize_enabled")
+
+
+def is_debrider_enabled():
+    return get_setting("debrider_enabled")
 
 
 def is_tb_enabled():
@@ -870,7 +876,9 @@ def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Di
     kodilog(results, level=xbmc.LOGDEBUG)
 
     results = [
-        res for res in results if re.search(combined_pattern, res.get("filename", ""))
+        res
+        for res in results
+        if re.search(combined_pattern, res.get("filename") or res.get("name"))
     ]
     kodilog("Results after filtering:", level=xbmc.LOGDEBUG)
     kodilog(results, level=xbmc.LOGDEBUG)
@@ -993,20 +1001,26 @@ def debrid_dialog_update(type, total, dialog, lock):
 
 def get_public_ip():
     public_ip = cache.get("public_ip")
-    if not public_ip:
+    if public_ip:
+        return public_ip
+
+    urls = ["https://ipconfig.io/ip", "https://api.ipify.org/"]
+
+    for url in urls:
         try:
-            response = requests.get("https://ipconfig.io/ip", timeout=5)
+            response = requests.get(url, timeout=5)
             response.raise_for_status()
             public_ip = response.text.strip()
             cache.set(
                 "public_ip",
                 public_ip,
-                timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+                timedelta(hours=get_cache_expiration()),
             )
+            return public_ip
         except requests.RequestException as e:
-            kodilog(f"Error getting public ip: {e}")
-            return None
-    return public_ip
+            kodilog(f"Error getting public IP from {url}: {e}")
+
+    return None
 
 
 def extract_publish_date(date):

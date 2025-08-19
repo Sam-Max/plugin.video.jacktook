@@ -59,8 +59,5 @@ class EasyDebrid(DebridClient):
             json={"url": magnet},
         )
 
-    def get_torrent_info(self, torrent_id: str):
-        pass
-
     def get_user_info(self):
         return self._make_request("GET", "/user/details")
