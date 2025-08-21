@@ -1,14 +1,17 @@
-from abc import abstractmethod
-import traceback
 import requests
+import traceback
 from abc import ABC, abstractmethod
+from json.decoder import JSONDecodeError
+
 from lib.utils.kodi.utils import kodilog, notification
 
 
 class DebridClient(ABC):
-    def __init__(self, token):
+    def __init__(self, token, timeout=15):
         self.headers = {}
         self.token = token
+        self.timeout = timeout
+        self.session = requests.Session()  # reuse session
         self.initialize_headers()
 
     def _make_request(
@@ -27,44 +30,62 @@ class DebridClient(ABC):
 
     def _perform_request(self, method, url, data, params, json):
         try:
-            return requests.Session().request(
-                method,
-                url,
+            return self.session.request(
+                method=method,
+                url=url,
                 params=params,
                 data=data,
                 json=json,
                 headers=self.headers,
-                timeout=15,
+                timeout=self.timeout,
             )
         except requests.exceptions.Timeout:
             raise ProviderException("Request timed out.")
         except requests.exceptions.ConnectionError:
             raise ProviderException("Failed to connect to Debrid service.")
+        except requests.exceptions.RequestException as e:
+            raise ProviderException(f"Request failed: {str(e)}")
 
     def _handle_errors(self, response, is_expected_to_fail):
         try:
             response.raise_for_status()
         except requests.RequestException as error:
             if is_expected_to_fail:
+                kodilog(f"Expected failure: {error}")
                 return
 
             status_code = getattr(error.response, "status_code", None)
+            url = getattr(error.response, "url", "Unknown URL")
 
-            if response.headers.get("Content-Type") == "application/json":
-                error_content = response.json()
-                self._handle_service_specific_errors(error_content, status_code)
+            error_content = None
+            if response.headers.get("Content-Type", "").startswith("application/json"):
+                try:
+                    error_content = response.json()
+                except ValueError:
+                    error_content = response.text
             else:
-                error_content = response.text()
+                error_content = response.text
 
+            # Call service-specific error hook if JSON
+            if isinstance(error_content, dict):
+                self._handle_service_specific_errors(error_content, status_code)
+
+            # Specific cases
             if status_code == 401:
                 raise ProviderException("Invalid token")
-
-            if status_code == 403:
+            elif status_code == 403:
                 raise ProviderException("Forbidden")
+            elif status_code == 500:
+                raise ProviderException("Internal server error")
 
-            formatted_traceback = "".join(traceback.format_exception(error))
+            formatted_traceback = "".join(
+                traceback.format_exception(type(error), error, error.__traceback__)
+            )
             kodilog(f"Error: {formatted_traceback}")
-            raise ProviderException(f"API Error: {error_content}")
+
+            raise ProviderException(
+                f"API Error: {status_code} for {url}\nDetails: {error_content}"
+            )
 
     @abstractmethod
     def initialize_headers(self):
@@ -80,7 +101,7 @@ class DebridClient(ABC):
             return {}
         try:
             return response.json()
-        except requests.JSONDecodeError as error:
+        except JSONDecodeError as error:
             raise ProviderException(
                 f"Failed to parse response error: {error}. \nresponse: {response.text}"
             )
