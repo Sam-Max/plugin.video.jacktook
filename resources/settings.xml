@@ -538,7 +538,7 @@
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="real_debid_authorized">true</condition>
+                            <condition operator="is" setting="real_debid_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
@@ -580,6 +580,11 @@
                 <setting id="real_debrid_cached_check" type="boolean" label="90062" help="90063">
                     <default>false</default>
                     <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="real_debrid_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
             </group>
             <group id="premiumize" label="30785">
