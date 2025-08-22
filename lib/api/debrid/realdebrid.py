@@ -1,14 +1,18 @@
 from time import time
+import traceback
 from lib.api.debrid.base import DebridClient, ProviderException
 from base64 import b64encode, b64decode
-from lib.utils.general.utils import supported_video_extensions
+from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.jacktook.utils import ADDON_PATH
+from lib.utils.debrid.qrcode_utils import make_qrcode
+from lib.utils.general.utils import DebridType, supported_video_extensions
 from lib.utils.kodi.utils import (
     copy2clip,
     dialog_ok,
     dialogyesno,
+    kodilog,
     notification,
     set_setting,
-    progressDialog,
     sleep as ksleep,
 )
 from xbmcgui import DialogProgress
@@ -17,24 +21,24 @@ from xbmcgui import DialogProgress
 class RealDebrid(DebridClient):
     BASE_URL = "https://api.real-debrid.com/rest/1.0"
     OAUTH_URL = "https://api.real-debrid.com/oauth/v2"
-    OPENSOURCE_CLIENT_ID = "X245A4XAIBGVM"
+    CLIENT_ID = "X245A4XAIBGVM"
 
     def initialize_headers(self):
+        self.headers = {"User-Agent": "Jacktook/1.0"}
         if self.token:
             token_data = self.decode_token_str(self.token)
             if "private_token" in token_data:
-                self.headers = {
-                    "Authorization": f"Bearer {token_data['private_token']}"
-                }
+                self.headers["Authorization"] = f"Bearer {token_data['private_token']}"
             else:
+                # Exchange client_id/secret/code for an access token
                 access_token_data = self.get_token(
                     token_data["client_id"],
                     token_data["client_secret"],
                     token_data["code"],
                 )
-                self.headers = {
-                    "Authorization": f"Bearer {access_token_data['access_token']}"
-                }
+                self.headers["Authorization"] = (
+                    f"Bearer {access_token_data['access_token']}"
+                )
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
@@ -87,15 +91,19 @@ class RealDebrid(DebridClient):
     def decode_token_str(token):
         try:
             client_id, client_secret, code = b64decode(token).decode().split(":")
+            return {
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code,
+            }
         except ValueError as e:
             raise ProviderException(f"Invalid token {e}")
-        return {"client_id": client_id, "client_secret": client_secret, "code": code}
 
     def get_device_code(self):
         return self._make_request(
             "GET",
             f"{self.OAUTH_URL}/device/code",
-            params={"client_id": self.OPENSOURCE_CLIENT_ID, "new_credentials": "yes"},
+            params={"client_id": self.CLIENT_ID, "new_credentials": "yes"},
         )
 
     def get_token(self, client_id, client_secret, device_code):
@@ -114,7 +122,7 @@ class RealDebrid(DebridClient):
         response_data = self._make_request(
             "GET",
             f"{self.OAUTH_URL}/device/credentials",
-            params={"client_id": self.OPENSOURCE_CLIENT_ID, "code": device_code},
+            params={"client_id": self.CLIENT_ID, "code": device_code},
             is_expected_to_fail=True,
         )
 
@@ -147,33 +155,45 @@ class RealDebrid(DebridClient):
             expires_in = int(response["expires_in"])
             device_code = response["device_code"]
             user_code = response["user_code"]
-            copy2clip(user_code)
-            content = "%s[CR]%s[CR]%s" % (
-                "Authorize Debrid Services",
-                "Navigate to: [B]%s[/B]" % "https://real-debrid.com/device",
-                "Enter the following code: [COLOR seagreen][B]%s[/B][/COLOR]"
-                % user_code,
+            auth_url = response["direct_verification_url"]
+            qr_code = make_qrcode(auth_url)
+            copy2clip(auth_url)
+            progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+            progressDialog.setup(
+                "Real Debrid Auth",
+                qr_code,
+                auth_url,
+                user_code,
+                DebridType.RD,
             )
-            progressDialog.create("Real-Debrid Auth")
-            progressDialog.update(-1, content)
+            progressDialog.show_dialog()
             start_time = time()
             while time() - start_time < expires_in:
+                ksleep(1000 * interval)
+                if progressDialog.iscanceled:
+                    progressDialog.close_dialog()
+                    return
                 try:
                     response = self.authorize(device_code)
+                except:
+                    continue
+                try:
                     if "token" in response:
-                        progressDialog.close()
-                        set_setting("real_debrid_token", response["token"])
-                        set_setting("real_debid_authorized", "true")
                         self.token = response["token"]
+                        set_setting("real_debrid_token", self.token)
+                        set_setting("real_debid_authorized", "true")
                         self.initialize_headers()
                         set_setting("real_debrid_user", self.get_user()["username"])
-                        dialog_ok("Success", "Authentication completed.")
+                        progressDialog.update_progress(100, "Authentication completed.")
+                        progressDialog.close_dialog()
                         return
-                    if progressDialog.iscanceled():
-                        progressDialog.close()
-                        return
-                    ksleep(1000 * interval)
+                    else:
+                        elapsed = time() - start_time
+                        percent = int((elapsed / expires_in) * 100)
+                        progressDialog.update_progress(percent)
                 except Exception as e:
+                    progressDialog.close_dialog()
+                    kodilog(traceback.print_exc())
                     dialog_ok("Error:", f"Error: {e}.")
                     return
 
@@ -326,7 +346,7 @@ class RealDebrid(DebridClient):
     def get_available_torrent(self, info_hash):
         available_torrents = self.get_user_torrent_list()
         for torrent in available_torrents:
-            if torrent["hash"] == info_hash:
+            if isinstance(torrent, dict) and torrent.get("hash") == info_hash:
                 return torrent
 
     def create_download_link(self, link):

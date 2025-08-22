@@ -16,8 +16,11 @@ class Premiumize(DebridClient):
     CLIENT_ID = "855400527"
 
     def initialize_headers(self):
-        if self.token:
-            self.headers = {"Authorization": f"Bearer {self.token}"}
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "User-Agent": "Jacktook/1.0",
+            "Accept": "application/json",
+        }
 
     def disable_access_token(self):
         pass
@@ -66,13 +69,9 @@ class Premiumize(DebridClient):
         )
 
     def auth(self):
-        self.token = ""
         response = self.get_device_code()
         user_code = response["user_code"]
-        try:
-            copy2clip(user_code)
-        except:
-            pass
+        copy2clip(user_code)
         content = "%s[CR]%s[CR]%s" % (
             "Authorize Debrid Services",
             "Navigate to: [B]%s[/B]" % response.get("verification_uri"),
@@ -87,7 +86,6 @@ class Premiumize(DebridClient):
         while (
             not progressDialog.iscanceled()
             and time_passed < expires_in
-            and not self.token
         ):
             ksleep(1000 * sleep_interval)
             response = self.authorize(device_code)

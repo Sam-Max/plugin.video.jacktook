@@ -6,8 +6,11 @@ class Torbox(DebridClient):
     BASE_URL = "https://api.torbox.app/v1/api"
 
     def initialize_headers(self):
-        if self.token:
-            self.headers = {"Authorization": f"Bearer {self.token}"}
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "User-Agent": "Jacktook/1.0",
+            "Accept": "application/json",
+        }
 
     def disable_access_token(self):
         pass
@@ -103,13 +106,6 @@ class Torbox(DebridClient):
             notification(f"Failed to create download link: {detail}")
             return None
 
-    def download(self, magnet):
-        response_data = self.add_magnet_link(magnet)
-        if response_data.get("detail") is False:
-            notification(f"Failed to add magnet link to Torbox {response_data}")
-        else:
-            notification(f"Magnet sent to cloud")
-
     def delete_torrent(self, torrent_id):
         self._make_request(
             "POST",
@@ -117,3 +113,6 @@ class Torbox(DebridClient):
             data={"torrent_id": torrent_id, "operation": "Delete"},
             is_expected_to_fail=False,
         )
+
+    def download(self):
+        pass

@@ -1,8 +1,10 @@
 from time import time
 from lib.api.debrid.base import DebridClient
+from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import copy2clip, dialog_ok, set_setting, sleep
-from xbmcgui import DialogProgress
+from lib.utils.debrid.qrcode_utils import make_qrcode
+from lib.utils.general.utils import DebridType
+from lib.utils.kodi.utils import ADDON_PATH, copy2clip, dialog_ok, set_setting, sleep
 
 
 class Debrider(DebridClient):
@@ -23,32 +25,39 @@ class Debrider(DebridClient):
             expires_in = int(response["expires_in"])
             device_code = response["device_code"]
             user_code = response["user_code"]
-            copy2clip(user_code)
-            content = (
-                "Navigate to: [B]https://debrider.app/dashboard/account[/B]\n"
-                "and on the 'Link a New Device section', enter the following code: "
-                "[COLOR seagreen][B]%s[/B][/COLOR]" % user_code
+            auth_url = response["verification_url"]
+            qr_code = make_qrcode(auth_url)
+            copy2clip(auth_url)
+            progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+            progressDialog.setup(
+                "Debrider Auth",
+                qr_code,
+                auth_url,
+                user_code,
+                DebridType.DB
             )
-            progressDialog = DialogProgress()
-            progressDialog.create("Debrider Auth")
-            progressDialog.update(-1, content)
+            progressDialog.show_dialog()
             start_time = time()
             while time() - start_time < expires_in:
+                if progressDialog.iscanceled:
+                    progressDialog.close_dialog()
+                    return
+                elapsed = time() - start_time
+                percent = int((elapsed / expires_in) * 100)
+                progressDialog.update_progress(percent)
                 try:
                     response = self.get_device_auth_status(device_code)
                     if "apikey" in response:
-                        progressDialog.close()
-                        set_setting("debrider_token", response["apikey"])
-                        set_setting("debrider_authorized", "true")
                         self.token = response["apikey"]
+                        progressDialog.close_dialog()
+                        set_setting("debrider_token", self.token)
+                        set_setting("debrider_authorized", "true")
                         self.initialize_headers()
                         dialog_ok("Success", "Authentication completed.")
                         return
-                    if progressDialog.iscanceled():
-                        progressDialog.close()
-                        return
                     sleep(1000 * interval)
                 except Exception as e:
+                    progressDialog.close_dialog()
                     dialog_ok("Error:", f"Error: {e}.")
                     return
 
@@ -58,7 +67,11 @@ class Debrider(DebridClient):
         dialog_ok("Success", "Authentification Removed.")
 
     def initialize_headers(self):
-        self.headers = {"Authorization": f"Bearer {self.token}"}
+        self.headers = {
+            "Authorization": f"Bearer {self.token}",
+            "User-Agent": "Jacktook/1.0",
+            "Accept": "application/json",
+        }
         if self.user_ip:
             self.headers["X-Forwarded-For"] = self.user_ip
 
