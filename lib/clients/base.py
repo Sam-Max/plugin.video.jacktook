@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from requests import Session
 from typing import Any, List, Optional, Callable
 from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.utils import notification
 
 
 class BaseClient(ABC):
@@ -30,4 +31,4 @@ class BaseClient(ABC):
         exception_message = str(exception)
         if len(exception_message) > 70:
             exception_message = exception_message[:70] + "..."
-        raise Exception(exception_message)
+        notification(exception_message)

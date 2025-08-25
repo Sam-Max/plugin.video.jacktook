@@ -157,9 +157,8 @@ def search_client(
                     total_results.extend(results)
             except Exception as e:
                 import traceback
-
                 error_details = traceback.format_exc()
-                kodilog(f"Error: {e}\n{error_details}")
+                kodilog(f"Error in {e}\n{error_details}")
 
     cache_results(total_results, query, mode, media_type, episode)
     return total_results
