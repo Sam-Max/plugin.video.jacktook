@@ -10,6 +10,13 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90064),  
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_popular",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90025),
         "mode": "tv",
         "api": "tmdb",
@@ -28,6 +35,20 @@ tv_items = [
         "mode": "tv",
         "api": "tmdb",
         "query": "tmdb_years",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": translation(90065),
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_lang",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": translation(90066),
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_networks",
         "icon": "tmdb.png",
     },
     {
@@ -98,6 +119,13 @@ movie_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90064),  
+        "mode": "movies",
+        "api": "tmdb",
+        "query": "tmdb_popular",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90025),
         "mode": "movies",
         "api": "tmdb",
@@ -109,6 +137,20 @@ movie_items = [
         "mode": "movies",
         "api": "tmdb",
         "query": "tmdb_years",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": translation(90065),
+        "mode": "movies",
+        "api": "tmdb",
+        "query": "tmdb_lang",
+        "icon": "tmdb.png",
+    },
+    {
+        "name": translation(90067),
+        "mode": "movies",
+        "api": "tmdb",
+        "query": "tmdb_collections",
         "icon": "tmdb.png",
     },
     {

@@ -22,7 +22,7 @@ class Collection(TMDb):
         :param collection_id: int
         :return:
         """
-        return self._request_obj(self._urls["images"] % collection_id)
+        return self._request_obj(self._urls["images"] % collection_id, add_lang=False)
 
     def translations(self, collection_id):
         """

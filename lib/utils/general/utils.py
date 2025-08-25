@@ -21,6 +21,7 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     MOVIES_TYPE,
     SHOWS_TYPE,
+    TITLES_TYPE,
     build_url,
     container_refresh,
     get_jacktorr_setting,
@@ -526,35 +527,28 @@ def set_cast_and_crew(metadata, cast_list):
 
 
 def set_listitem_artwork(list_item, metadata, fanart_details={}):
+    def tmdb_url(path, size):
+        return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
+
+    poster_path = metadata.get("poster_path")
+    still_path = metadata.get("still_path")
+    backdrop_path = metadata.get("backdrop_path")
+
+    thumb = tmdb_url(poster_path, "w780") or tmdb_url(still_path, "w1280")
+    poster = tmdb_url(poster_path, "w500") or tmdb_url(still_path, "w1280")
+    fanart = (
+        tmdb_url(backdrop_path, "w1280")
+        or tmdb_url(still_path, "w1280")
+        or fanart_details.get("fanart", "")
+    )
+
+    kodilog(f"Setting artwork: thumb={thumb}, poster={poster}, fanart={fanart}")
+
     list_item.setArt(
         {
-            "thumb": (
-                f"http://image.tmdb.org/t/p/w780{metadata['poster_path']}"
-                if "poster_path" in metadata
-                else (
-                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
-                    if "still_path" in metadata
-                    else ""
-                )
-            ),
-            "poster": (
-                f"http://image.tmdb.org/t/p/w500{metadata['poster_path']}"
-                if "poster_path" in metadata
-                else (
-                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
-                    if "still_path" in metadata
-                    else ""
-                )
-            ),
-            "fanart": (
-                f"http://image.tmdb.org/t/p/w1280{metadata['backdrop_path']}"
-                if "backdrop_path" in metadata
-                else (
-                    f"http://image.tmdb.org/t/p/w1280{metadata['still_path']}"
-                    if "still_path" in metadata
-                    else fanart_details.get("fanart", "")
-                )
-            ),
+            "thumb": thumb,
+            "poster": poster,
+            "fanart": fanart,
         }
     )
 
@@ -705,10 +699,12 @@ def tvdb_get(path, params={}):
 
 
 def set_content_type(mode, media_type="movies"):
-    if mode == "tv" or media_type == "tv" or mode == "anime":
+    if mode in ("tv", "anime") or media_type == "tv":
         setContent(ADDON_HANDLE, SHOWS_TYPE)
     elif mode == "movies" or media_type == "movies":
         setContent(ADDON_HANDLE, MOVIES_TYPE)
+    else:
+        setContent(ADDON_HANDLE, TITLES_TYPE)
 
 
 # This method was taken from script.elementum.jackett addon

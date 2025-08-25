@@ -88,6 +88,8 @@ class StremioAddonClient(BaseClient):
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
             else:
                 return []
+            
+            kodilog("Using Stremio addon search URL: " + url)
 
             if (
                 get_setting("real_debrid_enabled")

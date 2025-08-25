@@ -1,13 +1,11 @@
 import sys
 from urllib import parse
-
-
 from lib.clients.jackgram.utils import (
     list_telegram_files,
     list_telegram_latest,
     list_telegram_latest_files,
 )
-from lib.clients.tmdb.tmdb import TmdbClient
+from lib.clients.tmdb.tmdb import TmdbClient, TmdbCollections
 from lib.clients.trakt.trakt import TraktClient
 from lib.downloader import (
     handle_cancel_download,
@@ -117,11 +115,15 @@ def addon_router():
         "search": search,
         "handle_tmdb_search": TmdbClient.handle_tmdb_search,
         "handle_tmdb_query": TmdbClient.handle_tmdb_query,
+        "search_tmdb_lang": TmdbClient.show_lang_items,
+        "search_tmbd_network": TmdbClient.show_network_items,
         "search_tmdb_year": search_tmdb_year,
         "search_tmdb_genres": search_tmdb_genres,
         "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
         "search_tmdb_similar": TmdbClient.search_tmdb_similar,
         "search_direct": search_direct,
+        "handle_collection_query": TmdbClient.handle_collection_query,
+        "handle_collection_details": TmdbCollections.add_collection_details,
         "handle_download_file": handle_download_file,
         "search_item": search_item,
         "next_page_anime": next_page_anime,

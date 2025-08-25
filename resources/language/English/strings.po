@@ -1456,83 +1456,83 @@ msgid "Support Jacktook"
 msgstr ""
 
 msgctxt "#90024"
-msgid "Tmdb - Trending"
+msgid "Trending"
 msgstr ""
 
 msgctxt "#90025"
-msgid "Tmdb - Genres"
+msgid "Genres"
 msgstr ""
 
 msgctxt "#90026"
-msgid "Tmdb - Calendar"
+msgid "Calendar"
 msgstr ""
 
 msgctxt "#90027"
-msgid "Tmdb - Years"
+msgid "Years"
 msgstr ""
 
 msgctxt "#90028"
-msgid "Trakt - Trending"
+msgid "Trending"
 msgstr ""
 
 msgctxt "#90029"
-msgid "Trakt - Most Watched"
+msgid "Most Watched"
 msgstr ""
 
 msgctxt "#90030"
-msgid "Trakt - Most Favorited"
+msgid "Most Favorited"
 msgstr ""
 
 msgctxt "#90031"
-msgid "Trakt - Popular Lists"
+msgid "Popular Lists"
 msgstr ""
 
 msgctxt "#90032"
-msgid "Trakt - Trending Lists"
+msgid "Trending Lists"
 msgstr ""
 
 msgctxt "#90033"
-msgid "Trakt - Recomendations"
+msgid "Recomendations"
 msgstr ""
 
 msgctxt "#90034"
-msgid "Trakt - Watched History"
+msgid "Watched History"
 msgstr ""
 
 msgctxt "#90035"
-msgid "Trakt - Watchlist"
+msgid "Watchlist"
 msgstr ""
 
 msgctxt "#90036"
-msgid "Trakt - Top 10 BoxOffice"
+msgid "Top 10 BoxOffice"
 msgstr ""
 
 msgctxt "#90037"
-msgid "Anime Popular"
+msgid "Popular"
 msgstr ""
 
 msgctxt "#90038"
-msgid "Anime Popular Recent"
+msgid "Popular Recent"
 msgstr ""
 
 msgctxt "#90039"
-msgid "Anime Airing"
+msgid "Airing"
 msgstr ""
 
 msgctxt "#90040"
-msgid "Anime Years"
+msgid "Years"
 msgstr ""
 
 msgctxt "#90041"
-msgid "Anime Genres"
+msgid "Genres"
 msgstr ""
 
 msgctxt "#90042"
-msgid "Trakt - Anime Trending"
+msgid "Trending"
 msgstr ""
 
 msgctxt "#90043"
-msgid "Trakt - Anime Most Watched"
+msgid "Most Watched"
 msgstr ""
 
 msgctxt "#90044"
@@ -1617,3 +1617,22 @@ msgctxt "#90063"
 msgid "Only show cached streams from external services"
 msgstr ""
 
+msgctxt "#90064"
+msgid "Popular"
+msgstr ""
+
+msgctxt "#90065"
+msgid "Languages"
+msgstr ""
+
+msgctxt "#90066"
+msgid "Networks"
+msgstr ""
+
+msgctxt "#90067"
+msgid "Collections"
+msgstr ""
+
+msgctxt "#90068"
+msgid "Search for collections:"
+msgstr ""

@@ -6,6 +6,8 @@ import time
 
 import requests
 
+from lib.utils.kodi.utils import kodilog
+
 from .as_obj import AsObj
 from .exceptions import TMDbException
 
@@ -53,7 +55,7 @@ class TMDb(object):
     @property
     def api_key(self):
         return os.environ.get(self.TMDB_API_KEY)
-    
+
     @property
     def proxies(self):
         proxy = os.environ.get(self.TMDB_PROXIES)
@@ -85,7 +87,9 @@ class TMDb(object):
     @property
     def session_id(self):
         if not os.environ.get(self.TMDB_SESSION_ID):
-            raise TMDbException("Must Authenticate to create a session run Authentication(username, password)")
+            raise TMDbException(
+                "Must Authenticate to create a session run Authentication(username, password)"
+            )
         return os.environ.get(self.TMDB_SESSION_ID)
 
     @session_id.setter
@@ -133,22 +137,31 @@ class TMDb(object):
     def cache_clear(self):
         return self.cached_request.cache_clear()
 
-    def _request_obj(self, action, params="", call_cached=True, method="GET", data=None, json=None, key=None):
+    def _request_obj(
+        self,
+        action,
+        params="",
+        call_cached=True,
+        method="GET",
+        data=None,
+        json=None,
+        key=None,
+        add_lang=True,
+    ):
         if self.api_key is None or self.api_key == "":
             raise TMDbException("No API key found.")
 
-        url = "%s%s?api_key=%s&%s&language=%s" % (
-            self._base,
-            action,
-            self.api_key,
-            params,
-            self.language,
-        )
+        if add_lang:
+            url = f"{self._base}{action}?api_key={self.api_key}&{params}&language={self.language}"
+        else:
+            url = f"{self._base}{action}?api_key={self.api_key}&{params}"
 
         if self.cache and self.obj_cached and call_cached and method != "POST":
             req = self.cached_request(method, url, data, json, self.proxies)
         else:
-            req = self.__class__._session.request(method, url, data=data, json=json, proxies=self.proxies)
+            req = self.__class__._session.request(
+                method, url, data=data, json=json, proxies=self.proxies
+            )
 
         headers = req.headers
 
@@ -165,9 +178,13 @@ class TMDb(object):
             if self.wait_on_rate_limit:
                 logger.warning("Rate limit reached. Sleeping for: %d" % sleep_time)
                 time.sleep(abs(sleep_time))
-                return self._request_obj(action, params, call_cached, method, data, json, key)
+                return self._request_obj(
+                    action, params, call_cached, method, data, json, key
+                )
             else:
-                raise TMDbException("Rate limit reached. Try again in %d seconds." % sleep_time)
+                raise TMDbException(
+                    "Rate limit reached. Try again in %d seconds." % sleep_time
+                )
 
         json = req.json()
 

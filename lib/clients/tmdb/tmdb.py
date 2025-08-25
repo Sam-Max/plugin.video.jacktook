@@ -7,7 +7,13 @@ from lib.api.trakt.trakt_utils import (
     add_trakt_watchlist_context_menu,
     is_trakt_auth,
 )
+from lib.clients.tmdb.collections_utils import (
+    POPULAR_COLLECTIONS,
+    TOP_RATED_COLLECTIONS,
+)
 from lib.clients.tmdb.utils import (
+    FULL_NAME_LANGUAGES,
+    NETWORKS,
     add_kodi_dir_item,
     add_tmdb_movie_context_menu,
     add_tmdb_show_context_menu,
@@ -98,6 +104,7 @@ class TmdbClient(BaseTmdbClient):
     @staticmethod
     def handle_tmdb_search(params):
         mode = params.get("mode")
+        set_content_type(mode)
         page = int(params.get("page", 1))
 
         query = (
@@ -109,56 +116,53 @@ class TmdbClient(BaseTmdbClient):
         if page == 1:
             pickle_db.set_key("search_query", query)
 
-        data = Search().multi(query, page=page)
+        data = tmdb_get("search_multi", {"query": query, "page": page})
         kodilog(f"TMDB Search Results: {data}", level=xbmc.LOGDEBUG)
-
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
 
-        execute_thread_pool(
-            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
-        )
-        add_next_button("handle_tmdb_search", page=page, mode=mode)
+        results = getattr(data, "results", [])
+        if results:
+            execute_thread_pool(results, TmdbClient.show_tmdb_results, mode)
+            add_next_button("handle_tmdb_search", page=page, mode=mode)
+
         endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
     def handle_tmdb_query(params):
         query = params.get("query", "")
-        mode = params["mode"]
+        mode = params.get("mode")
         submode = params.get("submode")
         category = params.get("category")
         page = int(params.get("page", 1))
 
-        kodilog(f"Handling TMDB query: mode: {mode}, page: {page}")
-        set_content_type(mode)
-
         handlers = {
             "movies": lambda: TmdbClient.handle_tmdb_movie_query(query, page, mode),
             "tv": lambda: TmdbClient.handle_tmdb_show_query(query, page, mode),
-            "anime": lambda: TmdbAnimeClient.handle_tmdb_anime_query(
-                category, mode, submode, page
-            ),
-            "cartoon": lambda: TmdbAnimeClient.handle_tmdb_anime_query(
-                category, mode, submode, page
-            ),
-            "animation": lambda: TmdbAnimeClient.handle_tmdb_anime_query(
-                category, mode, submode, page
-            ),
         }
+
+        anime_modes = {"anime", "cartoon", "animation"}
+        if mode in anime_modes:
+            handlers[mode] = lambda: TmdbAnimeClient.handle_tmdb_anime_query(
+                category, mode, submode, page
+            )
 
         handler = handlers.get(mode)
         if handler:
-            handler()
+            return handler()
         else:
             notification("Invalid mode")
 
     @staticmethod
     def handle_tmdb_movie_query(query, page, mode):
         query_handlers = {
-            "tmdb_trending": lambda: TmdbClient.handle_trending_movies(page, mode),
+            "tmdb_trending": lambda: TmdbClient.show_trending_movies(mode, page),
             "tmdb_genres": lambda: TmdbClient.show_genres_items(mode, page),
+            "tmdb_popular": lambda: TmdbClient.show_popular_items(mode, page),
             "tmdb_years": lambda: TmdbClient.show_years_items(mode, page),
+            "tmdb_lang": lambda: TmdbClient.show_languages(mode, page),
+            "tmdb_collections": lambda: TmdbClient.show_collections_menu(mode),
             "tmdb_keywords": lambda: TmdbClient.show_keywords_items(query, page, mode),
         }
 
@@ -169,37 +173,22 @@ class TmdbClient(BaseTmdbClient):
             notification("Invalid query")
 
     @staticmethod
-    def handle_trending_movies(page, mode):
-        data = tmdb_get("trending_movie", page)
-        if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
-            return
-        execute_thread_pool(
-            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
-        )
-        add_next_button(
-            "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
-        )
-        endOfDirectory(ADDON_HANDLE)
-
-    @staticmethod
     def handle_tmdb_show_query(query, page, mode):
-        if query == "tmdb_trending":
-            data = tmdb_get("trending_tv", page)
-            if not data or getattr(data, "total_results", 0) == 0:
-                notification("No results found")
-                return
-            execute_thread_pool(
-                getattr(data, "results"), TmdbClient.show_tmdb_results, mode
-            )
-            add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
-            endOfDirectory(ADDON_HANDLE)
-        elif query == "tmdb_genres":
-            TmdbClient.show_genres_items(mode, page)
-        elif query == "tmdb_calendar":
-            TmdbClient.show_calendar_items(query, page, mode)
-        elif query == "tmdb_years":
-            TmdbClient.show_years_items(mode, page)
+        query_handlers = {
+            "tmdb_trending": lambda: TmdbClient.show_trending_shows(query, mode, page),
+            "tmdb_popular": lambda: TmdbClient.show_popular_items(mode, page),
+            "tmdb_lang": lambda: TmdbClient.show_languages(mode, page),
+            "tmdb_genres": lambda: TmdbClient.show_genres_items(mode, page),
+            "tmdb_calendar": lambda: TmdbClient.show_calendar_items(query, page, mode),
+            "tmdb_years": lambda: TmdbClient.show_years_items(mode, page),
+            "tmdb_networks": lambda: TmdbClient.show_networks(mode, page),
+        }
+
+        handler = query_handlers.get(query)
+        if handler:
+            return handler()
+        else:
+            notification("Invalid query")
 
     @staticmethod
     def tmdb_search_genres(mode, genre_id, page, submode=None):
@@ -371,6 +360,166 @@ class TmdbClient(BaseTmdbClient):
         set_view("widelist")
 
     @staticmethod
+    def show_trending_shows(query, mode, page):
+        set_content_type(mode)
+        data = tmdb_get("trending_tv", page)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No results found")
+            return
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
+        add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_trending_movies(mode, page):
+        set_content_type(mode)
+        data = tmdb_get("trending_movie", page)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No results found")
+            return
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
+        add_next_button(
+            "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
+        )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_popular_items(mode, page):
+        set_content_type(mode)
+        path = "popular_shows" if mode == "tv" else "popular_movie"
+        data = tmdb_get(path, page)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No results found")
+            return
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
+        add_next_button("handle_tmdb_query", query="tmdb_popular", page=page, mode=mode)
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_languages(mode, page):
+        for lang in FULL_NAME_LANGUAGES:
+            list_item = ListItem(label=lang["name"])
+            list_item.setArt(
+                {
+                    "icon": os.path.join(ADDON_PATH, "resources", "img", "lang.png"),
+                }
+            )
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "search_tmdb_lang",
+                    mode=mode,
+                    lang=lang["id"],
+                    page=page,
+                ),
+            )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_lang_items(params):
+        mode = params.get("mode")
+        set_content_type(mode)
+        lang = params.get("lang")
+        page = int(params.get("page", 1))
+
+        route_map = {
+            "movies": "discover_movie",
+            "tv": "discover_tv",
+        }
+
+        path = route_map.get(mode)
+        if not path:
+            notification("Invalid mode")
+            return
+
+        route_params = {"with_original_language": lang, "page": page}
+
+        data = tmdb_get(path=path, params=route_params)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No results found")
+            return
+
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
+
+        add_next_button(
+            "search_tmdb_lang",
+            mode=mode,
+            lang=lang,
+            page=page,
+        )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_networks(mode, page):
+        for network in NETWORKS:
+            list_item = ListItem(label=network["name"])
+            list_item.setArt(
+                {
+                    "icon": network["icon"],
+                    "thumb": network["icon"],
+                    "poster": network["icon"],
+                }
+            )
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "search_tmbd_network",
+                    mode=mode,
+                    id=network["id"],
+                    page=page,
+                ),
+            )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
+    def show_network_items(params):
+        mode = params.get("mode")
+        set_content_type(mode)
+        network_id = params.get("id")
+        page = int(params.get("page", 1))
+
+        route_map = {
+            "movies": "discover_movie",
+            "tv": "discover_tv",
+        }
+
+        path = route_map.get(mode)
+        if not path:
+            notification("Invalid mode")
+            return
+
+        route_params = {"page": page}
+        if mode == "tv":
+            route_params["with_networks"] = network_id
+        elif mode == "movies":
+            route_params["with_companies"] = network_id
+
+        data = tmdb_get(path=path, params=route_params)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No results found")
+            return
+
+        execute_thread_pool(
+            getattr(data, "results"), TmdbClient.show_tmdb_results, mode
+        )
+
+        add_next_button(
+            "search_tmbd_network",
+            mode=mode,
+            id=network_id,
+            page=page,
+        )
+        endOfDirectory(ADDON_HANDLE)
+
+    @staticmethod
     def show_genres_items(mode, page, submode=None):
         path = (
             "show_genres"
@@ -504,6 +653,47 @@ class TmdbClient(BaseTmdbClient):
         endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
+    def show_collections_menu(mode):
+        collections_menu = [
+            ("Search Collections", "search", "search.png"),
+            ("Popular Collections", "popular", "tmdb.png"),
+            ("Top Rated Collections", "top_rated", "tmdb.png"),
+        ]
+
+        for label, submode, icon_path in collections_menu:
+            list_item = ListItem(label=label)
+            add_kodi_dir_item(
+                list_item=list_item,
+                url=build_url(
+                    "handle_collection_query",
+                    mode=mode,
+                    submode=submode,
+                    page=1,
+                ),
+                is_folder=True,
+                icon_path=icon_path,
+            )
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def handle_collection_query(params):
+        mode = params.get("mode")
+        submode = params.get("submode")
+        page = int(params.get("page", 1))
+
+        set_content_type(mode)
+
+        if submode == "popular":
+            TmdbCollections.get_popular_collections(mode, page)
+        elif submode == "top_rated":
+            TmdbCollections.get_top_rated_collections(mode, page)
+        elif submode == "search":
+            TmdbCollections.search_collections(mode, page)
+        else:
+            notification("Invalid collection query")
+
+    @staticmethod
     def show_keywords_items(query, page, mode):
         keywords_data = Search().keywords(query, page=page)
         if not keywords_data or len(keywords_data) == 0:
@@ -609,6 +799,167 @@ class TmdbClient(BaseTmdbClient):
                 page=page,
             )
         endOfDirectory(ADDON_HANDLE)
+
+
+class TmdbCollections(BaseTmdbClient):
+    PAGE_SIZE = 10
+
+    @staticmethod
+    def add_collection_details(params):
+        collection = tmdb_get("collection_details", params.get("collection_id"))
+        if not collection:
+            notification("Collection details not found.")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        parts = collection.get("parts", [])
+        for movie in parts:
+            movie_item = ListItem(label=movie.get("title", "Untitled"))
+            set_media_infoTag(movie_item, metadata=movie, mode="movie")
+
+            tmdb_id = movie.get("id")
+            imdb_id = ""
+            details = get_tmdb_movie_details(tmdb_id)
+            if details:
+                imdb_id = getattr(details, "external_ids").get("imdb_id", "")
+
+            add_kodi_dir_item(
+                list_item=movie_item,
+                url=build_url(
+                    "search",
+                    mode="movies",
+                    media_type="movies",
+                    query=movie.get("title", "Untitled"),
+                    ids={"tmdb_id": tmdb_id, "imdb_id": imdb_id},
+                ),
+                is_folder=False,
+            )
+
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def _add_collection_item(collection):
+        collection_id = collection.get("id")
+        images_data = tmdb_get("collection_images", collection_id)
+        if images_data:
+            posters = images_data.get("posters") or []
+            if posters:
+                file_path = posters[0].get("file_path")
+                collection["poster_path"] = file_path
+
+        list_item = ListItem(label=collection.get("name"))
+        set_media_infoTag(list_item, metadata=collection, mode="movies")
+        add_kodi_dir_item(
+            list_item=list_item,
+            url=build_url("handle_collection_details", collection_id=collection_id),
+            is_folder=True,
+        )
+
+    @staticmethod
+    def fetch_and_add_collection(collection_data):
+        collection_id = collection_data["id"]
+        collection_details = tmdb_get("collection_details", collection_id)
+        kodilog(f"Fetching collection details for ID: {collection_details}")
+        if collection_details:
+            TmdbCollections._add_collection_item(collection_details)
+
+    @staticmethod
+    def get_popular_collections(mode, page):
+        kodilog(f"Displaying popular collections, page: {page}")
+
+        start_index = (page - 1) * TmdbCollections.PAGE_SIZE
+        end_index = start_index + TmdbCollections.PAGE_SIZE
+
+        current_page_collections = POPULAR_COLLECTIONS[start_index:end_index]
+
+        if not current_page_collections:
+            notification("No more popular collections to display.")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        execute_thread_pool(
+            current_page_collections, TmdbCollections.fetch_and_add_collection
+        )
+
+        # Add "Next" button
+        if end_index < len(POPULAR_COLLECTIONS):
+            add_next_button(
+                "handle_collection_query", submode="popular", page=page + 1, mode=mode
+            )
+
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def get_top_rated_collections(mode, page):
+        kodilog(f"Fetching top rated collections for mode: {mode}, page: {page}")
+
+        start_index = (page - 1) * TmdbCollections.PAGE_SIZE
+        end_index = start_index + TmdbCollections.PAGE_SIZE
+
+        current_page_collections = TOP_RATED_COLLECTIONS[start_index:end_index]
+
+        if not current_page_collections:
+            notification("No more collections to display.")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        execute_thread_pool(
+            current_page_collections, TmdbCollections.fetch_and_add_collection
+        )
+
+        # Add "Next" button
+        if end_index < len(TOP_RATED_COLLECTIONS):
+            add_next_button(
+                "handle_collection_query", submode="top_rated", page=page + 1, mode=mode
+            )
+
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def search_collections(mode, page):
+        query = (
+            show_keyboard(id=90068)
+            if page == 1
+            else pickle_db.get_key("collection_search_query")
+        )
+        if not query:
+            return
+
+        if page == 1:
+            pickle_db.set_key("collection_search_query", query)
+
+        results = tmdb_get("search_collections", params={"query": query, "page": page})
+        if not results or getattr(results, "total_results", 0) == 0:
+            notification("No results found for your search.")
+            endOfDirectory(ADDON_HANDLE)
+            return
+
+        execute_thread_pool(
+            getattr(results, "results"), TmdbCollections._add_collection_item
+        )
+
+        add_next_button(
+            "handle_collection_query",
+            submode="search",
+            query=query,
+            page=page + 1,
+            mode=mode,
+        )
+        endOfDirectory(ADDON_HANDLE)
+        set_view("widelist")
+
+    @staticmethod
+    def _extract_collection_id(movie, collection_ids_set):
+        """
+        Helper function to extract collection ID from movie details.
+        Designed to be used with execute_thread_pool.
+        """
+        movie_details = get_tmdb_movie_details(getattr(movie, "id"))
+        if movie_details and getattr(movie_details, "belongs_to_collection"):
+            collection_ids_set.add(movie_details.get("belongs_to_collection").get("id"))
 
 
 class TmdbAnimeClient(BaseTmdbClient):
