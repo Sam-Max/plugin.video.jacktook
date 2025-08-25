@@ -19,6 +19,9 @@ import xbmc
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     selected_addons = get_selected_catalogs_addons()
     if not selected_addons:
+        if menu_type == "tv":
+            notification("No TV catalogs addons selected")
+            return
         return
 
     for addon in selected_addons:
