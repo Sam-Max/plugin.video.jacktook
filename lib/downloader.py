@@ -5,6 +5,7 @@ import threading
 import re
 from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl
+from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     action_url_run,
@@ -15,14 +16,13 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     notification,
     open_file,
+    translation,
 )
 from lib.db.cached import MemoryCache
 from lib.gui.custom_progress import CustomProgressDialog
 
 from xbmcplugin import (
     addDirectoryItems,
-    setContent,
-    setPluginCategory,
     endOfDirectory,
 )
 import xbmcgui
@@ -215,6 +215,7 @@ def handle_delete_file(params):
 
 
 def downloads_viewer(params):
+    set_pluging_category(translation(90015))
     translated_path = translatePath(get_setting("download_dir"))
     item_list = []
 
@@ -265,8 +266,6 @@ def downloads_viewer(params):
             item_list.append((item_path, list_item, is_folder))
 
         addDirectoryItems(ADDON_HANDLE, item_list)
-        setContent(ADDON_HANDLE, "")
-        setPluginCategory(ADDON_HANDLE, params.get("name", "Downloads"))
         endOfDirectory(ADDON_HANDLE)
     except Exception as e:
         notification(f"Error: {str(e)}", "Downloads Viewer")

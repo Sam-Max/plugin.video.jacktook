@@ -1456,7 +1456,7 @@ msgid "Support Jacktook"
 msgstr ""
 
 msgctxt "#90024"
-msgid "Trending"
+msgid "Trending Recent"
 msgstr ""
 
 msgctxt "#90025"
@@ -1528,7 +1528,7 @@ msgid "Genres"
 msgstr ""
 
 msgctxt "#90042"
-msgid "Trending"
+msgid "Top Rated"
 msgstr ""
 
 msgctxt "#90043"
@@ -1635,4 +1635,20 @@ msgstr ""
 
 msgctxt "#90068"
 msgid "Search for collections:"
+msgstr ""
+
+msgctxt "#90069"
+msgid "Main Menu"
+msgstr ""
+
+msgctxt "#90070"
+msgid "Last Titles"
+msgstr ""
+
+msgctxt "#90071"
+msgid "Last Files"
+msgstr ""
+
+msgctxt "#90072"
+msgid "Trakt Lists"
 msgstr ""

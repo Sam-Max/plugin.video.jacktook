@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from lib.api.fanart.fanart import FanartTv
 from lib.clients.aisubtrans.utils import get_language_code
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
-from lib.api.trakt.trakt import TraktAPI
 from lib.clients.base import TorrentStream
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
@@ -35,7 +34,7 @@ from lib.vendor.torf._magnet import Magnet
 
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
-from xbmcplugin import addDirectoryItem, setContent
+from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
 from xbmc import getSupportedMedia
 import xbmc
 
@@ -429,7 +428,7 @@ def extract_genres(genres, media_type="movies"):
 
     genre_response = tmdb_get(path=path)
     if not genre_response or "genres" not in genre_response:
-        kodilog(f"Failed to fetch genres for {media_type}")
+        kodilog(f"Failed to fetch genres for {media_type}", level=xbmc.LOGDEBUG)
         return genre_list
 
     genre_mapping = {g["id"]: g["name"] for g in genre_response.get("genres", [])}
@@ -541,8 +540,6 @@ def set_listitem_artwork(list_item, metadata, fanart_details={}):
         or tmdb_url(still_path, "w1280")
         or fanart_details.get("fanart", "")
     )
-
-    kodilog(f"Setting artwork: thumb={thumb}, poster={poster}, fanart={fanart}")
 
     list_item.setArt(
         {
@@ -698,6 +695,10 @@ def tvdb_get(path, params={}):
     return data
 
 
+def set_pluging_category(heading: str):
+    setPluginCategory(ADDON_HANDLE, heading)
+
+
 def set_content_type(mode, media_type="movies"):
     if mode in ("tv", "anime") or media_type == "tv":
         setContent(ADDON_HANDLE, SHOWS_TYPE)
@@ -763,8 +764,6 @@ def clear_cache_on_update():
 
 def clear_all_cache():
     cache.clean_all()
-    TraktAPI().cache.clear_cache(cache_type="trakt")
-    TraktAPI().cache.clear_cache(cache_type="list")
 
 
 def clear(type="all", update=False):

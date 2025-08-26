@@ -17,7 +17,6 @@ from lib.clients.tmdb.utils import (
     add_kodi_dir_item,
     add_tmdb_movie_context_menu,
     add_tmdb_show_context_menu,
-    filter_anime_by_keyword,
     get_tmdb_movie_details,
     get_tmdb_show_details,
     tmdb_get,
@@ -34,6 +33,7 @@ from lib.utils.general.utils import (
     execute_thread_pool,
     set_content_type,
     set_media_infoTag,
+    set_pluging_category,
     translate_weekday,
 )
 
@@ -47,6 +47,7 @@ from lib.utils.kodi.utils import (
     set_view,
     show_keyboard,
     notification,
+    translation,
 )
 
 from lib.utils.views.weekly_calendar import is_this_week, parse_date_str
@@ -103,8 +104,10 @@ class BaseTmdbClient:
 class TmdbClient(BaseTmdbClient):
     @staticmethod
     def handle_tmdb_search(params):
+        set_pluging_category(translation(90006))
         mode = params.get("mode")
         set_content_type(mode)
+
         page = int(params.get("page", 1))
 
         query = (
@@ -235,6 +238,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def tmdb_search_year(mode, submode, year, page):
+        set_pluging_category(str(year))
         path_map = {
             "movies": "discover_movie",
             "tv": "discover_tv",
@@ -341,6 +345,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_years_items(mode, page, submode=None):
+        set_pluging_category(translation(90027))
         current_year = datetime.now().year
         for year in range(current_year, 1899, -1):
             list_item = ListItem(label=str(year))
@@ -361,6 +366,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_trending_shows(query, mode, page):
+        set_pluging_category(translation(90028))
         set_content_type(mode)
         data = tmdb_get("trending_tv", page)
         if not data or getattr(data, "total_results", 0) == 0:
@@ -374,6 +380,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_trending_movies(mode, page):
+        set_pluging_category(translation(90028))
         set_content_type(mode)
         data = tmdb_get("trending_movie", page)
         if not data or getattr(data, "total_results", 0) == 0:
@@ -389,6 +396,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_popular_items(mode, page):
+        set_pluging_category(translation(90037))
         set_content_type(mode)
         path = "popular_shows" if mode == "tv" else "popular_movie"
         data = tmdb_get(path, page)
@@ -403,6 +411,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_languages(mode, page):
+        set_pluging_category(translation(90065))
         for lang in FULL_NAME_LANGUAGES:
             list_item = ListItem(label=lang["name"])
             list_item.setArt(
@@ -423,9 +432,11 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_lang_items(params):
+        lang = params.get("lang")
+        set_pluging_category(lang)
+
         mode = params.get("mode")
         set_content_type(mode)
-        lang = params.get("lang")
         page = int(params.get("page", 1))
 
         route_map = {
@@ -459,6 +470,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_networks(mode, page):
+        set_pluging_category(translation(90066))
         for network in NETWORKS:
             list_item = ListItem(label=network["name"])
             list_item.setArt(
@@ -481,9 +493,15 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_network_items(params):
+        network_id = int(params.get("id"))
+        network_name = next(
+            (net["name"] for net in NETWORKS if net["id"] == network_id), ""
+        )
+        set_pluging_category(network_name)
+
         mode = params.get("mode")
         set_content_type(mode)
-        network_id = params.get("id")
+
         page = int(params.get("page", 1))
 
         route_map = {
@@ -521,6 +539,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_genres_items(mode, page, submode=None):
+        set_pluging_category(translation(90025))
         path = (
             "show_genres"
             if mode == "tv" or (mode == "anime" and submode == "tv")
@@ -554,6 +573,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_calendar_items(query, page, mode):
+        set_pluging_category(translation(90021))
         trending_data = tmdb_get("tv_week", page)
         if not trending_data or getattr(trending_data, "total_results") == 0:
             notification("No TV shows found")
@@ -654,6 +674,7 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_collections_menu(mode):
+        set_pluging_category(translation(90067))
         collections_menu = [
             ("Search Collections", "search", "search.png"),
             ("Popular Collections", "popular", "tmdb.png"),
@@ -866,6 +887,7 @@ class TmdbCollections(BaseTmdbClient):
 
     @staticmethod
     def get_popular_collections(mode, page):
+        set_pluging_category(translation(90064))
         kodilog(f"Displaying popular collections, page: {page}")
 
         start_index = (page - 1) * TmdbCollections.PAGE_SIZE
@@ -893,6 +915,7 @@ class TmdbCollections(BaseTmdbClient):
 
     @staticmethod
     def get_top_rated_collections(mode, page):
+        set_pluging_category(translation(90042))
         kodilog(f"Fetching top rated collections for mode: {mode}, page: {page}")
 
         start_index = (page - 1) * TmdbCollections.PAGE_SIZE
@@ -966,27 +989,42 @@ class TmdbAnimeClient(BaseTmdbClient):
     @staticmethod
     def handle_tmdb_anime_query(category, mode, submode, page):
         tmdb_anime = TmdbAnime()
-        data = None
+        set_content_type(mode)
 
-        if category == Anime.SEARCH:
-            query = TmdbAnimeClient.handle_anime_search_query(page)
-            if query is None:
-                return
-            data = tmdb_anime.anime_search(query, submode, page)
-            data = filter_anime_by_keyword(data, submode)
-        elif category in (Anime.AIRING, Anime.POPULAR, Anime.POPULAR_RECENT):
-            data = TmdbAnimeClient.handle_anime_category_query(
+        handlers = {
+            Anime.SEARCH: lambda: tmdb_anime.anime_search(
+                TmdbAnimeClient.handle_anime_search_query(page), submode, page
+            ),
+            Anime.AIRING: lambda: TmdbAnimeClient.handle_anime_category_query(
                 tmdb_anime, category, submode, page
-            )
-        elif category in (Anime.YEARS, Anime.GENRES):
-            TmdbAnimeClient.handle_anime_years_or_genres(category, mode, page, submode)
-        elif category in (Animation().POPULAR, Cartoons.POPULAR):
-            data = TmdbAnimeClient.handle_animation_or_cartoons_query(
+            ),
+            Anime.POPULAR: lambda: TmdbAnimeClient.handle_anime_category_query(
                 tmdb_anime, category, submode, page
-            )
+            ),
+            Anime.POPULAR_RECENT: lambda: TmdbAnimeClient.handle_anime_category_query(
+                tmdb_anime, category, submode, page
+            ),
+            Anime.YEARS: lambda: TmdbAnimeClient.handle_anime_years_or_genres(
+                category, mode, page, submode
+            ),
+            Anime.GENRES: lambda: TmdbAnimeClient.handle_anime_years_or_genres(
+                category, mode, page, submode
+            ),
+            Animation().POPULAR: lambda: TmdbAnimeClient.handle_animation_or_cartoons_query(
+                tmdb_anime, category, submode, page
+            ),
+            Cartoons.POPULAR: lambda: TmdbAnimeClient.handle_animation_or_cartoons_query(
+                tmdb_anime, category, submode, page
+            ),
+        }
 
-        if data:
-            TmdbAnimeClient.process_anime_results(data, submode, page, mode, category)
+        handler = handlers.get(category)
+        if handler:
+            data = handler()
+            if data:
+                TmdbAnimeClient.process_anime_results(
+                    data, submode, page, mode, category
+                )
 
     @staticmethod
     def handle_anime_search_query(page):
@@ -1001,10 +1039,13 @@ class TmdbAnimeClient(BaseTmdbClient):
     @staticmethod
     def handle_anime_category_query(tmdb_anime, category, submode, page):
         if category == Anime.AIRING:
+            set_pluging_category(translation(90039))
             return tmdb_anime.anime_on_the_air(submode, page)
         elif category == Anime.POPULAR:
+            set_pluging_category(translation(90064))
             return tmdb_anime.anime_popular(submode, page)
         elif category == Anime.POPULAR_RECENT:
+            set_pluging_category(translation(90038))
             return tmdb_anime.anime_popular_recent(submode, page)
 
     @staticmethod

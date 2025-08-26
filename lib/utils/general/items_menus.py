@@ -3,7 +3,7 @@ from lib.utils.kodi.utils import translation
 
 tv_items = [
     {
-        "name": translation(90024),
+        "name": translation(90028),
         "mode": "tv",
         "api": "tmdb",
         "query": "tmdb_trending",
@@ -112,7 +112,7 @@ tv_items = [
 
 movie_items = [
     {
-        "name": translation(90024),
+        "name": translation(90028),
         "mode": "movies",
         "api": "tmdb",
         "query": "tmdb_trending",
@@ -256,7 +256,7 @@ anime_items = [
         "icon": "tmdb.png",
     },
     {
-        "name": translation(90042),
+        "name": translation(90028),
         "mode": "anime",
         "category": "Anime_Trending",
         "api": "trakt",

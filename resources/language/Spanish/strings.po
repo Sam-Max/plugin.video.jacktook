@@ -1440,8 +1440,8 @@ msgid "Support Jacktook"
 msgstr "Apoya a Jacktook"
 
 msgctxt "#90024"
-msgid "Trending"
-msgstr "Tendencias"
+msgid "Trending Recent"
+msgstr "Tendencia Reciente"
 
 msgctxt "#90025"
 msgid "Genres"
@@ -1512,8 +1512,8 @@ msgid "Genres"
 msgstr "Géneros"
 
 msgctxt "#90042"
-msgid "Trending"
-msgstr "Tendencia"
+msgid "Top Rated"
+msgstr "Top Rated"
 
 msgctxt "#90043"
 msgid "Most Watched"
@@ -1620,3 +1620,19 @@ msgstr "Colecciones"
 msgctxt "#90068"
 msgid "Search for collections:"
 msgstr "Buscar colecciones"
+
+msgctxt "#90069"
+msgid "Main Menu"
+msgstr "Menu Principal"
+
+msgctxt "#90070"
+msgid "Last Titles"
+msgstr "Ultimos Titulos"
+
+msgctxt "#90071"
+msgid "Last Files"
+msgstr "Ultimos Videos"
+
+msgctxt "#90072"
+msgid "Trakt Lists"
+msgstr "Listas de Trakt"

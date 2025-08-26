@@ -4,20 +4,21 @@ import re
 from lib.clients.tmdb.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, translation
 from lib.utils.general.utils import (
     execute_thread_pool,
     set_media_infoTag,
+    set_pluging_category,
     translate_weekday,
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory, setPluginCategory
+from xbmcplugin import addDirectoryItem, endOfDirectory
 
 
 
 def show_weekly_calendar():
-    setPluginCategory(ADDON_HANDLE, "Weekly TV Calendar")
+    set_pluging_category(translation(90021))
 
     tv_shows = [
         (title, data)

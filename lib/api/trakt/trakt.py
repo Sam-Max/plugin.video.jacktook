@@ -3,6 +3,7 @@ import random
 import time
 from typing import Any, Dict
 import requests
+from lib.utils.general.utils import set_pluging_category
 import xbmc
 
 from lib.api.trakt.lists_cache import lists_cache
@@ -21,6 +22,7 @@ from lib.utils.kodi.utils import (
     set_setting,
     sleep,
     progressDialog,
+    translation,
 )
 from lib.utils.kodi.settings import (
     EMPTY_USER,
@@ -353,6 +355,7 @@ class TraktAuthentication(TraktBase):
 
 class TraktMovies(TraktBase):
     def trakt_movies_trending(self, page_no):
+        set_pluging_category(translation(90028))
         string = "trakt_movies_trending_%s" % page_no
         params = {
             "path": "movies/trending/%s",
@@ -362,6 +365,7 @@ class TraktMovies(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_trending_recent(self, page_no):
+        set_pluging_category(translation(90024))
         current_year = get_datetime().year
         years = "%s-%s" % (str(current_year - 1), str(current_year))
         string = "trakt_movies_trending_recent_%s" % page_no
@@ -373,11 +377,13 @@ class TraktMovies(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_top10_boxoffice(self):
+        set_pluging_category(translation(90036))
         string = "trakt_movies_top10_boxoffice"
         params = {"path": "movies/boxoffice/%s", "pagination": False}
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_most_watched(self, page_no):
+        set_pluging_category(translation(90029))
         string = "trakt_movies_most_watched_%s" % page_no
         params = {
             "path": "movies/watched/daily/%s",
@@ -387,6 +393,7 @@ class TraktMovies(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_most_favorited(self, page_no):
+        set_pluging_category(translation(90030))
         string = "trakt_movies_most_favorited%s" % page_no
         params = {
             "path": "movies/favorited/daily/%s",
@@ -396,6 +403,7 @@ class TraktMovies(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_recommendations(self, media_type):
+        set_pluging_category(translation(90033))
         string = "trakt_recommendations_%s" % (media_type)
         params = {
             "path": "/recommendations/%s",
@@ -413,6 +421,7 @@ class TraktMovies(TraktBase):
 
 class TraktTV(TraktBase):
     def trakt_tv_trending(self, page_no):
+        set_pluging_category(translation(90028))
         string = "trakt_tv_trending_%s" % page_no
         params = {
             "path": "shows/trending/%s",
@@ -422,6 +431,7 @@ class TraktTV(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_tv_trending_recent(self, page_no):
+        set_pluging_category(translation(90024))
         current_year = get_datetime().year
         years = "%s-%s" % (str(current_year - 1), str(current_year))
         string = "trakt_tv_trending_recent_%s" % page_no
@@ -433,6 +443,7 @@ class TraktTV(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_tv_most_watched(self, page_no):
+        set_pluging_category(translation(90029))
         string = "trakt_tv_most_watched_%s" % page_no
         params = {
             "path": "shows/watched/daily/%s",
@@ -442,6 +453,7 @@ class TraktTV(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_tv_most_favorited(self, page_no):
+        set_pluging_category(translation(90030))
         string = "trakt_tv_most_favorited_%s" % page_no
         params = {
             "path": "shows/favorited/daily/%s",
@@ -451,6 +463,7 @@ class TraktTV(TraktBase):
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_recommendations(self, media_type):
+        set_pluging_category(translation(90033))
         string = "trakt_recommendations_%s" % (media_type)
         params = {
             "path": "/recommendations/%s",
@@ -773,6 +786,7 @@ class TraktLists(TraktBase):
         return cache_trakt_object(_process, string, params)
 
     def trakt_trending_popular_lists(self, list_type, page_no):
+        set_pluging_category(translation(90072))
         string = "trakt_%s_user_lists_%s" % (list_type, page_no)
         params = {
             "path": "lists/%s",
@@ -899,7 +913,6 @@ class TraktCache(TraktBase):
             success = lists_cache.delete_all_lists()
         if success:
             return success
-
 
 class TraktAPI:
     def __init__(self):

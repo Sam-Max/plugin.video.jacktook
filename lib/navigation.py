@@ -89,6 +89,7 @@ from lib.utils.general.utils import (
     post_process,
     pre_process,
     set_content_type,
+    set_pluging_category,
     set_watched_title,
     ssl_enabled,
 )
@@ -106,7 +107,6 @@ from xbmcplugin import (
     addDirectoryItem,
     endOfDirectory,
     setResolvedUrl,
-    setPluginCategory,
     setContent,
 )
 import xbmc
@@ -132,7 +132,7 @@ except ValueError:
 
 
 def root_menu():
-    setPluginCategory(ADDON_HANDLE, "Main Menu")
+    set_pluging_category(translation(90069))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("handle_tmdb_search", mode="multi", page=1),
@@ -283,6 +283,7 @@ def animation_item(params):
 
 
 def telegram_menu(params):
+    set_pluging_category(translation(90013))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("search_direct", mode="direct"),
@@ -327,6 +328,7 @@ def search_tmdb_genres(params):
 
 
 def tv_shows_items(params):
+    set_pluging_category(translation(90007))
     for item in tv_items:
         addDirectoryItem(
             ADDON_HANDLE,
@@ -341,6 +343,7 @@ def tv_shows_items(params):
 
 
 def movies_items(params):
+    set_pluging_category(translation(90008))
     for item in movie_items:
         addDirectoryItem(
             ADDON_HANDLE,
@@ -359,6 +362,7 @@ def direct_menu(params):
 
 
 def anime_menu(params):
+    set_pluging_category(translation(90009))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_item", mode="tv"),
@@ -375,6 +379,7 @@ def anime_menu(params):
 
 
 def history_menu(params):
+    set_pluging_category(translation(90017))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("files_history"),
@@ -397,7 +402,9 @@ def history_menu(params):
 
 
 def anime_item(params):
+    set_pluging_category(translation(90009))
     mode = params.get("mode")
+    
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_search", mode=mode, category="Anime_Search"),
@@ -440,11 +447,13 @@ def anime_item(params):
 
 
 def tv_menu(params):
+    set_pluging_category(translation(90010))
     list_stremio_catalogs(menu_type="tv")
     endOfDirectory(ADDON_HANDLE)
 
 
 def search_direct(params):
+    set_pluging_category(translation(90011))
     mode = params.get("mode")
     query = params.get("query", "")
     is_clear = params.get("is_clear", False)
@@ -751,6 +760,7 @@ def cloud_details(params):
 
 
 def cloud(params):
+    set_pluging_category(translation(90014))
     activated_debrids = [
         debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)
     ]

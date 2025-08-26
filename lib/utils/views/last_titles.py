@@ -4,15 +4,17 @@ import os
 from lib.clients.tmdb.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.general.utils import set_media_infoTag
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, container_refresh
+from lib.utils.general.utils import set_media_infoTag, set_pluging_category
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    build_url,
+    container_refresh,
+    translation,
+)
 
 from xbmcgui import ListItem
-from xbmcplugin import (
-    addDirectoryItem,
-    endOfDirectory,
-    setPluginCategory,
-)
+from xbmcplugin import addDirectoryItem, endOfDirectory
 
 
 pickle_db = PickleDatabase()
@@ -24,7 +26,7 @@ def delete_last_title_entry(params):
 
 
 def show_last_titles():
-    setPluginCategory(ADDON_HANDLE, f"Last Titles - History")
+    set_pluging_category(translation(90070))
 
     list_item = ListItem(label="Clear Titles")
     list_item.setArt(
