@@ -1,3 +1,24 @@
+## 0.12.0 
+- Added TMDB collections, languages, networks, and popular filters. 
+- Added QR code dialog to simplify authentication for debrid services
+- Updated Stremio community addons URL to stable version (https://stremio-addons.net/).
+- Added notification messages to users when no stremio addons or catalogs are selected.
+- Added plugin categories for clearer window identification
+- Other minor improvements and fixes.
+
+Spanish:
+- Se añadieron colecciones, idiomas, cadenas de televisión y filtros populares de TMDB.
+- Se añadió un diálogo de código QR para simplificar la autenticación de los servicios de debrid.
+- Se actualizó la URL de los addons de la comunidad de Stremio a la version estable (https://stremio-addons.net/).
+- Se añadieron mensajes de notificación a los usuarios cuando no se seleccionan addons o catálogos de Stremio.
+- Se añadieron categorías para una identificación más clara de las ventanas.
+- Otras mejoras y correcciones menores.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.11.0 
 - Added support for Debrider (https://debrider.app/)
 - Other minor improvements and fixes.
