@@ -1432,8 +1432,8 @@ msgid "TV Calendar"
 msgstr "Calendario de TV"
 
 msgctxt "#90022"
-msgid "If you enjoy using Jacktook and appreciate the time and effort I put into developing this addon, consider supporting me with a contribution at:"
-msgstr "Si disfrutas usando Jacktook y valoras el tiempo y esfuerzo que dedico al desarrollo de este addon, considera apoyarme con una contribución en:"
+msgid "If you enjoy using Jacktook and appreciate the time and effort that goes into developing this addon, please consider supporting me with a contribution:"
+msgstr "Si disfrutas usando Jacktook y valoras el tiempo y esfuerzo que se dedica al desarrollo de este addon, considera apoyarme con una contribución en:"
 
 msgctxt "#90023"
 msgid "Support Jacktook"
