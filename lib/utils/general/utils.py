@@ -10,6 +10,8 @@ from datetime import datetime, timedelta
 
 from lib.api.fanart.fanart import FanartTv
 from lib.clients.aisubtrans.utils import get_language_code
+from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.clients.base import TorrentStream
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
@@ -23,9 +25,14 @@ from lib.utils.kodi.utils import (
     TITLES_TYPE,
     build_url,
     container_refresh,
+    copy2clip,
+    dialog_text,
     get_jacktorr_setting,
     get_setting,
     kodilog,
+    notification,
+    sleep,
+    translatePath,
     translation,
 )
 
@@ -1016,6 +1023,70 @@ def get_public_ip():
             kodilog(f"Error getting public IP from {url}: {e}")
 
     return None
+
+
+def export_to_kodi_paste(log_content):
+    try:
+        response = requests.post(
+            "https://paste.kodi.tv/documents",
+            data=log_content,
+            headers=USER_AGENT_HEADER,
+        )
+        kodilog(f"Paste.kodi.tv response: {response.status_code} - {response.text}")
+        if response.status_code == 200 and response.text:
+            paste_id = response.json().get("key", {})
+            if paste_id:
+                return f"https://paste.kodi.tv/{paste_id}"
+        return None
+    except Exception as e:
+        kodilog(f"Error exporting logs to paste.kodi.tv: {e}")
+        return None
+
+
+def show_log_export_dialog(params):
+    log_file = params.get("log_file")
+    kodi_log_path = os.path.join(translatePath("special://logpath"), log_file)
+    if os.path.exists(kodi_log_path):
+        try:
+            with open(kodi_log_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            content = "".join(lines[::-1])
+            # Ask user if they want to export
+            from xbmcgui import Dialog
+
+            dialog = Dialog()
+            choice = dialog.select(
+                "Kodi Logs", ["Show Logs", "Export to paste.kodi.tv"]
+            )
+            if choice == 1:
+                paste_url = export_to_kodi_paste(content)
+                qr_code = make_qrcode(paste_url)
+                copy2clip(paste_url)
+                progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+                progressDialog.setup(
+                    "Kodi Logs Exported",
+                    qr_code,
+                    paste_url,
+                    is_debrid=False,
+                )
+                if paste_url:
+                    count = 20
+                    progressDialog.show_dialog()
+                    while not progressDialog.iscanceled and count >= 0:
+                        try:
+                            count -= 1
+                            progressDialog.update_progress(count)
+                        except:
+                            pass
+                        sleep(1000 * count)
+                else:
+                    notification("Failed to export logs.")
+            else:
+                dialog_text("Kodi Logs", content)
+        except Exception as e:
+            notification(f"Error reading log: {e}")
+    else:
+        notification("Kodi log file not found.")
 
 
 def extract_publish_date(date):

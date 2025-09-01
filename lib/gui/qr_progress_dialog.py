@@ -1,4 +1,3 @@
-from lib.utils.general.utils import DebridType, IndexerType
 import xbmcgui
 
 
@@ -15,14 +14,16 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
         self.iscanceled = False
         self.qr_image_path = ""
 
-    def setup(self, title, qr_code, auth_url, user_code, debrid_type):
-        """Set all custom data after initialization."""
+    def setup(self, title, qr_code, url, user_code="", debrid_type="", is_debrid=True):
         self.title = title
         self.qr_image_path = qr_code
-        if debrid_type == DebridType.RD:
-            self.message = f"Navigate to: https://real-debrid.com/device\n\nEnter the following code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+        if is_debrid:
+            if debrid_type == "RealDebrid":
+                self.message = f"Navigate to: https://real-debrid.com/device\n\nEnter the following code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+            else:
+                self.message = f"Go to:\n[COLOR cyan]{url}[/COLOR]\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
         else:
-            self.message = f"Go to:\n[COLOR cyan]{auth_url}[/COLOR]\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+            self.message = f"Pastebin Link:\n[COLOR cyan]{url}[/COLOR]"
 
     def show_dialog(self):
         self.show()

@@ -57,7 +57,6 @@ from lib.utils.kodi.utils import (
     play_media,
     set_view,
     show_keyboard,
-    translatePath,
     translation,
 )
 from lib.utils.player.utils import resolve_playback_source
@@ -91,6 +90,7 @@ from lib.utils.general.utils import (
     set_content_type,
     set_pluging_category,
     set_watched_title,
+    show_log_export_dialog,
     ssl_enabled,
 )
 from lib.utils.general.items_menus import (
@@ -404,7 +404,7 @@ def history_menu(params):
 def anime_item(params):
     set_pluging_category(translation(90009))
     mode = params.get("mode")
-    
+
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("anime_search", mode=mode, category="Anime_Search"),
@@ -1027,13 +1027,7 @@ def clear_history(params):
 
 
 def kodi_logs(params):
-    log_file = params.get("log_file")
-    kodi_log_path = os.path.join(translatePath("special://logpath"), log_file)
-    if os.path.exists(kodi_log_path):
-        kodi_log_content = open(kodi_log_path, "r", encoding="utf-8").read()
-        dialog_text("Kodi Logs", kodi_log_content)
-    else:
-        notification("Kodi log file not found.")
+    Thread(target=show_log_export_dialog, args=(params,)).start()
 
 
 def files_history(params):
