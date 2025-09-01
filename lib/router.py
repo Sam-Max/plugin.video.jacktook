@@ -5,6 +5,12 @@ from lib.clients.jackgram.utils import (
     list_telegram_latest,
     list_telegram_latest_files,
 )
+from lib.clients.mdblist.mdblist import (
+    search_mdbd_lists,
+    show_mdblist_list,
+    top_mdbd_lists,
+    user_mdbd_lists,
+)
 from lib.clients.tmdb.tmdb import TmdbClient, TmdbCollections
 from lib.clients.trakt.trakt import TraktClient
 from lib.downloader import (
@@ -122,6 +128,10 @@ def addon_router():
         "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
         "search_tmdb_similar": TmdbClient.search_tmdb_similar,
         "search_direct": search_direct,
+        "search_mdbd_lists": search_mdbd_lists,
+        "user_mdbd_lists": user_mdbd_lists,
+        "top_mdbd_lists": top_mdbd_lists,
+        "show_mdblist_list": show_mdblist_list,
         "handle_collection_query": TmdbClient.handle_collection_query,
         "handle_collection_details": TmdbCollections.add_collection_details,
         "handle_download_file": handle_download_file,

@@ -11,6 +11,7 @@ from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.trakt.trakt import TraktClient
 
+from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.debrid.premiumize import Premiumize
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.api.debrid.torbox import Torbox
@@ -932,6 +933,45 @@ def search_item(params):
             )
     elif api == "tmdb":
         TmdbClient.handle_tmdb_query(params)
+    elif api == "mdblist":
+        mdblist_menu(mode)
+    else:
+        notification("Unsupported API")
+
+
+def mdblist_menu(mode):
+    set_pluging_category("MDblist")
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "search_mdbd_lists",
+            mode=mode,
+            page=1,
+        ),
+        build_list_item("Search Lists", "search.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "top_mdbd_lists",
+            mode=mode,
+            page=1,
+        ),
+        build_list_item("Top Lists", "mdblist.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "user_mdbd_lists",
+            mode=mode,
+            page=1,
+        ),
+        build_list_item("User Lists", "mdblist.png"),
+        isFolder=True,
+    )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def trakt_list_content(params):

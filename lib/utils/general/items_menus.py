@@ -52,6 +52,13 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90073),
+        "mode": "tv",
+        "api": "mdblist",
+        "query": "mdblist",
+        "icon": "mdblist.png",
+    },
+    {
         "name": translation(90028),
         "mode": "tv",
         "api": "trakt",
@@ -152,6 +159,13 @@ movie_items = [
         "api": "tmdb",
         "query": "tmdb_collections",
         "icon": "tmdb.png",
+    },
+     {
+        "name": translation(90073),
+        "mode": "movies",
+        "api": "mdblist",
+        "query": "mdblist",
+        "icon": "mdblist.png",
     },
     {
         "name": translation(90028),

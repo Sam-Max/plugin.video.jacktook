@@ -1268,8 +1268,8 @@ msgid "Enable Stremio add-ons integration."
 msgstr "Habilitar la integración de complementos de Stremio."
 
 msgctxt "#30870"
-msgid "Toggle Add-ons"
-msgstr "Alternar complementos"
+msgid "Select Addons"
+msgstr ""
 
 msgctxt "#30871"
 msgid "Log In to Stremio"
@@ -1288,8 +1288,8 @@ msgid "Update Addons"
 msgstr ""
 
 msgctxt "#30875"
-msgid "Toggle Catalogs Add-ons"
-msgstr "Alternar complementos de catalogos"
+msgid "Select Catalogs Addons"
+msgstr ""
 
 msgctxt "#30876"
 msgid "Download directory"
@@ -1651,4 +1651,24 @@ msgstr ""
 
 msgctxt "#90072"
 msgid "Trakt Lists"
+msgstr ""
+
+msgctxt "#90073"
+msgid "MDbList"
+msgstr ""
+
+msgctxt "#90074"
+msgid "Top Lists"
+msgstr ""
+
+msgctxt "#90075"
+msgid "User Lists"
+msgstr ""
+
+msgctxt "#90076"
+msgid "Search Lists"
+msgstr ""
+
+msgctxt "#90077"
+msgid "MDbList Configuration"
 msgstr ""

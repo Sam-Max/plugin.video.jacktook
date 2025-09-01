@@ -3,6 +3,7 @@ import os
 import threading
 from typing import Optional
 
+from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.api.tmdbv3api.objs.collection import Collection
@@ -292,6 +293,44 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         data = handlers.get(path, lambda _: None)(params)
     except Exception as e:
         kodilog(f"Error in tmdb_get for {path} with params {params}: {e}")
+        return None
+
+    if data is not None:
+        cache.set(
+            key=identifier,
+            data=data,
+            expires=timedelta(
+                hours=get_cache_expiration() if is_cache_enabled() else 0
+            ),
+        )
+
+    return data
+
+
+def mdblist_get(path, params=None) -> Optional[AsObj]:
+    identifier = f"{path}|{params}"
+    data = cache.get(key=identifier)
+    if data:
+        return data
+
+    handlers = {
+        "get_user_lists": lambda _: MDblistAPI().get_user_lists(),
+        "get_list_items": lambda p: MDblistAPI().get_list_items(
+            list_id=p.get("list_id"),
+            limit=p.get("limit"),
+            offset=p.get("offset"),
+            append_to_response="genre,poster",
+            unified=True,
+        ),
+        "top_mdbd_lists": lambda _: MDblistAPI().get_top_lists(),
+        "search_lists": lambda p: MDblistAPI().search_lists(p["query"]),
+    }
+
+    try:
+        data = handlers.get(path, lambda _: None)(params)
+        kodilog(f"MDblist data for {path} with params {params}: {data}")
+    except Exception as e:
+        kodilog(f"Error in mdblist_get for {path} with params {params}: {e}")
         return None
 
     if data is not None:

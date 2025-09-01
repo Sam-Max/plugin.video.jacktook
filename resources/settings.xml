@@ -768,6 +768,26 @@
                 </setting>
             </group>
         </category>
+        <category id="mdblist_category" label="90073">
+            <group id="mdblist_group" label="90077">
+                <setting id="mdblist_enabled" type="boolean" label="30786" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="mdblist_api_key" type="string" label="30023" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="mdblist_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
+        </category> 
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">
                 <setting id="tmdb_api_key" type="string" label="30103" help="30858">
