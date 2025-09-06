@@ -25,17 +25,30 @@ def delete_last_title_entry(params):
     container_refresh()
 
 
-def show_last_titles():
+def show_last_titles(params):
+    if params is None:
+        params = {}
+
     set_pluging_category(translation(90070))
 
+    per_page = 20
+    page = int(params.get("page", 1))
+
+    all_items = list(reversed(pickle_db.get_key("jt:lth").items()))
+    total = len(all_items)
+
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = all_items[start:end]
+
+    # Add "Clear Titles" button
     list_item = ListItem(label="Clear Titles")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
     )
-
     addDirectoryItem(ADDON_HANDLE, build_url("clear_history", type="lth"), list_item)
 
-    for title, data in reversed(pickle_db.get_key("jt:lth").items()):
+    for title, data in items:
         formatted_time = data["timestamp"]
         mode = data["mode"]
         ids = data.get("ids")
@@ -49,8 +62,8 @@ def show_last_titles():
             kodilog(f"Failed to get details for {mode} with ID {ids.get('tmdb_id')}")
             continue
 
-        list_item = ListItem(label=f"{title}— {formatted_time}")
-        set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
+        list_item = ListItem(label=f"{title} — {formatted_time}")
+        set_media_infoTag(list_item, metadata=details, mode=mode)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )
@@ -67,11 +80,7 @@ def show_last_titles():
         if mode == "tv":
             addDirectoryItem(
                 ADDON_HANDLE,
-                build_url(
-                    "tv_seasons_details",
-                    ids=ids,
-                    mode=mode,
-                ),
+                build_url("tv_seasons_details", ids=ids, mode=mode),
                 list_item,
                 isFolder=True,
             )
@@ -79,12 +88,7 @@ def show_last_titles():
             list_item.setProperty("IsPlayable", "true")
             addDirectoryItem(
                 ADDON_HANDLE,
-                build_url(
-                    "search",
-                    mode=mode,
-                    query=title,
-                    ids=ids,
-                ),
+                build_url("search", mode=mode, query=title, ids=ids),
                 list_item,
                 isFolder=False,
             )
@@ -92,11 +96,23 @@ def show_last_titles():
             addDirectoryItem(
                 ADDON_HANDLE,
                 build_url(
-                    "list_telegram_latest_files",
-                    data=json.dumps(data.get("tg_data")),
+                    "list_telegram_latest_files", data=json.dumps(data.get("tg_data"))
                 ),
                 list_item,
                 isFolder=True,
             )
+
+    # "Next Page"
+    if end < total:
+        list_item = ListItem(label=f"Next Page")
+        list_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
+        )
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url("titles_history", page=page + 1),
+            list_item,
+            isFolder=True,
+        )
 
     endOfDirectory(ADDON_HANDLE)

@@ -1125,7 +1125,7 @@ def files_history(params):
 
 
 def titles_history(params):
-    show_last_titles()
+    show_last_titles(params)
 
 
 def titles_calendar(params):
