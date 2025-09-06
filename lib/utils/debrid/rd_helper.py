@@ -15,6 +15,7 @@ from lib.utils.general.utils import (
     DebridType,
     IndexerType,
     debrid_dialog_update,
+    filter_debrid_episode,
     get_cached,
     info_hash_to_magnet,
     set_cached,
@@ -120,7 +121,6 @@ class RealDebridHelper:
                 else [str(video_files[0]["id"])]
             )
             if torrents_ids:
-                kodilog(",".join(torrents_ids))
                 self.client.select_files(torrent_info["id"], ",".join(torrents_ids))
 
     def get_link(
@@ -137,18 +137,49 @@ class RealDebridHelper:
             notification("No files available for this torrent.")
             return None
 
-        if len(links) > 1:
+         # --- Single-file torrent ---
+        if len(links) == 1:
+            response = self.client.create_download_link(links[0])
+            download_url = response.get("download")
+            if download_url:
+                data["url"] = download_url
+                return data
+            else:
+                notification("File not cached!")
+                return None
+
+        # --- Multi-file torrent (TV episode or pack) ---
+        if data.get("tv_data"):
+            season = data["tv_data"].get("season", "")
+            episode = data["tv_data"].get("episode", "")
+            matched = filter_debrid_episode(
+                torr_info["files"], episode_num=episode, season_num=season
+            )
+            if not matched:
+                notification("No matching episode found in torrent.")
+                return None
+            
+            file_match = matched[0]
+            file_index = next(
+                (i for i, f in enumerate(torr_info["files"]) if f["id"] == file_match["id"]),
+                None,
+            )
+            if file_index is None:
+                kodilog("Could not map episode to Real-Debrid link.")
+                return None
+
+            response = self.client.create_download_link(links[file_index])
+            download_url = response.get("download")
+            if download_url:
+                data["url"] = download_url
+                return data
+            else:
+                notification("File not cached!")
+                return None
+        else:
             data["is_pack"] = True
             return data
 
-        response = self.client.create_download_link(links[0])
-        download_url = response.get("download")
-        if download_url:
-            data["url"] = download_url
-            return data
-        else:
-            notification("File not cached!")
-            return None
 
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
