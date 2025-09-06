@@ -1,3 +1,4 @@
+import json
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
 from lib.utils.general.utils import (
@@ -13,6 +14,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     show_keyboard,
     notification,
+    translation,
 )
 
 from xbmcgui import ListItem
@@ -39,7 +41,7 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        execute_thread_pool(getattr(data, "results"), self.show_people, mode)
+        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -50,9 +52,40 @@ class PeopleClient(BaseTmdbClient):
         )
         endOfDirectory(ADDON_HANDLE)
 
+    @staticmethod
+    def search_people_by_id(params):
+        set_pluging_category(translation(90078))
+        mode = params.get("mode", "tv")
+        set_content_type(mode)
+
+        ids = json.loads(params.get("ids", "{}"))
+        tmdb_id = ids.get("tmdb_id")
+        if not tmdb_id:
+            notification("No TMDB ID found")
+            return
+
+        if mode == "movies":
+            credits = tmdb_get("movie_credits", params=tmdb_id)
+        else:
+            credits = tmdb_get("tv_credits", params=tmdb_id)
+
+        if not credits:
+            notification("No credits found for this ID")
+            return
+
+        def get_media_credits(person):
+            person_id = person.get("id")
+            if not person_id:
+                return
+            PeopleClient.show_people(person, mode)
+
+        execute_thread_pool(getattr(credits, "cast"), get_media_credits)
+
+        endOfDirectory(ADDON_HANDLE)
+
     def show_popular_people(self, mode, page=1):
         kodilog(f"Fetching popular people, page {page}")
-        set_pluging_category("Popular People")
+        set_pluging_category(translation(90079))
         set_content_type(mode)
 
         data = tmdb_get("popular_people", params=page)
@@ -60,7 +93,7 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        execute_thread_pool(getattr(data, "results"), self.show_people, mode)
+        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -73,7 +106,7 @@ class PeopleClient(BaseTmdbClient):
 
     def show_trending_people(self, mode, page=1):
         kodilog("Fetching trending person")
-        set_pluging_category("Trending People")
+        set_pluging_category(translation(90080))
         set_content_type(mode)
 
         data = tmdb_get("trending_people", params=page)
@@ -81,7 +114,7 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        execute_thread_pool(getattr(data, "results"), self.show_people, mode)
+        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -150,13 +183,12 @@ class PeopleClient(BaseTmdbClient):
         if credit.get("character"):
             label += f" as {credit['character']}"
 
-        url = None
         tmdb_id = credit.get("id")
         details = tmdb_get(f"{media_type}_details", tmdb_id)
         imdb_id = getattr(details, "external_ids").get("imdb_id")
         tvdb_id = getattr(details, "external_ids").get("tvdb_id")
 
-        ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id, "tvdb_id": tvdb_id}
+        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
         list_item = ListItem(label=label)
         set_media_infoTag(list_item, metadata=credit, mode=mode)
@@ -185,7 +217,8 @@ class PeopleClient(BaseTmdbClient):
                 is_folder=True,
             )
 
-    def show_people(self, person, mode):
+    @staticmethod
+    def show_people(person, mode):
         details = tmdb_get("person_details", params=person.get("id"))
         list_item = ListItem(label=person.get("name", "Unknown"))
         set_media_infoTag(list_item, metadata=details, mode=mode)

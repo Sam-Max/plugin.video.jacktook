@@ -1546,12 +1546,12 @@ msgid "Scrape again"
 msgstr "Volver a escanear"
 
 msgctxt "#90050"
-msgid "Search recommendations"
-msgstr "Buscar recomendaciones"
+msgid "Recommendations"
+msgstr "Recomendaciones"
 
 msgctxt "#90051"
-msgid "Search similar"
-msgstr "Buscar similares"
+msgid "Similar"
+msgstr "Similares"
 
 msgctxt "#90052"
 msgid "Thread Number"

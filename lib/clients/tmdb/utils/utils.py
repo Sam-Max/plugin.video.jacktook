@@ -290,6 +290,8 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "person_credits": lambda p: Person().combined_credits(p),
         "person_tv_credits": lambda p: Person().tv_credits(p),
         "person_movie_credits": lambda p: Person().movie_credits(p),
+        "tv_credits": lambda p: TV().credits(p),
+        "movie_credits": lambda p: Movie().credits(p),
         "person_ids": lambda p: Person().external_ids(p),
         "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),
         "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p),
@@ -420,6 +422,14 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
                 ids=ids,
             ),
         ),
+        (
+            translation(90081),
+            container_update(
+                name="search_people_by_id",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
     ]
 
 
@@ -437,6 +447,14 @@ def add_tmdb_show_context_menu(mode, ids={}):
             translation(90051),
             container_update(
                 name="search_tmdb_similar",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+        (
+            translation(90081),
+            container_update(
+                name="search_people_by_id",
                 mode=mode,
                 ids=ids,
             ),
@@ -469,6 +487,14 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
             translation(90051),
             container_update(
                 name="search_tmdb_similar",
+                mode=mode,
+                ids=ids,
+            ),
+        ),
+        (
+            translation(90081),
+            container_update(
+                name="search_people_by_id",
                 mode=mode,
                 ids=ids,
             ),

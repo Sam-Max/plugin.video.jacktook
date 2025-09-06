@@ -130,6 +130,7 @@ def addon_router():
         "search_tmdb_similar": TmdbClient.search_tmdb_similar,
         "search_direct": search_direct,
         "search_mdbd_lists": search_mdbd_lists,
+        "search_people_by_id": PeopleClient.search_people_by_id,
         "user_mdbd_lists": user_mdbd_lists,
         "top_mdbd_lists": top_mdbd_lists,
         "show_mdblist_list": show_mdblist_list,

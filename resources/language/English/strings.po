@@ -1562,11 +1562,11 @@ msgid "Scrape again"
 msgstr ""
 
 msgctxt "#90050"
-msgid "Search recommendations"
+msgid "Recommendations"
 msgstr ""
 
 msgctxt "#90051"
-msgid "Search similar"
+msgid "Similar"
 msgstr ""
 
 msgctxt "#90052"
