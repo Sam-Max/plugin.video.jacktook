@@ -43,6 +43,7 @@ class TmdbCollections(BaseTmdbClient):
         parts = collection.get("parts", [])
         for movie in parts:
             movie_item = ListItem(label=movie.get("title", "Untitled"))
+            movie_item.setProperty("IsPlayable", "true")
             set_media_infoTag(movie_item, metadata=movie, mode="movie")
 
             tmdb_id = movie.get("id")
