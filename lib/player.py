@@ -3,7 +3,7 @@ import traceback
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.aisubtrans.submanager import SubtitleManager
 from lib.clients.aisubtrans.utils import get_language_code
-from lib.clients.tmdb.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,

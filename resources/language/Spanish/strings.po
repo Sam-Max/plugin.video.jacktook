@@ -1656,3 +1656,19 @@ msgstr "Buscar Listas"
 msgctxt "#90077"
 msgid "Configuracion de MDbList"
 msgstr ""
+
+msgctxt "#90078"
+msgid "People"
+msgstr "Personas"
+
+msgctxt "#90079"
+msgid "Popular People"
+msgstr "Personas Populares"
+
+msgctxt "#90080"
+msgid "Latest People"
+msgstr "Ultimas Personas"
+
+msgctxt "#90081"
+msgid "Search People"
+msgstr "Buscar Personas"

@@ -1,5 +1,5 @@
 import json
-from lib.clients.tmdb.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.api.trakt.trakt_utils import (
     add_trakt_watched_context_menu,

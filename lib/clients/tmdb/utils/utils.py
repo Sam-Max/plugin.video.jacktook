@@ -11,6 +11,7 @@ from lib.api.tmdbv3api.objs.episode import Episode
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
 from lib.api.tmdbv3api.objs.movie import Movie
+from lib.api.tmdbv3api.objs.person import Person
 from lib.api.tmdbv3api.objs.search import Search
 from lib.api.tmdbv3api.objs.season import Season
 from lib.api.tmdbv3api.objs.discover import Discover
@@ -265,6 +266,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "search_movie": lambda p: Search().movies(p),
         "search_multi": lambda p: Search().multi(p["query"], page=p["page"]),
         "search_collections": lambda p: Search().collections(p["query"], p["page"]),
+        "search_people": lambda p: Search().people(p["query"], p["page"]),
         "movie_details": lambda p: Movie().details(p),
         "tv_details": lambda p: TV().details(p),
         "season_details": lambda p: Season().details(p["id"], p["season"]),
@@ -281,6 +283,14 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "popular_movie": lambda p: Movie().popular(page=p),
         "trending_tv": lambda p: Trending().tv_week(page=p),
         "popular_shows": lambda p: TV().popular(page=p),
+        "popular_people": lambda p: Person().popular(page=p),
+        "trending_people": lambda p: Trending().person_week(page=p),
+        "latest_people": lambda p: Person().latest(),
+        "person_details": lambda p: Person().details(p),
+        "person_credits": lambda p: Person().combined_credits(p),
+        "person_tv_credits": lambda p: Person().tv_credits(p),
+        "person_movie_credits": lambda p: Person().movie_credits(p),
+        "person_ids": lambda p: Person().external_ids(p),
         "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),
         "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p),
         "anime_year": lambda p: TmdbAnime().anime_year(p),
@@ -328,7 +338,6 @@ def mdblist_get(path, params=None) -> Optional[AsObj]:
 
     try:
         data = handlers.get(path, lambda _: None)(params)
-        kodilog(f"MDblist data for {path} with params {params}: {data}")
     except Exception as e:
         kodilog(f"Error in mdblist_get for {path} with params {params}: {e}")
         return None

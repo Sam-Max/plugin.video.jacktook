@@ -1,5 +1,5 @@
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
-from lib.clients.tmdb.utils import (
+from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_show_context_menu,
     tmdb_get,

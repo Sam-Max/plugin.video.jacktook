@@ -347,17 +347,23 @@ def set_media_infoTag(list_item, metadata, fanart_details={}, mode="video"):
             "original_title", metadata.get("original_name", metadata.get("title", ""))
         )
     )
-    info_tag.setPlot(metadata.get("overview", ""))
+    info_tag.setPlot(
+        metadata.get("overview") or metadata.get("biography", "No overview")
+    )
 
     # Year & Dates
     if "first_air_date" in metadata:
-        info_tag.setFirstAired(metadata["first_air_date"])
-        info_tag.setYear(int(metadata["first_air_date"].split("-")[0]))
+        first_air_date = metadata["first_air_date"]
+        if first_air_date:
+            info_tag.setFirstAired(first_air_date)
+            info_tag.setYear(int(first_air_date.split("-")[0]))
     elif "air_date" in metadata:
         info_tag.setFirstAired(metadata["air_date"])  # Setting air_date for episodes
     elif "release_date" in metadata:
-        info_tag.setPremiered(metadata["release_date"])
-        info_tag.setYear(int(metadata["release_date"].split("-")[0]))
+        release_date = metadata["release_date"]
+        if release_date:
+            info_tag.setPremiered(release_date)
+            info_tag.setYear(int(release_date.split("-")[0]))
 
     if "runtime" in metadata:
         runtime = metadata.get("runtime")
@@ -431,7 +437,7 @@ def extract_genres(genres, media_type="movies"):
     genre_list = []
     path = "movie_genres" if media_type == "movies" else "show_genres"
 
-    from lib.clients.tmdb.utils import tmdb_get
+    from lib.clients.tmdb.utils.utils import tmdb_get
 
     genre_response = tmdb_get(path=path)
     if not genre_response or "genres" not in genre_response:
@@ -533,26 +539,38 @@ def set_cast_and_crew(metadata, cast_list):
 
 
 def set_listitem_artwork(list_item, metadata, fanart_details={}):
+    if fanart_details is None:
+        fanart_details = {}
+
     def tmdb_url(path, size):
         return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
 
-    poster_path = metadata.get("poster_path")
-    still_path = metadata.get("still_path")
-    backdrop_path = metadata.get("backdrop_path")
+    thumb_sources = [
+        (metadata.get("poster_path"), "w780"),
+        (metadata.get("still_path"), "w1280"),
+    ]
+    poster_sources = [
+        (metadata.get("poster_path"), "w500"),
+        (metadata.get("still_path"), "w1280"),
+        (metadata.get("profile_path"), "w500"),
+    ]
+    fanart_sources = [
+        (metadata.get("backdrop_path"), "w1280"),
+        (metadata.get("still_path"), "w1280"),
+    ]
 
-    thumb = tmdb_url(poster_path, "w780") or tmdb_url(still_path, "w1280")
-    poster = tmdb_url(poster_path, "w500") or tmdb_url(still_path, "w1280")
-    fanart = (
-        tmdb_url(backdrop_path, "w1280")
-        or tmdb_url(still_path, "w1280")
-        or fanart_details.get("fanart", "")
-    )
+    def first_valid(sources, fallback=""):
+        for path, size in sources:
+            url = tmdb_url(path, size)
+            if url:
+                return url
+        return fallback
 
     list_item.setArt(
         {
-            "thumb": thumb,
-            "poster": poster,
-            "fanart": fanart,
+            "thumb": first_valid(thumb_sources),
+            "poster": first_valid(poster_sources),
+            "fanart": first_valid(fanart_sources, fanart_details.get("fanart", "")),
         }
     )
 
@@ -868,23 +886,26 @@ def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Di
         rf"{season_fill}x{episode_fill}",  # XXxXX format
         rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
         rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
+        rf"Season[\s._-]?{season_fill}[\s._-]?Episode[\s._-]?{episode_fill}",  # Season X Episode Y
+        rf"Ep[\s._-]?{episode_fill}",  # EpXX
         r"Cap\.",  # match "Cap."
     ]
 
     combined_pattern = "|".join(patterns)
 
-    kodilog(f"Combined regex pattern: {combined_pattern}", level=xbmc.LOGDEBUG)
-    kodilog("Results before filtering:", level=xbmc.LOGDEBUG)
-    kodilog(results, level=xbmc.LOGDEBUG)
+    def get_filename(res):
+        # Real-Debrid uses 'path', fallback to 'filename' or 'name'
+        return res.get("path") or res.get("filename") or res.get("name") or ""
 
-    results = [
+    filtered = [
         res
         for res in results
-        if re.search(combined_pattern, res.get("filename") or res.get("name"))
+        if re.search(combined_pattern, get_filename(res), re.IGNORECASE)
     ]
+
     kodilog("Results after filtering:", level=xbmc.LOGDEBUG)
-    kodilog(results, level=xbmc.LOGDEBUG)
-    return results
+    kodilog(filtered, level=xbmc.LOGDEBUG)
+    return filtered
 
 
 def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStream]:

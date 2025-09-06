@@ -1,5 +1,5 @@
 from lib.clients.jackgram.client import Jackgram
-from lib.clients.tmdb.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.clients.utils import validate_host
 from lib.utils.general.utils import (
     Indexer,

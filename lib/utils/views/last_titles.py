@@ -1,7 +1,7 @@
 import json
 import os
 
-from lib.clients.tmdb.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import set_media_infoTag, set_pluging_category

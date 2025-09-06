@@ -11,6 +11,7 @@ from lib.clients.mdblist.mdblist import (
     top_mdbd_lists,
     user_mdbd_lists,
 )
+from lib.clients.tmdb.people_client import PeopleClient
 from lib.clients.tmdb.tmdb import TmdbClient, TmdbCollections
 from lib.clients.trakt.trakt import TraktClient
 from lib.downloader import (
@@ -134,6 +135,7 @@ def addon_router():
         "show_mdblist_list": show_mdblist_list,
         "handle_collection_query": TmdbClient.handle_collection_query,
         "handle_collection_details": TmdbCollections.add_collection_details,
+        "handle_tmdb_person_details": PeopleClient.handle_tmdb_person_details,
         "handle_download_file": handle_download_file,
         "search_item": search_item,
         "next_page_anime": next_page_anime,

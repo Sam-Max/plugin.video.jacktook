@@ -1,5 +1,5 @@
 from urllib.parse import quote
-from lib.clients.tmdb.utils import mdblist_get
+from lib.clients.tmdb.utils.utils import mdblist_get
 from lib.utils.general.utils import build_list_item, set_pluging_category
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,

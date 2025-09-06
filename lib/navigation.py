@@ -11,16 +11,14 @@ from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.trakt.trakt import TraktClient
 
-from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.debrid.premiumize import Premiumize
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.api.debrid.torbox import Torbox
 from lib.clients.stremio.catalogs import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
-    TmdbAnimeClient,
 )
-from lib.clients.tmdb.utils import LANGUAGES, get_tmdb_media_details
+from lib.clients.tmdb.utils.utils import LANGUAGES, get_tmdb_media_details
 from lib.clients.search import search_client
 
 from lib.db.cached import cache
@@ -334,7 +332,11 @@ def tv_shows_items(params):
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
-                "search_item", mode=item["mode"], query=item["query"], api=item["api"]
+                "search_item",
+                mode=item["mode"],
+                submode=item.get("submode", ""),
+                query=item["query"],
+                api=item["api"],
             ),
             build_list_item(item["name"], item["icon"]),
             isFolder=True,
@@ -349,7 +351,11 @@ def movies_items(params):
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
-                "search_item", mode=item["mode"], query=item["query"], api=item["api"]
+                "search_item",
+                mode=item["mode"],
+                submode=item.get("submode", ""),
+                query=item["query"],
+                api=item["api"],
             ),
             build_list_item(item["name"], item["icon"]),
             isFolder=True,
@@ -796,10 +802,12 @@ def get_rd_downloads(params):
     debrid_color = get_random_color(type, formatted=False)
     formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
 
-    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=str(get_setting("real_debrid_token")))
     downloads = rd_client.get_user_downloads_list(page=page)
 
-    sorted_downloads = sorted(downloads, key=lambda x: x["filename"], reverse=False)
+    sorted_downloads = sorted(
+        downloads, key=lambda x: x.get("filename", ""), reverse=False
+    )
     for d in sorted_downloads:
         torrent_li = build_list_item(
             f"{formated_type} - {d['filename']}", "download.png"
@@ -915,28 +923,45 @@ def play_from_pack(params):
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 
-def search_item(params):
-    query = params.get("query", "")
-    category = params.get("category", None)
-    api = params["api"]
-    mode = params["mode"]
-    submode = params.get("submode", None)
-    page = int(params.get("page", 1))
-
-    if api == "trakt":
-        result = TraktClient.handle_trakt_query(
-            query, category, mode, page, submode, api
-        )
-        if result:
-            TraktClient.process_trakt_result(
-                result, query, category, mode, submode, api, page
-            )
-    elif api == "tmdb":
-        TmdbClient.handle_tmdb_query(params)
-    elif api == "mdblist":
-        mdblist_menu(mode)
-    else:
-        notification("Unsupported API")
+def people_menu(mode):
+    set_pluging_category("People")
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "search_item",
+            mode=mode,
+            api="tmdb",
+            query="tmdb_people",
+            subquery="search_people",
+        ),
+        build_list_item(translation(90081), "search.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "search_item",
+            mode=mode,
+            api="tmdb",
+            query="tmdb_people",
+            subquery="latest_people",
+        ),
+        build_list_item(translation(90080), "tmdb.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "search_item",
+            mode=mode,
+            api="tmdb",
+            query="tmdb_people",
+            subquery="popular_people",
+        ),
+        build_list_item(translation(90079), "tmdb.png"),
+        isFolder=True,
+    )
+    endOfDirectory(ADDON_HANDLE)
 
 
 def mdblist_menu(mode):
@@ -974,6 +999,33 @@ def mdblist_menu(mode):
     endOfDirectory(ADDON_HANDLE)
 
 
+def search_item(params):
+    query = params.get("query", "")
+    category = params.get("category", None)
+    api = params["api"]
+    mode = params["mode"]
+    submode = params.get("submode", "")
+    page = int(params.get("page", 1))
+
+    if api == "trakt":
+        result = TraktClient.handle_trakt_query(
+            query, category, mode, page, submode, api
+        )
+        if result:
+            TraktClient.process_trakt_result(
+                result, query, category, mode, submode, api, page
+            )
+    elif api == "tmdb":
+        if submode == "people_menu":
+            people_menu(mode)
+        else:
+            TmdbClient.handle_tmdb_query(params)
+    elif api == "mdblist":
+        mdblist_menu(mode)
+    else:
+        notification("Unsupported API")
+
+
 def trakt_list_content(params):
     mode = params.get("mode")
     set_content_type(mode)
@@ -998,15 +1050,13 @@ def anime_search(params):
     page = params.get("page", 1)
     category = params.get("category")
     set_content_type(mode)
-
-    TmdbAnimeClient.handle_tmdb_anime_query(category, mode, submode=mode, page=page)
+    TmdbClient.handle_tmdb_anime_query(category, mode, submode=mode, page=page)
 
 
 def next_page_anime(params):
     mode = params.get("mode")
     set_content_type(mode)
-
-    TmdbAnimeClient.handle_tmdb_anime_query(
+    TmdbClient.handle_tmdb_anime_query(
         params.get("category"),
         mode,
         params.get("submode"),
@@ -1016,15 +1066,15 @@ def next_page_anime(params):
 
 def download(magnet, type):
     if type == "RD":
-        rd_client = RealDebrid(token=get_setting("real_debrid_token"))
+        rd_client = RealDebrid(token=str(get_setting("real_debrid_token")))
         thread = Thread(
             target=rd_client.download, args=(magnet,), kwargs={"pack": False}
         )
     elif type == "TB":
-        tb_client = Torbox(token=get_setting("torbox_token"))
+        tb_client = Torbox(token=str(get_setting("torbox_token")))
         thread = Thread(target=tb_client.download, args=(magnet,))
     elif type == "PM":
-        pm_client = Premiumize(token=get_setting("premiumize_token"))
+        pm_client = Premiumize(token=str(get_setting("premiumize_token")))
         thread = Thread(
             target=pm_client.download, args=(magnet,), kwargs={"pack": False}
         )
@@ -1088,27 +1138,27 @@ def clear_all_cached(params):
 
 
 def rd_auth(params):
-    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=str(get_setting("real_debrid_token")))
     rd_client.auth()
 
 
 def rd_remove_auth(params):
-    rd_client = RealDebrid(token=get_setting("real_debrid_token"))
+    rd_client = RealDebrid(token=str(get_setting("real_debrid_token")))
     rd_client.remove_auth()
 
 
 def debrider_auth(params):
-    debrider_client = Debrider(token=get_setting("debrider_token"))
+    debrider_client = Debrider(token=str(get_setting("debrider_token")))
     debrider_client.auth()
 
 
 def debrider_remove_auth(params):
-    debrider_client = Debrider(token=get_setting("debrider_token"))
+    debrider_client = Debrider(token=str(get_setting("debrider_token")))
     debrider_client.remove_auth()
 
 
 def pm_auth(params):
-    pm_client = Premiumize(token=get_setting("premiumize_token"))
+    pm_client = Premiumize(token=str(get_setting("premiumize_token")))
     pm_client.auth()
 
 

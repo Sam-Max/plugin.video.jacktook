@@ -1,7 +1,7 @@
 from datetime import datetime, date
 import os
 import re
-from lib.clients.tmdb.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, translation

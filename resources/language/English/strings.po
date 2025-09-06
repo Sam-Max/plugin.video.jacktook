@@ -1672,3 +1672,19 @@ msgstr ""
 msgctxt "#90077"
 msgid "MDbList Configuration"
 msgstr ""
+
+msgctxt "#90078"
+msgid "People"
+msgstr ""
+
+msgctxt "#90079"
+msgid "Popular People"
+msgstr ""
+
+msgctxt "#90080"
+msgid "Latest People"
+msgstr ""
+
+msgctxt "#90081"
+msgid "Search People"
+msgstr ""

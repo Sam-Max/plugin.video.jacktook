@@ -52,6 +52,14 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90078),
+        "mode": "tv",
+        "submode": "people_menu",
+        "api": "tmdb",
+        "query": "tmdb_people",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90073),
         "mode": "tv",
         "api": "mdblist",
@@ -160,7 +168,15 @@ movie_items = [
         "query": "tmdb_collections",
         "icon": "tmdb.png",
     },
-     {
+    {
+        "name": translation(90078),
+        "mode": "movies",
+        "submode": "people_menu",
+        "api": "tmdb",
+        "query": "tmdb_people",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90073),
         "mode": "movies",
         "api": "mdblist",
