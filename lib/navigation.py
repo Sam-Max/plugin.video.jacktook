@@ -551,8 +551,6 @@ def search(params):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
-    kodilog(f"Search: {query} - {ids} - {mode} - {tv_data}")
-
     set_content_type(mode, media_type)
     set_watched_title(query, ids, mode, media_type)
 

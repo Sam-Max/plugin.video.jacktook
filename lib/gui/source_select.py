@@ -1,4 +1,5 @@
 from typing import List, Optional, Dict
+from lib.clients.aisubtrans.submanager import SubtitleManager
 from lib.domain.torrent import TorrentStream
 from lib.gui.filter_type_window import FilterTypeWindow
 from lib.gui.filter_items_window import FilterWindow
@@ -13,7 +14,9 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     notification,
+    set_property,
     translatePath,
+    translation,
 )
 from lib.utils.general.utils import (
     IndexerType,
@@ -172,12 +175,14 @@ class SourceSelect(BaseWindow):
                     self._download_file()
             else:
                 response = xbmcgui.Dialog().contextmenu(
-                    ["Browse into", "Download file"]
+                    [translation(90084), translation(90083), translation(90082)]
                 )
                 if response == 0:
                     self._resolve_item(pack_select=True)
                 elif response == 1:
                     self._download_file()
+                elif response == 2:
+                    self._resolve_item(download_subtitle=True)
 
         elif control_id == 1300:
             quality_list = self.getControl(1300)
@@ -267,7 +272,7 @@ class SourceSelect(BaseWindow):
                 "Download", f"Failed to start download: {str(e)}"
             )
 
-    def _resolve_item(self, pack_select: bool = False) -> None:
+    def _resolve_item(self, pack_select: bool = False, download_subtitle=False) -> None:
         self.setProperty("resolving", "true")
 
         selected_source = self.list_sources[self.position]
@@ -282,9 +287,22 @@ class SourceSelect(BaseWindow):
         resolver_window.doModal(pack_select)
         self.playback_info = resolver_window.playback_info
 
-        del resolver_window
         self.setProperty("instant_close", "true")
+
+        if download_subtitle:
+            self._download_subtitle()
+
+        del resolver_window
         self.close()
+
+    def _download_subtitle(self):
+        notification = xbmcgui.Dialog()
+        subtitle_manager = SubtitleManager(self.playback_info, notification)
+        subtitles_path = subtitle_manager.fetch_subtitles()
+        if subtitles_path:
+            set_property("search_subtitles", "true")
+            if self.playback_info:
+                self.playback_info.update({"subtitles_path": subtitles_path})
 
     def show_resume_dialog(self, playback_percent: float) -> Optional[bool]:
         try:

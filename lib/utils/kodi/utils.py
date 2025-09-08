@@ -70,7 +70,7 @@ progressDialog = xbmcgui.DialogProgress()
 def get_jacktorr_setting(value, default=None):
     if not JACKTORR_ADDON:
         notification(translation(30253))
-        return 
+        return
     value = JACKTORR_ADDON.getSetting(value)
     if not value:
         return default
@@ -249,7 +249,7 @@ def build_url(action, **params):
     for key, value in params.items():
         if isinstance(value, (dict, list)):
             params[key] = json.dumps(value)
-    query = parse.urlencode(params)
+    query = urlencode(params)
     return f"plugin://{ADDON_ID}/?action={action}&{query}"
 
 

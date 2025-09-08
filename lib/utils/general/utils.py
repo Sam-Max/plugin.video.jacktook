@@ -885,6 +885,7 @@ def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Di
         rf"S{season_fill}E{episode_fill}",  # SXXEXX format
         rf"{season_fill}x{episode_fill}",  # XXxXX format
         rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
+        rf"E{episode_fill}",  # .EXX format
         rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
         rf"Season[\s._-]?{season_fill}[\s._-]?Episode[\s._-]?{episode_fill}",  # Season X Episode Y
         rf"Ep[\s._-]?{episode_fill}",  # EpXX
@@ -1118,7 +1119,7 @@ def extract_publish_date(date):
 
 
 def translate_weekday(weekday_name, lang="eng"):
-    sub_language = str(get_setting("auto_sub_language"))
+    sub_language = str(get_setting("auto_subtitle_lang"))
     if sub_language and sub_language.lower() != "none":
         lang = get_language_code(sub_language)
     return WEEKDAY_TRANSLATIONS.get(lang, WEEKDAY_TRANSLATIONS["eng"]).get(

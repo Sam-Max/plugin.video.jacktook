@@ -1688,3 +1688,16 @@ msgstr ""
 msgctxt "#90081"
 msgid "Search People"
 msgstr ""
+
+msgctxt "#90082"
+msgid "Download subtitles"
+msgstr ""
+
+msgctxt "#90083"
+msgid "Download video"
+msgstr ""
+
+msgctxt "#90084"
+msgid "Browse into"
+msgstr ""
+

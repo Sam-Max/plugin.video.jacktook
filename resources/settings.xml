@@ -648,7 +648,7 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="auto_sub_language" type="string" label="30736" help="30873">
+                <setting id="auto_subtitle_lang" type="string" label="30736" help="30873">
                     <default>None</default>
                     <neading>30736</neading>
                     <dependencies>
@@ -682,7 +682,7 @@
                 </setting>
             </group>   
             <group id="stremio_subtitle" label="30893">
-                <setting id="stremio_sub_enabled" type="boolean" label="30734" help="">
+                <setting id="stremio_subtitle_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
@@ -693,7 +693,7 @@
                     </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_sub_enabled">true</condition>
+                            <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
                         </dependency>
                     </dependencies>
                     <control type="edit" format="string" />

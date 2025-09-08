@@ -2,7 +2,6 @@ import json
 import os
 
 from typing import Any, Dict, List, Optional
-
 from lib.clients.aisubtrans.deepl import DeepLTranslator
 from lib.clients.aisubtrans.opensubstremio import OpenSubtitleStremioClient
 from lib.utils.kodi.utils import (
@@ -34,8 +33,8 @@ class KodiJsonRpcClient:
 
 
 class SubtitleManager(KodiJsonRpcClient):
-    def __init__(self, kodi_player: Any, notification: Any):
-        self.player = kodi_player
+    def __init__(self, data: Any, notification: Any):
+        self.data = data
         self.notification = notification
         self.opensub_client = OpenSubtitleStremioClient(notification)
         self.translator = DeepLTranslator(notification)
@@ -74,12 +73,12 @@ class SubtitleManager(KodiJsonRpcClient):
         Download subtitles for the current video.
         Returns a list of subtitle file paths.
         """
-        data = self.player.data
-        mode = data.get("mode")
-        imdb_id = data.get("imdb_id")
-        episode = data.get("episode")
-        season = data.get("season")
-        title = data.get("title")
+        mode = self.data.get("mode")
+        imdb_id = self.data.get("ids", {}).get("imdb_id")
+        tv_data = self.data.get("tv_data", {})
+        episode = tv_data.get("episode")
+        season = tv_data.get("season")
+        title = self.data.get("title")
 
         if not imdb_id:
             kodilog("No IMDb ID found for the current video")
@@ -131,3 +130,5 @@ class SubtitleManager(KodiJsonRpcClient):
                 return translated_subtitles_paths
 
         return subtitle_paths
+
+

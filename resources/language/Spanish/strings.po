@@ -1672,3 +1672,15 @@ msgstr "Ultimas Personas"
 msgctxt "#90081"
 msgid "Search People"
 msgstr "Buscar Personas"
+
+msgctxt "#90082"
+msgid "Download subtitles"
+msgstr "Descargar Subtitulos"
+
+msgctxt "#90083"
+msgid "Download video"
+msgstr "Descargar video"
+
+msgctxt "#90084"
+msgid "Browse into"
+msgstr "Buscar dentro"
