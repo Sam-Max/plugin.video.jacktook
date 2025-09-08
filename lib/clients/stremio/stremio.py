@@ -1,10 +1,12 @@
 from lib.clients.stremio.addons_manager import Addon
 from lib.clients.stremio.stream import Stream
 from lib.clients.base import BaseClient, TorrentStream
+
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
+
 from lib.db.cached import cache
 
 import re
@@ -12,6 +14,8 @@ from typing import List, Dict, Optional, Any
 
 
 TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
+
+EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
 
 
 class StremioAddonCatalogsClient(BaseClient):
@@ -88,36 +92,17 @@ class StremioAddonClient(BaseClient):
                 url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
             else:
                 return []
-            
+
             kodilog("Using Stremio addon search URL: " + url)
 
-            if (
-                get_setting("real_debrid_enabled")
-                and get_setting("real_debrid_cached_check")
-                and get_setting("torrent_enable") is False
-            ):
-                kodilog("Using Real-Debrid cached results")
-                cached_results = process_external_cache(
-                    data={
-                        "imdb_id": imdb_id,
-                        "season": season,
-                        "episode": episode,
-                        "mode": mode,
-                    },
-                    debrid="realdebrid",
-                    token=str(get_setting("real_debrid_token")),
-                    url=self.addon.url(),
-                )
-                if not cached_results:
-                    return []
-                return self.parse_response(cached_results, is_cached=True)
+            if self.should_use_rd_cache():
+                return self.get_rd_cached_results(imdb_id, mode, season, episode)
 
-            if get_setting("torrentio_enabled"):
-                if "torrentio" in self.addon.url():
-                    providers = cache.get(TORRENTIO_PROVIDERS_KEY)
-                    if providers:
-                        url = url.replace("/stream/", f"/providers={providers}/stream/")
-                        kodilog(f"URL with providers: {url}")
+            if get_setting("torrentio_enabled") and "torrentio" in self.addon.url():
+                providers = cache.get(TORRENTIO_PROVIDERS_KEY)
+                if providers:
+                    url = url.replace("/stream/", f"/providers={providers}/stream/")
+                    kodilog(f"URL with providers: {url}")
 
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
@@ -194,3 +179,37 @@ class StremioAddonClient(BaseClient):
             "provider": provider or "",
             "languages": find_languages_in_string(desc),
         }
+
+    def should_use_rd_cache(self) -> Optional[bool]:
+        """Checks if RD cache should be used for this addon."""
+        return (
+            get_setting("real_debrid_enabled")
+            and get_setting("real_debrid_cached_check")
+            and not get_setting("torrent_enable")
+            and not get_setting("stremio_loggedin")
+            and self.addon.manifest.id not in EXCLUDED_RD_ADDONS
+        )
+
+    def get_rd_cached_results(
+        self,
+        imdb_id: str,
+        mode: str,
+        season: Optional[int],
+        episode: Optional[int],
+    ) -> List[TorrentStream]:
+        """Fetches and parses Real-Debrid cached results."""
+        kodilog("Using Real-Debrid cached results")
+        cached_results = process_external_cache(
+            data={
+                "imdb_id": imdb_id,
+                "season": season,
+                "episode": episode,
+                "mode": mode,
+            },
+            debrid="realdebrid",
+            token=str(get_setting("real_debrid_token")),
+            url=self.addon.url(),
+        )
+        if not cached_results:
+            return []
+        return self.parse_response(cached_results, is_cached=True)
