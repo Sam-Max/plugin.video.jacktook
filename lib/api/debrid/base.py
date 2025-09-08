@@ -174,5 +174,10 @@ class ProviderException(Exception):
         self.message = message
         self.status_code = status_code
         self.error_content = error_content
-        super().__init__(self.message)
-        notification(self.message)
+        details = f"{self.message}"
+        if self.status_code is not None:
+            details += f" (Status code: {self.status_code})"
+        if self.error_content is not None:
+            details += f"\nError content: {self.error_content}"
+        super().__init__(details)
+        notification(details)
