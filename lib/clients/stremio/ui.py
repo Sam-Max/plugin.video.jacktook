@@ -43,6 +43,33 @@ all_torrentio_providers = [
     ("bludv", "BluDV", "torrentio.png"),
 ]
 
+excluded_addons = {
+    "imdb.ratings.local",
+    "org.stremio.deepdivecompanion",
+    "community.ratings.aggregator",
+    "org.stremio.ageratings",
+    "com.stremio.autostream.addon",
+    "org.cinetorrent",
+    "community.peario",
+    "community.stremioeasynews",
+    "Community-knightcrawler.elfhosted.com",
+    "jackettio.elfhosted.com",
+    "org.stremio.zamunda",
+    "com.stremify",
+    "org.anyembedaddon",
+    "org.stremio.tmdbcollections",
+    "org.stremio.ytztvio",
+    "com.skyflix",
+    "org.stremio.local",
+    "com.animeflv.stremio.addon",
+    "org.cinecalidad.addon",
+    "org.stremio.hellspy",
+    "org.prisonmike.streamvix",
+    "community.SeedSphere",
+    "org.moviesindetail.openlink",
+    "app.torbox.stremio",
+}
+
 
 def merge_addons_lists(*lists):
     seen = set()
@@ -213,6 +240,13 @@ def stremio_toggle_addons(params):
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
 
+    addons = [
+        addon
+        for addon in addons
+        if not addon.manifest.isConfigurationRequired()
+        and addon.key() not in excluded_addons
+    ]
+    
     addons = list(reversed(addons))
 
     dialog = xbmcgui.Dialog()
