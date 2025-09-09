@@ -744,7 +744,7 @@ def cloud_details(params):
 
     if debrid_name == DebridType.RD:
         downloads_method = "get_rd_downloads"
-        info_method = "rd_info"
+        info_method = "real_debrid_info"
     elif debrid_name == DebridType.PM:
         notification("Not yet implemented")
         return
