@@ -15,13 +15,16 @@ from xbmcplugin import addDirectoryItem
 
 
 def show_season_info(ids, mode, media_type):
-    tmdb_id, tvdb_id, imdb_id = ids.values()
+    tmdb_id = ids.get("tmdb_id")
+    tvdb_id = ids.get("tvdb_id")
+    imdb_id = ids.get("imdb_id")
 
     if imdb_id:
         res = tmdb_get("find_by_imdb_id", imdb_id)
-        if res and "tv_results" in res:
+        if res and res.get("tv_results"):
             tmdb_id = res["tv_results"][0]["id"]
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+
+    ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     details = tmdb_get("tv_details", tmdb_id)
     name = getattr(details, "name")

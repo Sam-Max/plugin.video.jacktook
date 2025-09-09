@@ -1,6 +1,11 @@
 from urllib.parse import quote
-from lib.clients.tmdb.utils.utils import mdblist_get
-from lib.utils.general.utils import build_list_item, set_pluging_category
+from lib.clients.tmdb.utils.utils import mdblist_get, tmdb_get
+from lib.utils.general.utils import (
+    build_list_item,
+    make_listing,
+    set_content_type,
+    set_pluging_category,
+)
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
@@ -31,11 +36,11 @@ def search_mdbd_lists(params):
     for item in results:
         label = item.get("name", "Unnamed List")
         list_id = item.get("id")
-        li = build_list_item(label, "mdblist.png")
+        list_item = build_list_item(label, "mdblist.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("show_mdblist_list", list_id=list_id, mode=mode),
-            li,
+            list_item,
             isFolder=True,
         )
     endOfDirectory(ADDON_HANDLE)
@@ -54,11 +59,11 @@ def user_mdbd_lists(params):
     for item in results:
         label = item.get("name", "Unnamed List")
         list_id = item.get("id")
-        li = build_list_item(label, "mdblist.png")
+        list_item = build_list_item(label, "mdblist.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("show_mdblist_list", list_id=list_id, mode=mode),
-            li,
+            list_item,
             isFolder=True,
         )
     endOfDirectory(ADDON_HANDLE)
@@ -77,11 +82,11 @@ def top_mdbd_lists(params):
     for item in results:
         label = item.get("name", "Unnamed List")
         list_id = item.get("id")
-        li = build_list_item(label, "mdblist.png")
+        list_item = build_list_item(label, "mdblist.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("show_mdblist_list", list_id=list_id, mode=mode),
-            li,
+            list_item,
             isFolder=True,
         )
     endOfDirectory(ADDON_HANDLE)
@@ -89,10 +94,12 @@ def top_mdbd_lists(params):
 
 def show_mdblist_list(params):
     list_id = params.get("list_id")
-    mode = params.get("mode", "movie")
+    mode = params.get("mode", "movies")
     offset = int(params.get("offset", 0))
     limit = int(params.get("limit", 10))
+
     set_pluging_category(f"MDblist List {list_id}")
+    set_content_type(mode)
 
     result = mdblist_get(
         "get_list_items",
@@ -109,12 +116,27 @@ def show_mdblist_list(params):
         return
 
     for item in result:
-        li = make_li(item, mode)
         ids = {
-            "tmdb_id": "",
+            "tmdb_id": item.get("id", ""),
             "tvdb_id": item.get("tvdb_id", ""),
             "imdb_id": item.get("imdb_id", ""),
         }
+
+        res = tmdb_get("find_by_imdb_id", ids.get("imdb_id"))
+        if res:
+            if res.get("tv_results"):
+                overview = res["tv_results"][0]["overview"]
+                poster_path = res["tv_results"][0]["poster_path"]
+            elif res.get("movie_results"):
+                overview = res["movie_results"][0]["overview"]
+                poster_path = res["movie_results"][0]["poster_path"]
+            else:
+                overview = None
+                poster_path = None
+
+            item.update({"overview": overview})
+            item.update({"poster_path": poster_path})
+
         if item.get("mediatype") == "show":
             url = build_url(
                 "tv_seasons_details",
@@ -126,19 +148,20 @@ def show_mdblist_list(params):
             url = build_url(
                 "search",
                 mode="movies",
-                query=quote(item.get("title", "")),
+                query=quote(item.get("title", "") or ""),
                 ids=ids,
             )
             is_folder = False
 
+        list_item = make_listing(item)
         addDirectoryItem(
             ADDON_HANDLE,
             url,
-            li,
+            list_item,
             isFolder=is_folder,
         )
 
-    li = build_list_item("Next Page", "nextpage.png")
+    list_item = build_list_item("Next Page", "nextpage.png")
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(
@@ -148,19 +171,7 @@ def show_mdblist_list(params):
             offset=offset + limit,
             limit=limit,
         ),
-        li,
+        list_item,
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE)
-
-
-def make_li(item, mode):
-    label = item.get("title", "Untitled")
-    genre = ", ".join(item.get("genre", [])) if item.get("genre") else ""
-    poster = item.get("poster")
-    li = build_list_item(label, "mdblist.png")
-    if genre:
-        li.setInfo("video", {"genre": genre})
-    if poster:
-        li.setArt({"poster": poster, "thumb": poster})
-    return li

@@ -1,7 +1,7 @@
 from datetime import timedelta
 import os
 import threading
-from typing import Optional
+from typing import List, Optional
 
 from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.tmdbv3api.as_obj import AsObj
@@ -319,7 +319,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
     return data
 
 
-def mdblist_get(path, params=None) -> Optional[AsObj]:
+def mdblist_get(path, params=None) -> Optional[List]:
     identifier = f"{path}|{params}"
     data = cache.get(key=identifier)
     if data:
@@ -357,7 +357,6 @@ def mdblist_get(path, params=None) -> Optional[AsObj]:
 
 
 def get_tmdb_media_details(tmdb_id, mode):
-    kodilog(f"Fetching TMDB details for ID: {tmdb_id} in mode: {mode}")
     if mode == "tv":
         return tmdb_get("tv_details", tmdb_id)
     elif mode == "movies":
