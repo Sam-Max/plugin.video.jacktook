@@ -19,7 +19,7 @@ A Kodi addon for torrent finding and streaming.
   Debrider, RealDebrid, Premiumize, Torbox, and Debrid Services configured with Stremio Addons.
 
 - **Metadata**:  
-  TMDB, Trakt, and Fanart.tv.
+  TMDB, MDBList, Trakt, Fanart.tv and Stremio catalogs.
 
 - **Stremio Subtitle Download**:  
   Download subtitles directly from Stremio sources.
