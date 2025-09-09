@@ -286,6 +286,8 @@ class SourceSelect(BaseWindow):
         )
         resolver_window.doModal(pack_select)
         self.playback_info = resolver_window.playback_info
+        if self.playback_info:
+            self.playback_info.update(self.item_information)
 
         self.setProperty("instant_close", "true")
 

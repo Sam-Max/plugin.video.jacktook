@@ -294,7 +294,7 @@ class TmdbClient(BaseTmdbClient):
         title, label_title, mode, ids = result
 
         list_item = ListItem(label=label_title)
-        set_media_infoTag(list_item, metadata=res, mode=mode)
+        set_media_infoTag(list_item, data=res, mode=mode)
 
         TmdbClient.add_media_directory_item(list_item, mode, title, ids, media_type)
 
@@ -611,7 +611,7 @@ class TmdbClient(BaseTmdbClient):
             list_item = ListItem(label=ep_title)
             list_item.setProperty("IsPlayable", "true")
 
-            set_media_infoTag(list_item, metadata=details, mode="tv")
+            set_media_infoTag(list_item, data=details, mode="tv")
 
             add_kodi_dir_item(
                 list_item=list_item,

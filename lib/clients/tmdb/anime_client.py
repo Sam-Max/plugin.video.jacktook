@@ -102,5 +102,5 @@ class TmdbAnimeClient(BaseTmdbClient):
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=res, mode=mode)
+        set_media_infoTag(list_item, data=res, mode=mode)
         self.add_media_directory_item(list_item, mode, title, ids)

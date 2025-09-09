@@ -43,7 +43,7 @@ def show_season_info(ids, mode, media_type):
         list_item = ListItem(label=season_name)
 
         set_media_infoTag(
-            list_item, metadata=details, fanart_details=fanart_details, mode=mode
+            list_item, data=details, fanart_details=fanart_details, mode=mode
         )
 
         list_item.setProperty("IsPlayable", "false")
@@ -87,7 +87,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
 
         set_media_infoTag(
-            list_item, metadata=episode, fanart_details=fanart_data, mode="episode"
+            list_item, data=episode, fanart_details=fanart_data, mode=mode
         )
 
         list_item.setProperty("IsPlayable", "true")

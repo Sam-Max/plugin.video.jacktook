@@ -306,7 +306,7 @@ class TraktPresentation:
             details = tmdb_get("movie_details", tmdb_id)
 
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
             list_item=list_item,
@@ -333,7 +333,7 @@ class TraktPresentation:
             details = tmdb_get("movie_details", tmdb_id)
 
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
             list_item=list_item,
@@ -357,7 +357,7 @@ class TraktPresentation:
             details = tmdb_get("movie_details", tmdb_id)
 
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
             list_item=list_item,
@@ -407,7 +407,7 @@ class TraktPresentation:
             details = tmdb_get("movie_details", tmdb_id)
 
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
             list_item=list_item,
@@ -453,7 +453,7 @@ class TraktPresentation:
             is_playable = True
 
         list_item = ListItem(title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         add_kodi_dir_item(
             list_item,
@@ -477,7 +477,7 @@ class TraktPresentation:
             details = tmdb_get("movie_details", tmdb_id)
 
         list_item = ListItem(label=title)
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
             list_item=list_item,

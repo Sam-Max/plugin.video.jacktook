@@ -63,7 +63,7 @@
                 <textcolor>FFDDDDDD</textcolor>
                 <align>center</align>
                 <aligny>center</aligny>
-                <label>$INFO[Window().Property(info.plot)]</label>
+                <label>$INFO[Window().Property(info.overview)]</label>
             </control>
         </control>
 

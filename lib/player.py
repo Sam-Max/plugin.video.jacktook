@@ -1,5 +1,4 @@
 from json import dumps as json_dumps, loads
-import re
 import traceback
 
 from lib.api.trakt.trakt_utils import is_trakt_auth
@@ -55,7 +54,7 @@ class JacktookPLayer(xbmc.Player):
         self.lang_code = "en"
         self.subtitles_found = False
 
-    def run(self, data=None):
+    def run(self, data={}):
         self.set_constants(data)
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()

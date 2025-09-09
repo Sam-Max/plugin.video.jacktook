@@ -533,8 +533,8 @@
 				<textcolor>FFFFFFFF</textcolor>
 				<align>left</align>
 				<aligny>top</aligny>
-				<label>$INFO[Window().Property(info.plot)]</label>
-				<visible>!String.IsEmpty(Window.Property(info.plot))</visible>
+				<label>$INFO[Window().Property(info.overview)]</label>
+				<visible>!String.IsEmpty(Window.Property(info.overview))</visible>
 			</control>
         </control>
     </controls>

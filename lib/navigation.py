@@ -649,16 +649,27 @@ def handle_results(
     if not direct and ids:
         tmdb_id = ids.get("tmdb_id", "")
         tvdb_id = ids.get("tvdb_id", "")
+
+        poster = fanart = clearlogo = overview = ""
+
         details = get_tmdb_media_details(tmdb_id, mode)
-        poster = f"{TMDB_POSTER_URL}{getattr(details, 'poster_path', '') or ''}"
-        overview = getattr(details, "overview", "") or ""
-        fanart_data = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
+        poster_path = getattr(details, "poster_path", "")
+        poster = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
+        overview = getattr(details, "overview", "")
+
+        if tmdb_id or tvdb_id:
+            fanart_data = get_fanart_details(
+                tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode
+            )
+            fanart = fanart_data.get("fanart") or poster
+            clearlogo = fanart_data.get("clearlogo")
+
         item_info.update(
             {
                 "poster": poster,
-                "fanart": fanart_data.get("fanart") or poster,
-                "clearlogo": fanart_data.get("clearlogo"),
-                "plot": overview,
+                "fanart": fanart,
+                "clearlogo": clearlogo,
+                "overview": overview,
             }
         )
 
@@ -704,8 +715,6 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
         return
 
     selected_result = quality_matches[0]
-
-    kodilog(f"Selected result for auto play: {selected_result}")
 
     playback_info = resolve_playback_source(
         data={

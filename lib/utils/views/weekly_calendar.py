@@ -16,7 +16,6 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 
-
 def show_weekly_calendar():
     set_pluging_category(translation(90021))
 
@@ -83,7 +82,7 @@ def show_weekly_calendar():
         list_item = ListItem(label=ep_title)
         list_item.setProperty("IsPlayable", "true")
 
-        set_media_infoTag(list_item, metadata=details, mode=data.get("mode"))
+        set_media_infoTag(list_item, data=details, mode=data.get("mode"))
 
         addDirectoryItem(
             ADDON_HANDLE,

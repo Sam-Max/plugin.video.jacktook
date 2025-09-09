@@ -191,7 +191,7 @@ class PeopleClient(BaseTmdbClient):
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
         list_item = ListItem(label=label)
-        set_media_infoTag(list_item, metadata=credit, mode=mode)
+        set_media_infoTag(list_item, data=credit, mode=mode)
 
         if media_type == "movie":
             list_item.setProperty("IsPlayable", "true")
@@ -221,7 +221,7 @@ class PeopleClient(BaseTmdbClient):
     def show_people(person, mode):
         details = tmdb_get("person_details", params=person.get("id"))
         list_item = ListItem(label=person.get("name", "Unknown"))
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
         add_kodi_dir_item(
             list_item=list_item,
             url=build_url(

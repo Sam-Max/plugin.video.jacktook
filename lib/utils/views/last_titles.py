@@ -63,7 +63,7 @@ def show_last_titles(params):
             continue
 
         list_item = ListItem(label=f"{title} — {formatted_time}")
-        set_media_infoTag(list_item, metadata=details, mode=mode)
+        set_media_infoTag(list_item, data=details, mode=mode)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
         )

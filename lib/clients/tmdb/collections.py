@@ -44,7 +44,7 @@ class TmdbCollections(BaseTmdbClient):
         for movie in parts:
             movie_item = ListItem(label=movie.get("title", "Untitled"))
             movie_item.setProperty("IsPlayable", "true")
-            set_media_infoTag(movie_item, metadata=movie, mode="movie")
+            set_media_infoTag(movie_item, data=movie, mode="movie")
 
             tmdb_id = movie.get("id")
             imdb_id = ""
@@ -78,7 +78,7 @@ class TmdbCollections(BaseTmdbClient):
                 collection["poster_path"] = file_path
 
         list_item = ListItem(label=collection.get("name"))
-        set_media_infoTag(list_item, metadata=collection, mode="movies")
+        set_media_infoTag(list_item, data=collection, mode="movies")
         add_kodi_dir_item(
             list_item=list_item,
             url=build_url("handle_collection_details", collection_id=collection_id),

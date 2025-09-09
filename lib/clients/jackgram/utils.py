@@ -87,7 +87,7 @@ def add_telegram_latest_item(entry):
     entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = ListItem(label=title)
-    set_media_infoTag(list_item, metadata=details, mode=mode)
+    set_media_infoTag(list_item, data=details, mode=mode)
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -130,7 +130,7 @@ def add_telegram_latest_file_item(file_entry, parent_data):
         details = tmdb_get("movie_details", parent_data["tmdb_id"])
 
     list_item.setProperty("IsPlayable", "true")
-    set_media_infoTag(list_item, metadata=details, mode=mode)
+    set_media_infoTag(list_item, data=details, mode=mode)
 
     merged_data = {**parent_data, **file_entry}
 
