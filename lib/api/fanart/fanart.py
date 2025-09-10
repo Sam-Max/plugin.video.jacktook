@@ -15,7 +15,7 @@ def fanart_guard_response(func):
 
         try:
             response = func(*args, **kwarg)
-            
+
             if response.status_code in [200, 201]:
                 return response
 
@@ -23,7 +23,9 @@ def fanart_guard_response(func):
                 kodilog(f"FanartTv failed to find {response.url}")
                 return None
             else:
-                kodilog(f"FanartTv returned a {response.status_code} ({FanartTv.http_codes[response.status_code]}")
+                kodilog(
+                    f"FanartTv returned a {response.status_code} ({FanartTv.http_codes[response.status_code]}"
+                )
             return response
         except requests.exceptions.ConnectionError:
             notification("Error: Connection Error")
@@ -166,9 +168,7 @@ class FanartTv(ApiBase):
     @wrap_fanart_object
     def get_season(self, tvdb_id, season):
         return (
-            self._handle_response(
-                self._get_json(f"tv/{tvdb_id}"), "season", season
-            )
+            self._handle_response(self._get_json(f"tv/{tvdb_id}"), "season", season)
             if self.fanart_support
             else None
         )

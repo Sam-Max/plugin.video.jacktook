@@ -651,18 +651,29 @@ def handle_results(
         tvdb_id = ids.get("tvdb_id", "")
 
         poster = fanart = clearlogo = overview = ""
+        clearart = keyart = banner = landscape = ""
 
-        details = get_tmdb_media_details(tmdb_id, mode)
-        poster_path = getattr(details, "poster_path", "")
-        poster = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
-        overview = getattr(details, "overview", "")
+        if tmdb_id:
+            details = get_tmdb_media_details(tmdb_id, mode)
+            poster_path = getattr(details, "poster_path", "")
+            poster = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
+            overview = getattr(details, "overview", "")
 
         if tmdb_id or tvdb_id:
-            fanart_data = get_fanart_details(
+            fanart_details = get_fanart_details(
                 tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode
             )
-            fanart = fanart_data.get("fanart") or poster
-            clearlogo = fanart_data.get("clearlogo")
+            fanart = (
+                fanart_details.get("fanart") or fanart_details.get("poster") or poster
+            )
+            clearlogo = (
+                fanart_details.get("clearlogo") or fanart_details.get("clearart") or ""
+            )
+
+            clearart = fanart_details.get("clearart", "")
+            keyart = fanart_details.get("keyart", "")
+            banner = fanart_details.get("banner", "")
+            landscape = fanart_details.get("landscape", "")
 
         item_info.update(
             {
@@ -670,6 +681,10 @@ def handle_results(
                 "fanart": fanart,
                 "clearlogo": clearlogo,
                 "overview": overview,
+                "clearart": clearart,
+                "keyart": keyart,
+                "banner": banner,
+                "landscape": landscape,
             }
         )
 

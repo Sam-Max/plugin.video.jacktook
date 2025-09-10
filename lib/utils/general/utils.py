@@ -335,7 +335,7 @@ def make_listing(data):
     return list_item
 
 
-def set_media_infoTag(list_item, data, fanart_details={}, mode="video"):
+def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
     info_tag = list_item.getVideoInfoTag()
 
     # General Video Info
@@ -402,7 +402,7 @@ def set_media_infoTag(list_item, data, fanart_details={}, mode="video"):
         info_tag.setUniqueIDs(unique_ids, "tmdb")
 
     # Artwork
-    set_listitem_artwork(list_item, data, fanart_details)
+    set_listitem_artwork(list_item, data, fanart_data)
 
     if "seasons" in data:
         seasons = list(data["seasons"])
@@ -525,10 +525,7 @@ def set_cast_and_crew(data, cast_list):
             cast_list.append(actor)
 
 
-def set_listitem_artwork(list_item, data, fanart_details={}):
-    if fanart_details is None:
-        fanart_details = {}
-
+def set_listitem_artwork(list_item, data, fanart_data):
     def tmdb_url(path, size):
         return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
 
@@ -546,26 +543,28 @@ def set_listitem_artwork(list_item, data, fanart_details={}):
         (data.get("still_path"), "w1280"),
     ]
 
-    def first_valid(sources, fallback=""):
+    def first_valid(sources, fallback_key=""):
         for path, size in sources:
             url = tmdb_url(path, size)
             if url:
                 return url
-        return fallback
+        if fallback_key:
+            return data.get(fallback_key, "") or fanart_data.get(fallback_key, "")
+        return ""
 
     list_item.setArt(
         {
             "thumb": first_valid(thumb_sources),
-            "poster": first_valid(poster_sources, data.get("poster")),
-            "fanart": first_valid(fanart_sources, data.get("fanart")),
-            "icon": first_valid(poster_sources, data.get("poster")),
-            "banner": first_valid(fanart_sources, data.get("fanart")),
-            "clearart": first_valid(fanart_sources, data.get("fanart")),
-            "clearlogo": data.get("clearlogo", ""),
-            "tvshow.clearart": first_valid(fanart_sources, data.get("fanart")),
-            "tvshow.clearlogo": data.get("clearlogo", ""),
-            "tvshow.landscape": first_valid(fanart_sources, data.get("fanart")),
-            "tvshow.banner": first_valid(fanart_sources, data.get("fanart")),
+            "poster": first_valid(poster_sources, "poster"),
+            "fanart": first_valid(fanart_sources, "fanart"),
+            "icon": first_valid(poster_sources),
+            "banner": first_valid(fanart_sources, "banner"),
+            "clearart": first_valid(fanart_sources, "clearart"),
+            "clearlogo": first_valid([], "clearlogo"),
+            "tvshow.clearart": first_valid(fanart_sources, "clearart"),
+            "tvshow.clearlogo": first_valid([], "clearlogo"),
+            "tvshow.landscape": first_valid(fanart_sources, "landscape"),
+            "tvshow.banner": first_valid(fanart_sources, "banner"),
         }
     )
 
@@ -638,24 +637,40 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     return data
 
 
-def get_fanart_data(fanart_details):
-    fanart_objec = fanart_details["fanart_object"]
-    fanart = clearlogo = poster = ""
-    if fanart_objec:
-        art = fanart_objec.get("art", {})
-        fanart_obj = art.get("fanart", {})
-        if fanart_obj:
-            fanart = fanart_obj[0]["url"]
+def get_fanart_data(res):
+    art = res.get("fanart_object", {}).get("art", {})
 
-        clearlogo_obj = art.get("clearlogo", {})
-        if clearlogo_obj:
-            clearlogo = clearlogo_obj[0]["url"]
+    from lib.clients.tmdb.utils.utils import LANGUAGES
 
-        poster_obj = art.get("poster", {})
-        if poster_obj:
-            poster = poster_obj[0]["url"]
+    language_index = get_setting("language", 18)
+    lang = LANGUAGES[int(language_index)].split("-")[0].strip()
 
-    return {"fanart": fanart, "clearlogo": clearlogo, "poster": poster}
+    return {
+        "fanart": get_best_image(art.get("fanart", []), lang),
+        "clearlogo": get_best_image(art.get("clearlogo", []), lang),
+        "poster": get_best_image(art.get("poster", []), lang),
+        "clearart": get_best_image(art.get("clearart", []), lang),
+        "keyart": get_best_image(art.get("keyart", []), lang),
+        "banner": get_best_image(art.get("banner", []), lang),
+        "landscape": get_best_image(art.get("landscape", []), lang),
+    }
+
+
+def get_best_image(images, lang="en"):
+    if not images:
+        return ""
+    # Try preferred language first
+    lang_matches = [img for img in images if img.get("language") == lang]
+    if lang_matches:
+        return max(lang_matches, key=lambda x: x.get("rating", 0)).get("url", "")
+
+    # 2. Fallback to English if preferred language not found
+    en_matches = [img for img in images if img.get("language") == "en"]
+    if en_matches:
+        return max(en_matches, key=lambda x: x.get("rating", 0)).get("url", "")
+
+    # 3. Fallback: highest rating overall
+    return max(images, key=lambda x: x.get("rating", 0)).get("url", "")
 
 
 def get_cached_results(query, mode, media_type, episode):
