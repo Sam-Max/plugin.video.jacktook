@@ -538,7 +538,7 @@
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="real_debid_enabled">true</condition>
+                            <condition operator="is" setting="real_debrid_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
@@ -791,11 +791,11 @@
         <category id="tmdb_category" label="30100">
             <group id="tmdb" label="30102">
                 <setting id="tmdb_api_key" type="string" label="30103" help="30858">
-                    <default />
+                    <default/>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <control type="edit" format="string"/>
                 </setting>
                 <setting id="language" type="integer" label="42418" help="42419">
                     <default>18</default>
