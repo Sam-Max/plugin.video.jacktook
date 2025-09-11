@@ -1,3 +1,32 @@
+## 0.13.0 
+- Added support for [MDBList](https://mdblist.com/)
+- Added people category for movies and TV shows.
+- Added context menu option to search people for movies and TV shows.
+- Added setting to include/exclude TV show specials.
+- Added metadata info to playback info for richer UI display.
+- Added subtitle download option from the source select window.
+- Added pagination to “last titles” view.
+- Added export Kodi logs to paste.kodi.tv.
+- Added excluded addons filter to Stremio toggle dialog to show only functional and manually tested addons.
+- Other minor improvements and fixes.
+
+Spanish:
+- Se añadió soporte para [MDBList](https://mdblist.com/)
+- Se añadió la categoría de personas para películas y series de TV.
+- Se añadió una opción en el menú contextual para buscar personas en películas y series de TV.
+- Se añadió la opción para incluir/excluir episodios especiales de series de TV.
+- Se añadió información de metadatos en la información de reproducción para una interfaz más completa.
+- Se añadió la opción de descarga de subtítulos desde la ventana de selección de fuente.
+- Se añadió paginación a la vista de “últimos títulos”.
+- Se añadió la exportación de registros de Kodi a paste.kodi.tv.
+- Se añadió un filtro interno de addons excluidos al cuadro de diálogo de seleccion de addons de Stremio para mostrar solo addons funcionales y testeados.
+- Otras mejoras y correcciones menores.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.12.0 
 - Added TMDB collections, languages, networks, and popular filters. 
 - Added QR code dialog to simplify authentication for debrid services
