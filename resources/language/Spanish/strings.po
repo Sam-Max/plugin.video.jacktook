@@ -1684,3 +1684,7 @@ msgstr "Descargar video"
 msgctxt "#90084"
 msgid "Browse into"
 msgstr "Buscar dentro"
+
+msgctxt "#90085"
+msgid "Include TV show Specials"
+msgstr "Incluir Especiales en shows de TV"

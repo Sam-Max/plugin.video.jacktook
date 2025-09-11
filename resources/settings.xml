@@ -433,6 +433,10 @@
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
+                 <setting id="include_tvshow_specials" type="boolean" label="90085" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
             </group>
             <group id="size_filter" label="90058">
                 <setting id="filter_size_enabled" type="boolean" label="90059" help="">

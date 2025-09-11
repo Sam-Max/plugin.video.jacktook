@@ -4,7 +4,7 @@ from lib.clients.tmdb.utils.utils import (
     add_tmdb_show_context_menu,
     tmdb_get,
 )
-from lib.utils.kodi.utils import ADDON_HANDLE, build_url
+from lib.utils.kodi.utils import ADDON_HANDLE, build_url, get_setting, kodilog
 from lib.utils.general.utils import (
     get_fanart_details,
     set_media_infoTag,
@@ -33,21 +33,20 @@ def show_season_info(ids, mode, media_type):
 
     for season in seasons:
         season_name = season.name
-        if "Specials" in season_name:
-            continue
+        overview = season.overview
+        if not overview:
+            season.update({"overview": getattr(details, "overview", "")})
 
         if "Miniseries" in season_name:
             season_name = "Season 1"
 
         season_number = season.season_number
-        if season_number == 0:
+        if season_number == 0 and not get_setting("include_tvshow_specials"):
             continue
 
         list_item = ListItem(label=season_name)
 
-        set_media_infoTag(
-            list_item, data=details, fanart_data=fanart_details, mode=mode
-        )
+        set_media_infoTag(list_item, data=season, fanart_data=fanart_details, mode=mode)
 
         list_item.setProperty("IsPlayable", "false")
 
