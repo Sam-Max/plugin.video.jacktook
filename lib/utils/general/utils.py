@@ -621,24 +621,27 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     data = cache.get(identifier)
     if data:
         return data
+    fanart = FanartTv(client_key="fa836e1c874ba95ab08a14ee88e05565")
+    if mode == "tv":
+        results = fanart.get_show(tvdb_id)
     else:
-        fanart = FanartTv(client_key="fa836e1c874ba95ab08a14ee88e05565")
-        if mode == "tv":
-            results = fanart.get_show(tvdb_id)
-        else:
-            results = fanart.get_movie(tmdb_id)
-        data = get_fanart_data(results)
-        if data:
-            cache.set(
-                identifier,
-                data,
-                timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-            )
+        results = fanart.get_movie(tmdb_id)
+    data = get_fanart_data(results)
+    if data:
+        cache.set(
+            identifier,
+            data,
+            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+        )
     return data
 
 
 def get_fanart_data(res):
-    art = res.get("fanart_object", {}).get("art", {})
+    fanart_object = res.get("fanart_object")
+    if fanart_object is None:
+        art = {}
+    else:
+        art = fanart_object.get("art", {})
 
     from lib.clients.tmdb.utils.utils import LANGUAGES
 
