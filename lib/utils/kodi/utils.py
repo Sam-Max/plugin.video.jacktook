@@ -7,9 +7,7 @@ import time
 import sqlite3 as database
 from typing import Any, Union
 
-from urllib import parse
 from urllib.parse import quote, urlencode
-
 from lib.db.cached import cache
 
 import xbmc
@@ -40,7 +38,7 @@ JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
 
 
 try:
-    JACKTORR_ADDON = xbmcaddon.Addon("plugin.video.jacktorr")
+    JACKTORR_ADDON = xbmcaddon.Addon(JACKTORR_ADDON_ID)
 except:
     JACKTORR_ADDON = None
 

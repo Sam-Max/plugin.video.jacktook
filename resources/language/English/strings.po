@@ -1704,3 +1704,52 @@ msgstr ""
 msgctxt "#90085"
 msgid "Include TV show Specials"
 msgstr ""
+
+msgctxt "#90099"
+msgid "Filter by Source Type"
+msgstr ""
+
+# BluRay/UHD
+msgctxt "#90100"
+msgid "Include BluRay/UHD sources"
+msgstr ""
+
+msgctxt "#90105"
+msgid "Includes releases such as: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
+msgstr ""
+
+# WEB/HD
+msgctxt "#90101"
+msgid "Include WEB/HD sources"
+msgstr ""
+
+msgctxt "#90106"
+msgid "Includes releases such as: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
+msgstr ""
+
+# DVD/TV/SAT
+msgctxt "#90102"
+msgid "Include DVD/TV/SAT sources"
+msgstr ""
+
+msgctxt "#90107"
+msgid "Includes releases such as: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
+msgstr ""
+
+# CAM/Screener
+msgctxt "#90103"
+msgid "Include CAM/Screener sources"
+msgstr ""
+
+msgctxt "#90108"
+msgid "Includes releases such as: CAM, TeleSync, TeleCine, SCR"
+msgstr ""
+
+# Unknown
+msgctxt "#90104"
+msgid "Include Unknown sources"
+msgstr ""
+
+msgctxt "#90109"
+msgid "Includes uncategorized or unidentified sources"
+msgstr ""

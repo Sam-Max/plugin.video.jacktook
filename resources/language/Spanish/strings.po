@@ -1688,3 +1688,52 @@ msgstr "Buscar dentro"
 msgctxt "#90085"
 msgid "Include TV show Specials"
 msgstr "Incluir Especiales en shows de TV"
+
+msgctxt "#90099"
+msgid "Filter by Source Type"
+msgstr "Filtrar por tipo de fuente"
+
+# BluRay/UHD
+msgctxt "#90100"
+msgid "Include BluRay/UHD sources"
+msgstr "Incluir fuentes BluRay/UHD"
+
+msgctxt "#90105"
+msgid "Includes releases such as: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
+msgstr "Incluye lanzamientos como: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
+
+# WEB/HD
+msgctxt "#90101"
+msgid "Include WEB/HD sources"
+msgstr "Incluir fuentes WEB/HD"
+
+msgctxt "#90106"
+msgid "Includes releases such as: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
+msgstr "Incluye lanzamientos como: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
+
+# DVD/TV/SAT
+msgctxt "#90102"
+msgid "Include DVD/TV/SAT sources"
+msgstr "Incluir fuentes DVD/TV/SAT"
+
+msgctxt "#90107"
+msgid "Includes releases such as: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
+msgstr "Incluye lanzamientos como: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
+
+# CAM/Screener
+msgctxt "#90103"
+msgid "Include CAM/Screener sources"
+msgstr "Incluir fuentes CAM/Screener"
+
+msgctxt "#90108"
+msgid "Includes releases such as: CAM, TeleSync, TeleCine, SCR"
+msgstr "Incluye lanzamientos como: CAM, TeleSync, TeleCine, SCR"
+
+# Unknown
+msgctxt "#90104"
+msgid "Include Unknown sources"
+msgstr "Incluir fuentes desconocidas"
+
+msgctxt "#90109"
+msgid "Includes uncategorized or unidentified sources"
+msgstr "Incluye fuentes no categorizadas o no identificadas"

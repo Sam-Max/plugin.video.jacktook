@@ -14,6 +14,43 @@ class Quality(Enum):
     UNKNOWN = ("N/A", "[B][COLOR yellow]N/A[/COLOR][/B]")
 
 
+class SourceCategory(Enum):
+    BLURAY_UHD = (
+        "BluRay/UHD",
+        [
+            "BluRay",
+            "BluRay REMUX",
+            "BRRip",
+            "BDRip",
+            "UHDRip",
+            "REMUX",
+            "BLURAY",
+            "DolbyVision",
+            "HDR10",
+        ],
+    )
+    WEB_HD = (
+        "WEB/HD",
+        [
+            "WEB-DL",
+            "WEB-DLRip",
+            "WEBRip",
+            "HDRip",
+            "WEBMux",
+            "AMZN",
+        ],
+    )
+    DVD_TV_SAT = (
+        "DVD/TV/SAT",
+        ["DVD", "DVDRip", "HDTV", "SATRip", "TVRip", "PPVRip", "PDTV", "DVDR", "DVD-R"],
+    )
+    CAM_SCREENER = (
+        "CAM/Screener",
+        ["CAM", "CAMRip", "SCREENER", "TeleSync", "TeleCine", "SCR"],
+    )
+    UNKNOWN = ("Unknown", [None])
+
+
 class SortField(Enum):
     SEEDS = "seeders"
     SIZE = "size"
@@ -166,6 +203,44 @@ class PreProcessBuilder(BaseProcessBuilder):
             + quality_buckets[Quality.LOW]
             + quality_buckets[Quality.UNKNOWN]
         )
+        return self
+
+    def filter_by_source(self) -> "PreProcessBuilder":
+        """
+        Categorize torrents into SourceCategory buckets and filter them
+        depending on Kodi settings (quality_filter group).
+        """
+        source_buckets: Dict[SourceCategory, List[TorrentStream]] = {
+            cat: [] for cat in SourceCategory
+        }
+
+        for res in self.results:
+            title = res.title.upper()
+            matched_category = None
+            for cat in SourceCategory:
+                for keyword in cat.value[1]:
+                    if keyword and keyword.upper() in title:
+                        source_buckets[cat].append(res)
+                        matched_category = cat
+                        break
+                if matched_category:
+                    break
+            if not matched_category:
+                source_buckets[SourceCategory.UNKNOWN].append(res)
+
+        allowed_results: List[TorrentStream] = []
+        if get_setting("bluray_hd_enabled", True):
+            allowed_results.extend(source_buckets[SourceCategory.BLURAY_UHD])
+        if get_setting("web_hd_enabled", True):
+            allowed_results.extend(source_buckets[SourceCategory.WEB_HD])
+        if get_setting("dvd_tv_enabled", True):
+            allowed_results.extend(source_buckets[SourceCategory.DVD_TV_SAT])
+        if get_setting("cam_screener_enabled", True):
+            allowed_results.extend(source_buckets[SourceCategory.CAM_SCREENER])
+        if get_setting("unknown_enabled", True):
+            allowed_results.extend(source_buckets[SourceCategory.UNKNOWN])
+
+        self.results = allowed_results
         return self
 
     def filter_by_size(self) -> "PreProcessBuilder":
