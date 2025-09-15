@@ -25,20 +25,22 @@ class RealDebrid(DebridClient):
 
     def initialize_headers(self):
         self.headers = {"User-Agent": "Jacktook/1.0"}
-        if self.token:
-            token_data = self.decode_token_str(self.token)
-            if "private_token" in token_data:
-                self.headers["Authorization"] = f"Bearer {token_data['private_token']}"
-            else:
-                # Exchange client_id/secret/code for an access token
-                access_token_data = self.get_token(
-                    token_data["client_id"],
-                    token_data["client_secret"],
-                    token_data["code"],
-                )
-                self.headers["Authorization"] = (
-                    f"Bearer {access_token_data['access_token']}"
-                )
+        if not self.token or not isinstance(self.token, str):
+            kodilog("Invalid token")
+            return
+        token_data = self.decode_token_str(self.token)
+        if "private_token" in token_data:
+            self.headers["Authorization"] = f"Bearer {token_data['private_token']}"
+        else:
+            # Exchange client_id/secret/code for an access token
+            access_token_data = self.get_token(
+                token_data["client_id"],
+                token_data["client_secret"],
+                token_data["code"],
+            )
+            self.headers["Authorization"] = (
+                f"Bearer {access_token_data['access_token']}"
+            )
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
@@ -56,10 +58,6 @@ class RealDebrid(DebridClient):
             raise ProviderException("Too many active downloads")
         elif error_code == 35:
             raise ProviderException("Infringing file")
-
-    def __del__(self):
-        if self.token:
-            self.disable_access_token()
 
     def _make_request(
         self,
@@ -90,13 +88,18 @@ class RealDebrid(DebridClient):
     @staticmethod
     def decode_token_str(token):
         try:
-            client_id, client_secret, code = b64decode(token).decode().split(":")
+            decoded = b64decode(token)
+            decoded_str = decoded.decode()
+            parts = decoded_str.split(":")
+            if len(parts) != 3:
+                raise ProviderException("Invalid token format")
+            client_id, client_secret, code = parts
             return {
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "code": code,
             }
-        except ValueError as e:
+        except Exception as e:
             raise ProviderException(f"Invalid token {e}")
 
     def get_device_code(self):
@@ -143,6 +146,7 @@ class RealDebrid(DebridClient):
             return token_data
 
     def remove_auth(self):
+        self.token = ""
         set_setting("real_debrid_token", "")
         set_setting("real_debid_authorized", "false")
         set_setting("real_debrid_user", "")
@@ -331,9 +335,7 @@ class RealDebrid(DebridClient):
         )
 
     def disable_access_token(self):
-        return self._make_request(
-            "GET", f"{self.BASE_URL}/disable_access_token", is_return_none=True
-        )
+        pass
 
     def select_files(self, torrent_id, file_ids="all"):
         return self._make_request(

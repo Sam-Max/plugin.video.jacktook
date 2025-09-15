@@ -30,7 +30,7 @@ class LinkNotFoundError(Exception):
 
 class RealDebridHelper:
     def __init__(self) -> None:
-        self.client = RealDebrid(token=get_setting("real_debrid_token"))
+        self.client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
 
     def check_cached(
         self,
