@@ -182,7 +182,7 @@ def root_menu():
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("telegram_menu"),
-            build_list_item(translation(90013), "cloud.png"),
+            build_list_item(translation(90013), "telegram.png"),
             isFolder=True,
         )
 
@@ -196,7 +196,7 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("downloads_menu"),
-        build_list_item(translation(90015), "cloud.png"),
+        build_list_item(translation(90015), "download2.png"),
         isFolder=True,
     )
 
