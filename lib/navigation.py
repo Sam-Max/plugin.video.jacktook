@@ -189,7 +189,7 @@ def root_menu():
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("cloud"),
-        build_list_item(translation(90014), "cloud.png"),
+        build_list_item(translation(90014), "cloud2.png"),
         isFolder=True,
     )
 
