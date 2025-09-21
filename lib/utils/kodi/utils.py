@@ -28,6 +28,7 @@ _URL = sys.argv[0]
 
 MOVIES_TYPE = "movies"
 SHOWS_TYPE = "tvshows"
+SEASONS_TYPE = "seasons"
 EPISODES_TYPE = "episodes"
 TITLES_TYPE = "titles"
 
@@ -194,18 +195,17 @@ def dialog_ok(heading, line1, line2="", line3=""):
     return xbmcgui.Dialog().ok(heading, compat(line1=line1, line2=line2, line3=line3))
 
 
-def dialog_text(heading, content="", file=None):
+def dialog_text(heading: str, content: str, file=None):
     dialog = xbmcgui.Dialog()
     if file:
         try:
             with open(file, encoding="utf-8") as r:
-                content = r.readlines()
-                content = "".join(content)
+                content = r.read()
         except Exception as e:
             logger(f"Error reading file {file}: {e}", xbmc.LOGERROR)
             notification("Error reading file.")
             return
-    dialog.textviewer(heading, str(content), False)
+    dialog.textviewer(heading, content, False)
     return dialog
 
 
@@ -377,11 +377,7 @@ def get_current_view_id():
     return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()
 
 
-def set_view_mode(view_id):
-    xbmc.executebuiltin("Container.SetViewMode({})".format(view_id))
-
-
-def set_view(name):
+def set_view(name, default="current"):
     views_dict = {
         "list": 50,
         "poster": 51,
@@ -392,8 +388,10 @@ def set_view(name):
         "wall": 500,
         "banner": 501,
         "fanart": 502,
+        "current": get_current_view_id()
     }
-    execute_builtin("Container.SetViewMode({})".format(views_dict[name]))
+    view_id = views_dict.get(name, views_dict.get(default))
+    execute_builtin(f"Container.SetViewMode({view_id})")
 
 
 def container_content():

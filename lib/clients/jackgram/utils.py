@@ -145,7 +145,7 @@ def add_telegram_latest_file_item(file_entry, parent_data):
 
 
 def process_results(results, callback, next_button_action, page):
-     # Sort results by date (newest first)
+    # Sort results by date (newest first)
     results = sorted(
         results,
         key=lambda x: x.get("date") or "",

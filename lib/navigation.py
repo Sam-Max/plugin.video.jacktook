@@ -42,6 +42,7 @@ from lib.utils.kodi.utils import (
     CHANGELOG_PATH,
     EPISODES_TYPE,
     JACKTORR_ADDON,
+    SEASONS_TYPE,
     SHOWS_TYPE,
     action_url_run,
     build_url,
@@ -917,9 +918,9 @@ def tv_seasons_details(params):
     mode = params["mode"]
     media_type = params.get("media_type", None)
 
-    setContent(ADDON_HANDLE, SHOWS_TYPE)
+    setContent(ADDON_HANDLE, SEASONS_TYPE)
     show_season_info(ids, mode, media_type)
-    set_view("widelist")
+    set_view("current")
     endOfDirectory(ADDON_HANDLE)
 
 
@@ -932,7 +933,7 @@ def tv_episodes_details(params):
 
     setContent(ADDON_HANDLE, EPISODES_TYPE)
     show_episode_info(tv_name, season, ids, mode, media_type)
-    set_view("widelist")
+    set_view("current")
     endOfDirectory(ADDON_HANDLE)
 
 

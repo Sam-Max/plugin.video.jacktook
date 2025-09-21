@@ -39,6 +39,8 @@ from lib.utils.kodi.utils import (
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.vendor.torf._magnet import Magnet
 
+from collections import deque
+
 from xbmcgui import ListItem, Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
@@ -329,13 +331,13 @@ def make_listing(data):
     data["id"] = ids.get("tmdb_id")
     data["imdb_id"] = ids.get("imdb_id")
 
-    set_media_infoTag(list_item, data=data, mode=mode)
+    set_media_infoTag(list_item, data=data, mode=mode, for_player=True)
 
     list_item.setProperty("IsPlayable", "true")
     return list_item
 
 
-def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
+def set_media_infoTag(list_item, data, fanart_data={}, mode="video", for_player=False):
     info_tag = list_item.getVideoInfoTag()
 
     # General Video Info
@@ -375,7 +377,13 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
     # Media Type
     if mode == "movies":
         info_tag.setMediaType("movie")
+    elif mode == "tv" and for_player:
+        info_tag.setMediaType("episode")
     elif mode == "tv":
+        info_tag.setMediaType("tvshow")
+    elif mode == "season":
+        info_tag.setMediaType("season")
+    elif mode == "episode":
         info_tag.setMediaType("episode")
     else:
         info_tag.setMediaType("video")
@@ -398,6 +406,7 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
         unique_ids = {
             "tmdb": str(data.get("id", "")),
             "imdb": data.get("imdb_id", ""),
+            "tvdb": data.get("tvdb_id", ""),
         }
         info_tag.setUniqueIDs(unique_ids, "tmdb")
 
@@ -418,7 +427,10 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
     set_cast_and_actors(info_tag, data)
 
     # Episode & Season Info (for TV shows/episodes)
-    if mode in ["tv", "episode"]:
+    if mode == "tv":
+        info_tag.setTvShowTitle(data.get("tvshow_title", data.get("name", "")))
+        info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
+    elif mode == "episode":
         info_tag.setTvShowTitle(data.get("tvshow_title", data.get("name", "")))
         info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
         info_tag.setEpisode(int(data.get("episode", data.get("episode_number", 0))))
@@ -1082,9 +1094,11 @@ def show_log_export_dialog(params):
     kodi_log_path = os.path.join(translatePath("special://logpath"), log_file)
     if os.path.exists(kodi_log_path):
         try:
-            with open(kodi_log_path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-            content = "".join(lines[::-1])
+            with open(kodi_log_path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = deque(f, maxlen=500)
+
+            content = "".join(reversed(lines))
+
             # Ask user if they want to export
             from xbmcgui import Dialog
 

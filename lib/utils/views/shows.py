@@ -89,7 +89,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
 
         set_media_infoTag(
-            list_item, data=episode, fanart_data=fanart_details, mode=mode
+            list_item, data=episode, fanart_data=fanart_details, mode="episode"
         )
 
         list_item.setProperty("IsPlayable", "true")
