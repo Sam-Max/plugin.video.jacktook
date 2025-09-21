@@ -27,7 +27,9 @@ from xbmcplugin import endOfDirectory
 
 class BaseTmdbClient:
     @staticmethod
-    def add_media_directory_item(list_item, mode, title, ids, media_type=None):
+    def add_media_directory_item(
+        list_item, mode, title, ids, seasons_number=1, media_type=None
+    ):
         if mode == "movies":
             context_menu = add_tmdb_movie_context_menu(mode, title=title, ids=ids)
             if is_trakt_auth():
@@ -53,16 +55,30 @@ class BaseTmdbClient:
                     "shows", ids
                 ) + add_trakt_watched_context_menu("shows", ids=ids)
             list_item.addContextMenuItems(context_menu)
-            add_kodi_dir_item(
-                list_item=list_item,
-                url=build_url(
-                    "tv_seasons_details",
-                    ids=ids,
-                    mode=mode,
-                    media_type=media_type,
-                ),
-                is_folder=True,
-            )
+            if seasons_number == 1:
+                add_kodi_dir_item(
+                    list_item=list_item,
+                    url=build_url(
+                        "tv_episodes_details",
+                        tv_name=title,
+                        ids=ids,
+                        mode=mode,
+                        media_type=media_type,
+                        season=seasons_number,
+                    ),
+                    is_folder=True,
+                )
+            else:
+                add_kodi_dir_item(
+                    list_item=list_item,
+                    url=build_url(
+                        "tv_seasons_details",
+                        ids=ids,
+                        mode=mode,
+                        media_type=media_type,
+                    ),
+                    is_folder=True,
+                )
 
     @staticmethod
     def show_years_items(mode, page, submode=None):

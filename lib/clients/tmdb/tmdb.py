@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 import os
+
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.clients.tmdb.anime_client import TmdbAnimeClient
@@ -8,13 +9,11 @@ from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.collections import TmdbCollections
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.api.tmdbv3api.objs.search import Search
-from lib.api.tmdbv3api.objs.movie import Movie
-from lib.api.tmdbv3api.objs.tv import TV
-
 from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
 from lib.utils.general.utils import (
     add_next_button,
     execute_thread_pool,
+    get_fanart_details,
     set_content_type,
     set_media_infoTag,
     set_pluging_category,
@@ -280,78 +279,97 @@ class TmdbClient(BaseTmdbClient):
         endOfDirectory(ADDON_HANDLE)
 
     @staticmethod
-    def show_tmdb_results(res, mode, submode=None):
+    def show_tmdb_results(res, mode, submode=""):
         tmdb_id = getattr(res, "id", "")
-        media_type = res.get("media_type", "") if hasattr(res, "get") else ""
+        tvdb_id = ""
+        media_type = res.get("media_type", "") if isinstance(res, dict) else ""
+        number_of_seasons = 1
+        title = getattr(res, "title", "") or getattr(res, "name", "")
+        label_title = title
+        ids = {"tmdb_id": tmdb_id}
 
         # Adjust mode for anime
         if mode == "anime":
             mode = submode
 
-        result = TmdbClient._get_tmdb_result_metadata(res, mode, media_type, tmdb_id)
-        if result is None:
+        tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, tmdb_id)
+        if not tmdb_obj:
             return
-        title, label_title, mode, ids = result
+
+        # Handle movie-specific
+        if (
+            mode == "movies"
+            or (mode == "multi" and media_type == "movie")
+            and "external_ids" in tmdb_obj
+        ):
+            if mode == "multi":
+                mode = "movies"
+                label_title = f"[B]MOVIE -[/B] {title}"
+
+            ids["imdb_id"] = tmdb_obj["external_ids"].get("imdb_id", "")
+            res.runtime = tmdb_obj.get("runtime", 0)
+            res.casts = tmdb_obj.get("casts", [])
+
+        # Handle tv-specific
+        elif (
+            mode == "tv"
+            or (mode == "multi" and media_type == "tv")
+            and "external_ids" in tmdb_obj
+        ):
+            if mode == "multi":
+                mode = "tv"
+                label_title = f"[B]TV -[/B] {title}"
+
+            ids["imdb_id"] = tmdb_obj["external_ids"].get("imdb_id", "")
+            tvdb_id = tmdb_obj["external_ids"].get("tvdb_id", "") or ""
+            ids["tvdb_id"] = tvdb_id
+            res.casts = tmdb_obj.get("credits", {}).get("cast", [])
+            number_of_seasons = tmdb_obj.get("number_of_seasons", 1) or 1
+
+        fanart_details = get_fanart_details(
+            tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=str(mode)
+        )
 
         list_item = ListItem(label=label_title)
-        set_media_infoTag(list_item, data=res, mode=mode)
 
-        TmdbClient.add_media_directory_item(list_item, mode, title, ids, media_type)
+        set_media_infoTag(
+            list_item, data=tmdb_obj, fanart_data=fanart_details, mode=str(mode)
+        )
+
+        TmdbClient.add_media_directory_item(
+            list_item,
+            mode,
+            title,
+            ids,
+            seasons_number=number_of_seasons,
+            media_type=media_type,
+        )
 
     @staticmethod
-    def _get_tmdb_result_metadata(res, mode, media_type, tmdb_id):
+    def _get_tmdb_metadata(mode, media_type, tmdb_id):
         from lib.clients.tmdb.utils.utils import (
             get_tmdb_movie_details,
             get_tmdb_show_details,
         )
 
-        imdb_id = tvdb_id = ""
-        title = label_title = ""
+        tmdb_obj = None
 
         if mode == "movies":
-            title = getattr(res, "title", "")
-            label_title = title
-            movie_details = get_tmdb_movie_details(tmdb_id)
-            if movie_details:
-                setattr(res, "runtime", movie_details.get("runtime"))
-                setattr(res, "casts", movie_details.get("casts"))
-                imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
+            tmdb_obj = get_tmdb_movie_details(tmdb_id)
+
         elif mode == "tv":
-            title = getattr(res, "name", "")
-            label_title = title
-            show_details = get_tmdb_show_details(tmdb_id)
-            if show_details:
-                external_ids = getattr(show_details, "external_ids")
-                setattr(res, "casts", getattr(show_details, "credits").get("cast", []))
-                imdb_id = external_ids.get("imdb_id", "")
-                tvdb_id = external_ids.get("tvdb_id", "")
+            tmdb_obj = get_tmdb_show_details(tmdb_id)
+
         elif mode == "multi":
-            title = getattr(res, "name", "") or getattr(res, "title", "")
             if media_type == "movie":
-                mode = "movies"
-                movie_details = get_tmdb_movie_details(tmdb_id)
-                if movie_details:
-                    setattr(res, "runtime", movie_details.get("runtime"))
-                    setattr(res, "casts", movie_details.get("casts"))
-                    imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
-                label_title = f"[B]MOVIE -[/B] {title}"
+                tmdb_obj = get_tmdb_movie_details(tmdb_id)
             elif media_type == "tv":
-                mode = "tv"
-                show_details = get_tmdb_show_details(tmdb_id)
-                if show_details:
-                    external_ids = getattr(show_details, "external_ids")
-                    setattr(
-                        res, "casts", getattr(show_details, "credits").get("cast", [])
-                    )
-                    imdb_id = external_ids.get("imdb_id", "")
-                    tvdb_id = external_ids.get("tvdb_id", "")
-                label_title = f"[B]TV -[/B] {title}"
+                tmdb_obj = get_tmdb_show_details(tmdb_id)
             else:
                 kodilog(f"Invalid media type: {media_type}", level=xbmc.LOGERROR)
                 return None
 
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
-        return title, label_title, mode, ids
+        return tmdb_obj
 
     @staticmethod
     def show_trending_shows(query, mode, page):
@@ -722,9 +740,9 @@ class TmdbClient(BaseTmdbClient):
             return
 
         if mode == "tv":
-            results = TV().recommendations(tmdb_id, page=page)
+            results = tmdb_get("tv_recommendations", {"id": tmdb_id, "page": page})
         elif mode == "movies":
-            results = Movie().recommendations(tmdb_id, page=page)
+            results = tmdb_get("movie_recommendations", {"id": tmdb_id, "page": page})
         else:
             notification("Invalid mode")
             return
@@ -759,9 +777,9 @@ class TmdbClient(BaseTmdbClient):
             return
 
         if mode == "tv":
-            results = TV().similar(tmdb_id, page=page)
+            results = tmdb_get("tv_similar", {"id": tmdb_id, "page": page})
         elif mode == "movies":
-            results = Movie().similar(tmdb_id, page=page)
+            results = tmdb_get("movie_similar", {"id": tmdb_id, "page": page})
         else:
             notification("Invalid mode")
             return

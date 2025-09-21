@@ -299,6 +299,14 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "anime_genres": lambda p: TmdbAnime().anime_genres(p),
         "collection_details": lambda p: Collection().details(p),
         "collection_images": lambda p: Collection().images(p),
+        "tv_recommendations": lambda p: TV().recommendations(
+            tv_id=p["id"], page=p["page"]
+        ),
+        "movie_recommendations": lambda p: Movie().recommendations(
+            movie_id=p["id"], page=p["page"]
+        ),
+        "tv_similar": lambda p: TV().similar(tv_id=p["id"], page=p["page"]),
+        "movie_similar": lambda p: Movie().similar(movie_id=p["id"], page=p["page"]),
     }
 
     try:
