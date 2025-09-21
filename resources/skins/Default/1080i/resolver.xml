@@ -41,6 +41,18 @@
             <width>550</width>
             <height>400</height> <!-- Increased height to accommodate Clearlogo -->
             
+             <!-- Fallback -->
+            <control type="image">
+                <top>0</top>
+                <left>80</left> <!-- Centered horizontally: (550 - 400) / 2 -->
+                <width>400</width>
+                <height>200</height>
+                <align>center</align>
+                <texture>jtk_clearlogo.png</texture>
+                <aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
+                <visible>String.IsEmpty(Window().Property(info.clearlogo))</visible>
+            </control>
+
             <!-- Clearlogo -->
             <control type="image">
                 <top>0</top>

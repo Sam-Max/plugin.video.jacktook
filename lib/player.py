@@ -37,7 +37,7 @@ video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 
 
 class JacktookPLayer(xbmc.Player):
-    def __init__(self):
+    def __init__(self, on_started=None):
         xbmc.Player.__init__(self)
         self.url = None
         self.kodi_monitor = xbmc.Monitor()
@@ -53,6 +53,7 @@ class JacktookPLayer(xbmc.Player):
         self.notification = notification
         self.lang_code = "en"
         self.subtitles_found = False
+        self.on_started = on_started
 
     def run(self, data={}):
         self.set_constants(data)
@@ -159,7 +160,8 @@ class JacktookPLayer(xbmc.Player):
                         video_fullscreen_check
                     ):
                         self.playback_successful = True
-
+                        if self.on_started:
+                            self.on_started()
                         break
                 except Exception as e:
                     kodilog(f"Error in check_playback_start: {e}")

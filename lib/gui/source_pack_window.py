@@ -20,12 +20,16 @@ class SourcePackWindow(BaseWindow):
         self.display_list.reset()
 
         files = self.pack_info.get("files", [])
-        for _, title in files:
-            menu_item = xbmcgui.ListItem(label=title)
-            menu_item.setProperty("title", title or "")
-            menu_item.setProperty("type", getattr(self.source, "type", "") or "")
-            menu_item.setProperty("quality", getattr(self.source, "quality", "") or "")
-            self.display_list.addItem(menu_item)
+        if files:
+            for _, title in files:
+                menu_item = xbmcgui.ListItem(label=title)
+                menu_item.setProperty("title", title or "")
+                menu_item.setProperty("type", getattr(self.source, "type", "") or "")
+                menu_item.setProperty("quality", getattr(self.source, "quality", "") or "")
+                self.display_list.addItem(menu_item)
+        else:
+            self.setProperty("resolving", "false")
+            self.close()
 
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):

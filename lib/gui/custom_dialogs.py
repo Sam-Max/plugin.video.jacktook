@@ -106,9 +106,8 @@ def source_select(
         sources=sources,
         uncached=sources,
     )
-    data = window.doModal()
+    window.doModal()
     del window
-    return data
 
 
 def run_next_dialog(params):

@@ -581,12 +581,7 @@ def search(params):
         auto_play(post_results, ids, tv_data, mode)
         return
 
-    data = handle_results(post_results, mode, ids, tv_data, direct)
-    if not data:
-        cancel_playback()
-        return
-
-    play_data(data)
+    handle_results(post_results, mode, ids, tv_data, direct)
 
 
 def extract_tv_data(tv_data):
@@ -693,7 +688,7 @@ def handle_results(
         "source_select_direct.xml" if mode == "direct" else "source_select.xml"
     )
 
-    return source_select(
+    source_select(
         item_info,
         xml_file=xml_file_string,
         sources=results,
