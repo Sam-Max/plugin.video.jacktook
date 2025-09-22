@@ -138,6 +138,16 @@ def is_jacktorr_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})")
 
 
+def is_jacktorr_addon_enabled():
+    try:
+        addon = xbmcaddon.Addon(JACKTORR_ADDON_ID)
+        # If the addon is disabled, this will raise RuntimeError
+        return True
+    except RuntimeError:
+        # Addon exists but is disabled
+        return False
+
+
 def is_elementum_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
 
@@ -146,6 +156,30 @@ def is_burst_addon():
     return xbmc.getCondVisibility(f"System.HasAddon({JACKTOOK_BURST_ADOON_ID})")
 
 
+def enable_addon(addon_id: str):
+    """
+    Enable a Kodi addon using JSON-RPC.
+    Returns True if successful, False otherwise.
+    """
+    request = {
+        "jsonrpc": "2.0",
+        "method": "Addons.SetAddonEnabled",
+        "params": {
+            "addonid": addon_id,
+            "enabled": True
+        },
+        "id": 1
+    }
+
+    try:
+        result = xbmc.executeJSONRPC(json.dumps(request))
+        response = json.loads(result)
+        return "error" not in response
+    except Exception as e:
+        xbmc.log(f"Failed to enable addon {addon_id}: {e}", level=xbmc.LOGERROR)
+        return False
+
+        
 def translation(id_value):
     return ADDON.getLocalizedString(id_value)
 
@@ -388,7 +422,7 @@ def set_view(name, default="current"):
         "wall": 500,
         "banner": 501,
         "fanart": 502,
-        "current": get_current_view_id()
+        "current": get_current_view_id(),
     }
     view_id = views_dict.get(name, views_dict.get(default))
     execute_builtin(f"Container.SetViewMode({view_id})")

@@ -54,6 +54,7 @@ class SourceSelect(BaseWindow):
         self.setProperty("resolving", "false")
         self.filtered_sources: Optional[List[TorrentStream]] = None
         self.filter_applied: bool = False
+        
 
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
@@ -162,14 +163,14 @@ class SourceSelect(BaseWindow):
             selected_source = self.list_sources[self.position]
             if selected_source.type == "Torrent":
                 response = xbmcgui.Dialog().contextmenu(
-                    ["Download to Debrid", "Download file"]
+                    ["Download to Debrid", translation(90083)]
                 )
                 if response == 0:
                     self._download_to_debrid()
                 elif response == 1:
                     self._download_file()
             elif selected_source.type == "Direct":
-                response = xbmcgui.Dialog().contextmenu(["Download file"])
+                response = xbmcgui.Dialog().contextmenu([translation(90083)])
                 if response == 0:
                     self._download_file()
             else:

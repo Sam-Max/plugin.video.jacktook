@@ -13,11 +13,11 @@ ACTION_PREVIOUS_MENU = 10
 ACTION_PLAYER_STOP = 13
 ACTION_NAV_BACK = 92
 
-
 class BaseWindow(xbmcgui.WindowXMLDialog):
-    def __init__(self, xml_file, location, item_information=None):
+    def __init__(self, xml_file, location, item_information=None, previous_window=None):
         super().__init__(xml_file, location)
         self.item_information = {}
+        self.previous_window = previous_window
         self.CACHE_KEY = ""
         self._last_focused_control = (None, None)
         self.action_exitkeys_id = {
@@ -25,10 +25,8 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             ACTION_PLAYER_STOP,
             ACTION_NAV_BACK,
         }
-
         if item_information is None:
             return
-
         self.add_item_information_to_window(item_information)
 
     def onInit(self):
@@ -111,9 +109,11 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
     def onAction(self, action):
         action_id = action.getId()
         if action_id in self.action_exitkeys_id:
+            if self.previous_window:
+                self.previous_window.setProperty("instant_close", "true")
+                self.previous_window.close()
             self.close()
-            return
-        if action_id != 7:  # Enter(7) also fires an onClick event
+        elif action_id != 7:
             self.handle_action(action_id, self.getFocusId())
 
     def prepare_source_data(

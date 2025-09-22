@@ -18,7 +18,12 @@ class ResolverWindow(BaseWindow):
         previous_window: Optional[BaseWindow] = None,
         close_callback: Optional[Any] = None,
     ) -> None:
-        super().__init__(xml_file, location, item_information=item_information)
+        super().__init__(
+            xml_file,
+            location,
+            item_information=item_information,
+            previous_window=previous_window,
+        )
         self.stream_data: Optional[Any] = None
         self.progress: int = 1
         self.resolver: Optional[Any] = None
@@ -47,11 +52,13 @@ class ResolverWindow(BaseWindow):
         super().onInit()
         self.resolve_source()
 
-    def handle_playback_started(self):
-        # Close dialog only when playback has begun
+    def close_windows(self):
         self.previous_window.setProperty("instant_close", "true")
         self.previous_window.close()
         self.close()
+
+    def handle_playback_started(self):
+        self.close_windows()
 
     def resolve_source(self) -> Optional[Dict[str, Any]]:
         if self.source.isPack or self.pack_select:
@@ -59,7 +66,10 @@ class ResolverWindow(BaseWindow):
         else:
             self.resolve_single_source()
 
-        player = JacktookPLayer(on_started=self.handle_playback_started)
+        player = JacktookPLayer(
+            on_started=self.handle_playback_started,
+            on_error=self.handle_playback_started,
+        )
         player.run(data=self.playback_info)
         del player
 
@@ -89,12 +99,9 @@ class ResolverWindow(BaseWindow):
         self.playback_info = self.window.doModal()
 
         if self.playback_info is None:
-            self.previous_window.setProperty("instant_close", "true")
-            self.previous_window.close()
-            self.close()
+            self.close_windows()
             del self.window
             raise SourceException("No files on the current source")
-
         del self.window
 
     def _update_window_properties(self, source: TorrentStream) -> None:
