@@ -31,7 +31,7 @@ from xbmcplugin import endOfDirectory
 class TmdbAnimeClient(BaseTmdbClient):
     def handle_anime_search_query(self, page):
         if page == 1:
-            query = show_keyboard(id=30242)
+            query = show_keyboard(id=30241)
             if query:
                 PickleDatabase().set_key("anime_query", query)
                 return query
@@ -82,7 +82,8 @@ class TmdbAnimeClient(BaseTmdbClient):
             kodilog(f"Invalid category: {category}")
             return None
 
-    def show_anime_results(self, res, mode):
+    @staticmethod
+    def show_anime_results(res, mode):
         tmdb_id = res.get("id", "")
         if mode == "movies":
             title = res.title
@@ -91,7 +92,6 @@ class TmdbAnimeClient(BaseTmdbClient):
             tvdb_id = ""
         elif mode == "tv":
             title = res.name
-            title = res["name"]
             show_details = get_tmdb_show_details(tmdb_id)
             external_ids = getattr(show_details, "external_ids")
             imdb_id = external_ids.get("imdb_id", "")
@@ -103,4 +103,4 @@ class TmdbAnimeClient(BaseTmdbClient):
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
         list_item = ListItem(label=title)
         set_media_infoTag(list_item, data=res, mode=mode)
-        self.add_media_directory_item(list_item, mode, title, ids)
+        TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids)

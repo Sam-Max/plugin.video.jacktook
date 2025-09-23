@@ -282,7 +282,7 @@ class TmdbClient(BaseTmdbClient):
     def show_tmdb_results(res, mode, submode=""):
         tmdb_id = getattr(res, "id", "")
         tvdb_id = ""
-        media_type = res.get("media_type", "") if isinstance(res, dict) else ""
+        media_type = res.get("media_type", "") or ""
         number_of_seasons = 1
         title = getattr(res, "title", "") or getattr(res, "name", "")
         label_title = title
