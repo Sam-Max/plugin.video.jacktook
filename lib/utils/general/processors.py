@@ -171,10 +171,12 @@ class PreProcessBuilder(BaseProcessBuilder):
             r"Cap\.",  # match "Cap."
         ]
         if episode_name:
-            patterns.append(episode_name)
+            patterns.append(re.escape(episode_name))
 
         episode_results = [
-            res for res in self.results if re.search("|".join(patterns), res.title)
+            res
+            for res in self.results
+            if re.search("|".join(patterns), res.title, re.IGNORECASE)
         ]
         self.results = season_pack_results + episode_results
         return self
