@@ -626,7 +626,7 @@ def build_media_metadata(tmdb_id: str, tvdb_id: str, mode: str) -> dict:
         metadata["vote_count"] = getattr(details, "vote_count", 0)
         metadata["popularity"] = getattr(details, "popularity", 0)
         metadata["unique_ids"]["tmdb"] = str(tmdb_id)
-        metadata["cast"] = getattr(details, "casts", getattr(details, "cast", [])) 
+        metadata["cast"] = getattr(details, "casts", getattr(details, "cast", []))
 
     # Fanart details
     if tmdb_id or tvdb_id:
@@ -652,9 +652,6 @@ def set_watched_file(data):
     is_torrent = data.get("is_torrent", False)
     is_direct = data.get("type", "") == IndexerType.DIRECT
 
-    if title in pickle_db.get_key("jt:lfh"):
-        return
-
     if is_direct:
         color = get_random_color("Direct", formatted=False)
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
@@ -665,28 +662,19 @@ def set_watched_file(data):
         color = get_random_color("Cached", formatted=False)
         title = f"[B][COLOR {color}][Cached][/COLOR][/B] - {title}"
 
-    if title not in pickle_db.get_key("jt:watch"):
-        pickle_db.set_item(key="jt:watch", subkey=title, value=True)
-
     data["timestamp"] = datetime.now().strftime("%a, %d %b %Y %I:%M %p")
 
     pickle_db.set_item(key="jt:lfh", subkey=title, value=data)
 
 
 def set_watched_title(title, ids, mode, tg_data="", media_type=""):
-    kodilog(f"Setting watched title: {title}", level=xbmc.LOGDEBUG)
-    current_time = datetime.now()
-
-    if mode == "multi":
-        mode = media_type
-
     pickle_db.set_item(
         key="jt:lth",
         subkey=title,
         value={
-            "timestamp": current_time.strftime("%a, %d %b %Y %I:%M %p"),
+            "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
             "ids": ids,
-            "mode": mode,
+            "mode": media_type if mode == "multi" else mode,
             "tg_data": tg_data,
         },
     )

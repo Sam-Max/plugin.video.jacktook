@@ -655,12 +655,6 @@ def play_torrent(params):
     del player
 
 
-def play_data(data: dict):
-    player = JacktookPLayer()
-    player.run(data=data)
-    del player
-
-
 def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     filtered_results = clean_auto_play_undesired(results)
     if not filtered_results:
