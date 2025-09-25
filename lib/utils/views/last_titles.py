@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import os
 
@@ -25,6 +26,17 @@ def delete_last_title_entry(params):
     container_refresh()
 
 
+def parse_time(item):
+    ts = item[1].get("timestamp")
+    if ts:
+        try:
+            return datetime.strptime(ts, "%a, %d %b %Y %I:%M %p")
+        except ValueError as e:
+            kodilog(e)
+            return datetime.min
+    return datetime.min
+
+
 def show_last_titles(params):
     if params is None:
         params = {}
@@ -40,6 +52,8 @@ def show_last_titles(params):
     start = (page - 1) * per_page
     end = start + per_page
     items = all_items[start:end]
+
+    items = sorted(items, key=parse_time)
 
     # Add "Clear Titles" button
     list_item = ListItem(label="Clear Titles")

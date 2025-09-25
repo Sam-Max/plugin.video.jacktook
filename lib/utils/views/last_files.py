@@ -1,9 +1,15 @@
+import json
 import os
 from lib.db.pickle_db import PickleDatabase
+from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, translation
+
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
+
+
+pickle_db = PickleDatabase()
 
 
 def show_last_files():
@@ -19,9 +25,18 @@ def show_last_files():
         list_item,
     )
 
-    for title, data in reversed(PickleDatabase().get_key("jt:lfh").items()):
+    all_items = list(reversed(pickle_db.get_key("jt:lfh").items()))
+
+    for title, data in all_items:
         formatted_time = data["timestamp"]
-        label = f"{title}—{formatted_time}"
+        tv_data = data.get("tv_data", {})
+        if tv_data:
+            season = tv_data.get("season")
+            episode = tv_data.get("episode")
+            name = tv_data.get("name", "")
+            label = f"{title} S{season:02d}E{episode:02d} - {name} — {formatted_time}"
+        else:
+            label = f"{title}—{formatted_time}"
 
         list_item = ListItem(label=label)
         list_item.setArt(
@@ -33,7 +48,7 @@ def show_last_files():
             ADDON_HANDLE,
             build_url(
                 "play_torrent",
-                data=data,
+                data=json.dumps(data),
             ),
             list_item,
             False,
