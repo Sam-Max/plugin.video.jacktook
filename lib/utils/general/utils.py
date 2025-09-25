@@ -424,7 +424,7 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", for_player=
         else:
             info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
 
-    set_cast_and_actors(info_tag, data)
+    info_tag.setCast(get_cast_and_actors(data))
 
     # Episode & Season Info (for TV shows/episodes)
     if mode == "tv":
@@ -464,28 +464,24 @@ def extract_genres(genres, media_type="movies"):
     return genre_list
 
 
-def set_cast_and_actors(info_tag, data):
+def get_cast_and_actors(data: dict) -> list:
     cast_list = []
     casts = []
 
-    if "credits" in data:
-        credits = data["credits"]
-        if "cast" in credits:
-            casts = credits["cast"]
+    if "credits" in data and "cast" in data["credits"]:
+        casts = data["credits"]["cast"]
     elif "casts" in data:
-        casts_obj = data["casts"]
-        casts = casts_obj.get("cast", [])
-        if not casts:
-            kodilog(f"Extracted casts from list: {casts}", level=xbmc.LOGDEBUG)
-            try:
-                casts = list(casts_obj)
-            except Exception:
-                casts = []
+        casts = data["casts"].get("cast", [])
     elif "cast" in data:
         casts = data["cast"]
     elif "actors" in data:
         casts = data["actors"]
 
+    if not isinstance(casts, list):
+        kodilog(f"Unexpected casts type: {type(casts)}", level=xbmc.LOGWARNING)
+        casts = []
+
+    # Build Actor objects
     for cast_member in casts:
         actor = xbmc.Actor(
             name=cast_member.get("name", "Unknown"),
@@ -499,12 +495,16 @@ def set_cast_and_actors(info_tag, data):
         )
         cast_list.append(actor)
 
+    crew = None
     if "credits" in data and "crew" in data["credits"]:
-        set_cast_and_crew({"crew": data["credits"]["crew"]}, cast_list)
+        crew = data["credits"]["crew"]
     elif "crew" in data:
-        set_cast_and_crew(data, cast_list)
+        crew = data["crew"]
 
-    info_tag.setCast(cast_list)
+    if crew:
+        set_cast_and_crew({"crew": crew}, cast_list)
+
+    return cast_list
 
 
 def set_cast_and_crew(data, cast_list):
@@ -579,6 +579,72 @@ def set_listitem_artwork(list_item, data, fanart_data):
             "tvshow.banner": first_valid(fanart_sources, "banner"),
         }
     )
+
+
+def build_media_metadata(tmdb_id: str, tvdb_id: str, mode: str) -> dict:
+    metadata = {
+        "poster": "",
+        "fanart": "",
+        "clearlogo": "",
+        "overview": "",
+        "clearart": "",
+        "keyart": "",
+        "banner": "",
+        "landscape": "",
+        "title": "",
+        "original_title": "",
+        "genres": [],
+        "countries": [],
+        "year": None,
+        "runtime": None,
+        "vote_average": 0,
+        "vote_count": 0,
+        "popularity": 0,
+        "unique_ids": {},
+        "cast": [],
+    }
+
+    # TMDB details
+    if tmdb_id:
+        from lib.clients.tmdb.utils.utils import get_tmdb_media_details
+
+        details = get_tmdb_media_details(tmdb_id, mode)
+        poster_path = getattr(details, "poster_path", "")
+        metadata["poster"] = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
+        metadata["overview"] = getattr(details, "overview", "")
+        metadata["title"] = getattr(details, "title", getattr(details, "name", ""))
+        metadata["original_title"] = getattr(
+            details, "original_title", getattr(details, "original_name", "")
+        )
+        metadata["year"] = (
+            int(str(getattr(details, "release_date", "0"))[:4])
+            if getattr(details, "release_date", None)
+            else None
+        )
+        metadata["runtime"] = getattr(details, "runtime", None)
+        metadata["vote_average"] = getattr(details, "vote_average", 0)
+        metadata["vote_count"] = getattr(details, "vote_count", 0)
+        metadata["popularity"] = getattr(details, "popularity", 0)
+        metadata["unique_ids"]["tmdb"] = str(tmdb_id)
+        metadata["cast"] = getattr(details, "casts", getattr(details, "cast", [])) 
+
+    # Fanart details
+    if tmdb_id or tvdb_id:
+        fanart_details = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
+        metadata["fanart"] = (
+            fanart_details.get("fanart")
+            or fanart_details.get("poster")
+            or metadata["poster"]
+        )
+        metadata["clearlogo"] = fanart_details.get("clearlogo") or fanart_details.get(
+            "clearart", ""
+        )
+        metadata["clearart"] = fanart_details.get("clearart", "")
+        metadata["keyart"] = fanart_details.get("keyart", "")
+        metadata["banner"] = fanart_details.get("banner", "")
+        metadata["landscape"] = fanart_details.get("landscape", "")
+
+    return metadata
 
 
 def set_watched_file(data):

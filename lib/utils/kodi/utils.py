@@ -229,7 +229,7 @@ def dialog_ok(heading, line1, line2="", line3=""):
     return xbmcgui.Dialog().ok(heading, compat(line1=line1, line2=line2, line3=line3))
 
 
-def dialog_text(heading: str, content: str, file=None):
+def dialog_text(heading: str, content: str="", file=None):
     dialog = xbmcgui.Dialog()
     if file:
         try:

@@ -153,8 +153,6 @@ class JacktookPLayer(xbmc.Player):
         self.playback_successful = None
 
         while self.playback_successful is None:
-            kodilog("Checking playback...")
-
             # Abort requested
             if self.kodi_monitor.abortRequested():
                 self.cancel_all_playback = True
