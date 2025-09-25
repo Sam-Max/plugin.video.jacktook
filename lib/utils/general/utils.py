@@ -883,18 +883,22 @@ def clear_all_cache():
 
 def clear(type="all", update=False):
     if update:
-        msg = "Do you want to clear your cached history?."
+        msg = translation(90110)
     else:
-        msg = "Do you want to clear this history?."
+        msg = translation(90111)
     confirmed = Dialog().yesno("Clear History", msg)
     if confirmed:
+        keys = []
         if type == "lth":
-            pickle_db.set_key("jt:lth", {})
+            keys = ["jt:lth"]
         elif type == "lfh":
-            pickle_db.set_key("jt:lfh", {})
+            keys = ["jt:lfh"]
         else:
-            pickle_db.set_key("jt:lth", {})
-            pickle_db.set_key("jt:lfh", {})
+            keys = ["jt:lth", "jt:lfh"]
+
+        for key in keys:
+            pickle_db.set_key(key, {})
+
         container_refresh()
 
 

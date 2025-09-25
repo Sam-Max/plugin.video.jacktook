@@ -1737,3 +1737,11 @@ msgstr "Incluir fuentes desconocidas"
 msgctxt "#90109"
 msgid "Includes uncategorized or unidentified sources"
 msgstr "Incluye fuentes no categorizadas o no identificadas"
+
+msgctxt "#90110"
+msgid "Do you want to clear your watched history?."
+msgstr "¿Quieres borrar tu historial de vistos?"
+
+msgctxt "#90111"
+msgid "Do you want to clear this history?."
+msgstr "¿Quieres borrar este historial?"
