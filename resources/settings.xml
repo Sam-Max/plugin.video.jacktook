@@ -994,6 +994,12 @@
                         <close>true</close>
                     </control>
                 </setting>
+                <setting id="clear_all_history" type="action" label="90112" help="90113"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_history&type=all)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
             </group>
             <group id="update" label="30724">
                 <setting id="addon_update" type="action" label="30724" help="30839"> 

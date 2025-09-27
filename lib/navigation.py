@@ -75,8 +75,8 @@ from lib.utils.general.utils import (
     build_media_metadata,
     check_debrid_enabled,
     clean_auto_play_undesired,
-    clear,
     clear_all_cache,
+    clear_history_by_type,
     get_password,
     get_port,
     get_random_color,
@@ -633,9 +633,7 @@ def show_source_select(
     item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
     if not direct and ids:
-        tmdb_id = ids.get("tmdb_id", "")
-        tvdb_id = ids.get("tvdb_id", "")
-        item_info.update(build_media_metadata(tmdb_id, tvdb_id, mode))
+        item_info.update(build_media_metadata(ids, mode))
 
     xml_file_string = (
         "source_select_direct.xml" if mode == "direct" else "source_select.xml"
@@ -1077,8 +1075,14 @@ def settings(params):
     addon_settings()
 
 
+def clear_all_cached(params):
+    clear_all_cache()
+    notification(translation(30244))
+
+
 def clear_history(params):
-    clear(type=params.get("type"))
+    clear_history_by_type(type=params.get("type"))
+    notification(translation(90114))
 
 
 def kodi_logs(params):
@@ -1095,11 +1099,6 @@ def titles_history(params):
 
 def titles_calendar(params):
     show_weekly_calendar()
-
-
-def clear_all_cached(params):
-    clear_all_cache()
-    notification(translation(30244))
 
 
 def rd_auth(params):

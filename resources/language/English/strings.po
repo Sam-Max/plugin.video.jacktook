@@ -112,11 +112,11 @@ msgid "Cache expiration hours"
 msgstr ""
 
 msgctxt "#30106"
-msgid "Clear cache"
+msgid "Clear Cache"
 msgstr ""
 
 msgctxt "#30107"
-msgid "Enable cache"
+msgid "Enable Cache"
 msgstr ""
 
 msgctxt "#30140"
@@ -1759,5 +1759,17 @@ msgid "Do you want to clear your watched history?."
 msgstr ""
 
 msgctxt "#90111"
-msgid "Do you want to clear this history?."
+msgid "Do you want to clear your history?."
+msgstr ""
+
+msgctxt "#90112"
+msgid "Clear History"
+msgstr ""
+
+msgctxt "#90113"
+msgid "Click to delete all watched history immediately."
+msgstr ""
+
+msgctxt "#90114"
+msgid "History cleared"
 msgstr ""
