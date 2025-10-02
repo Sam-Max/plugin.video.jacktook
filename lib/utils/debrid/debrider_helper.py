@@ -104,7 +104,7 @@ class DebriderHelper:
         torrent_files = response_data.get("files", [])
 
         if len(torrent_files) <= 1:
-            notification("Not a torrent pack")
+            notification("No files on the current source")
             return
 
         files = [

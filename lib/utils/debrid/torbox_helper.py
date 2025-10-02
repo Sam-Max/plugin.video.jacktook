@@ -107,7 +107,7 @@ class TorboxHelper:
         torrent_files = torrent_info.get("files", [])
 
         if not torrent_files:
-            notification("Not a torrent pack")
+            notification("No files on the current source")
             return None
 
         files = [

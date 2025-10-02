@@ -58,7 +58,7 @@ from lib.utils.kodi.utils import (
     show_keyboard,
     translation,
 )
-from lib.utils.player.utils import resolve_playback_source
+from lib.utils.player.utils import resolve_playback_url
 from lib.utils.views.last_files import show_last_files
 from lib.utils.views.last_titles import show_last_titles
 from lib.utils.views.weekly_calendar import show_weekly_calendar
@@ -553,9 +553,9 @@ def search(params):
     set_content_type(mode, media_type)
     set_watched_title(query, ids, mode, media_type)
 
-    ep_name = tv_data.get("name", "") 
-    episode = tv_data.get("episode", 1) 
-    season  = tv_data.get("season", 1)
+    ep_name = tv_data.get("name", "")
+    episode = tv_data.get("episode", 1)
+    season = tv_data.get("season", 1)
 
     results = perform_search(query, ids, mode, media_type, rescrape, season, episode)
     kodilog(f"Search results: {results}", level=xbmc.LOGDEBUG)
@@ -672,7 +672,7 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
 
     selected_result = quality_matches[0]
 
-    playback_info = resolve_playback_source(
+    playback_info = resolve_playback_url(
         data={
             "title": selected_result.title,
             "mode": mode,
@@ -879,7 +879,7 @@ def tv_episodes_details(params):
 
 def play_from_pack(params):
     data = json.loads(params.get("data"))
-    data = resolve_playback_source(data)
+    data = resolve_playback_url(data)
     if not data:
         return
     list_item = make_listing(data)

@@ -1,5 +1,4 @@
 from typing import List, Optional, Dict
-from lib.clients.aisubtrans.submanager import SubtitleManager
 from lib.domain.torrent import TorrentStream
 from lib.gui.filter_type_window import FilterTypeWindow
 from lib.gui.filter_items_window import FilterWindow
@@ -14,7 +13,6 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     notification,
-    set_property,
     translatePath,
     translation,
 )
@@ -25,7 +23,6 @@ from lib.utils.general.utils import (
     get_random_color,
 )
 
-from lib.utils.player.utils import resolve_playback_source
 import xbmcgui
 import xbmc
 
@@ -54,7 +51,6 @@ class SourceSelect(BaseWindow):
         self.setProperty("resolving", "false")
         self.filtered_sources: Optional[List[TorrentStream]] = None
         self.filter_applied: bool = False
-        
 
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
@@ -93,6 +89,7 @@ class SourceSelect(BaseWindow):
 
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         self.position = self.display_list.getSelectedPosition()
+        selected_source = self.list_sources[self.position]
 
         if action_id == 1 and control_id == 1000:
             filter_type_popup = FilterTypeWindow("filter_type.xml", ADDON_PATH)
@@ -160,7 +157,6 @@ class SourceSelect(BaseWindow):
             self.set_default_focus(self.display_list, 1000, control_list_reset=True)
 
         elif action_id == 117:  # Context menu action
-            selected_source = self.list_sources[self.position]
             if selected_source.type == "Torrent":
                 response = xbmcgui.Dialog().contextmenu(
                     ["Download to Debrid", translation(90083)]
@@ -168,21 +164,21 @@ class SourceSelect(BaseWindow):
                 if response == 0:
                     self._download_to_debrid()
                 elif response == 1:
-                    self._download_file()
+                    self._download_file(selected_source)
             elif selected_source.type == "Direct":
                 response = xbmcgui.Dialog().contextmenu([translation(90083)])
                 if response == 0:
-                    self._download_file()
+                    self._download_file(selected_source)
             else:
                 response = xbmcgui.Dialog().contextmenu(
                     [translation(90084), translation(90083), translation(90082)]
                 )
                 if response == 0:
-                    self._resolve_item(pack_select=True)
+                    self._resolve_item(selected_source, pack_select=True)
                 elif response == 1:
-                    self._download_file()
+                    self._download_file(selected_source)
                 elif response == 2:
-                    self._resolve_item(download_subtitle=True)
+                    self._resolve_item(selected_source, is_subtitle_download=True)
 
         elif control_id == 1300:
             quality_list = self.getControl(1300)
@@ -198,7 +194,7 @@ class SourceSelect(BaseWindow):
         elif action_id == 7 and control_id == 1000:  # Select action
             control_list = self.getControl(control_id)
             self.set_cached_focus(control_id, control_list.getSelectedPosition())
-            self._resolve_item(pack_select=False)
+            self._resolve_item(selected_source, pack_select=False)
 
     def populate_sources_list(self) -> None:
         self.display_list.reset()
@@ -240,19 +236,11 @@ class SourceSelect(BaseWindow):
     def _download_to_debrid(self) -> None:
         pass
 
-    def _download_file(self) -> None:
-        selected_source = self.list_sources[self.position]
-
-        url, magnet, is_torrent = self.get_source_details(source=selected_source)
-        source_data = self.prepare_source_data(
-            source=selected_source,
-            url=url,
-            magnet=magnet,
-            is_torrent=is_torrent,
-        )
-
-        playback_info = resolve_playback_source(source_data)
-        if not playback_info or "url" not in playback_info:
+    def _download_file(self, selected_source) -> None:
+        self.playback_info = self._ensure_playback_info(selected_source)
+        if self.playback_info:
+            self.playback_info.update(self.item_information)
+        else:
             notification("Failed to resolve playback source")
             return
 
@@ -261,8 +249,8 @@ class SourceSelect(BaseWindow):
             xbmc.executebuiltin(
                 action_url_run(
                     "handle_download_file",
-                    file_name=playback_info["title"],
-                    url=playback_info["url"],
+                    file_name=self.playback_info["title"],
+                    url=self.playback_info["url"],
                     destination=translatePath(download_dir),
                 )
             )
@@ -272,33 +260,20 @@ class SourceSelect(BaseWindow):
                 "Download", f"Failed to start download: {str(e)}"
             )
 
-    def _resolve_item(self, pack_select: bool = False, download_subtitle=False) -> None:
+    def _resolve_item(
+        self, selected_source, pack_select: bool = False, is_subtitle_download=False
+    ) -> None:
         self.setProperty("resolving", "true")
-
-        selected_source = self.list_sources[self.position]
-
         resolver_window = ResolverWindow(
             "resolver.xml",
             ADDON_PATH,
             source=selected_source,
             previous_window=self,
             item_information=self.item_information,
+            is_subtitle_download=is_subtitle_download,
         )
         resolver_window.doModal(pack_select)
-
-        if download_subtitle:
-            self._download_subtitle()  
-
         del resolver_window
-
-    def _download_subtitle(self):
-        notification = xbmcgui.Dialog()
-        subtitle_manager = SubtitleManager(self.playback_info, notification)
-        subtitles_path = subtitle_manager.fetch_subtitles()
-        if subtitles_path:
-            set_property("search_subtitles", "true")
-            if self.playback_info:
-                self.playback_info.update({"subtitles_path": subtitles_path})
 
     def show_resume_dialog(self, playback_percent: float) -> Optional[bool]:
         try:

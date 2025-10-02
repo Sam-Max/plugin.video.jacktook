@@ -73,12 +73,13 @@ class SubtitleManager(KodiJsonRpcClient):
         Download subtitles for the current video.
         Returns a list of subtitle file paths.
         """
+        
+        title = self.data.get("title")
         mode = self.data.get("mode")
         imdb_id = self.data.get("ids", {}).get("imdb_id")
         tv_data = self.data.get("tv_data", {})
         episode = tv_data.get("episode")
         season = tv_data.get("season")
-        title = self.data.get("title")
 
         if not imdb_id:
             kodilog("No IMDb ID found for the current video")

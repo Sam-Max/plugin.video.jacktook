@@ -22,7 +22,7 @@ from xbmcgui import Dialog
 from typing import Any, Dict, Optional
 
 
-def resolve_playback_source(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     indexer_type: str = data.get("type", "")
     debrid_type: str = data.get("debrid_type", "")
     is_pack: bool = data.get("is_pack", False)

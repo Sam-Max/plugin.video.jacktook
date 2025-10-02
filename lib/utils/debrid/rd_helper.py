@@ -232,7 +232,7 @@ class RealDebridHelper:
         torrent_files = torr_info["files"]
 
         if len(torrent_files) <= 1:
-            notification("Not a torrent pack")
+            notification("No files on the current source")
             return None
 
         torr_items = [item for item in torrent_files if item["selected"] == 1]

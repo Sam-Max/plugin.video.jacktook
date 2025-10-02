@@ -71,7 +71,7 @@ class JacktookPLayer(xbmc.Player):
                 self.build_playlist()
             self.play_video(self.list_item)
         except Exception as e:
-            self.run_error()
+            self.run_error(e)
         finally:
             try:
                 del self.kodi_monitor
@@ -116,7 +116,7 @@ class JacktookPLayer(xbmc.Player):
         except Exception as e:
             kodilog(f"Error during playback: {e}")
             kodilog(traceback.format_exc())
-            self.run_error()
+            self.run_error(e)
         finally:
             try:
                 del self.kodi_monitor
@@ -428,8 +428,9 @@ class JacktookPLayer(xbmc.Player):
         close_all_dialog()
         setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
-    def run_error(self):
+    def run_error(self, e: Exception):
         self.playback_successful = False
+        kodilog(f"Playback Error: {e}")
         if self.on_error:
             self.on_error()
         self.clear_playback_properties()

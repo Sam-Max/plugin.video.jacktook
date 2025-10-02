@@ -93,7 +93,7 @@ class PremiumizeHelper:
 
         torrent_content = response_data.get("content", [])
         if len(torrent_content) <= 1:
-            notification("Not a torrent pack")
+            notification("No files on the current source")
             return None
 
         files = [

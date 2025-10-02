@@ -167,8 +167,6 @@ class Downloader:
                         f"{self.name} - {percent}% - {bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
                     )
 
-                    kodilog(f"Downloaded {downloaded} bytes, {percent}% complete")
-
                     # Handle cancellation
                     if (
                         self.progress_handler.cancelled()
