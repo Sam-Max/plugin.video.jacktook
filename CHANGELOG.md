@@ -1,3 +1,19 @@
+
+## 0.15.0
+- Delay closing resolve source window until playback starts.
+- Added context menu options for selecting stremio sources and opening addon settings. 
+- Added option on settings to clear all history
+- Updated several menu icons for better consistency.
+- Improved tvshow and movie metadata handling.
+- Improved cast/crew extraction.
+- Improved display and sorting of last files and titles.
+- Other minor improvements and fixes.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.14.0
 - Updated menu icons for Telegram and Downloads.
 - Added filtering options setting for quality/source.
