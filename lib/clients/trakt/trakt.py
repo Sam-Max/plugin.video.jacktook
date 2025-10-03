@@ -318,9 +318,6 @@ class TraktPresentation:
 
     @staticmethod
     def show_common_categories(res, mode):
-        kodilog(f"Processing common categories for mode: {mode}")
-        kodilog(f"Result: {res}")
-
         if mode == "tv":
             title = res["show"]["title"]
             ids = extract_ids(res, mode)

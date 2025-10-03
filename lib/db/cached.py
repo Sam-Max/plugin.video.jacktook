@@ -188,8 +188,6 @@ class SQLiteCache(_BaseCache):
         """Retrieve the list stored under the given key."""
         result = self.get(key)
         if result:
-            kodilog("Retrieved list for key '{}'".format(key))
-            kodilog("List content: {}".format(result))
             return [tuple(item) for item in result]
         return []
 

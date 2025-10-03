@@ -30,7 +30,6 @@ class CustomProgressDialog(xbmcgui.WindowXMLDialog):
             self.getControl(12002).setLabel(message)
 
     def onClick(self, controlId):
-        kodilog(f"Control clicked: {controlId}")
         if controlId == 12003:  # Cancel button
             self.cancelled = True
             self.close_dialog()
@@ -38,6 +37,5 @@ class CustomProgressDialog(xbmcgui.WindowXMLDialog):
             self.close_dialog()
 
     def onAction(self, action):
-        kodilog(f"Action received: {action.getId()}")
         if action.getId() in (10, 92):
             self.close_dialog()
