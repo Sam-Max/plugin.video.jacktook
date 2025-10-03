@@ -101,3 +101,23 @@ class AsObj:
 
     def values(self):
         return self._dict().values()
+    
+    def to_dict(self):
+        if self._list_only:
+            return [
+                o.to_dict() if isinstance(o, AsObj) else o
+                for o in self._obj_list
+            ]
+        else:
+            result = {}
+            for k, v in self._dict().items():
+                if isinstance(v, AsObj):
+                    result[k] = v.to_dict()
+                elif isinstance(v, list):
+                    result[k] = [
+                        i.to_dict() if isinstance(i, AsObj) else i
+                        for i in v
+                    ]
+                else:
+                    result[k] = v
+            return result

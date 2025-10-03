@@ -320,10 +320,12 @@ def make_listing(data):
     ids = data.get("ids", {})
     tv_data = data.get("tv_data", {})
     mode = data.get("mode", "")
+    mode = "episode" if mode == "tv" else "movies"
 
     list_item = ListItem(label=title)
     list_item.setLabel(title)
     list_item.setContentLookup(False)
+    list_item.setProperty("IsPlayable", "true")
 
     data["episode"] = tv_data.get("episode", data.get("episode", ""))
     data["season"] = tv_data.get("season", data.get("season", ""))
@@ -331,13 +333,12 @@ def make_listing(data):
     data["id"] = ids.get("tmdb_id")
     data["imdb_id"] = ids.get("imdb_id")
 
-    set_media_infoTag(list_item, data=data, mode=mode, for_player=True)
+    set_media_infoTag(list_item, data=data, mode=mode)
 
-    list_item.setProperty("IsPlayable", "true")
     return list_item
 
 
-def set_media_infoTag(list_item, data, fanart_data={}, mode="video", for_player=False):
+def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
     info_tag = list_item.getVideoInfoTag()
 
     # General Video Info
@@ -377,8 +378,6 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", for_player=
     # Media Type
     if mode == "movies":
         info_tag.setMediaType("movie")
-    elif mode == "tv" and for_player:
-        info_tag.setMediaType("episode")
     elif mode == "tv":
         info_tag.setMediaType("tvshow")
     elif mode == "season":
@@ -424,14 +423,14 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", for_player=
         else:
             info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
 
-    info_tag.setCast(get_cast_and_actors(data))
+    info_tag.setCast(get_cast_and_crew(data))
 
     # Episode & Season Info (for TV shows/episodes)
     if mode == "tv":
-        info_tag.setTvShowTitle(data.get("tvshow_title", data.get("name", "")))
+        info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
         info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
     elif mode == "episode":
-        info_tag.setTvShowTitle(data.get("tvshow_title", data.get("name", "")))
+        info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
         info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
         info_tag.setEpisode(int(data.get("episode", data.get("episode_number", 0))))
 
@@ -464,77 +463,79 @@ def extract_genres(genres, media_type="movies"):
     return genre_list
 
 
-def get_cast_and_actors(data: dict) -> list:
+def get_cast_and_crew(data):
+    """Return combined list of xbmc.Actor objects for cast and crew."""
     cast_list = []
-    casts = []
 
-    if "credits" in data and "cast" in data["credits"]:
-        casts = data["credits"]["cast"]
-    elif "casts" in data:
-        casts = data["casts"].get("cast", [])
-    elif "cast" in data:
-        casts = data["cast"]
-    elif "actors" in data:
-        casts = data["actors"]
+    casts = extract_cast(data)
+    crew = extract_crew(data)
 
-    if not isinstance(casts, list):
-        kodilog(f"Unexpected casts type: {type(casts)}", level=xbmc.LOGWARNING)
-        casts = []
-
-    # Build Actor objects
-    for cast_member in casts:
-        actor = xbmc.Actor(
-            name=cast_member.get("name", "Unknown"),
-            role=cast_member.get("character", "Unknown"),
-            thumbnail=(
-                f"http://image.tmdb.org/t/p/w185{cast_member['profile_path']}"
-                if cast_member.get("profile_path")
-                else ""
-            ),
-            order=cast_member.get("order", 0),
-        )
-        cast_list.append(actor)
-
-    crew = None
-    if "credits" in data and "crew" in data["credits"]:
-        crew = data["credits"]["crew"]
-    elif "crew" in data:
-        crew = data["crew"]
-
-    if crew:
-        set_cast_and_crew({"crew": crew}, cast_list)
+    # Build actors
+    cast_list.extend(build_actor(c, is_cast=True) for c in casts)
+    cast_list.extend(build_actor(c, is_cast=False) for c in crew)
 
     return cast_list
 
 
-def set_cast_and_crew(data, cast_list):
-    if "crew" in data:
-        for crew_member in data["crew"]:
-            actor = xbmc.Actor(
-                name=crew_member["name"],
-                role=crew_member["job"],  # Director, Writer, etc.
-                thumbnail=(
-                    f"http://image.tmdb.org/t/p/w185{crew_member['profile_path']}"
-                    if crew_member.get("profile_path")
-                    else ""
-                ),
-                order=0,  # No specific order for crew members
-            )
-            cast_list.append(actor)
+def extract_cast(data):
+    if hasattr(data, "to_dict"):
+        data = data.to_dict()
 
-    if "guest_stars" in data:
-        for guest in data["guest_stars"]:
-            actor = xbmc.Actor(
-                name=guest.get("name", "Unknown"),
-                role=guest.get("character", "Unknown"),  # Role = Character name
-                thumbnail=(
-                    f"http://image.tmdb.org/t/p/w185{guest['profile_path']}"
-                    if guest.get("profile_path")
-                    else ""
-                ),
-                order=guest.get("order", 0),  # Preserve the order from TMDB
-            )
-            cast_list.append(actor)
+    credits = data.get("credits", {})
+    if isinstance(credits, dict) and "cast" in credits:
+        return credits.get("cast", []) or []
+
+    casts = data.get("casts", {})
+    if isinstance(casts, dict) and "cast" in casts:
+        return casts.get("cast", []) or []
+
+    if "cast" in data:
+        return data.get("cast", []) or []
+
+    if "actors" in data:
+        return data.get("actors", []) or []
+
+    return []
+
+
+def extract_crew(data):
+    if hasattr(data, "to_dict"):
+        data = data.to_dict()
+
+    credits = data.get("credits", {})
+    if isinstance(credits, dict) and "crew" in credits:
+        return credits.get("crew", []) or []
+
+    if "crew" in data:
+        return data.get("crew", []) or []
+
+    return []
+
+
+def build_actor(member, is_cast=True):
+    """Build an xbmc.Actor from a cast or crew member dict."""
+    if is_cast:
+        return xbmc.Actor(
+            name=member.get("name", "Unknown"),
+            role=member.get("character", "Unknown"),
+            thumbnail=(
+                f"http://image.tmdb.org/t/p/w185{member['profile_path']}"
+                if member.get("profile_path")
+                else ""
+            ),
+            order=member.get("order", 0),
+        )
+    else:
+        return xbmc.Actor(
+            name=member.get("name", "Unknown"),
+            role=member.get("job", "Unknown"),
+            thumbnail=(
+                f"http://image.tmdb.org/t/p/w185{member['profile_path']}"
+                if member.get("profile_path")
+                else ""
+            ),
+            order=0,  # Crew usually has no ordering
+        )
 
 
 def set_listitem_artwork(list_item, data, fanart_data):
@@ -581,7 +582,7 @@ def set_listitem_artwork(list_item, data, fanart_data):
     )
 
 
-def build_media_metadata(tmdb_id: str, tvdb_id: str, mode: str) -> dict:
+def build_media_metadata(ids, mode: str) -> dict:
     metadata = {
         "poster": "",
         "fanart": "",
@@ -597,18 +598,26 @@ def build_media_metadata(tmdb_id: str, tvdb_id: str, mode: str) -> dict:
         "countries": [],
         "year": None,
         "runtime": None,
+        "tmdb_id": 0,
+        "tvdb_id": 0,
         "vote_average": 0,
         "vote_count": 0,
         "popularity": 0,
-        "unique_ids": {},
         "cast": [],
     }
+
+    tmdb_id = ids.get("tmdb_id", "")
+    tvdb_id = ids.get("tvdb_id", "")
+
+    metadata["tmdb_id"] = str(tmdb_id)
+    metadata["tvdb_id"] = str(tvdb_id)
 
     # TMDB details
     if tmdb_id:
         from lib.clients.tmdb.utils.utils import get_tmdb_media_details
 
         details = get_tmdb_media_details(tmdb_id, mode)
+
         poster_path = getattr(details, "poster_path", "")
         metadata["poster"] = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
         metadata["overview"] = getattr(details, "overview", "")
@@ -625,8 +634,7 @@ def build_media_metadata(tmdb_id: str, tvdb_id: str, mode: str) -> dict:
         metadata["vote_average"] = getattr(details, "vote_average", 0)
         metadata["vote_count"] = getattr(details, "vote_count", 0)
         metadata["popularity"] = getattr(details, "popularity", 0)
-        metadata["unique_ids"]["tmdb"] = str(tmdb_id)
-        metadata["cast"] = getattr(details, "casts", getattr(details, "cast", []))
+        metadata["cast"] = extract_cast(details)
 
     # Fanart details
     if tmdb_id or tvdb_id:
@@ -869,7 +877,7 @@ def clear_all_cache():
     cache.clean_all()
 
 
-def clear(type="all", update=False):
+def clear_history_by_type(type="all", update=False):
     if update:
         msg = translation(90110)
     else:
@@ -1240,3 +1248,14 @@ WEEKDAY_TRANSLATIONS = {
         "Sunday": "Domingo",
     },
 }
+
+
+def parse_time(item):
+    ts = item[1].get("timestamp")
+    if ts:
+        try:
+            return datetime.strptime(ts, "%a, %d %b %Y %I:%M %p")
+        except Exception as e:
+            kodilog(e)
+            return datetime.min
+    return datetime.min
