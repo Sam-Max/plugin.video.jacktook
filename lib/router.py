@@ -120,6 +120,7 @@ def addon_router():
         "anime_item": anime_item,
         "anime_search": anime_search,
         "search": search,
+        "search_with_sources": stremio_toggle_addons,
         "handle_tmdb_search": TmdbClient.handle_tmdb_search,
         "handle_tmdb_query": TmdbClient.handle_tmdb_query,
         "search_tmdb_lang": TmdbClient.show_lang_items,

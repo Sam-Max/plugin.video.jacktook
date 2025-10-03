@@ -414,6 +414,12 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
             ),
         ),
         (
+            translation(90115),
+            play_media(
+                name="search_with_sources",
+            ),
+        ),
+        (
             translation(90050),
             container_update(
                 name="search_tmdb_recommendations",
@@ -436,6 +442,10 @@ def add_tmdb_movie_context_menu(mode, title=None, ids={}):
                 mode=mode,
                 ids=ids,
             ),
+        ),
+        (
+            translation(90116),
+            container_update(name="settings"),
         ),
     ]
 
@@ -466,6 +476,10 @@ def add_tmdb_show_context_menu(mode, ids={}):
                 ids=ids,
             ),
         ),
+        (
+            translation(90116),
+            container_update(name="settings"),
+        ),
     ]
 
 
@@ -481,6 +495,10 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
                 tv_data=tv_data,
                 rescrape=True,
             ),
+        ),
+        (
+            translation(90115),
+            play_media(name="search_with_sources"),
         ),
         (
             translation(90050),
@@ -505,5 +523,9 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
                 mode=mode,
                 ids=ids,
             ),
+        ),
+        (
+            translation(90116),
+            container_update(name="settings"),
         ),
     ]

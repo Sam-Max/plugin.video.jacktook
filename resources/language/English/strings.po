@@ -1773,3 +1773,11 @@ msgstr ""
 msgctxt "#90114"
 msgid "History cleared"
 msgstr ""
+
+msgctxt "#90115"
+msgid "Sources selection"
+msgstr ""
+
+msgctxt "#90116"
+msgid "Open Settings"
+msgstr ""

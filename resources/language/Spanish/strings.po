@@ -1757,3 +1757,11 @@ msgstr "Click para borrar todo tu historial inmediatamente"
 msgctxt "#90114"
 msgid "History cleared"
 msgstr "Historial borrado"
+
+msgctxt "#90115"
+msgid "Sources selection"
+msgstr "Seleccionar Fuentes"
+
+msgctxt "#90116"
+msgid "Open Settings"
+msgstr "Abrir Configuracion"
