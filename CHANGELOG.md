@@ -1,4 +1,8 @@
 
+## 0.15.1
+- HOTFIXED: Resolved multiple issues preventing addon updates.
+- Ensured ordered results in show and episode listings.
+
 ## 0.15.0
 - Delay closing resolve source window until playback starts.
 - Added context menu options for selecting stremio sources and opening addon settings. 
