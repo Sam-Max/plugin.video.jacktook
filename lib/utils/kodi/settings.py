@@ -17,12 +17,8 @@ def get_int_setting(setting):
     return int(get_setting(setting))
 
 
-def update_delay(fallback=45):
-    return get_property("update.delay") or fallback
-
-
-def update_action(fallback=2):
-    return get_property("update.action") or fallback
+def update_delay(default=45):
+    return default
 
 
 def is_cache_enabled():

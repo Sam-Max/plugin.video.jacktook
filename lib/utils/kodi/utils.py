@@ -99,6 +99,10 @@ def set_setting(id, value):
     Window(10000).setProperty(id, value)
 
 
+def get_property_no_fallback(prop: str):
+    return Window(10000).getProperty(prop)
+
+
 def get_property(prop: str):
     value = Window(10000).getProperty(prop)
     kodilog(f"Get property: {prop} = {value}", xbmc.LOGDEBUG)
@@ -108,6 +112,10 @@ def get_property(prop: str):
         if not value:
             return None
     return value
+
+
+def set_property_no_fallback(prop: str, value: Any):
+    Window(10000).setProperty(prop, value)
 
 
 def set_property(prop: str, value: Any):
@@ -164,11 +172,8 @@ def enable_addon(addon_id: str):
     request = {
         "jsonrpc": "2.0",
         "method": "Addons.SetAddonEnabled",
-        "params": {
-            "addonid": addon_id,
-            "enabled": True
-        },
-        "id": 1
+        "params": {"addonid": addon_id, "enabled": True},
+        "id": 1,
     }
 
     try:
@@ -179,7 +184,7 @@ def enable_addon(addon_id: str):
         xbmc.log(f"Failed to enable addon {addon_id}: {e}", level=xbmc.LOGERROR)
         return False
 
-        
+
 def translation(id_value):
     return ADDON.getLocalizedString(id_value)
 
@@ -229,7 +234,7 @@ def dialog_ok(heading, line1, line2="", line3=""):
     return xbmcgui.Dialog().ok(heading, compat(line1=line1, line2=line2, line3=line3))
 
 
-def dialog_text(heading: str, content: str="", file=None):
+def dialog_text(heading: str, content: str = "", file=None):
     dialog = xbmcgui.Dialog()
     if file:
         try:

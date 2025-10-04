@@ -888,7 +888,7 @@ def paginate_list(data, page_size=10):
 
 
 def clear_cache_on_update():
-    clear(update=True)
+    clear_history_by_type(update=True)
 
 
 def clear_all_cache():
