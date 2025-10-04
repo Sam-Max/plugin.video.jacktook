@@ -864,6 +864,24 @@ def execute_thread_pool(results, func, *args, **kwargs):
                 kodilog(f"Thread pool error: {e}")
 
 
+def execute_thread_pool_collection(results, func, *args, **kwargs):
+    thread_number = get_setting("thread_number", 8)
+    collected = []
+
+    def wrapper(res):
+        try:
+            result = func(res, *args, **kwargs)
+            if result is not None:
+                collected.append(result)
+        except Exception as e:
+            kodilog(f"Thread pool error: {e}")
+
+    with ThreadPoolExecutor(max_workers=int(thread_number)) as executor:
+        executor.map(wrapper, results)
+
+    return collected
+
+
 def paginate_list(data, page_size=10):
     for i in range(0, len(data), page_size):
         yield data[i : i + page_size]

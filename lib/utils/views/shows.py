@@ -6,7 +6,7 @@ from lib.clients.tmdb.utils.utils import (
 )
 from lib.utils.kodi.utils import ADDON_HANDLE, build_url, get_setting
 from lib.utils.general.utils import (
-    execute_thread_pool,
+    execute_thread_pool_collection,
     get_fanart_details,
     set_media_infoTag,
 )
@@ -32,7 +32,7 @@ def show_season_info(ids, mode, media_type):
     seasons = getattr(details, "seasons")
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
-    execute_thread_pool(
+    results = execute_thread_pool_collection(
         seasons,
         _process_season,
         details,
@@ -42,6 +42,12 @@ def show_season_info(ids, mode, media_type):
         media_type,
         fanart_details,
     )
+
+    # Sort by season number
+    results.sort(key=lambda x: x[0])
+
+    for _, url, list_item in results:
+        addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=True)
 
 
 def _process_season(season, details, name, ids, mode, media_type, fanart_details):
@@ -72,19 +78,16 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
 
     list_item.addContextMenuItems(context_menu)
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(
-            "tv_episodes_details",
-            tv_name=name,
-            ids=ids,
-            mode=mode,
-            media_type=media_type,
-            season=season_number,
-        ),
-        list_item,
-        isFolder=True,
+    url = build_url(
+        "tv_episodes_details",
+        tv_name=name,
+        ids=ids,
+        mode=mode,
+        media_type=media_type,
+        season=season_number,
     )
+
+    return (season_number, url, list_item)
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
@@ -93,7 +96,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     )
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
-    execute_thread_pool(
+    results = execute_thread_pool_collection(
         getattr(season_details, "episodes"),
         _process_episode,
         tv_name,
@@ -103,6 +106,12 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         media_type,
         fanart_details,
     )
+
+    # Sort by episode number
+    results.sort(key=lambda x: x[0])
+
+    for _, url, list_item in results:
+        addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=False)
 
 
 def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details):
@@ -128,16 +137,13 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
 
     list_item.addContextMenuItems(context_menu)
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(
-            "search",
-            mode=mode,
-            media_type=media_type,
-            query=tv_name,
-            ids=ids,
-            tv_data=tv_data,
-        ),
-        list_item,
-        isFolder=False,
+    url = build_url(
+        "search",
+        mode=mode,
+        media_type=media_type,
+        query=tv_name,
+        ids=ids,
+        tv_data=tv_data,
     )
+
+    return (episode_number, url, list_item)
