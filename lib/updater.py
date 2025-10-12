@@ -86,7 +86,7 @@ def updates_check_addon():
     msg = f"Installed: [B]{current_version}[/B][CR]Online: [B]{online_version}[/B][CR][CR]"
 
     if current_version == online_version:
-        dialog_ok(heading=HEADING, line1=msg + "[B]No update available[/B]")
+        notification(heading=HEADING, message="[B]No update available[/B]")
         return
 
     if current_version < online_version:
