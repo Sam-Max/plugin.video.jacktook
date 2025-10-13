@@ -1765,3 +1765,7 @@ msgstr "Seleccionar Fuentes"
 msgctxt "#90116"
 msgid "Open Settings"
 msgstr "Abrir Configuracion"
+
+msgctxt "#90117"
+msgid "Select Torrentio Providers"
+msgstr "Seleccionar proveedores de Torrentio"

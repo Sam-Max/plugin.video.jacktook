@@ -1781,3 +1781,7 @@ msgstr ""
 msgctxt "#90116"
 msgid "Open Settings"
 msgstr ""
+
+msgctxt "#90117"
+msgid "Select Torrentio Providers"
+msgstr ""

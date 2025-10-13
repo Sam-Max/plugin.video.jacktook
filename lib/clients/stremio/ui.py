@@ -7,7 +7,14 @@ from lib.clients.stremio.addons_manager import Addon, AddonManager
 from lib.clients.stremio.client import Stremio
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
-from lib.utils.kodi.utils import ADDON, ADDON_PATH, get_setting, kodilog, set_setting
+from lib.utils.kodi.utils import (
+    ADDON,
+    ADDON_PATH,
+    get_setting,
+    kodilog,
+    set_setting,
+    translation,
+)
 
 import xbmcgui
 import xbmc
@@ -35,6 +42,7 @@ all_torrentio_providers = [
     ("horriblesubs", "HorribleSubs", "torrentio.png"),
     ("tokyotosho", "Tokyotosho", "torrentio.png"),
     ("anidex", "Anidex", "torrentio.png"),
+    ("rutor", "Rutor", "torrentio.png"),
     ("rutracker", "Rutracker", "torrentio.png"),
     ("comando", "Comando", "torrentio.png"),
     ("torrent9", "Torrent9", "torrentio.png"),
@@ -246,7 +254,7 @@ def stremio_toggle_addons(params):
         if not addon.manifest.isConfigurationRequired()
         and addon.key() not in excluded_addons
     ]
-    
+
     addons = list(reversed(addons))
 
     dialog = xbmcgui.Dialog()
@@ -451,10 +459,9 @@ def torrentio_toggle_providers(params):
             selected_indexes.append(i)
 
     dialog = xbmcgui.Dialog()
-    title = "Seleccionar proveedores de Torrentio"
 
     selected = dialog.multiselect(
-        title, options, preselect=selected_indexes, useDetails=True
+        translation(90117), options, preselect=selected_indexes, useDetails=True
     )
 
     if selected is None:
