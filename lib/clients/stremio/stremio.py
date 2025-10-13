@@ -112,7 +112,9 @@ class StremioAddonClient(BaseClient):
             self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
             return []
 
-    def parse_response(self, res: Any, is_cached: bool = False) -> List[TorrentStream]:
+    def parse_response(
+        self, res: Any, is_external_cache: bool = False
+    ) -> List[TorrentStream]:
         res = res.json()
         results = []
 
@@ -120,13 +122,15 @@ class StremioAddonClient(BaseClient):
             stream = Stream(item)
             parsed = self.parse_torrent_description(stream.description)
 
-            if is_cached:
+            if is_external_cache:
                 match = re.search(r"\b\w{40}\b", stream.url)
                 info_hash = match.group() if match else item.get("infoHash")
                 url = ""
+                is_cached = True
             else:
                 info_hash = stream.infoHash
                 url = stream.url
+                is_cached = True if url else False
 
             results.append(
                 TorrentStream(
@@ -212,4 +216,4 @@ class StremioAddonClient(BaseClient):
         )
         if not cached_results:
             return []
-        return self.parse_response(cached_results, is_cached=True)
+        return self.parse_response(cached_results, is_external_cache=True)

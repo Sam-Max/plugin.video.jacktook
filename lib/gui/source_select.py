@@ -5,7 +5,7 @@ from lib.gui.filter_items_window import FilterWindow
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.debrid.debrid_utils import get_debrid_status
+from lib.utils.debrid.debrid_utils import get_source_status
 from lib.utils.kodi.utils import (
     action_url_run,
     bytes_to_human_readable,
@@ -205,12 +205,12 @@ class SourceSelect(BaseWindow):
         )
         for source in self.list_sources:
             menu_item = xbmcgui.ListItem(label=source.title)
-
             menu_item.setProperty("title", source.title)
             if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
-                menu_item.setProperty("type", get_random_color(source.type))
+                provider_name = source.type
             else:
-                menu_item.setProperty("type", get_random_color(source.debridType))
+                provider_name = source.debridType
+            menu_item.setProperty("type", get_random_color(provider_name))
             menu_item.setProperty("indexer", get_random_color(source.indexer))
             menu_item.setProperty("guid", source.guid)
             menu_item.setProperty("infoHash", source.infoHash)
@@ -225,10 +225,7 @@ class SourceSelect(BaseWindow):
             )
             menu_item.setProperty("peers", str(source.peers))
             menu_item.setProperty("quality", source.quality)
-            if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
-                menu_item.setProperty("status", "****")
-            else:
-                menu_item.setProperty("status", get_debrid_status(source))
+            menu_item.setProperty("status", get_source_status(source))
             menu_item.setProperty("isPack", str(source.isPack))
 
             self.display_list.addItem(menu_item)

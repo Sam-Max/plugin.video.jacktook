@@ -135,7 +135,7 @@ def update_cache(
         set_cached(cached_results, query, params=params)
 
 
-def get_debrid_status(res: TorrentStream) -> str:
+def get_source_status(res: TorrentStream) -> str:
     is_cached = res.isCached
 
     if res.isPack:
