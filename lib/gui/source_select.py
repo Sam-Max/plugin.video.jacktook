@@ -88,113 +88,123 @@ class SourceSelect(BaseWindow):
         super().doModal()
 
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
-        self.position = self.display_list.getSelectedPosition()
-        selected_source = self.list_sources[self.position]
-
         if action_id == 1 and control_id == 1000:
-            filter_type_popup = FilterTypeWindow("filter_type.xml", ADDON_PATH)
-            filter_type_popup.doModal()
-            selected_type = filter_type_popup.selected_type
-            del filter_type_popup
+            self._handle_filter_action()
+        elif action_id == 117:  # Context menu action
+            self._handle_context_menu_action()
+        elif control_id == 1300:
+            self._handle_quality_select_action()
+        elif action_id == 7 and control_id == 1000:  # Select action
+            self._handle_select_action(control_id)
 
-            def get_unique(attr):
-                return sorted(
-                    set(getattr(s, attr) for s in self.sources if getattr(s, attr))
+    def _handle_filter_action(self):
+        filter_type_popup = FilterTypeWindow("filter_type.xml", ADDON_PATH)
+        filter_type_popup.doModal()
+        selected_type = filter_type_popup.selected_type
+        del filter_type_popup
+
+        def get_unique(attr):
+            return sorted(
+                set(getattr(s, attr) for s in self.sources if getattr(s, attr))
+            )
+
+        filter_map = {
+            "quality": {
+                "items": lambda: get_unique("quality"),
+                "filter": lambda val: [s for s in self.sources if s.quality == val],
+            },
+            "provider": {
+                "items": lambda: get_unique("provider"),
+                "filter": lambda val: [s for s in self.sources if s.provider == val],
+            },
+            "type": {
+                "items": lambda: get_unique("type"),
+                "filter": lambda val: [s for s in self.sources if s.type == val],
+            },
+            "indexer": {
+                "items": lambda: get_unique("indexer"),
+                "filter": lambda val: [s for s in self.sources if s.indexer == val],
+            },
+            "language": {
+                "items": self._get_all_languages,
+                "filter": lambda val: [
+                    s
+                    for s in self.sources
+                    if val in getattr(s, "languages", [])
+                    or val in getattr(s, "fullLanguages", [])
+                ],
+            },
+        }
+
+        if selected_type in filter_map:
+            items = filter_map[selected_type]["items"]()
+            if selected_type == "language" and not items:
+                notification("No languages found")
+                return
+            popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=items)
+            popup.doModal()
+            selected_filter = popup.selected_filter
+            del popup
+            if selected_filter is not None:
+                self.filtered_sources = filter_map[selected_type]["filter"](
+                    selected_filter
                 )
-
-            filter_map = {
-                "quality": {
-                    "items": lambda: get_unique("quality"),
-                    "filter": lambda val: [s for s in self.sources if s.quality == val],
-                },
-                "provider": {
-                    "items": lambda: get_unique("provider"),
-                    "filter": lambda val: [
-                        s for s in self.sources if s.provider == val
-                    ],
-                },
-                "type": {
-                    "items": lambda: get_unique("type"),
-                    "filter": lambda val: [s for s in self.sources if s.type == val],
-                },
-                "indexer": {
-                    "items": lambda: get_unique("indexer"),
-                    "filter": lambda val: [s for s in self.sources if s.indexer == val],
-                },
-                "language": {
-                    "items": self._get_all_languages,
-                    "filter": lambda val: [
-                        s
-                        for s in self.sources
-                        if val in getattr(s, "languages", [])
-                        or val in getattr(s, "fullLanguages", [])
-                    ],
-                },
-            }
-
-            if selected_type in filter_map:
-                items = filter_map[selected_type]["items"]()
-                if selected_type == "language" and not items:
-                    notification("No languages found")
-                    return
-                popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=items)
-                popup.doModal()
-                selected_filter = popup.selected_filter
-                del popup
-                if selected_filter is not None:
-                    self.filtered_sources = filter_map[selected_type]["filter"](
-                        selected_filter
-                    )
-                    self.filter_applied = True
-                else:
-                    self.filtered_sources = None
-                    self.filter_applied = False
+                self.filter_applied = True
             else:
                 self.filtered_sources = None
                 self.filter_applied = False
+        else:
+            self.filtered_sources = None
+            self.filter_applied = False
 
+        self.populate_sources_list()
+        self.set_default_focus(self.display_list, 1000, control_list_reset=True)
+
+    def _handle_context_menu_action(self):
+        self.position = self.display_list.getSelectedPosition()
+        selected_source = self.list_sources[self.position]
+
+        if selected_source.type == "Torrent":
+            response = xbmcgui.Dialog().contextmenu(
+                ["Download to Debrid", translation(90083)]
+            )
+            if response == 0:
+                self._download_to_debrid()
+            elif response == 1:
+                self._download_file(selected_source)
+        elif selected_source.type == "Direct":
+            response = xbmcgui.Dialog().contextmenu([translation(90083)])
+            if response == 0:
+                self._download_file(selected_source)
+        else:
+            response = xbmcgui.Dialog().contextmenu(
+                [translation(90084), translation(90083), translation(90082)]
+            )
+            if response == 0:
+                self._resolve_item(selected_source, pack_select=True)
+            elif response == 1:
+                self._download_file(selected_source)
+            elif response == 2:
+                self._resolve_item(selected_source, is_subtitle_download=True)
+
+    def _handle_quality_select_action(self):
+        quality_list = self.getControl(1300)
+        selected_item = quality_list.getSelectedItem()
+        if selected_item:
+            selected_quality = selected_item.getProperty("quality")
+            self.filtered_sources = [
+                s for s in self.sources if selected_quality in s.quality
+            ]
+            self.filter_applied = True
             self.populate_sources_list()
-            self.set_default_focus(self.display_list, 1000, control_list_reset=True)
 
-        elif action_id == 117:  # Context menu action
-            if selected_source.type == "Torrent":
-                response = xbmcgui.Dialog().contextmenu(
-                    ["Download to Debrid", translation(90083)]
-                )
-                if response == 0:
-                    self._download_to_debrid()
-                elif response == 1:
-                    self._download_file(selected_source)
-            elif selected_source.type == "Direct":
-                response = xbmcgui.Dialog().contextmenu([translation(90083)])
-                if response == 0:
-                    self._download_file(selected_source)
-            else:
-                response = xbmcgui.Dialog().contextmenu(
-                    [translation(90084), translation(90083), translation(90082)]
-                )
-                if response == 0:
-                    self._resolve_item(selected_source, pack_select=True)
-                elif response == 1:
-                    self._download_file(selected_source)
-                elif response == 2:
-                    self._resolve_item(selected_source, is_subtitle_download=True)
+    def _handle_select_action(self, control_id):
+        self.position = self.display_list.getSelectedPosition()
+        selected_source = self.list_sources[self.position]
 
-        elif control_id == 1300:
-            quality_list = self.getControl(1300)
-            selected_item = quality_list.getSelectedItem()
-            if selected_item:
-                selected_quality = selected_item.getProperty("quality")
-                self.filtered_sources = [
-                    s for s in self.sources if selected_quality in s.quality
-                ]
-                self.filter_applied = True
-                self.populate_sources_list()
-
-        elif action_id == 7 and control_id == 1000:  # Select action
-            control_list = self.getControl(control_id)
-            self.set_cached_focus(control_id, control_list.getSelectedPosition())
-            self._resolve_item(selected_source, pack_select=False)
+        control_list = self.getControl(control_id)
+        self.set_cached_focus(control_id, control_list.getSelectedPosition())
+        self._resolve_item(selected_source, pack_select=False)
 
     def populate_sources_list(self) -> None:
         self.display_list.reset()
@@ -203,6 +213,7 @@ class SourceSelect(BaseWindow):
             if self.filter_applied and self.filtered_sources is not None
             else self.sources
         )
+
         for source in self.list_sources:
             menu_item = xbmcgui.ListItem(label=source.title)
             menu_item.setProperty("title", source.title)

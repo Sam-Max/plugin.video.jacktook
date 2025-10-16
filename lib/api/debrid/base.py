@@ -71,7 +71,7 @@ class DebridClient(ABC):
             raise ProviderException("Request timed out.")
         except requests.exceptions.ConnectionError as e:
             kodilog(f"ConnectionError: {e}")
-            raise 
+            raise ProviderException(f"ConnectionError: {e}")
         except requests.exceptions.RequestException as e:
             kodilog(f"RequestException: {e}")
             raise ProviderException(f"Request failed: {str(e)}")
