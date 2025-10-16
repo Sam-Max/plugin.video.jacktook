@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
-from lib.api.fanart.fanart import FanartTv
+from lib.api.fanart.fanart import get_fanart
 from lib.clients.aisubtrans.utils import get_language_code
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.utils.debrid.qrcode_utils import make_qrcode
@@ -692,62 +692,31 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     identifier = "{}|{}".format(
         "fanart.tv", tvdb_id if tvdb_id and tvdb_id != "None" else tmdb_id
     )
-    data = cache.get(identifier)
-    if data:
-        return data
-    fanart = FanartTv(client_key="fa836e1c874ba95ab08a14ee88e05565")
-    if mode == "tv":
-        results = fanart.get_show(tvdb_id)
-    else:
-        results = fanart.get_movie(tmdb_id)
-    data = get_fanart_data(results)
-    if data:
-        cache.set(
-            identifier,
-            data,
-            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
-        )
-    return data
-
-
-def get_fanart_data(res):
-    fanart_object = res.get("fanart_object")
-    if fanart_object is None:
-        art = {}
-    else:
-        art = fanart_object.get("art", {})
+    cached = cache.get(identifier)
+    if cached:
+        return cached
 
     from lib.clients.tmdb.utils.utils import LANGUAGES
 
-    language_index = get_setting("language", 18)
-    lang = LANGUAGES[int(language_index)].split("-")[0].strip()
+    try:
+        language_index = int(get_setting("language", 18))
+        lang = LANGUAGES[language_index].split("-")[0].strip()
+    except Exception:
+        lang = "en" 
 
-    return {
-        "fanart": get_best_image(art.get("fanart", []), lang),
-        "clearlogo": get_best_image(art.get("clearlogo", []), lang),
-        "poster": get_best_image(art.get("poster", []), lang),
-        "clearart": get_best_image(art.get("clearart", []), lang),
-        "keyart": get_best_image(art.get("keyart", []), lang),
-        "banner": get_best_image(art.get("banner", []), lang),
-        "landscape": get_best_image(art.get("landscape", []), lang),
-    }
+    if mode == "tv":
+        data = get_fanart(mode, lang, tvdb_id)
+    else:
+        data = get_fanart(mode, lang, tmdb_id)
 
+    kodilog("Caching fanart details for ID: {}".format(identifier))
+    kodilog(data)
 
-def get_best_image(images, lang="en"):
-    if not images:
-        return ""
-    # Try preferred language first
-    lang_matches = [img for img in images if img.get("language") == lang]
-    if lang_matches:
-        return max(lang_matches, key=lambda x: x.get("rating", 0)).get("url", "")
+    if data:
+        hours = get_cache_expiration() if is_cache_enabled() else 0
+        cache.set(identifier, data, timedelta(hours=hours))
 
-    # 2. Fallback to English if preferred language not found
-    en_matches = [img for img in images if img.get("language") == "en"]
-    if en_matches:
-        return max(en_matches, key=lambda x: x.get("rating", 0)).get("url", "")
-
-    # 3. Fallback: highest rating overall
-    return max(images, key=lambda x: x.get("rating", 0)).get("url", "")
+    return data or {}
 
 
 def get_cached_results(query, mode, media_type, episode):
