@@ -4,7 +4,7 @@ import os
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
-from lib.clients.tmdb.anime_client import TmdbAnimeClient
+from lib.clients.tmdb.anime import TmdbAnimeClient
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.collections import TmdbCollections
 from lib.clients.tmdb.people_client import PeopleClient
@@ -22,9 +22,9 @@ from lib.utils.general.utils import (
 
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     build_url,
+    end_of_directory,
     kodilog,
     set_view,
     show_keyboard,
@@ -38,7 +38,6 @@ from lib.utils.views.weekly_calendar import get_episodes_for_show
 from lib.utils.general.utils import Anime
 
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 import xbmc
 
 
@@ -72,7 +71,7 @@ class TmdbClient(BaseTmdbClient):
             execute_thread_pool(results, TmdbClient.show_tmdb_results, mode)
             add_next_button("handle_tmdb_search", page=page, mode=mode)
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def handle_tmdb_query(params):
@@ -238,7 +237,7 @@ class TmdbClient(BaseTmdbClient):
             genre_id=genre_id,
             page=page,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def tmdb_search_year(mode, submode, year, page):
@@ -276,7 +275,7 @@ class TmdbClient(BaseTmdbClient):
         add_next_button(
             "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_tmdb_results(res, mode, submode=""):
@@ -383,7 +382,7 @@ class TmdbClient(BaseTmdbClient):
             getattr(data, "results"), TmdbClient.show_tmdb_results, mode
         )
         add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_trending_movies(mode, page):
@@ -399,7 +398,7 @@ class TmdbClient(BaseTmdbClient):
         add_next_button(
             "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_popular_items(mode, page):
@@ -414,7 +413,7 @@ class TmdbClient(BaseTmdbClient):
             getattr(data, "results"), TmdbClient.show_tmdb_results, mode
         )
         add_next_button("handle_tmdb_query", query="tmdb_popular", page=page, mode=mode)
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_languages(mode, page):
@@ -437,7 +436,7 @@ class TmdbClient(BaseTmdbClient):
                     page=page,
                 ),
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_lang_items(params):
@@ -475,7 +474,8 @@ class TmdbClient(BaseTmdbClient):
             lang=lang,
             page=page,
         )
-        endOfDirectory(ADDON_HANDLE)
+        
+        end_of_directory()
 
     @staticmethod
     def show_networks(mode, page):
@@ -500,7 +500,7 @@ class TmdbClient(BaseTmdbClient):
                     page=page,
                 ),
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_network_items(params):
@@ -548,7 +548,7 @@ class TmdbClient(BaseTmdbClient):
             id=network_id,
             page=page,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_calendar_items(query, page, mode):
@@ -558,7 +558,7 @@ class TmdbClient(BaseTmdbClient):
         trending_data = tmdb_get("tv_week", page)
         if not trending_data or getattr(trending_data, "total_results") == 0:
             notification("No TV shows found")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         results = []
@@ -651,7 +651,7 @@ class TmdbClient(BaseTmdbClient):
                 page=page + 1,
                 mode=mode,
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_collections_menu(mode):
@@ -675,7 +675,7 @@ class TmdbClient(BaseTmdbClient):
                 is_folder=True,
                 icon_path=icon_path,
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -700,7 +700,7 @@ class TmdbClient(BaseTmdbClient):
         keywords_data = Search().keywords(query, page=page)
         if not keywords_data or len(keywords_data) == 0:
             notification("No keywords found")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         for keyword in keywords_data:
@@ -725,7 +725,7 @@ class TmdbClient(BaseTmdbClient):
         add_next_button(
             "handle_tmdb_movie_query", query="tmdb_keywords", page=page + 1, mode=mode
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -749,7 +749,7 @@ class TmdbClient(BaseTmdbClient):
 
         if not results:
             notification("No recommendations found")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         execute_thread_pool(
@@ -763,7 +763,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 page=page,
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def search_tmdb_similar(params):
@@ -786,7 +786,7 @@ class TmdbClient(BaseTmdbClient):
 
         if not results:
             notification("No similar items found")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         execute_thread_pool(
@@ -800,4 +800,4 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 page=page,
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()

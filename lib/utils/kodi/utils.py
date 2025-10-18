@@ -15,7 +15,7 @@ import xbmcaddon
 import xbmcgui
 
 from xbmcgui import Window, ListItem
-from xbmcplugin import setResolvedUrl
+from xbmcplugin import setResolvedUrl, endOfDirectory
 from xbmcvfs import (
     translatePath as translate_path,
     delete as xbmc_delete,
@@ -492,3 +492,11 @@ def cancel_playback():
 
 def kodilog(message, level=xbmc.LOGINFO):
     xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
+
+
+def is_widget():
+    return "jacktook" not in xbmc.getInfoLabel("Container.PluginName")
+
+
+def end_of_directory():
+    endOfDirectory(ADDON_HANDLE, cacheToDisc=False if is_widget() else True)

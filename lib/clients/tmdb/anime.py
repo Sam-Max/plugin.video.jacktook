@@ -16,7 +16,7 @@ from lib.utils.general.utils import (
 )
 
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
+    end_of_directory,
     kodilog,
     show_keyboard,
     notification,
@@ -25,7 +25,6 @@ from lib.utils.kodi.utils import (
 
 
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
 class TmdbAnimeClient(BaseTmdbClient):
@@ -60,7 +59,7 @@ class TmdbAnimeClient(BaseTmdbClient):
         add_next_button(
             "next_page_anime", page=page, mode=mode, submode=submode, category=category
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def handle_anime_years_or_genres(category, mode, page, submode):

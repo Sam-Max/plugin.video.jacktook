@@ -16,8 +16,8 @@ from lib.utils.general.utils import (
     set_media_infoTag,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
+    end_of_directory,
     kodilog,
     notification,
     play_media,
@@ -25,7 +25,6 @@ from lib.utils.kodi.utils import (
 )
 from .paginator import paginator_db
 
-from xbmcplugin import endOfDirectory
 from xbmcgui import ListItem
 
 
@@ -272,7 +271,7 @@ class TraktClient:
             submode=submode,
             api=api,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
@@ -283,14 +282,14 @@ class TraktClient:
         items = paginator_db.get_page(page)
         execute_thread_pool(items, TraktPresentation.show_lists_content_items)
         add_next_button("list_trakt_page", page, mode=mode)
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_list_trakt_page(page, mode):
         items = paginator_db.get_page(page)
         execute_thread_pool(items, TraktPresentation.show_lists_content_items)
         add_next_button("list_trakt_page", page, mode=mode)
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
 
 class TraktPresentation:

@@ -2,10 +2,10 @@ import json
 import os
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import parse_time, set_pluging_category
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
 
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcplugin import addDirectoryItem
 
 
 pickle_db = PickleDatabase()
@@ -54,4 +54,4 @@ def show_last_files():
             list_item,
             False,
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()

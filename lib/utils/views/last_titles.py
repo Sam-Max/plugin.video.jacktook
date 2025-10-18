@@ -1,4 +1,3 @@
-from datetime import datetime
 import json
 import os
 
@@ -11,11 +10,12 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     build_url,
     container_refresh,
+    end_of_directory,
     translation,
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcplugin import addDirectoryItem
 
 
 pickle_db = PickleDatabase()
@@ -118,4 +118,4 @@ def show_last_titles(params):
             isFolder=True,
         )
 
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()

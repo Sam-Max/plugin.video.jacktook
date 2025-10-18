@@ -4,7 +4,7 @@ import re
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
 from lib.utils.general.utils import (
     execute_thread_pool,
     set_media_infoTag,
@@ -13,7 +13,7 @@ from lib.utils.general.utils import (
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcplugin import addDirectoryItem
 
 
 def show_weekly_calendar():
@@ -98,7 +98,7 @@ def show_weekly_calendar():
             isFolder=False,
         )
 
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def get_episodes_for_show(ids):
