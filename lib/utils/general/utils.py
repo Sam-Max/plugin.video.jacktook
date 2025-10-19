@@ -303,7 +303,7 @@ def is_ed_enabled():
 
 
 def build_list_item(label, icon="", poster_path=""):
-    item = ListItem(label)
+    item = ListItem(label=label)
     item.setArt(
         {
             "poster": poster_path,
@@ -539,23 +539,22 @@ def build_actor(member, is_cast=True):
 
 
 def set_listitem_artwork(list_item, data, fanart_data):
-    def tmdb_url(path, size):
-        return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
-
     thumb_sources = [
         (data.get("poster_path"), "w780"),
-        (data.get("still_path"), "w1280"),
+        (data.get("still_path"), "w780"),
     ]
     poster_sources = [
-        (data.get("poster_path"), "w500"),
-        (data.get("still_path"), "w1280"),
-        (data.get("profile_path"), "w500"),
+        (data.get("poster_path"), "w780"),
+        (data.get("still_path"), "w780"),
+        (data.get("profile_path"), "w780"),
     ]
     fanart_sources = [
         (data.get("backdrop_path"), "w1280"),
         (data.get("still_path"), "w1280"),
     ]
 
+    clear_logo = [ (extract_tmdb_logo_url(data), "original") ]
+    
     def first_valid(sources, fallback_key=""):
         for path, size in sources:
             url = tmdb_url(path, size)
@@ -573,13 +572,25 @@ def set_listitem_artwork(list_item, data, fanart_data):
             "icon": first_valid(poster_sources),
             "banner": first_valid(fanart_sources, "banner"),
             "clearart": first_valid(fanart_sources, "clearart"),
-            "clearlogo": first_valid([], "clearlogo"),
+            "clearlogo": first_valid(clear_logo, "clearlogo"),
             "tvshow.clearart": first_valid(fanart_sources, "clearart"),
-            "tvshow.clearlogo": first_valid([], "clearlogo"),
+            "tvshow.clearlogo": first_valid(clear_logo, "clearlogo"),
             "tvshow.landscape": first_valid(fanart_sources, "landscape"),
             "tvshow.banner": first_valid(fanart_sources, "banner"),
         }
     )
+
+def extract_tmdb_logo_url(data):
+    images = data.get("images", {}) or {}
+    logos = images.get("logos", []) or []
+    if logos:
+        file_path = logos[0].get("file_path")
+        if file_path:
+            return file_path
+
+
+def tmdb_url(path, size):
+    return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
 
 
 def build_media_metadata(ids, mode: str) -> dict:
@@ -612,6 +623,8 @@ def build_media_metadata(ids, mode: str) -> dict:
     metadata["tmdb_id"] = str(tmdb_id)
     metadata["tvdb_id"] = str(tvdb_id)
 
+    tmdb_logo_path = None
+
     # TMDB details
     if tmdb_id:
         from lib.clients.tmdb.utils.utils import get_tmdb_media_details
@@ -635,22 +648,19 @@ def build_media_metadata(ids, mode: str) -> dict:
         metadata["vote_count"] = getattr(details, "vote_count", 0)
         metadata["popularity"] = getattr(details, "popularity", 0)
         metadata["cast"] = extract_cast(details)
+        tmdb_logo_path = extract_tmdb_logo_url(details) or ""
+        if tmdb_logo_path:
+            metadata["clearlogo"] = tmdb_url(tmdb_logo_path, "original")
 
     # Fanart details
     if tmdb_id or tvdb_id:
         fanart_details = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
-        metadata["fanart"] = (
-            fanart_details.get("fanart")
-            or fanart_details.get("poster")
-            or metadata["poster"]
-        )
-        metadata["clearlogo"] = fanart_details.get("clearlogo") or fanart_details.get(
-            "clearart", ""
-        )
-        metadata["clearart"] = fanart_details.get("clearart", "")
-        metadata["keyart"] = fanart_details.get("keyart", "")
-        metadata["banner"] = fanart_details.get("banner", "")
-        metadata["landscape"] = fanart_details.get("landscape", "")
+
+        if not tmdb_logo_path:
+            metadata["clearlogo"] = fanart_details.get("clearlogo")
+
+        for key in ("fanart", "clearart", "keyart", "banner", "landscape"):
+            metadata[key] = fanart_details.get(key, "")
 
     return metadata
 
@@ -702,15 +712,12 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
         language_index = int(get_setting("language", 18))
         lang = LANGUAGES[language_index].split("-")[0].strip()
     except Exception:
-        lang = "en" 
+        lang = "en"
 
     if mode == "tv":
         data = get_fanart(mode, lang, tvdb_id)
     else:
         data = get_fanart(mode, lang, tmdb_id)
-
-    kodilog("Caching fanart details for ID: {}".format(identifier))
-    kodilog(data)
 
     if data:
         hours = get_cache_expiration() if is_cache_enabled() else 0
