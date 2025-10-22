@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 import unicodedata
+from urllib.parse import unquote
 import requests
 from typing import Dict, List
 from zipfile import ZipFile
@@ -553,8 +554,8 @@ def set_listitem_artwork(list_item, data, fanart_data):
         (data.get("still_path"), "w1280"),
     ]
 
-    clear_logo = [ (extract_tmdb_logo_url(data), "original") ]
-    
+    clear_logo = [(extract_tmdb_logo_url(data), "original")]
+
     def first_valid(sources, fallback_key=""):
         for path, size in sources:
             url = tmdb_url(path, size)
@@ -579,6 +580,7 @@ def set_listitem_artwork(list_item, data, fanart_data):
             "tvshow.banner": first_valid(fanart_sources, "banner"),
         }
     )
+
 
 def extract_tmdb_logo_url(data):
     images = data.get("images", {}) or {}
@@ -961,35 +963,70 @@ def filter_torrent_sources(results):
     return filtered_results
 
 
-def filter_debrid_episode(results, episode_num: int, season_num: int) -> List[Dict]:
-    episode_fill = f"{int(episode_num):02}"
-    season_fill = f"{int(season_num):02}"
-
-    patterns = [
-        rf"S{season_fill}E{episode_fill}",  # SXXEXX format
-        rf"{season_fill}x{episode_fill}",  # XXxXX format
-        rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
-        rf"E{episode_fill}",  # .EXX format
-        rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
-        rf"Season[\s._-]?{season_fill}[\s._-]?Episode[\s._-]?{episode_fill}",  # Season X Episode Y
-        rf"Ep[\s._-]?{episode_fill}",  # EpXX
-        r"Cap\.",  # match "Cap."
-    ]
-
-    combined_pattern = "|".join(patterns)
+def filter_debrid_episode(
+    results, episode_num: int, season_num: int, strict: bool = True
+) -> List[Dict]:
+    str_season, str_episode = str(season_num), str(episode_num)
+    season_fill, episode_fill = str_season.zfill(2), str_episode.zfill(2)
+    ep_plus_1 = str(episode_num + 1).zfill(2)
+    ep_minus_1 = str(episode_num - 1).zfill(2)
 
     def get_filename(res):
-        # Real-Debrid uses 'path', fallback to 'filename' or 'name'
         return res.get("path") or res.get("filename") or res.get("name") or ""
 
+    # Normalize filenames for matching
+    def normalize_title(title):
+        title = unquote(title).replace("'", "")
+        title = re.sub(r"[^A-Za-z0-9-]+", ".", title)
+        return title.lower()
+
+    string_list = []
+
+    # SXXEYY variants and S2 - 11 / S02.11
+    for s, e in [
+        (season_fill, episode_fill),
+        (str_season, episode_fill),
+        (season_fill, str_episode),
+        (str_season, str_episode),
+    ]:
+        string_list.append(rf"s{s}[.-]?e{e}")
+        string_list.append(rf"s{s}[.\s-]?{e}")  # S2 - 11 or S02.11
+
+    # Season X Episode Y or SxE patterns
+    for s, e in [
+        (season_fill, episode_fill),
+        (str_season, episode_fill),
+        (season_fill, str_episode),
+        (str_season, str_episode),
+    ]:
+        string_list.append(rf"(season[.-]?{s}[.-]?episode[.-]?{e})")
+        string_list.append(rf"{s}[x.]?{e}")  # 2x11 or 02.11
+
+    # Episode ±1
+    string_list.append(rf"s{season_fill}e{ep_minus_1}[.-]?e{episode_fill}")
+    string_list.append(rf"s{season_fill}e{episode_fill}[.-]?e{ep_plus_1}")
+
+    # Episode-only patterns
+    string_list.append(rf"episode[.-]?{episode_fill}")
+    string_list.append(rf"[.-]ep[.-]?{episode_fill}")
+    string_list.append(r"cap\.")
+
+    # Optional strict negative lookahead to avoid false positives like 10x11 matching 1x01
+    if strict:
+        lookahead = rf"^(?=.*\.e?0*{episode_fill}\.)(?:(?!((?:s|season)[.-]?\d+[.-x]?(?:ep?|episode)[.-]?\d+)|\d+x\d+).)*$"
+        string_list.append(lookahead)
+
+    combined_pattern = "|".join(string_list)
+    try:
+        regex = re.compile(combined_pattern, re.IGNORECASE)
+    except re.error as e:
+        kodilog(f"Regex compilation failed: {e}")
+        return results
+
     filtered = [
-        res
-        for res in results
-        if re.search(combined_pattern, get_filename(res), re.IGNORECASE)
+        res for res in results if regex.search(normalize_title(get_filename(res)))
     ]
 
-    kodilog("Results after filtering:", level=xbmc.LOGDEBUG)
-    kodilog(filtered, level=xbmc.LOGDEBUG)
     return filtered
 
 
