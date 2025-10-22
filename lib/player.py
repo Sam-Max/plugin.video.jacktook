@@ -148,7 +148,7 @@ class JacktookPLayer(xbmc.Player):
         else:
             kodilog("No subtitle handling method selected, skipping subtitle loading")
 
-    def check_playback_start(self, timeout_ms=15000, check_interval_ms=50):
+    def check_playback_start(self, timeout_ms=20000, check_interval_ms=50):
         elapsed_ms = 0
         self.playback_successful = None
 
