@@ -88,6 +88,12 @@ class BaseProcessBuilder:
             rf"s1 thru s{season_num}",
             rf"s01 thru {season_fill}",
             rf"s01 thru s{season_fill}",
+            rf"\[S{season_fill}\]",
+            rf"\[S{season_num}\]"
+            rf"\(S{season_fill}\)",
+            rf"\(S{season_num}\)",
+            rf"\[Season {season_num}\]",
+            rf"\[Season {season_fill}\]",
         ]
 
     def get_results(self) -> List[TorrentStream]:
