@@ -10,11 +10,11 @@ from typing import List, Optional, Callable, Any
 
 class Jackett(BaseClient):
     def __init__(
-        self, host: str, apikey: str, notification: Callable[[str], None]
+        self, host: str, apikey: str, port: str, notification: Callable[[str], None]
     ) -> None:
         super().__init__(host, notification)
         self.apikey = apikey
-        self.base_url = f"{self.host}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}"
+        self.base_url = f"{self.host}:{port}/api/v2.0/indexers/all/results/torznab/api?apikey={self.apikey}"
 
     def _build_url(
         self,
@@ -83,7 +83,6 @@ class Jackett(BaseClient):
         except Exception as e:
             self.handle_exception(f"Error parsing Jackett response: {str(e)}")
             return None
-
 
     def extract_result(self, results: List[TorrentStream], item: dict) -> None:
         attrs = item.get("torznab:attr", [])

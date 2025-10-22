@@ -40,8 +40,8 @@ msgid "Jackett Configuration:"
 msgstr "Configuracion de Jackett"
 
 msgctxt "#30023"
-msgid "Api Key"
-msgstr "Clave Api"
+msgid "API Key"
+msgstr "Clave API"
 
 msgctxt "#30025"
 msgid "Host"
@@ -1032,8 +1032,8 @@ msgid "Premiumize API token (get from account page)."
 msgstr "Token de API de Premiumize (obtén en la página de la cuenta)."
 
 msgctxt "#30815"
-msgid "Jackett server URL (e.g., http://localhost:9117)."
-msgstr "URL del servidor Jackett (ej. http://localhost:9117)."
+msgid "Jackett server URL (e.g., http://localhost)."
+msgstr "URL del servidor Jackett (ej. http://localhost)."
 
 msgctxt "#30816"
 msgid "Display Telegram integration options in UI."
@@ -1176,8 +1176,8 @@ msgid "Enable Jackgram integration for enhanced search."
 msgstr "Habilitar la integración de Jackgram para búsquedas mejoradas."
 
 msgctxt "#30851"
-msgid "Prowlarr instance URL (e.g., http://localhost:9696)."
-msgstr "URL de la instancia de Prowlarr (ej. http://localhost:9696)."
+msgid "Prowlarr instance URL (e.g., http://localhost)."
+msgstr "URL de la instancia de Prowlarr (ej. http://localhost)."
 
 msgctxt "#30852"
 msgid "Maximum number of search results to display (e.g., 50)."
@@ -1769,3 +1769,15 @@ msgstr "Abrir Configuracion"
 msgctxt "#90117"
 msgid "Select Torrentio Providers"
 msgstr "Seleccionar proveedores de Torrentio"
+
+msgctxt "#90118"
+msgid "Port"
+msgstr "Puerto"
+
+msgctxt "#90119"
+msgid "Jackett port (default:9117)"
+msgstr "Puerto de Jackett (por defecto: 9117)"
+
+msgctxt "#90120"
+msgid "Prowlarr port (default:9696)"
+msgstr "Puerto de Prowlarr (por defecto: 9696)"

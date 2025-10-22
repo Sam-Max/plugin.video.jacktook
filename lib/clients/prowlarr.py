@@ -6,9 +6,9 @@ from typing import Dict, List, Optional, Any, Callable
 
 
 class Prowlarr(BaseClient):
-    def __init__(self, host: str, apikey: str, notification: Callable) -> None:
+    def __init__(self, host: str, port: str, apikey: str, notification: Callable) -> None:
         super().__init__(host, notification)
-        self.base_url = f"{self.host}/api/v1/search"
+        self.base_url = f"{self.host}:{port}/api/v1/search"
         self.apikey = apikey
 
     def search(

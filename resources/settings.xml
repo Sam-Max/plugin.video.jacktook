@@ -286,6 +286,18 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="jackett_port" type="string" label="90118" help="90119">
+                    <default>9117</default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="jackett_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="jackett_apikey" type="string" label="30051" help="30821">
                     <default/>
                     <constraints>
@@ -322,6 +334,18 @@
                 </setting>
                 <setting id="prowlarr_host" type="string" label="30052" help="30851">
                     <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string"/>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="prowlarr_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="prowlarr_port" type="string" label="90118" help="90120">
+                    <default>9696</default>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>

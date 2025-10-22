@@ -44,16 +44,20 @@ def get_client(indexer: str) -> Optional[object]:
     if indexer == Indexer.JACKETT:
         host = str(get_setting("jackett_host", ""))
         api_key = str(get_setting("jackett_apikey", ""))
+        port = str(get_setting("jackett_port", "9117"))
+
         if not validate_credentials(indexer, host, api_key):
             return
-        return Jackett(host, api_key, notification)
+        return Jackett(host, api_key, port, notification)
 
     elif indexer == Indexer.PROWLARR:
         host = str(get_setting("prowlarr_host"))
         api_key = str(get_setting("prowlarr_apikey"))
+        port = str(get_setting("prowlarr_port", "9696"))
+
         if not validate_credentials(indexer, host, api_key):
             return
-        return Prowlarr(host, api_key, notification)
+        return Prowlarr(host, api_key, port, notification)
 
     elif indexer == Indexer.JACKGRAM:
         host = str(get_setting("jackgram_host"))

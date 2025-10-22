@@ -40,7 +40,7 @@ msgid "Jackett Configuration:"
 msgstr ""
 
 msgctxt "#30023"
-msgid "Api Key"
+msgid "API Key"
 msgstr ""
 
 msgctxt "#30025"
@@ -76,7 +76,7 @@ msgid "Prowlarr Configuration:"
 msgstr ""
 
 msgctxt "#30051"
-msgid "Api Key"
+msgid "API Key"
 msgstr ""
 
 msgctxt "#30052"
@@ -1048,7 +1048,7 @@ msgid "Premiumize API token (get from account page)."
 msgstr ""
 
 msgctxt "#30815"
-msgid "Jackett server URL (e.g., http://localhost:9117)."
+msgid "Jackett server URL (e.g., http://localhost)."
 msgstr ""
 
 msgctxt "#30816"
@@ -1192,7 +1192,7 @@ msgid "Enable Jackgram integration for enhanced search."
 msgstr ""
 
 msgctxt "#30851"
-msgid "Prowlarr instance URL (e.g., http://localhost:9696)."
+msgid "Prowlarr instance URL (e.g., http://localhost)."
 msgstr ""
 
 msgctxt "#30852"
@@ -1784,4 +1784,16 @@ msgstr ""
 
 msgctxt "#90117"
 msgid "Select Torrentio Providers"
+msgstr ""
+
+msgctxt "#90118"
+msgid "Port"
+msgstr ""
+
+msgctxt "#90119"
+msgid "Jackett port (default:9117)"
+msgstr ""
+
+msgctxt "#90120"
+msgid "Prowlarr port (default:9696)"
 msgstr ""
