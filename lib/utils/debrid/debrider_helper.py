@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
+from lib.api.debrid.base import ProviderException
 from lib.api.debrid.debrider import Debrider
 from lib.utils.kodi.utils import dialog_text, get_setting, notification
 from lib.utils.general.utils import (
@@ -72,8 +73,7 @@ class DebriderHelper:
         ]
 
         if not torrent_files:
-            notification("No valid files found in torrent")
-            return
+            raise ProviderException("No valid files found in torrent")
 
         if len(torrent_files) > 1:
             if data["tv_data"]:
@@ -104,8 +104,7 @@ class DebriderHelper:
         torrent_files = response_data.get("files", [])
 
         if len(torrent_files) <= 1:
-            notification("No files on the current source")
-            return
+            raise ProviderException("No files on the current source")
 
         files = [
             (item["download_link"], item["name"])
@@ -125,8 +124,9 @@ class DebriderHelper:
                 not response.get("message", "")
                 or "task added successfully" not in response.get("message", "").lower()
             ):
-                notification(f"Failed to add magnet link to Debrider {response}")
-                return
+                raise ProviderException(
+                    f"Failed to add magnet link to Debrider {response}"
+                )
         except Exception as e:
             notification(str(e))
             raise

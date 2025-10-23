@@ -70,32 +70,29 @@ class RealDebridHelper:
         status = torrent_info["status"]
         if status in ["magnet_error", "error", "virus", "dead"]:
             self.client.delete_torrent(torrent_id)
-            raise Exception(f"Torrent cannot be downloaded due to status: {status}")
+            raise ProviderException(f"Torrent cannot be downloaded: {status}")
         if status in ["queued", "downloading", "magnet_conversion"]:
             return None
         if status == "waiting_files_selection":
-            self.handle_file_selection(torrent_info, is_pack)
+            if "files" in torrent_info and torrent_info["files"]:
+                self.handle_file_selection(torrent_info, is_pack)
+            else:
+                raise ProviderException("No files available for this torrent yet.")
         return torrent_id
 
     def add_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
             torrent_info = self.client.get_available_torrent(info_hash)
-
             if not torrent_info:
                 self.check_max_active_count()
                 magnet = info_hash_to_magnet(info_hash)
                 response = self.client.add_magnet_link(magnet)
                 torrent_id = response.get("id")
-
                 if not torrent_id:
-                    kodilog("Failed to add magnet link to Real-Debrid")
-                    return None
-
+                    raise ProviderException("Failed to add magnet link to Real-Debrid")
                 torrent_info = self.client.get_torrent_info(torrent_id)
-
             return self._handle_torrent_status(torrent_info, is_pack)
-
         except ProviderException as e:
             notification(str(e))
             raise
@@ -132,12 +129,9 @@ class RealDebridHelper:
             return None
 
         torr_info = self.client.get_torrent_info(torrent_id)
-        links = torr_info.get("links")
-        if not links:
-            notification("No files available for this torrent.")
-            return None
+        links = torr_info["links"]
 
-         # --- Single-file torrent ---
+        # --- Single-file torrent ---
         if len(links) == 1:
             response = self.client.create_download_link(links[0])
             download_url = response.get("download")
@@ -158,10 +152,14 @@ class RealDebridHelper:
             if not matched:
                 notification("No matching episode found in torrent.")
                 return None
-            
+
             file_match = matched[0]
             file_index = next(
-                (i for i, f in enumerate(torr_info["files"]) if f["id"] == file_match["id"]),
+                (
+                    i
+                    for i, f in enumerate(torr_info["files"])
+                    if f["id"] == file_match["id"]
+                ),
                 None,
             )
             if file_index is None:
@@ -179,7 +177,6 @@ class RealDebridHelper:
         else:
             data["is_pack"] = True
             return data
-
 
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""

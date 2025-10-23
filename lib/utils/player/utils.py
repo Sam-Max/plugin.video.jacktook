@@ -38,8 +38,8 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         data["url"] = addon_url
         return data
 
-    source_data = get_debrid_url(data, debrid_type, is_pack)
-    if source_data:
+    debrid_url = get_debrid_url(data, debrid_type, is_pack)
+    if debrid_url:
         return data
 
     return None
