@@ -44,20 +44,53 @@ class RealDebrid(DebridClient):
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
-        if error_code == 9:
-            raise ProviderException("Real-Debrid Permission denied")
-        elif error_code == 22:
-            raise ProviderException("IP address not allowed")
-        elif error_code == 34:
-            raise ProviderException("Too many requests")
-        elif error_code == 35:
-            raise ProviderException("Content marked as infringing")
-        elif error_code == 25:
-            raise ProviderException("Service Unavailable")
-        elif error_code == 21:
-            raise ProviderException("Too many active downloads")
-        elif error_code == 35:
-            raise ProviderException("Infringing file")
+        messages = {
+            -1: "Internal error",
+            1: "Missing parameter",
+            2: "Bad parameter value",
+            3: "Unknown method",
+            4: "Method not allowed",
+            5: "Slow down",
+            6: "Resource unreachable",
+            7: "Resource not found",
+            8: "Bad token",
+            9: "Permission denied",
+            10: "Two-Factor authentication needed",
+            11: "Two-Factor authentication pending",
+            12: "Invalid login",
+            13: "Invalid password",
+            14: "Account locked",
+            15: "Account not activated",
+            16: "Unsupported hoster",
+            17: "Hoster in maintenance",
+            18: "Hoster limit reached",
+            19: "Hoster temporarily unavailable",
+            20: "Hoster not available for free users",
+            21: "Too many active downloads",
+            22: "IP address not allowed",
+            23: "Traffic exhausted",
+            24: "File unavailable",
+            25: "Service unavailable",
+            26: "Upload too big",
+            27: "Upload error",
+            28: "File not allowed",
+            29: "Torrent too big",
+            30: "Torrent file invalid",
+            31: "Action already done",
+            32: "Image resolution error",
+            33: "Torrent already active",
+            34: "Too many requests",
+            35: "Infringing file",
+            36: "Fair Usage Limit",
+            37: "Disabled endpoint",
+        }
+
+        if error_code in messages:
+            raise ProviderException(messages[error_code])
+        err = error_data.get("error") or error_data.get("message")
+        if err:
+            raise ProviderException(f"{err} (code {error_code})")
+        raise ProviderException(f"Real-Debrid error (code {error_code})")
 
     def _make_request(
         self,
