@@ -141,6 +141,34 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "tv_data": self.item_information.get("tv_data"),
         }
 
+    def _ensure_playback_info(self, source: TorrentStream):
+        url, magnet, is_torrent = self.get_source_details(source=source)
+        source_data = self.prepare_source_data(
+            source=source,
+            url=url,
+            magnet=magnet,
+            is_torrent=is_torrent,
+        )
+        try:
+            return resolve_playback_url(source_data) or {}
+        except Exception:
+            if self.previous_window:
+                self.previous_window.setProperty("instant_close", "true")
+                self.previous_window.close()
+            self.close()
+
+    def get_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
+        url, magnet, is_torrent = "", "", False
+        type = source.type
+
+        if type in (IndexerType.TORRENT, IndexerType.DEBRID):
+            url, magnet = self._handle_torrent_source(source)
+            is_torrent = type == IndexerType.TORRENT
+        elif type == IndexerType.DIRECT or IndexerType.STREMIO_DEBRID:
+            url = source.url
+
+        return url, magnet, is_torrent
+
     def _handle_torrent_source(self, source: TorrentStream) -> Tuple[str, str]:
         guid = source.guid
         magnet = ""
@@ -159,30 +187,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             magnet = resolve_to_magnet(url) or ""
 
         return url, magnet
-
-    def get_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
-        type = source.type
-        url, magnet, is_torrent = "", "", False
-
-        if type == IndexerType.TORRENT:
-            url, magnet = self._handle_torrent_source(source)
-            is_torrent = True
-        elif type == IndexerType.DEBRID:
-            url, magnet = self._handle_torrent_source(source)
-        elif type == IndexerType.DIRECT or IndexerType.STREMIO_DEBRID:
-            url = source.url
-
-        return url, magnet, is_torrent
-
-    def _ensure_playback_info(self, source: TorrentStream):
-        url, magnet, is_torrent = self.get_source_details(source=source)
-        source_data = self.prepare_source_data(
-            source=source,
-            url=url,
-            magnet=magnet,
-            is_torrent=is_torrent,
-        )
-        return resolve_playback_url(source_data) or {}
 
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):
