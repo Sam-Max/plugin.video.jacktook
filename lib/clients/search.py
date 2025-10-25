@@ -17,11 +17,13 @@ def stremio_addon_generator(stremio_addons, dialog):
 
 
 def add_task_if_enabled(
-    executor, tasks, setting_key, indexer_key, perform_search, dialog, *args
+    executor, tasks, setting_key, indexer_key, perform_search, dialog, *args, **kwargs
 ):
     """Add a search task to the task list if the corresponding setting is enabled."""
     if get_setting(setting_key):
-        tasks.append(executor.submit(perform_search, indexer_key, dialog, *args))
+        tasks.append(
+            executor.submit(perform_search, indexer_key, dialog, *args, **kwargs)
+        )
 
 
 def search_client(
@@ -158,6 +160,7 @@ def search_client(
                     total_results.extend(results)
             except Exception as e:
                 import traceback
+
                 error_details = traceback.format_exc()
                 kodilog(f"Error in {e}\n{error_details}")
 
