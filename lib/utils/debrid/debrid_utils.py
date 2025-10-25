@@ -204,22 +204,30 @@ def extract_info_hash(res: TorrentStream) -> Optional[str]:
 
 
 def get_magnet_from_uri(uri):
-    magnet = info_hash = ""
-    if is_url(uri):
-        try:
-            res = requests.head(
-                uri, allow_redirects=False, timeout=10, headers=USER_AGENT_HEADER
-            )
-            if res.status_code == 200:
-                if res.is_redirect:
-                    uri = res.headers.get("Location")
-                    if uri and uri.startswith("magnet:"):
-                        magnet = uri
-                        info_hash = get_info_hash_from_magnet(uri).lower()
-                elif res.headers.get("Content-Type") == "application/octet-stream":
-                    magnet = extract_magnet_from_url(uri)
-        except Exception as e:
-            kodilog(f"Failed to extract torrent data from: {str(e)}")
+    magnet = ""
+    info_hash = ""
+
+    if not is_url(uri):
+        return magnet, info_hash
+
+    try:
+        res = requests.head(
+            uri, allow_redirects=False, timeout=10, headers=USER_AGENT_HEADER
+        )
+        if res.status_code == 200:
+            if res.is_redirect or res.is_permanent_redirect:
+                uri = res.headers.get("Location")
+                if uri and uri.startswith("magnet:"):
+                    magnet = uri
+                    info_hash = get_info_hash_from_magnet(uri).lower()
+            elif res.headers.get("Content-Type") == "application/octet-stream":
+                magnet = extract_magnet_from_url(uri)
+                if magnet:
+                    info_hash = get_info_hash_from_magnet(magnet).lower()
+        else:
+            kodilog(f"get_magnet_from_uri: HEAD request did not return 200")
+    except Exception:
+        kodilog(f"get_magnet_from_uri: Exception occurred for uri: {uri}")
     return magnet, info_hash
 
 
