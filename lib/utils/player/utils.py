@@ -126,8 +126,11 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
             return None
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
-    else:
+    elif url:
         _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
+    else:
+        notification("No magnet or url provided for Jacktorr playback")
+        return None
     return _url
 
 
