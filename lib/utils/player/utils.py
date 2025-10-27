@@ -33,7 +33,7 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
         return data
 
-    addon_url = get_addon_url(data, torrent_enable, torrent_client)
+    addon_url = get_torrent_url(data, torrent_enable, torrent_client)
     if addon_url:
         data["url"] = addon_url
         return data
@@ -45,7 +45,7 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return None
 
 
-def get_addon_url(
+def get_torrent_url(
     data: Dict[str, Any], torrent_enable: bool, torrent_client: str
 ) -> Optional[str]:
     magnet: str = data.get("magnet", "")
@@ -54,13 +54,29 @@ def get_addon_url(
     ids: Any = data.get("ids", "")
 
     if torrent_enable:
-        return get_torrent_addon_url_for_client(torrent_client, magnet, url, mode, ids)
-    elif data.get("is_torrent", False):
-        return get_torrent_addon_url_select(magnet, url, mode, ids)
+        return get_torrent_url_for_client(torrent_client, magnet, url, mode, ids)
+    else:
+        if data.get("is_torrent"):
+            selected_client = get_torrent_client_selection(magnet, url, mode, ids)
+            if selected_client:
+                return get_torrent_url_for_client(
+                    selected_client, magnet, url, mode, ids
+                )
+            else:
+                raise TorrentException("No torrent client selected")
     return None
 
 
-def get_torrent_addon_url_for_client(
+def get_torrent_client_selection(
+    magnet: str, url: str, mode: str, ids: Any
+) -> Optional[str]:
+    chosen_client = Dialog().select(translation(30800), torrent_clients)
+    if chosen_client < 0:
+        return None
+    return torrent_clients[chosen_client]
+
+
+def get_torrent_url_for_client(
     client: str, magnet: str, url: str, mode: str, ids: Any
 ) -> Optional[str]:
     if client in [Players.TORREST]:
@@ -69,17 +85,8 @@ def get_torrent_addon_url_for_client(
         return get_elementum_url(magnet, url, mode, ids)
     elif client in [Players.JACKTORR]:
         return get_jacktorr_url(magnet, url)
-    return None
-
-
-def get_torrent_addon_url_select(
-    magnet: str, url: str, mode: str, ids: Any
-) -> Optional[str]:
-    chosen_client = Dialog().select(translation(30800), torrent_clients)
-    if chosen_client < 0:
-        return None
-    selected_client = torrent_clients[chosen_client]
-    return get_torrent_addon_url_for_client(selected_client, magnet, url, mode, ids)
+    else:
+        raise TorrentException(f"Unknown torrent client selected: {client}")
 
 
 def get_debrid_url(
@@ -87,7 +94,8 @@ def get_debrid_url(
 ) -> Optional[Dict[str, Any]]:
     if is_pack and debrid_type in [DebridType.RD, DebridType.TB]:
         return get_debrid_pack_direct_url(debrid_type, data)
-    return get_debrid_direct_url(debrid_type, data)
+    else:
+        return get_debrid_direct_url(debrid_type, data)
 
 
 def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
@@ -103,13 +111,12 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
             notification(translation(30252))
             return None
 
-    if ids:
-        tmdb_id = ids["tmdb_id"]
-    else:
-        tmdb_id = ""
+    tmdb_id = ids["tmdb_id"] if ids else ""
 
-    uri: str = magnet or url or ""
-    return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
+    if magnet or url:
+        return f"plugin://plugin.video.elementum/play?uri={quote(magnet or url)}&type={mode}&tmdb={tmdb_id}"
+    else:
+        raise TorrentException("No magnet or url found for Elementum playback")
 
 
 def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
@@ -129,8 +136,7 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
     elif url:
         _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
     else:
-        notification("No magnet or url provided for Jacktorr playback")
-        return None
+        raise TorrentException("No magnet or url found for Jacktorr playback")
     return _url
 
 
@@ -148,6 +154,24 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
             return None
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
-    else:
+    elif url:
         _url = f"plugin://plugin.video.torrest/play_url?url={quote(url)}"
+    else:
+        raise TorrentException("No magnet or url found for Torrest playback")
     return _url
+
+
+class TorrentException(Exception):
+    def __init__(
+        self, message: str, status_code: Optional[int] = None, error_content: Any = None
+    ):
+        self.message = message
+        self.status_code = status_code
+        self.error_content = error_content
+        details = f"{self.message}"
+        if self.status_code is not None:
+            details += f" (Status code: {self.status_code})"
+        if self.error_content is not None:
+            details += f"\nError content: {self.error_content}"
+        super().__init__(details)
+        notification(details)
