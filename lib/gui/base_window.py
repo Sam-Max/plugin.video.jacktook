@@ -3,8 +3,8 @@ from copy import deepcopy
 import json
 from typing import Any, Dict, Tuple
 from lib.domain.torrent import TorrentStream
+from lib.utils.debrid.debrid_utils import get_magnet_from_uri
 from lib.utils.player.utils import resolve_playback_url
-from lib.utils.torrent.resolve_to_magnet import resolve_to_magnet
 from lib.utils.general.utils import Indexer, IndexerType
 from lib.utils.kodi.utils import ADDON, kodilog
 import xbmcgui
@@ -118,6 +118,64 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         elif action_id != 7:
             self.handle_action(action_id, self.getFocusId())
 
+    def _ensure_playback_info(self, source: TorrentStream):
+        url, magnet, is_torrent = self._extract_source_details(source)
+        source_data = self.prepare_source_data(
+            source=source,
+            url=url,
+            magnet=magnet,
+            is_torrent=is_torrent,
+        )
+        try:
+            return resolve_playback_url(source_data) or {}
+        except Exception:
+            if self.previous_window:
+                self.previous_window.setProperty("instant_close", "true")
+                self.previous_window.close()
+            self.close()
+
+    def _extract_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
+        url = source.url or ""
+        guid = source.guid or ""
+        magnet = ""
+        indexer = source.indexer
+        source_type = source.type
+        is_torrent = source.type == IndexerType.TORRENT
+
+        if source_type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
+            return url, magnet, is_torrent
+
+        # Prefer magnet in guid
+        if guid.startswith("magnet:?"):
+            magnet = guid
+        # Handle Burst indexer
+        elif indexer == Indexer.BURST:
+            url = guid
+        # Prefer .torrent in guid or url
+        elif guid.endswith(".torrent"):
+            url = guid
+        elif url.endswith(".torrent"):
+            pass
+        # Try to extract magnet from guid if it's a details page
+        elif guid.startswith("http"):
+            magnet_candidate, _ = get_magnet_from_uri(guid)
+            if magnet_candidate:
+                magnet = magnet_candidate
+
+        # Try to extract magnet from url if it's a details page
+        if not magnet and url.startswith("http"):
+            magnet_candidate, _ = get_magnet_from_uri(url)
+            if magnet_candidate:
+                magnet = magnet_candidate
+            else:
+                url = ""
+
+        # --- Fallback: magnet from url ---
+        if not magnet and url.startswith("magnet:?"):
+            magnet, url = url, ""
+
+        return url, magnet, is_torrent
+
     def prepare_source_data(
         self,
         source: TorrentStream,
@@ -140,53 +198,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "ids": self.item_information.get("ids"),
             "tv_data": self.item_information.get("tv_data"),
         }
-
-    def _ensure_playback_info(self, source: TorrentStream):
-        url, magnet, is_torrent = self.get_source_details(source=source)
-        source_data = self.prepare_source_data(
-            source=source,
-            url=url,
-            magnet=magnet,
-            is_torrent=is_torrent,
-        )
-        try:
-            return resolve_playback_url(source_data) or {}
-        except Exception:
-            if self.previous_window:
-                self.previous_window.setProperty("instant_close", "true")
-                self.previous_window.close()
-            self.close()
-
-    def get_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
-        url, magnet, is_torrent = "", "", False
-        type = source.type
-
-        if type in (IndexerType.TORRENT, IndexerType.DEBRID):
-            url, magnet = self._handle_torrent_source(source)
-            is_torrent = type == IndexerType.TORRENT
-        elif type == IndexerType.DIRECT or IndexerType.STREMIO_DEBRID:
-            url = source.url
-
-        return url, magnet, is_torrent
-
-    def _handle_torrent_source(self, source: TorrentStream) -> Tuple[str, str]:
-        guid = source.guid
-        magnet = ""
-        indexer = source.indexer
-        url = source.url or ""
-
-        if guid and guid.startswith("magnet:?"):
-            magnet = guid
-        elif indexer == Indexer.BURST:
-            url, magnet = guid, ""
-
-        if url.startswith("magnet:?") and not magnet:
-            magnet, url = url, ""
-
-        if not magnet:
-            magnet = resolve_to_magnet(url) or ""
-
-        return url, magnet
 
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):
