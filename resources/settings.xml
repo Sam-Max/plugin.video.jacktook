@@ -217,58 +217,6 @@
                     </control>
                 </setting>
             </group>
-            <group id="jackgram" label="30767">
-                <setting id="jackgram_enabled" type="boolean" label="30734" help="30850">
-                    <default>false</default>
-                    <control type="toggle"/>
-                </setting>
-                <setting id="jackgram_host" type="string" label="30768" help="30827">
-                    <default/>
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="jackgram_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-            </group>
-            <group id="zilean" label="30771">
-                <setting id="zilean_enabled" type="boolean" label="30734" help="30857">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="zilean_host" type="string" label="30772" help="30801">
-                    <default>https://zilean.elfhosted.com</default>
-                    <constraints>
-                        <allowempty>false</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="zilean_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-                <setting id="zilean_timeout" type="integer" label="30774" help="30820">
-                    <default>10</default>
-                    <constraints>
-                        <minimum>1</minimum>
-                        <maximum>30</maximum>
-                        <step>1</step>
-                    </constraints>
-                    <control type="slider" format="integer">
-                        <popup>false</popup>
-                    </control>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="zilean_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-            </group>
             <group id="jackett" label="30775">
                 <setting id="jackett_enabled" type="boolean" label="30734" help="30849">
                     <default>false</default>
@@ -397,7 +345,7 @@
                     </dependencies>
                 </setting>
             </group>
-            <group id="jacktookburst" label="30780">
+             <group id="jacktookburst" label="30780">
                 <setting id="jacktookburst_enabled" type="boolean" label="30734" help="30859">
                     <default>false</default>
                     <control type="toggle" />
@@ -410,6 +358,58 @@
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="jacktookburst_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
+            <group id="jackgram" label="30767">
+                <setting id="jackgram_enabled" type="boolean" label="30734" help="30850">
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="jackgram_host" type="string" label="30768" help="30827">
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="jackgram_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
+            <group id="zilean" label="30771">
+                <setting id="zilean_enabled" type="boolean" label="30734" help="30857">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="zilean_host" type="string" label="30772" help="30801">
+                    <default>https://zilean.elfhosted.com</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="zilean_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="zilean_timeout" type="integer" label="30774" help="30820">
+                    <default>10</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="zilean_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
