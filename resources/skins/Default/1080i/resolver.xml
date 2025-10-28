@@ -12,11 +12,18 @@
             <width>1920</width>
             <height>1080</height>
 
-            <!-- Fallback Fanart -->
+            <!-- Fallback Jacktook Fanart-->
             <control type="image">
                 <texture background="true">jtk_fanart.png</texture>
                 <aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
-                <visible>String.IsEmpty(Window().Property(info.fanart))</visible>
+                <visible>String.IsEmpty(Window().Property(info.poster))</visible>
+            </control>
+
+            <!-- Fallback Poster -->
+            <control type="image">
+                <texture background="true">$INFO[Window().Property(info.poster)]</texture>
+                <aspectratio scalediffuse="false" align="center" aligny="center">scale</aspectratio>
+                <visible>!String.IsEmpty(Window().Property(info.poster))</visible>
             </control>
 
             <!-- Fanart -->
