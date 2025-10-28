@@ -126,13 +126,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             magnet=magnet,
             is_torrent=is_torrent,
         )
-        try:
-            return resolve_playback_url(source_data) or {}
-        except Exception:
-            if self.previous_window:
-                self.previous_window.setProperty("instant_close", "true")
-                self.previous_window.close()
-            self.close()
+        return resolve_playback_url(source_data) or {}
 
     def _extract_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
         url = source.url or ""

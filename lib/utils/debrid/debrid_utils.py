@@ -161,8 +161,7 @@ def get_pack_info(debrid_type, info_hash):
     elif debrid_type == DebridType.DB:
         info = DebriderHelper().get_pack_info(info_hash)
     else:
-        kodilog(f"Unknown debrid type: {debrid_type}")
-        info = {}
+        raise ValueError(f"Unknown debrid type for pack info: {debrid_type}")
     return info
 
 
