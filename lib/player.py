@@ -161,7 +161,7 @@ class JacktookPLayer(xbmc.Player):
 
             # Timeout reached
             if elapsed_ms >= timeout_ms:
-                kodilog("Playback check timeout")
+                notification("Playback Timeout", time=3000)
                 self.playback_successful = False
                 break
 
