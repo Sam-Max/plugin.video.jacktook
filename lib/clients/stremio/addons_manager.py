@@ -102,7 +102,7 @@ class AddonManager:
                 version=item["manifest"]["version"],
                 name=item["manifest"]["name"],
                 description=item["manifest"].get("description", ""),
-                catalogs=item["manifest"]["catalogs"],
+                catalogs=item["manifest"].get("catalogs", []),
                 resources=resources,
                 types=item["manifest"]["types"],
                 behavior_hints=item["manifest"].get("behaviorHints", {}),
