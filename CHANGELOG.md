@@ -1,3 +1,17 @@
+## 0.16.0
+- Add TMDB logo support for clearlogo.
+- Prowlarr: add parallel query execution and refined TV search.
+- Jackett: add multi-indexer parallel search and improved URL building.
+- Add port configuration on settings for Jackett and Prowlarr clients.
+- Enhance season pack pattern matching with additional regex options.
+- Stremio/UI: add Rutor provider and localized title for Torrentio provider selection.
+- Player: notify and handle missing magnet or URL.
+- Fanart: simplify fanart fetching.
+- Updater: replace dialog_ok with a notification for “no update” messages.
+- Skin: refactor resolver.xml layout and adjust clearlogo/fanart positioning.
+- Skin: minor UI layout improvements in resolver window and clearlogo positioning.
+- Better grouping of addon and settings configuration options.
+- Many other minor fixes and improvements.
 
 ## 0.15.1
 - HOTFIXED: Resolved multiple issues preventing addon updates.
