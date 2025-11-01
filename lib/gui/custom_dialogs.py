@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_progress import CustomProgressDialog
-from lib.gui.next_window import PlayNext
+from lib.gui.play_next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST
