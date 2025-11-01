@@ -1,6 +1,3 @@
-from json import dumps as json_dumps, loads
-import traceback
-
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.aisubtrans.utils import get_language_code
 from lib.clients.tmdb.utils.utils import tmdb_get
@@ -27,12 +24,12 @@ from lib.utils.general.utils import (
 
 import xbmc
 from xbmc import getCondVisibility as get_visibility
-from xbmcgui import ListItem
+from xbmcgui import ListItem, Dialog
 from xbmcplugin import setResolvedUrl
 
+from json import dumps as json_dumps, loads
 
 total_time_errors = ("0.0", "", 0.0, None)
-set_resume, set_watched = 5, 90
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 
 
@@ -40,12 +37,11 @@ class JacktookPLayer(xbmc.Player):
     def __init__(self, on_started=None, on_error=None):
         xbmc.Player.__init__(self)
         self.url = None
-        self.kodi_monitor = xbmc.Monitor()
         self.playback_percent = 0.0
         self.playing_filename = ""
         self.media_marked = False
-        self.playback_successful = None
         self.cancel_all_playback = False
+        self.kodi_monitor = xbmc.Monitor()
         self.next_dialog = get_setting("playnext_dialog_enabled")
         self.playing_next_time = int(get_setting("playnext_time", 50))
         self.PLAYLIST = PLAYLIST
@@ -72,56 +68,66 @@ class JacktookPLayer(xbmc.Player):
             self.play_video(self.list_item)
         except Exception as e:
             self.run_error(e)
-        finally:
-            try:
-                del self.kodi_monitor
-            except:
-                pass
-
-    def onPlayBackError(self):
-        notification("Playback failed")
-        if self.on_error:
-            self.on_error()
 
     def play_video(self, list_item):
         close_busy_dialog()
 
         try:
-            if (
-                is_trakt_auth()
-                and get_setting("trakt_scrobbling_enabled")
-                and self.data.get("ids")
-            ):
-                last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(
-                    self.data
-                )
-                if last_position > 0:
-                    list_item.setProperty("StartPercent", str(last_position))
-                TraktAPI().scrobble.trakt_start_scrobble(self.data)
-
+            self._handle_trakt_scrobble(list_item)
             self.handle_subtitles(list_item)
-
             setResolvedUrl(ADDON_HANDLE, True, list_item)
-            self.check_playback_start()
+            self.monitor()
+        except Exception as e:
+            self.run_error(e)
 
-            if self.playback_successful:
-                self.monitor()
-            else:
-                if self.cancel_all_playback:
-                    self.kill_dialog()
-                if self.on_error:
-                    self.on_error()
-                self.stop()
+    def _handle_trakt_scrobble(self, list_item):
+        if (
+            is_trakt_auth()
+            and get_setting("trakt_scrobbling_enabled")
+            and self.data.get("ids")
+        ):
+            last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(
+                self.data
+            )
+            if last_position > 0:
+                list_item.setProperty("StartPercent", str(last_position))
+            TraktAPI().scrobble.trakt_start_scrobble(self.data)
+
+    def monitor(self):
+        ensure_dialog_closed = False
+
+        try:
+            while not self.isPlayingVideo():
+                if self.kodi_monitor.abortRequested():
+                    return
+                if get_visibility("Window.IsTopMost(okdialog)"):
+                    execute_builtin("SendClick(okdialog, 11)")
+                    return
+                sleep(100)
+
+            # Once playing, initialize streams and subtitles
+            self.select_audio_stream()
+            self.handle_subtitle_selection()
+            self.handle_playback_start()
+
+            # Monitor loop
+            while self.isPlayingVideo():
+                self.update_playback_progress()
+
+                if not ensure_dialog_closed:
+                    ensure_dialog_closed = True
+                    self.playback_close_dialogs()
+
+                self.check_next_dialog()
+                sleep(1000)
+
+            self.handle_playback_stop()
 
         except Exception as e:
-            kodilog(f"Error during playback: {e}")
-            kodilog(traceback.format_exc())
-            self.run_error(e)
+            self.kill_dialog()
         finally:
-            try:
-                del self.kodi_monitor
-            except:
-                pass
+            self.cancel_playback()
+            self.clear_playback_properties()
 
     def handle_subtitles(self, list_item):
         self.subtitles_found = False
@@ -147,44 +153,6 @@ class JacktookPLayer(xbmc.Player):
                 self.lang_code = get_language_code(sub_language)
         else:
             kodilog("No subtitle handling method selected, skipping subtitle loading")
-
-    def check_playback_start(self, timeout_ms=20000, check_interval_ms=50):
-        elapsed_ms = 0
-        self.playback_successful = None
-
-        while self.playback_successful is None:
-            # Abort requested
-            if self.kodi_monitor.abortRequested():
-                self.cancel_all_playback = True
-                self.playback_successful = False
-                break
-
-            # Timeout reached
-            if elapsed_ms >= timeout_ms:
-                notification("Playback Timeout", time=3000)
-                self.playback_successful = False
-                break
-
-            if get_visibility("Window.IsTopMost(okdialog)"):
-                execute_builtin("SendClick(okdialog, 11)")
-                self.playback_successful = False
-                break
-
-            # Check if video is playing and fullscreen
-            if self.isPlayingVideo():
-                try:
-                    if self.getTotalTime() not in total_time_errors and get_visibility(
-                        video_fullscreen_check
-                    ):
-                        self.playback_successful = True
-                        if self.on_started:
-                            self.on_started()
-                        break
-                except Exception as e:
-                    kodilog(f"Error in check_playback_start: {e}")
-
-            xbmc.sleep(check_interval_ms)
-            elapsed_ms += check_interval_ms
 
     def handle_subtitle_selection(self):
         """
@@ -228,84 +196,63 @@ class JacktookPLayer(xbmc.Player):
             and auto_audio_language
             and auto_audio_language.lower() != "none"
         ):
-            kodilog(f"Auto audio selection enabled: {auto_audio_language}")
             sleep(500)
-            # Get audio streams
             audio_streams = self.getAvailableAudioStreams()
-            kodilog(f"Available audio streams: {audio_streams}")
             if audio_streams or len(audio_streams) > 0:
                 lang_code = get_language_code(auto_audio_language)
-                kodilog(f"Selected audio language code: {lang_code}")
                 for stream_lang in audio_streams:
                     if stream_lang == lang_code:
                         self.setAudioStream(audio_streams.index(stream_lang))
-                        kodilog(
-                            f"Audio stream set to {auto_audio_language} ({stream_lang})"
-                        )
                         break
 
-    def monitor(self):
-        ensure_dialog_dead = False
-        total_check_time = 0
+    def handle_playback_failure(self):
+        self.kill_dialog()
+        if self.on_error:
+            self.on_error()
+        self.stop()
 
+    def handle_playback_start(self):
         try:
-            while total_check_time <= 30 and not get_visibility(video_fullscreen_check):
-                sleep(100)
-                total_check_time += 0.10
-
-            close_busy_dialog()
-            sleep(1000)
-
-            self.select_audio_stream()
-            self.handle_subtitle_selection()
-
-            while self.isPlayingVideo():
-                try:
-                    self.total_time, self.current_time = (
-                        self.getTotalTime(),
-                        self.getTime(),
-                    )
-
-                    if not ensure_dialog_dead:
-                        ensure_dialog_dead = True
-                        self.playback_close_dialogs()
-
-                    sleep(1000)
-
-                    self.watched_percentage = round(
-                        float(self.current_time / self.total_time * 100), 1
-                    )
-                    self.data["progress"] = self.watched_percentage
-
-                    time_left = int(self.total_time) - int(self.current_time)
-                    if self.next_dialog and time_left <= self.playing_next_time:
-                        xbmc.executebuiltin(
-                            action_url_run(name="run_next_dialog", item_info=self.data)
-                        )
-                        self.next_dialog = False
-
-                except Exception as e:
-                    kodilog(f"Error in monitor: {e}")
-                    kodilog(traceback.format_exc())
-                    sleep(250)
-
-            if (
-                is_trakt_auth()
-                and get_setting("trakt_scrobbling_enabled")
-                and self.data.get("ids")
+            if self.getTotalTime() not in total_time_errors and get_visibility(
+                video_fullscreen_check
             ):
-                TraktAPI().scrobble.trakt_stop_scrobble(self.data)
-
-            close_busy_dialog()
-
+                if self.on_started:
+                    self.on_started()
         except Exception as e:
-            kodilog(f"Monitor failed: {e}")
-            self.cancel_all_playback = True
-            self.kill_dialog()
+            kodilog(f"Error in handle_playback_start: {e}")
 
-        finally:
-            self.cancel_playback()
-            self.clear_playback_properties()
+    def update_playback_progress(self):
+        try:
+            self.total_time = self.getTotalTime()
+            self.current_time = self.getTime()
+            if self.total_time:
+                self.watched_percentage = round(
+                    float(self.current_time / self.total_time * 100), 1
+                )
+                self.data["progress"] = self.watched_percentage
+        except Exception as e:
+            kodilog(f"Error updating playback progress: {e}")
+
+    def check_next_dialog(self):
+        try:
+            time_left = int(self.total_time) - int(self.current_time)
+            if self.next_dialog and time_left <= self.playing_next_time:
+                kodilog("Triggering next dialog...")
+                xbmc.executebuiltin(
+                    action_url_run(name="run_next_dialog", item_info=self.data)
+                )
+                self.next_dialog = False
+        except Exception as e:
+            kodilog(f"Error in check_next_dialog: {e}")
+
+    def handle_playback_stop(self):
+        if (
+            is_trakt_auth()
+            and get_setting("trakt_scrobbling_enabled")
+            and self.data.get("ids")
+        ):
+            TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+        close_busy_dialog()
 
     def build_playlist(self):
         if self.data.get("mode") != "tv":
@@ -365,7 +312,6 @@ class JacktookPLayer(xbmc.Player):
         close_all_dialog()
 
     def playback_close_dialogs(self):
-        sleep(200)
         close_all_dialog()
 
     def set_constants(self, data):
@@ -373,6 +319,7 @@ class JacktookPLayer(xbmc.Player):
         self.data = data
         self.url = self.data["url"]
         self.watched_percentage = self.data.get("progress", 0.0)
+        self.next_dialog = get_setting("playnext_dialog_enabled")
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")
@@ -412,12 +359,29 @@ class JacktookPLayer(xbmc.Player):
         }
         json_query = xbmc.executeJSONRPC(json_dumps(details_query))
         details = loads(json_query).get("result", {})
-        kodilog(f"Player details: {details}", level=xbmc.LOGDEBUG)
         return (
             playerid,
             details.get("currentsubtitle", {}),
             details.get("subtitles", []),
         )
+
+    def ask_user_retry(self):
+        dialog = Dialog()
+        choice = dialog.yesno(
+            "Playback Failed",
+            "The video could not be played.\nDo you want to retry?",
+            yeslabel="Retry",
+            nolabel="Cancel",
+        )
+        if choice:
+            try:
+                self.play_video(make_listing(self.data))
+            except Exception as e:
+                kodilog(f"Retry failed: {e}")
+                self.run_error(e)
+        else:
+            self.cancel_playback()
+            notification("Playback Cancelled", time=2000)
 
     def mark_watched(self, data):
         set_watched_file(data)
@@ -429,10 +393,8 @@ class JacktookPLayer(xbmc.Player):
         setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
     def run_error(self, e: Exception):
-        self.playback_successful = False
-        kodilog(f"Playback Error: {e}")
+        notification("Playback Failed", time=3500)
         if self.on_error:
             self.on_error()
-        self.clear_playback_properties()
         self.cancel_playback()
-        notification("Playback Failed", time=3500)
+        self.clear_playback_properties()
