@@ -7,7 +7,7 @@ A Kodi addon for torrent finding and streaming.
 ## Features
 
 - **Torrent Sources**:  
-  Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Zilean.
+  Stremio Addons, Jacktook Burst, Jackett, Prowlarr, Jackgram, Zilean.
 
 - **Torrent Engines**:  
   Jacktorr, Torrest, and Elementum.
@@ -16,7 +16,7 @@ A Kodi addon for torrent finding and streaming.
   Jackgram.
 
 - **Debrid Services**:  
-  Debrider, RealDebrid, Premiumize, Torbox, and Debrid Services configured with Stremio Addons.
+  RealDebrid, AllDebrid, Debrider, Premiumize, Torbox, and Debrid Services configured and imported through Stremio Addons.
 
 - **Metadata**:  
   TMDB, MDBList, Trakt, Fanart.tv and Stremio catalogs.
