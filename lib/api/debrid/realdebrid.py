@@ -188,13 +188,15 @@ class RealDebrid(DebridClient):
     def auth(self):
         response = self.get_device_code()
         if response:
-            interval = int(response["interval"])
+            sleep_interval = int(response["interval"])
             expires_in = int(response["expires_in"])
             device_code = response["device_code"]
             user_code = response["user_code"]
             auth_url = response["direct_verification_url"]
+
             qr_code = make_qrcode(auth_url)
             copy2clip(auth_url)
+
             progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
             progressDialog.setup(
                 "Real Debrid Auth",
@@ -204,9 +206,10 @@ class RealDebrid(DebridClient):
                 DebridType.RD,
             )
             progressDialog.show_dialog()
+
             start_time = time()
             while time() - start_time < expires_in:
-                ksleep(1000 * interval)
+                ksleep(1000 * sleep_interval)
                 if progressDialog.iscanceled:
                     progressDialog.close_dialog()
                     return
@@ -219,7 +222,9 @@ class RealDebrid(DebridClient):
                         self.token = response["token"]
                         set_setting("real_debrid_token", self.token)
                         set_setting("real_debid_authorized", "true")
+
                         self.initialize_headers()
+                        
                         set_setting("real_debrid_user", self.get_user()["username"])
                         progressDialog.update_progress(100, "Authentication completed.")
                         progressDialog.close_dialog()
@@ -230,8 +235,7 @@ class RealDebrid(DebridClient):
                         progressDialog.update_progress(percent)
                 except Exception as e:
                     progressDialog.close_dialog()
-                    kodilog(traceback.print_exc())
-                    dialog_ok("Error:", f"Error: {e}.")
+                    dialog_ok("Auth Error:", f"Error: {e}")
                     return
 
     def download(self, magnet_url, pack=False):

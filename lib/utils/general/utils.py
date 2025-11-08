@@ -175,6 +175,7 @@ class DebridType(Enum):
     TB = "Torbox"
     ED = "EasyDebrid"
     DB = "Debrider"
+    AD = "AllDebrid"
 
 
 class IndexerType(Enum):
@@ -279,12 +280,18 @@ def check_debrid_enabled(debrid_type):
         return is_tb_enabled()
     elif debrid_type == DebridType.DB:
         return is_debrider_enabled()
+    elif debrid_type == DebridType.AD:
+        return is_ad_enabled()
     else:
         kodilog(f"Unknown debrid type: {debrid_type}", level=xbmc.LOGERROR)
 
 
 def is_rd_enabled():
     return get_setting("real_debrid_enabled")
+
+
+def is_ad_enabled():
+    return get_setting("alldebrid_enabled")
 
 
 def is_pm_enabled():
@@ -964,15 +971,21 @@ def filter_torrent_sources(results):
 
 
 def filter_debrid_episode(
-    results, episode_num: int, season_num: int, strict: bool = True
+    files, episode_num: int, season_num: int, strict: bool = True
 ) -> List[Dict]:
     str_season, str_episode = str(season_num), str(episode_num)
     season_fill, episode_fill = str_season.zfill(2), str_episode.zfill(2)
     ep_plus_1 = str(episode_num + 1).zfill(2)
     ep_minus_1 = str(episode_num - 1).zfill(2)
 
-    def get_filename(res):
-        return res.get("path") or res.get("filename") or res.get("name") or ""
+    def get_filename(file):
+        return (
+            file.get("path")
+            or file.get("filename")
+            or file.get("name")
+            or file.get("n")
+            or ""
+        )
 
     # Normalize filenames for matching
     def normalize_title(title):
@@ -1021,12 +1034,9 @@ def filter_debrid_episode(
         regex = re.compile(combined_pattern, re.IGNORECASE)
     except re.error as e:
         kodilog(f"Regex compilation failed: {e}")
-        return results
+        return files
 
-    filtered = [
-        res for res in results if regex.search(normalize_title(get_filename(res)))
-    ]
-
+    filtered = [f for f in files if regex.search(normalize_title(get_filename(f)))]
     return filtered
 
 

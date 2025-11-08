@@ -1797,3 +1797,7 @@ msgstr ""
 msgctxt "#90120"
 msgid "Prowlarr port (default:9696)"
 msgstr ""
+
+msgctxt "#90121"
+msgid "All Debrid Configuration"
+msgstr ""

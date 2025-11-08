@@ -1781,3 +1781,7 @@ msgstr "Puerto de Jackett (por defecto: 9117)"
 msgctxt "#90120"
 msgid "Prowlarr port (default:9696)"
 msgstr "Puerto de Prowlarr (por defecto: 9696)"
+
+msgctxt "#90121"
+msgid "All Debrid Configuration"
+msgstr "Configuracion de AllDebrid"

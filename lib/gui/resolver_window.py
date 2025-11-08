@@ -37,7 +37,7 @@ class ResolverWindow(BaseWindow):
         self.item_information: Dict = item_information or {}
         self.close_callback: Optional[Any] = close_callback
         self.playback_info: Optional[Dict[str, Any]] = None
-        self.pack_data: Optional[Any] = None
+        self.pack_info: Optional[Any] = None
         self.previous_window: BaseWindow = previous_window
         self.setProperty("enable_busy_spinner", "false")
 
@@ -89,21 +89,18 @@ class ResolverWindow(BaseWindow):
             self.playback_info.update(self.item_information)
 
     def resolve_pack_source(self) -> None:
-        self.pack_data = get_pack_info(
+        self.pack_info = get_pack_info(
             debrid_type=self.source.debridType,
             info_hash=self.source.infoHash,
         )
-
         self.window = SourcePackSelect(
             "source_pack_select.xml",
             ADDON_PATH,
             source=self.source,
-            pack_info=self.pack_data,
+            pack_info=self.pack_info,
             item_information=self.item_information,
         )
-
         self.playback_info = self.window.doModal()
-
         if self.playback_info:
             self.playback_info.update(self.item_information)
         else:

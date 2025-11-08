@@ -5,10 +5,12 @@ from threading import Thread
 from typing import Dict, List, Optional
 from urllib.parse import quote
 
+from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.debrider import Debrider
 from lib.api.jacktorr.jacktorr import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
+from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.trakt.trakt import TraktClient
 
 from lib.api.debrid.premiumize import Premiumize
@@ -35,7 +37,7 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
-from lib.utils.debrid.debrider_helper import DebriderHelper
+from lib.clients.debrid.debrider import DebriderHelper
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -64,7 +66,7 @@ from lib.utils.views.last_titles import show_last_titles
 from lib.utils.views.weekly_calendar import show_weekly_calendar
 from lib.utils.views.shows import show_episode_info, show_season_info
 from lib.utils.torrentio.utils import open_providers_selection
-from lib.utils.debrid.rd_helper import RealDebridHelper
+from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.kodi.settings import auto_play_enabled, get_cache_expiration
 from lib.utils.kodi.settings import addon_settings
@@ -701,15 +703,18 @@ def cloud_details(params):
     if debrid_name == DebridType.RD:
         downloads_method = "get_rd_downloads"
         info_method = "real_debrid_info"
+    elif debrid_name == DebridType.DB:
+        downloads_method = "get_db_downloads"
+        info_method = "debrider_info"
+    elif debrid_name == DebridType.AD:
+        downloads_method = "get_ad_downloads"
+        info_method = "alldebrid_info"
     elif debrid_name == DebridType.PM:
         notification("Not yet implemented")
         return
     elif debrid_name == DebridType.TB:
         notification("Not yet implemented")
         return
-    elif debrid_name == DebridType.DB:
-        downloads_method = "get_db_downloads"
-        info_method = "debrider_info"
     else:
         notification("Unsupported debrid type")
         return
@@ -753,6 +758,10 @@ def cloud(params):
 
 def real_debrid_info(params):
     RealDebridHelper().get_info()
+
+
+def alldebrid_info(params):
+    AllDebridHelper().get_info()
 
 
 def debrider_info(params):
@@ -1102,17 +1111,23 @@ def titles_calendar(params):
 
 
 def rd_auth(params):
-    rd_client = RealDebrid(
-        token=str(
-            get_setting("real_debrid_token", ""),
-        )
-    )
+    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
     rd_client.auth()
+
+
+def ad_auth(params):
+    ad_client = AllDebrid(token=str(get_setting("all_debrid_token", "")))
+    ad_client.auth()
 
 
 def rd_remove_auth(params):
     rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
     rd_client.remove_auth()
+
+
+def ad_remove_auth(params):
+    ad_client = AllDebrid(token=str(get_setting("all_debrid_token", "")))
+    ad_client.remove_auth()
 
 
 def debrider_auth(params):

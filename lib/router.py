@@ -21,7 +21,10 @@ from lib.downloader import (
 )
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
+    ad_auth,
+    ad_remove_auth,
     addon_update,
+    alldebrid_info,
     animation_item,
     animation_menu,
     anime_item,
@@ -161,8 +164,11 @@ def addon_router():
         "addon_update": addon_update,
         "open_burst_config": open_burst_config,
         "rd_auth": rd_auth,
+        "ad_auth": ad_auth,
         "rd_remove_auth": rd_remove_auth,
+        "ad_remove_auth": ad_remove_auth,
         "real_debrid_info": real_debrid_info,
+        "alldebrid_info": alldebrid_info,
         "debrider_auth": debrider_auth,
         "debrider_remove_auth": debrider_remove_auth,
         "debrider_info": debrider_info,

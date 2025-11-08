@@ -3,13 +3,13 @@ import threading
 import time
 from datetime import datetime
 from typing import Any, List, Dict, Optional
+
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
     kodilog,
-    notification,
 )
 from lib.utils.general.utils import (
     DebridType,
@@ -41,9 +41,13 @@ class RealDebridHelper:
         dialog: object,
         lock: threading.Lock,
     ) -> None:
-        """Checks if torrents are cached in Real-Debrid."""
+        # Checks if torrents are cached in Real-Debrid.
         torr_available = self.client.get_user_torrent_list()
-        torr_available_hashes = {torr["hash"] for torr in torr_available}
+        torr_available_hashes = [
+            t.get("hash")
+            for t in torr_available
+            if isinstance(t, dict) and t.get("hash")
+        ]
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("RD", total, dialog, lock)
@@ -62,43 +66,37 @@ class RealDebridHelper:
         if get_setting("show_uncached"):
             cached_results.extend(uncached_results)
 
-    def _handle_torrent_status(
-        self, torrent_info: Dict, is_pack: bool = False
-    ) -> Optional[str]:
-        """Processes torrent_info status and handles errors or file selection."""
-        torrent_id = torrent_info["id"]
-        status = torrent_info["status"]
-        if status in ["magnet_error", "error", "virus", "dead"]:
-            self.client.delete_torrent(torrent_id)
-            raise ProviderException(f"Torrent cannot be downloaded: {status}")
-        if status in ["queued", "downloading", "magnet_conversion"]:
-            return None
-        if status == "waiting_files_selection":
-            if "files" in torrent_info and torrent_info["files"]:
-                self.handle_file_selection(torrent_info, is_pack)
-            else:
-                raise ProviderException("No files available for this torrent yet.")
-        return torrent_id
-
-    def add_magnet(self, info_hash: str, is_pack: bool = False) -> Optional[str]:
+    def add_magnet(self, info_hash: str, is_pack: bool = False):
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
             torrent_info = self.client.get_available_torrent(info_hash)
             if not torrent_info:
                 self.check_max_active_count()
-                magnet = info_hash_to_magnet(info_hash)
-                response = self.client.add_magnet_link(magnet)
+                response = self.client.add_magnet_link(info_hash_to_magnet(info_hash))
                 torrent_id = response.get("id")
                 if not torrent_id:
                     raise ProviderException("Failed to add magnet link to Real-Debrid")
                 torrent_info = self.client.get_torrent_info(torrent_id)
-            return self._handle_torrent_status(torrent_info, is_pack)
-        except ProviderException as e:
-            notification(str(e))
-            raise
+            self._handle_torrent_status(torrent_info, is_pack)
+            return torrent_info.get("id")
         except Exception as e:
-            notification(str(e))
-            raise
+            raise ProviderException(str(e))
+
+    def _handle_torrent_status(
+        self, torrent_info: Dict, is_pack: bool = False
+    ) -> Optional[str]:
+        """Processes torrent_info status and handles errors or file selection."""
+        status = torrent_info["status"]
+        if status in ["magnet_error", "error", "virus", "dead"]:
+            self.client.delete_torrent(torrent_info["id"])
+            raise ProviderException(f"Torrent cannot be downloaded: {status}")
+        elif status in ["queued", "downloading", "magnet_conversion"]:
+            raise ProviderException("Torrent is still being processed.")
+        elif status == "waiting_files_selection":
+            if "files" in torrent_info and torrent_info["files"]:
+                self.handle_file_selection(torrent_info, is_pack)
+            else:
+                raise ProviderException("No files available for this torrent yet.")
 
     def handle_file_selection(self, torrent_info: Dict, is_pack: bool) -> None:
         """Handles file selection for Real-Debrid torrents."""
@@ -125,94 +123,72 @@ class RealDebridHelper:
     ) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a Real-Debrid torrent."""
         torrent_id = self.add_magnet(info_hash)
-        if not torrent_id:
-            return None
+        torrent_info = self.client.get_torrent_info(torrent_id)
+        links = torrent_info.get("links", [])
+        files = torrent_info.get("files", [])
 
-        torr_info = self.client.get_torrent_info(torrent_id)
-        links = torr_info["links"]
+        if not links:
+            raise ProviderException("No links found in torrent info.")
+
+        def create_download_for_link(link: str) -> str:
+            response = self.client.create_download_link(link)
+            url = response.get("download")
+            if not url:
+                raise ProviderException("File not cached!")
+            return url
 
         # --- Single-file torrent ---
         if len(links) == 1:
-            response = self.client.create_download_link(links[0])
-            download_url = response.get("download")
-            if download_url:
-                data["url"] = download_url
-                return data
-            else:
-                notification("File not cached!")
-                return None
-
-        # --- Multi-file torrent (TV episode or pack) ---
-        if data.get("tv_data"):
-            season = data["tv_data"].get("season", "")
-            episode = data["tv_data"].get("episode", "")
-            matched = filter_debrid_episode(
-                torr_info["files"], episode_num=episode, season_num=season
-            )
-            if not matched:
-                notification("No matching episode found in torrent.")
-                return None
-
-            file_match = matched[0]
-            file_index = next(
-                (
-                    i
-                    for i, f in enumerate(torr_info["files"])
-                    if f["id"] == file_match["id"]
-                ),
-                None,
-            )
-            if file_index is None:
-                kodilog("Could not map episode to Real-Debrid link.")
-                return None
-
-            response = self.client.create_download_link(links[file_index])
-            download_url = response.get("download")
-            if download_url:
-                data["url"] = download_url
-                return data
-            else:
-                notification("File not cached!")
-                return None
-        else:
-            data["is_pack"] = True
+            data["url"] = create_download_for_link(links[0])
             return data
+
+        # --- Multi-file torrent ---
+        tv_data = data.get("tv_data")
+        if tv_data:
+            season = tv_data.get("season")
+            episode = tv_data.get("episode")
+
+            possible_matches = filter_debrid_episode(
+                files, episode_num=episode, season_num=season
+            )
+            if not possible_matches:
+                raise ProviderException("No matching episode found in torrent.")
+
+            match_file = next(
+                (f for f in possible_matches if f.get("selected") == 1), None
+            )
+            if not match_file:
+                raise ValueError("File is not cached")
+
+            selected_files = [f for f in files if f.get("selected") == 1]
+            try:
+                file_index = selected_files.index(match_file)
+            except ValueError:
+                raise ProviderException("Could not map episode to Real-Debrid link.")
+
+            data["url"] = create_download_for_link(links[file_index])
+            return data
+
+        # --- Pack (no TV data) ---
+        data["is_pack"] = True
+        return data
 
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
 
         pack_info = data.get("pack_info", {})
-        file_id = pack_info.get("file_id", "")
+        file_position = pack_info.get("file_position", "")
         torrent_id = pack_info.get("torrent_id", "")
 
         torrent_info = self.client.get_torrent_info(torrent_id)
-        torrent_items = [
-            item for item in torrent_info["files"] if item["selected"] == 1
-        ]
+        links = torrent_info.get("links", [])
 
-        index = next(
-            (
-                index
-                for index, item in enumerate(torrent_items)
-                if item["id"] == file_id
-            ),
-            None,
-        )
-
-        if index is None:
-            raise LinkNotFoundError("Requested file not found in torrent pack")
-
-        response = self.client.create_download_link(torrent_info["links"][index])
+        response = self.client.create_download_link(links[file_position])
         url = response.get("download")
         if not url:
-            notification("File not cached!")
-            return None
+            raise ProviderException("Failed to retrieve download link")
 
         data["url"] = url
-        data["pack_info"] = {
-            "file_id": file_id,
-            "torrent_id": torrent_id,
-        }
         return data
 
     def get_pack_info(self, info_hash: str) -> Optional[Dict]:
@@ -227,15 +203,13 @@ class RealDebridHelper:
 
         torr_info = self.client.get_torrent_info(torrent_id)
         torrent_files = torr_info["files"]
-
         if len(torrent_files) <= 1:
-            notification("No files on the current source")
-            return None
+            raise ProviderException("No files on the current source")
 
         torr_items = [item for item in torrent_files if item["selected"] == 1]
         files = [(item["id"], item["path"].split("/", 1)[1]) for item in torr_items]
 
-        info = {"id": torr_info["id"], "files": files}
+        info = {"torrent_id": torr_info["id"], "files": files}
         set_cached(info, info_hash)
         return info
 
@@ -271,8 +245,8 @@ class RealDebridHelper:
             if hashes:
                 torrents = self.client.get_user_torrent_list()
                 torrent_info = next(
-                    (i for i in torrents if i["hash"] == hashes[0]), None
+                    (i for i in torrents if i.get("hash", "") == hashes[0]), None
                 )
 
                 if torrent_info:
-                    self.client.delete_torrent(torrent_info["id"])
+                    self.client.delete_torrent(torrent_info.get("id"))

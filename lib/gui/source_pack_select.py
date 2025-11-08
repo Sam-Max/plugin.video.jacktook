@@ -48,26 +48,26 @@ class SourcePackSelect(SourcePackWindow):
                 "tv_data": self.item_information.get("tv_data"),
             }
             if self.source.debridType in [DebridType.RD, DebridType.TB]:
-                file_id, name = self.pack_info["files"][self.position]
-                self.playback_info = resolve_playback_url(
-                    data={
-                        **common_data,
-                        "title": name,
-                        "pack_info": {
-                            "file_id": file_id,
-                            "torrent_id": self.pack_info["id"],
-                        },
-                    }
-                )
+                _, title = self.pack_info["files"][self.position]
+                data = {
+                    **common_data,
+                    "title": title,
+                    "pack_info": {
+                        "file_position": self.position,
+                        "torrent_id": self.pack_info["torrent_id"],
+                    },
+                }
             else:
                 url, title = self.pack_info["files"][self.position]
-                self.playback_info = resolve_playback_url(
-                    data={
-                        **common_data,
-                        "title": title,
+                data = {
+                    **common_data,
+                    "title": title,
+                    "pack_info": {
+                        "file_position": self.position,
                         "url": url,
-                    }
-                )
+                    },
+                }
+            self.playback_info = resolve_playback_url(data)
 
         if not self.playback_info:
             self.setProperty("resolving", "false")
