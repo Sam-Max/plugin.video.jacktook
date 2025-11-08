@@ -1,3 +1,20 @@
+## 0.17.0 
+- Add AllDebrid support 
+- Add cached search for AllDebrid 
+- Fix RealDebrid episodes match not reliable.
+- Other minor fixes and improvements.
+
+Spanish:
+- Se añadió soporte para AllDebrid
+- Se añadió búsqueda con caché para AllDebrid
+- Se arreglo errores con la coincidencia de episodios en RealDebrid que no era 100% fiable.
+- Otras mejoras y correcciones menores.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
 ## 0.16.0
 - Add TMDB logo support for clearlogo.
 - Prowlarr: add parallel query execution and refined TV search.
