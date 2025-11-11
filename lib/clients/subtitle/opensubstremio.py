@@ -1,6 +1,10 @@
 import requests
 from typing import Callable, List, Optional, Dict, Any
-from lib.clients.aisubtrans.utils import language_code_to_name, slugify_title
+from lib.clients.subtitle.utils import (
+    get_language_code,
+    language_code_to_name,
+    slugify_title,
+)
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
@@ -45,11 +49,6 @@ class OpenSubtitleStremioClient:
             self.notification(f"Failed to fetch subtitles: {e}")
             return None
 
-    def _filter_subtitles_by_language(
-        self, subtitles_list: List[Dict[str, Any]], lang: str
-    ) -> List[Dict[str, Any]]:
-        return [s for s in subtitles_list if s.get("lang") == lang]
-
     def get_subtitles(
         self,
         mode: str,
@@ -59,7 +58,16 @@ class OpenSubtitleStremioClient:
     ) -> Optional[List[Dict[str, Any]]]:
         subtitles = self._fetch_subtitles_data(mode, imdb_id, season, episode)
         if not subtitles:
-            return None
+            return
+
+        sub_language = get_setting("subtitle_language")
+        auto_subtitle_download = get_setting("auto_subtitle_download")
+        if auto_subtitle_download:
+            filtered = [
+                s for s in subtitles if s.get("lang") == get_language_code(sub_language)
+            ]
+            if filtered:
+                return filtered
 
         items = [
             xbmcgui.ListItem(
@@ -118,16 +126,16 @@ class OpenSubtitleStremioClient:
 
         if season and episode:
             file_path = (
-                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/{episode}/"
                 f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt"
             )
         elif season:
             file_path = (
-                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/"
                 f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt"
             )
         else:
-            file_path = f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/Subtitle No.{index}.{title}.{lang_name}.srt"
+            file_path = f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/Subtitle No.{index}.{title}.{lang_name}.srt"
 
         try:
             response = requests.get(

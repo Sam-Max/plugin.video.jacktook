@@ -757,18 +757,35 @@
         </category>
         <category id="subtitle_category" label="30886">
             <group id="general_settings" label="30884">
-                <setting id="auto_subtitle" type="boolean" label="30878" help=""> 
+                <setting id="auto_subtitle_selection" type="boolean" label="30878" help=""> 
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="auto_subtitle_lang" type="string" label="30736" help="30873">
-                    <default>None</default>
-                    <neading>30736</neading>
+                <setting id="auto_subtitle_download" type="boolean" label="90122" help=""> 
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>   
+            <group id="stremio_subtitle" label="30893">
+                <setting id="stremio_subtitle_enabled" type="boolean" label="30734" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="stremio_sub_addon_host" type="string" label="30885" help="">
+                    <default>https://opensubtitles-v3.strem.io/</default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="auto_subtitle">true</condition>
+                            <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
                         </dependency>
                     </dependencies>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="subtitle_language" type="string" label="30736" help="30873">
+                    <default>None</default>
+                    <neading>30736</neading>
                     <constraints>
                         <options>
                             <option label="None">None</option>
@@ -792,24 +809,6 @@
                         </options>
                     </constraints>
                     <control type="list" format="string" />
-                </setting>
-            </group>   
-            <group id="stremio_subtitle" label="30893">
-                <setting id="stremio_subtitle_enabled" type="boolean" label="30734" help="">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="stremio_sub_addon_host" type="string" label="30885" help="">
-                    <default>https://opensubtitles-v3.strem.io/</default>
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <control type="edit" format="string" />
                 </setting>
             </group>
             <group id="deepl_translator" label="30891">

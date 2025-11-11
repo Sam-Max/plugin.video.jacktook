@@ -1,6 +1,6 @@
 import traceback
 import requests
-from lib.clients.aisubtrans.utils import get_deepl_language_code, slugify
+from lib.clients.subtitle.utils import slugify
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,

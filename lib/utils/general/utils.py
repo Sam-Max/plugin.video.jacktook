@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 from lib.api.fanart.fanart import get_fanart
-from lib.clients.aisubtrans.utils import get_language_code
+from lib.clients.subtitle.utils import get_language_code
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
@@ -1252,7 +1252,7 @@ def extract_publish_date(date):
 
 
 def translate_weekday(weekday_name, lang="eng"):
-    sub_language = str(get_setting("auto_subtitle_lang"))
+    sub_language = str(get_setting("subtitle_language"))
     if sub_language and sub_language.lower() != "none":
         lang = get_language_code(sub_language)
     return WEEKDAY_TRANSLATIONS.get(lang, WEEKDAY_TRANSLATIONS["eng"]).get(

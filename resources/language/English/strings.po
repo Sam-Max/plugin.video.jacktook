@@ -1300,7 +1300,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto-select subtitle when playing"
+msgid "Automatically select subtitle when playing"
 msgstr ""
 
 msgctxt "#30879"
@@ -1800,4 +1800,8 @@ msgstr ""
 
 msgctxt "#90121"
 msgid "All Debrid Configuration"
+msgstr ""
+
+msgctxt "#90122"
+msgid "Automatically download subtitles"
 msgstr ""

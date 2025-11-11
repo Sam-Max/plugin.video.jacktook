@@ -1,5 +1,5 @@
 from lib.api.trakt.trakt_utils import is_trakt_auth
-from lib.clients.aisubtrans.utils import get_language_code
+from lib.clients.subtitle.utils import get_language_code
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.utils.kodi.utils import (
@@ -136,7 +136,7 @@ class JacktookPLayer(xbmc.Player):
             self.setSubtitleStream(0)
             self.subtitles_found = True
         elif get_setting("stremio_subtitle_enabled"):
-            from lib.clients.aisubtrans.submanager import SubtitleManager
+            from lib.clients.subtitle.submanager import SubtitleManager
 
             subtitle_manager = SubtitleManager(self.data, self.notification)
             subs_paths = subtitle_manager.fetch_subtitles()
@@ -147,8 +147,8 @@ class JacktookPLayer(xbmc.Player):
             list_item.setSubtitles(subs_paths)
             self.setSubtitleStream(0)
             self.subtitles_found = True
-        elif get_setting("auto_subtitle"):
-            sub_language = str(get_setting("auto_subtitle_lang"))
+        elif get_setting("auto_subtitle_selection"):
+            sub_language = str(get_setting("subtitle_language"))
             if sub_language and sub_language.lower() != "None":
                 self.lang_code = get_language_code(sub_language)
         else:
@@ -158,7 +158,7 @@ class JacktookPLayer(xbmc.Player):
         """
         Handles subtitle activation and selection logic after playback starts.
         """
-        auto_sub_enabled = get_setting("auto_subtitle")
+        auto_select_enabled = get_setting("auto_subtitle_selection")
         stremio_subtitle_enabled = get_setting("stremio_subtitle_enabled")
         search_subtitles = get_setting("search_subtitles")
 
@@ -169,7 +169,7 @@ class JacktookPLayer(xbmc.Player):
                 set_property("search_subtitles", "false")
                 return
 
-        if auto_sub_enabled:
+        if auto_select_enabled :
             _, _, subtitles = self.get_player_streams()
             kodilog(f"Available subtitles: {subtitles}", level=xbmc.LOGDEBUG)
             for sub in subtitles:
@@ -181,7 +181,7 @@ class JacktookPLayer(xbmc.Player):
                     self.showSubtitles(True)
                     break
 
-        elif not (stremio_subtitle_enabled or auto_sub_enabled):
+        elif not (stremio_subtitle_enabled or auto_select_enabled):
             kodilog("Auto subtitle selection disabled")
             self.showSubtitles(False)
 

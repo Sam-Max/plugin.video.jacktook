@@ -1284,8 +1284,8 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr "Habilitar Trakt.tv Scrobbling"
 
 msgctxt "#30878"
-msgid "Auto-select subtitle when playing"
-msgstr "Auto habilitar subtitulo al reproducir"
+msgid "Automatically select subtitle when playing"
+msgstr "Seleccionar automaticamente subtitulo al reproducir"
 
 msgctxt "#30879"
 msgid "Auto-play quality"
@@ -1785,3 +1785,7 @@ msgstr "Puerto de Prowlarr (por defecto: 9696)"
 msgctxt "#90121"
 msgid "All Debrid Configuration"
 msgstr "Configuracion de AllDebrid"
+
+msgctxt "#90122"
+msgid "Automatically download subtitles"
+msgstr "Descargar subtitulos de manera automática"

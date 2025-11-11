@@ -1,12 +1,12 @@
 from typing import Optional, Dict, Any
 
+from lib.clients.subtitle.submanager import SubtitleManager
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.player import JacktookPLayer
 from lib.utils.debrid.debrid_utils import get_pack_info
 from lib.utils.kodi.utils import ADDON_PATH, notification, set_property
 from lib.domain.torrent import TorrentStream
-from lib.clients.aisubtrans.submanager import SubtitleManager
 
 import xbmcgui
 
