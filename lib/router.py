@@ -75,9 +75,7 @@ from lib.navigation import (
     trakt_auth,
     trakt_auth_revoke,
     trakt_list_content,
-    tv_episodes_details,
     tv_menu,
-    tv_seasons_details,
     tv_shows_items,
 )
 from lib.clients.stremio.catalogs import (
@@ -106,6 +104,7 @@ from lib.clients.stremio.ui import (
 )
 
 from lib.utils.views.last_titles import delete_last_title_entry
+from lib.utils.views.shows import show_episodes_details, show_seasons_details
 import xbmc
 
 
@@ -115,8 +114,6 @@ def addon_router():
         "run_next_dialog": run_next_dialog,
         "run_resume_dialog": run_resume_dialog,
         "tv_shows_items": tv_shows_items,
-        "tv_seasons_details": tv_seasons_details,
-        "tv_episodes_details": tv_episodes_details,
         "movies_items": movies_items,
         "direct_menu": direct_menu,
         "anime_menu": anime_menu,
@@ -138,6 +135,9 @@ def addon_router():
         "user_mdbd_lists": user_mdbd_lists,
         "top_mdbd_lists": top_mdbd_lists,
         "show_mdblist_list": show_mdblist_list,
+        "show_tmdb_item": TmdbClient.show_tmdb_item,
+        "show_episodes_details": show_episodes_details,
+        "show_seasons_details": show_seasons_details,
         "handle_collection_query": TmdbClient.handle_collection_query,
         "handle_collection_details": TmdbCollections.add_collection_details,
         "handle_tmdb_person_details": PeopleClient.handle_tmdb_person_details,

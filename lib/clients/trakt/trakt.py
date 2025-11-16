@@ -85,7 +85,7 @@ class BaseTraktClient:
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
-                    "tv_seasons_details",
+                    "show_seasons_details",
                     ids=ids,
                     mode=mode,
                     media_type=media_type,

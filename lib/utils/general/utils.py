@@ -21,7 +21,9 @@ from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    EPISODES_TYPE,
     MOVIES_TYPE,
+    SEASONS_TYPE,
     SHOWS_TYPE,
     TITLES_TYPE,
     build_url,
@@ -341,49 +343,44 @@ def make_listing(data):
     data["id"] = ids.get("tmdb_id")
     data["imdb_id"] = ids.get("imdb_id")
 
-    set_media_infoTag(list_item, data=data, mode=mode)
+    set_media_infoTag(list_item, data=data, mode=mode, detailed=True)
 
     return list_item
 
 
-def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
+def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=False):
     info_tag = list_item.getVideoInfoTag()
 
-    # General Video Info
+    _set_basic_info(info_tag, data)
+    _set_media_type(info_tag, mode)
+    _set_identification(info_tag, data)
+    _set_artwork(list_item, data, fanart_data)
+
+    if detailed:
+        _set_detailed_info(info_tag, data, mode)
+        _set_released_info(info_tag, data)
+        _set_tv_episode_info(info_tag, data, mode)
+
+
+def set_show_infoTag(list_item, data, mode, fanart_data={}):
+    info_tag = list_item.getVideoInfoTag()
+
+    _set_basic_info(info_tag, data)
+    _set_media_type(info_tag, mode)
+    _set_artwork(list_item, data, fanart_data)
+    _set_released_info(info_tag, data)
+    _set_tv_episode_info(info_tag, data, mode)
+
+
+def _set_basic_info(info_tag, data):
     info_tag.setTitle(data.get("title", data.get("name", "")))
     info_tag.setOriginalTitle(
         data.get("original_title", data.get("original_name", data.get("title", "")))
     )
     info_tag.setPlot(data.get("overview") or data.get("biography", "No overview"))
 
-    # Year & Dates
-    if "first_air_date" in data:
-        first_air_date = data["first_air_date"]
-        if first_air_date:
-            info_tag.setFirstAired(first_air_date)
-            info_tag.setYear(int(first_air_date.split("-")[0]))
-    elif "air_date" in data:
-        info_tag.setFirstAired(data["air_date"])  # Setting air_date for episodes
-    elif "release_date" in data:
-        release_date = data["release_date"]
-        if release_date:
-            info_tag.setPremiered(release_date)
-            info_tag.setYear(int(release_date.split("-")[0]))
 
-    if "runtime" in data:
-        runtime = data.get("runtime")
-        if runtime:
-            info_tag.setDuration(runtime * 60)  # Convert to seconds
-
-    # Rating
-    info_tag.setRating(
-        data.get("vote_average", data.get("rating", 0)),
-        votes=data.get("vote_count", data.get("votes", 0)),
-    )
-
-    info_tag.setUserRating(int(float(data.get("popularity", 0))))
-
-    # Media Type
+def _set_media_type(info_tag, mode):
     if mode == "movies":
         info_tag.setMediaType("movie")
     elif mode == "tv":
@@ -395,18 +392,8 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
     else:
         info_tag.setMediaType("video")
 
-    # Classification
-    genres = data.get("genre_ids", data.get("genres", []))
-    final_genres = extract_genres(genres, mode)
-    info_tag.setGenres(final_genres)
 
-    # Countries
-    countries = list(data.get("origin_country", data.get("countries", [])))
-    if isinstance(countries, str):
-        countries = [countries]  # Ensure it's a List
-    info_tag.setCountries(countries)
-
-    # Identification
+def _set_identification(info_tag, data):
     if "imdb_id" in data:
         info_tag.setIMDBNumber(data["imdb_id"])
     if "id" in data:
@@ -417,9 +404,57 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
         }
         info_tag.setUniqueIDs(unique_ids, "tmdb")
 
-    # Artwork
+
+def _set_artwork(list_item, data, fanart_data):
     set_listitem_artwork(list_item, data, fanart_data)
 
+
+def _set_released_info(info_tag, data):
+    # Year & Dates
+    if "first_air_date" in data:
+        first_air_date = data["first_air_date"]
+        if first_air_date:
+            info_tag.setFirstAired(first_air_date)
+            info_tag.setYear(int(first_air_date.split("-")[0]))
+    elif "air_date" in data:
+        info_tag.setFirstAired(data["air_date"])
+    elif "release_date" in data:
+        release_date = data["release_date"]
+        if release_date:
+            info_tag.setPremiered(release_date)
+            info_tag.setYear(int(release_date.split("-")[0]))
+
+    if "runtime" in data:
+        runtime = data.get("runtime")
+        if runtime:
+            info_tag.setDuration(runtime * 60)
+
+
+def _set_detailed_info(info_tag, data, mode):
+    # Rating
+    info_tag.setRating(
+        data.get("vote_average", data.get("rating", 0)),
+        votes=data.get("vote_count", data.get("votes", 0)),
+    )
+    info_tag.setUserRating(int(float(data.get("popularity", 0))))
+
+    # Classification
+    genres = data.get("genre_ids", data.get("genres", []))
+    final_genres = extract_genres(genres, mode)
+    info_tag.setGenres(final_genres)
+
+    # Countries
+    countries = list(data.get("origin_country", data.get("countries", [])))
+    if isinstance(countries, str):
+        countries = [countries]
+    info_tag.setCountries(countries)
+
+    # Cast & crew
+    info_tag.setCast(get_cast_and_crew(data))
+
+
+def _set_tv_episode_info(info_tag, data, mode):
+    # Seasons
     if "seasons" in data:
         seasons = list(data["seasons"])
         if isinstance(seasons, list):
@@ -431,9 +466,6 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video"):
         else:
             info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
 
-    info_tag.setCast(get_cast_and_crew(data))
-
-    # Episode & Season Info (for TV shows/episodes)
     if mode == "tv":
         info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
         info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
@@ -639,7 +671,6 @@ def build_media_metadata(ids, mode: str) -> dict:
         from lib.clients.tmdb.utils.utils import get_tmdb_media_details
 
         details = get_tmdb_media_details(tmdb_id, mode)
-
         poster_path = getattr(details, "poster_path", "")
         metadata["poster"] = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
         metadata["overview"] = getattr(details, "overview", "")
@@ -796,7 +827,11 @@ def set_pluging_category(heading: str):
 
 
 def set_content_type(mode, media_type="movies"):
-    if mode in ("tv", "anime") or media_type == "tv":
+    if mode == "season":
+        setContent(ADDON_HANDLE, SEASONS_TYPE)
+    elif mode == "episode":
+        setContent(ADDON_HANDLE, EPISODES_TYPE)
+    elif mode in ("tv", "anime") or media_type == "tv":
         setContent(ADDON_HANDLE, SHOWS_TYPE)
     elif mode == "movies" or media_type == "movies":
         setContent(ADDON_HANDLE, MOVIES_TYPE)
@@ -850,7 +885,7 @@ def execute_thread_pool(results, func, *args, **kwargs):
 
 
 def execute_thread_pool_collection(results, func, *args, **kwargs):
-    thread_number = get_setting("thread_number", 8)
+    thread_number = get_setting("thread_number", 6)
     collected = []
 
     def wrapper(res):

@@ -1,15 +1,10 @@
 from datetime import datetime
 
 from lib.api.tmdbv3api.as_obj import AsObj
-from lib.api.trakt.trakt_utils import (
-    add_trakt_watched_context_menu,
-    add_trakt_watchlist_context_menu,
-    is_trakt_auth,
-)
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
+    end_of_directory,
     notification,
     set_view,
     translation,
@@ -22,63 +17,40 @@ from lib.clients.tmdb.utils.utils import (
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
 class BaseTmdbClient:
     @staticmethod
-    def add_media_directory_item(
-        list_item, mode, title, ids, seasons_number=1, media_type=None
-    ):
-        if mode == "movies":
+    def add_media_directory_item(list_item, mode, title, ids, media_type=""):
+        if mode == "movies" or (mode == "multi" and media_type == "movie"):
             context_menu = add_tmdb_movie_context_menu(mode, title=title, ids=ids)
-            if is_trakt_auth():
-                context_menu += add_trakt_watchlist_context_menu(
-                    "movies", ids
-                ) + add_trakt_watched_context_menu("movies", ids=ids)
+            # if is_trakt_auth():
+            #     context_menu += add_trakt_watchlist_context_menu(
+            #         "movies", ids
+            #     ) + add_trakt_watched_context_menu("movies", ids=ids)
             list_item.addContextMenuItems(context_menu)
-            add_kodi_dir_item(
-                list_item=list_item,
-                url=build_url(
-                    "search",
-                    mode=mode,
-                    query=title,
-                    ids=ids,
-                ),
-                is_folder=False,
-                set_playable=True,
-            )
+            list_item.setProperty("IsPlayable", "true")
+            is_folder = False
         else:
             context_menu = add_tmdb_show_context_menu(mode, ids=ids)
-            if is_trakt_auth():
-                context_menu += add_trakt_watchlist_context_menu(
-                    "shows", ids
-                ) + add_trakt_watched_context_menu("shows", ids=ids)
+            # if is_trakt_auth():
+            #     context_menu += add_trakt_watchlist_context_menu(
+            #         "shows", ids
+            #     ) + add_trakt_watched_context_menu("shows", ids=ids)
             list_item.addContextMenuItems(context_menu)
-            if seasons_number == 1:
-                add_kodi_dir_item(
-                    list_item=list_item,
-                    url=build_url(
-                        "tv_episodes_details",
-                        tv_name=title,
-                        ids=ids,
-                        mode=mode,
-                        media_type=media_type,
-                        season=seasons_number,
-                    ),
-                    is_folder=True,
-                )
-            else:
-                add_kodi_dir_item(
-                    list_item=list_item,
-                    url=build_url(
-                        "tv_seasons_details",
-                        ids=ids,
-                        mode=mode,
-                        media_type=media_type,
-                    ),
-                    is_folder=True,
-                )
+            is_folder = True
+        add_kodi_dir_item(
+            list_item=list_item,
+            url=build_url(
+                "show_tmdb_item",
+                mode=mode,
+                submode="",
+                id=ids.get("tmdb_id"),
+                title=title,
+                media_type=media_type,
+            ),
+            is_folder=is_folder,
+        )
 
     @staticmethod
     def show_years_items(mode, page, submode=None):
@@ -98,7 +70,7 @@ class BaseTmdbClient:
                 is_folder=True,
                 icon_path="status.png",
             )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -112,7 +84,7 @@ class BaseTmdbClient:
         genres = tmdb_get(path=path)
         if genres is None or len(genres) == 0:
             notification("No genres found")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         for genre in genres:
@@ -132,5 +104,5 @@ class BaseTmdbClient:
                     is_folder=True,
                     icon_path=None,
                 )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")

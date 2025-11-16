@@ -1,18 +1,39 @@
+import json
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_show_context_menu,
     tmdb_get,
 )
-from lib.utils.kodi.utils import ADDON_HANDLE, build_url, get_setting
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    build_url,
+    end_of_directory,
+    get_setting,
+    set_view,
+)
 from lib.utils.general.utils import (
     execute_thread_pool_collection,
     get_fanart_details,
+    set_content_type,
     set_media_infoTag,
+    set_show_infoTag,
 )
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
+
+
+def show_seasons_details(params):
+    set_content_type("season")
+
+    ids = json.loads(params.get("ids", "{}"))
+    mode = params.get("mode", "")
+    media_type = params.get("media_type", "")
+
+    show_season_info(ids, mode, media_type)
+    set_view("current")
+    end_of_directory()
 
 
 def show_season_info(ids, mode, media_type):
@@ -64,22 +85,18 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
         return  # skip specials if disabled
 
     list_item = ListItem(label=season_name)
-
-    set_media_infoTag(list_item, data=season, fanart_data=fanart_details, mode=mode)
-
+    set_show_infoTag(list_item, data=season, fanart_data=fanart_details, mode="season")
     list_item.setProperty("IsPlayable", "false")
 
     context_menu = add_tmdb_show_context_menu(mode, ids)
-
     if is_trakt_auth():
         context_menu += add_trakt_watched_context_menu(
             "shows", season=season_number, ids=ids
         )
-
     list_item.addContextMenuItems(context_menu)
 
     url = build_url(
-        "tv_episodes_details",
+        "show_episodes_details",
         tv_name=name,
         ids=ids,
         mode=mode,
@@ -88,6 +105,20 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
     )
 
     return (season_number, url, list_item)
+
+
+def show_episodes_details(params):
+    set_content_type("episode")
+
+    tv_name = params.get("tv_name", "")
+    season = int(params.get("season", 1))
+    ids = json.loads(params.get("ids", "{}"))
+    mode = params.get("mode", "")
+    media_type = params.get("media_type", "")
+
+    show_episode_info(tv_name, season, ids, mode, media_type)
+    set_view("current")
+    end_of_directory()
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
@@ -121,20 +152,16 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
     tv_data = {"name": ep_name, "episode": episode_number, "season": season}
 
     list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
-
-    set_media_infoTag(
+    list_item.setProperty("IsPlayable", "true")
+    set_show_infoTag(
         list_item, data=episode, fanart_data=fanart_details, mode="episode"
     )
 
-    list_item.setProperty("IsPlayable", "true")
-
     context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids)
-
     if is_trakt_auth():
         context_menu += add_trakt_watched_context_menu(
             "shows", season=season, episode=episode_number, ids=ids
         )
-
     list_item.addContextMenuItems(context_menu)
 
     url = build_url(
