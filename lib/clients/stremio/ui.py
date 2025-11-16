@@ -344,6 +344,9 @@ def add_custom_stremio_addon(params):
     if not url:
         dialog.ok("Custom Addon", "No URL provided.")
         return
+    
+    if url.startswith("stremio://"):
+        url = url.replace("stremio://", "https://") 
 
     # Try to fetch the manifest from the URL
     try:
