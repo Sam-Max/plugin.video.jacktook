@@ -23,7 +23,9 @@ class BaseTmdbClient:
     @staticmethod
     def add_media_directory_item(list_item, mode, title, ids, media_type=""):
         if mode == "movies" or (mode == "multi" and media_type == "movie"):
-            context_menu = add_tmdb_movie_context_menu(mode, title=title, ids=ids)
+            context_menu = add_tmdb_movie_context_menu(
+                mode, media_type, title=title, ids=ids
+            )
             # if is_trakt_auth():
             #     context_menu += add_trakt_watchlist_context_menu(
             #         "movies", ids

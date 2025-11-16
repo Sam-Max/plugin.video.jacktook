@@ -129,6 +129,7 @@ def addon_router():
         "search_tmdb_genres": search_tmdb_genres,
         "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
         "search_tmdb_similar": TmdbClient.search_tmdb_similar,
+        "rescrape_tmdb_media": TmdbClient.rescrape_tmdb_media,
         "search_direct": search_direct,
         "search_mdbd_lists": search_mdbd_lists,
         "search_people_by_id": PeopleClient.search_people_by_id,

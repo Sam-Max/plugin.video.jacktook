@@ -401,15 +401,16 @@ def filter_anime_by_keyword(results, mode):
     return results
 
 
-def add_tmdb_movie_context_menu(mode, title=None, ids={}):
+def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
     return [
         (
             translation(90049),
             play_media(
-                name="search",
+                name="rescrape_tmdb_media",
                 mode=mode,
+                media_type=media_type,
                 query=title,
-                ids=ids,
+                tmdb_id=ids.get("tmdb_id"),
                 rescrape=True,
             ),
         ),

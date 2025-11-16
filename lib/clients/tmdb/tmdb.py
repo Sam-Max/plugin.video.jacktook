@@ -918,3 +918,36 @@ class TmdbClient(BaseTmdbClient):
                 page=page,
             )
         end_of_directory()
+
+    @staticmethod
+    def rescrape_tmdb_media(params):
+        mode = params.get("mode", "")
+        media_type = params.get("media_type", "")
+        tmdb_id = params.get("tmdb_id", "")
+        query = params.get("query", "")
+
+        if mode == "anime":
+            mode = params.get("submode", mode)
+        if mode == "multi":
+            if media_type == "movie":
+                mode = "movies"
+            elif media_type == "tv":
+                mode = "tv"
+
+        tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, tmdb_id)
+        if not tmdb_obj:
+            notification("TMDB metadata not found")
+            return
+
+        external_ids = tmdb_obj.get("external_ids") or {}
+        ids = {
+            "tmdb_id": tmdb_id,
+            "imdb_id": external_ids.get("imdb_id", ""),
+            "tvdb_id": external_ids.get("tvdb_id", ""),
+        }
+
+        from lib.actions.search_action import run_search_entry
+
+        run_search_entry(
+            {"query": query, "mode": mode, "ids": json.dumps(ids), "rescrape": True}
+        )
