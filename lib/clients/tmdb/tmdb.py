@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import json
 import os
@@ -13,7 +14,6 @@ from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
 from lib.utils.general.utils import (
     add_next_button,
     execute_thread_pool,
-    get_fanart_details,
     set_content_type,
     set_media_infoTag,
     set_pluging_category,
@@ -173,7 +173,6 @@ class TmdbClient(BaseTmdbClient):
         set_content_type(mode)
 
         page = int(params.get("page", 1))
-
         query = (
             show_keyboard(id=30241)
             if page == 1
@@ -189,8 +188,10 @@ class TmdbClient(BaseTmdbClient):
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
-
+        
         results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
         if results:
             for item in results:
                 tmdb_id = item.get("id", "")
@@ -205,7 +206,8 @@ class TmdbClient(BaseTmdbClient):
                     continue
 
                 list_item = ListItem(label=label_title)
-                set_media_infoTag(list_item, data=item, mode=mode)
+                tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+                set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=mode,
@@ -245,19 +247,21 @@ class TmdbClient(BaseTmdbClient):
             return
 
         data = tmdb_get(path=path, params=params)
-
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
 
         results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
         if results:
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
                 list_item = ListItem(label=title)
-                set_media_infoTag(list_item, data=item, mode=mode)
+                tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+                set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=mode,
@@ -304,13 +308,16 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
         if results:
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
                 list_item = ListItem(label=title)
-                set_media_infoTag(list_item, data=item, mode=mode)
+                tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+                set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=mode,
@@ -353,12 +360,18 @@ class TmdbClient(BaseTmdbClient):
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
+
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(
+            getattr(data, "results", []), mode
+        )
+
         for res in getattr(data, "results", []):
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -377,12 +390,18 @@ class TmdbClient(BaseTmdbClient):
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
+
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(
+            getattr(data, "results", []), mode
+        )
+
         for res in getattr(data, "results", []):
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -470,12 +489,17 @@ class TmdbClient(BaseTmdbClient):
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
-        for res in getattr(data, "results", []):
+
+        results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -535,12 +559,16 @@ class TmdbClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        for res in getattr(data, "results", []):
+        results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -619,12 +647,16 @@ class TmdbClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        for res in getattr(data, "results", []):
+        results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -834,24 +866,28 @@ class TmdbClient(BaseTmdbClient):
         set_content_type(mode)
 
         if mode == "tv":
-            results = tmdb_get("tv_recommendations", {"id": tmdb_id, "page": page})
+            data = tmdb_get("tv_recommendations", {"id": tmdb_id, "page": page})
         elif mode == "movies":
-            results = tmdb_get("movie_recommendations", {"id": tmdb_id, "page": page})
+            data = tmdb_get("movie_recommendations", {"id": tmdb_id, "page": page})
         else:
             notification("Invalid mode")
             return
 
-        if not results or getattr(results, "total_results", 0) == 0:
+        if not data or getattr(data, "total_results", 0) == 0:
             notification("No recommendations found")
             end_of_directory()
             return
 
-        for res in getattr(results, "results", []):
+        results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -884,24 +920,28 @@ class TmdbClient(BaseTmdbClient):
         set_content_type(mode)
 
         if mode == "tv":
-            results = tmdb_get("tv_similar", {"id": tmdb_id, "page": page})
+            data = tmdb_get("tv_similar", {"id": tmdb_id, "page": page})
         elif mode == "movies":
-            results = tmdb_get("movie_similar", {"id": tmdb_id, "page": page})
+            data = tmdb_get("movie_similar", {"id": tmdb_id, "page": page})
         else:
             notification("Invalid mode")
             return
 
-        if not results or getattr(results, "total_results", 0) == 0:
+        if not data or getattr(data, "total_results", 0) == 0:
             notification("No similar items found")
             end_of_directory()
             return
+
+        results = getattr(data, "results", [])
+        tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
 
         for res in getattr(results, "results", []):
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
             list_item = ListItem(label=title)
-            set_media_infoTag(list_item, data=res, mode=mode)
+            tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
+            set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
             BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
@@ -951,3 +991,32 @@ class TmdbClient(BaseTmdbClient):
         run_search_entry(
             {"query": query, "mode": mode, "ids": json.dumps(ids), "rescrape": True}
         )
+
+    @staticmethod
+    def fetch_tmdb_metadata_concurrently(results, mode):
+        future_map = {}
+        max_workers = min(8, max(1, len(results)))
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            for res in results:
+                tmdb_id = getattr(res, "id", "") or None
+                media_type = getattr(res, "media_type", "") or ""
+                if not tmdb_id:
+                    continue
+                future = ex.submit(
+                    TmdbClient._get_tmdb_metadata, mode, media_type, tmdb_id
+                )
+                future_map[future] = tmdb_id
+
+            tmdb_meta_by_id = {}
+            for future in as_completed(future_map):
+                tmdb_id = future_map[future]
+                try:
+                    tmdb_obj = future.result()
+                except Exception as e:
+                    kodilog(
+                        f"Error fetching TMDB metadata for id {tmdb_id}: {e}",
+                        level=xbmc.LOGWARNING,
+                    )
+                    tmdb_obj = None
+                tmdb_meta_by_id[tmdb_id] = tmdb_obj
+        return tmdb_meta_by_id
