@@ -12,8 +12,8 @@ from lib.utils.general.utils import (
 )
 
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
+    end_of_directory,
     set_view,
     show_keyboard,
     notification,
@@ -26,7 +26,6 @@ from lib.clients.tmdb.utils.utils import (
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
 class TmdbCollections(BaseTmdbClient):
@@ -37,11 +36,10 @@ class TmdbCollections(BaseTmdbClient):
         collection = tmdb_get("collection_details", params.get("collection_id"))
         if not collection:
             notification("Collection details not found.")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
-        parts = collection.get("parts", [])
-        for movie in parts:
+        for movie in collection.get("parts", []) or []:
             movie_item = ListItem(label=movie.get("title", "Untitled"))
             movie_item.setProperty("IsPlayable", "true")
             set_media_infoTag(movie_item, data=movie, mode="movie")
@@ -64,7 +62,7 @@ class TmdbCollections(BaseTmdbClient):
                 is_folder=False,
             )
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -103,7 +101,7 @@ class TmdbCollections(BaseTmdbClient):
 
         if not current_page_collections:
             notification("No more popular collections to display.")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         execute_thread_pool(
@@ -116,7 +114,7 @@ class TmdbCollections(BaseTmdbClient):
                 "handle_collection_query", submode="popular", page=page + 1, mode=mode
             )
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -130,7 +128,7 @@ class TmdbCollections(BaseTmdbClient):
 
         if not current_page_collections:
             notification("No more collections to display.")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         execute_thread_pool(
@@ -143,7 +141,7 @@ class TmdbCollections(BaseTmdbClient):
                 "handle_collection_query", submode="top_rated", page=page + 1, mode=mode
             )
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod
@@ -162,7 +160,7 @@ class TmdbCollections(BaseTmdbClient):
         results = tmdb_get("search_collections", params={"query": query, "page": page})
         if not results or getattr(results, "total_results", 0) == 0:
             notification("No results found for your search.")
-            endOfDirectory(ADDON_HANDLE)
+            end_of_directory()
             return
 
         execute_thread_pool(
@@ -176,7 +174,7 @@ class TmdbCollections(BaseTmdbClient):
             page=page + 1,
             mode=mode,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         set_view("widelist")
 
     @staticmethod

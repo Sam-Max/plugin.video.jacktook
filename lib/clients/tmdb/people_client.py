@@ -9,8 +9,8 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
+    end_of_directory,
     kodilog,
     show_keyboard,
     notification,
@@ -18,7 +18,6 @@ from lib.utils.kodi.utils import (
 )
 
 from xbmcgui import ListItem
-from xbmcplugin import endOfDirectory
 
 
 class PeopleClient(BaseTmdbClient):
@@ -50,7 +49,7 @@ class PeopleClient(BaseTmdbClient):
             page=page + 1,
             mode=mode,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def search_people_by_id(params):
@@ -81,10 +80,9 @@ class PeopleClient(BaseTmdbClient):
 
         execute_thread_pool(getattr(credits, "cast"), get_media_credits)
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     def show_popular_people(self, mode, page=1):
-        kodilog(f"Fetching popular people, page {page}")
         set_pluging_category(translation(90079))
         set_content_type(mode)
 
@@ -102,7 +100,7 @@ class PeopleClient(BaseTmdbClient):
             page=page + 1,
             mode=mode,
         )
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     def show_trending_people(self, mode, page=1):
         kodilog("Fetching trending person")
@@ -124,7 +122,7 @@ class PeopleClient(BaseTmdbClient):
             mode=mode,
         )
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def handle_tmdb_person_details(params):
@@ -164,7 +162,7 @@ class PeopleClient(BaseTmdbClient):
             credits, PeopleClient.show_credited_people, mode, media_type
         )
 
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
 
     @staticmethod
     def show_credited_people(credit, mode, media_type):
@@ -210,7 +208,7 @@ class PeopleClient(BaseTmdbClient):
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
-                    "tv_seasons_details",
+                    "show_seasons_details",
                     mode="tv",
                     ids=ids,
                 ),

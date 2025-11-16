@@ -14,13 +14,14 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
+    end_of_directory,
     get_setting,
     kodilog,
     notification,
     set_view,
 )
 
-from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcplugin import addDirectoryItem
 from xbmcgui import ListItem
 import xbmc
 import json
@@ -109,7 +110,7 @@ def list_telegram_latest_files(query):
     execute_thread_pool(
         parent_data["files"], add_telegram_latest_file_item, parent_data
     )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def add_telegram_latest_file_item(file_entry, parent_data):
@@ -154,5 +155,5 @@ def process_results(results, callback, next_button_action, page):
 
     execute_thread_pool(results, callback)  
     add_next_button(next_button_action, page=page)
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
     set_view("widelist")

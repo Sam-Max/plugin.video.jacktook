@@ -105,7 +105,6 @@ class ResolverWindow(BaseWindow):
             self.playback_info.update(self.item_information)
         else:
             self.close_windows()
-            raise SourceException("No files on the current source")
 
         del self.window
 

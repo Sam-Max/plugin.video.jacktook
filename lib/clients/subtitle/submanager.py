@@ -74,8 +74,9 @@ class SubtitleManager(KodiJsonRpcClient):
         season = tv_data.get("season")
 
         if not imdb_id:
-            raise ValueError("No IMDb ID found for the current video")
-
+            kodilog("No IMDb ID found for the current video")
+            return 
+        
         folder_path = (
             os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode))
             if mode == "tv"

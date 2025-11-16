@@ -78,6 +78,7 @@ class JacktookPLayer(xbmc.Player):
             setResolvedUrl(ADDON_HANDLE, True, list_item)
             self.monitor()
         except Exception as e:
+            kodilog(f"Error during play_video: {e}")
             self.run_error(e)
 
     def _handle_trakt_scrobble(self, list_item):

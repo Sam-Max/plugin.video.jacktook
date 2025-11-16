@@ -7,12 +7,13 @@ from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
+    end_of_directory,
     kodilog,
     notification,
     show_keyboard,
 )
 
-from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
+from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
 import xbmc
 
@@ -108,7 +109,7 @@ def list_catalog(params):
             handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
         )
 
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def search_catalog(params):
@@ -136,7 +137,7 @@ def search_catalog(params):
             if tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
-                    "tv_seasons_details",
+                    "show_seasons_details",
                     ids=ids,
                     mode="tv",
                     media_type="tv",
@@ -192,7 +193,7 @@ def search_catalog(params):
         )
 
     add_next_button("search_catalog", page=page, mode=params["catalog_type"])
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def add_meta_items(videos, params):
@@ -222,7 +223,7 @@ def add_meta_items(videos, params):
 
     if not videos:
         notification(f"No content available for {menu_type}")
-        endOfDirectory(ADDON_HANDLE)
+        end_of_directory()
         return
 
     for video in videos:
@@ -243,7 +244,7 @@ def add_meta_items(videos, params):
             if tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
-                    "tv_seasons_details", ids=ids, mode="tv", media_type="tv"
+                    "show_seasons_details", ids=ids, mode="tv", media_type="tv"
                 )
             else:
                 url = build_url(
@@ -352,7 +353,7 @@ def list_stremio_seasons(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=True
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def list_stremio_episodes(params):
@@ -439,7 +440,7 @@ def list_stremio_episodes(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def list_stremio_tv(params):
@@ -466,7 +467,7 @@ def list_stremio_tv(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def list_stremio_tv_streams(params):
@@ -486,4 +487,4 @@ def list_stremio_tv_streams(params):
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
 
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()

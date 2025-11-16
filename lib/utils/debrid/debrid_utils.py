@@ -103,7 +103,7 @@ def execute_debrid_checks(
     lock: Lock,
 ):
     with ThreadPoolExecutor(
-        max_workers=int(get_setting("thread_number", 8))
+        max_workers=int(get_setting("thread_number", 6))
     ) as executor:
         futures = [
             executor.submit(

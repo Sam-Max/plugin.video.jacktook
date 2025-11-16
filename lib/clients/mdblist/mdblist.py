@@ -9,11 +9,12 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
+    end_of_directory,
     notification,
     show_keyboard,
 )
 
-from xbmcplugin import addDirectoryItem, endOfDirectory
+from xbmcplugin import addDirectoryItem
 
 
 def search_mdbd_lists(params):
@@ -43,7 +44,7 @@ def search_mdbd_lists(params):
             list_item,
             isFolder=True,
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def user_mdbd_lists(params):
@@ -66,7 +67,7 @@ def user_mdbd_lists(params):
             list_item,
             isFolder=True,
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def top_mdbd_lists(params):
@@ -89,7 +90,7 @@ def top_mdbd_lists(params):
             list_item,
             isFolder=True,
         )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
 
 
 def show_mdblist_list(params):
@@ -139,7 +140,7 @@ def show_mdblist_list(params):
 
         if item.get("mediatype") == "show":
             url = build_url(
-                "tv_seasons_details",
+                "show_seasons_details",
                 ids=ids,
                 mode="tv",
             )
@@ -174,4 +175,4 @@ def show_mdblist_list(params):
         list_item,
         isFolder=True,
     )
-    endOfDirectory(ADDON_HANDLE)
+    end_of_directory()
