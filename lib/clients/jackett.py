@@ -1,10 +1,11 @@
 from urllib.parse import quote
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 import concurrent
 import requests
 
 from lib.clients.base import BaseClient
 from lib.domain.torrent import TorrentStream
+from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.settings import get_jackett_timeout
 from lib.utils.kodi.utils import get_setting, notification, translation
@@ -12,34 +13,17 @@ from lib.utils.parsers import xmltodict
 
 
 class Jackett(BaseClient):
-    def __init__(
-        self, host: str, apikey: str, port: str, notification: Callable[[str], None]
-    ) -> None:
+    def __init__(self, host: str, apikey: str, port: str, notification) -> None:
         super().__init__(host, notification)
         self.apikey = apikey
         self.port = port
         self.host = host
         self.base_url = self._make_base_url("all")
+        self.session = requests.Session()
+        self.session.headers.update(USER_AGENT_HEADER.copy())
 
     def _make_base_url(self, indexer_id: str) -> str:
         return f"{self.host}:{self.port}/api/v2.0/indexers/{indexer_id}/results/torznab/api?apikey={self.apikey}"
-
-    def get_active_indexers(self) -> List[str]:
-        url = f"{self.host}:{self.port}/api/v2.0/indexers?apikey={self.apikey}"
-        try:
-            headers = USER_AGENT_HEADER
-            headers["Accept"] = "application/json"
-            headers["Content-Type"] = "application/json"
-            session = requests.Session()
-            response = session.get(url, timeout=10, headers=headers)
-            if "text/html" in response.headers.get("Content-Type", ""):
-                response = session.get(url, headers=headers, timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                return [idx["id"] for idx in data if idx.get("configured")]
-        except Exception as e:
-            self.handle_exception(f"Error fetching Jackett indexers: {str(e)}")
-        return []
 
     def _build_url(
         self,
@@ -159,30 +143,19 @@ class Jackett(BaseClient):
         categories: Optional[List[int]] = None,
         additional_params: Optional[dict] = None,
     ) -> Optional[List[TorrentStream]]:
-        """Search all active indexers in parallel and combine results."""
-        all_results = []
-        indexers = self.get_active_indexers()
-        futures = []
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            for idx in indexers:
-                base_url = self._make_base_url(idx)
-                futures.append(
-                    executor.submit(
-                        self.search_indexer,
-                        base_url,
-                        query,
-                        mode,
-                        season,
-                        episode,
-                        categories,
-                        additional_params,
-                    )
-                )
-            for future in concurrent.futures.as_completed(futures):
-                results = future.result()
-                if results:
-                    all_results.extend(results)
-        return all_results if all_results else None
+        try:
+            return self.search_indexer(
+                self.base_url,
+                query,
+                mode,
+                season,
+                episode,
+                categories,
+                additional_params,
+            )
+        except Exception as e:
+            self.handle_exception(f"{translation(30229)}: {str(e)}")
+            return None
 
     def parse_response(self, res: Any) -> Optional[List[TorrentStream]]:
         try:
