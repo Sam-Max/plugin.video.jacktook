@@ -17,7 +17,6 @@ from lib.utils.general.utils import (
     get_fanart_details,
     set_content_type,
     set_media_infoTag,
-    set_show_infoTag,
 )
 
 from xbmcgui import ListItem
@@ -85,7 +84,7 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
         return  # skip specials if disabled
 
     list_item = ListItem(label=season_name)
-    set_show_infoTag(list_item, data=season, fanart_data=fanart_details, mode="season")
+    set_media_infoTag(list_item, data=season, fanart_data=fanart_details, mode="season")
     list_item.setProperty("IsPlayable", "false")
 
     context_menu = add_tmdb_show_context_menu(mode, ids)
@@ -153,7 +152,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
 
     list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")
-    set_show_infoTag(
+    set_media_infoTag(
         list_item, data=episode, fanart_data=fanart_details, mode="episode"
     )
 

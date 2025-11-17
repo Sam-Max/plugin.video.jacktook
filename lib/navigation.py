@@ -526,7 +526,7 @@ def search_direct(params):
 
 
 def search(params):
-    from lib.actions.search_action import run_search_entry
+    from lib.search import run_search_entry
     run_search_entry(params)
 
 

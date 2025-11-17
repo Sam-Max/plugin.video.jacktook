@@ -20,7 +20,6 @@ class Torrentio(BaseClient):
         episode: Optional[int],
     ) -> Optional[List[TorrentStream]]:
         try:
-            kodilog(f"Searching for {imdb_id} on Torrentio")
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{imdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":

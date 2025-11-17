@@ -205,6 +205,11 @@ class TmdbClient(BaseTmdbClient):
                 else:
                     continue
 
+                if mode == "multi" and media_type == "tv":
+                    mode = "tv"
+                elif mode == "multi" and media_type == "movie":
+                    mode = "movies"
+
                 list_item = ListItem(label=label_title)
                 tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
                 set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
@@ -443,7 +448,7 @@ class TmdbClient(BaseTmdbClient):
         ids = {"tmdb_id": tmdb_id}
         ids["imdb_id"] = tmdb_obj.get("external_ids", {}).get("imdb_id", "")
 
-        from lib.actions.search_action import run_search_entry
+        from lib.search import run_search_entry
 
         run_search_entry({"query": title, "mode": mode, "ids": json.dumps(ids)})
 
@@ -986,7 +991,7 @@ class TmdbClient(BaseTmdbClient):
             "tvdb_id": external_ids.get("tvdb_id", ""),
         }
 
-        from lib.actions.search_action import run_search_entry
+        from lib.search import run_search_entry
 
         run_search_entry(
             {"query": query, "mode": mode, "ids": json.dumps(ids), "rescrape": True}

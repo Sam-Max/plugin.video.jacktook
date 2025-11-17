@@ -17,8 +17,6 @@ class Jackgram(BaseClient):
         episode: Optional[int],
     ) -> Optional[List[TorrentStream]]:
         try:
-            kodilog(f"Searching for {query} on Jackgram")
-
             if mode == "tv" or media_type == "tv":
                 url = f"{self.host}/stream/series/{tmdb_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":

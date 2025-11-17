@@ -103,7 +103,6 @@ class PeopleClient(BaseTmdbClient):
         end_of_directory()
 
     def show_trending_people(self, mode, page=1):
-        kodilog("Fetching trending person")
         set_pluging_category(translation(90080))
         set_content_type(mode)
 
@@ -112,6 +111,7 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
+        kodilog(f"Trending people data: {data}")
         execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
 
         add_next_button(
@@ -157,6 +157,9 @@ class PeopleClient(BaseTmdbClient):
         credits = sorted(
             getattr(person_credits, "cast", []), key=get_date, reverse=True
         )
+
+        kodilog(f"Found {len(credits)} credits for person")
+        kodilog(f"Credits: {credits}")
 
         execute_thread_pool(
             credits, PeopleClient.show_credited_people, mode, media_type
@@ -217,7 +220,10 @@ class PeopleClient(BaseTmdbClient):
 
     @staticmethod
     def show_people(person, mode):
+        kodilog(f"Showing person")
         details = tmdb_get("person_details", params=person.get("id"))
+        kodilog(f"Person details: {details}")
+
         list_item = ListItem(label=person.get("name", "Unknown"))
         set_media_infoTag(list_item, data=details, mode=mode)
         add_kodi_dir_item(

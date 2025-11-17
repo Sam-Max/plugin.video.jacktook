@@ -355,21 +355,13 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=Fa
     _set_media_type(info_tag, mode)
     _set_identification(info_tag, data)
     _set_artwork(list_item, data, fanart_data)
-
+    _set_released_info(info_tag, data)
+    
+    if mode == "tv" or mode == "season" or mode == "episode":
+        _set_show_info(info_tag, data, mode)
+        
     if detailed:
         _set_detailed_info(info_tag, data, mode)
-        _set_released_info(info_tag, data)
-        _set_tv_episode_info(info_tag, data, mode)
-
-
-def set_show_infoTag(list_item, data, mode, fanart_data={}):
-    info_tag = list_item.getVideoInfoTag()
-
-    _set_basic_info(info_tag, data)
-    _set_media_type(info_tag, mode)
-    _set_artwork(list_item, data, fanart_data)
-    _set_released_info(info_tag, data)
-    _set_tv_episode_info(info_tag, data, mode)
 
 
 def _set_basic_info(info_tag, data):
@@ -410,7 +402,8 @@ def _set_artwork(list_item, data, fanart_data):
 
 
 def _set_released_info(info_tag, data):
-    # Year & Dates
+    kodilog("Setting released info")
+    kodilog(f"Data for released info: {data}")
     if "first_air_date" in data:
         first_air_date = data["first_air_date"]
         if first_air_date:
@@ -453,8 +446,7 @@ def _set_detailed_info(info_tag, data, mode):
     info_tag.setCast(get_cast_and_crew(data))
 
 
-def _set_tv_episode_info(info_tag, data, mode):
-    # Seasons
+def _set_show_info(info_tag, data, mode):
     if "seasons" in data:
         seasons = list(data["seasons"])
         if isinstance(seasons, list):
@@ -466,7 +458,7 @@ def _set_tv_episode_info(info_tag, data, mode):
         else:
             info_tag.addSeason(seasons.get("season_number", 0), seasons.get("name", ""))
 
-    if mode == "tv":
+    if mode == "tv" or mode == "season":
         info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
         info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
     elif mode == "episode":

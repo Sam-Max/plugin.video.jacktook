@@ -81,7 +81,6 @@ class StremioAddonClient(BaseClient):
         episode: Optional[int],
     ) -> List[TorrentStream]:
         try:
-            kodilog(f"Searching for {imdb_id} on {self.addon.manifest.name}")
             if mode == "tv" or media_type == "tv":
                 if not self.addon.isSupported("stream", "series", "tt"):
                     return []
