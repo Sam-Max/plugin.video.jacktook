@@ -205,14 +205,9 @@ class TmdbClient(BaseTmdbClient):
                 else:
                     continue
 
-                if mode == "multi" and media_type == "tv":
-                    mode = "tv"
-                elif mode == "multi" and media_type == "movie":
-                    mode = "movies"
-
                 list_item = ListItem(label=label_title)
                 tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
-                set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
+                set_media_infoTag(list_item, data=tmdb_obj, mode=media_type)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=mode,

@@ -402,8 +402,6 @@ def _set_artwork(list_item, data, fanart_data):
 
 
 def _set_released_info(info_tag, data):
-    kodilog("Setting released info")
-    kodilog(f"Data for released info: {data}")
     if "first_air_date" in data:
         first_air_date = data["first_air_date"]
         if first_air_date:
