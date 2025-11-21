@@ -40,7 +40,9 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
+        execute_thread_pool(
+            getattr(data, "results"), PeopleClient.show_people_details, mode
+        )
 
         add_next_button(
             "handle_tmdb_query",
@@ -76,7 +78,7 @@ class PeopleClient(BaseTmdbClient):
             person_id = person.get("id")
             if not person_id:
                 return
-            PeopleClient.show_people(person, mode)
+            PeopleClient.show_people_details(person, mode)
 
         execute_thread_pool(getattr(credits, "cast"), get_media_credits)
 
@@ -91,7 +93,9 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
+        execute_thread_pool(
+            getattr(data, "results"), PeopleClient.show_people_details, mode
+        )
 
         add_next_button(
             "handle_tmdb_query",
@@ -111,8 +115,9 @@ class PeopleClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        kodilog(f"Trending people data: {data}")
-        execute_thread_pool(getattr(data, "results"), PeopleClient.show_people, mode)
+        execute_thread_pool(
+            getattr(data, "results"), PeopleClient.show_people_details, mode
+        )
 
         add_next_button(
             "handle_tmdb_query",
@@ -120,49 +125,6 @@ class PeopleClient(BaseTmdbClient):
             subquery="latest_people",
             page=page + 1,
             mode=mode,
-        )
-
-        end_of_directory()
-
-    @staticmethod
-    def handle_tmdb_person_details(params):
-        mode = params.get("mode")
-        set_pluging_category("Person Details")
-        set_content_type(mode)
-
-        if mode == "movies":
-            media_type = "movie"
-            person_credits = tmdb_get(
-                "person_movie_credits", params=params.get("person_id")
-            )
-            if not person_credits:
-                notification("Person not found")
-                return
-        elif mode == "tv":
-            media_type = "tv"
-            person_credits = tmdb_get(
-                "person_tv_credits", params=params.get("person_id")
-            )
-            if not person_credits:
-                notification("Person not found")
-                return
-        else:
-            notification("Invalid mode")
-            return
-
-        # Sort credits by release date (newest first)
-        def get_date(c):
-            return c.get("release_date") or c.get("first_air_date") or ""
-
-        credits = sorted(
-            getattr(person_credits, "cast", []), key=get_date, reverse=True
-        )
-
-        kodilog(f"Found {len(credits)} credits for person")
-        kodilog(f"Credits: {credits}")
-
-        execute_thread_pool(
-            credits, PeopleClient.show_credited_people, mode, media_type
         )
 
         end_of_directory()
@@ -219,11 +181,8 @@ class PeopleClient(BaseTmdbClient):
             )
 
     @staticmethod
-    def show_people(person, mode):
-        kodilog(f"Showing person")
+    def show_people_details(person, mode):
         details = tmdb_get("person_details", params=person.get("id"))
-        kodilog(f"Person details: {details}")
-
         list_item = ListItem(label=person.get("name", "Unknown"))
         set_media_infoTag(list_item, data=details, mode=mode)
         add_kodi_dir_item(
@@ -233,3 +192,43 @@ class PeopleClient(BaseTmdbClient):
             ),
             is_folder=True,
         )
+
+    @staticmethod
+    def handle_tmdb_person_details(params):
+        mode = params.get("mode")
+        set_pluging_category("Person Details")
+        set_content_type(mode)
+
+        if mode == "movies":
+            media_type = "movie"
+            person_credits = tmdb_get(
+                "person_movie_credits", params=params.get("person_id")
+            )
+            if not person_credits:
+                notification("Person not found")
+                return
+        elif mode == "tv":
+            media_type = "tv"
+            person_credits = tmdb_get(
+                "person_tv_credits", params=params.get("person_id")
+            )
+            if not person_credits:
+                notification("Person not found")
+                return
+        else:
+            notification("Invalid mode")
+            return
+
+        # Sort credits by release date (newest first)
+        def get_date(c):
+            return c.get("release_date") or c.get("first_air_date") or ""
+
+        credits = sorted(
+            getattr(person_credits, "cast", []), key=get_date, reverse=True
+        )
+
+        execute_thread_pool(
+            credits, PeopleClient.show_credited_people, mode, media_type
+        )
+
+        end_of_directory()
