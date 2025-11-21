@@ -1,3 +1,23 @@
+## 0.18.0 
+- Rewrite TMDB directory handling to include full metadata only when needed and simplify search result rendering.
+- Add automatic subtitle download and improved storage/retrieval for individual episodes.
+- Automatically convert URLs starting with stremio:// to https:// when adding custom addons.
+- Fix Jackett search not working when a password is set
+- Other minor fixes and improvements.
+
+Spanish:
+- Reescritura del manejo de directorios de TMDb para incluir solo los metadatos completos cuando sea necesario y simplificar la visualización de resultados de búsqueda.
+- Añadida descarga automática de subtítulos y mejora en el almacenamiento/recuperación de episodios individuales.
+- Conversión automática de URLs que comienzan con stremio:// a https:// al añadir addons personalizados.
+- Corrección en la búsqueda de Jackett cuando se establece una contraseña.
+- Otras mejoras y correcciones menores.
+
+Note: 
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
+
+
 ## 0.17.0 
 - Add AllDebrid support 
 - Add cached search for AllDebrid 
