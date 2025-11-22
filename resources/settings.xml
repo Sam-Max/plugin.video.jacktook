@@ -199,6 +199,22 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_timeout" type="integer" label="90123" help="">
+                    <default>25</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
             <group id="torrentio" label="90044">
                 <setting id="torrentio_enabled" type="boolean" label="90045" help="90046">
@@ -398,7 +414,7 @@
                     </dependencies>
                 </setting>
                 <setting id="zilean_timeout" type="integer" label="30774" help="30820">
-                    <default>10</default>
+                    <default>25</default>
                     <constraints>
                         <minimum>1</minimum>
                         <maximum>30</maximum>

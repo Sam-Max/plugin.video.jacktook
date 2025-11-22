@@ -4,6 +4,7 @@ from lib.clients.base import BaseClient, TorrentStream
 
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
+from lib.utils.kodi.settings import get_int_setting
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
 
@@ -119,7 +120,11 @@ class StremioAddonClient(BaseClient):
                     url = url.replace("/stream/", f"/providers={providers}/stream/")
                     kodilog(f"URL with providers: {url}")
 
-            res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
+            res = self.session.get(
+                url,
+                headers=USER_AGENT_HEADER,
+                timeout=get_int_setting("stremio_timeout"),
+            )
             if res.status_code != 200:
                 return []
             return self.parse_response(res)

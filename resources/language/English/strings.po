@@ -1805,3 +1805,7 @@ msgstr ""
 msgctxt "#90122"
 msgid "Automatically download subtitles"
 msgstr ""
+
+msgctxt "#90123"
+msgid "Stremio Timeout"
+msgstr ""

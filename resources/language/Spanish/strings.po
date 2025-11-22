@@ -1789,3 +1789,7 @@ msgstr "Configuracion de AllDebrid"
 msgctxt "#90122"
 msgid "Automatically download subtitles"
 msgstr "Descargar subtitulos de manera automática"
+
+msgctxt "#90123"
+msgid "Stremio Timeout"
+msgstr "Tiempo de espera para Stremio"
