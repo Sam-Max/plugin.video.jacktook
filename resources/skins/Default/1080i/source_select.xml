@@ -286,7 +286,7 @@
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>550</left>
+								<left>565</left>
 								<textcolor>CCFFFFFF</textcolor>
 								<label>[UPPERCASE]PROVIDER: $INFO[ListItem.Property(provider)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(provider))</visible>
@@ -323,7 +323,7 @@
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>550</left>
+								<left>565</left>
 								<textcolor>FFFFFFFF</textcolor>
 								<label>[UPPERCASE]LANGUAGES: $INFO[ListItem.Property(fullLanguages)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(fullLanguages))</visible>
@@ -452,7 +452,7 @@
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>550</left>
+								<left>565</left>
 								<textcolor>FFFFFFFF</textcolor>
 								<label>[UPPERCASE]PROVIDER: $INFO[ListItem.Property(provider)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(provider))</visible>
@@ -488,7 +488,7 @@
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>550</left>
+								<left>565</left>
 								<textcolor>FFFFFFFF</textcolor>
 								<label>[UPPERCASE]LANGUAGES: $INFO[ListItem.Property(fullLanguages)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(fullLanguages))</visible>

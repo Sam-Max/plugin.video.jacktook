@@ -20,6 +20,7 @@ from lib.utils.general.utils import (
     IndexerType,
     extract_publish_date,
     get_colored_languages,
+    get_provider_color,
     get_random_color,
 )
 
@@ -221,12 +222,15 @@ class SourceSelect(BaseWindow):
                 provider_name = source.type
             else:
                 provider_name = source.debridType
-            menu_item.setProperty("type", get_random_color(provider_name))
+            menu_item.setProperty("type", get_provider_color(provider_name))
             menu_item.setProperty("indexer", get_random_color(source.indexer))
             menu_item.setProperty("guid", source.guid)
             menu_item.setProperty("infoHash", source.infoHash)
             menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))
-            menu_item.setProperty("seeders", str(source.seeders))
+            if source.seeders:
+                menu_item.setProperty("seeders", str(source.seeders))
+            if source.peers:
+                menu_item.setProperty("peers", str(source.peers))
             menu_item.setProperty(
                 "fullLanguages", get_colored_languages(source.fullLanguages)
             )
@@ -234,7 +238,6 @@ class SourceSelect(BaseWindow):
             menu_item.setProperty(
                 "publishDate", extract_publish_date(source.publishDate)
             )
-            menu_item.setProperty("peers", str(source.peers))
             menu_item.setProperty("quality", source.quality)
             menu_item.setProperty("status", get_source_status(source))
             menu_item.setProperty("isPack", str(source.isPack))

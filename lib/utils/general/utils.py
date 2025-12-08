@@ -246,6 +246,14 @@ torrent_indexers = [
 ]
 
 
+PROVIDER_COLORS = {
+    "debrid": "FF1E90FF",  # dodger blue
+    "direct": "FFFFA500",  # orange
+    "stremio": "FF8A2BE2",  # blue-violet
+    "torrent": "FFFFD700",  # gold
+}
+
+
 class DialogListener:
     def __init__(self):
         self._dialog = DialogProgressBG()
@@ -356,10 +364,10 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=Fa
     _set_identification(info_tag, data)
     _set_artwork(list_item, data, fanart_data)
     _set_released_info(info_tag, data)
-    
+
     if mode == "tv" or mode == "season" or mode == "episode":
         _set_show_info(info_tag, data, mode)
-        
+
     if detailed:
         _set_detailed_info(info_tag, data, mode)
 
@@ -827,6 +835,20 @@ def set_content_type(mode, media_type="movies"):
         setContent(ADDON_HANDLE, MOVIES_TYPE)
     else:
         setContent(ADDON_HANDLE, TITLES_TYPE)
+
+
+def get_provider_color(provider_name, formatted=True):
+    key = provider_name.lower()
+
+    if key in PROVIDER_COLORS:
+        color = PROVIDER_COLORS[key]
+    else:
+        color = get_random_color(provider_name, formatted=False)
+
+    if formatted:
+        return f"[B][COLOR {color}]{provider_name}[/COLOR][/B]"
+    else:
+        return color
 
 
 # This method was taken from script.elementum.jackett addon
