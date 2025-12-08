@@ -18,6 +18,7 @@ class Stream:
         self.infoHash = data.get("infoHash", "")
         self.fileIdx = data.get("fileIdx")
         self.externalUrl = data.get("externalUrl")
+        self.meta = data.get("meta", {})
 
         # Initialize optional attributes
         self.name = data.get("name")
@@ -49,7 +50,10 @@ class Stream:
         return title.splitlines()[0] if title else ""
 
     def get_parsed_size(self) -> int:
-        return self.videoSize or 0
+        return self.videoSize or self.meta.get("size") or 0
+    
+    def get_provider(self): 
+        return self.meta.get("indexer") or ""
 
     def __repr__(self):
         return f"Stream(name={self.name}, url={self.url}, ytId={self.ytId}, infoHash={self.infoHash}, externalUrl={self.externalUrl})"

@@ -165,7 +165,7 @@ class StremioAddonClient(BaseClient):
                     seeders=item.get("seed", 0) or parsed["seeders"],
                     languages=parsed["languages"],
                     fullLanguages=parsed["languages"],
-                    provider=parsed["provider"],
+                    provider=stream.get_provider() or parsed["provider"],
                     publishDate="",
                     peers=0,
                     url=url,
