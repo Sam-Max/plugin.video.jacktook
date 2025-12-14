@@ -602,15 +602,6 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="real_debrid_cached_check" type="boolean" label="90062" help="90063">
-                    <default>false</default>
-                    <control type="toggle" />
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="real_debrid_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
             </group>
              <group id="alldebrid" label="90121">
                 <setting id="alldebrid_enabled" type="boolean" label="30734" help="30824">
@@ -658,15 +649,6 @@
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="alldebrid_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-                <setting id="alldebrid_cached_check" type="boolean" label="90062" help="90063">
-                    <default>false</default>
-                    <control type="toggle" />
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="alldebrid_enabled">true</condition>

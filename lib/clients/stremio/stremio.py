@@ -95,25 +95,6 @@ class StremioAddonClient(BaseClient):
 
             kodilog("Using Stremio addon search URL: " + url)
 
-            if self.should_use_rd_cache():
-                return self.get_cached_results(
-                    imdb_id,
-                    mode,
-                    season,
-                    episode,
-                    debridType="realdebrid",
-                    debridToken=get_setting("real_debrid_token"),
-                )
-            elif self.should_use_ad_cache():
-                return self.get_cached_results(
-                    imdb_id,
-                    mode,
-                    season,
-                    episode,
-                    debridType="alldebrid",
-                    debridToken=get_setting("alldebrid_token"),
-                )
-
             if get_setting("torrentio_enabled") and "torrentio" in self.addon.url():
                 providers = cache.get(TORRENTIO_PROVIDERS_KEY)
                 if providers:
