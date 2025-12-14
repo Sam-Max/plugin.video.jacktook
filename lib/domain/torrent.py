@@ -9,6 +9,7 @@ class TorrentStream:
     type: str = ""  # e.g., "torrent" or "debrid" or "direct"
     debridType: str = ""
     indexer: str = ""
+    subindexer: str = ""
     guid: str = ""
     infoHash: str = ""
 

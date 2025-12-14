@@ -138,6 +138,7 @@ class StremioAddonClient(BaseClient):
                     title=stream.get_parsed_title(),
                     type=(IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT),
                     indexer=self.addon.manifest.name.split(" ")[0],
+                    subindexer=stream.get_sub_indexer(self.addon),
                     guid=info_hash_to_magnet(info_hash),
                     infoHash=info_hash,
                     size=stream.get_parsed_size()

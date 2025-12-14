@@ -219,7 +219,10 @@ class SourceSelect(BaseWindow):
             menu_item = xbmcgui.ListItem(label=source.title)
             menu_item.setProperty("title", source.title)
             if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
-                provider_name = source.type
+                if source.subindexer:
+                    provider_name = source.subindexer
+                else:
+                    provider_name = source.type
             else:
                 provider_name = source.debridType
             menu_item.setProperty("type", get_provider_color(provider_name))

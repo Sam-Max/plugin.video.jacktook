@@ -48,7 +48,12 @@ class Stream:
     def get_parsed_title(self) -> str:
         title = self.filename or self.description or self.title
         return title.splitlines()[0] if title else ""
-
+    
+    def get_sub_indexer(self, addon) -> str:
+        if addon.manifest.name.split(" ")[0] == "AIOStreams":
+            return self.name.split()[1] if self.name else ""
+        return ""
+        
     def get_parsed_size(self) -> int:
         return self.videoSize or self.meta.get("size") or 0
     
