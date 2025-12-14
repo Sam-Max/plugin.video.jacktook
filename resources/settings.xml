@@ -522,11 +522,11 @@
                     </dependencies>
                 </setting>
                 <setting id="maximum_size" type="integer" label="90061" help="">
-                    <default>5000</default>
+                    <default>20000</default>
                     <constraints>
                         <minimum>100</minimum>
                         <maximum>100000</maximum>
-                        <step>10</step>
+                        <step>100</step>
                     </constraints>
                     <control type="slider" format="integer">
                         <popup>false</popup>
