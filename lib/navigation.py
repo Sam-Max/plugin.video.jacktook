@@ -527,6 +527,7 @@ def search_direct(params):
 
 def search(params):
     from lib.search import run_search_entry
+
     run_search_entry(params)
 
 
@@ -592,6 +593,14 @@ def cloud(params):
             torrent_li,
             isFolder=True,
         )
+
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("list_webdav"),
+        build_list_item("Webdav", "download.png"),
+        isFolder=True,
+    )
+
     end_of_directory()
 
 

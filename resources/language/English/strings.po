@@ -1809,3 +1809,51 @@ msgstr ""
 msgctxt "#90123"
 msgid "Stremio Timeout"
 msgstr ""
+
+msgctxt "#90124"
+msgid "Webdav Client Configuration"
+msgstr ""
+
+msgctxt "#90126"
+msgid "Host"
+msgstr ""
+
+msgctxt "#90127"
+msgid "Username"
+msgstr ""
+
+msgctxt "#90128"
+msgid "Password"
+msgstr ""
+
+msgctxt "#90129"
+msgid "Test Connection"
+msgstr ""
+
+msgctxt "#90131"
+msgid "Webdav"
+msgstr ""
+
+msgctxt "#90132"
+msgid "Remote Path"
+msgstr ""
+
+msgctxt "#90133"
+msgid "The hostname or IP address of your WebDAV server (e.g., http://mywebdav.com or https://192.168.1.100)."
+msgstr ""
+
+msgctxt "#90134"
+msgid "The username required for authenticating with your WebDAV server"
+msgstr ""
+
+msgctxt "#90135"
+msgid "The password for the specified username to authenticate with your WebDAV server"
+msgstr ""
+
+msgctxt "#90136"
+msgid "The base path or directory on the WebDAV server where your media files are located (e.g., /movies)."
+msgstr ""
+
+msgctxt "#90137"
+msgid "Click to verify if the WebDAV client can successfully connect to the configured server using the provided credentials."
+msgstr ""

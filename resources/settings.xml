@@ -540,7 +540,6 @@
             </group>
         </category>
         <category id="debrid" label="30150">
-            
             <group id="real_debrid" label="30152">
                 <setting id="real_debrid_enabled" type="boolean" label="30734" help="30837">
                     <default>false</default>
@@ -768,6 +767,48 @@
                 <setting id="show_uncached" type="boolean" label="30791" help="30803">
                     <default>true</default>
                     <control type="toggle" />
+                </setting>
+            </group>
+        </category>
+        <category id="webdav" label="90131">
+            <group id="webdav_provider" label="90124">
+                <setting id="webdav_hostname" type="string" label="90126" help="90133">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                 <setting id="webdav_username" type="string" label="90127" help="90134">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="webdav_password" type="string" label="90128" help="90135">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="webdav_port" type="string" label="90118" help="">
+                    <default>8080</default>
+                    <control type="edit" format="string"/>
+                </setting>
+                <setting id="webdav_remote_path" type="string" label="90132" help="90136">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="webdav_provider_test" type="action" label="90129" help="90137">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=webdav_provider_test)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
                 </setting>
             </group>
         </category>

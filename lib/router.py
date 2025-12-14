@@ -14,6 +14,12 @@ from lib.clients.mdblist.mdblist import (
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.clients.tmdb.tmdb import TmdbClient, TmdbCollections
 from lib.clients.trakt.trakt import TraktClient
+from lib.clients.webdav.client import (
+    display_text_webdav,
+    list_webdav,
+    show_picture_webdav,
+    webdav_provider_test,
+)
 from lib.downloader import (
     handle_cancel_download,
     handle_delete_file,
@@ -211,6 +217,10 @@ def addon_router():
         "stremio_login": stremio_login,
         "stremio_logout": stremio_logout,
         "stremio_update": stremio_update,
+        "list_webdav": list_webdav,
+        "webdav_provider_test": webdav_provider_test,
+        "display_text_webdav": display_text_webdav,
+        "show_picture_webdav": show_picture_webdav,
         "show_changelog": show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
         "delete_last_title_entry": delete_last_title_entry,

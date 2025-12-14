@@ -1793,3 +1793,51 @@ msgstr "Descargar subtitulos de manera automática"
 msgctxt "#90123"
 msgid "Stremio Timeout"
 msgstr "Tiempo de espera para Stremio"
+
+msgctxt "#90124"
+msgid "Webdav Client Configuration"
+msgstr "Configuración del Cliente Webdav"
+
+msgctxt "#90126"
+msgid "Host"
+msgstr "Servidor"
+
+msgctxt "#90127"
+msgid "Username"
+msgstr "Usuario"
+
+msgctxt "#90128"
+msgid "Password"
+msgstr "Contraseña"
+
+msgctxt "#90129"
+msgid "Test Connection"
+msgstr "Probar Conexión"
+
+msgctxt "#90131"
+msgid "Webdav"
+msgstr "Webdav"
+
+msgctxt "#90132"
+msgid "Remote Path"
+msgstr "Ruta Remota"
+
+msgctxt "#90133"
+msgid "The hostname or IP address of your WebDAV server (e.g., http://mywebdav.com or https://192.168.1.100)."
+msgstr "El nombre de host o la dirección IP de tu servidor WebDAV (por ejemplo, http://mywebdav.com o https://192.168.1.100)."
+
+msgctxt "#90134"
+msgid "The username required for authenticating with your WebDAV server"
+msgstr "El nombre de usuario requerido para autenticarse con tu servidor WebDAV."
+
+msgctxt "#90135"
+msgid "The password for the specified username to authenticate with your WebDAV server"
+msgstr "La contraseña del nombre de usuario especificado para autenticarse con tu servidor WebDAV."
+
+msgctxt "#90136"
+msgid "The base path or directory on the WebDAV server where your media files are located (e.g., /movies)."
+msgstr "La ruta o directorio base en el servidor WebDAV donde se encuentran tus archivos multimedia (por ejemplo, /movies)."
+
+msgctxt "#90137"
+msgid "Click to verify if the WebDAV client can successfully connect to the configured server using the provided credentials."
+msgstr "Haz clic para verificar si el cliente WebDAV puede conectarse correctamente al servidor configurado usando las credenciales proporcionadas."
