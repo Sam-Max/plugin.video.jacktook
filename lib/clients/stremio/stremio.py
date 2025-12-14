@@ -108,7 +108,9 @@ class StremioAddonClient(BaseClient):
             )
             if res.status_code != 200:
                 return []
-            return self.parse_response(res)
+            response = self.parse_response(res)
+            kodilog(f"Stremio addon {self.addon.manifest.name} returned {len(response)} results")
+            return response
         except Exception as e:
             self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
             return []

@@ -996,7 +996,10 @@ def pre_process(
     builder.filter_by_quality()
     if get_setting("filter_size_enabled"):
         builder.filter_by_size()
-    return builder.get_results()
+
+    results = builder.get_results()
+    kodilog(f"Pre-processed results count: {len(results)}")
+    return results
 
 
 def post_process(results: List[TorrentStream], season: int = 0) -> List[TorrentStream]:

@@ -32,7 +32,7 @@ from lib.utils.general.utils import (
 from lib.domain.torrent import TorrentStream
 
 from xbmcgui import Dialog
-
+from xbmc import LOGDEBUG
 
 def check_debrid_cached(
     query: Optional[str],
@@ -209,6 +209,7 @@ def extract_info_hash(res: TorrentStream) -> Optional[str]:
 
 
 def get_magnet_from_uri(uri):
+    kodilog(f"get_magnet_from_uri: Checking URI: {uri}", level=LOGDEBUG)
     magnet = ""
     info_hash = ""
 
@@ -216,19 +217,23 @@ def get_magnet_from_uri(uri):
         return magnet, info_hash
 
     try:
-        res = requests.head(
+        res = requests.get(
             uri, allow_redirects=False, timeout=10, headers=USER_AGENT_HEADER
         )
-        if res.status_code == 200:
-            if res.is_redirect or res.is_permanent_redirect:
-                uri = res.headers.get("Location")
-                if uri and uri.startswith("magnet:"):
-                    magnet = uri
-                    info_hash = get_info_hash_from_magnet(uri).lower()
-            elif res.headers.get("Content-Type") == "application/octet-stream":
-                magnet = extract_magnet_from_url(uri)
-                if magnet:
-                    info_hash = get_info_hash_from_magnet(magnet).lower()
+        kodilog(f"get_magnet_from_uri: GET request status code: {res.status_code}")
+        if res.status_code in (301, 302, 303, 307, 308):
+            location = res.headers.get("Location")
+            if location and location.startswith("magnet:"):
+                magnet = location
+                info_hash = get_info_hash_from_magnet(magnet).lower()
+                return magnet, info_hash
+        elif (
+            res.status_code == 200
+            and res.headers.get("Content-Type") == "application/octet-stream"
+        ):
+            magnet = extract_magnet_from_url(uri)
+            if magnet:
+                info_hash = get_info_hash_from_magnet(magnet).lower()
         else:
             kodilog(f"get_magnet_from_uri: HEAD request did not return 200")
     except Exception:

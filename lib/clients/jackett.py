@@ -168,6 +168,7 @@ class Jackett(BaseClient):
                 results: List[TorrentStream] = []
                 for item in items if isinstance(items, list) else [items]:
                     self.extract_result(results, item)
+                kodilog(f"Parsed {len(results)} results from Jackett")
                 return results
         except Exception as e:
             self.handle_exception(f"Error parsing Jackett response: {str(e)}")

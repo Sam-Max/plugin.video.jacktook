@@ -150,19 +150,18 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             url = guid
         elif url.endswith(".torrent"):
             pass
-        # Try to extract magnet from guid if it's a details page
-        elif guid.startswith("http"):
-            magnet_candidate, _ = get_magnet_from_uri(guid)
-            if magnet_candidate:
-                magnet = magnet_candidate
 
-        # Try to extract magnet from url if it's a details page
-        if not magnet and url.startswith("http"):
+        # Try to extract magnet from url 
+        if url.startswith("http"):
             magnet_candidate, _ = get_magnet_from_uri(url)
             if magnet_candidate:
                 magnet = magnet_candidate
-            else:
-                url = ""
+                
+        # Try to extract magnet from guid if it's a details page
+        elif not magnet and guid.startswith("http"):
+            magnet_candidate, _ = get_magnet_from_uri(guid)
+            if magnet_candidate:
+                magnet = magnet_candidate
 
         # --- Fallback: magnet from url ---
         if not magnet and url.startswith("magnet:?"):

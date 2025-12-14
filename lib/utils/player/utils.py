@@ -1,4 +1,5 @@
 from urllib.parse import quote
+from lib.jacktook.utils import kodilog
 from lib.utils.debrid.debrid_utils import (
     get_debrid_direct_url,
     get_debrid_pack_direct_url,
@@ -19,6 +20,7 @@ from lib.utils.general.utils import (
     torrent_clients,
 )
 from xbmcgui import Dialog
+from xbmc import LOGDEBUG
 from typing import Any, Dict, Optional
 
 
@@ -120,6 +122,7 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
 
 def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
+    kodilog(f"Preparing Jacktorr URL with magnet: {magnet} and url: {url}", level=LOGDEBUG)
     if not is_jacktorr_addon():
         if Dialog().yesno(
             translation(30253),
