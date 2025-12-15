@@ -1,3 +1,13 @@
+## 0.19.0 
+- Added WebDAV client integration with browsing and playback support.
+- Improved magnet extraction and fixed URLs not being passed correctly to torrent clients.
+- Increased the default maximum size and adjusted the slider step for better control.
+- Added configurable timeout setting for Stremio requests.
+- Removed debrid cached search logic to avoid inconsistencies.
+- Fixed correct values display for addons like UsenetStreamer. 
+- Fixed correct rendering of addons names on source selection when using AIOStreams addon.
+- Other minor fixes and improvements.
+
 ## 0.18.0 
 - Rewrite TMDB directory handling to include full metadata only when needed and simplify search result rendering.
 - Add automatic subtitle download and improved storage/retrieval for individual episodes.
