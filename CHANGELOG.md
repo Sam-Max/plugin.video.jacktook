@@ -1,3 +1,7 @@
+## 0.20.0 
+- Added functionality to remove custom addons from settings.
+- Fixed subtitle translation not working.
+
 ## 0.19.0 
 - Added WebDAV client integration with browsing and playback support.
 - Improved magnet extraction and fixed URLs not being passed correctly to torrent clients.
