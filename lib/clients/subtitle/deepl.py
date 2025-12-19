@@ -1,6 +1,6 @@
 import traceback
 import requests
-from lib.clients.subtitle.utils import slugify
+from lib.clients.subtitle.utils import get_deepl_language_code, slugify
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
@@ -67,16 +67,16 @@ class DeepLTranslator:
         """
         if season and episode:
             new_subtitle_file_path = (
-                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/{episode}/"
                 f"Translated_Subtitle No.{idx}.S{season}E{episode}.{lang_name}.srt"
             )
         elif season:
             new_subtitle_file_path = (
-                f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/{season}/"
+                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/"
                 f"Translated_Subtitle No.{idx}.S{season}.{lang_name}.srt"
             )
         else:
-            new_subtitle_file_path = f"{ADDON_PROFILE_PATH}subtitles/{imdb_id}/Translated_Subtitle No.{idx}.{lang_name}.srt"
+            new_subtitle_file_path = f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/Translated_Subtitle No.{idx}.{lang_name}.srt"
 
         # Ensure the file path is safe
         new_subtitle_file_path = slugify(new_subtitle_file_path)
@@ -313,21 +313,17 @@ class DeepLTranslator:
                         "application/octet-stream",
                     )
                 }
-
-                kodilog(f"Target language: {get_deepl_language_code(self.target_lang)}")
                 data = {"target_lang": get_deepl_language_code(self.target_lang)}
 
                 headers = {"Authorization": f"DeepL-Auth-Key {self.api_key}"}
 
                 response = requests.post(url, files=files, data=data, headers=headers)
-
-            kodilog("Raw response content: " + response.text)
+                kodilog("Raw response content: " + response.text)
 
             if not self._handle_deepl_response(response, "document upload"):
                 return None
 
             upload_data = response.json()
-
             if "document_id" not in upload_data or "document_key" not in upload_data:
                 raise Exception(f"Invalid response from document upload: {upload_data}")
 
