@@ -579,16 +579,13 @@ def cloud(params):
     activated_debrids = [
         debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)
     ]
-    if not activated_debrids:
-        return notification("No debrid services activated")
-
-    for debrid_name in activated_debrids:
-        torrent_li = build_list_item(debrid_name, "download.png")
+    for d in activated_debrids:
+        torrent_li = build_list_item(d, "download.png")
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "cloud_details",
-                debrid_name=debrid_name,
+                debrid_name=d,
             ),
             torrent_li,
             isFolder=True,
