@@ -151,8 +151,7 @@ def stremio_login(params):
     dialog = xbmcgui.Dialog()
     dialog.ok(
         "Stremio Add-ons Import",
-        "To import your add-ons, please log in with your Stremio email and password.\n\n"
-        + "Your login details will not be saved and are only used once for this process.",
+        "To import your add-ons, please log in with your Stremio email and password."
     )
 
     email = dialog.input(heading="Enter your Email", type=xbmcgui.INPUT_ALPHANUM)

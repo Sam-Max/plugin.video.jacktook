@@ -34,6 +34,7 @@ from lib.domain.torrent import TorrentStream
 from xbmcgui import Dialog
 from xbmc import LOGDEBUG
 
+
 def check_debrid_cached(
     query: Optional[str],
     results: List[TorrentStream],
@@ -43,9 +44,8 @@ def check_debrid_cached(
     rescrape: bool,
     episode: int = 1,
 ) -> List[TorrentStream]:
-
     kodilog("Checking debrid cached results...")
-
+    
     if not rescrape:
         cached_results = get_cached_results(query, mode, media_type, episode)
         if cached_results:
@@ -57,7 +57,15 @@ def check_debrid_cached(
     dialog.create("")
     filter_results(results, direct_results)
 
+    if direct_results and not results:
+        kodilog("Only direct results found, returning them.")
+        return direct_results
+
     check_functions = get_debrid_check_functions()
+    if not check_functions:
+        kodilog("No debrid services enabled for caching check.")
+        return direct_results
+    
     execute_debrid_checks(
         check_functions, results, cached_results, uncached_results, dialog, lock
     )
@@ -273,6 +281,17 @@ def get_debrid_pack_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:
         return None
 
     return helper_cls().get_pack_link(data)
+
+
+def is_supported_debrid_type(debrid_type: str) -> bool:
+    return debrid_type in [
+        DebridType.RD,
+        DebridType.AD,
+        DebridType.TB,
+        DebridType.ED,
+        DebridType.PM,
+        DebridType.DB,
+    ]
 
 
 def process_external_cache(data: dict, debrid: str, token: str, url: str):

@@ -96,12 +96,12 @@ msgid "TMDB"
 msgstr "TMDB"
 
 msgctxt "#30102"
-msgid "TMDB Configuracion:"
+msgid "TMDB Configuration"
 msgstr "Configuracion de TMDB"
 
 msgctxt "#30103"
-msgid "TMDB Api Key"
-msgstr "TMDB Api Key"
+msgid "API Key"
+msgstr "API Key"
 
 msgctxt "#30104"
 msgid "Clear tmdb cache"
@@ -134,6 +134,18 @@ msgstr "Client ID"
 msgctxt "#30144"
 msgid "Client Secret"
 msgstr "Client Secret"
+
+msgctxt "#30150"
+msgid "Services"
+msgstr "Servicios"
+
+msgctxt "#30152"
+msgid "Real Debrid Configuration"
+msgstr "Configuracion de Real Debrid"
+
+msgctxt "#30154"
+msgid "Token:"
+msgstr "Token:"
 
 msgctxt "#30200"
 msgid "Fanart.TV"
@@ -348,8 +360,8 @@ msgid "General"
 msgstr "General"
 
 msgctxt "#30713"
-msgid "Use Torrent"
-msgstr "Usar Torrent"
+msgid "Enable"
+msgstr "Habilitar"
 
 msgctxt "#30714"
 msgid "Jacktorr"
@@ -364,8 +376,8 @@ msgid "Elementum"
 msgstr "Elementum"
 
 msgctxt "#30717"
-msgid "Playback"
-msgstr "Reproducción"
+msgid "General"
+msgstr "General"
 
 msgctxt "#30718"
 msgid "Auto-Play"
@@ -1116,8 +1128,8 @@ msgid "Authorize add-on to access Real-Debrid account."
 msgstr "Autorizar el complemento para acceder a la cuenta Real-Debrid."
 
 msgctxt "#30836"
-msgid "Enable torrent-based media content. Disabling this restricts the addon to cached debrid content only."
-msgstr "Habilita descargas de contenido multimedia mediante torrents. Si se desactiva, el addon solo funcionará con contenido en caché de servicios debrid."
+msgid "Enable torrent-based media content"
+msgstr "Habilita descargas de contenido multimedia mediante torrents."
 
 msgctxt "#30837"
 msgid "Indicates if Real-Debrid account is linked."
@@ -1204,7 +1216,7 @@ msgid "Enable Zilean integration for metadata fetching."
 msgstr "Habilitar la integración de Zilean para obtener metadatos."
 
 msgctxt "#30858"
-msgid "Your TMDB API key (required for metadata)"
+msgid "Your API Key (required for metadata)"
 msgstr "Tu clave API de TMDB (necesaria para metadatos)."
 
 msgctxt "#30859"
@@ -1216,12 +1228,12 @@ msgid "Others"
 msgstr "Otros"
 
 msgctxt "#30861"
-msgid "Results"
-msgstr "Resultados"
+msgid "Filters"
+msgstr "Filtros"
 
 msgctxt "#30862"
-msgid "Torrent"
-msgstr "Torrent"
+msgid "Torrent (P2P) Configuration"
+msgstr "Configuracion de Torrents (P2P)"
 
 msgctxt "#30863"
 msgid "Specify the torrent client"
@@ -1520,15 +1532,15 @@ msgid "Most Watched"
 msgstr "Más Visto"
 
 msgctxt "#90044"
-msgid "Torrentio Settings"
+msgid "Torrentio Configuration"
 msgstr "Configuracion de Torrentio "
 
 msgctxt "#90045"
-msgid "Enable"
-msgstr "Habilitar"
+msgid "Enable Torrentio Settings"
+msgstr "Habiitar Configuracion de Torrentio"
 
 msgctxt "#90046"
-msgid "Enable or disable the Torrentio settings"
+msgid "Enable or disable the Torrentio Configuration"
 msgstr "Activa o desactiva la configuracion de Torrentio."
 
 msgctxt "#90047"
@@ -1638,8 +1650,8 @@ msgid "Trakt Lists"
 msgstr "Listas de Trakt"
 
 msgctxt "#90073"
-msgid "MDbList"
-msgstr "MDbList"
+msgid "Metadata"
+msgstr "Metadatos"
 
 msgctxt "#90074"
 msgid "Top Lists"
@@ -1845,3 +1857,7 @@ msgstr "Haz clic para verificar si el cliente WebDAV puede conectarse correctame
 msgctxt "#90138"
 msgid "Remove Custom Addon"
 msgstr "Eliminar Complemento Personalizado"
+
+msgctxt "#90139"
+msgid "Playback"
+msgstr "Reproduccion"

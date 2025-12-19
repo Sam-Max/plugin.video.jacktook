@@ -224,13 +224,14 @@ def process_results(
     rescrape: bool,
     episode: int,
 ) -> List[TorrentStream]:
+    torrent_results = []
     if get_setting("torrent_enable"):
-        return post_process(pre_results)
-    else:
-        with DialogListener() as listener:
-            return check_debrid_cached(
-                query, pre_results, mode, media_type, listener.dialog, rescrape, episode
-            )
+        torrent_results = post_process(pre_results)
+    with DialogListener() as listener:
+        debrid_results = check_debrid_cached(
+            query, pre_results, mode, media_type, listener.dialog, rescrape, episode
+        )
+    return debrid_results + torrent_results
 
 
 def show_source_select(

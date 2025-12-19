@@ -96,11 +96,11 @@ msgid "TMDB"
 msgstr ""
 
 msgctxt "#30102"
-msgid "TMDB Configuration:"
+msgid "TMDB Configuration"
 msgstr ""
 
 msgctxt "#30103"
-msgid "TMDB Api Key"
+msgid "API Key"
 msgstr ""
 
 msgctxt "#30104"
@@ -136,7 +136,7 @@ msgid "Client Secret"
 msgstr ""
 
 msgctxt "#30150"
-msgid "Debrid"
+msgid "Services"
 msgstr ""
 
 msgctxt "#30152"
@@ -364,7 +364,7 @@ msgid "General"
 msgstr ""
 
 msgctxt "#30713"
-msgid "Use Torrent"
+msgid "Enable"
 msgstr ""
 
 msgctxt "#30714"
@@ -380,7 +380,7 @@ msgid "Elementum"
 msgstr ""
 
 msgctxt "#30717"
-msgid "Playback"
+msgid "General"
 msgstr ""
 
 msgctxt "#30718"
@@ -1132,7 +1132,7 @@ msgid "Authorize add-on to access Real-Debrid account."
 msgstr ""
 
 msgctxt "#30836"
-msgid "Enable torrent-based media content. Disabling this restricts the addon to cached debrid content only."
+msgid "Enable torrent-based media content"
 msgstr ""
 
 msgctxt "#30837"
@@ -1220,7 +1220,7 @@ msgid "Enable Zilean integration for metadata fetching."
 msgstr ""
 
 msgctxt "#30858"
-msgid "Your TMDB API key (required for metadata)"
+msgid "Your API Key (required for metadata)"
 msgstr ""
 
 msgctxt "#30859"
@@ -1232,11 +1232,11 @@ msgid "Others"
 msgstr ""
 
 msgctxt "#30861"
-msgid "Results"
+msgid "Filters"
 msgstr ""
 
 msgctxt "#30862"
-msgid "Torrent"
+msgid "Torrent (P2P) Configuration"
 msgstr ""
 
 msgctxt "#30863"
@@ -1536,15 +1536,15 @@ msgid "Most Watched"
 msgstr ""
 
 msgctxt "#90044"
-msgid "Torrentio Settings"
+msgid "Torrentio Configuration"
 msgstr ""
 
 msgctxt "#90045"
-msgid "Enable"
+msgid "Enable Torrentio Settings"
 msgstr ""
 
 msgctxt "#90046"
-msgid "Enable or disable the Torrentio settings"
+msgid "Enable or disable the Torrentio Configuration"
 msgstr ""
 
 msgctxt "#90047"
@@ -1654,7 +1654,7 @@ msgid "Trakt Lists"
 msgstr ""
 
 msgctxt "#90073"
-msgid "MDbList"
+msgid "Metadata"
 msgstr ""
 
 msgctxt "#90074"
@@ -1861,3 +1861,7 @@ msgstr ""
 msgctxt "#90138"
 msgid "Remove Custom Addon"
 msgstr "Remove Custom Addon"
+
+msgctxt "#90139"
+msgid "Playback"
+msgstr "Playback"

@@ -3,6 +3,7 @@ from lib.jacktook.utils import kodilog
 from lib.utils.debrid.debrid_utils import (
     get_debrid_direct_url,
     get_debrid_pack_direct_url,
+    is_supported_debrid_type,
 )
 from lib.utils.kodi.utils import (
     execute_builtin,
@@ -29,44 +30,55 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     debrid_type: str = data.get("debrid_type", "")
     is_pack: bool = data.get("is_pack", False)
 
-    torrent_enable = bool(get_setting("torrent_enable"))
-    torrent_client = str(get_setting("torrent_client"))
-
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
         return data
 
-    addon_url = get_torrent_url(data, torrent_enable, torrent_client)
+    if is_supported_debrid_type(debrid_type):
+        debrid_url = get_debrid_url(data, debrid_type, is_pack)
+        if debrid_url:
+            return data
+        return None
+
+    addon_url = get_torrent_url(data)
     if addon_url:
         data["url"] = addon_url
-        return data
-
-    debrid_url = get_debrid_url(data, debrid_type, is_pack)
-    if debrid_url:
         return data
 
     return None
 
 
-def get_torrent_url(
-    data: Dict[str, Any], torrent_enable: bool, torrent_client: str
-) -> Optional[str]:
+def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
     magnet: str = data.get("magnet", "")
     url: str = data.get("url", "")
     mode: str = data.get("mode", "")
     ids: Any = data.get("ids", "")
 
-    if torrent_enable:
-        return get_torrent_url_for_client(torrent_client, magnet, url, mode, ids)
+    if get_setting("torrent_enable"):
+        return get_torrent_url_for_client(magnet, url, mode, ids)
     else:
         if data.get("is_torrent"):
             selected_client = get_torrent_client_selection(magnet, url, mode, ids)
             if selected_client:
                 return get_torrent_url_for_client(
-                    selected_client, magnet, url, mode, ids
+                    magnet, url, mode, ids, selected_client
                 )
             else:
                 raise TorrentException("No torrent client selected")
     return None
+
+
+def get_torrent_url_for_client(
+    magnet: str, url: str, mode: str, ids: Any, client: str = ""
+) -> Optional[str]:
+    torrent_client = client or str(get_setting("torrent_client"))
+    if torrent_client in [Players.TORREST]:
+        return get_torrest_url(magnet, url)
+    elif torrent_client in [Players.ELEMENTUM]:
+        return get_elementum_url(magnet, url, mode, ids)
+    elif torrent_client in [Players.JACKTORR]:
+        return get_jacktorr_url(magnet, url)
+    else:
+        raise TorrentException(f"Unknown torrent client selected: {torrent_client}")
 
 
 def get_torrent_client_selection(
@@ -76,19 +88,6 @@ def get_torrent_client_selection(
     if chosen_client < 0:
         return None
     return torrent_clients[chosen_client]
-
-
-def get_torrent_url_for_client(
-    client: str, magnet: str, url: str, mode: str, ids: Any
-) -> Optional[str]:
-    if client in [Players.TORREST]:
-        return get_torrest_url(magnet, url)
-    elif client in [Players.ELEMENTUM]:
-        return get_elementum_url(magnet, url, mode, ids)
-    elif client in [Players.JACKTORR]:
-        return get_jacktorr_url(magnet, url)
-    else:
-        raise TorrentException(f"Unknown torrent client selected: {client}")
 
 
 def get_debrid_url(
@@ -122,7 +121,9 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
 
 def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
-    kodilog(f"Preparing Jacktorr URL with magnet: {magnet} and url: {url}", level=LOGDEBUG)
+    kodilog(
+        f"Preparing Jacktorr URL with magnet: {magnet} and url: {url}", level=LOGDEBUG
+    )
     if not is_jacktorr_addon():
         if Dialog().yesno(
             translation(30253),
