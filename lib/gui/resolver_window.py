@@ -8,8 +8,6 @@ from lib.utils.debrid.debrid_utils import get_pack_info
 from lib.utils.kodi.utils import ADDON_PATH, notification, set_property
 from lib.domain.torrent import TorrentStream
 
-import xbmcgui
-
 
 class ResolverWindow(BaseWindow):
     def __init__(
@@ -109,15 +107,16 @@ class ResolverWindow(BaseWindow):
         del self.window
 
     def _download_subtitle(self):
-        notification = xbmcgui.Dialog()
         subtitle_manager = SubtitleManager(self.playback_info, notification)
         subtitles_path = subtitle_manager.fetch_subtitles()
-        if subtitles_path:
-            set_property("search_subtitles", "true")
-            if self.playback_info:
-                self.playback_info.update({"subtitles_path": subtitles_path})
-        else:
-            raise SourceException("No subtitles found for the current source")
+        if not subtitles_path:
+            from lib.gui.resolver_window import SourceException
+
+            raise SourceException("Failed to download subtitles for the current source")
+
+        set_property("search_subtitles", "true")
+        if self.playback_info:
+            self.playback_info.update({"subtitles_path": subtitles_path})
 
     def _update_window_properties(self, source: TorrentStream) -> None:
         self.setProperty("enable_busy_spinner", "true")
