@@ -157,6 +157,17 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_remove_custom_addon" type="action" label="90138" help="">
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=remove_custom_stremio_addon)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="stremio_login" type="action" label="30871" help="30866">
                     <dependencies>
                         <dependency type="visible">

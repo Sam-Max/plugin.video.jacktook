@@ -2,7 +2,6 @@ import os
 import requests
 from typing import List
 from datetime import timedelta
-
 from lib.clients.stremio.addons_manager import Addon, AddonManager
 from lib.clients.stremio.client import Stremio
 from lib.db.cached import cache
@@ -344,9 +343,9 @@ def add_custom_stremio_addon(params):
     if not url:
         dialog.ok("Custom Addon", "No URL provided.")
         return
-    
+
     if url.startswith("stremio://"):
-        url = url.replace("stremio://", "https://") 
+        url = url.replace("stremio://", "https://")
 
     # Try to fetch the manifest from the URL
     try:
@@ -441,6 +440,62 @@ def add_custom_stremio_addon(params):
             dialog.ok("Custom Addon", "This addon is already added to your list.")
     except Exception as e:
         dialog.ok("Custom Addon", f"Failed to add custom addon: {e}")
+
+
+def remove_custom_stremio_addon(params=None):
+    user_addons = cache.get(STREMIO_USER_ADDONS) or []
+    removable_addons = [a for a in user_addons if a.get("transportName") == "custom"]
+    if not removable_addons:
+        xbmcgui.Dialog().ok("Remove Addon", "No custom Stremio addons to remove.")
+        return
+
+    options = []
+    for addon in removable_addons:
+        manifest = addon.get("manifest", {})
+        name = (
+            manifest.get("name")
+            or manifest.get("id")
+            or addon.get("transportUrl", "Unknown")
+        )
+        desc = manifest.get("description", "")
+        item = xbmcgui.ListItem(label=name, label2=desc)
+        logo = manifest.get("logo")
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+        item.setArt({"icon": logo})
+        options.append(item)
+
+    dialog = xbmcgui.Dialog()
+    selected = dialog.multiselect("Remove Stremio Addons", options, useDetails=True)
+    if not selected:
+        return
+
+    # Remove selected addons
+    to_remove_keys = set()
+    for idx in selected:
+        manifest = removable_addons[idx].get("manifest", {})
+        key = manifest.get("id") or manifest.get("name")
+        if key:
+            to_remove_keys.add(key)
+
+    # Remove from user_addons
+    new_user_addons = [
+        a
+        for a in user_addons
+        if (a.get("manifest", {}).get("id") or a.get("manifest", {}).get("name"))
+        not in to_remove_keys
+    ]
+    cache.set(STREMIO_USER_ADDONS, new_user_addons, timedelta(days=365 * 20))
+
+    # Remove from selected stream/catalogs if present
+    for cache_key in [STREMIO_ADDONS_KEY, STREMIO_ADDONS_CATALOGS_KEY]:
+        selected = cache.get(cache_key)
+        if selected:
+            selected_keys = selected.split(",")
+            selected_keys = [k for k in selected_keys if k not in to_remove_keys]
+            cache.set(cache_key, ",".join(selected_keys), timedelta(days=365 * 20))
+
+    xbmcgui.Dialog().ok("Remove Addon", "Selected addon(s) removed.")
 
 
 def torrentio_toggle_providers(params):

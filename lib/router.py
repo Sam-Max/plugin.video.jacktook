@@ -101,6 +101,7 @@ from lib.utils.torrent.torrserver_utils import (
 )
 from lib.clients.stremio.ui import (
     add_custom_stremio_addon,
+    remove_custom_stremio_addon,
     stremio_login,
     stremio_toggle_addons,
     stremio_logout,
@@ -223,6 +224,7 @@ def addon_router():
         "show_picture_webdav": show_picture_webdav,
         "show_changelog": show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
+        "remove_custom_stremio_addon": remove_custom_stremio_addon,
         "delete_last_title_entry": delete_last_title_entry,
         "kodi_logs": kodi_logs,
     }

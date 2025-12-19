@@ -1841,3 +1841,7 @@ msgstr "La ruta o directorio base en el servidor WebDAV donde se encuentran tus 
 msgctxt "#90137"
 msgid "Click to verify if the WebDAV client can successfully connect to the configured server using the provided credentials."
 msgstr "Haz clic para verificar si el cliente WebDAV puede conectarse correctamente al servidor configurado usando las credenciales proporcionadas."
+
+msgctxt "#90138"
+msgid "Remove Custom Addon"
+msgstr "Eliminar Complemento Personalizado"
