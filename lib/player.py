@@ -170,7 +170,7 @@ class JacktookPLayer(xbmc.Player):
                 set_property("search_subtitles", "false")
                 return
 
-        if auto_select_enabled :
+        if auto_select_enabled:
             _, _, subtitles = self.get_player_streams()
             kodilog(f"Available subtitles: {subtitles}", level=xbmc.LOGDEBUG)
             for sub in subtitles:
@@ -236,6 +236,11 @@ class JacktookPLayer(xbmc.Player):
 
     def check_next_dialog(self):
         try:
+            if not self.total_time or self.total_time < 60:
+                return
+            if not self.current_time or self.current_time < (self.total_time * 0.1):
+                # Don't trigger in the first 10% of playback
+                return
             time_left = int(self.total_time) - int(self.current_time)
             if self.next_dialog and time_left <= self.playing_next_time:
                 kodilog("Triggering next dialog...")
