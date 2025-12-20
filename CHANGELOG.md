@@ -1,3 +1,10 @@
+## 0.21.0 
+- Implemented parallel Debrid/P2P resolution.
+- Redesigned settings for more intuitive setup.
+- Fixed next dialog triggering at wrong time in player.
+- Enhanced update notifications for better user feedback.
+- Other minor fixes and improvements.
+
 ## 0.20.0 
 - Added functionality to remove custom addons from settings.
 - Fixed subtitle translation not working.
