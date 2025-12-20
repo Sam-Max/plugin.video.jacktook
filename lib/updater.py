@@ -106,6 +106,8 @@ def update_addon(new_version):
     if cache_clear_update():
         clear_cache_on_update()
 
+    notification(heading=HEADING, message="[B]Downloading and installing update...[/B]")
+
     close_all_dialog()
     execute_builtin("ActivateWindow(Home)", True)
 
@@ -119,19 +121,26 @@ def update_addon(new_version):
         dialog_ok(heading=HEADING, line1="Error: Unable to download update.")
         return
 
-    with open(zip_path, "wb") as f:
-        shutil.copyfileobj(raw_data, f)
+    try:
+        with open(zip_path, "wb") as f:
+            shutil.copyfileobj(raw_data, f)
+    except Exception as e:
+        dialog_ok(heading=HEADING, line1=f"Error saving update file: {e}")
+        return
 
     # Remove old addon
     if ospath.exists(DESTINATION_DIR):
-        shutil.rmtree(DESTINATION_DIR)
+        try:
+            shutil.rmtree(DESTINATION_DIR)
+        except Exception as e:
+            delete_file(zip_path)
+            dialog_ok(heading=HEADING, line1=f"Error removing old version: {e}")
+            return
 
     # Extract
     if not unzip(zip_path, HOME_ADDONS_DIR, DESTINATION_DIR):
         delete_file(zip_path)
-        dialog_ok(
-            heading=HEADING, line1="Error updating. Please install manually."
-        )
+        dialog_ok(heading=HEADING, line1="Error extracting update. Please install manually.")
         return
 
     delete_file(zip_path)
@@ -142,9 +151,9 @@ def update_addon(new_version):
     ):
         get_changes()
 
-    notification("Updating...")
-
     # Refresh Kodi addon system
     update_local_addons()
     disable_enable_addon()
     update_kodi_addons_db()
+
+    notification(heading=HEADING, message="[B]Update complete.[/B]")
