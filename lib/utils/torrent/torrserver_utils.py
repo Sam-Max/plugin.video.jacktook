@@ -155,6 +155,7 @@ def extract_magnet_from_url(url: str):
 
 
 def extract_torrent_metadata(content: bytes):
+    kodilog("Extracting torrent metadata...")
     try:
         torrent_data = bencodepy.decode(content)
         info = torrent_data[b"info"]

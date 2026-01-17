@@ -12,7 +12,7 @@ from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.utils.kodi.utils import get_setting, kodilog
-from lib.utils.torrent.torrserver_utils import extract_magnet_from_url
+from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
     DebridType,
@@ -226,26 +226,24 @@ def get_magnet_from_uri(uri):
 
     try:
         res = requests.get(
-            uri, allow_redirects=False, timeout=10, headers=USER_AGENT_HEADER
+            uri, allow_redirects=True, timeout=10, headers=USER_AGENT_HEADER
         )
-        kodilog(f"get_magnet_from_uri: GET request status code: {res.status_code}")
-        if res.status_code in (301, 302, 303, 307, 308):
-            location = res.headers.get("Location")
-            if location and location.startswith("magnet:"):
-                magnet = location
+        kodilog(
+            f"get_magnet_from_uri: GET request to {uri} (final url: {res.url}) returned status code: {res.status_code}"
+        )
+        if res.status_code == 200:
+            kodilog(f"get_magnet_from_uri: Processing content from {uri}")
+            if res.url.startswith("magnet:"):
+                magnet = res.url
                 info_hash = get_info_hash_from_magnet(magnet).lower()
                 return magnet, info_hash
-        elif (
-            res.status_code == 200
-            and res.headers.get("Content-Type") == "application/octet-stream"
-        ):
-            magnet = extract_magnet_from_url(uri)
+            
+            magnet = extract_torrent_metadata(res.content)
+            kodilog(f"get_magnet_from_uri: Extracted magnet: {magnet}")
             if magnet:
                 info_hash = get_info_hash_from_magnet(magnet).lower()
-        else:
-            kodilog(f"get_magnet_from_uri: HEAD request did not return 200")
-    except Exception:
-        kodilog(f"get_magnet_from_uri: Exception occurred for uri: {uri}")
+    except Exception as e:
+        kodilog(f"get_magnet_from_uri: Exception occurred for uri: {uri}: {e}")
     return magnet, info_hash
 
 
