@@ -52,6 +52,15 @@ def handle_download_file(params):
     downloader.run()
 
 
+def download_video(params):
+    data = json.loads(params["data"])
+    download_dir = get_setting("download_dir")
+    destination = translatePath(download_dir)
+    handle_download_file(
+        {"destination": destination, "file_name": data["title"], "url": data["url"]}
+    )
+
+
 class ProgressHandler:
     def update(self, percent: int, message: str):
         pass
@@ -246,7 +255,10 @@ def downloads_viewer(params):
                     context_menu.append(
                         (
                             "Cancel Download",
-                            action_url_run("handle_cancel_download", file_path=json.dumps(item_path)),
+                            action_url_run(
+                                "handle_cancel_download",
+                                file_path=json.dumps(item_path),
+                            ),
                         )
                     )
 

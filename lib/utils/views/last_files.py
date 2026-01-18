@@ -2,6 +2,7 @@ import json
 import os
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import parse_time, set_pluging_category
+from lib.utils.kodi.last_files_actions import add_last_files_context_menu
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
 
 from xbmcgui import ListItem
@@ -44,7 +45,7 @@ def show_last_files():
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
         )
         list_item.setProperty("IsPlayable", "true")
-
+        list_item.addContextMenuItems(add_last_files_context_menu(data))
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(

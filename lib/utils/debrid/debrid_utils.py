@@ -11,7 +11,7 @@ from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
-from lib.utils.kodi.utils import get_setting, kodilog
+from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
@@ -175,7 +175,8 @@ def get_pack_info(debrid_type, info_hash):
     elif debrid_type == DebridType.AD:
         info = AllDebridHelper().get_pack_info(info_hash)
     else:
-        raise ValueError(f"Unknown debrid type for pack info: {debrid_type}")
+        notification(f"Unknown debrid type for pack info: {debrid_type}")
+        raise ValueError(f"Unknown debrid type: {debrid_type}")
     return info
 
 

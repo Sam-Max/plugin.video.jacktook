@@ -74,11 +74,14 @@ class SubtitleManager(KodiJsonRpcClient):
         season = tv_data.get("season")
 
         if not imdb_id:
-            kodilog("No IMDb ID found for the current video")
-            return 
-        
+            from lib.gui.resolver_window import SourceException
+
+            raise SourceException("No IMDb ID found for the current video")
+
         folder_path = (
-            os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode))
+            os.path.join(
+                ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode)
+            )
             if mode == "tv"
             else os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
         )
@@ -102,7 +105,7 @@ class SubtitleManager(KodiJsonRpcClient):
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
         if not subtitles:
             from lib.gui.resolver_window import SourceException
-            
+
             raise SourceException("No subtitles found for the current source")
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(
@@ -124,5 +127,3 @@ class SubtitleManager(KodiJsonRpcClient):
                 return translated_subtitles_paths
 
         return subtitle_paths
-
-

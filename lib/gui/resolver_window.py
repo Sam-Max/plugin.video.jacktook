@@ -5,6 +5,7 @@ from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.player import JacktookPLayer
 from lib.utils.debrid.debrid_utils import get_pack_info
+from lib.utils.kodi.utils import kodilog
 from lib.utils.kodi.utils import ADDON_PATH, notification, set_property
 from lib.domain.torrent import TorrentStream
 
@@ -53,8 +54,9 @@ class ResolverWindow(BaseWindow):
         self.resolve_source()
 
     def close_windows(self):
-        self.previous_window.setProperty("instant_close", "true")
-        self.previous_window.close()
+        if self.previous_window:
+            self.previous_window.setProperty("instant_close", "true")
+            self.previous_window.close()
         self.close()
 
     def handle_playback_started(self):
@@ -75,7 +77,10 @@ class ResolverWindow(BaseWindow):
                 on_error=self.handle_playback_started,
             )
             player.run(data=self.playback_info)
-        except Exception:
+        except Exception as e:
+            import traceback
+            kodilog(f"Error in resolver window: {e}")
+            kodilog(traceback.format_exc())
             if self.previous_window:
                 self.previous_window.setProperty("instant_close", "true")
                 self.previous_window.close()

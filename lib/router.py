@@ -21,9 +21,13 @@ from lib.clients.webdav.client import (
     webdav_provider_test,
 )
 from lib.downloader import (
+    download_video,
     handle_cancel_download,
     handle_delete_file,
-    handle_download_file,
+)
+from lib.actions import (
+    resolve_for_pack_selection,
+    resolve_for_subtitles,
 )
 from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
 from lib.navigation import (
@@ -149,7 +153,9 @@ def addon_router():
         "handle_collection_query": TmdbClient.handle_collection_query,
         "handle_collection_details": TmdbCollections.add_collection_details,
         "handle_tmdb_person_details": PeopleClient.handle_tmdb_person_details,
-        "handle_download_file": handle_download_file,
+        "download_video": download_video,
+        "resolve_for_pack_selection": resolve_for_pack_selection,
+        "resolve_for_subtitles": resolve_for_subtitles,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
         "play_torrent": play_torrent,
@@ -240,3 +246,4 @@ def addon_router():
             return
 
     root_menu()
+
