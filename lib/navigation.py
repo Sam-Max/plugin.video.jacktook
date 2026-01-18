@@ -491,7 +491,7 @@ def search_direct(params):
                     play_media(
                         name="search",
                         mode=mode,
-                        query=quote(text),
+                        query=text,
                         rescrape=True,
                         direct=True,
                     ),
@@ -506,7 +506,7 @@ def search_direct(params):
         )
         addDirectoryItem(
             ADDON_HANDLE,
-            build_url("search", mode=mode, query=quote(text), direct=True),
+            build_url("search", mode=mode, query=text, direct=True),
             list_item,
             isFolder=False,
         )
