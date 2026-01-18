@@ -1861,3 +1861,23 @@ msgstr "Eliminar Complemento Personalizado"
 msgctxt "#90139"
 msgid "Playback"
 msgstr "Reproduccion"
+
+msgctxt "#90140"
+msgid "Super quick play"
+msgstr "Reproducción súper rápida"
+
+msgctxt "#90141"
+msgid "Re-ask to play last played torrent"
+msgstr "Volver a preguntar para reproducir el último torrent"
+
+msgctxt "#90142"
+msgid "Replay Dialog"
+msgstr "Diálogo de Repetición"
+
+msgctxt "#90143"
+msgid "Do you want to play last watched?"
+msgstr "¿Quieres reproducir la última visualización?"
+
+msgctxt "#90144"
+msgid "Could not resolve playback URL"
+msgstr "No se pudo resolver la URL de reproducción"

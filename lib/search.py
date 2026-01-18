@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from lib.clients.stremio import ui
 from lib.clients.stremio.stremio import StremioAddonClient
+from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_dialogs import source_select
 from lib.player import JacktookPLayer
@@ -23,12 +24,50 @@ from lib.utils.general.utils import (
 from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.kodi.settings import auto_play_enabled, get_setting
 from lib.utils.player.utils import resolve_playback_url
-from lib.utils.kodi.utils import notification, cancel_playback, kodilog
+from lib.utils.kodi.utils import (
+    notification,
+    cancel_playback,
+    kodilog,
+    translation,
+)
 
 import xbmc
+from xbmcgui import Dialog
 
 
 def run_search_entry(params: dict):
+    if get_setting("super_quick_play", False):
+        ids = json.loads(params.get("ids", "{}"))
+        key = ""
+        if "tmdb_id" in ids:
+            key = str(ids["tmdb_id"])
+            tv_data = json.loads(params.get("tv_data", "{}"))
+            if "season" in tv_data and "episode" in tv_data:
+                key += f'_{tv_data["season"]}_{tv_data["episode"]}'
+
+        if key:
+            cached_torrent = cache.get(key)
+            if cached_torrent:
+                kodilog(f"Found cached torrent: {cached_torrent['title']}")
+                dialog = Dialog()
+                if dialog.yesno(
+                    translation(90142),
+                    translation(90143),
+                ):
+                    playback_info = resolve_playback_url(cached_torrent)
+                    if not playback_info:
+                        notification(translation(90144))
+                        return
+
+                    player = JacktookPLayer()
+                    player.run(data=playback_info)
+                    del player
+                    return
+                else:
+                    kodilog("User chose not to play cached torrent")
+            else:
+                kodilog("No cached torrent found")
+
     query = params.get("query", "")
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
@@ -78,6 +117,7 @@ def search_client(
     episode: int,
 ) -> List[TorrentStream]:
     with DialogListener() as listener:
+
         def perform_search(indexer_key, dialog, *args, **kwargs):
             if indexer_key == Indexer.STREMIO:
                 stremio_addons = ui.get_selected_stream_addons()
@@ -104,7 +144,9 @@ def search_client(
                 listener.dialog.create("")
                 return cached_results
 
-        tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
+        tmdb_id, imdb_id = (
+            (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
+        )
 
         listener.dialog.create("")
         total_results = []

@@ -1,11 +1,13 @@
 from typing import Optional, Dict, Any
+from datetime import timedelta
 
 from lib.clients.subtitle.submanager import SubtitleManager
+from lib.db.cached import cache
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.player import JacktookPLayer
 from lib.utils.debrid.debrid_utils import get_pack_info
-from lib.utils.kodi.utils import kodilog
+from lib.utils.kodi.utils import get_setting, kodilog
 from lib.utils.kodi.utils import ADDON_PATH, notification, set_property
 from lib.domain.torrent import TorrentStream
 
@@ -90,6 +92,7 @@ class ResolverWindow(BaseWindow):
         self.playback_info = self._ensure_playback_info(source=self.source)
         if self.playback_info:
             self.playback_info.update(self.item_information)
+            self._cache_playback_info()
 
     def resolve_pack_source(self) -> None:
         self.pack_info = get_pack_info(
@@ -106,10 +109,26 @@ class ResolverWindow(BaseWindow):
         self.playback_info = self.window.doModal()
         if self.playback_info:
             self.playback_info.update(self.item_information)
+            self._cache_playback_info()
         else:
             self.close_windows()
 
         del self.window
+
+    def _cache_playback_info(self) -> None:
+        if get_setting("super_quick_play", False):
+            kodilog("Super quick play enabled, caching playback info")
+            key = ""
+            if "ids" in self.playback_info and "tmdb_id" in self.playback_info["ids"]:
+                key = str(self.playback_info["ids"]["tmdb_id"])
+                if "season" in self.playback_info.get("tv_data", {}) and "episode" in self.playback_info.get(
+                    "tv_data", {}
+                ):
+                    key += f'_{self.playback_info["tv_data"]["season"]}_{self.playback_info["tv_data"]["episode"]}'
+
+            if key:
+                cache.set(key, self.playback_info, timedelta(days=30))
+                kodilog("Playback info cached")
 
     def _download_subtitle(self):
         subtitle_manager = SubtitleManager(self.playback_info, notification)

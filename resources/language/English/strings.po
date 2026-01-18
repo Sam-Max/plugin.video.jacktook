@@ -1865,3 +1865,23 @@ msgstr "Remove Custom Addon"
 msgctxt "#90139"
 msgid "Playback"
 msgstr "Playback"
+
+msgctxt "#90140"
+msgid "Super quick play"
+msgstr ""
+
+msgctxt "#90141"
+msgid "Re-ask to play last played torrent"
+msgstr ""
+
+msgctxt "#90142"
+msgid "Replay Dialog"
+msgstr "Replay Dialog"
+
+msgctxt "#90143"
+msgid "Do you want to play last watched?"
+msgstr "Do you want to play last watched?"
+
+msgctxt "#90144"
+msgid "Could not resolve playback URL"
+msgstr "Could not resolve playback URL"

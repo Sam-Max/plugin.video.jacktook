@@ -674,6 +674,10 @@
                     </constraints>
                     <control type="spinner" format="string" />
                 </setting>
+                <setting id="super_quick_play" type="boolean" label="90140" help="90141">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
                 <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
