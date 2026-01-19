@@ -137,7 +137,19 @@ class SourceSelect(BaseWindow):
             },
         }
 
-        if selected_type in filter_map:
+        one_click_filters = {
+            "only_torrents": lambda: [s for s in self.sources if s.type == "Torrent"],
+            "only_debrid": lambda: [s for s in self.sources if s.type == "Debrid"],
+        }
+
+        if selected_type in one_click_filters:
+            filtered_sources = one_click_filters[selected_type]()
+            if not filtered_sources:
+                notification("No sources found matching the filter")
+                return
+            self.filtered_sources = filtered_sources
+            self.filter_applied = True
+        elif selected_type in filter_map:
             items = filter_map[selected_type]["items"]()
             if selected_type == "language" and not items:
                 notification("No languages found")
@@ -147,9 +159,13 @@ class SourceSelect(BaseWindow):
             selected_filter = popup.selected_filter
             del popup
             if selected_filter is not None:
-                self.filtered_sources = filter_map[selected_type]["filter"](
+                filtered_sources = filter_map[selected_type]["filter"](
                     selected_filter
                 )
+                if not filtered_sources:
+                    notification("No sources found matching the filter")
+                    return
+                self.filtered_sources = filtered_sources
                 self.filter_applied = True
             else:
                 self.filtered_sources = None
@@ -193,9 +209,13 @@ class SourceSelect(BaseWindow):
         selected_item = quality_list.getSelectedItem()
         if selected_item:
             selected_quality = selected_item.getProperty("quality")
-            self.filtered_sources = [
+            filtered_sources = [
                 s for s in self.sources if selected_quality in s.quality
             ]
+            if not filtered_sources:
+                notification("No sources found matching the filter")
+                return
+            self.filtered_sources = filtered_sources
             self.filter_applied = True
             self.populate_sources_list()
 

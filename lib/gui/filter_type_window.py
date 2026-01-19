@@ -26,6 +26,14 @@ class FilterTypeWindow(BaseWindow):
         language_item = xbmcgui.ListItem(label="Filter by Language")
         language_item.setProperty("type", "language")
         self.list_control.addItem(language_item)
+
+        torrents_item = xbmcgui.ListItem(label="Filter by Torrents")
+        torrents_item.setProperty("type", "only_torrents")
+        self.list_control.addItem(torrents_item)
+
+        debrid_item = xbmcgui.ListItem(label="Filter by Debrid")
+        debrid_item.setProperty("type", "only_debrid")
+        self.list_control.addItem(debrid_item)
         
         reset_item = xbmcgui.ListItem(label="Reset Filter")
         reset_item.setProperty("type", "reset")
@@ -35,17 +43,11 @@ class FilterTypeWindow(BaseWindow):
 
     def handle_action(self, action_id, control_id=None):
         if action_id == 7:  # Select
-            pos = self.list_control.getSelectedPosition()
-            if pos == 0:
-                self.selected_type = "quality"
-            elif pos == 1:
-                self.selected_type = "provider"
-            elif pos == 2:
-                self.selected_type = "indexer"
-            elif pos == 3:
-                self.selected_type = "language"
-            else:
-                self.selected_type = None  # Reset
+            selected_item = self.list_control.getSelectedItem()
+            if selected_item:
+                self.selected_type = selected_item.getProperty("type")
+                if self.selected_type == "reset":
+                    self.selected_type = None
             self.close()
         elif action_id in (2, 9, 10, 13, 92):  # Back/Escape
             self.close()

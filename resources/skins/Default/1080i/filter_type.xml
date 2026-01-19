@@ -21,8 +21,8 @@
     <control type="image">
       <left>0</left>
       <top>0</top>
-      <width>500</width>
-      <height>500</height>
+      <width>470</width>
+      <height>560</height>
       <texture border="30">circle.png</texture>
       <colordiffuse>CC000000</colordiffuse>
     </control>
@@ -30,9 +30,9 @@
     <!-- Title -->
     <control type="label" id="2100">
       <left>0</left>
-      <top>50</top>
+      <top>40</top>
       <width>500</width>
-      <height>60</height>
+      <height>50</height>
       <font>font16_title</font>
       <textcolor>white</textcolor>
       <align>center</align>
@@ -42,9 +42,9 @@
     <!-- Filter Types List -->
     <control type="list" id="2000">
       <left>50</left>
-      <top>120</top>
+      <top>100</top>
       <width>400</width>
-      <height>400</height>
+      <height>420</height>
       <onleft>2000</onleft>
       <onright>2000</onright>
       <onup>2000</onup>
@@ -55,12 +55,12 @@
       <itemlayout height="60">
         <control type="group">
           <width>400</width>
-          <height>60</height>
+          <height>80</height>
           <control type="image">
             <left>0</left>
             <top>10</top>
             <width>60</width>
-            <height>40</height>
+            <height>50</height>
             <texture>circle.png</texture>
             <colordiffuse>CC222222</colordiffuse>
           </control>
@@ -68,7 +68,7 @@
             <left>80</left>
             <top>10</top>
             <width>320</width>
-            <height>40</height>
+            <height>50</height>
             <font>font14</font>
             <textcolor>white</textcolor>
             <align>left</align>
