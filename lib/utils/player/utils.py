@@ -165,6 +165,71 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
     return _url
 
 
+def precache_next_episodes(item_data):
+    kodilog("Precaching next episodes...")
+
+    from lib.search import search_client
+    from lib.clients.tmdb.utils.utils import tmdb_get
+
+    if not get_setting("precaching_enabled", False):
+        return
+
+    if item_data.get("mode") != "tv":
+        return
+
+    ids = item_data.get("ids")
+    if not ids:
+        return
+
+    tmdb_id = ids.get("tmdb_id")
+    if not tmdb_id:
+        return
+
+    details = tmdb_get("tv_details", tmdb_id)
+    tv_data = item_data.get("tv_data", {})
+    season = tv_data.get("season")
+    episode = tv_data.get("episode")
+
+    if season is None or episode is None:
+        kodilog("Invalid season or episode data")
+        return
+
+    season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
+    if not season_details or not hasattr(season_details, "episodes"):
+        kodilog("Invalid season details")
+        return
+
+    episodes_to_cache = []
+    for e in getattr(season_details, "episodes"):
+        episode_number = getattr(e, "episode_number", 0)
+        if episode_number > int(episode):
+            episodes_to_cache.append(e)
+
+    kodilog(f"Found {len(episodes_to_cache)} episodes to cache")
+
+    if not episodes_to_cache:
+        return
+
+    count = int(get_setting("precaching_episode_count", 1))
+    for i in range(min(count, len(episodes_to_cache))):
+        next_episode = episodes_to_cache[i]
+        episode_number = getattr(next_episode, "episode_number", 0)
+        query = getattr(details, "name", "")
+
+        search_client(
+            query=query,
+            ids=ids,
+            mode=item_data["mode"],
+            media_type=item_data.get("media_type", ""),
+            rescrape=True,
+            season=season,
+            episode=episode_number,
+            show_dialog=False,
+        )
+
+        kodilog(f"Precaching episode {season}x{episode_number}")
+
+
 class TorrentException(Exception):
     def __init__(
         self, message: str, status_code: Optional[int] = None, error_content: Any = None

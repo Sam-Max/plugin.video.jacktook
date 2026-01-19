@@ -129,7 +129,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         return resolve_playback_url(source_data) or {}
 
     def _extract_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
-        kodilog(f"Extracting source details from: {source}")
         url = source.url or ""
         guid = source.guid or ""
         magnet = ""

@@ -659,3 +659,21 @@ msgstr "Configuração de legendas do Stremio"
 msgctxt "#90139"
 msgid "Playback"
 msgstr "Playback"
+
+msgctxt "#90145"
+msgid "Precaching Enabled"
+msgstr "Pré-carregamento Ativado"
+
+msgctxt "#90146"
+msgid "Enable or disable precaching of next episodes."
+msgstr "Ativar ou desativar o pré-carregamento dos próximos episódios."
+
+msgctxt "#90147"
+msgid "Precaching Episode Count"
+msgstr "Contagem de Episódios para Pré-carregar"
+
+msgctxt "#90148"
+msgid "Number of next episodes to precache."
+msgstr "Número de próximos episódios para pré-carregar."
+
+

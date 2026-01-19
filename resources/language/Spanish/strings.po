@@ -1881,3 +1881,19 @@ msgstr "¿Quieres reproducir la última visualización?"
 msgctxt "#90144"
 msgid "Could not resolve playback URL"
 msgstr "No se pudo resolver la URL de reproducción"
+
+msgctxt "#90145"
+msgid "Precaching Enabled"
+msgstr "Precaching Habilitado"
+
+msgctxt "#90146"
+msgid "Enable or disable precaching of next episodes."
+msgstr "Habilitar o deshabilitar el precaching de los próximos episodios."
+
+msgctxt "#90147"
+msgid "Precaching Episode Count"
+msgstr "Cantidad de Episodios a Precargar"
+
+msgctxt "#90148"
+msgid "Number of next episodes to precache."
+msgstr "Número de próximos episodios a precargar."

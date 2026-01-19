@@ -1,3 +1,4 @@
+from threading import Thread
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
 from lib.clients.tmdb.utils.utils import tmdb_get
@@ -21,6 +22,7 @@ from lib.utils.general.utils import (
     make_listing,
     set_watched_file,
 )
+from lib.utils.player.utils import precache_next_episodes
 
 import xbmc
 from xbmc import getCondVisibility as get_visibility
@@ -57,7 +59,10 @@ class JacktookPLayer(xbmc.Player):
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()
         self.mark_watched(data)
-
+        
+        precaching_thread = Thread(target=precache_next_episodes, args=(self.data,))
+        precaching_thread.start()
+        
         close_busy_dialog()
 
         try:

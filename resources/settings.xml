@@ -678,7 +678,26 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
+                <setting id="precaching_enabled" type="boolean" label="90145" help="90146">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="precaching_episode_count" type="integer" label="90147" help="90148">
+                    <default>1</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>5</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="precaching_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
                     <default>true</default>
                     <control type="toggle" />
                 </setting>

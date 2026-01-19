@@ -1885,3 +1885,19 @@ msgstr "Do you want to play last watched?"
 msgctxt "#90144"
 msgid "Could not resolve playback URL"
 msgstr "Could not resolve playback URL"
+
+msgctxt "#90145"
+msgid "Precaching Enabled"
+msgstr "Precaching Enabled"
+
+msgctxt "#90146"
+msgid "Enable or disable precaching of next episodes."
+msgstr "Enable or disable precaching of next episodes."
+
+msgctxt "#90147"
+msgid "Precaching Episode Count"
+msgstr "Precaching Episode Count"
+
+msgctxt "#90148"
+msgid "Number of next episodes to precache."
+msgstr "Number of next episodes to precache."

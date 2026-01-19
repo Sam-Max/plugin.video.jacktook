@@ -48,7 +48,7 @@ def run_search_entry(params: dict):
         if key:
             cached_torrent = cache.get(key)
             if cached_torrent:
-                kodilog(f"Found cached torrent: {cached_torrent['title']}")
+                kodilog(f"Found cached media: {cached_torrent['title']}")
                 dialog = Dialog()
                 if dialog.yesno(
                     translation(90142),
@@ -66,7 +66,7 @@ def run_search_entry(params: dict):
                 else:
                     kodilog("User chose not to play cached torrent")
             else:
-                kodilog("No cached torrent found")
+                kodilog("No cached media found")
 
     query = params.get("query", "")
     mode = params.get("mode", "")
@@ -115,6 +115,7 @@ def search_client(
     rescrape: bool,
     season: int,
     episode: int,
+    show_dialog: bool = True,
 ) -> List[TorrentStream]:
     with DialogListener() as listener:
 
@@ -126,11 +127,13 @@ def search_client(
                     return []
                 return [
                     result
-                    for client in stremio_addon_generator(stremio_addons, dialog)
+                    for client in stremio_addon_generator(
+                        stremio_addons, dialog, show_dialog
+                    )
                     for result in client.search(*args, **kwargs)
                 ]
 
-            if indexer_key != Indexer.BURST:
+            if indexer_key != Indexer.BURST and show_dialog:
                 update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
 
             client = get_client(indexer_key)
@@ -139,16 +142,22 @@ def search_client(
             return client.search(*args, **kwargs)
 
         if not rescrape:
+            kodilog("Checking for cached results before searching")
+            kodilog(
+                f"Search parameters - Query: {query}, Mode: {mode}, Media Type: {media_type}, Episode: {episode}"
+            )
             cached_results = get_cached_results(query, mode, media_type, episode)
             if cached_results:
-                listener.dialog.create("")
+                if show_dialog:
+                    listener.dialog.create("")
                 return cached_results
 
         tmdb_id, imdb_id = (
             (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
         )
 
-        listener.dialog.create("")
+        if show_dialog:
+            listener.dialog.create("")
         total_results = []
         tasks = []
 
@@ -337,9 +346,10 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     del player
 
 
-def stremio_addon_generator(stremio_addons, dialog):
+def stremio_addon_generator(stremio_addons, dialog, show_dialog):
     for addon in stremio_addons:
-        update_dialog(Indexer.STREMIO, f"Searching {addon.manifest.name}", dialog)
+        if show_dialog:
+            update_dialog(Indexer.STREMIO, f"Searching {addon.manifest.name}", dialog)
         yield StremioAddonClient(addon)
 
 
