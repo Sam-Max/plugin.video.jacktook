@@ -133,9 +133,6 @@ def search_client(
                     for result in client.search(*args, **kwargs)
                 ]
 
-            if indexer_key != Indexer.BURST and show_dialog:
-                update_dialog(indexer_key, f"Searching {indexer_key}", dialog)
-
             client = get_client(indexer_key)
             if not client:
                 return []
@@ -245,8 +242,16 @@ def search_client(
                     )
                 )
 
+            total_tasks = len(tasks)
+            completed_tasks = 0
+
             for future in as_completed(tasks):
                 try:
+                    completed_tasks += 1
+                    if show_dialog and total_tasks > 0:
+                        percent = int(completed_tasks / total_tasks * 100)
+                        update_dialog("Searching", f"Searching... {percent}%", listener.dialog, percent)
+                    
                     results = future.result()
                     kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
                     if results:
@@ -348,8 +353,6 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
 
 def stremio_addon_generator(stremio_addons, dialog, show_dialog):
     for addon in stremio_addons:
-        if show_dialog:
-            update_dialog(Indexer.STREMIO, f"Searching {addon.manifest.name}", dialog)
         yield StremioAddonClient(addon)
 
 

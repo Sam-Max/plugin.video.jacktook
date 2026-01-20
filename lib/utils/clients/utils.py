@@ -23,8 +23,8 @@ def validate_key(api_key: Optional[str], indexer: str) -> Optional[bool]:
     return True
 
 
-def update_dialog(title: str, message: str, dialog: object) -> None:
-    dialog.update(0, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
+def update_dialog(title: str, message: str, dialog: object, percent: int = 0) -> None:
+    dialog.update(percent, f"Jacktook [COLOR FFFF6B00]{title}[/COLOR]", message)
 
 
 def validate_credentials(
