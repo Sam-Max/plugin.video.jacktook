@@ -65,7 +65,7 @@ class SubtitleManager(KodiJsonRpcClient):
                     subtitle_files.append(os.path.join(root, f))
         return subtitle_files
 
-    def fetch_subtitles(self) -> Optional[List[str]]:
+    def fetch_subtitles(self, auto_select: bool = False) -> Optional[List[str]]:
         title = self.data.get("title")
         mode = self.data.get("mode")
         imdb_id = self.data.get("ids", {}).get("imdb_id")
@@ -91,6 +91,9 @@ class SubtitleManager(KodiJsonRpcClient):
 
         subtitle_files = self.get_downloaded_subtitle_paths(folder_path)
         if subtitle_files:
+            if auto_select:
+                return subtitle_files
+
             dialog = xbmcgui.Dialog()
             use_existing = dialog.yesno(
                 "Subtitles Found",

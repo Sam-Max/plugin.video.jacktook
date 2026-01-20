@@ -145,7 +145,7 @@ class JacktookPLayer(xbmc.Player):
             from lib.clients.subtitle.submanager import SubtitleManager
 
             subtitle_manager = SubtitleManager(self.data, self.notification)
-            subs_paths = subtitle_manager.fetch_subtitles()
+            subs_paths = subtitle_manager.fetch_subtitles(auto_select=True)
             if not subs_paths:
                 kodilog("No subtitles found, skipping subtitle loading")
                 self.subtitles_found = False
