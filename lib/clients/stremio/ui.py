@@ -114,7 +114,7 @@ def get_addons():
         except Exception as e:
             kodilog(f"Failed to fetch user addons: {e}")
             user_addons = []
-        merged_addons = merge_addons_lists(user_addons, custom_addons)
+        merged_addons = merge_addons_lists(custom_addons, user_addons)
     else:
         community_addons = cache.get("stremio_community_addons")
         if community_addons is None:
@@ -125,7 +125,7 @@ def get_addons():
                 kodilog(f"Failed to fetch community addons: {e}")
                 community_addons = []
             cache.set("stremio_community_addons", community_addons, timedelta(hours=12))
-        merged_addons = merge_addons_lists(community_addons, custom_addons)
+        merged_addons = merge_addons_lists(custom_addons, community_addons)
 
     kodilog(f"Loaded {len(merged_addons)} addons from catalog")
     return AddonManager(merged_addons)
@@ -245,11 +245,19 @@ def stremio_toggle_addons(params):
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
 
+    # De-duplicate addons by key
+    seen_keys = set()
+    unique_addons = []
+    for addon in addons:
+        if addon.key() not in seen_keys:
+            seen_keys.add(addon.key())
+            unique_addons.append(addon)
+    addons = unique_addons
+
     addons = [
         addon
         for addon in addons
-        if not addon.manifest.isConfigurationRequired()
-        and addon.key() not in excluded_addons
+        if addon.key() not in excluded_addons
     ]
 
     addons = list(reversed(addons))

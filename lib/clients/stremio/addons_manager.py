@@ -90,11 +90,15 @@ class AddonManager:
                         name=(
                             resource["name"] if isinstance(resource, dict) else resource
                         ),
-                        types=resource.get("types", []),
-                        id_prefixes=resource.get("idPrefixes", []),
+                        types=resource.get(
+                            "types", item["manifest"].get("types", [])
+                        ),
+                        id_prefixes=resource.get(
+                            "idPrefixes", item["manifest"].get("idPrefixes", [])
+                        ),
                     )
                 )
-                for resource in item["manifest"]["resources"]
+                for resource in item["manifest"].get("resources", [])
             ]
 
             manifest = Manifest(
@@ -126,8 +130,6 @@ class AddonManager:
     ) -> List[Addon]:
         result = []
         for addon in self.addons:
-            if addon.manifest.isConfigurationRequired():
-                continue
             if addon.manifest.id == "org.stremio.local":
                 continue
             for resource in addon.manifest.resources:
@@ -146,13 +148,14 @@ class AddonManager:
     ) -> List[Addon]:
         result = []
         for addon in self.addons:
-            if addon.manifest.isConfigurationRequired():
-                continue
             if addon.manifest.id == "org.stremio.local":
                 continue
             for resource in addon.manifest.resources:
                 if isinstance(resource, str):
-                    if resource == resource_name and id_prefix in addon.manifest.types:
+                    if (
+                        resource == resource_name
+                        and id_prefix in addon.manifest.id_prefixes
+                    ):
                         result.append(addon)
                         break
 
