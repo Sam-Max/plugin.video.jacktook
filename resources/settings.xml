@@ -69,6 +69,28 @@
                         </dependencies>
                     </setting>
                 </group>
+                <group id="calendar" label="30896">
+                    <setting id="use_broadcast_adjustment" type="boolean" label="30897" help="30898">
+                        <default>false</default>
+                        <control type="toggle" />
+                    </setting>
+                    <setting id="broadcast_offset" type="integer" label="30899" help="30900">
+                        <default>0</default>
+                        <constraints>
+                            <minimum>-24</minimum>
+                            <maximum>24</maximum>
+                            <step>1</step>
+                        </constraints>
+                        <control type="slider" format="integer">
+                            <popup>false</popup>
+                        </control>
+                        <dependencies>
+                            <dependency type="visible">
+                                <condition operator="is" setting="use_broadcast_adjustment">true</condition>
+                            </dependency>
+                        </dependencies>
+                    </setting>
+                </group>
         </category>
         <category id="services_category" label="30150">
             <group id="torrents" label="30862">

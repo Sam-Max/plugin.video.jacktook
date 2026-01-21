@@ -727,6 +727,26 @@ msgctxt "#30895"
 msgid "View the latest changes and updates to the addon."
 msgstr "View the latest changes and updates to the addon."
 
+msgctxt "#30896"
+msgid "Calendar"
+msgstr "Calendar"
+
+msgctxt "#30897"
+msgid "Use broadcast day adjustment"
+msgstr "Use broadcast day adjustment"
+
+msgctxt "#30898"
+msgid "Adjust broadcast day based on manual offset"
+msgstr "Adjust broadcast day based on manual offset"
+
+msgctxt "#30899"
+msgid "Broadcast Offset (Hours)"
+msgstr "Broadcast Offset (Hours)"
+
+msgctxt "#30900"
+msgid "Manual hour adjustment for broadcast day simulation"
+msgstr "Manual hour adjustment for broadcast day simulation"
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""
