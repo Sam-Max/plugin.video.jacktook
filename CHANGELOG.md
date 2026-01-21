@@ -1,3 +1,27 @@
+## 0.22.0
+- Add super quick play feature (last played dialog) for faster playback.
+- Add torrent and debrid filter options on source select window.
+- Add precaching of next episodes with settings option.
+- Add automatic subtitle selection.
+- Add broadcast day adjustment setting for the weekly calendar.
+- Add context menu actions for last files 
+- Add context menu actions for weekly calendar episodes
+- Implement accurate search progress indicator.
+- Fix search with non-ASCII characters.
+- Improve magnet link extraction from torrent files.
+
+Spanish:
+- Añadida función de reproducción súper rápida (diálogo de última reproducción) para una reproducción más veloz.
+- Añadidas opciones de filtrado de torrent y debrid en la ventana de selección de fuente.
+- Añadida precarga (precaching) de los siguientes episodios con opción en los ajustes.
+- Añadida selección automática de subtítulos.
+- Añadido ajuste del día de emisión para el calendario semanal.
+- Añadidas acciones del menú contextual para los últimos archivos.
+- Añadidas acciones del menú contextual para los episodios del calendario semanal.
+- Implementado un indicador preciso del progreso de búsqueda.
+- Corregida la búsqueda con caracteres no ASCII.
+- Mejorada la extracción de enlaces magnet de archivos torrent.
+
 ## 0.21.0 
 - Implemented parallel Debrid/P2P resolution.
 - Redesigned settings for more intuitive setup.
