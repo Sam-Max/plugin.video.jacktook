@@ -6,7 +6,7 @@ import re
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation, play_media
 from lib.utils.general.utils import (
     execute_thread_pool,
     set_media_infoTag,
@@ -103,7 +103,23 @@ def show_weekly_calendar():
         ep,
         details,
     ) in results:
-        tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
+        # Get episode name if available
+        ep_name = ep.get("name", "")
+
+        # Build complete IDs if possible from show details
+        ids = copy(data.get("ids", {}))
+        external_ids = getattr(details, "external_ids", {})
+        if external_ids:
+            if external_ids.get("imdb_id"):
+                ids["imdb_id"] = external_ids.get("imdb_id")
+            if external_ids.get("tvdb_id"):
+                ids["tvdb_id"] = external_ids.get("tvdb_id")
+
+        tv_data = {
+            "name": ep_name or title,
+            "episode": ep["number"],
+            "season": ep["season"],
+        }
 
         # Get the day of the week from air_date
         air_date_obj = parse_date_str(ep["air_date"])
@@ -123,6 +139,27 @@ def show_weekly_calendar():
 
         set_media_infoTag(list_item, data=details, mode=data.get("mode"))
 
+        # Add context menu items
+        list_item.addContextMenuItems(
+            [
+                (
+                    translation(90049),
+                    play_media(
+                        name="search",
+                        mode=data.get("mode"),
+                        query=title,
+                        ids=ids,
+                        tv_data=tv_data,
+                        rescrape=True,
+                    ),
+                ),
+                (
+                    translation(90115),
+                    play_media(name="search_with_sources"),
+                ),
+            ]
+        )
+
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -130,7 +167,7 @@ def show_weekly_calendar():
                 mode=data.get("mode"),
                 media_type=data.get("mode"),
                 query=title,
-                ids=data.get("ids"),
+                ids=ids,
                 tv_data=tv_data,
             ),
             list_item,
@@ -164,6 +201,7 @@ def get_episodes_for_show(ids):
                         "season": season_number,
                         "number": ep.get("episode_number"),
                         "air_date": air_date,
+                        "name": ep.get("name"),
                     }
                 )
         return episodes, show_details
