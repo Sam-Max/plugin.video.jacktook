@@ -134,6 +134,7 @@ class Prowlarr(BaseClient):
                     languages=res.get("languages", []),
                     fullLanguages=res.get("fullLanguages", ""),
                     publishDate=res.get("publishDate", ""),
+                    url=res.get("downloadUrl", ""),
                 )
             )
         return results

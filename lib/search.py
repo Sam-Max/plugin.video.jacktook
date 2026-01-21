@@ -337,6 +337,7 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
             "debrid_type": selected_result.debridType,
             "ids": ids,
             "info_hash": selected_result.infoHash,
+            "url": selected_result.url,
             "tv_data": tv_data,
             "is_torrent": False,
         },

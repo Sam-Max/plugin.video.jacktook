@@ -163,9 +163,14 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             if magnet_candidate:
                 magnet = magnet_candidate
 
-        # --- Fallback: magnet from url ---
+         # --- Fallback: magnet from url ---
         if not magnet and url.startswith("magnet:?"):
             magnet, url = url, ""
+
+        # --- Fallback: magnet from infoHash ---
+        if not magnet and source.infoHash:
+            from lib.utils.general.utils import info_hash_to_magnet
+            magnet = info_hash_to_magnet(source.infoHash)
 
         kodilog(f"Extracted source details - URL: {url}, Magnet: {magnet}, Is Torrent: {is_torrent}")
 

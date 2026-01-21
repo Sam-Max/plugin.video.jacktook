@@ -52,20 +52,25 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
     url: str = data.get("url", "")
     mode: str = data.get("mode", "")
     ids: Any = data.get("ids", "")
+    info_hash: str = data.get("info_hash", "")
+
+    if not magnet and info_hash:
+        from lib.utils.general.utils import info_hash_to_magnet
+        magnet = info_hash_to_magnet(info_hash)
 
     if get_setting("torrent_enable"):
         return get_torrent_url_for_client(magnet, url, mode, ids)
-    else:
-        if data.get("is_torrent"):
-            selected_client = get_torrent_client_selection(magnet, url, mode, ids)
-            if selected_client:
-                return get_torrent_url_for_client(
-                    magnet, url, mode, ids, selected_client
-                )
-            else:
-                raise TorrentException("No torrent client selected")
-    return None
 
+    if data.get("is_torrent"):
+        selected_client = get_torrent_client_selection(magnet, url, mode, ids)
+        if selected_client:
+            return get_torrent_url_for_client(
+                magnet, url, mode, ids, selected_client
+            )
+        else:
+            raise TorrentException("No torrent client selected")
+    return None
+    
 
 def get_torrent_url_for_client(
     magnet: str, url: str, mode: str, ids: Any, client: str = ""
