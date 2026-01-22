@@ -1,0 +1,56 @@
+STREMIO_ADDONS_KEY = "stremio_addons"
+STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
+STREMIO_USER_ADDONS = "stremio_user_addons"
+TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
+
+all_torrentio_providers = [
+    ("yts", "YTS", "torrentio.png"),
+    ("nyaasi", "Nyaa", "torrentio.png"),
+    ("eztv", "EZTV", "torrentio.png"),
+    ("rarbg", "RARBG", "torrentio.png"),
+    ("mejortorrent", "MejorTorrent", "torrentio.png"),
+    ("wolfmax4k", "WolfMax4K", "torrentio.png"),
+    ("cinecalidad", "CineCalidad", "torrentio.png"),
+    ("1337x", "1337x", "torrentio.png"),
+    ("thepiratebay", "The Pirate Bay", "torrentio.png"),
+    ("kickasstorrents", "Kickass", "torrentio.png"),
+    ("torrentgalaxy", "TorrentGalaxy", "torrentio.png"),
+    ("magnetdl", "MagnetDL", "torrentio.png"),
+    ("horriblesubs", "HorribleSubs", "torrentio.png"),
+    ("tokyotosho", "Tokyotosho", "torrentio.png"),
+    ("anidex", "Anidex", "torrentio.png"),
+    ("rutor", "Rutor", "torrentio.png"),
+    ("rutracker", "Rutracker", "torrentio.png"),
+    ("comando", "Comando", "torrentio.png"),
+    ("torrent9", "Torrent9", "torrentio.png"),
+    ("ilcorsaronero", "Il Corsaro Nero", "torrentio.png"),
+    ("besttorrents", "BestTorrents", "torrentio.png"),
+    ("bludv", "BluDV", "torrentio.png"),
+]
+
+excluded_addons = {
+    "imdb.ratings.local",
+    "org.stremio.deepdivecompanion",
+    "community.ratings.aggregator",
+    "org.stremio.ageratings",
+    "com.stremio.autostream.addon",
+    "org.cinetorrent",
+    "community.peario",
+    "community.stremioeasynews",
+    "Community-knightcrawler.elfhosted.com",
+    "jackettio.elfhosted.com",
+    "org.stremio.zamunda",
+    "com.stremify",
+    "org.anyembedaddon",
+    "org.stremio.tmdbcollections",
+    "org.stremio.ytztvio",
+    "com.skyflix",
+    "org.stremio.local",
+    "com.animeflv.stremio.addon",
+    "org.cinecalidad.addon",
+    "org.stremio.hellspy",
+    "org.prisonmike.streamvix",
+    "community.SeedSphere",
+    "org.moviesindetail.openlink",
+    "app.torbox.stremio",
+}

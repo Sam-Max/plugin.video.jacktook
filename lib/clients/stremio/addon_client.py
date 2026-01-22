@@ -1,5 +1,5 @@
-from lib.clients.stremio.addons_manager import Addon
-from lib.clients.stremio.types import Stream, Meta, MetaPreview
+from lib.api.stremio.addon_manager import Addon
+from lib.api.stremio.models import Stream, Meta, MetaPreview
 from lib.clients.base import BaseClient, TorrentStream
 
 from lib.utils.debrid.debrid_utils import process_external_cache
@@ -14,7 +14,7 @@ import re
 from typing import List, Dict, Optional, Any
 
 
-TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
+from lib.clients.stremio.constants import TORRENTIO_PROVIDERS_KEY
 
 EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
 

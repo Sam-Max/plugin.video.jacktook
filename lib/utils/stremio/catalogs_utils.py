@@ -1,5 +1,5 @@
 from datetime import timedelta
-from lib.clients.stremio.stremio import StremioAddonCatalogsClient
+from lib.clients.stremio.addon_client import StremioAddonCatalogsClient
 from lib.db.cached import cache
 from lib.utils.kodi.utils import kodilog
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled

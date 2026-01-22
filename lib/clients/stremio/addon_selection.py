@@ -1,245 +1,20 @@
-import os
 import requests
-from typing import List
 from datetime import timedelta
-from lib.clients.stremio.addons_manager import Addon, AddonManager
-from lib.clients.stremio.client import Stremio
+from collections import Counter
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import (
     ADDON,
-    ADDON_PATH,
-    get_setting,
     kodilog,
-    set_setting,
-    translation,
 )
-
+from lib.clients.stremio.constants import (
+    STREMIO_ADDONS_KEY,
+    STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_USER_ADDONS,
+    excluded_addons,
+)
+from lib.clients.stremio.helpers import get_addons
 import xbmcgui
-import xbmc
-
-
-STREMIO_ADDONS_KEY = "stremio_addons"
-STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
-STREMIO_USER_ADDONS = "stremio_user_addons"
-TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
-
-
-all_torrentio_providers = [
-    ("yts", "YTS", "torrentio.png"),
-    ("nyaasi", "Nyaa", "torrentio.png"),
-    ("eztv", "EZTV", "torrentio.png"),
-    ("rarbg", "RARBG", "torrentio.png"),
-    ("mejortorrent", "MejorTorrent", "torrentio.png"),
-    ("wolfmax4k", "WolfMax4K", "torrentio.png"),
-    ("cinecalidad", "CineCalidad", "torrentio.png"),
-    ("1337x", "1337x", "torrentio.png"),
-    ("thepiratebay", "The Pirate Bay", "torrentio.png"),
-    ("kickasstorrents", "Kickass", "torrentio.png"),
-    ("torrentgalaxy", "TorrentGalaxy", "torrentio.png"),
-    ("magnetdl", "MagnetDL", "torrentio.png"),
-    ("horriblesubs", "HorribleSubs", "torrentio.png"),
-    ("tokyotosho", "Tokyotosho", "torrentio.png"),
-    ("anidex", "Anidex", "torrentio.png"),
-    ("rutor", "Rutor", "torrentio.png"),
-    ("rutracker", "Rutracker", "torrentio.png"),
-    ("comando", "Comando", "torrentio.png"),
-    ("torrent9", "Torrent9", "torrentio.png"),
-    ("ilcorsaronero", "Il Corsaro Nero", "torrentio.png"),
-    ("besttorrents", "BestTorrents", "torrentio.png"),
-    ("bludv", "BluDV", "torrentio.png"),
-]
-
-excluded_addons = {
-    "imdb.ratings.local",
-    "org.stremio.deepdivecompanion",
-    "community.ratings.aggregator",
-    "org.stremio.ageratings",
-    "com.stremio.autostream.addon",
-    "org.cinetorrent",
-    "community.peario",
-    "community.stremioeasynews",
-    "Community-knightcrawler.elfhosted.com",
-    "jackettio.elfhosted.com",
-    "org.stremio.zamunda",
-    "com.stremify",
-    "org.anyembedaddon",
-    "org.stremio.tmdbcollections",
-    "org.stremio.ytztvio",
-    "com.skyflix",
-    "org.stremio.local",
-    "com.animeflv.stremio.addon",
-    "org.cinecalidad.addon",
-    "org.stremio.hellspy",
-    "org.prisonmike.streamvix",
-    "community.SeedSphere",
-    "org.moviesindetail.openlink",
-    "app.torbox.stremio",
-}
-
-
-def merge_addons_lists(*lists):
-    seen = set()
-    merged = []
-
-    for addon_source in lists:
-        if isinstance(addon_source, dict):
-            addons = addon_source.get("addons", [])
-        else:
-            addons = addon_source
-        for addon in addons:
-            key = addon.get("manifest", {}).get("id") or addon.get("id")
-            if key and key not in seen:
-                seen.add(key)
-                merged.append(addon)
-    return merged
-
-
-def get_addons():
-    all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
-    custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
-
-    logged_in = get_setting("stremio_loggedin")
-    if logged_in:
-        stremio = Stremio()
-        try:
-            email = get_setting("stremio_email")
-            password = get_setting("stremio_pass")
-            if email and password:
-                stremio.login(email, password)
-                user_addons = stremio.get_my_addons() or []
-            else:
-                kodilog("Stremio credentials missing, cannot fetch user addons.")
-                user_addons = []
-        except Exception as e:
-            kodilog(f"Failed to fetch user addons: {e}")
-            user_addons = []
-        merged_addons = merge_addons_lists(custom_addons, user_addons)
-    else:
-        community_addons = cache.get("stremio_community_addons")
-        if community_addons is None:
-            stremio = Stremio()
-            try:
-                community_addons = stremio.get_community_addons()
-            except Exception as e:
-                kodilog(f"Failed to fetch community addons: {e}")
-                community_addons = []
-            cache.set("stremio_community_addons", community_addons, timedelta(hours=12))
-        merged_addons = merge_addons_lists(custom_addons, community_addons)
-
-    kodilog(f"Loaded {len(merged_addons)} addons from catalog")
-    return AddonManager(merged_addons)
-
-
-def get_selected_stream_addons() -> List[Addon]:
-    catalog = get_addons()
-    selected_ids = cache.get(STREMIO_ADDONS_KEY)
-    if not selected_ids:
-        return []
-    selected_ids_list = selected_ids.split(",")
-    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
-
-
-def get_selected_catalogs_addons() -> List[Addon]:
-    catalog = get_addons()
-    selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
-    if not selected_ids:
-        return []
-    selected_ids_list = selected_ids.split(",")
-    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
-
-
-def stremio_login(params):
-    dialog = xbmcgui.Dialog()
-    dialog.ok(
-        "Stremio Add-ons Import",
-        "To import your add-ons, please log in with your Stremio email and password."
-    )
-
-    email = dialog.input(heading="Enter your Email", type=xbmcgui.INPUT_ALPHANUM)
-    if not email:
-        return
-
-    password = dialog.input(heading="Enter your Password", type=xbmcgui.INPUT_ALPHANUM)
-    if not password:
-        return
-
-    log_in(email, password, dialog)
-
-
-def log_in(email, password, dialog):
-    try:
-        stremio = Stremio()
-        stremio.login(email, password)
-    except Exception as e:
-        dialog.ok("Login Failed", f"Failed to login: {e}")
-        return
-
-    try:
-        # Only merge user account addons with custom addons
-        user_account_addons = stremio.get_my_addons() or []
-        all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
-        custom_addons = [
-            a for a in all_user_addons if a.get("transportName") == "custom"
-        ]
-        all_addons = merge_addons_lists(user_account_addons, custom_addons)
-        cache.set(STREMIO_USER_ADDONS, all_addons, timedelta(days=365 * 20))
-
-        set_setting("stremio_email", email)
-        set_setting("stremio_pass", password)
-        set_setting("stremio_loggedin", "true")
-
-        kodilog(f"Stremio addons imported: {len(all_addons)}")
-    except Exception as e:
-        dialog.ok(
-            "Add-ons Import Failed",
-            "Please try again later and report the issue if the problem persists. For more details, check the log file.",
-        )
-        kodilog(f"Failed to import addons: {e}")
-        return
-
-    dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
-
-
-def stremio_update(params):
-    dialog = xbmcgui.Dialog()
-    confirm = dialog.yesno(
-        "Update Stremio Addons",
-        "Do you want to update the Addons from you account?",
-        nolabel="Cancel",
-        yeslabel="Yes",
-    )
-    if not confirm:
-        return
-
-    email = get_setting("stremio_email")
-    password = get_setting("stremio_pass")
-
-    log_in(email, password, dialog)
-
-
-def stremio_logout(params):
-    dialog = xbmcgui.Dialog()
-
-    confirm = dialog.yesno(
-        "Log Out from Stremio",
-        "Are you sure you want to log out? You can continue using Stremio without logging in, but your settings will be reset to the default configuration.",
-        nolabel="Cancel",
-        yeslabel="Log Out",
-    )
-    if confirm:
-        cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1))
-        cache.set(STREMIO_ADDONS_CATALOGS_KEY, None, timedelta(seconds=1))
-        # Do not clear custom addons, only clear login state and user (login) addons
-        all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
-        custom_addons = [
-            a for a in all_user_addons if a.get("transportName") == "custom"
-        ]
-        cache.set(STREMIO_USER_ADDONS, custom_addons, timedelta(days=365 * 20))
-
-        set_setting("stremio_loggedin", "false")
-        set_setting("stremio_email", "")
-        set_setting("stremio_pass", "")
 
 
 def stremio_toggle_addons(params):
@@ -273,7 +48,6 @@ def stremio_toggle_addons(params):
         addons.index(addon) for addon in addons if addon.key() in selected_ids
     ]
 
-    from collections import Counter
     name_counts = Counter(addon.manifest.name for addon in addons)
 
     options = []
@@ -325,7 +99,6 @@ def stremio_toggle_catalogs(params):
         addons.index(addon) for addon in addons if addon.key() in selected_ids
     ]
 
-    from collections import Counter
     name_counts = Counter(addon.manifest.name for addon in addons)
 
     options = []
@@ -527,33 +300,3 @@ def remove_custom_stremio_addon(params=None):
             cache.set(cache_key, ",".join(selected_keys), timedelta(days=365 * 20))
 
     xbmcgui.Dialog().ok("Remove Addon", "Selected addon(s) removed.")
-
-
-def torrentio_toggle_providers(params):
-    selected_ids = cache.get(TORRENTIO_PROVIDERS_KEY) or ""
-    selected_ids = selected_ids.split(",") if selected_ids else []
-
-    options = []
-    selected_indexes = []
-    for i, (key, name, logo) in enumerate(all_torrentio_providers):
-        item = xbmcgui.ListItem(label=name)
-        item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "torrentio.png")}
-        )
-        options.append(item)
-        if key in selected_ids:
-            selected_indexes.append(i)
-
-    dialog = xbmcgui.Dialog()
-
-    selected = dialog.multiselect(
-        translation(90117), options, preselect=selected_indexes, useDetails=True
-    )
-
-    if selected is None:
-        return
-
-    new_selected_ids = [all_torrentio_providers[i][0] for i in selected]
-    cache.set(
-        TORRENTIO_PROVIDERS_KEY, ",".join(new_selected_ids), timedelta(days=365 * 20)
-    )

@@ -1,6 +1,6 @@
 import json
 from dataclasses import asdict
-from lib.clients.stremio.ui import get_selected_catalogs_addons
+from lib.clients.stremio.helpers import get_selected_catalogs_addons
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.general.utils import add_next_button
 from lib.db.pickle_db import PickleDatabase

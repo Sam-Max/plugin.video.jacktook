@@ -88,7 +88,7 @@ from lib.navigation import (
     tv_menu,
     tv_shows_items,
 )
-from lib.clients.stremio.catalogs import (
+from lib.clients.stremio.catalog_menus import (
     list_catalog,
     list_stremio_episodes,
     list_stremio_seasons,
@@ -103,16 +103,18 @@ from lib.utils.torrent.torrserver_utils import (
     torrent_action,
     torrent_files,
 )
-from lib.clients.stremio.ui import (
+from lib.clients.stremio.authentication import (
+    stremio_login,
+    stremio_logout,
+    stremio_update,
+)
+from lib.clients.stremio.addon_selection import (
     add_custom_stremio_addon,
     remove_custom_stremio_addon,
-    stremio_login,
     stremio_toggle_addons,
-    stremio_logout,
     stremio_toggle_catalogs,
-    stremio_update,
-    torrentio_toggle_providers,
 )
+from lib.clients.stremio.torrentio import torrentio_toggle_providers
 
 from lib.utils.views.last_titles import delete_last_title_entry
 from lib.utils.views.shows import show_episodes_details, show_seasons_details

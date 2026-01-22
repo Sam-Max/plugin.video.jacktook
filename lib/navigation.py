@@ -15,7 +15,7 @@ from lib.clients.trakt.trakt import TraktClient
 from lib.api.debrid.premiumize import Premiumize
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.api.debrid.torbox import Torbox
-from lib.clients.stremio.catalogs import list_stremio_catalogs
+from lib.clients.stremio.catalog_menus import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
 )

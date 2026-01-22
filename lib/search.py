@@ -2,8 +2,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from typing import List, Optional
 
-from lib.clients.stremio import ui
-from lib.clients.stremio.stremio import StremioAddonClient
+from lib.clients.stremio.helpers import get_selected_stream_addons
+from lib.clients.stremio.addon_client import StremioAddonClient
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_dialogs import source_select
@@ -121,7 +121,7 @@ def search_client(
 
         def perform_search(indexer_key, dialog, *args, **kwargs):
             if indexer_key == Indexer.STREMIO:
-                stremio_addons = ui.get_selected_stream_addons()
+                stremio_addons = get_selected_stream_addons()
                 if not stremio_addons:
                     notification("No Stremio addons selected")
                     return []
