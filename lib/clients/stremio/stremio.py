@@ -1,5 +1,5 @@
 from lib.clients.stremio.addons_manager import Addon
-from lib.clients.stremio.stream import Stream
+from lib.clients.stremio.types import Stream, Meta, MetaPreview
 from lib.clients.base import BaseClient, TorrentStream
 
 from lib.utils.debrid.debrid_utils import process_external_cache
@@ -57,21 +57,33 @@ class StremioAddonCatalogsClient(BaseClient):
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-        return res.json()
+        
+        data = res.json()
+        if "metas" in data:
+            data["metas"] = [MetaPreview.from_dict(m) for m in data["metas"]]
+        return data
 
     def get_meta_info(self) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/meta/{self.params['catalog_type']}/{self.params['video_id']}.json"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-        return res.json()
+            
+        data = res.json()
+        if "meta" in data:
+            data["meta"] = Meta.from_dict(data["meta"])
+        return data
 
     def get_stream_info(self) -> Optional[Dict[str, Any]]:
         url = f"{self.base_url}/stream/{self.params['catalog_type']}/{self.params['video_id']}.json"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-        return res.json()
+            
+        data = res.json()
+        if "streams" in data:
+            data["streams"] = [Stream.from_dict(s) for s in data["streams"]]
+        return data
 
 
 class StremioAddonClient(BaseClient):
@@ -124,15 +136,29 @@ class StremioAddonClient(BaseClient):
     def parse_response(
         self, res: Any, is_external_cache: bool = False
     ) -> List[TorrentStream]:
-        res = res.json()
+        if not is_external_cache:
+            res_json = res.json()
+            streams = res_json.get("streams", [])
+        else:
+            pass
+
+        if hasattr(res, 'json'):
+             data = res.json()
+        elif isinstance(res, dict):
+             data = res
+        else:
+             data = {} # Should not happen
+
         results = []
 
-        for item in res["streams"]:
-            stream = Stream(item)
-            parsed = self.parse_torrent_description(stream.description)
+        streams = data.get("streams", [])
+
+        for item in streams:
+            stream = Stream.from_dict(item)
+            parsed = self.parse_torrent_description(stream.description or stream.title or "")
 
             if is_external_cache:
-                match = re.search(r"\b\w{40}\b", stream.url)
+                match = re.search(r"\b\w{40}\b", stream.url or "")
                 info_hash = match.group() if match else item.get("infoHash")
                 url = ""
                 is_cached = True
@@ -147,7 +173,7 @@ class StremioAddonClient(BaseClient):
                     type=(IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT),
                     indexer=self.addon.manifest.name.split(" ")[0],
                     subindexer=stream.get_sub_indexer(self.addon),
-                    guid=info_hash_to_magnet(info_hash),
+                    guid=info_hash_to_magnet(info_hash) if info_hash else "",
                     infoHash=info_hash,
                     size=stream.get_parsed_size()
                     or item.get("sizebytes")
@@ -165,6 +191,13 @@ class StremioAddonClient(BaseClient):
         return results
 
     def parse_torrent_description(self, desc: str) -> Dict[str, Any]:
+        if not desc:
+            return {
+                "size": 0,
+                "seeders": 0,
+                "provider": "",
+                "languages": [],
+            }
         # Extract size
         size_pattern = r"💾 ([\d.]+ (?:GB|MB))"
         size_match = re.search(size_pattern, desc)

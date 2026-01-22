@@ -1,4 +1,5 @@
 import json
+from dataclasses import asdict
 from lib.clients.stremio.ui import get_selected_catalogs_addons
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.general.utils import add_next_button
@@ -141,9 +142,9 @@ def search_catalog(params):
 
     meta_data = response.get("metas", {})
     for meta in meta_data:
-        if meta["type"] == "series":
-            tmdb_id = meta.get("moviedb_id")
-            imdb_id = meta.get("imdb_id")
+        if meta.type == "series":
+            tmdb_id = meta.moviedb_id
+            imdb_id = meta.imdb_id
 
             if tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
@@ -158,30 +159,30 @@ def search_catalog(params):
                     "list_stremio_seasons",
                     addon_url=params["addon_url"],
                     catalog_type=params["catalog_type"],
-                    video_id=meta["id"],
+                    video_id=meta.id,
                 )
-        elif meta["type"] == "movie":
+        elif meta.type == "movie":
             tmdb_id = ""
-            id = meta.get("id", "")
+            id = meta.id
             if "tmdb" in id:
                 tmdb_id = id.split(":")[1]
 
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": meta.get("imdb_id")}
-            url = build_url("search", mode="movies", query=meta["name"], ids=ids)
+            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": meta.imdb_id}
+            url = build_url("search", mode="movies", query=meta.name, ids=ids)
         else:
             continue
 
-        list_item = ListItem(label=f"{meta['name']}")
+        list_item = ListItem(label=f"{meta.name}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
-            meta["id"], type="imdb" if meta["id"].startswith("tt") else "mf"
+            meta.id, type="imdb" if meta.id.startswith("tt") else "mf"
         )
-        info_tag.setTitle(meta["name"])
-        info_tag.setPlot(meta.get("description", ""))
-        info_tag.setGenres(meta.get("genres", []))
+        info_tag.setTitle(meta.name)
+        info_tag.setPlot(meta.description or "")
+        info_tag.setGenres(meta.genres)
         info_tag.setMediaType("video")
 
-        if meta["type"] == "movie":
+        if meta.type == "movie":
             list_item.setProperty("IsPlayable", "true")
             isFolder = False
         else:
@@ -189,12 +190,12 @@ def search_catalog(params):
 
         list_item.setArt(
             {
-                "thumb": meta.get("poster", ""),
-                "poster": meta.get("poster", ""),
-                "fanart": meta.get("poster", ""),
-                "icon": meta.get("poster", ""),
-                "banner": meta.get("background", ""),
-                "landscape": meta.get("background", ""),
+                "thumb": meta.poster or "",
+                "poster": meta.poster or "",
+                "fanart": meta.poster or "",
+                "icon": meta.poster or "",
+                "banner": meta.background or "",
+                "landscape": meta.background or "",
             }
         )
 
@@ -216,7 +217,7 @@ def add_meta_items(metas, params):
     setContent(ADDON_HANDLE, content_type)
 
     def should_include(meta):
-        meta_type = meta["type"]
+        meta_type = meta.type
         if menu_type in ["anime", "movie"] and sub_menu_type == "movie":
             return meta_type == "movie"
         if menu_type in ["anime", "series"] and sub_menu_type == "series":
@@ -232,11 +233,11 @@ def add_meta_items(metas, params):
         return
 
     for meta in metas:
-        name = meta.get("name", "")
-        video_type = meta["type"]
-        video_id = meta.get("id", "")
-        tmdb_id = meta.get("moviedb_id", "")
-        imdb_id = meta.get("imdb_id", "")
+        name = meta.name
+        video_type = meta.type
+        video_id = meta.id
+        tmdb_id = meta.moviedb_id
+        imdb_id = meta.imdb_id
 
         if "tmdb" in video_id:
             tmdb_id = video_id.split(":")[1]
@@ -259,8 +260,10 @@ def add_meta_items(metas, params):
                 )
 
         elif video_type == "tv":
-            if meta.get("streams"):
-                url = build_url("list_stremio_tv_streams", streams=meta["streams"])
+            if meta.streams:
+                # Serialize streams to list of dicts for URL params
+                streams_data = [asdict(s) for s in meta.streams]
+                url = build_url("list_stremio_tv_streams", streams=json.dumps(streams_data))
             else:
                 url = build_url(
                     "list_stremio_tv",
@@ -279,16 +282,16 @@ def add_meta_items(metas, params):
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(video_id, type="imdb" if video_id.startswith("tt") else "mf")
         info_tag.setTitle(name)
-        info_tag.setPlot(meta.get("description", ""))
-        info_tag.setGenres(meta.get("genres", []))
+        info_tag.setPlot(meta.description or "")
+        info_tag.setGenres(meta.genres)
         info_tag.setMediaType("video")
 
         is_folder = video_type != "movie"
         if not is_folder:
             list_item.setProperty("IsPlayable", "true")
 
-        poster = meta.get("poster", "")
-        background = meta.get("background", "")
+        poster = meta.poster or ""
+        background = meta.background or ""
         list_item.setArt(
             {
                 "thumb": poster,
@@ -310,14 +313,18 @@ def list_stremio_seasons(params):
     if not response:
         return
 
-    meta_data = response.get("meta", {})
-    videos = meta_data.get("videos", [])
+    meta_data = response.get("meta")
+    if not meta_data:
+        notification("No meta available")
+        return
+
+    videos = meta_data.videos
     if not videos:
         notification("No seasons available")
         return
 
     available_seasons = set(
-        video["imdbSeason"] if video.get("imdbSeason") else video["season"]
+        video.imdbSeason if video.imdbSeason else video.season
         for video in videos
     )
     for season in available_seasons:
@@ -331,23 +338,23 @@ def list_stremio_seasons(params):
         list_item = ListItem(label=f"Season {season}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
-            meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
+            meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
         )
-        info_tag.setTitle(meta_data["name"])
-        info_tag.setPlot(meta_data.get("description", ""))
-        info_tag.setRating(float(meta_data.get("imdbRating", 0)))
-        info_tag.setGenres(meta_data.get("genres", []))
-        info_tag.setTvShowTitle(meta_data["name"])
+        info_tag.setTitle(meta_data.name)
+        info_tag.setPlot(meta_data.description or "")
+        info_tag.setRating(float(meta_data.imdbRating or 0))
+        info_tag.setGenres(meta_data.genres)
+        info_tag.setTvShowTitle(meta_data.name)
         info_tag.setSeason(season)
 
         list_item.setArt(
             {
-                "thumb": meta_data.get("poster", ""),
-                "poster": meta_data.get("poster", ""),
-                "fanart": meta_data.get("poster", ""),
-                "icon": meta_data.get("poster", ""),
-                "banner": meta_data.get("background", ""),
-                "landscape": meta_data.get("background", ""),
+                "thumb": meta_data.poster or "",
+                "poster": meta_data.poster or "",
+                "fanart": meta_data.poster or "",
+                "icon": meta_data.poster or "",
+                "banner": meta_data.background or "",
+                "landscape": meta_data.background or "",
             }
         )
 
@@ -362,24 +369,28 @@ def list_stremio_episodes(params):
     if not response:
         return
 
-    meta_data = response.get("meta", {})
-    videos = meta_data.get("videos", [])
+    meta_data = response.get("meta")
+    if not meta_data:
+        notification("No meta available")
+        return
+
+    videos = meta_data.videos
     if not videos:
         notification("No episodes available")
         return
 
     for video in videos:
         season = (
-            int(video["imdbSeason"]) if video.get("imdbSeason") else video["season"]
+            int(video.imdbSeason) if video.imdbSeason else video.season
         )
         episode = (
-            int(video["imdbEpisode"]) if video.get("imdbEpisode") else video["episode"]
+            int(video.imdbEpisode) if video.imdbEpisode else video.episode
         )
 
         if season != int(params["season"]):
             continue
 
-        title = video.get("title") or video.get("name")
+        title = video.title or video.name
 
         tv_data = {
             "name": title,
@@ -389,14 +400,14 @@ def list_stremio_episodes(params):
 
         ids = {"tmdb_id": "", "tvdb_id": "", "imdb_id": ""}
 
-        if imdb_id := meta_data.get("imdb_id"):
+        if imdb_id := meta_data.imdb_id:
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
             if getattr(res, "tv_results", []):
                 ids["tmdb_id"] = getattr(res, "tv_results")[0]["id"]
 
-        if video["id"].startswith("tt") and not imdb_id:
-            imdb_id = meta_data["id"].split(":")[0]
+        if video.id.startswith("tt") and not imdb_id:
+            imdb_id = meta_data.id.split(":")[0]
             ids["imdb_id"] = imdb_id
             res = tmdb_get("find_by_imdb_id", imdb_id)
             if getattr(res, "tv_results", []):
@@ -406,7 +417,7 @@ def list_stremio_episodes(params):
             "search",
             mode="tv",
             media_type="tv",
-            query=meta_data["name"],
+            query=meta_data.name,
             ids=ids,
             tv_data=tv_data,
         )
@@ -414,12 +425,12 @@ def list_stremio_episodes(params):
         list_item = ListItem(label=f"{season}x{episode}. {title}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
-            meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
+            meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
         )
         info_tag.setTitle(title)
-        info_tag.setPlot(video.get("overview", ""))
-        info_tag.setRating(float(meta_data.get("imdbRating", 0)))
-        info_tag.setGenres(meta_data.get("genres", []))
+        info_tag.setPlot(video.overview or "")
+        info_tag.setRating(float(meta_data.imdbRating or 0))
+        info_tag.setGenres(meta_data.genres)
         info_tag.setTvShowTitle(title)
         info_tag.setSeason(season)
         info_tag.setEpisode(episode)
@@ -428,12 +439,12 @@ def list_stremio_episodes(params):
 
         list_item.setArt(
             {
-                "thumb": meta_data.get("poster", ""),
-                "poster": meta_data.get("poster", ""),
-                "fanart": meta_data.get("poster", ""),
-                "icon": meta_data.get("poster", ""),
-                "banner": meta_data.get("background", ""),
-                "landscape": meta_data.get("background", ""),
+                "thumb": meta_data.poster or "",
+                "poster": meta_data.poster or "",
+                "fanart": meta_data.poster or "",
+                "icon": meta_data.poster or "",
+                "banner": meta_data.background or "",
+                "landscape": meta_data.background or "",
             }
         )
 
@@ -456,13 +467,13 @@ def list_stremio_tv(params):
     for stream in streams:
         url = build_url(
             "play_torrent",
-            data={"mode": "movie", "url": stream["url"]},
+            data={"mode": "movie", "url": stream.url},
         )
 
-        list_item = ListItem(label=stream["title"])
+        list_item = ListItem(label=stream.title)
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(stream.get("description", ""))
+        info_tag.setPlot(stream.description or "")
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
