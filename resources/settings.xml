@@ -374,6 +374,17 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_toggle_tv_addons" type="action" label="30903" help="30904">
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_tv_addons)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="stremio_add_custom_addon" type="action" label="90001" help="90002">
                     <dependencies>
                         <dependency type="visible">

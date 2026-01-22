@@ -7,6 +7,7 @@ from lib.utils.kodi.utils import get_setting, kodilog
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
 )
 
@@ -76,6 +77,15 @@ def get_selected_stream_addons() -> List[Addon]:
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
+    if not selected_ids:
+        return []
+    selected_ids_list = selected_ids.split(",")
+    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
+
+
+def get_selected_tv_addons() -> List[Addon]:
+    catalog = get_addons()
+    selected_ids = cache.get(STREMIO_TV_ADDONS_KEY)
     if not selected_ids:
         return []
     selected_ids_list = selected_ids.split(",")

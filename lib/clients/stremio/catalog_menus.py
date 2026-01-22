@@ -1,6 +1,6 @@
 import json
 from dataclasses import asdict
-from lib.clients.stremio.helpers import get_selected_catalogs_addons
+from lib.clients.stremio.helpers import get_selected_catalogs_addons, get_selected_tv_addons
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.general.utils import add_next_button
 from lib.db.pickle_db import PickleDatabase
@@ -18,12 +18,14 @@ from xbmcgui import ListItem
 
 
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
-    selected_addons = get_selected_catalogs_addons()
+    if menu_type == "tv":
+        selected_addons = get_selected_tv_addons()
+    else:
+        selected_addons = get_selected_catalogs_addons()
     if not selected_addons:
-        if menu_type == "tv":
-            notification("No TV catalogs addons selected")
+        notification("No catalogs addons selected")
         return
-
+        
     for addon in selected_addons:
         if menu_type in addon.manifest.types:
             for catalog in addon.manifest.catalogs:

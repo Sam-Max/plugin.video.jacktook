@@ -113,6 +113,7 @@ from lib.clients.stremio.addon_selection import (
     remove_custom_stremio_addon,
     stremio_toggle_addons,
     stremio_toggle_catalogs,
+    stremio_toggle_tv_addons,
 )
 from lib.clients.stremio.torrentio import torrentio_toggle_providers
 
@@ -215,6 +216,7 @@ def addon_router():
         "animation_item": animation_item,
         "stremio_toggle_addons": stremio_toggle_addons,
         "stremio_toggle_catalogs": stremio_toggle_catalogs,
+        "stremio_toggle_tv_addons": stremio_toggle_tv_addons,
         "torrentio_toggle_providers": torrentio_toggle_providers,
         "list_catalog": list_catalog,
         "list_stremio_seasons": list_stremio_seasons,

@@ -1,5 +1,6 @@
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
+STREMIO_TV_ADDONS_KEY = "stremio_tv_addons"
 STREMIO_USER_ADDONS = "stremio_user_addons"
 TORRENTIO_PROVIDERS_KEY = "torrentio.providers"
 

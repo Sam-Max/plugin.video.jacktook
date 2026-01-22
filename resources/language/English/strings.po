@@ -1288,7 +1288,7 @@ msgid "Enable Stremio add-ons integration."
 msgstr "Habilitar la integración de complementos de Stremio."
 
 msgctxt "#30870"
-msgid "Select Addons"
+msgid "Select Stream Addons"
 msgstr ""
 
 msgctxt "#30871"
@@ -1928,4 +1928,12 @@ msgstr ""
 
 msgctxt "#30902"
 msgid "Hides embedded items (TMDb, Trakt, etc.) and shows only Stremio catalogs in menus."
+msgstr ""
+
+msgctxt "#30903"
+msgid "Select Live TV Addons"
+msgstr ""
+
+msgctxt "#30904"
+msgid "Choose specific Stremio addons for Live TV content"
 msgstr ""

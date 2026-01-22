@@ -10,6 +10,7 @@ from lib.utils.kodi.utils import (
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
     excluded_addons,
 )
@@ -94,6 +95,25 @@ def stremio_toggle_catalogs(params):
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource("catalog")
 
+    # Filter out Live TV addons
+    filtered_addons = []
+    for addon in addons:
+        is_tv = False
+        for res in addon.manifest.resources:
+            if isinstance(res, str):
+                if res == "stream" and (
+                    "tv" in addon.manifest.types or "channel" in addon.manifest.types
+                ):
+                    is_tv = True
+                    break
+            elif res.name == "stream":
+                if "tv" in res.types or "channel" in res.types:
+                    is_tv = True
+                    break
+        if not is_tv:
+            filtered_addons.append(addon)
+    addons = filtered_addons
+
     dialog = xbmcgui.Dialog()
     selected_addon_ids = [
         addons.index(addon) for addon in addons if addon.key() in selected_ids
@@ -138,6 +158,92 @@ def stremio_toggle_catalogs(params):
         timedelta(days=365 * 20),
     )
 
+def stremio_toggle_tv_addons(params):
+    selected_ids = cache.get(STREMIO_TV_ADDONS_KEY) or ""
+    addon_manager = get_addons()
+
+    addons = []
+    for addon in addon_manager.addons:
+        if addon.manifest.id == "org.stremio.local":
+            continue
+        for resource in addon.manifest.resources:
+            # Resource can be str or object
+            if isinstance(resource, str):
+                if resource == "stream" and (
+                    "tv" in addon.manifest.types or "channel" in addon.manifest.types
+                ):
+                    addons.append(addon)
+                    break
+            elif resource.name == "stream":
+                if "tv" in resource.types or "channel" in resource.types:
+                    addons.append(addon)
+                    break
+
+    # De-duplicate addons by key
+    seen_keys = set()
+    unique_addons = []
+    for addon in addons:
+        if addon.key() not in seen_keys:
+            seen_keys.add(addon.key())
+            unique_addons.append(addon)
+    addons = unique_addons
+
+    addons = [
+        addon
+        for addon in addons
+        if addon.key() not in excluded_addons
+        and (
+            not addon.manifest.isConfigurationRequired()
+            or addon.transport_name == "custom"
+        )
+    ]
+
+    addons = list(reversed(addons))
+
+    dialog = xbmcgui.Dialog()
+    selected_addon_ids = [
+        addons.index(addon) for addon in addons if addon.key() in selected_ids
+    ]
+
+    name_counts = Counter(addon.manifest.name for addon in addons)
+
+    options = []
+    for addon in addons:
+        name = addon.manifest.name
+        if name_counts[name] > 1:
+            label = f"{name} ({addon.key()})"
+        else:
+            label = name
+
+        option = xbmcgui.ListItem(
+            label=label, label2=f"{addon.manifest.description}"
+        )
+
+        logo = addon.manifest.logo
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+
+        option.setArt({"icon": logo})
+        options.append(option)
+
+    settings = ADDON.getSettings()
+    stremio_email = settings.getString("stremio_email")
+    title = stremio_email or "Stremio Live TV Addons"
+    selected_indexes = dialog.multiselect(
+        title, options, preselect=selected_addon_ids, useDetails=True
+    )
+
+    if selected_indexes is None:
+        return
+
+    selected_addon_ids = [addons[index].key() for index in selected_indexes]
+
+    cache.set(
+        STREMIO_TV_ADDONS_KEY,
+        ",".join(selected_addon_ids),
+        timedelta(days=365 * 20),
+    )
+
 
 def add_custom_stremio_addon(params):
     dialog = xbmcgui.Dialog()
@@ -177,17 +283,28 @@ def add_custom_stremio_addon(params):
         # Determine capabilities
         is_stream = False
         is_catalog = False
+        is_tv_stream = False
+        types = manifest.get("types", [])
+
         for res in resources:
             if isinstance(res, dict):
+                res_types = res.get("types", types)
                 if res.get("name") == "stream":
                     id_prefixes = res.get("idPrefixes", [])
                     if "tt" in id_prefixes:
                         is_stream = True
+                    if "tv" in res_types or "channel" in res_types:
+                        is_tv_stream = True
+
                 if res.get("name") == "catalog":
                     is_catalog = True
             elif isinstance(res, str):
                 if res == "stream":
-                    is_stream = True
+                    # For string resource, rely on top-elevel types
+                    if "movie" in types or "series" in types:
+                        is_stream = True # Assumption for now, though checking for 'tt' prefix is safer properly but here we just have string
+                    if "tv" in types or "channel" in types:
+                        is_tv_stream = True
                 if res == "catalog":
                     is_catalog = True
 
@@ -200,6 +317,20 @@ def add_custom_stremio_addon(params):
                 cache.set(
                     STREMIO_ADDONS_KEY,
                     ",".join(selected_keys),
+                    timedelta(days=365 * 20),
+                )
+
+        # Add to selected TV stream addons
+        if is_tv_stream:
+            selected_tv_addons = cache.get(STREMIO_TV_ADDONS_KEY)
+            selected_tv_keys = (
+                selected_tv_addons.split(",") if selected_tv_addons else []
+            )
+            if addon_key not in selected_tv_keys:
+                selected_tv_keys.append(addon_key)
+                cache.set(
+                    STREMIO_TV_ADDONS_KEY,
+                    ",".join(selected_tv_keys),
                     timedelta(days=365 * 20),
                 )
 
@@ -233,7 +364,7 @@ def add_custom_stremio_addon(params):
             user_addons.append(custom_addon)
             cache.set(STREMIO_USER_ADDONS, user_addons, timedelta(days=365 * 20))
 
-            if is_stream or is_catalog:
+            if is_stream or is_catalog or is_tv_stream:
                 dialog.ok("Custom Addon", "Custom Stremio addon added successfully!")
             else:
                 dialog.ok(
@@ -291,8 +422,12 @@ def remove_custom_stremio_addon(params=None):
     ]
     cache.set(STREMIO_USER_ADDONS, new_user_addons, timedelta(days=365 * 20))
 
-    # Remove from selected stream/catalogs if present
-    for cache_key in [STREMIO_ADDONS_KEY, STREMIO_ADDONS_CATALOGS_KEY]:
+    # Remove from selected stream/catalogs/tv if present
+    for cache_key in [
+        STREMIO_ADDONS_KEY,
+        STREMIO_ADDONS_CATALOGS_KEY,
+        STREMIO_TV_ADDONS_KEY,
+    ]:
         selected = cache.get(cache_key)
         if selected:
             selected_keys = selected.split(",")
