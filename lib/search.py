@@ -354,6 +354,8 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
 
 def stremio_addon_generator(stremio_addons, dialog, show_dialog):
     for addon in stremio_addons:
+        if show_dialog:
+            update_dialog(addon.manifest.name, "Searching...", dialog)
         yield StremioAddonClient(addon)
 
 
