@@ -843,7 +843,7 @@
             </group>
             <group id="size_filter" label="90058">
                 <setting id="filter_size_enabled" type="boolean" label="90059" help="">
-                    <default>true</default>
+                    <default>false</default>
                     <control type="toggle" />
                 </setting>
                 <setting id="minimum_size" type="integer" label="90060" help="">
