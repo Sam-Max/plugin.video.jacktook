@@ -20,6 +20,16 @@ class Stream:
         self.externalUrl = data.get("externalUrl")
         self.meta = data.get("meta", {})
 
+        # Initialize new supported attributes
+        self.fileMustInclude = data.get("fileMustInclude")
+        self.nzbUrl = data.get("nzbUrl")
+        self.servers = data.get("servers", [])
+        self.rarUrls = data.get("rarUrls", [])
+        self.zipUrls = data.get("zipUrls", [])
+        self.sevenZipUrls = data.get("7zipUrls", [])
+        self.tgzUrls = data.get("tgzUrls", [])
+        self.tarUrls = data.get("tarUrls", [])
+
         # Initialize optional attributes
         self.name = data.get("name")
         self.title = data.get("title", "")  # deprecated
@@ -40,9 +50,9 @@ class Stream:
         self.filename = behavior_hints.get("filename")
 
         # Validation for at least one stream identifier
-        if not (self.url or self.ytId or self.infoHash or self.externalUrl):
+        if not (self.url or self.ytId or self.infoHash or self.externalUrl or self.nzbUrl or self.rarUrls or self.zipUrls or self.sevenZipUrls or self.tgzUrls or self.tarUrls):
             raise ValueError(
-                "At least one of 'url', 'ytId', 'infoHash', or 'externalUrl' must be specified."
+                "At least one of 'url', 'ytId', 'infoHash', 'externalUrl', 'nzbUrl', or an archive url list must be specified."
             )
 
     def get_parsed_title(self) -> str:
