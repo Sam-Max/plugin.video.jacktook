@@ -260,6 +260,10 @@ def stremio_toggle_addons(params):
         addon
         for addon in addons
         if addon.key() not in excluded_addons
+        and (
+            not addon.manifest.isConfigurationRequired()
+            or addon.transport_name == "custom"
+        )
     ]
 
     addons = list(reversed(addons))
@@ -269,10 +273,19 @@ def stremio_toggle_addons(params):
         addons.index(addon) for addon in addons if addon.key() in selected_ids
     ]
 
+    from collections import Counter
+    name_counts = Counter(addon.manifest.name for addon in addons)
+
     options = []
     for addon in addons:
+        name = addon.manifest.name
+        if name_counts[name] > 1:
+            label = f"{name} ({addon.key()})"
+        else:
+            label = name
+
         option = xbmcgui.ListItem(
-            label=addon.manifest.name, label2=f"{addon.manifest.description}"
+            label=label, label2=f"{addon.manifest.description}"
         )
 
         logo = addon.manifest.logo
@@ -312,10 +325,19 @@ def stremio_toggle_catalogs(params):
         addons.index(addon) for addon in addons if addon.key() in selected_ids
     ]
 
+    from collections import Counter
+    name_counts = Counter(addon.manifest.name for addon in addons)
+
     options = []
     for addon in addons:
+        name = addon.manifest.name
+        if name_counts[name] > 1:
+            label = f"{name} ({addon.key()})"
+        else:
+            label = name
+
         option = xbmcgui.ListItem(
-            label=addon.manifest.name, label2=f"{addon.manifest.description}"
+            label=label, label2=f"{addon.manifest.description}"
         )
 
         logo = addon.manifest.logo
