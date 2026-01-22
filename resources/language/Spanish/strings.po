@@ -1917,3 +1917,11 @@ msgstr "Cantidad de Episodios a Precargar"
 msgctxt "#90148"
 msgid "Number of next episodes to precache."
 msgstr "Número de próximos episodios a precargar."
+
+msgctxt "#30901"
+msgid "Show Only Stremio Catalogs"
+msgstr "Mostrar solo catálogos de Stremio"
+
+msgctxt "#30902"
+msgid "Hides embedded items (TMDb, Trakt, etc.) and shows only Stremio catalogs in menus."
+msgstr "Oculta elementos integrados (TMDb, Trakt, etc.) y muestra solo catálogos de Stremio en los menús."

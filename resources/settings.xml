@@ -454,6 +454,15 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="stremio_only_catalogs" type="boolean" label="30901" help="30902">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="torrentio_enabled" type="boolean" label="90045" help="90046">
                     <default>true</default>
                     <control type="toggle"/>

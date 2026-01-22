@@ -1921,3 +1921,11 @@ msgstr "Precaching Episode Count"
 msgctxt "#90148"
 msgid "Number of next episodes to precache."
 msgstr "Number of next episodes to precache."
+
+msgctxt "#30901"
+msgid "Show Only Stremio Catalogs"
+msgstr ""
+
+msgctxt "#30902"
+msgid "Hides embedded items (TMDb, Trakt, etc.) and shows only Stremio catalogs in menus."
+msgstr ""
