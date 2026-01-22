@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import List, Optional, Any
 
 
 class Catalog:
@@ -28,6 +28,24 @@ class Resource:
         self.extra = extra or []
 
 
+class Config:
+    def __init__(
+        self,
+        key: str,
+        type: str,
+        default: Optional[str] = None,
+        title: Optional[str] = None,
+        options: Optional[List[str]] = None,
+        required: bool = False,
+    ):
+        self.key = key
+        self.type = type
+        self.default = default
+        self.title = title
+        self.options = options
+        self.required = required
+
+
 class Manifest:
     def __init__(
         self,
@@ -39,6 +57,8 @@ class Manifest:
         resources: List[Resource],
         types: List[str],
         behavior_hints: dict,
+        addon_catalogs: Optional[List[dict]] = None,
+        config: Optional[List[dict]] = None,
         contact_email: Optional[str] = None,
         logo: Optional[str] = None,
         background: Optional[str] = None,
@@ -56,6 +76,26 @@ class Manifest:
             )
             for cat in catalogs
         ]
+        self.addon_catalogs = [
+            Catalog(
+                type=cat["type"],
+                id=cat["id"],
+                name=cat.get("name"),
+                extra=cat.get("extra"),
+            )
+            for cat in (addon_catalogs or [])
+        ]
+        self.config = [
+            Config(
+                key=c["key"],
+                type=c["type"],
+                default=c.get("default"),
+                title=c.get("title"),
+                options=c.get("options"),
+                required=c.get("required", False),
+            )
+            for c in (config or [])
+        ]
         self.resources = resources
         self.types = types
         self.behavior_hints = behavior_hints
@@ -67,7 +107,13 @@ class Manifest:
         return self.behavior_hints.get("configurationRequired", False)
 
     def isConfigurable(self):
-        return self.behavior_hints.get("configurable", False)
+        return self.behavior_hints.get("configurable", False) or bool(self.config)
+
+    def isAdult(self):
+        return self.behavior_hints.get("adult", False)
+
+    def isP2P(self):
+        return self.behavior_hints.get("p2p", False)
 
 
 class Addon:
@@ -132,6 +178,8 @@ class AddonManager:
                 name=item["manifest"]["name"],
                 description=item["manifest"].get("description", ""),
                 catalogs=item["manifest"].get("catalogs", []),
+                addon_catalogs=item["manifest"].get("addonCatalogs", []),
+                config=item["manifest"].get("config", []),
                 resources=resources,
                 types=item["manifest"]["types"],
                 behavior_hints=item["manifest"].get("behaviorHints", {}),
