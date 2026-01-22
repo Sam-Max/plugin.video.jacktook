@@ -2,13 +2,30 @@ import json
 from typing import List, Optional
 
 
+class Catalog:
+    def __init__(self, type: str, id: str, name: str, extra: List[dict] = None):
+        self.type = type
+        self.id = id
+        self.name = name
+        self.extra = extra or []
+        self.genres = []
+        for item in self.extra:
+            if item.get("name") == "genre" and "options" in item:
+                self.genres = item["options"]
+
+
 class Resource:
     def __init__(
-        self, name: str, types: List[str], id_prefixes: Optional[List[str]] = None
+        self,
+        name: str,
+        types: List[str],
+        id_prefixes: Optional[List[str]] = None,
+        extra: Optional[List[dict]] = None,
     ):
         self.name = name
         self.types = types
         self.id_prefixes = id_prefixes or []
+        self.extra = extra or []
 
 
 class Manifest:
@@ -30,7 +47,15 @@ class Manifest:
         self.version = version
         self.name = name
         self.description = description
-        self.catalogs = catalogs
+        self.catalogs = [
+            Catalog(
+                type=cat["type"],
+                id=cat["id"],
+                name=cat.get("name"),
+                extra=cat.get("extra"),
+            )
+            for cat in catalogs
+        ]
         self.resources = resources
         self.types = types
         self.behavior_hints = behavior_hints

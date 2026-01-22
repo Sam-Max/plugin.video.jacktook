@@ -13,8 +13,8 @@ def catalogs_get_cache(path, params, *args, **kwargs):
 
     handlers = {
         "search_catalog": lambda p: StremioAddonCatalogsClient(params).search_catalog(p),
-        "list_catalog": lambda p: StremioAddonCatalogsClient(params).get_catalog_info(
-            p
+        "list_catalog": lambda **kwargs: StremioAddonCatalogsClient(params).get_catalog_info(
+            **kwargs
         ),
         "list_stremio_seasons": lambda: StremioAddonCatalogsClient(
             params

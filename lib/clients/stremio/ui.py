@@ -136,7 +136,8 @@ def get_selected_stream_addons() -> List[Addon]:
     selected_ids = cache.get(STREMIO_ADDONS_KEY)
     if not selected_ids:
         return []
-    return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    selected_ids_list = selected_ids.split(",")
+    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
@@ -144,7 +145,8 @@ def get_selected_catalogs_addons() -> List[Addon]:
     selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
     if not selected_ids:
         return []
-    return [addon for addon in catalog.addons if addon.key() in selected_ids]
+    selected_ids_list = selected_ids.split(",")
+    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
 
 
 def stremio_login(params):

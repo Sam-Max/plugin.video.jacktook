@@ -42,12 +42,18 @@ class StremioAddonCatalogsClient(BaseClient):
     def search_catalog(self, query: str) -> List[TorrentStream]:
         return []
 
-    def get_catalog_info(self, skip: Optional[int]) -> Optional[Dict[str, Any]]:
-        if skip:
-            skip_append = f"/skip={skip}.json"
+    def get_catalog_info(self, **kwargs) -> Optional[Dict[str, Any]]:
+        extra_path = ""
+        for key, value in kwargs.items():
+            if value:
+                extra_path += f"/{key}={value}"
+        
+        if not extra_path:
+             path_suffix = ".json"
         else:
-            skip_append = ".json"
-        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}{skip_append}"
+             path_suffix = f"{extra_path}.json"
+
+        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}{path_suffix}"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return

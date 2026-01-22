@@ -8,14 +8,12 @@ from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     build_url,
     end_of_directory,
-    kodilog,
     notification,
     show_keyboard,
 )
 
 from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
-import xbmc
 
 
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
@@ -23,17 +21,22 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     if not selected_addons:
         if menu_type == "tv":
             notification("No TV catalogs addons selected")
-            return
         return
 
     for addon in selected_addons:
         if menu_type in addon.manifest.types:
             for catalog in addon.manifest.catalogs:
-                catalog_name = catalog.get("name")
-                catalog_id = catalog.get("id")
+                catalog_name = catalog.name
+                catalog_id = catalog.id
+                catalog_type = catalog.type
+
+                # Filter catalogs by type to prevent duplicates and ensure correct content (e.g. Anime Movies vs Series)
+                target_type = sub_menu_type if sub_menu_type else menu_type
+                if target_type in ["movie", "series", "tv"] and catalog_type != target_type:
+                    continue
 
                 search_capabilities = any(
-                    extra["name"] == "search" for extra in catalog.get("extra", [])
+                    extra.get("name") == "search" for extra in catalog.extra
                 )
 
                 if search_capabilities:
@@ -46,7 +49,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                             "search_catalog",
                             page=1,
                             addon_url=addon.url(),
-                            catalog_type=catalog["type"],
+                            catalog_type=catalog.type,
                             catalog_id=catalog_id,
                         ),
                         listitem,
@@ -70,8 +73,8 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                             addon_url=addon.url(),
                             menu_type=menu_type,
                             sub_menu_type=sub_menu_type,
-                            catalog_type=catalog["type"],
-                            catalog_id=catalog["id"],
+                            catalog_type=catalog.type,
+                            catalog_id=catalog.id,
                         ),
                         listitem,
                         isFolder=True,
@@ -83,18 +86,26 @@ def list_catalog(params):
     setContent(ADDON_HANDLE, content_type)
 
     skip = int(params.get("skip", 0))
-    response = catalogs_get_cache("list_catalog", params, skip)
+    
+    # Extract known extra params
+    extras = {}
+    # Common Stremio extra params
+    for key in ["genre", "search"]: 
+        if key in params:
+             extras[key] = params[key]
+
+    response = catalogs_get_cache("list_catalog", params, skip=skip, **extras)
     if not response:
         return
 
-    videos = response.get("metas", [])
-    if not videos:
-        notification("No videos available")
+    metas = response.get("metas", [])
+    if not metas:
+        notification("No metas available")
         return
 
-    add_meta_items(videos, params)
+    add_meta_items(metas, params)
 
-    if len(videos) >= 25:
+    if len(metas) >= 25:
         next_url = build_url(
             "list_catalog",
             addon_url=params["addon_url"],
@@ -102,7 +113,7 @@ def list_catalog(params):
             sub_menu_type=params.get("sub_menu_type", ""),
             catalog_type=params["catalog_type"],
             catalog_id=params["catalog_id"],
-            skip=skip + len(videos),
+            skip=skip + len(metas),
         )
         list_item = ListItem(label="Next Page")
         addDirectoryItem(
@@ -161,15 +172,14 @@ def search_catalog(params):
             continue
 
         list_item = ListItem(label=f"{meta['name']}")
-        tags = list_item.getVideoInfoTag()
-        tags.setUniqueID(
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setUniqueID(
             meta["id"], type="imdb" if meta["id"].startswith("tt") else "mf"
         )
-        tags.setTitle(meta["name"])
-        tags.setPlot(meta.get("description", ""))
-        # tags.setRating(float(meta.get("imdbRating", 0) or 0))
-        tags.setGenres(meta.get("genres", []))
-        tags.setMediaType("video")
+        info_tag.setTitle(meta["name"])
+        info_tag.setPlot(meta.get("description", ""))
+        info_tag.setGenres(meta.get("genres", []))
+        info_tag.setMediaType("video")
 
         if meta["type"] == "movie":
             list_item.setProperty("IsPlayable", "true")
@@ -196,7 +206,7 @@ def search_catalog(params):
     end_of_directory()
 
 
-def add_meta_items(videos, params):
+def add_meta_items(metas, params):
     catalog_type = params["catalog_type"]
     menu_type = params["menu_type"]
     sub_menu_type = params.get("sub_menu_type", "")
@@ -205,33 +215,28 @@ def add_meta_items(videos, params):
     content_type = "movies" if menu_type == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
-    # Filtrado por tipo de video según el menú
-    def should_include(video):
-        video_type = video["type"]
+    def should_include(meta):
+        meta_type = meta["type"]
         if menu_type in ["anime", "movie"] and sub_menu_type == "movie":
-            kodilog(f"Filtering video: {video_type} for menu type: {menu_type}")
-            return video_type == "movie"
+            return meta_type == "movie"
         if menu_type in ["anime", "series"] and sub_menu_type == "series":
-            return video_type == "series"
+            return meta_type == "series"
         if menu_type == "tv":
-            return video_type == "tv"
+            return meta_type == "tv"
         return True
 
-    videos = [v for v in videos if should_include(v)]
-
-    kodilog(f"Filtered videos: {videos}", level=xbmc.LOGDEBUG)
-
-    if not videos:
+    metas = [m for m in metas if should_include(m)]
+    if not metas:
         notification(f"No content available for {menu_type}")
         end_of_directory()
         return
 
-    for video in videos:
-        name = video.get("name", "")
-        video_type = video["type"]
-        video_id = video.get("id", "")
-        tmdb_id = video.get("moviedb_id", "")
-        imdb_id = video.get("imdb_id", "")
+    for meta in metas:
+        name = meta.get("name", "")
+        video_type = meta["type"]
+        video_id = meta.get("id", "")
+        tmdb_id = meta.get("moviedb_id", "")
+        imdb_id = meta.get("imdb_id", "")
 
         if "tmdb" in video_id:
             tmdb_id = video_id.split(":")[1]
@@ -239,7 +244,6 @@ def add_meta_items(videos, params):
             imdb_id = video_id
             tmdb_id = ""
 
-        # Construcción de la URL según tipo
         if video_type == "series":
             if tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
@@ -255,8 +259,8 @@ def add_meta_items(videos, params):
                 )
 
         elif video_type == "tv":
-            if video.get("streams"):
-                url = build_url("list_stremio_tv_streams", streams=video["streams"])
+            if meta.get("streams"):
+                url = build_url("list_stremio_tv_streams", streams=meta["streams"])
             else:
                 url = build_url(
                     "list_stremio_tv",
@@ -271,23 +275,20 @@ def add_meta_items(videos, params):
         else:
             continue
 
-        # Creación del ListItem
         list_item = ListItem(label=name)
-        tags = list_item.getVideoInfoTag()
-        tags.setUniqueID(video_id, type="imdb" if video_id.startswith("tt") else "mf")
-        tags.setTitle(name)
-        tags.setPlot(video.get("description", ""))
-        tags.setGenres(video.get("genres", []))
-        tags.setMediaType("video")
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setUniqueID(video_id, type="imdb" if video_id.startswith("tt") else "mf")
+        info_tag.setTitle(name)
+        info_tag.setPlot(meta.get("description", ""))
+        info_tag.setGenres(meta.get("genres", []))
+        info_tag.setMediaType("video")
 
-        # Marcar como reproducible si es película
         is_folder = video_type != "movie"
         if not is_folder:
             list_item.setProperty("IsPlayable", "true")
 
-        # Setear arte
-        poster = video.get("poster", "")
-        background = video.get("background", "")
+        poster = meta.get("poster", "")
+        background = meta.get("background", "")
         list_item.setArt(
             {
                 "thumb": poster,
@@ -328,16 +329,16 @@ def list_stremio_seasons(params):
             season=season,
         )
         list_item = ListItem(label=f"Season {season}")
-        tags = list_item.getVideoInfoTag()
-        tags.setUniqueID(
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setUniqueID(
             meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
         )
-        tags.setTitle(meta_data["name"])
-        tags.setPlot(meta_data.get("description", ""))
-        tags.setRating(float(meta_data.get("imdbRating", 0)))
-        tags.setGenres(meta_data.get("genres", []))
-        tags.setTvShowTitle(meta_data["name"])
-        tags.setSeason(season)
+        info_tag.setTitle(meta_data["name"])
+        info_tag.setPlot(meta_data.get("description", ""))
+        info_tag.setRating(float(meta_data.get("imdbRating", 0)))
+        info_tag.setGenres(meta_data.get("genres", []))
+        info_tag.setTvShowTitle(meta_data["name"])
+        info_tag.setSeason(season)
 
         list_item.setArt(
             {
@@ -357,7 +358,6 @@ def list_stremio_seasons(params):
 
 
 def list_stremio_episodes(params):
-    kodilog("catalogs::list_stremio_episodes")
     response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
         return
@@ -412,17 +412,17 @@ def list_stremio_episodes(params):
         )
 
         list_item = ListItem(label=f"{season}x{episode}. {title}")
-        tags = list_item.getVideoInfoTag()
-        tags.setUniqueID(
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setUniqueID(
             meta_data["id"], type="imdb" if meta_data["id"].startswith("tt") else "mf"
         )
-        tags.setTitle(title)
-        tags.setPlot(video.get("overview", ""))
-        tags.setRating(float(meta_data.get("imdbRating", 0)))
-        tags.setGenres(meta_data.get("genres", []))
-        tags.setTvShowTitle(title)
-        tags.setSeason(season)
-        tags.setEpisode(episode)
+        info_tag.setTitle(title)
+        info_tag.setPlot(video.get("overview", ""))
+        info_tag.setRating(float(meta_data.get("imdbRating", 0)))
+        info_tag.setGenres(meta_data.get("genres", []))
+        info_tag.setTvShowTitle(title)
+        info_tag.setSeason(season)
+        info_tag.setEpisode(episode)
 
         list_item.setProperty("IsPlayable", "true")
 
@@ -461,8 +461,8 @@ def list_stremio_tv(params):
 
         list_item = ListItem(label=stream["title"])
         list_item.setProperty("IsPlayable", "true")
-        tags = list_item.getVideoInfoTag()
-        tags.setPlot(stream.get("description", ""))
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setPlot(stream.get("description", ""))
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
@@ -480,8 +480,8 @@ def list_stremio_tv_streams(params):
 
         list_item = ListItem(label=stream["name"])
         list_item.setProperty("IsPlayable", "true")
-        tags = list_item.getVideoInfoTag()
-        tags.setPlot(stream.get("description", ""))
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setPlot(stream.get("description", ""))
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
