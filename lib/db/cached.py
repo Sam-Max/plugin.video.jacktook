@@ -126,12 +126,28 @@ class MemoryCache(_BaseCache):
     def get(self, key):
         data = self._window.getProperty(self._database + key)
         if data:
-            decoded_data = self._load_func(b64decode(data))
-            return decoded_data
+            try:
+                decoded_data = self._load_func(b64decode(data))
+                # Check for (data, expires) tuple format
+                if isinstance(decoded_data, tuple) and len(decoded_data) == 2:
+                    val, expires = decoded_data
+                    if isinstance(expires, datetime):
+                        if expires > datetime.utcnow():
+                            return val
+                        else:
+                            self.delete(key)
+                            return None
+                return decoded_data
+            except Exception:
+                return None
 
-    def set(self, key, data):
+    def set(self, key, data, expires=timedelta(hours=24)):
         try:
-            blob = self._dump_func(data)
+            # Wrap data with expiry
+            expiry_dt = datetime.utcnow() + expires
+            val_to_store = (data, expiry_dt)
+            
+            blob = self._dump_func(val_to_store)
             self._window.setProperty(self._database + key, b64encode(blob).decode())
         except Exception as e:
             kodilog(f"[MemoryCache] Error storing key {key!r}: {str(e)}")
@@ -139,6 +155,59 @@ class MemoryCache(_BaseCache):
 
     def delete(self, key):
         self._window.clearProperty(self._database + key)
+
+
+class HybridCache(_BaseCache):
+    def __init__(self):
+        self.memory = MemoryCache()
+        self.db = SQLiteCache()
+
+    def get(self, key):
+        # L1: Memory
+        data = self.memory.get(key)
+        if data is not None:
+            return data
+        
+        # L2: Database
+        data = self.db.get(key)
+        if data is not None:
+            # Backfill memory (default 1 hour if not retrievable, but DB doesn't easily give TTL back in get())
+            # SQLiteCache.get returns data, checking expiry internally.
+            # We don't know the exact remaining TTL here easily without modifying SQLiteCache.get
+            # For safe consistency, we set a short-ish memory TTL or we just don't backfill?
+            # Backfilling key for cache locality:
+            self.memory.set(key, data, expires=timedelta(minutes=30))
+            return data
+        return None
+
+    def set(self, key, data, expires=timedelta(hours=24)):
+        # Write to both
+        self.memory.set(key, data, expires)
+        self.db.set(key, data, expires)
+    
+    def delete(self, key):
+        self.memory.delete(key)
+        self.db.delete(key)
+
+    def add_to_list(self, key, item, expires):
+        # Naive implementation for list appending
+        existing_data = self.get_list(key)
+        existing_data.append(item)
+        self.set(key, existing_data, expires)
+
+    def get_list(self, key):
+        result = self.get(key)
+        if result:
+            return [tuple(item) for item in result]
+        return []
+
+    def clear_list(self, key):
+        self.set(key, [], expires=timedelta(seconds=1))
+
+    def clean_all(self):
+        # We can't easily clean all memory keys without tracking them, 
+        # but we can clean DB
+        self.db.clean_all()
 
 
 class SQLiteCache(_BaseCache):
@@ -279,4 +348,4 @@ class SQLiteCache(_BaseCache):
         self._conn.close()
 
 
-cache = SQLiteCache()
+cache = HybridCache()

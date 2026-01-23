@@ -14,6 +14,7 @@ from time import time
 from lib.utils.kodi.settings import update_delay
 from lib.updater import updates_check_addon
 from lib.services.trakt_sync import TraktSyncService
+from lib.services.preloader import StartupPreloader
 
 
 import xbmcaddon
@@ -105,6 +106,7 @@ class JacktookMOnitor(xbmc.Monitor):
         DatabaseSetup().run()
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
+        StartupPreloader().run()
         DownloaderSetup().run()
         TMDBHelperAutoInstall()
 
