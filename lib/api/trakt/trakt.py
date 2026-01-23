@@ -190,15 +190,13 @@ class TraktBase:
 
     def get_trakt(self, params):
         try:
-            kodilog(f"get_trakt params: {params}")
-            path_insert = params.get("path_insert", "")
-            if not isinstance(path_insert, (tuple, str)):
-                path_insert = (path_insert,)
-
-            kodilog(f"Path: {params['path']}")
-            kodilog(f"Path insert: {path_insert}")
-            formatted_path = params["path"] % path_insert
-            kodilog(f"Formatted path: {formatted_path}")
+            path_insert = params.get("path_insert")
+            if path_insert is not None:
+                if not isinstance(path_insert, (tuple)):
+                    path_insert = (path_insert,)
+                formatted_path = params["path"] % path_insert
+            else:
+                formatted_path = params["path"]
 
             result = self.call_trakt(
                 formatted_path,
@@ -211,7 +209,6 @@ class TraktBase:
                 page_no=params.get("page_no"),
             )
             if result is not None:
-                kodilog(f"Call trakt result: {result}", level=xbmc.LOGDEBUG)
                 return result[0] if params.get("pagination", True) else result
         except KeyError as e:
             kodilog(f"KeyError in get_trakt: {e}")

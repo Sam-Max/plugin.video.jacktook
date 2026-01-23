@@ -5,8 +5,8 @@ from lib.utils.kodi.utils import kodilog, get_setting
 
 class TraktSyncService:
     def run(self):
-        if not get_setting("is_trakt_auth"):
-            kodilog("Trakt not authenticated, skipping sync.")
+        if not get_setting("trakt_enabled") or not get_setting("is_trakt_auth"):
+            kodilog("Trakt not enabled or not authenticated, skipping sync.")
             return
 
         kodilog("Starting Trakt Sync...")
