@@ -1037,6 +1037,7 @@ class TraktScrobble(TraktBase):
                                 progress = item.get("progress", 0)
                                 kodilog(f"Trakt: Found cloud resume point for episode: {progress}%")
                                 return progress
+                    except Exception:
                          continue
                         
             # kodilog("Trakt: No resume point found.")
