@@ -46,3 +46,4 @@ The project contains a `tests` directory, but it is not clear how to run the tes
 -   The addon uses a background service to perform tasks that do not require user interaction.
 -   The addon uses XML files to define the addon's settings and GUI elements.
 -   The project includes a `.gitignore` file, which lists files and directories that should be excluded from version control.
+- Always use conventional commits message format with a detailed body explaining *why* the change was made and *what* was changed.
