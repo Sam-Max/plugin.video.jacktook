@@ -747,6 +747,30 @@ msgctxt "#30900"
 msgid "Manual hour adjustment for broadcast day simulation"
 msgstr "Manual hour adjustment for broadcast day simulation"
 
+msgctxt "#30905"
+msgid "Trakt Calendar Previous Days"
+msgstr "Trakt Calendar Previous Days"
+
+msgctxt "#30906"
+msgid "Number of days in the past to show in the Trakt calendar."
+msgstr "Number of days in the past to show in the Trakt calendar."
+
+msgctxt "#30907"
+msgid "Trakt Calendar Future Days"
+msgstr "Trakt Calendar Future Days"
+
+msgctxt "#30908"
+msgid "Number of days in the future to show in the Trakt calendar."
+msgstr "Number of days in the future to show in the Trakt calendar."
+
+msgctxt "#30909"
+msgid "Show All Shows in Calendar"
+msgstr "Show All Shows in Calendar"
+
+msgctxt "#30910"
+msgid "Show all airing shows instead of just your watchlist/collection."
+msgstr "Show all airing shows instead of just your watchlist/collection."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

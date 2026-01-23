@@ -76,6 +76,34 @@ def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}
     ]
 
 
+def add_trakt_collection_context_menu(media_type, ids):
+    filtered_ids = clean_ids(
+        {
+            "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
+            "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
+            "imdb": ids.get("imdb_id") or ids.get("imdb"),
+        }
+    )
+    return [
+        (
+            "Add to Collection",
+            action_url_run(
+                "add_to_collection",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+        ),
+        (
+            "Remove from Collection",
+            action_url_run(
+                "remove_from_collection",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+        ),
+    ]
+
+
 def clean_ids(ids_dict):
     return {k: v for k, v in ids_dict.items() if v not in (None, "", "null")}
 

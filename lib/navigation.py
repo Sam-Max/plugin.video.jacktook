@@ -814,7 +814,7 @@ def search_item(params):
         result = TraktClient.handle_trakt_query(
             query, category, mode, page, submode, api
         )
-        if result:
+        if result is not None:
             TraktClient.process_trakt_result(
                 result, query, category, mode, submode, api, page
             )

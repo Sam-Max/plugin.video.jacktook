@@ -1190,6 +1190,47 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="trakt_calendar_previous_days" type="integer" label="30905" help="30906">
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="trakt_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="trakt_calendar_future_days" type="integer" label="30907" help="30908">
+                    <default>14</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="trakt_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="trakt_calendar_show_all" type="boolean" label="30909" help="30910">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="trakt_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">
                     <default>true</default>
                     <control type="toggle" />

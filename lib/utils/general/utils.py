@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from lib.api.fanart.fanart import get_fanart
 from lib.clients.subtitle.utils import get_language_code
 from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.api.trakt.trakt_cache import trakt_watched_cache
 from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.clients.base import TorrentStream
@@ -364,6 +365,7 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=Fa
     _set_identification(info_tag, data)
     _set_artwork(list_item, data, fanart_data)
     _set_released_info(info_tag, data)
+    _set_watched_status(info_tag, data, mode)
 
     if mode == "tv" or mode == "season" or mode == "episode":
         _set_show_info(info_tag, data, mode)
@@ -450,6 +452,24 @@ def _set_detailed_info(info_tag, data, mode):
 
     # Cast & crew
     info_tag.setCast(get_cast_and_crew(data))
+
+
+def _set_watched_status(info_tag, data, mode):
+    tmdb_id = str(data.get("id") or data.get("tmdb_id", ""))
+    if not tmdb_id:
+        return
+
+    is_watched = False
+    if mode == "movies":
+         is_watched = trakt_watched_cache.get_watched_status("movie", tmdb_id)
+    elif mode == "episode":
+         season = data.get("season")
+         episode = data.get("episode")
+         if season is not None and episode is not None:
+             is_watched = trakt_watched_cache.get_watched_status("episode", tmdb_id, int(season), int(episode))
+    
+    if is_watched:
+         info_tag.setPlaycount(1)
 
 
 def _set_show_info(info_tag, data, mode):

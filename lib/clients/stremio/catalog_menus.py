@@ -23,7 +23,8 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     else:
         selected_addons = get_selected_catalogs_addons()
     if not selected_addons:
-        notification("No catalogs addons selected")
+        if menu_type == "tv":
+            notification("No tv addons selected")
         return
         
     for addon in selected_addons:

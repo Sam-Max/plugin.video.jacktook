@@ -122,6 +122,27 @@ tv_items = [
         "query": "trakt_watchlist",
         "icon": "trakt.png",
     },
+    {
+        "name": "Collection",
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_collection",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Calendar",
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_calendar",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Up Next",
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_up_next",
+        "icon": "trakt.png",
+    },
 ]
 
 
@@ -244,6 +265,13 @@ movie_items = [
         "mode": "movies",
         "api": "trakt",
         "query": "trakt_watchlist",
+        "icon": "trakt.png",
+    },
+    {
+        "name": "Collection",
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_collection",
         "icon": "trakt.png",
     },
 ]

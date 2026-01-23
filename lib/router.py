@@ -196,6 +196,8 @@ def addon_router():
         "trakt_remove_from_watchlist": TraktClient.trakt_remove_from_watchlist,
         "trakt_mark_as_watched": TraktClient.trakt_mark_as_watched,
         "trakt_mark_as_unwatched": TraktClient.trakt_mark_as_unwatched,
+        "add_to_collection": TraktClient.trakt_add_to_collection,
+        "remove_from_collection": TraktClient.trakt_remove_from_collection,
         "pm_auth": pm_auth,
         "torrents": torrents,
         "torrent_action": torrent_action,
