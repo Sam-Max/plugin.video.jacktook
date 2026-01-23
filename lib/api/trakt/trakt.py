@@ -73,7 +73,6 @@ class TraktBase:
             TraktCache().clear_all_trakt_cache_data()
         except:
             pass
-        notification("Trakt Authentication Expired. Please Re-authorize.")
 
     def call_trakt(
         self,
