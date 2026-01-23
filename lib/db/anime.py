@@ -8,12 +8,19 @@ from xbmcvfs import translatePath
 
 
 try:
-    OTAKU_ADDON = xbmcaddon.Addon("script.otaku.mappings")
+    if xbmc.getCondVisibility("System.HasAddon(script.otaku.mappings)"):
+        OTAKU_ADDON = xbmcaddon.Addon("script.otaku.mappings")
+    else:
+        OTAKU_ADDON = None
     TRANSLATEPATH = translatePath
-    mappingPath = TRANSLATEPATH(OTAKU_ADDON.getAddonInfo("path"))
-    mappingDB = os.path.join(mappingPath, "resources", "data", "anime_mappings.db")
+    if OTAKU_ADDON:
+        mappingPath = TRANSLATEPATH(OTAKU_ADDON.getAddonInfo("path"))
+        mappingDB = os.path.join(mappingPath, "resources", "data", "anime_mappings.db")
+    else:
+        mappingDB = None
 except:
     OTAKU_ADDON = None
+    mappingDB = None
 
 mappingDB_lock = threading.Lock()
 

@@ -39,7 +39,10 @@ JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
 
 
 try:
-    JACKTORR_ADDON = xbmcaddon.Addon(JACKTORR_ADDON_ID)
+    if xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
+        JACKTORR_ADDON = xbmcaddon.Addon(JACKTORR_ADDON_ID)
+    else:
+        JACKTORR_ADDON = None
 except:
     JACKTORR_ADDON = None
 
@@ -148,6 +151,8 @@ def is_jacktorr_addon():
 
 def is_jacktorr_addon_enabled():
     try:
+        if not xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
+            return False
         addon = xbmcaddon.Addon(JACKTORR_ADDON_ID)
         # If the addon is disabled, this will raise RuntimeError
         return True
