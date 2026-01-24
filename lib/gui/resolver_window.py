@@ -74,6 +74,9 @@ class ResolverWindow(BaseWindow):
             if self.is_subtitle_download:
                 self._download_subtitle()
 
+            if not self.playback_info:
+                raise Exception("Failed to resolve source")
+
             player = JacktookPLayer(
                 on_started=self.handle_playback_started,
                 on_error=self.handle_playback_started,

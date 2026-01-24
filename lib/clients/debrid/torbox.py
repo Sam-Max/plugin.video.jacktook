@@ -1,7 +1,9 @@
 import copy
 from typing import Dict, List, Any, Optional
+from datetime import datetime
 from lib.api.debrid.torbox import Torbox
-from lib.utils.kodi.utils import get_setting, notification
+from lib.jacktook.utils import kodilog
+from lib.utils.kodi.utils import get_setting, notification, dialog_text
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -38,7 +40,15 @@ class TorboxHelper:
     ) -> None:
         hashes = [res.infoHash for res in results]
         response = self.client.get_torrent_instant_availability(hashes)
-        cached_response = response.get("data", [])
+        
+        raw_data = response.get("data", [])
+        cached_response = set()
+        for item in raw_data:
+            if isinstance(item, dict):
+                if item.get('hash'):
+                    cached_response.add(item.get('hash'))
+            else:
+                cached_response.add(item)
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("TB", total, dialog, lock)
@@ -103,7 +113,11 @@ class TorboxHelper:
         if not torrent_info:
             return None
 
-        info = {"id": torrent_info["id"], "files": []}
+        info = {
+            "id": torrent_info["id"],
+            "torrent_id": torrent_info["id"],
+            "files": [],
+        }
         torrent_files = torrent_info.get("files", [])
 
         if not torrent_files:
@@ -111,7 +125,7 @@ class TorboxHelper:
             return None
 
         files = [
-            (id, item["name"])
+            (item.get("id"), item["name"])
             for id, item in enumerate(torrent_files)
             if any(item["short_name"].lower().endswith(ext) for ext in EXTENSIONS)
         ]
@@ -119,3 +133,35 @@ class TorboxHelper:
         info["files"] = files
         set_cached(info, info_hash)
         return info
+
+    def get_info(self) -> None:
+        """Fetches Torbox account details and displays them."""
+        response = self.client.get_user()
+        if not response.get("success"):
+            notification("Failed to fetch Torbox user info")
+            return
+
+        user = response.get("data", {})
+        customer_email = user.get("customer_email", "")
+        plan = user.get("plan", 0)
+        
+        # Plan mapping (based on general knowledge of Torbox plans, might need adjustment)
+        plans = {
+            0: "Free",
+            1: "Essential",
+            2: "Pro",
+            3: "Standard"
+        }
+        plan_name = plans.get(plan, f"Plan {plan}")
+        
+        body = [
+            f"[B]Account:[/B] {customer_email}",
+            f"[B]Plan:[/B] {plan_name}",
+            f"[B]User ID:[/B] {user.get('auth_id')}",
+            f"[B]Cooldown Until:[/B] {user.get('cooldown_until') or 'None'}",
+        ]
+
+        days = self.client.days_remaining()
+        if days is not None:
+             body.append(f"[B]Days Remaining:[/B] {days}")
+        dialog_text("Torbox", "\n".join(body))

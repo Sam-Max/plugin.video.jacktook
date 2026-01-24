@@ -771,6 +771,18 @@ msgctxt "#30910"
 msgid "Show all airing shows instead of just your watchlist/collection."
 msgstr "Show all airing shows instead of just your watchlist/collection."
 
+msgctxt "#30911"
+msgid "Your Torbox account username/email."
+msgstr "Your Torbox account username/email."
+
+msgctxt "#30912"
+msgid "Authorize add-on to access Torbox account."
+msgstr "Authorize add-on to access Torbox account."
+
+msgctxt "#30913"
+msgid "Revoke Torbox account access."
+msgstr "Revoke Torbox account access."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

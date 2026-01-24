@@ -10,6 +10,7 @@ from lib.api.jacktorr.jacktorr import TorrServer
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.debrid.alldebrid import AllDebridHelper
+from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.trakt.trakt import TraktClient
 
 from lib.api.debrid.premiumize import Premiumize
@@ -563,8 +564,8 @@ def cloud_details(params):
         notification("Not yet implemented")
         return
     elif debrid_name == DebridType.TB:
-        notification("Not yet implemented")
-        return
+        downloads_method = "get_tb_downloads" # Placeholder, will implement later if needed
+        info_method = "torbox_info"
     else:
         notification("Unsupported debrid type")
         return
@@ -982,6 +983,20 @@ def trakt_auth(params):
 
 def trakt_auth_revoke(params):
     TraktAPI().auth.trakt_revoke_authentication()
+
+
+def tb_auth(params):
+    torbox_client = Torbox(token=str(get_setting("torbox_token")))
+    torbox_client.auth()
+
+
+def tb_remove_auth(params):
+    torbox_client = Torbox(token=str(get_setting("torbox_token")))
+    torbox_client.remove_auth()
+
+
+def torbox_info(params):
+    TorboxHelper().get_info()
 
 
 def open_burst_config(params):

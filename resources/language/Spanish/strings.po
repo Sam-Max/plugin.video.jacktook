@@ -743,6 +743,18 @@ msgctxt "#30900"
 msgid "Manual hour adjustment for broadcast day simulation"
 msgstr "Ajuste manual de horas para simulación de emisión"
 
+msgctxt "#30911"
+msgid "Your Torbox account username/email."
+msgstr "Tu nombre de usuario/email de cuenta Torbox."
+
+msgctxt "#30912"
+msgid "Authorize add-on to access Torbox account."
+msgstr "Autorizar complemento para acceder a la cuenta de Torbox."
+
+msgctxt "#30913"
+msgid "Revoke Torbox account access."
+msgstr "Revocar acceso a la cuenta de Torbox."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr "Árabe (Emiratos Árabes Unidos)"

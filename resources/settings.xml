@@ -307,12 +307,47 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="torbox_token" type="string" label="30787" help="30832">
+                <setting id="torbox_user" type="string" label="30782" help="30911">
                     <default />
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
                     <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="torbox_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="torbox_token" type="string" label="30787" help="30832">
+                    <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="torbox_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="tb_auth" type="action" label="30783" help="30912">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=tb_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="torbox_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="tb_remove_auth" type="action" label="30784" help="30913">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=tb_remove_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="torbox_enabled">true</condition>
