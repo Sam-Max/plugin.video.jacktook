@@ -231,7 +231,7 @@
                     </dependencies>
                 </setting>
             </group>
-            <group id="debrider" label="30789">
+            <!-- <group id="debrider" label="30789">
                 <setting id="debrider_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
@@ -271,37 +271,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-            </group>
-            <group id="premiumize" label="30785">
-                <setting id="premiumize_enabled" type="boolean" label="30734" help="30824">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="premiumize_token" type="string" label="30787" help="30814">
-                    <default />
-                    <visible>false</visible>
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="premiumize_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-                <setting id="premiumize_auth" type="action" label="30783" help="30845">
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=pm_auth)</data>
-                    <control type="button" format="action">
-                        <close>false</close>
-                    </control>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="premiumize_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-            </group>
+            </group> -->
             <group id="torbox" label="30788">
                 <setting id="torbox_enabled" type="boolean" label="30734" help="30843">
                     <default>false</default>
@@ -351,6 +321,36 @@
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="torbox_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
+            <group id="premiumize" label="30785">
+                <setting id="premiumize_enabled" type="boolean" label="30734" help="30824">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="premiumize_token" type="string" label="30787" help="30814">
+                    <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="premiumize_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="premiumize_auth" type="action" label="30783" help="30845">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=pm_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="premiumize_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
