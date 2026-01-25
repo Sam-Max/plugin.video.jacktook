@@ -125,13 +125,45 @@ def search_client(
                 if not stremio_addons:
                     notification("No Stremio addons selected")
                     return []
-                return [
-                    result
-                    for client in stremio_addon_generator(
-                        stremio_addons, dialog, show_dialog
-                    )
-                    for result in client.search(*args, **kwargs)
-                ]
+
+                ids_dict = args[0]
+                rest_args = args[1:]
+
+                results = []
+                for addon in stremio_addons:
+                    if show_dialog:
+                        update_dialog(addon.manifest.name, "Searching...", dialog)
+
+                    video_id = None
+                    original_id = ids_dict.get("original_id")
+
+                    # 1. Try Original ID (e.g. kitsu:123) if supported
+                    if original_id:
+                        prefix = original_id.split(":")[0]
+                        if addon.isSupported(
+                            "stream",
+                            "series" if args[1] == "tv" or args[2] == "tv" else "movie",
+                            prefix,
+                        ):
+                            video_id = original_id
+
+                    # 2. Try IMDB ID if supported and not already found
+                    if not video_id and ids_dict.get("imdb_id"):
+                        if addon.isSupported(
+                            "stream",
+                            "series" if args[1] == "tv" or args[2] == "tv" else "movie",
+                            "tt",
+                        ):
+                            video_id = ids_dict.get("imdb_id")
+
+                    if video_id:
+                        try:
+                            client = StremioAddonClient(addon)
+                            results.extend(client.search(video_id, *rest_args))
+                        except Exception as e:
+                            kodilog(f"Error searching {addon.manifest.name}: {e}")
+
+                return results
 
             client = get_client(indexer_key)
             if not client:
@@ -228,13 +260,17 @@ def search_client(
                 season,
                 episode,
             )
-            if get_setting("stremio_enabled") and imdb_id:
+            if (
+                get_setting("stremio_enabled")
+                and ids.get("imdb_id")
+                or ids.get("original_id")
+            ):
                 tasks.append(
                     executor.submit(
                         perform_search,
                         Indexer.STREMIO,
                         listener.dialog,
-                        imdb_id,
+                        ids,
                         mode,
                         media_type,
                         season,
@@ -250,8 +286,13 @@ def search_client(
                     completed_tasks += 1
                     if show_dialog and total_tasks > 0:
                         percent = int(completed_tasks / total_tasks * 100)
-                        update_dialog("Searching", f"Searching... {percent}%", listener.dialog, percent)
-                    
+                        update_dialog(
+                            "Searching",
+                            f"Searching... {percent}%",
+                            listener.dialog,
+                            percent,
+                        )
+
                     results = future.result()
                     kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
                     if results:

@@ -262,8 +262,12 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         return data
 
     handlers = {
-        "search_tv": lambda p: Search().tv_shows(p),
-        "search_movie": lambda p: Search().movies(p),
+        "search_tv": lambda p: Search().tv_shows(
+            term=p["query"], page=p.get("page", 1), release_year=p.get("year")
+        ),
+        "search_movie": lambda p: Search().movies(
+            term=p["query"], page=p.get("page", 1), year=p.get("year")
+        ),
         "search_multi": lambda p: Search().multi(p["query"], page=p["page"]),
         "search_collections": lambda p: Search().collections(p["query"], p["page"]),
         "search_people": lambda p: Search().people(p["query"], p["page"]),
@@ -295,7 +299,9 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "person_ids": lambda p: Person().external_ids(p),
         "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),
         "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p),
-        "anime_year": lambda p: TmdbAnime().anime_year(p),
+        "anime_year": lambda p: TmdbAnime().anime_year(
+            term=p["query"], page=p.get("page", 1), year=p.get("year")
+        ),
         "anime_genres": lambda p: TmdbAnime().anime_genres(p),
         "collection_details": lambda p: Collection().details(p),
         "collection_images": lambda p: Collection().images(p),

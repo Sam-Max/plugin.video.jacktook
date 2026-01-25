@@ -1,16 +1,20 @@
+from lib.utils.kodi.utils import ADDON_HANDLE
 import json
 from dataclasses import asdict
-from lib.clients.stremio.helpers import get_selected_catalogs_addons, get_selected_tv_addons
+from lib.clients.stremio.helpers import (
+    get_selected_catalogs_addons,
+    get_selected_tv_addons,
+)
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.general.utils import add_next_button
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
     end_of_directory,
     notification,
     show_keyboard,
+    kodilog,
 )
 
 from xbmcplugin import addDirectoryItem, setContent
@@ -22,67 +26,90 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         selected_addons = get_selected_tv_addons()
     else:
         selected_addons = get_selected_catalogs_addons()
+
     if not selected_addons:
         if menu_type == "tv":
             notification("No tv addons selected")
+        kodilog(f"No addons found for menu_type={menu_type}")
         return
-        
+
     for addon in selected_addons:
-        if menu_type in addon.manifest.types:
-            for catalog in addon.manifest.catalogs:
-                catalog_name = catalog.name
-                catalog_id = catalog.id
-                catalog_type = catalog.type
+        addon_name = addon.manifest.name
+        addon_id = addon.manifest.id
+        addon_types = addon.manifest.types
 
-                # Filter catalogs by type to prevent duplicates and ensure correct content (e.g. Anime Movies vs Series)
-                target_type = sub_menu_type if sub_menu_type else menu_type
-                if target_type in ["movie", "series", "tv"] and catalog_type != target_type:
-                    continue
+        if menu_type not in addon.manifest.types:
+            kodilog(
+                f"  Skipped addon {addon_name}: type '{menu_type}' not in addon types {addon.manifest.types}"
+            )
+            continue
 
-                search_capabilities = any(
-                    extra.get("name") == "search" for extra in catalog.extra
+        for catalog in addon.manifest.catalogs:
+            catalog_name = catalog.name
+            catalog_id = catalog.id
+            catalog_type = catalog.type
+
+            # Filter catalogs by type
+            target_type = sub_menu_type if sub_menu_type else menu_type
+
+            # Allow 'anime' catalogs when target is 'series' and we are in 'anime' menu
+            allowed_types = [target_type]
+            if menu_type == "anime" and target_type == "series":
+                allowed_types.append("anime")
+
+            if (
+                target_type in ["movie", "series", "tv"]
+                and catalog_type not in allowed_types
+            ):
+                kodilog(
+                    f"  Skipped catalog {catalog_name}: type '{catalog_type}' != target '{target_type}' (Allowed: {allowed_types})"
+                )
+                continue
+
+            search_capabilities = any(
+                extra.get("name") == "search" for extra in catalog.extra
+            )
+
+            if search_capabilities:
+                listitem = ListItem(label=f"Search")
+                listitem.setArt({"icon": addon.manifest.logo})
+
+                addDirectoryItem(
+                    ADDON_HANDLE,
+                    build_url(
+                        "search_catalog",
+                        page=1,
+                        addon_url=addon.url(),
+                        catalog_type=catalog.type,
+                        catalog_id=catalog_id,
+                    ),
+                    listitem,
+                    isFolder=True,
                 )
 
-                if search_capabilities:
-                    listitem = ListItem(label=f"Search-{catalog_name}")
-                    listitem.setArt({"icon": addon.manifest.logo})
+            if catalog_name or catalog_id:
+                addon_name = addon.manifest.name
+                if addon_name == "Cinemeta":
+                    label = f"{addon_name} - {catalog_name or catalog_id}"
+                else:
+                    label = catalog_name or catalog_id
 
-                    addDirectoryItem(
-                        ADDON_HANDLE,
-                        build_url(
-                            "search_catalog",
-                            page=1,
-                            addon_url=addon.url(),
-                            catalog_type=catalog.type,
-                            catalog_id=catalog_id,
-                        ),
-                        listitem,
-                        isFolder=True,
-                    )
+                listitem = ListItem(label=label)
+                listitem.setArt({"icon": addon.manifest.logo})
 
-                if catalog_name or catalog_id:
-                    addon_name = addon.manifest.name
-                    if addon_name == "Cinemeta":
-                        label = f"{addon_name} - {catalog_name or catalog_id}"
-                    else:
-                        label = catalog_name or catalog_id
-
-                    listitem = ListItem(label=label)
-                    listitem.setArt({"icon": addon.manifest.logo})
-
-                    addDirectoryItem(
-                        ADDON_HANDLE,
-                        build_url(
-                            action="list_catalog",
-                            addon_url=addon.url(),
-                            menu_type=menu_type,
-                            sub_menu_type=sub_menu_type,
-                            catalog_type=catalog.type,
-                            catalog_id=catalog.id,
-                        ),
-                        listitem,
-                        isFolder=True,
-                    )
+                addDirectoryItem(
+                    ADDON_HANDLE,
+                    build_url(
+                        action="list_catalog",
+                        addon_url=addon.url(),
+                        menu_type=menu_type,
+                        sub_menu_type=sub_menu_type,
+                        catalog_type=catalog.type,
+                        catalog_id=catalog.id,
+                    ),
+                    listitem,
+                    isFolder=True,
+                )
 
 
 def list_catalog(params):
@@ -90,13 +117,12 @@ def list_catalog(params):
     setContent(ADDON_HANDLE, content_type)
 
     skip = int(params.get("skip", 0))
-    
-    # Extract known extra params
+
     extras = {}
     # Common Stremio extra params
-    for key in ["genre", "search"]: 
+    for key in ["genre", "search"]:
         if key in params:
-             extras[key] = params[key]
+            extras[key] = params[key]
 
     response = catalogs_get_cache("list_catalog", params, skip=skip, **extras)
     if not response:
@@ -177,9 +203,7 @@ def search_catalog(params):
 
         list_item = ListItem(label=f"{meta.name}")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(
-            meta.id, type="imdb" if meta.id.startswith("tt") else "mf"
-        )
+        info_tag.setUniqueID(meta.id, type="imdb" if meta.id.startswith("tt") else "mf")
         info_tag.setTitle(meta.name)
         info_tag.setPlot(meta.description or "")
         info_tag.setGenres(meta.genres)
@@ -224,7 +248,7 @@ def add_meta_items(metas, params):
         if menu_type in ["anime", "movie"] and sub_menu_type == "movie":
             return meta_type == "movie"
         if menu_type in ["anime", "series"] and sub_menu_type == "series":
-            return meta_type == "series"
+            return meta_type in ["series", "anime"]
         if menu_type == "tv":
             return meta_type == "tv"
         return True
@@ -266,7 +290,9 @@ def add_meta_items(metas, params):
             if meta.streams:
                 # Serialize streams to list of dicts for URL params
                 streams_data = [asdict(s) for s in meta.streams]
-                url = build_url("list_stremio_tv_streams", streams=json.dumps(streams_data))
+                url = build_url(
+                    "list_stremio_tv_streams", streams=json.dumps(streams_data)
+                )
             else:
                 url = build_url(
                     "list_stremio_tv",
@@ -283,7 +309,9 @@ def add_meta_items(metas, params):
 
         list_item = ListItem(label=name)
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(video_id, type="imdb" if video_id.startswith("tt") else "mf")
+        info_tag.setUniqueID(
+            video_id, type="imdb" if video_id.startswith("tt") else "mf"
+        )
         info_tag.setTitle(name)
         info_tag.setPlot(meta.description or "")
         info_tag.setGenres(meta.genres)
@@ -327,7 +355,7 @@ def list_stremio_seasons(params):
         return
 
     available_seasons = set(
-        video.imdbSeason if video.imdbSeason else video.season
+        int(video.imdbSeason) if video.imdbSeason else int(video.season)
         for video in videos
     )
     for season in available_seasons:
@@ -377,18 +405,55 @@ def list_stremio_episodes(params):
         notification("No meta available")
         return
 
+    try:
+        kodilog(f"Meta Data: {asdict(meta_data)}")
+    except Exception:
+        kodilog(f"Meta Data (repr): {meta_data}")
+
     videos = meta_data.videos
     if not videos:
         notification("No episodes available")
         return
 
+    # Resolve IDs once for the show
+    tmdb_id = ""
+    imdb_id = ""
+    # Store original ID (e.g. kitsu:123) for addons that support it
+    original_id = meta_data.id if ":" in meta_data.id else ""
+
+    if meta_data.imdb_id:
+        imdb_id = meta_data.imdb_id
+        res = tmdb_get("find_by_imdb_id", imdb_id)
+        if getattr(res, "tv_results", []):
+            tmdb_id = str(getattr(res, "tv_results")[0]["id"])
+
+    if not tmdb_id and not imdb_id and meta_data.name:
+        kodilog(f"No IDs found for {meta_data.name}. Searching TMDB...")
+        year = meta_data.releaseInfo.split("-")[0] if meta_data.releaseInfo else ""
+        results = tmdb_get(
+            "search_tv", {"query": meta_data.name, "page": 1, "year": year}
+        )
+        if results and results.results:
+            try:
+                tmdb_id = str(results.results[0].id)
+                kodilog(f"Fallback found TMDB ID: {tmdb_id} for {meta_data.name}")
+            except Exception:
+                pass
+
+    if tmdb_id and not imdb_id:
+        details = tmdb_get("tv_details", tmdb_id)
+        if details and getattr(details, "external_ids", None):
+            imdb_id = details.external_ids.get("imdb_id", "")
+            kodilog(f"Resolved IMDB ID: {imdb_id} from TMDB ID: {tmdb_id}")
+
     for video in videos:
-        season = (
-            int(video.imdbSeason) if video.imdbSeason else video.season
-        )
-        episode = (
-            int(video.imdbEpisode) if video.imdbEpisode else video.episode
-        )
+        try:
+            season = int(video.imdbSeason) if video.imdbSeason else int(video.season)
+            episode = (
+                int(video.imdbEpisode) if video.imdbEpisode else int(video.episode)
+            )
+        except (ValueError, TypeError):
+            continue
 
         if season != int(params["season"]):
             continue
@@ -401,20 +466,12 @@ def list_stremio_episodes(params):
             "season": season,
         }
 
-        ids = {"tmdb_id": "", "tvdb_id": "", "imdb_id": ""}
-
-        if imdb_id := meta_data.imdb_id:
-            ids["imdb_id"] = imdb_id
-            res = tmdb_get("find_by_imdb_id", imdb_id)
-            if getattr(res, "tv_results", []):
-                ids["tmdb_id"] = getattr(res, "tv_results")[0]["id"]
-
-        if video.id.startswith("tt") and not imdb_id:
-            imdb_id = meta_data.id.split(":")[0]
-            ids["imdb_id"] = imdb_id
-            res = tmdb_get("find_by_imdb_id", imdb_id)
-            if getattr(res, "tv_results", []):
-                ids["tmdb_id"] = getattr(res, "tv_results")[0]["id"]
+        ids = {
+            "tmdb_id": tmdb_id,
+            "tvdb_id": "",
+            "imdb_id": imdb_id,
+            "original_id": original_id,
+        }
 
         url = build_url(
             "search",

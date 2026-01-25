@@ -39,25 +39,25 @@ class StremioAddonCatalogsClient(BaseClient):
     def parse_response(self, res: Any) -> List[TorrentStream]:
         return []
 
-    def search_catalog(self, query: str) -> List[TorrentStream]:
-        return []
+    def search_catalog(self, query: str) -> Optional[Dict[str, Any]]:
+        return self.get_catalog_info(search=query)
 
     def get_catalog_info(self, **kwargs) -> Optional[Dict[str, Any]]:
         extra_path = ""
         for key, value in kwargs.items():
             if value:
                 extra_path += f"/{key}={value}"
-        
+
         if not extra_path:
-             path_suffix = ".json"
+            path_suffix = ".json"
         else:
-             path_suffix = f"{extra_path}.json"
+            path_suffix = f"{extra_path}.json"
 
         url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}{path_suffix}"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-        
+
         data = res.json()
         if "metas" in data:
             data["metas"] = [MetaPreview.from_dict(m) for m in data["metas"]]
@@ -68,7 +68,7 @@ class StremioAddonCatalogsClient(BaseClient):
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-            
+
         data = res.json()
         if "meta" in data:
             data["meta"] = Meta.from_dict(data["meta"])
@@ -79,7 +79,7 @@ class StremioAddonCatalogsClient(BaseClient):
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
-            
+
         data = res.json()
         if "streams" in data:
             data["streams"] = [Stream.from_dict(s) for s in data["streams"]]
@@ -93,21 +93,27 @@ class StremioAddonClient(BaseClient):
 
     def search(
         self,
-        imdb_id: str,
+        video_id: str,
         mode: str,
         media_type: str,
         season: Optional[int],
         episode: Optional[int],
     ) -> List[TorrentStream]:
         try:
+            prefix = video_id.split(":")[0] if ":" in video_id else "tt"
+
             if mode == "tv" or media_type == "tv":
-                if not self.addon.isSupported("stream", "series", "tt"):
+                if not self.addon.isSupported("stream", "series", prefix):
                     return []
-                url = f"{self.addon.url()}/stream/series/{imdb_id}:{season}:{episode}.json"
+
+                if prefix == "kitsu":
+                    url = f"{self.addon.url()}/stream/series/{video_id}:{episode}.json"
+                else:
+                    url = f"{self.addon.url()}/stream/series/{video_id}:{season}:{episode}.json"
             elif mode == "movies" or media_type == "movies":
-                if not self.addon.isSupported("stream", "movie", "tt"):
+                if not self.addon.isSupported("stream", "movie", prefix):
                     return []
-                url = f"{self.addon.url()}/stream/movie/{imdb_id}.json"
+                url = f"{self.addon.url()}/stream/movie/{video_id}.json"
             else:
                 return []
 
@@ -127,7 +133,9 @@ class StremioAddonClient(BaseClient):
             if res.status_code != 200:
                 return []
             response = self.parse_response(res)
-            kodilog(f"Stremio addon {self.addon.manifest.name} returned {len(response)} results")
+            kodilog(
+                f"Stremio addon {self.addon.manifest.name} returned {len(response)} results"
+            )
             return response
         except Exception as e:
             self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
@@ -142,12 +150,12 @@ class StremioAddonClient(BaseClient):
         else:
             pass
 
-        if hasattr(res, 'json'):
-             data = res.json()
+        if hasattr(res, "json"):
+            data = res.json()
         elif isinstance(res, dict):
-             data = res
+            data = res
         else:
-             data = {} # Should not happen
+            data = {}
 
         results = []
 
@@ -155,7 +163,9 @@ class StremioAddonClient(BaseClient):
 
         for item in streams:
             stream = Stream.from_dict(item)
-            parsed = self.parse_torrent_description(stream.description or stream.title or "")
+            parsed = self.parse_torrent_description(
+                stream.description or stream.title or ""
+            )
 
             if is_external_cache:
                 match = re.search(r"\b\w{40}\b", stream.url or "")
