@@ -17,22 +17,16 @@ from xbmcplugin import (
 from xbmcplugin import addSortMethod, SORT_METHOD_LABEL_IGNORE_THE, SORT_METHOD_FILE
 from xbmcgui import Dialog
 
-webdav_hostname = get_setting("webdav_hostname")
-webdav_username = get_setting("webdav_username")
-webdav_password = get_setting("webdav_password")
-webdav_port = get_setting("webdav_port")
-webdav_remote_path = get_setting("webdav_remote_path")
-
 
 def list_webdav(params):
     relative_path = params.get("path", "").strip("/")
 
     client = WebDAVClient(
-        webdav_hostname,
-        webdav_username,
-        webdav_password,
-        webdav_port,
-        webdav_remote_path,
+        get_setting("webdav_hostname"),
+        get_setting("webdav_username"),
+        get_setting("webdav_password"),
+        get_setting("webdav_port"),
+        get_setting("webdav_remote_path"),
     )
 
     items = client.list_dir(relative_path)
@@ -101,11 +95,11 @@ def list_webdav(params):
 
 def webdav_provider_test(params):
     client = WebDAVClient(
-        webdav_hostname,
-        webdav_username,
-        webdav_password,
-        webdav_port,
-        webdav_remote_path,
+        get_setting("webdav_hostname"),
+        get_setting("webdav_username"),
+        get_setting("webdav_password"),
+        get_setting("webdav_port"),
+        get_setting("webdav_remote_path"),
     )
     result = client.test_connection()
     if result["success"]:

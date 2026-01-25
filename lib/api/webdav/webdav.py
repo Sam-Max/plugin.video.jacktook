@@ -29,6 +29,7 @@ class WebDAVClient:
     ):
         self.username = username
         self.password = password
+        kodilog(f"WebDAV Client initialized with hostname: {hostname}")
 
         hostname = hostname.strip().rstrip("/")
 
@@ -37,12 +38,28 @@ class WebDAVClient:
         else:
             base = "http://" + hostname
 
+        # Store scheme for URL construction
+        self.scheme = "https" if base.startswith("https://") else "http"
+
         remote_path = remote_path.strip("/") if remote_path else ""
 
-        self.server_root = f"{base}:{port}"
-        self.api_root = f"{self.server_root}/webdav"
+        if port and str(port).strip():
+            # Check if port is already in hostname
+            if ":" in hostname.replace("://", ""):
+                self.server_root = base
+            else:
+                self.server_root = f"{base}:{port}"
+        else:
+            self.server_root = base
+
+        # Use remote_path if provided, otherwise server_root
         if remote_path:
-            self.api_root = f"{self.api_root}/{remote_path}"
+            self.api_root = f"{self.server_root}/{remote_path}"
+        else:
+            self.api_root = self.server_root
+
+        kodilog(f"WebDAV Server Root: {self.server_root}")
+        kodilog(f"WebDAV API Root: {self.api_root}")
 
         self.auth = HTTPBasicAuth(username, password) if username and password else None
 
@@ -62,14 +79,27 @@ class WebDAVClient:
         return "file"
 
     def list_dir(self, relative_path=""):
-        url = f"{self.api_root}/{relative_path}".strip("/") + "/"
+        # Construct URL carefully to avoid double slashes but ensure trailing slash for PROPFIND
+        path_parts = [self.api_root]
+        if relative_path:
+            path_parts.append(relative_path.strip("/"))
+
+        url = "/".join(path_parts).rstrip("/") + "/"
+        kodilog(f"WebDAV URL: {url}")
 
         headers = {"Depth": "1"}
         try:
-            r = requests.request("PROPFIND", url, headers=headers, auth=self.auth)
+            r = requests.request(
+                "PROPFIND", url, headers=headers, auth=self.auth, timeout=15
+            )
             r.raise_for_status()
         except requests.exceptions.RequestException as e:
-            kodilog(f"WebDAV Error: {e}")
+            # Check if it's an HTTP error with a response
+            if hasattr(e, "response") and e.response is not None:
+                kodilog(f"WebDAV Error {e.response.status_code}: {e}")
+                kodilog(f"WebDAV Error Response Content: {e.response.text[:500]}")
+            else:
+                kodilog(f"WebDAV Error: {e}")
             return []
 
         tree = ET.fromstring(r.text)
@@ -113,7 +143,13 @@ class WebDAVClient:
                 clean_host = self.server_root.replace("http://", "").replace(
                     "https://", ""
                 )
-                file_url = f"http://{creds}{clean_host}{href}"
+
+                # Extract only the path from href to avoid issues with absolute URLs
+                # (e.g. server returning http://localhost:8080/...)
+                href_path = urlparse(href).path
+                file_url = (
+                    f"{self.scheme}://{creds}{clean_host}/{href_path.lstrip('/')}"
+                )
 
                 items.append(
                     {
@@ -129,10 +165,14 @@ class WebDAVClient:
         if not self.api_root:
             return {"success": False, "message": "WebDAV hostname not set."}
 
+        # Ensure trailing slash for directory PROPFIND
+        url = self.api_root.rstrip("/") + "/"
+
         try:
             headers = {"Depth": "1"}
+            kodilog(f"Testing connection to {url}")
             r = requests.request(
-                "PROPFIND", self.api_root, headers=headers, auth=self.auth, timeout=10
+                "PROPFIND", url, headers=headers, auth=self.auth, timeout=10
             )
             r.raise_for_status()
 
@@ -145,6 +185,14 @@ class WebDAVClient:
             }
 
         except requests.exceptions.RequestException as e:
-            return {"success": False, "message": f"Connection failed"}
+            msg = f"Connection failed: {e}"
+            if hasattr(e, "response") and e.response is not None:
+                msg = f"WebDAV Error {e.response.status_code}: {e}"
+                kodilog(f"Test Connection Response Content: {e.response.text[:500]}")
+            kodilog(msg)
+            return {"success": False, "message": msg}
         except ET.ParseError:
-            return {"success": False, "message": "Invalid response from WebDAV server."}
+            return {
+                "success": False,
+                "message": "Invalid response from WebDAV server. (Not XML)",
+            }
