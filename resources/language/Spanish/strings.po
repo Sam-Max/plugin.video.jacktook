@@ -1945,3 +1945,19 @@ msgstr "Seleccionar complementos de Live TV"
 msgctxt "#30904"
 msgid "Choose specific Stremio addons for Live TV content"
 msgstr "Seleccionar complementos de Stremio para contenido de Live TV"
+
+msgctxt "#90150"
+msgid "Stremio: General"
+msgstr "Stremio: General"
+
+msgctxt "#90151"
+msgid "Stremio: Account"
+msgstr "Stremio: Cuenta"
+
+msgctxt "#90152"
+msgid "Stremio: Addons & Catalogs"
+msgstr "Stremio: Addons y catálogos"
+
+msgctxt "#90153"
+msgid "Stremio: Torrentio"
+msgstr "Stremio: Torrentio"

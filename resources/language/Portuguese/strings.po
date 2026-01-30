@@ -676,3 +676,19 @@ msgid "Number of next episodes to precache."
 msgstr "Número de próximos episódios para pré-carregar."
 
 
+
+msgctxt "#90150"
+msgid "Stremio: General"
+msgstr "Stremio: Geral"
+
+msgctxt "#90151"
+msgid "Stremio: Account"
+msgstr "Stremio: Conta"
+
+msgctxt "#90152"
+msgid "Stremio: Addons & Catalogs"
+msgstr "Stremio: Addons e catálogos"
+
+msgctxt "#90153"
+msgid "Stremio: Torrentio"
+msgstr "Stremio: Torrentio"

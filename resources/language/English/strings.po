@@ -2008,3 +2008,19 @@ msgstr "Clear MDBList Cache"
 msgctxt "#90149"
 msgid "Maintenance"
 msgstr "Maintenance"
+
+msgctxt "#90150"
+msgid "Stremio: General"
+msgstr "Stremio: General"
+
+msgctxt "#90151"
+msgid "Stremio: Account"
+msgstr "Stremio: Account"
+
+msgctxt "#90152"
+msgid "Stremio: Addons & Catalogs"
+msgstr "Stremio: Addons & Catalogs"
+
+msgctxt "#90153"
+msgid "Stremio: Torrentio"
+msgstr "Stremio: Torrentio"
