@@ -1973,3 +1973,38 @@ msgstr ""
 msgctxt "#30904"
 msgid "Choose specific Stremio addons for Live TV content"
 msgstr ""
+
+msgctxt "#30920"
+msgid "Clear Trakt Cache"
+msgstr "Clear Trakt Cache"
+
+msgctxt "#30921"
+msgid "Clear TMDB Cache"
+msgstr "Clear TMDB Cache"
+
+msgctxt "#30922"
+msgid "Clear Providers Cache"
+msgstr "Clear Providers Cache"
+
+msgctxt "#30923"
+msgid "Clear Settings Cache"
+msgstr "Clear Settings Cache"
+
+msgctxt "#30924"
+msgid "Clear Database Cache"
+msgstr "Clear Database Cache"
+
+msgctxt "#30925"
+msgid "Clear Stremio Cache"
+msgstr "Clear Stremio Cache"
+
+msgctxt "#30926"
+msgid "Clear Debrid Cache"
+msgstr "Clear Debrid Cache"
+
+msgctxt "#30927"
+msgid "Clear MDBList Cache"
+msgstr "Clear MDBList Cache"
+msgctxt "#90149"
+msgid "Maintenance"
+msgstr "Maintenance"

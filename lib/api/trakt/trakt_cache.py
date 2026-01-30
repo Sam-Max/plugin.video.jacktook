@@ -42,6 +42,14 @@ class TraktCache:
         except:
             pass
 
+    def clear_all(self):
+        try:
+            dbcon = connect_database("trakt_db")
+            dbcon.execute("DELETE FROM trakt_data")
+            dbcon.execute("VACUUM")
+        except:
+            pass
+
 
 trakt_cache = TraktCache()
 
@@ -73,9 +81,16 @@ class TraktWatched:
         self._delete(PROGRESS_DELETE, ("movie",))
         self._executemany(PROGRESS_INSERT, insert_list)
 
-    def set_bulk_tvshow_progress(self, insert_list):
         self._delete(PROGRESS_DELETE, ("episode",))
         self._executemany(PROGRESS_INSERT, insert_list)
+
+    def clear_all(self):
+        try:
+            self._delete("DELETE FROM watched", ())
+            self._delete("DELETE FROM progress", ())
+            self._delete("DELETE FROM watched_status", ())
+        except:
+            pass
 
     def _executemany(self, command, insert_list):
         dbcon = connect_database("trakt_db")

@@ -2,8 +2,6 @@ from datetime import timedelta
 import json
 import os
 from threading import Thread
-from urllib.parse import quote
-
 from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.debrider import Debrider
 from lib.api.jacktorr.jacktorr import TorrServer
@@ -66,6 +64,12 @@ from lib.utils.general.utils import (
     build_list_item,
     check_debrid_enabled,
     clear_all_cache,
+    clear_trakt_db_cache,
+    clear_tmdb_cache as utils_clear_tmdb_cache,
+    clear_stremio_cache as utils_clear_stremio_cache,
+    clear_debrid_cache as utils_clear_debrid_cache,
+    clear_mdblist_cache as utils_clear_mdblist_cache,
+    clear_database_cache as utils_clear_database_cache,
     clear_history_by_type,
     get_password,
     get_port,
@@ -919,6 +923,30 @@ def settings(params):
 def clear_all_cached(params):
     clear_all_cache()
     notification(translation(30244))
+
+
+def clear_trakt_cache(params):
+    clear_trakt_db_cache()
+
+
+def clear_tmdb_cache(params):
+    utils_clear_tmdb_cache()
+
+
+def clear_stremio_cache(params):
+    utils_clear_stremio_cache()
+
+
+def clear_debrid_cache(params):
+    utils_clear_debrid_cache()
+
+
+def clear_mdblist_cache(params):
+    utils_clear_mdblist_cache()
+
+
+def clear_database_cache(params):
+    utils_clear_database_cache()
 
 
 def clear_history(params):

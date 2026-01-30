@@ -12,12 +12,20 @@ from datetime import datetime, timedelta
 from lib.api.fanart.fanart import get_fanart
 from lib.clients.subtitle.utils import get_language_code
 from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.api.trakt.trakt_cache import trakt_watched_cache
+from lib.api.trakt.trakt_cache import trakt_watched_cache, trakt_cache
+from lib.api.trakt.lists_cache import lists_cache
+from lib.api.trakt.main_cache import main_cache
 from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.clients.base import TorrentStream
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
 from lib.db.cached import cache
+from lib.clients.stremio.constants import (
+    STREMIO_ADDONS_KEY,
+    STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_TV_ADDONS_KEY,
+    STREMIO_USER_ADDONS,
+)
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
@@ -461,15 +469,17 @@ def _set_watched_status(info_tag, data, mode):
 
     is_watched = False
     if mode == "movies":
-         is_watched = trakt_watched_cache.get_watched_status("movie", tmdb_id)
+        is_watched = trakt_watched_cache.get_watched_status("movie", tmdb_id)
     elif mode == "episode":
-         season = data.get("season")
-         episode = data.get("episode")
-         if season is not None and episode is not None:
-             is_watched = trakt_watched_cache.get_watched_status("episode", tmdb_id, int(season), int(episode))
-    
+        season = data.get("season")
+        episode = data.get("episode")
+        if season is not None and episode is not None:
+            is_watched = trakt_watched_cache.get_watched_status(
+                "episode", tmdb_id, int(season), int(episode)
+            )
+
     if is_watched:
-         info_tag.setPlaycount(1)
+        info_tag.setPlaycount(1)
 
 
 def _set_show_info(info_tag, data, mode):
@@ -945,6 +955,76 @@ def clear_cache_on_update():
 
 def clear_all_cache():
     cache.clean_all()
+
+
+def clear_trakt_db_cache():
+    trakt_cache.clear_all()
+    trakt_watched_cache.clear_all()
+    lists_cache.delete_all_lists()
+    main_cache.delete_all()
+    notification(translation(30244))
+
+
+def clear_tmdb_cache():
+    prefixes = [
+        "search_%",
+        "movie_%",
+        "tv_%",
+        "season_%",
+        "episode_%",
+        "discover_%",
+        "trending_%",
+        "popular_%",
+        "person_%",
+        "find_%",
+        "anime_%",
+        "collection_%",
+        "get_imdb_id%",
+        "latest_%",
+    ]
+    cache.delete("movie_genres|None")
+    cache.delete("show_genres|None")
+
+    for prefix in prefixes:
+        cache.delete_like(f"{prefix}|%")
+    notification(translation(30240))
+
+
+def clear_database_cache():
+    clear_history_by_type("all")
+
+
+def clear_stremio_cache():
+    cache.delete(STREMIO_ADDONS_KEY)
+    cache.delete(STREMIO_ADDONS_CATALOGS_KEY)
+    cache.delete(STREMIO_TV_ADDONS_KEY)
+    cache.delete(STREMIO_USER_ADDONS)
+
+    cache.delete_like("search_catalog%")
+    cache.delete_like("list_catalog%")
+    cache.delete_like("list_stremio_%")
+    notification(translation(30244))
+
+
+def clear_debrid_cache():
+    cache.delete_like("%|%deb%")
+    cache.delete_like("real_debrid%")
+    cache.delete_like("premiumize%")
+    cache.delete_like("all_debrid%")
+    cache.delete_like("torbox%")
+    cache.delete_like("debrider%")
+    notification(translation(30244))
+
+
+def clear_mdblist_cache():
+    cache.delete("get_user_lists|None")
+    cache.delete("top_mdbd_lists|None")
+
+    cache.delete_like("get_user_lists%")
+    cache.delete_like("get_list_items%")
+    cache.delete_like("top_mdbd_lists%")
+    cache.delete_like("search_lists%")
+    notification(translation(30244))
 
 
 def clear_history_by_type(type="all", update=False):

@@ -37,28 +37,6 @@
                             </dependency>
                         </dependencies>
                     </setting>
-                    <setting id="clear_all_cached" type="action" label="30106" help="30847"> 
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_all_cached)</data>
-                        <control type="button" format="action">
-                            <close>true</close>
-                        </control>
-                        <dependencies>
-                            <dependency type="visible">
-                                <condition operator="is" setting="cache_enabled">true</condition>
-                            </dependency>
-                        </dependencies>
-                    </setting>
-                    <setting id="clear_all_history" type="action" label="90112" help="90113"> 
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_history&type=all)</data>
-                        <control type="button" format="action">
-                            <close>true</close>
-                        </control>
-                        <dependencies>
-                            <dependency type="visible">
-                                <condition operator="is" setting="cache_enabled">true</condition>
-                            </dependency>
-                        </dependencies>
-                    </setting>
                     <setting id="clear_cache_update" type="boolean" label="30806" help="30846"> 
                         <default>true</default>
                         <control type="toggle" />
@@ -355,6 +333,19 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="debrid_cleanup" label="30106">
+                <setting id="clear_debrid_cache" type="action" label="30926"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_debrid_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="uncached" label="30790">
                 <setting id="show_uncached" type="boolean" label="30791" help="30803">
                     <default>true</default>
@@ -419,6 +410,17 @@
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                </setting>
+                <setting id="clear_stremio_cache" type="action" label="30925"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_stremio_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_add_custom_addon" type="action" label="90001" help="90002">
                     <dependencies>
@@ -1147,6 +1149,17 @@
                         <heading>42418</heading>
                     </control>
                 </setting>
+                <setting id="clear_tmdb_cache" type="action" label="30921"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_tmdb_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
             <group id="mdblist_group" label="90077">
                 <setting id="mdblist_enabled" type="boolean" label="30786" help="">
@@ -1162,6 +1175,17 @@
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="mdblist_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="clear_mdblist_cache" type="action" label="30927"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_mdblist_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>
@@ -1275,6 +1299,17 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="clear_trakt_cache" type="action" label="30920"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_trakt_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
         </category>
         <category id="webdav" label="90131">
@@ -1352,7 +1387,20 @@
 					<control type="button" format="path"/>
                 </setting>
             </group>
-            <group id="logs" label="90057">
+            <group id="cleanup" label="30106">
+                <setting id="clear_database_cache" type="action" label="30924"> 
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_database_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="cache_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
+             <group id="maintenance_logs" label="90057">
                 <setting id="kodi_logs" type="action" label="90054" help="90056"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.log)</data>
                     <control type="button" format="action">

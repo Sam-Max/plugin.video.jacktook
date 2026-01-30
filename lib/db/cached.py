@@ -4,6 +4,7 @@ import sqlite3
 import sys
 import threading
 import traceback
+import re
 
 from base64 import b64encode, b64decode
 from datetime import datetime, timedelta
@@ -62,22 +63,17 @@ class _BaseCache(object):
         return cls.__instance
 
     def _get(self, key, default=None, hashed_key=False, identifier=""):
-        result = self._get(self._generate_key(key, hashed_key, identifier))
-        ret = default
-        if result:
-            data, expires = result
-            if expires > datetime.utcnow():
-                ret = self._process(data)
-        return ret
+        result = self.get(self._generate_key(key, hashed_key, identifier))
+        return result if result is not None else default
 
     def _set(self, key, data, expiry_time, hashed_key=False, identifier=""):
         if expiry_time == timedelta(0):
             return  # Do nothing, as it will expire immediately
 
-        self._set(
+        self.set(
             self._generate_key(key, hashed_key, identifier),
-            self._prepare(data),
-            datetime.utcnow() + expiry_time,
+            data,
+            expiry_time,
         )
 
     def close(self):
@@ -142,11 +138,12 @@ class MemoryCache(_BaseCache):
                 return None
 
     def set(self, key, data, expires=timedelta(hours=24)):
+        self._add_key_to_index(key)
         try:
             # Wrap data with expiry
             expiry_dt = datetime.utcnow() + expires
             val_to_store = (data, expiry_dt)
-            
+
             blob = self._dump_func(val_to_store)
             self._window.setProperty(self._database + key, b64encode(blob).decode())
         except Exception as e:
@@ -154,7 +151,61 @@ class MemoryCache(_BaseCache):
             kodilog(traceback.format_exc())
 
     def delete(self, key):
+        self._remove_key_from_index(key)
         self._window.clearProperty(self._database + key)
+
+    def delete_like(self, pattern):
+        # Convert SQL LIKE pattern to regex
+        regex_pattern = (
+            re.escape(pattern)
+            .replace(r"\%", ".*")
+            .replace("%", ".*")
+            .replace(r"\_", ".")
+            .replace("_", ".")
+        )
+        regex = re.compile(f"^{regex_pattern}$")
+
+        keys = self._get_key_index()
+        to_delete = [k for k in keys if regex.match(k)]
+
+        for k in to_delete:
+            self.delete(k)
+
+    def clean_all(self):
+        keys = self._get_key_index()
+        for k in keys:
+            self._window.clearProperty(self._database + k)
+        self._window.clearProperty(self._database + "_KEY_INDEX_")
+
+    def _get_key_index(self):
+        try:
+            data = self._window.getProperty(self._database + "_KEY_INDEX_")
+            if data:
+                return self._load_func(b64decode(data))
+        except:
+            pass
+        return set()
+
+    def _save_key_index(self, index):
+        try:
+            blob = self._dump_func(index)
+            self._window.setProperty(
+                self._database + "_KEY_INDEX_", b64encode(blob).decode()
+            )
+        except:
+            pass
+
+    def _add_key_to_index(self, key):
+        index = self._get_key_index()
+        if key not in index:
+            index.add(key)
+            self._save_key_index(index)
+
+    def _remove_key_from_index(self, key):
+        index = self._get_key_index()
+        if key in index:
+            index.remove(key)
+            self._save_key_index(index)
 
 
 class HybridCache(_BaseCache):
@@ -167,15 +218,10 @@ class HybridCache(_BaseCache):
         data = self.memory.get(key)
         if data is not None:
             return data
-        
+
         # L2: Database
         data = self.db.get(key)
         if data is not None:
-            # Backfill memory (default 1 hour if not retrievable, but DB doesn't easily give TTL back in get())
-            # SQLiteCache.get returns data, checking expiry internally.
-            # We don't know the exact remaining TTL here easily without modifying SQLiteCache.get
-            # For safe consistency, we set a short-ish memory TTL or we just don't backfill?
-            # Backfilling key for cache locality:
             self.memory.set(key, data, expires=timedelta(minutes=30))
             return data
         return None
@@ -184,13 +230,12 @@ class HybridCache(_BaseCache):
         # Write to both
         self.memory.set(key, data, expires)
         self.db.set(key, data, expires)
-    
+
     def delete(self, key):
         self.memory.delete(key)
         self.db.delete(key)
 
     def add_to_list(self, key, item, expires):
-        # Naive implementation for list appending
         existing_data = self.get_list(key)
         existing_data.append(item)
         self.set(key, existing_data, expires)
@@ -205,9 +250,12 @@ class HybridCache(_BaseCache):
         self.set(key, [], expires=timedelta(seconds=1))
 
     def clean_all(self):
-        # We can't easily clean all memory keys without tracking them, 
-        # but we can clean DB
+        self.memory.clean_all()
         self.db.clean_all()
+
+    def delete_like(self, pattern):
+        self.memory.delete_like(pattern)
+        self.db.delete_like(pattern)
 
 
 class SQLiteCache(_BaseCache):
@@ -316,6 +364,10 @@ class SQLiteCache(_BaseCache):
     def delete(self, key):
         """Remove a single key from the SQLite store."""
         self._conn.execute("DELETE FROM `cached` WHERE key = ?", (key,))
+
+    def delete_like(self, pattern):
+        """Remove keys matching a pattern from the SQLite store."""
+        self._conn.execute("DELETE FROM `cached` WHERE key LIKE ?", (pattern,))
 
     def _set_version(self, version):
         self._conn.execute("PRAGMA user_version={}".format(version))

@@ -35,12 +35,11 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
 
     for addon in selected_addons:
         addon_name = addon.manifest.name
-        addon_id = addon.manifest.id
         addon_types = addon.manifest.types
 
-        if menu_type not in addon.manifest.types:
+        if menu_type not in addon_types:
             kodilog(
-                f"  Skipped addon {addon_name}: type '{menu_type}' not in addon types {addon.manifest.types}"
+                f"  Skipped addon {addon_name}: type '{menu_type}' not in addon types {addon_types}"
             )
             continue
 
@@ -49,7 +48,6 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             catalog_id = catalog.id
             catalog_type = catalog.type
 
-            # Filter catalogs by type
             target_type = sub_menu_type if sub_menu_type else menu_type
 
             # Allow 'anime' catalogs when target is 'series' and we are in 'anime' menu
@@ -404,11 +402,6 @@ def list_stremio_episodes(params):
     if not meta_data:
         notification("No meta available")
         return
-
-    try:
-        kodilog(f"Meta Data: {asdict(meta_data)}")
-    except Exception:
-        kodilog(f"Meta Data (repr): {meta_data}")
 
     videos = meta_data.videos
     if not videos:
