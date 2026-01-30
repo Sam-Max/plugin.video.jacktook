@@ -89,8 +89,7 @@ class BaseProcessBuilder:
             rf"s01 thru {season_fill}",
             rf"s01 thru s{season_fill}",
             rf"\[S{season_fill}\]",
-            rf"\[S{season_num}\]"
-            rf"\(S{season_fill}\)",
+            rf"\[S{season_num}\]" rf"\(S{season_fill}\)",
             rf"\(S{season_num}\)",
             rf"\[Season {season_num}\]",
             rf"\[Season {season_fill}\]",
@@ -143,10 +142,6 @@ class PreProcessBuilder(BaseProcessBuilder):
                 unique_results.append(res)
                 seen_values.append(key)
         self.results = unique_results
-        return self
-
-    def filter_torrent_sources(self) -> "PreProcessBuilder":
-        self.results = [res for res in self.results if res.infoHash or res.guid]
         return self
 
     def filter_season_packs(self, season_num: int) -> List[TorrentStream]:
