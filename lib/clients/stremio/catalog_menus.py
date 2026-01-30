@@ -28,8 +28,6 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         selected_addons = get_selected_catalogs_addons()
 
     if not selected_addons:
-        if menu_type == "tv":
-            notification("No tv addons selected")
         kodilog(f"No addons found for menu_type={menu_type}")
         return
 
