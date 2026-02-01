@@ -1,5 +1,6 @@
 import xbmcgui
 from lib.gui.base_window import BaseWindow
+from lib.utils.kodi.utils import translation
 
 
 class FilterTypeWindow(BaseWindow):
@@ -10,32 +11,32 @@ class FilterTypeWindow(BaseWindow):
     def onInit(self):
         self.list_control = self.getControl(2000)
         self.list_control.reset()
-        
-        quality_item = xbmcgui.ListItem(label="Filter by Quality")
+
+        quality_item = xbmcgui.ListItem(label=translation(32300))
         quality_item.setProperty("type", "quality")
         self.list_control.addItem(quality_item)
-        
-        provider_item = xbmcgui.ListItem(label="Filter by Provider")
+
+        provider_item = xbmcgui.ListItem(label=translation(32301))
         provider_item.setProperty("type", "provider")
         self.list_control.addItem(provider_item)
 
-        source_item = xbmcgui.ListItem(label="Filter by Source")
+        source_item = xbmcgui.ListItem(label=translation(32302))
         source_item.setProperty("type", "indexer")
         self.list_control.addItem(source_item)
 
-        language_item = xbmcgui.ListItem(label="Filter by Language")
+        language_item = xbmcgui.ListItem(label=translation(32303))
         language_item.setProperty("type", "language")
         self.list_control.addItem(language_item)
 
-        torrents_item = xbmcgui.ListItem(label="Filter by Torrents")
+        torrents_item = xbmcgui.ListItem(label=translation(32304))
         torrents_item.setProperty("type", "only_torrents")
         self.list_control.addItem(torrents_item)
 
-        debrid_item = xbmcgui.ListItem(label="Filter by Debrid")
+        debrid_item = xbmcgui.ListItem(label=translation(32305))
         debrid_item.setProperty("type", "only_debrid")
         self.list_control.addItem(debrid_item)
-        
-        reset_item = xbmcgui.ListItem(label="Reset Filter")
+
+        reset_item = xbmcgui.ListItem(label=translation(32306))
         reset_item.setProperty("type", "reset")
         self.list_control.addItem(reset_item)
 

@@ -1961,3 +1961,31 @@ msgstr "Stremio: Addons y catálogos"
 msgctxt "#90153"
 msgid "Stremio: Torrentio"
 msgstr "Stremio: Torrentio"
+
+msgctxt "#32300"
+msgid "Filter by Quality"
+msgstr "Filtrar por Calidad"
+
+msgctxt "#32301"
+msgid "Filter by Provider"
+msgstr "Filtrar por Proveedor"
+
+msgctxt "#32302"
+msgid "Filter by Source"
+msgstr "Filtrar por Fuente"
+
+msgctxt "#32303"
+msgid "Filter by Language"
+msgstr "Filtrar por Idioma"
+
+msgctxt "#32304"
+msgid "Filter by Torrents"
+msgstr "Filtrar por Torrents"
+
+msgctxt "#32305"
+msgid "Filter by Debrid"
+msgstr "Filtrar por Debrid"
+
+msgctxt "#32306"
+msgid "Reset Filter"
+msgstr "Restablecer Filtro"
