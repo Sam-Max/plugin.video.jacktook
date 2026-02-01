@@ -29,6 +29,7 @@ from lib.utils.kodi.utils import (
     cancel_playback,
     kodilog,
     translation,
+    close_busy_dialog,
 )
 
 import xbmc
@@ -57,6 +58,7 @@ def run_search_entry(params: dict):
                     playback_info = resolve_playback_url(cached_torrent)
                     if not playback_info:
                         notification(translation(90144))
+                        cancel_playback()
                         return
 
                     player = JacktookPLayer()
@@ -86,11 +88,13 @@ def run_search_entry(params: dict):
     results = search_client(query, ids, mode, media_type, rescrape, season, episode)
     if not results:
         notification("No results found")
+        cancel_playback()
         return
 
     pre_results = pre_process_results(results, mode, ep_name, episode, season)
     if not pre_results:
         notification("No results found")
+        cancel_playback()
         return
 
     post_results = process_results(
@@ -98,13 +102,19 @@ def run_search_entry(params: dict):
     )
     if not post_results:
         notification("No cached results found")
+        cancel_playback()
         return
 
-    if auto_play_enabled():
-        auto_play(post_results, ids, tv_data, mode)
+    preferred_group = params.get("preferred_group")
+    force_select = params.get("force_select", False)
+
+    if auto_play_enabled() and not force_select:
+        if not auto_play(post_results, ids, tv_data, mode, preferred_group):
+            cancel_playback()
         return
 
-    show_source_select(post_results, mode, ids, tv_data, direct)
+    if not show_source_select(post_results, mode, ids, tv_data, direct):
+        cancel_playback()
 
 
 def search_client(
@@ -117,6 +127,7 @@ def search_client(
     episode: int,
     show_dialog: bool = True,
 ) -> List[TorrentStream]:
+    close_busy_dialog()
     with DialogListener() as listener:
 
         def perform_search(indexer_key, dialog, *args, **kwargs):
@@ -173,7 +184,7 @@ def search_client(
         if not rescrape:
             kodilog("Checking for cached results before searching")
             kodilog(
-                f"Search parameters - Query: {query}, Mode: {mode}, Media Type: {media_type}, Episode: {episode}"
+                f"Search parameters - Query: {query}, Mode: {mode}, Media Type: {media_type}, Episode: {episode}, ids: {ids}"
             )
             cached_results = get_cached_results(query, mode, media_type, episode)
             if cached_results:
@@ -324,6 +335,7 @@ def process_results(
     torrent_results = []
     if get_setting("torrent_enable"):
         torrent_results = post_process(pre_results)
+    close_busy_dialog()
     with DialogListener() as listener:
         debrid_results = check_debrid_cached(
             query, pre_results, mode, media_type, listener.dialog, rescrape, episode
@@ -337,7 +349,7 @@ def show_source_select(
     ids: dict,
     tv_data: dict,
     direct: bool = False,
-) -> Optional[dict]:
+) -> bool:
     item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
 
     if not direct and ids:
@@ -347,15 +359,24 @@ def show_source_select(
         "source_select_direct.xml" if mode == "direct" else "source_select.xml"
     )
 
-    source_select(item_info, xml_file=xml_file_string, sources=results)
+    return source_select(item_info, xml_file=xml_file_string, sources=results)
 
 
-def auto_play(results: List[TorrentStream], ids, tv_data, mode):
+def auto_play(
+    results: List[TorrentStream],
+    ids,
+    tv_data,
+    mode,
+    preferred_group=None,
+    force_select=False,
+) -> bool:
+    if force_select:
+        return False
+
     filtered_results = clean_auto_play_undesired(results)
     if not filtered_results:
         notification("No suitable source found for auto play.")
-        cancel_playback()
-        return
+        return False
 
     preferred_quality = str(get_setting("auto_play_quality"))
     quality_matches = [
@@ -364,10 +385,15 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
 
     if not quality_matches:
         notification("No sources found with the preferred quality.")
-        cancel_playback()
-        return
+        return False
 
     selected_result = quality_matches[0]
+    if preferred_group:
+        group_matches = [
+            r for r in quality_matches if preferred_group.lower() in r.title.lower()
+        ]
+        if group_matches:
+            selected_result = group_matches[0]
 
     playback_info = resolve_playback_url(
         data={
@@ -385,12 +411,12 @@ def auto_play(results: List[TorrentStream], ids, tv_data, mode):
     )
 
     if not playback_info:
-        cancel_playback()
-        return
+        return False
 
     player = JacktookPLayer()
     player.run(data=playback_info)
     del player
+    return True
 
 
 def stremio_addon_generator(stremio_addons, dialog, show_dialog):

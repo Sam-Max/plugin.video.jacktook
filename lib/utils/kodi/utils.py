@@ -492,6 +492,10 @@ def cancel_playback():
     PLAYLIST.clear()
     close_busy_dialog()
     close_all_dialog()
+    try:
+        xbmc.Player().stop()
+    except Exception:
+        pass
     setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
 

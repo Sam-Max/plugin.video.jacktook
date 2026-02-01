@@ -188,7 +188,7 @@ class TmdbClient(BaseTmdbClient):
         if not data or getattr(data, "total_results", 0) == 0:
             notification("No results found")
             return
-        
+
         results = getattr(data, "results", [])
         if results:
             for item in results:
@@ -962,7 +962,13 @@ class TmdbClient(BaseTmdbClient):
         from lib.search import run_search_entry
 
         run_search_entry(
-            {"query": query, "mode": mode, "ids": json.dumps(ids), "rescrape": True}
+            {
+                "query": query,
+                "mode": mode,
+                "ids": json.dumps(ids),
+                "rescrape": True,
+                "force_select": params.get("force_select", False),
+            }
         )
 
     @staticmethod

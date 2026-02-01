@@ -41,15 +41,17 @@ class ResolverWindow(BaseWindow):
         self.pack_info: Optional[Any] = None
         self.previous_window: BaseWindow = previous_window
         self.setProperty("enable_busy_spinner", "false")
+        self.resolved = False
 
     def doModal(
         self,
         pack_select: bool = False,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> bool:
         self.pack_select = pack_select
 
         self._update_window_properties(self.source)
         super().doModal()
+        return self.resolved
 
     def onInit(self) -> None:
         super().onInit()
@@ -62,6 +64,7 @@ class ResolverWindow(BaseWindow):
         self.close()
 
     def handle_playback_started(self):
+        self.resolved = True
         self.close_windows()
 
     def resolve_source(self) -> Optional[Dict[str, Any]]:
@@ -84,6 +87,7 @@ class ResolverWindow(BaseWindow):
             player.run(data=self.playback_info)
         except Exception as e:
             import traceback
+
             kodilog(f"Error in resolver window: {e}")
             kodilog(traceback.format_exc())
             if self.previous_window:
@@ -124,9 +128,9 @@ class ResolverWindow(BaseWindow):
             key = ""
             if "ids" in self.playback_info and "tmdb_id" in self.playback_info["ids"]:
                 key = str(self.playback_info["ids"]["tmdb_id"])
-                if "season" in self.playback_info.get("tv_data", {}) and "episode" in self.playback_info.get(
+                if "season" in self.playback_info.get(
                     "tv_data", {}
-                ):
+                ) and "episode" in self.playback_info.get("tv_data", {}):
                     key += f'_{self.playback_info["tv_data"]["season"]}_{self.playback_info["tv_data"]["episode"]}'
 
             if key:

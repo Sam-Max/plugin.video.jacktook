@@ -50,7 +50,7 @@
 				<font>font12</font>
 				<align>center</align>
 				<textcolor>ffffffff</textcolor>
-				<label>Playing in $INFO[Player.TimeRemaining(ss)] seconds</label>
+				<label>Playing in $INFO[Window.Property(timer)] seconds</label>
 			</control>
 
         </control>

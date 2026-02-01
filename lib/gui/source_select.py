@@ -52,6 +52,7 @@ class SourceSelect(BaseWindow):
         self.setProperty("resolving", "false")
         self.filtered_sources: Optional[List[TorrentStream]] = None
         self.filter_applied: bool = False
+        self.resolved = False
 
     def onInit(self) -> None:
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
@@ -85,8 +86,9 @@ class SourceSelect(BaseWindow):
             list_item.setProperty("quality", key)
             qualities_list.addItem(list_item)
 
-    def doModal(self) -> Optional[Dict]:
+    def doModal(self) -> bool:
         super().doModal()
+        return self.resolved
 
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         if action_id == 1 and control_id == 1000:
@@ -145,7 +147,7 @@ class SourceSelect(BaseWindow):
         if selected_type in one_click_filters:
             filtered_sources = one_click_filters[selected_type]()
             if not filtered_sources:
-                notification("No sources found matching the filter")
+                kodilog("No sources found matching the filter")
                 return
             self.filtered_sources = filtered_sources
             self.filter_applied = True
@@ -159,11 +161,9 @@ class SourceSelect(BaseWindow):
             selected_filter = popup.selected_filter
             del popup
             if selected_filter is not None:
-                filtered_sources = filter_map[selected_type]["filter"](
-                    selected_filter
-                )
+                filtered_sources = filter_map[selected_type]["filter"](selected_filter)
                 if not filtered_sources:
-                    notification("No sources found matching the filter")
+                    kodilog("No sources found matching the filter")
                     return
                 self.filtered_sources = filtered_sources
                 self.filter_applied = True
@@ -213,7 +213,7 @@ class SourceSelect(BaseWindow):
                 s for s in self.sources if selected_quality in s.quality
             ]
             if not filtered_sources:
-                notification("No sources found matching the filter")
+                kodilog("No sources found matching the filter")
                 return
             self.filtered_sources = filtered_sources
             self.filter_applied = True
@@ -306,7 +306,7 @@ class SourceSelect(BaseWindow):
             item_information=self.item_information,
             is_subtitle_download=is_subtitle_download,
         )
-        resolver_window.doModal(pack_select)
+        self.resolved = resolver_window.doModal(pack_select)
         del resolver_window
 
     def show_resume_dialog(self, playback_percent: float) -> Optional[bool]:

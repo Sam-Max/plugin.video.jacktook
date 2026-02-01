@@ -1392,6 +1392,22 @@ def extract_publish_date(date):
     return match.group() if match else ""
 
 
+def extract_release_group(title):
+    if not title:
+        return ""
+    # Remove file extension if present
+    title = re.sub(r"\.[a-z0-9]{3,4}$", "", title, flags=re.IGNORECASE)
+    # Search for -GroupName at the end (common in scene releases)
+    match = re.search(r"-([a-zA-Z0-9]+)$", title)
+    if match:
+        return match.group(1)
+    # Search for [GroupName] at the beginning (common in anime/p2p)
+    match = re.search(r"^\[([a-zA-Z0-9]+)\]", title)
+    if match:
+        return match.group(1)
+    return ""
+
+
 def translate_weekday(weekday_name, lang="eng"):
     sub_language = str(get_setting("subtitle_language"))
     if sub_language and sub_language.lower() != "none":

@@ -59,10 +59,10 @@ class JacktookPLayer(xbmc.Player):
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()
         self.mark_watched(data)
-        
+
         precaching_thread = Thread(target=precache_next_episodes, args=(self.data,))
         precaching_thread.start()
-        
+
         close_busy_dialog()
 
         try:
@@ -231,7 +231,7 @@ class JacktookPLayer(xbmc.Player):
         try:
             self.total_time = self.getTotalTime()
             self.current_time = self.getTime()
-            if self.total_time:
+            if self.total_time and self.total_time > 0:
                 self.watched_percentage = round(
                     float(self.current_time / self.total_time * 100), 1
                 )
@@ -241,14 +241,24 @@ class JacktookPLayer(xbmc.Player):
 
     def check_next_dialog(self):
         try:
-            if not self.total_time or self.total_time < 60:
+            if not getattr(self, "total_time", None) or self.total_time < 60:
                 return
-            if not self.current_time or self.current_time < (self.total_time * 0.1):
-                # Don't trigger in the first 10% of playback
+            if not getattr(self, "current_time", None):
                 return
+
+            # Stale data check: if getTime() is very high but we just started, skip
+            if not getattr(self, "playback_started_properly", False):
+                if self.current_time < 10:
+                    self.playback_started_properly = True
+                else:
+                    return
+
+            if self.current_time < (self.total_time * 0.5):
+                # Don't trigger in the first 50% of playback as a safety measure
+                return
+
             time_left = int(self.total_time) - int(self.current_time)
             if self.next_dialog and time_left <= self.playing_next_time:
-                kodilog("Triggering next dialog...")
                 xbmc.executebuiltin(
                     action_url_run(name="run_next_dialog", item_info=self.data)
                 )
@@ -311,7 +321,18 @@ class JacktookPLayer(xbmc.Player):
                 ids=ids,
                 tv_data=next_tv_data,
                 rescrape=True,
+                preferred_group=self.preferred_group,
             )
+
+            # Deduplication: Check if this URL is already in the playlist
+            is_in_playlist = False
+            for i in range(self.PLAYLIST.size()):
+                if self.PLAYLIST[i].getPath() == url:
+                    is_in_playlist = True
+                    break
+
+            if is_in_playlist:
+                continue
 
             list_item = ListItem(label=label)
             list_item.setPath(url)
@@ -330,7 +351,13 @@ class JacktookPLayer(xbmc.Player):
         self.data = data
         self.url = self.data["url"]
         self.watched_percentage = self.data.get("progress", 0.0)
+        self.total_time = 0
+        self.current_time = 0
+        self.playback_started_properly = False
         self.next_dialog = get_setting("playnext_dialog_enabled")
+        from lib.utils.general.utils import extract_release_group
+
+        self.preferred_group = extract_release_group(self.data.get("title", ""))
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")
@@ -401,7 +428,12 @@ class JacktookPLayer(xbmc.Player):
         self.PLAYLIST.clear()
         close_busy_dialog()
         close_all_dialog()
-        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+        try:
+            setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+        except Exception as e:
+            kodilog(
+                f"setResolvedUrl failed in cancel_playback (expected when using direct play): {e}"
+            )
 
     def run_error(self, e: Exception):
         notification("Playback Failed", time=3500)

@@ -12,6 +12,7 @@ class PlayWindow(BaseWindow):
             self.playing_file = self.getPlayingFile()
             self.duration = self.getTotalTime() - self.getTime()
             self.closed = False
+            self.action = None
         except Exception as e:
             kodilog(f"Error PlayWindow: {e}")
             self.player = None
@@ -43,7 +44,9 @@ class PlayWindow(BaseWindow):
         super().onInit()
 
     def calculate_percent(self):
-        return ((int(self.getTotalTime()) - int(self.getTime())) / float(self.duration)) * 100
+        return (
+            (int(self.getTotalTime()) - int(self.getTime())) / float(self.duration)
+        ) * 100
 
     def background_tasks(self):
         try:
@@ -61,7 +64,15 @@ class PlayWindow(BaseWindow):
                 if progress_bar is not None:
                     progress_bar.setPercent(self.calculate_percent())
 
-            self.smart_play_action()
+                remaining = int(self.getTotalTime()) - int(self.getTime())
+                self.setProperty("timer", str(remaining))
+
+            if self.playing_file != self.getPlayingFile():
+                self.close()
+                return
+
+            if self.playing_file == self.getPlayingFile():
+                self.smart_play_action()
         except Exception as e:
             kodilog(f"Error: {e}")
 
@@ -81,7 +92,8 @@ class PlayWindow(BaseWindow):
     def handle_action(self, action, control_id=None):
         if action == 7:
             if control_id == 3001:
-                xbmc.executebuiltin('PlayerControl(BigSkipForward)')
+                self.action = "next_episode"
                 self.close()
             if control_id == 3002:
+                self.action = "close"
                 self.close()
