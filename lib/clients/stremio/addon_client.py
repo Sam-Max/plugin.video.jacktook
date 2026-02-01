@@ -120,10 +120,11 @@ class StremioAddonClient(BaseClient):
             kodilog("Using Stremio addon search URL: " + url)
 
             if get_setting("torrentio_enabled") and "torrentio" in self.addon.url():
-                providers = cache.get(TORRENTIO_PROVIDERS_KEY)
-                if providers:
-                    url = url.replace("/stream/", f"/providers={providers}/stream/")
-                    kodilog(f"URL with providers: {url}")
+                if "/providers=" not in url:
+                    providers = cache.get(TORRENTIO_PROVIDERS_KEY)
+                    if providers:
+                        url = url.replace("/stream/", f"/providers={providers}/stream/")
+                        kodilog(f"URL with providers: {url}")
 
             res = self.session.get(
                 url,
