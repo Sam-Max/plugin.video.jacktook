@@ -138,6 +138,8 @@ def show_mdblist_list(params):
             item.update({"overview": overview})
             item.update({"poster_path": poster_path})
 
+        item["ids"] = ids
+
         if item.get("mediatype") == "show":
             url = build_url(
                 "show_seasons_details",

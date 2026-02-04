@@ -412,7 +412,9 @@ def _set_identification(info_tag, data):
             "imdb": data.get("imdb_id", ""),
             "tvdb": data.get("tvdb_id", ""),
         }
-        info_tag.setUniqueIDs(unique_ids, "tmdb")
+        unique_ids = {k: str(v) for k, v in unique_ids.items() if v}
+        if unique_ids:
+            info_tag.setUniqueIDs(unique_ids, "tmdb")
 
 
 def _set_artwork(list_item, data, fanart_data):
