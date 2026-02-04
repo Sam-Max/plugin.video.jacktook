@@ -72,6 +72,7 @@ class TraktBase:
         set_property("trakt_expires", "")
         set_setting("trakt_user", EMPTY_USER)
         set_setting("is_trakt_auth", "false")
+        notification("Trakt not authorized. Please authenticate.", time=5000)
         try:
             TraktCache().clear_all_trakt_cache_data()
         except:
@@ -213,7 +214,11 @@ class TraktBase:
                 page_no=params.get("page_no"),
             )
             if result is not None:
-                return result[0] if params.get("pagination", True) else result
+                if params.get("pagination", True):
+                    if isinstance(result, (list, tuple)) and len(result) > 0:
+                        return result[0]
+                    return []
+                return result
         except KeyError as e:
             kodilog(f"KeyError in get_trakt: {e}")
             raise
@@ -685,6 +690,8 @@ class TraktLists(TraktBase):
         def _process(params, media_type):
             response = self.get_trakt(params)
             history = []
+            if not response or not isinstance(response, (list, tuple)):
+                return history
             if media_type == "movies":
                 for item in response:
                     if item["type"] == "movie":
@@ -810,6 +817,8 @@ class TraktLists(TraktBase):
     def trakt_fetch_watchlist(self, list_type, media_type):
         def _process(params):
             raw_data = self.get_trakt(params)
+            if not raw_data:
+                return []
             return [
                 {
                     "media_ids": {
@@ -867,6 +876,9 @@ class TraktLists(TraktBase):
 
     def trakt_favorites(self, media_type):
         def _process(params):
+            result = self.get_trakt(params)
+            if not result:
+                return []
             return [
                 {
                     "media_ids": {
@@ -875,7 +887,7 @@ class TraktLists(TraktBase):
                         "tvdb": i[i["type"]]["ids"].get("tvdb", ""),
                     }
                 }
-                for i in self.get_trakt(params)
+                for i in result
             ]
 
         media_type = "movies" if media_type in ("movie", "movies") else "shows"
@@ -890,6 +902,9 @@ class TraktLists(TraktBase):
 
     def get_trakt_list_contents(self, list_type, user, slug, with_auth):
         def _process(params):
+            result = self.get_trakt(params)
+            if not result:
+                return []
             return [
                 {
                     "media_ids": i[i["type"]]["ids"],
@@ -897,7 +912,7 @@ class TraktLists(TraktBase):
                     "type": i["type"],
                     "order": c,
                 }
-                for c, i in enumerate(self.get_trakt(params))
+                for c, i in enumerate(result)
                 if i["type"] in ("movie", "show")
             ]
 
