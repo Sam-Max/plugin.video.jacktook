@@ -402,7 +402,7 @@ class TraktMovies(TraktBase):
         set_pluging_category(translation(90028))
         string = "trakt_movies_trending_%s" % page_no
         params = {
-            "path": "movies/trending/%s",
+            "path": "movies/trending",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -414,7 +414,7 @@ class TraktMovies(TraktBase):
         years = "%s-%s" % (str(current_year - 1), str(current_year))
         string = "trakt_movies_trending_recent_%s" % page_no
         params = {
-            "path": "movies/trending/%s",
+            "path": "movies/trending",
             "params": {"limit": 20, "years": years},
             "page_no": page_no,
         }
@@ -423,14 +423,14 @@ class TraktMovies(TraktBase):
     def trakt_movies_top10_boxoffice(self):
         set_pluging_category(translation(90036))
         string = "trakt_movies_top10_boxoffice"
-        params = {"path": "movies/boxoffice/%s", "pagination": False}
+        params = {"path": "movies/boxoffice", "pagination": False}
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_most_watched(self, page_no):
         set_pluging_category(translation(90029))
         string = "trakt_movies_most_watched_%s" % page_no
         params = {
-            "path": "movies/watched/daily/%s",
+            "path": "movies/watched/daily",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -440,7 +440,7 @@ class TraktMovies(TraktBase):
         set_pluging_category(translation(90030))
         string = "trakt_movies_most_favorited%s" % page_no
         params = {
-            "path": "movies/favorited/daily/%s",
+            "path": "movies/favorited/daily",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -475,7 +475,7 @@ class TraktMovies(TraktBase):
         set_pluging_category("Collection")
         string = "trakt_movies_collection_%s" % page_no
         params = {
-            "path": "sync/collection/movies%s",
+            "path": "sync/collection/movies",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
@@ -488,7 +488,7 @@ class TraktTV(TraktBase):
         set_pluging_category(translation(90028))
         string = "trakt_tv_trending_%s" % page_no
         params = {
-            "path": "shows/trending/%s",
+            "path": "shows/trending",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -500,7 +500,7 @@ class TraktTV(TraktBase):
         years = "%s-%s" % (str(current_year - 1), str(current_year))
         string = "trakt_tv_trending_recent_%s" % page_no
         params = {
-            "path": "shows/trending/%s",
+            "path": "shows/trending",
             "params": {"limit": 20, "years": years},
             "page_no": page_no,
         }
@@ -510,7 +510,7 @@ class TraktTV(TraktBase):
         set_pluging_category(translation(90029))
         string = "trakt_tv_most_watched_%s" % page_no
         params = {
-            "path": "shows/watched/daily/%s",
+            "path": "shows/watched/daily",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -520,7 +520,7 @@ class TraktTV(TraktBase):
         set_pluging_category(translation(90030))
         string = "trakt_tv_most_favorited_%s" % page_no
         params = {
-            "path": "shows/favorited/daily/%s",
+            "path": "shows/favorited/daily",
             "params": {"limit": 20},
             "page_no": page_no,
         }
@@ -569,7 +569,7 @@ class TraktTV(TraktBase):
         set_pluging_category("Collection")
         string = "trakt_tv_collection_%s" % page_no
         params = {
-            "path": "sync/collection/shows%s",
+            "path": "sync/collection/shows",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
@@ -581,7 +581,7 @@ class TraktAnime(TraktBase):
     def trakt_anime_trending(self, page_no):
         string = "trakt_anime_trending_%s" % page_no
         params = {
-            "path": "shows/trending/%s",
+            "path": "shows/trending",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
@@ -592,7 +592,7 @@ class TraktAnime(TraktBase):
         years = "%s-%s" % (str(current_year - 1), str(current_year))
         string = "trakt_anime_trending_recent_%s" % page_no
         params = {
-            "path": "shows/trending/%s",
+            "path": "shows/trending",
             "params": {"genres": "anime", "limit": 20, "years": years},
             "page_no": page_no,
         }
@@ -601,7 +601,7 @@ class TraktAnime(TraktBase):
     def trakt_anime_most_watched(self, page_no):
         string = "trakt_anime_most_watched_%s" % page_no
         params = {
-            "path": "shows/watched/daily/%s",
+            "path": "shows/watched/daily",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
