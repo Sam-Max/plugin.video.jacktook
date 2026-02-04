@@ -6,6 +6,7 @@
 
 [![Kodi Version](https://img.shields.io/badge/Kodi-20+-blue.svg)](https://kodi.tv)
 [![License](https://img.shields.io/badge/License-GPL%20v3-green.svg)](LICENSE)
+[![Support on Ko-fi](https://img.shields.io/badge/Support%20on%20Ko--fi-F16061?logo=ko-fi&logoColor=white)](https://ko-fi.com/sammax09)
 
 ---
 
@@ -117,6 +118,14 @@ CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
 | Home Screen | TV Shows | Settings |
 | :---: | :---: | :---: |
 | ![Home](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/home.png) | ![TV](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/tv.png) | ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) |
+
+---
+
+## ☕ Support
+
+If you enjoy using **Jacktook** and want to support its development, you can buy me a coffee! Your support helps keep the project active and enables future improvements.
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/sammax09)
 
 ---
 
