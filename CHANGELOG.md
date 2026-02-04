@@ -1,3 +1,40 @@
+## 0.23.0
+- Implement hybrid cache and background preloading for better performance.
+- Add dedicated selection on Stremio settings for Stremio Live TV addons.
+- Add setting to show only Stremio catalogs instead of native catalogs.
+- Add granular cache cleaning options.
+- Add setting to enable the precaching of next episodes.
+- Add Trakt synchronization service, QR code authentication and improved resume capability.
+- Reorganized and improved Stremio settings with better grouping.
+- Improve Torbox integration with better pack resolution and localization.
+- Improve WebDAV connection robustness and fix playback URL issue.
+- Improve Stremio addon compatibility and manifest parsing.
+- Fix next episode skip bug and prevent player crashes.
+- Fix search results loss when P2P is enabled in Stremio.
+- Fix duplicate providers in Torrentio URL.
+- Fix various issues with Trakt authentication and sync.
+- Localize many UI strings.
+- Many other internal refactors and improvements to the Stremio client.
+
+
+Spanish:
+- Implementación de caché híbrida y precarga en segundo plano para un mejor rendimiento.
+- Añadida en la configuración de Stremio la selección dedicada para addons de TV en vivo.
+- Añadido ajuste para mostrar solo catálogos de Stremio en lugar de los catálogos nativos.  
+- Añadido limpiado granular de caché.
+- Añadido ajuste para habilitar la precarga de los siguientes episodios.
+- Añadido servicio de sincronización con Trakt, autenticación con QR y mejora en la capacidad de reanudación.
+- Reorganización y mejora de los ajustes de Stremio con una mejor agrupación.
+- Mejora en la integración con Torbox, con mejor resolución de paquetes y localización.
+- Mejora en la robustez de la conexión WebDAV y corrección del error en la URL de reproducción.
+- Mejora en la compatibilidad de addons de Stremio y el análisis del manifest.
+- Corregido el error de salto al siguiente episodio y prevención de cuelgues del reproductor.
+- Corregida la pérdida de resultados de búsqueda cuando P2P está habilitado en Stremio.
+- Corregida la duplicación de proveedores en la URL de Torrentio.
+- Corregidos varios problemas con la autenticación y sincronización de Trakt.
+- Localización de varias cadenas de la interfaz.
+- Muchas otras refactorizaciones internas y mejoras en el cliente de Stremio.
+
 ## 0.22.0
 - Add super quick play feature (last played dialog) for faster playback.
 - Add torrent and debrid filter options on source select window.
