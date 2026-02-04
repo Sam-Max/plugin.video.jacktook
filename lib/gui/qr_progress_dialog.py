@@ -23,7 +23,11 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
             else:
                 self.message = f"Go to:\n[COLOR cyan]{url}[/COLOR]\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
         else:
-            self.message = f"Pastebin Link:\n[COLOR cyan]{url}[/COLOR]"
+            # For non-debrid services (like Trakt)
+            if user_code:
+                self.message = f"Go to:\n[COLOR cyan]{url}[/COLOR]\n\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+            else:
+                self.message = f"Pastebin Link:\n[COLOR cyan]{url}[/COLOR]"
 
     def show_dialog(self):
         self.show()

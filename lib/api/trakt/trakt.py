@@ -13,6 +13,9 @@ from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.trakt_cache import cache_trakt_object, trakt_watched_cache
 from lib.api.trakt.trakt_utils import sort_for_article, sort_list
+from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.jacktook.utils import ADDON_PATH
+from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.kodi.utils import (
     copy2clip,
     get_datetime,
@@ -106,13 +109,15 @@ class TraktBase:
             params["page"] = page_no
 
         response = self._send_request(path, params, data, headers, is_delete, method)
-        
+
         # Rate Limiting Handling
         if response.status_code == 429:
             retry_after = int(response.headers.get("Retry-After", 1))
             kodilog(f"Trakt Rate Limit Exceeded. Retrying in {retry_after} seconds.")
             sleep(retry_after * 1000)
-            response = self._send_request(path, params, data, headers, is_delete, method)
+            response = self._send_request(
+                path, params, data, headers, is_delete, method
+            )
 
         kodilog("Trakt response status code: %s" % response.status_code)
         try:
@@ -296,22 +301,30 @@ class TraktAuthentication(TraktBase):
         expires_in = device_codes["expires_in"]
         sleep_interval = device_codes["interval"]
         user_code = str(device_codes["user_code"])
+        verification_url = str(device_codes["verification_url"])
+
+        # Generate QR code for the verification URL
+        qr_code = make_qrcode(verification_url)
         try:
             copy2clip(user_code)
         except:
             pass
-        content = (
-            "[CR]Navigate to: [B]%s[/B][CR]Enter the following code: [B]%s[/B]"
-            % (
-                str(device_codes["verification_url"]),
-                user_code,
-            )
+
+        # Create and display QR code dialog
+        progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+        progressDialog.setup(
+            "Trakt Authorization",
+            qr_code,
+            verification_url,
+            user_code,
+            "",
+            is_debrid=False,
         )
-        progressDialog.create("Trakt Authorize")
-        progressDialog.update(0, content)
+        progressDialog.show_dialog()
+
         try:
             time_passed = 0
-            while not progressDialog.iscanceled() and time_passed < expires_in:
+            while not progressDialog.iscanceled and time_passed < expires_in:
                 sleep(max(sleep_interval, 1) * 1000)
                 response = requests.post(
                     self.api_endpoint % "oauth/device/token",
@@ -322,17 +335,18 @@ class TraktAuthentication(TraktBase):
                 status_code = response.status_code
                 if status_code == 200:
                     result = response.json()
+                    progressDialog.update_progress(100, "Authentication completed.")
                     break
                 elif status_code == 400:
                     time_passed = time.time() - start
                     progress = int(100 * time_passed / expires_in)
-                    progressDialog.update(progress, content)
+                    progressDialog.update_progress(progress)
                 else:
                     break
         except:
             pass
         try:
-            progressDialog.close()
+            progressDialog.close_dialog()
         except:
             pass
         return result
@@ -464,7 +478,7 @@ class TraktMovies(TraktBase):
             "path": "sync/collection/movies%s",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
-            "with_auth": True
+            "with_auth": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -558,7 +572,7 @@ class TraktTV(TraktBase):
             "path": "sync/collection/shows%s",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
-            "with_auth": True
+            "with_auth": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -999,17 +1013,20 @@ class TraktScrobble(TraktBase):
             season = data.get("tv_data", {}).get("season")
             episode = data.get("tv_data", {}).get("episode")
             tmdb_id = data.get("ids", {}).get("tmdb_id")
-            
-            
+
             # Check local cache first
             if data["mode"] == "movies":
-                 cached_progress = trakt_watched_cache.get_progress("movie", str(tmdb_id))
+                cached_progress = trakt_watched_cache.get_progress(
+                    "movie", str(tmdb_id)
+                )
             else:
-                 cached_progress = trakt_watched_cache.get_progress("episode", str(tmdb_id), season, episode)
-            
+                cached_progress = trakt_watched_cache.get_progress(
+                    "episode", str(tmdb_id), season, episode
+                )
+
             if cached_progress > 0:
-                 kodilog(f"Trakt: Found cached resume point: {cached_progress}%")
-                 return cached_progress
+                kodilog(f"Trakt: Found cached resume point: {cached_progress}%")
+                return cached_progress
 
             path = f"sync/playback/{media_type}"
             response = self.call_trakt(path, with_auth=True)
@@ -1017,30 +1034,36 @@ class TraktScrobble(TraktBase):
                 for item in response:
                     try:
                         if item["type"] == "movie":
-                             trakt_tmdb = int(item["movie"]["ids"]["tmdb"])
-                             local_tmdb = int(tmdb_id)
-                             if trakt_tmdb == local_tmdb:
+                            trakt_tmdb = int(item["movie"]["ids"]["tmdb"])
+                            local_tmdb = int(tmdb_id)
+                            if trakt_tmdb == local_tmdb:
                                 progress = item.get("progress", 0)
-                                kodilog(f"Trakt: Found cloud resume point for movie: {progress}%")
+                                kodilog(
+                                    f"Trakt: Found cloud resume point for movie: {progress}%"
+                                )
                                 return progress
                         elif item["type"] == "episode":
-                             trakt_tmdb = int(item["show"]["ids"]["tmdb"])
-                             local_tmdb = int(tmdb_id)
-                             # TV Show comparison logic
-                             if (trakt_tmdb == local_tmdb and 
-                                 item["episode"]["season"] == int(season) and 
-                                 item["episode"]["number"] == int(episode)):
+                            trakt_tmdb = int(item["show"]["ids"]["tmdb"])
+                            local_tmdb = int(tmdb_id)
+                            # TV Show comparison logic
+                            if (
+                                trakt_tmdb == local_tmdb
+                                and item["episode"]["season"] == int(season)
+                                and item["episode"]["number"] == int(episode)
+                            ):
                                 progress = item.get("progress", 0)
-                                kodilog(f"Trakt: Found cloud resume point for episode: {progress}%")
+                                kodilog(
+                                    f"Trakt: Found cloud resume point for episode: {progress}%"
+                                )
                                 return progress
                     except Exception:
-                         continue
-                        
+                        continue
+
             # kodilog("Trakt: No resume point found.")
         except Exception as e:
             kodilog(f"Trakt: Error fetching last tracked position: {e}")
             return 0.0
-            
+
         return 0.0
 
     def trakt_get_playback_progress(self, media_type):
@@ -1049,7 +1072,7 @@ class TraktScrobble(TraktBase):
             path = f"sync/playback/{media_type}"
             params = {
                 "path": path,
-                "params": {"limit": 1000}, # Safety limit
+                "params": {"limit": 1000},  # Safety limit
                 "with_auth": True,
                 "pagination": False,
             }
@@ -1102,6 +1125,7 @@ class TraktCalendar(TraktBase):
         }
         return self.get_trakt(params)
 
+
 class TraktAPI:
     def __init__(self):
         self.auth = TraktAuthentication()
@@ -1112,8 +1136,6 @@ class TraktAPI:
         self.scrobble = TraktScrobble()
         self.cache = TraktCache()
         self.calendar = TraktCalendar()
-
-
 
 
 class ProviderException(Exception):
