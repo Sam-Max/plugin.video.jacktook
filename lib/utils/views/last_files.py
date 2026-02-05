@@ -49,7 +49,7 @@ def show_last_files():
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
-                "play_torrent",
+                "play_media",
                 data=json.dumps(data),
             ),
             list_item,

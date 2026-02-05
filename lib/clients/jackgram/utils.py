@@ -58,7 +58,7 @@ def add_telegram_file_item(item):
     list_item.setProperty("IsPlayable", "true")
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("play_torrent", data=item),
+        build_url("play_media", data=item),
         list_item,
         isFolder=False,
     )
@@ -139,7 +139,7 @@ def add_telegram_latest_file_item(file_entry, parent_data):
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("play_torrent", data=json.dumps(merged_data)),
+        build_url("play_media", data=json.dumps(merged_data)),
         list_item,
         isFolder=False,
     )

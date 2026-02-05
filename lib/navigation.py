@@ -317,7 +317,7 @@ def search_tmdb_genres(params):
 def tv_shows_items(params):
     set_pluging_category(translation(90007))
     stremio_only = get_setting("stremio_only_catalogs", False)
-    
+
     if not stremio_only:
         for item in tv_items:
             addDirectoryItem(
@@ -339,7 +339,7 @@ def tv_shows_items(params):
 def movies_items(params):
     set_pluging_category(translation(90008))
     stremio_only = get_setting("stremio_only_catalogs", False)
-    
+
     if not stremio_only:
         for item in movie_items:
             addDirectoryItem(
@@ -546,13 +546,6 @@ def search(params):
     run_search_entry(params)
 
 
-def play_torrent(params):
-    data = json.loads(params["data"])
-    player = JacktookPLayer()
-    player.run(data=data)
-    del player
-
-
 def cloud_details(params):
     debrid_name = params.get("debrid_name")
     if debrid_name == DebridType.RD:
@@ -568,7 +561,9 @@ def cloud_details(params):
         notification("Not yet implemented")
         return
     elif debrid_name == DebridType.TB:
-        downloads_method = "get_tb_downloads" # Placeholder, will implement later if needed
+        downloads_method = (
+            "get_tb_downloads"  # Placeholder, will implement later if needed
+        )
         info_method = "torbox_info"
     else:
         notification("Unsupported debrid type")
@@ -713,6 +708,17 @@ def torrents(params):
             isFolder=True,
         )
     end_of_directory()
+
+
+def play_media(params):
+    data = json.loads(params["data"])
+    data = resolve_playback_url(data)
+    if not data:
+        notification("Failed to resolve playback URL")
+        return
+    player = JacktookPLayer()
+    player.run(data=data)
+    del player
 
 
 def play_url(params):

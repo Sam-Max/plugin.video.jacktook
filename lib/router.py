@@ -82,7 +82,7 @@ from lib.navigation import (
     titles_history,
     torbox_info,
     torrentio_selection,
-    play_torrent,
+    play_media,
     rd_auth,
     rd_remove_auth,
     root_menu,
@@ -100,6 +100,7 @@ from lib.navigation import (
 from lib.clients.stremio.catalog_menus import (
     list_catalog,
     list_stremio_episodes,
+    list_stremio_movie,
     list_stremio_seasons,
     list_stremio_tv,
     list_stremio_tv_streams,
@@ -170,7 +171,7 @@ def addon_router():
         "resolve_for_subtitles": resolve_for_subtitles,
         "search_item": search_item,
         "next_page_anime": next_page_anime,
-        "play_torrent": play_torrent,
+        "play_media": play_media,
         "play_from_pack": play_from_pack,
         "play_url": play_url,
         "trakt_list_content": trakt_list_content,
@@ -241,6 +242,7 @@ def addon_router():
         "list_catalog": list_catalog,
         "list_stremio_seasons": list_stremio_seasons,
         "list_stremio_episodes": list_stremio_episodes,
+        "list_stremio_movie": list_stremio_movie,
         "list_stremio_tv_streams": list_stremio_tv_streams,
         "list_stremio_tv": list_stremio_tv,
         "search_catalog": search_catalog,
@@ -270,4 +272,3 @@ def addon_router():
             return
 
     root_menu()
-

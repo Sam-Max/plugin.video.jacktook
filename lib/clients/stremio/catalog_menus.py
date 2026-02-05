@@ -16,6 +16,7 @@ from lib.utils.kodi.utils import (
     show_keyboard,
     kodilog,
 )
+from lib.utils.general.utils import info_hash_to_magnet
 
 from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
@@ -35,10 +36,9 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         addon_name = addon.manifest.name
         addon_types = addon.manifest.types
 
+        kodilog(f"Addon url: {addon.url()}")
+
         if menu_type not in addon_types:
-            kodilog(
-                f"  Skipped addon {addon_name}: type '{menu_type}' not in addon types {addon_types}"
-            )
             continue
 
         for catalog in addon.manifest.catalogs:
@@ -57,9 +57,6 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 target_type in ["movie", "series", "tv"]
                 and catalog_type not in allowed_types
             ):
-                kodilog(
-                    f"  Skipped catalog {catalog_name}: type '{catalog_type}' != target '{target_type}' (Allowed: {allowed_types})"
-                )
                 continue
 
             search_capabilities = any(
@@ -67,7 +64,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             )
 
             if search_capabilities:
-                listitem = ListItem(label=f"Search")
+                listitem = ListItem(label=f"Search {catalog_name}")
                 listitem.setArt({"icon": addon.manifest.logo})
 
                 addDirectoryItem(
@@ -121,6 +118,7 @@ def list_catalog(params):
             extras[key] = params[key]
 
     response = catalogs_get_cache("list_catalog", params, skip=skip, **extras)
+    kodilog(f"Response: {response}")
     if not response:
         return
 
@@ -231,6 +229,9 @@ def search_catalog(params):
 
 
 def add_meta_items(metas, params):
+    kodilog(f"Add meta items")
+    kodilog(f"Params: {params}")
+    kodilog(f"Metas: {metas}")
     catalog_type = params["catalog_type"]
     menu_type = params["menu_type"]
     sub_menu_type = params.get("sub_menu_type", "")
@@ -284,7 +285,6 @@ def add_meta_items(metas, params):
 
         elif video_type == "tv":
             if meta.streams:
-                # Serialize streams to list of dicts for URL params
                 streams_data = [asdict(s) for s in meta.streams]
                 url = build_url(
                     "list_stremio_tv_streams", streams=json.dumps(streams_data)
@@ -298,8 +298,18 @@ def add_meta_items(metas, params):
                 )
 
         elif video_type == "movie":
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
-            url = build_url("search", mode="movies", query=name, ids=ids)
+            if not tmdb_id and not imdb_id and ":" in video_id:
+                is_custom_movie = True
+                url = build_url(
+                    "list_stremio_movie",
+                    addon_url=addon_url,
+                    catalog_type=catalog_type,
+                    video_id=video_id,
+                )
+            else:
+                is_custom_movie = False
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+                url = build_url("search", mode="movies", query=name, ids=ids)
         else:
             continue
 
@@ -313,7 +323,7 @@ def add_meta_items(metas, params):
         info_tag.setGenres(meta.genres)
         info_tag.setMediaType("video")
 
-        is_folder = video_type != "movie"
+        is_folder = video_type != "movie" or (video_type == "movie" and is_custom_movie)
         if not is_folder:
             list_item.setProperty("IsPlayable", "true")
 
@@ -505,6 +515,48 @@ def list_stremio_episodes(params):
     end_of_directory()
 
 
+def list_stremio_movie(params):
+    response = catalogs_get_cache("list_stremio_movie", params)
+    if not response:
+        return
+
+    streams = response.get("streams", [])
+    if not streams:
+        notification("No videos available")
+        return
+
+    for stream in streams:
+        playback_data = {"mode": "movie"}
+
+        if stream.url:
+            if stream.url.startswith("magnet:"):
+                playback_data["magnet"] = stream.url
+                playback_data["is_torrent"] = True
+            else:
+                playback_data["url"] = stream.url
+        elif stream.infoHash:
+            playback_data["magnet"] = info_hash_to_magnet(stream.infoHash)
+            playback_data["info_hash"] = stream.infoHash
+            playback_data["is_torrent"] = True
+        else:
+            continue
+
+        url = build_url(
+            "play_media",
+            data=playback_data,
+        )
+
+        list_item = ListItem(label=stream.title)
+        list_item.setProperty("IsPlayable", "true")
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setPlot(stream.description or "")
+
+        addDirectoryItem(
+            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
+        )
+    end_of_directory()
+
+
 def list_stremio_tv(params):
     response = catalogs_get_cache("list_stremio_tv", params)
     if not response:
@@ -517,7 +569,7 @@ def list_stremio_tv(params):
 
     for stream in streams:
         url = build_url(
-            "play_torrent",
+            "play_media",
             data={"mode": "movie", "url": stream.url},
         )
 
@@ -536,7 +588,7 @@ def list_stremio_tv_streams(params):
     streams = json.loads(params.get("streams", {}))
     for stream in streams:
         url = build_url(
-            "play_torrent",
+            "play_media",
             data={"mode": "movie", "url": stream["url"]},
         )
 

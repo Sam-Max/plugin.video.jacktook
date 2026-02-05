@@ -25,6 +25,9 @@ def catalogs_get_cache(path, params, *args, **kwargs):
             params
         ).get_meta_info(),
         "list_stremio_tv": lambda: StremioAddonCatalogsClient(params).get_stream_info(),
+        "list_stremio_movie": lambda: StremioAddonCatalogsClient(
+            params
+        ).get_stream_info(),
     }
 
     try:
