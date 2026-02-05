@@ -56,14 +56,17 @@ class TmdbAnime(TMDb):
         )
 
     def anime_year(self, params):
+        year_param = (
+            "first_air_date_year" if params["mode"] == "tv" else "primary_release_year"
+        )
         return self._request_obj(
             (
                 self._urls["discover_tv"]
                 if params["mode"] == "tv"
                 else self._urls["discover_movie"]
             ),
-            params="with_keywords=210024&include_null_first_air_dates=false&first_air_date_year=%s&page=%s"
-            % (params["year"], params["page"]),
+            params="with_keywords=210024&include_null_first_air_dates=false&%s=%s&page=%s"
+            % (year_param, params["year"], params["page"]),
         )
 
     def anime_genres(self, params):
@@ -87,6 +90,17 @@ class TmdbAnime(TMDb):
             ),
             params="with_keywords=210024&air_date.gte=%s&air_date.lte=%s&page=%s"
             % (current_date, future_date, page_no),
+        )
+
+    def anime_top_rated(self, mode, page_no):
+        return self._request_obj(
+            (
+                self._urls["discover_tv"]
+                if mode == "tv"
+                else self._urls["discover_movie"]
+            ),
+            params="with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page=%s"
+            % page_no,
         )
 
     def anime_search(self, query, mode, page_no, adult=False):

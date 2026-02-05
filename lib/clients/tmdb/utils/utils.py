@@ -299,9 +299,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "person_ids": lambda p: Person().external_ids(p),
         "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p),
         "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p),
-        "anime_year": lambda p: TmdbAnime().anime_year(
-            term=p["query"], page=p.get("page", 1), year=p.get("year")
-        ),
+        "anime_year": lambda p: TmdbAnime().anime_year(p),
         "anime_genres": lambda p: TmdbAnime().anime_genres(p),
         "collection_details": lambda p: Collection().details(p),
         "collection_images": lambda p: Collection().images(p),

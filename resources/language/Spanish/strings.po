@@ -1962,6 +1962,10 @@ msgctxt "#90153"
 msgid "Stremio: Torrentio"
 msgstr "Stremio: Torrentio"
 
+msgctxt "#90154"
+msgid "Trending Recent"
+msgstr "Tendencias Recientes"
+
 msgctxt "#32300"
 msgid "Filter by Quality"
 msgstr "Filtrar por Calidad"

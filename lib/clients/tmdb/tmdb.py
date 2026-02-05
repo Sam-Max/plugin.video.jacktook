@@ -154,6 +154,7 @@ class TmdbClient(BaseTmdbClient):
             Anime.AIRING: handle_category,
             Anime.POPULAR: handle_category,
             Anime.POPULAR_RECENT: handle_category,
+            Anime.TOP_RATED: handle_category,
             Anime.YEARS: handle_years_or_genres,
             Anime.GENRES: handle_years_or_genres,
         }
@@ -256,10 +257,12 @@ class TmdbClient(BaseTmdbClient):
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
                 list_item = ListItem(label=title)
-                set_media_infoTag(list_item, data=item, mode=mode)
+                # Use submode for anime, otherwise use mode
+                display_mode = submode if mode == "anime" and submode else mode
+                set_media_infoTag(list_item, data=item, mode=display_mode)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
-                    mode=mode,
+                    mode=display_mode,
                     title=title,
                     ids={"tmdb_id": tmdb_id},
                     media_type=media_type,
@@ -309,10 +312,12 @@ class TmdbClient(BaseTmdbClient):
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
                 list_item = ListItem(label=title)
-                set_media_infoTag(list_item, data=item, mode=mode)
+                # Use submode for anime, otherwise use mode
+                display_mode = submode if mode == "anime" and submode else mode
+                set_media_infoTag(list_item, data=item, mode=display_mode)
                 BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
-                    mode=mode,
+                    mode=display_mode,
                     title=title,
                     ids={"tmdb_id": tmdb_id},
                     media_type=media_type,

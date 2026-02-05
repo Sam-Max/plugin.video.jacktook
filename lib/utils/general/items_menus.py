@@ -10,7 +10,7 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
-        "name": translation(90064),  
+        "name": translation(90064),
         "mode": "tv",
         "api": "tmdb",
         "query": "tmdb_popular",
@@ -155,7 +155,7 @@ movie_items = [
         "icon": "tmdb.png",
     },
     {
-        "name": translation(90064),  
+        "name": translation(90064),
         "mode": "movies",
         "api": "tmdb",
         "query": "tmdb_popular",
@@ -300,6 +300,13 @@ anime_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90042),
+        "mode": "anime",
+        "category": "Anime_Top_Rated",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90040),
         "mode": "anime",
         "category": "Anime_Years",
@@ -321,9 +328,23 @@ anime_items = [
         "icon": "trakt.png",
     },
     {
+        "name": translation(90154),
+        "mode": "anime",
+        "category": "Anime_Trending_Recent",
+        "api": "trakt",
+        "icon": "trakt.png",
+    },
+    {
         "name": translation(90043),
         "mode": "anime",
         "category": "Anime_Most_Watched",
+        "api": "trakt",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90030),
+        "mode": "anime",
+        "category": "Anime_Favorited",
         "api": "trakt",
         "icon": "trakt.png",
     },

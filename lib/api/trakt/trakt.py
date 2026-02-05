@@ -583,30 +583,46 @@ class TraktTV(TraktBase):
 
 
 class TraktAnime(TraktBase):
-    def trakt_anime_trending(self, page_no):
-        string = "trakt_anime_trending_%s" % page_no
+    def _get_path_prefix(self, mode):
+        return "movies" if mode == "movies" else "shows"
+
+    def trakt_anime_trending(self, page_no, mode="tv"):
+        path_prefix = self._get_path_prefix(mode)
+        string = "trakt_anime_trending_%s_%s" % (mode, page_no)
         params = {
-            "path": "shows/trending",
+            "path": "%s/trending" % path_prefix,
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
-    def trakt_anime_trending_recent(self, page_no):
+    def trakt_anime_trending_recent(self, page_no, mode="tv"):
+        path_prefix = self._get_path_prefix(mode)
         current_year = get_datetime().year
         years = "%s-%s" % (str(current_year - 1), str(current_year))
-        string = "trakt_anime_trending_recent_%s" % page_no
+        string = "trakt_anime_trending_recent_%s_%s" % (mode, page_no)
         params = {
-            "path": "shows/trending",
+            "path": "%s/trending" % path_prefix,
             "params": {"genres": "anime", "limit": 20, "years": years},
             "page_no": page_no,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
-    def trakt_anime_most_watched(self, page_no):
-        string = "trakt_anime_most_watched_%s" % page_no
+    def trakt_anime_most_watched(self, page_no, mode="tv"):
+        path_prefix = self._get_path_prefix(mode)
+        string = "trakt_anime_most_watched_%s_%s" % (mode, page_no)
         params = {
-            "path": "shows/watched/daily",
+            "path": "%s/watched/daily" % path_prefix,
+            "params": {"genres": "anime", "limit": 20},
+            "page_no": page_no,
+        }
+        return lists_cache_object(self.get_trakt, string, params)
+
+    def trakt_anime_most_favorited(self, page_no, mode="tv"):
+        path_prefix = self._get_path_prefix(mode)
+        string = "trakt_anime_most_favorited_%s_%s" % (mode, page_no)
+        params = {
+            "path": "%s/favorited/daily" % path_prefix,
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }

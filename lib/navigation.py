@@ -407,14 +407,6 @@ def anime_item(params):
     mode = params.get("mode")
     stremio_only = get_setting("stremio_only_catalogs", False)
 
-    if not stremio_only:
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("anime_search", mode=mode, category="Anime_Search"),
-            build_list_item(translation(90006), "search.png"),
-            isFolder=True,
-        )
-
     if mode == "tv":
         if not stremio_only:
             for item in anime_items:
@@ -434,19 +426,18 @@ def anime_item(params):
     if mode == "movies":
         if not stremio_only:
             for item in anime_items:
-                if item["api"] == "tmdb":
-                    addDirectoryItem(
-                        ADDON_HANDLE,
-                        build_url(
-                            "search_item",
-                            category=item["category"],
-                            mode=item["mode"],
-                            submode=mode,
-                            api=item["api"],
-                        ),
-                        build_list_item(item["name"], item["icon"]),
-                        isFolder=True,
-                    )
+                addDirectoryItem(
+                    ADDON_HANDLE,
+                    build_url(
+                        "search_item",
+                        category=item["category"],
+                        mode=item["mode"],
+                        submode=mode,
+                        api=item["api"],
+                    ),
+                    build_list_item(item["name"], item["icon"]),
+                    isFolder=True,
+                )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
 

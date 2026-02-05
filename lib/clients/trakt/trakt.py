@@ -110,7 +110,9 @@ class TraktClient:
         handlers = {
             "movies": TraktClient.handle_trakt_movie_query,
             "tv": TraktClient.handle_trakt_show_query,
-            "anime": lambda q, m, p: TraktClient.handle_trakt_anime_query(category, p),
+            "anime": lambda q, m, p: TraktClient.handle_trakt_anime_query(
+                category, p, submode
+            ),
         }
         handler = handlers.get(mode)
         if handler:
@@ -176,11 +178,15 @@ class TraktClient:
             return list_handlers[query]()
 
     @staticmethod
-    def handle_trakt_anime_query(query, page):
+    def handle_trakt_anime_query(query, page, submode="tv"):
         if query == Anime.TRENDING:
-            return TraktAPI().anime.trakt_anime_trending(page)
+            return TraktAPI().anime.trakt_anime_trending(page, submode)
+        elif query == Anime.TRENDING_RECENT:
+            return TraktAPI().anime.trakt_anime_trending_recent(page, submode)
         elif query == Anime.MOST_WATCHED:
-            return TraktAPI().anime.trakt_anime_most_watched(page)
+            return TraktAPI().anime.trakt_anime_most_watched(page, submode)
+        elif query == Anime.FAVORITED:
+            return TraktAPI().anime.trakt_anime_most_favorited(page, submode)
 
     @staticmethod
     def trakt_add_to_watchlist(params):
@@ -328,7 +334,13 @@ class TraktClient:
             Anime.TRENDING: lambda: execute_thread_pool(
                 results, TraktPresentation.show_anime_common, submode
             ),
+            Anime.TRENDING_RECENT: lambda: execute_thread_pool(
+                results, TraktPresentation.show_anime_common, submode
+            ),
             Anime.MOST_WATCHED: lambda: execute_thread_pool(
+                results, TraktPresentation.show_anime_common, submode
+            ),
+            Anime.FAVORITED: lambda: execute_thread_pool(
                 results, TraktPresentation.show_anime_common, submode
             ),
         }
@@ -371,8 +383,12 @@ class TraktClient:
 class TraktPresentation:
     @staticmethod
     def show_anime_common(res, mode):
-        ids = extract_ids(res)
-        title = res["show"]["title"]
+        ids = extract_ids(res, mode)
+        # Handle both show and movie responses
+        if mode == "movies" and "movie" in res:
+            title = res["movie"]["title"]
+        else:
+            title = res["show"]["title"]
 
         tmdb_id = ids["tmdb_id"]
         if mode == "tv":

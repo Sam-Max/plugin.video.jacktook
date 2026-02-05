@@ -47,6 +47,9 @@ class TmdbAnimeClient(BaseTmdbClient):
         elif category == Anime.POPULAR_RECENT:
             set_pluging_category(translation(90038))
             return client.anime_popular_recent(submode, page)
+        elif category == Anime.TOP_RATED:
+            set_pluging_category(translation(90042))
+            return client.anime_top_rated(submode, page)
         else:
             kodilog(f"Invalid category: {category}")
             return None

@@ -222,10 +222,13 @@ class Anime(Enum):
     POPULAR = "Anime_Popular"
     POPULAR_RECENT = "Anime_Popular_Recent"
     TRENDING = "Anime_Trending"
+    TRENDING_RECENT = "Anime_Trending_Recent"
     AIRING = "Anime_On_The_Air"
     MOST_WATCHED = "Anime_Most_Watched"
+    FAVORITED = "Anime_Favorited"
     YEARS = "Anime_Years"
     GENRES = "Anime_Genres"
+    TOP_RATED = "Anime_Top_Rated"
 
 
 class Animation(Enum):
