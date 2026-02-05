@@ -23,7 +23,7 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     container_update,
     kodilog,
-    play_media,
+    kodi_play_media,
     translation,
 )
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
@@ -411,7 +411,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
     return [
         (
             translation(90049),
-            play_media(
+            kodi_play_media(
                 name="rescrape_tmdb_media",
                 mode=mode,
                 media_type=media_type,
@@ -422,7 +422,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
         ),
         (
             translation(90115),
-            play_media(
+            kodi_play_media(
                 name="rescrape_tmdb_media",
                 mode=mode,
                 media_type=media_type,
@@ -465,16 +465,6 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
 def add_tmdb_show_context_menu(mode, ids={}):
     return [
         (
-            translation(90115),
-            play_media(
-                name="rescrape_tmdb_media",
-                mode=mode,
-                media_type="tv",
-                tmdb_id=ids.get("tmdb_id"),
-                force_select=True,
-            ),
-        ),
-        (
             translation(90050),
             container_update(
                 name="search_tmdb_recommendations",
@@ -509,7 +499,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
     return [
         (
             translation(90049),
-            play_media(
+            kodi_play_media(
                 name="search",
                 mode=mode,
                 query=tv_name,
@@ -520,7 +510,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
         ),
         (
             translation(90115),
-            play_media(
+            kodi_play_media(
                 name="search",
                 mode=mode,
                 query=tv_name,

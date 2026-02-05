@@ -1803,7 +1803,7 @@ msgid "History cleared"
 msgstr "Historial borrado"
 
 msgctxt "#90115"
-msgid "Sources selection"
+msgid "Source Select"
 msgstr "Seleccionar Fuentes"
 
 msgctxt "#90116"

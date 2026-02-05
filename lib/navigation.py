@@ -47,7 +47,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     notification,
     play_info_hash,
-    play_media,
+    kodi_play_media,
     show_keyboard,
     translation,
 )
@@ -503,7 +503,7 @@ def search_direct(params):
             [
                 (
                     translation(90049),
-                    play_media(
+                    kodi_play_media(
                         name="search",
                         mode=mode,
                         query=text,

@@ -1,6 +1,6 @@
 from lib.utils.kodi.utils import (
     action_url_run,
-    play_media,
+    kodi_play_media,
     translation,
 )
 import json
@@ -24,7 +24,7 @@ def add_last_files_context_menu(data):
         ),
         (
             translation(90082),
-            play_media(
+            kodi_play_media(
                 "resolve_for_subtitles",
                 data=json.dumps(data),
             ),

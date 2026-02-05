@@ -24,7 +24,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     notification,
-    play_media,
+    kodi_play_media,
     translation,
 )
 from .paginator import paginator_db
@@ -56,7 +56,7 @@ class BaseTraktClient:
                 [
                     (
                         translation(90049),
-                        play_media(
+                        kodi_play_media(
                             name="search",
                             mode=mode,
                             query=title,
@@ -255,26 +255,28 @@ class TraktClient:
     def handle_calendar_request():
         previous_days = int(get_setting("trakt_calendar_previous_days", 0))
         future_days = int(get_setting("trakt_calendar_future_days", 14))
-        
+
         # Calculate start date
         start_date_obj = get_datetime(string=False) - timedelta(days=previous_days)
         start_date = start_date_obj.strftime("%Y-%m-%d")
-        
+
         # Calculate total days (past + future + today)
         days = previous_days + future_days + 1
-        
+
         # Log user identity logic
         try:
-             user_settings = TraktAPI().auth.get_user_settings()
-             if user_settings and 'user' in user_settings:
-                 username = user_settings.get('user', {}).get('username')
-                 kodilog(f"Trakt Calendar Request for user: {username}")
+            user_settings = TraktAPI().auth.get_user_settings()
+            if user_settings and "user" in user_settings:
+                username = user_settings.get("user", {}).get("username")
+                kodilog(f"Trakt Calendar Request for user: {username}")
         except Exception as e:
-             kodilog(f"Error fetching Trakt user profile: {e}")
+            kodilog(f"Error fetching Trakt user profile: {e}")
 
         if get_setting("trakt_calendar_show_all"):
-             return TraktAPI().calendar.trakt_all_shows_calendar(start_date=start_date, days=days)
-             
+            return TraktAPI().calendar.trakt_all_shows_calendar(
+                start_date=start_date, days=days
+            )
+
         return TraktAPI().calendar.trakt_my_calendar(start_date=start_date, days=days)
 
     @staticmethod
@@ -282,7 +284,7 @@ class TraktClient:
         if not results:
             if query in (Trakt.CALENDAR, Trakt.UP_NEXT):
                 notification("No results found", time=3000)
-        
+
         query_handlers = {
             Trakt.TRENDING: lambda: execute_thread_pool(
                 results, TraktPresentation.show_common_categories, mode
@@ -564,13 +566,13 @@ class TraktPresentation:
         title = ep_data.get("title")
         season = ep_data.get("season")
         episode = ep_data.get("number")
-        
+
         first_aired = res.get("first_aired")
-        
+
         tmdb_id = res.get("show", {}).get("ids", {}).get("tmdb")
         imdb_id = res.get("show", {}).get("ids", {}).get("imdb")
         tvdb_id = res.get("show", {}).get("ids", {}).get("tvdb")
-        
+
         if not tmdb_id:
             return
 
@@ -578,20 +580,20 @@ class TraktPresentation:
         if first_aired:
             date_part = first_aired.split("T")[0]
             display_title = f"{date_part} | {display_title}"
-            
+
         ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id, "tvdb_id": tvdb_id}
-        
+
         details = tmdb_get("tv_details", tmdb_id) or {}
-        
+
         list_item = ListItem(label=display_title)
         set_media_infoTag(list_item, data=details, mode="tv")
-        
+
         # Override title
         list_item.setLabel(display_title)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)
         info_tag.setPlot(details.get("overview", ""))
-        
+
         url = build_url(
             "search",
             ids=ids,
@@ -603,9 +605,9 @@ class TraktPresentation:
                 "season": season,
             },
         )
-        
+
         add_kodi_dir_item(
-             list_item=list_item,
-             url=url,
-             is_folder=True,
+            list_item=list_item,
+            url=url,
+            is_folder=True,
         )

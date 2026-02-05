@@ -6,7 +6,14 @@ import re
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation, play_media
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    build_url,
+    end_of_directory,
+    translation,
+    kodi_play_media,
+)
 from lib.utils.general.utils import (
     execute_thread_pool,
     set_media_infoTag,
@@ -42,16 +49,16 @@ def show_weekly_calendar():
         """
         if not date_str:
             return None, None
-            
+
         try:
             # Parse date, assume midnight (00:00) for calculation
             dt = datetime.strptime(date_str, "%Y-%m-%d")
-            
+
             if use_broadcast_adjustment:
                 # Clamp offset to -24 to +24 (defensive, though settings limit this)
                 offset = max(-24, min(24, offset_hours))
                 dt += timedelta(hours=offset)
-            
+
             return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M")
         except Exception as e:
             kodilog(f"Error calculating broadcast adjustment: {e}")
@@ -63,14 +70,16 @@ def show_weekly_calendar():
         for ep in episodes:
             # create a shallow copy to avoid mutating the cached data
             ep_copy = copy(ep)
-            
+
             original_air_date = ep_copy.get("air_date")
-            adjusted_date, adjusted_time = calculate_adjusted_broadcast(original_air_date, broadcast_offset)
-            
+            adjusted_date, adjusted_time = calculate_adjusted_broadcast(
+                original_air_date, broadcast_offset
+            )
+
             # Attach adjusted values for display
             ep_copy["air_date"] = adjusted_date
             ep_copy["air_time"] = adjusted_time
-            
+
             if adjusted_date and is_this_week(adjusted_date):
                 results.append((title, data, ep_copy, details))
 
@@ -88,7 +97,7 @@ def show_weekly_calendar():
     addDirectoryItem(ADDON_HANDLE, "", date_item, isFolder=False)
 
     today_str = datetime.now().strftime("%Y-%m-%d")
-    
+
     results_today = [r for r in results if r[2].get("air_date") == today_str]
     results_other = [r for r in results if r[2].get("air_date") != today_str]
 
@@ -144,7 +153,7 @@ def show_weekly_calendar():
             [
                 (
                     translation(90049),
-                    play_media(
+                    kodi_play_media(
                         name="search",
                         mode=data.get("mode"),
                         query=title,
@@ -152,10 +161,6 @@ def show_weekly_calendar():
                         tv_data=tv_data,
                         rescrape=True,
                     ),
-                ),
-                (
-                    translation(90115),
-                    play_media(name="search_with_sources"),
                 ),
             ]
         )

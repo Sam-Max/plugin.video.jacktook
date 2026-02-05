@@ -314,7 +314,7 @@ def buffer_and_play(info_hash, file_id, path):
     return f"PlayMedia({url})"
 
 
-def play_media(name, *args, **kwargs):
+def kodi_play_media(name, *args, **kwargs):
     return "PlayMedia({})".format(build_url(name, *args, **kwargs))
 
 
