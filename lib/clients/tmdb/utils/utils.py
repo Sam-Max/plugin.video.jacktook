@@ -287,6 +287,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "popular_movie": lambda p: Movie().popular(page=p),
         "trending_tv": lambda p: Trending().tv_week(page=p),
         "popular_shows": lambda p: TV().popular(page=p),
+        "airing_today": lambda p: TV().airing_today(page=p),
         "popular_people": lambda p: Person().popular(page=p),
         "trending_people": lambda p: Trending().person_week(page=p),
         "latest_people": lambda p: Person().latest(),

@@ -17,6 +17,13 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
+        "name": translation(90086),
+        "mode": "tv",
+        "api": "tmdb",
+        "query": "tmdb_airing_today",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90025),
         "mode": "tv",
         "api": "tmdb",

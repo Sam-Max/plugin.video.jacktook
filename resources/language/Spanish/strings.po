@@ -1733,6 +1733,10 @@ msgctxt "#90085"
 msgid "Include TV show Specials"
 msgstr "Incluir Especiales en shows de TV"
 
+msgctxt "#90086"
+msgid "Airing Today"
+msgstr "En Emisión Hoy"
+
 msgctxt "#90099"
 msgid "Filter by Source Type"
 msgstr "Filtrar por tipo de fuente"

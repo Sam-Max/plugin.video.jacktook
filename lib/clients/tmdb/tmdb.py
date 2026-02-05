@@ -116,6 +116,7 @@ class TmdbClient(BaseTmdbClient):
         query_handlers = {
             "tmdb_trending": lambda: TmdbClient.show_trending_shows(query, mode, page),
             "tmdb_popular": lambda: TmdbClient.show_popular_items(mode, page),
+            "tmdb_airing_today": lambda: TmdbClient.show_airing_today_items(mode, page),
             "tmdb_lang": lambda: TmdbClient.show_languages(mode, page),
             "tmdb_genres": lambda: TmdbClient.show_genres_items(mode, page),
             "tmdb_calendar": lambda: TmdbClient.show_calendar_items(query, page, mode),
@@ -492,6 +493,44 @@ class TmdbClient(BaseTmdbClient):
                 media_type=media_type,
             )
         add_next_button("handle_tmdb_query", query="tmdb_popular", page=page, mode=mode)
+        end_of_directory()
+
+    @staticmethod
+    def show_airing_today_items(mode, page):
+        set_pluging_category(translation(90086))
+        set_content_type(mode)
+
+        today = datetime.now().strftime("%Y-%m-%d")
+        params = {
+            "air_date.gte": today,
+            "air_date.lte": today,
+            "without_genres": "10767,10763,10764",
+            "sort_by": "popularity.desc",
+            "page": page,
+        }
+
+        data = tmdb_get("discover_tv", params)
+        if not data or getattr(data, "total_results", 0) == 0:
+            notification("No shows airing today")
+            return
+
+        results = getattr(data, "results", [])
+        for res in results:
+            tmdb_id = getattr(res, "id", "")
+            title = getattr(res, "name", "")
+            media_type = getattr(res, "media_type", "") or ""
+            list_item = ListItem(label=title)
+            set_media_infoTag(list_item, data=res, mode=mode)
+            BaseTmdbClient.add_media_directory_item(
+                list_item=list_item,
+                mode=mode,
+                title=title,
+                ids={"tmdb_id": tmdb_id},
+                media_type=media_type,
+            )
+        add_next_button(
+            "handle_tmdb_query", query="tmdb_airing_today", page=page, mode=mode
+        )
         end_of_directory()
 
     @staticmethod
