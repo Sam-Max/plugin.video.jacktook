@@ -135,6 +135,21 @@ This addon is a meta-search tool. It does not host or scrape torrent websites di
 
 ---
 
+## 🤝 Collaborators
+
+A huge thanks to everyone who has contributed to this project:
+
+<p align="left">
+  <a href="https://github.com/addon-rajada"><img src="https://github.com/addon-rajada.png?size=50" width="50" height="50" alt="addon-rajada" title="addon-rajada"/></a>
+  <a href="https://github.com/cleanhands"><img src="https://github.com/cleanhands.png?size=50" width="50" height="50" alt="cleanhands" title="cleanhands"/></a>
+  <a href="https://github.com/coffelius"><img src="https://github.com/coffelius.png?size=50" width="50" height="50" alt="Gabriel Ortega" title="Gabriel Ortega"/></a>
+  <a href="https://github.com/icarok99"><img src="https://github.com/icarok99.png?size=50" width="50" height="50" alt="Ícaro Maicon" title="Ícaro Maicon"/></a>
+  <a href="https://github.com/asylumexp"><img src="https://github.com/asylumexp.png?size=50" width="50" height="50" alt="Sam Heinz" title="Sam Heinz"/></a>
+  <a href="https://github.com/saucepanlid"><img src="https://github.com/saucepanlid.png?size=50" width="50" height="50" alt="saucepanlid" title="saucepanlid"/></a>
+</p>
+
+---
+
 <div align="center">
 Made with ❤️ for the Kodi Community
 </div>
