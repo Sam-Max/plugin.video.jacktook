@@ -1,4 +1,6 @@
-from typing import List
+from typing import List, Callable, Optional
+import requests
+import concurrent.futures
 from datetime import timedelta
 from lib.api.stremio.addon_manager import Addon, AddonManager
 from lib.api.stremio.api_client import Stremio
@@ -90,3 +92,35 @@ def get_selected_tv_addons() -> List[Addon]:
         return []
     selected_ids_list = selected_ids.split(",")
     return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
+
+
+def ping_addons(
+    addons: List[Addon], progress_callback: Optional[Callable[[int, int], None]] = None
+) -> List[Addon]:
+    reachable_addons = []
+    total = len(addons)
+    completed = 0
+
+    def check_addon(addon):
+        try:
+            url = addon.transport_url
+            if not url.endswith("/manifest.json"):
+                if not url.endswith("/"):
+                    url += "/"
+                url += "manifest.json"
+            requests.get(url, timeout=5)
+            return addon
+        except Exception:
+            return None
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = {executor.submit(check_addon, addon): addon for addon in addons}
+        for future in concurrent.futures.as_completed(futures):
+            result = future.result()
+            if result:
+                reachable_addons.append(result)
+            completed += 1
+            if progress_callback:
+                progress_callback(completed, total)
+
+    return reachable_addons

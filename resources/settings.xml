@@ -384,6 +384,17 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="stremio_ping_addons" type="action" label="30930" help="30931">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_filtered_selection)</data>
+                    <control type="button" format="action">
+                         <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="clear_stremio_cache" type="action" label="30925"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_stremio_cache)</data>
                     <control type="button" format="action">

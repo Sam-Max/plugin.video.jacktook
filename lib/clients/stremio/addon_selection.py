@@ -14,25 +14,94 @@ from lib.clients.stremio.constants import (
     STREMIO_USER_ADDONS,
     excluded_addons,
 )
-from lib.clients.stremio.helpers import get_addons
+from lib.clients.stremio.helpers import get_addons, ping_addons
 import xbmcgui
 
 
-def stremio_toggle_addons(params):
-    selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
-    addon_manager = get_addons()
-    addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
+def _ping_addons_with_progress(addons):
+    """Ping addons and show progress dialog."""
+    total_addons = len(addons)
 
-    # De-duplicate addons by key
+    progress_dialog = xbmcgui.DialogProgress()
+    progress_dialog.create("Stremio", "Pinging addons for availability...")
+
+    def update_progress(completed, total):
+        percent = int((completed / total) * 100)
+        progress_dialog.update(percent, f"Pinging addons... {completed}/{total}")
+
+    reachable_addons = ping_addons(addons, progress_callback=update_progress)
+    progress_dialog.close()
+
+    # Show summary
+    reachable_count = len(reachable_addons)
+    unreachable_count = total_addons - reachable_count
+
+    dialog = xbmcgui.Dialog()
+    dialog.ok(
+        "Ping Results",
+        f"Reachable: {reachable_count}\nUnreachable: {unreachable_count}",
+    )
+
+    return reachable_addons
+
+
+def _build_addon_options(addons):
+    """Build list items for addon multiselect with deduplication."""
+    name_counts = Counter(addon.manifest.name for addon in addons)
+    options = []
+
+    for addon in addons:
+        name = addon.manifest.name
+        if name_counts[name] > 1:
+            label = f"{name} ({addon.key()})"
+        else:
+            label = name
+
+        option = xbmcgui.ListItem(label=label, label2=f"{addon.manifest.description}")
+
+        logo = addon.manifest.logo
+        if not logo or logo.endswith(".svg"):
+            logo = "DefaultAddon.png"
+
+        option.setArt({"icon": logo})
+        options.append(option)
+
+    return options
+
+
+def _show_addon_multiselect(title, addons, selected_ids):
+    """Show multiselect dialog and return selected addon keys."""
+    options = _build_addon_options(addons)
+
+    dialog = xbmcgui.Dialog()
+    selected_addon_ids = [
+        addons.index(addon) for addon in addons if addon.key() in selected_ids
+    ]
+
+    selected_indexes = dialog.multiselect(
+        title, options, preselect=selected_addon_ids, useDetails=True
+    )
+
+    if selected_indexes is None:
+        return None
+
+    return [addons[index].key() for index in selected_indexes]
+
+
+def _deduplicate_addons(addons):
+    """Remove duplicate addons by key."""
     seen_keys = set()
     unique_addons = []
     for addon in addons:
         if addon.key() not in seen_keys:
             seen_keys.add(addon.key())
             unique_addons.append(addon)
-    addons = unique_addons
+    return unique_addons
 
-    addons = [
+
+def _filter_excluded_addons(addons):
+    """Filter out excluded addons and those requiring configuration."""
+    return [
         addon
         for addon in addons
         if addon.key() not in excluded_addons
@@ -42,55 +111,50 @@ def stremio_toggle_addons(params):
         )
     ]
 
-    addons = list(reversed(addons))
 
+def stremio_filtered_selection(params):
     dialog = xbmcgui.Dialog()
-    selected_addon_ids = [
-        addons.index(addon) for addon in addons if addon.key() in selected_ids
-    ]
+    options = ["Stream Addons", "Catalogs", "Live TV Addons"]
+    selection = dialog.select("Select Category to Filter", options)
 
-    name_counts = Counter(addon.manifest.name for addon in addons)
+    if selection == 0:
+        stremio_toggle_addons(params, check_availability=True)
+    elif selection == 1:
+        stremio_toggle_catalogs(params, check_availability=True)
+    elif selection == 2:
+        stremio_toggle_tv_addons(params, check_availability=True)
 
-    options = []
-    for addon in addons:
-        name = addon.manifest.name
-        if name_counts[name] > 1:
-            label = f"{name} ({addon.key()})"
-        else:
-            label = name
 
-        option = xbmcgui.ListItem(
-            label=label, label2=f"{addon.manifest.description}"
-        )
+def stremio_toggle_addons(params, check_availability=False):
+    selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
+    addon_manager = get_addons()
+    addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
 
-        logo = addon.manifest.logo
-        if not logo or logo.endswith(".svg"):
-            logo = "DefaultAddon.png"
+    addons = _deduplicate_addons(addons)
+    addons = _filter_excluded_addons(addons)
 
-        option.setArt({"icon": logo})
-        options.append(option)
+    if check_availability:
+        addons = _ping_addons_with_progress(addons)
+
+    addons = list(reversed(addons))
 
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
     title = stremio_email or "Stremio Community Addons List"
 
-    selected_indexes = dialog.multiselect(
-        title, options, preselect=selected_addon_ids, useDetails=True
-    )
+    selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
 
-    if selected_indexes is None:
+    if selected_addon_keys is None:
         return
-
-    selected_addon_ids = [addons[index].key() for index in selected_indexes]
 
     cache.set(
         STREMIO_ADDONS_KEY,
-        ",".join(selected_addon_ids),
+        ",".join(selected_addon_keys),
         timedelta(days=365 * 20),
     )
 
 
-def stremio_toggle_catalogs(params):
+def stremio_toggle_catalogs(params, check_availability=False):
     selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY) or ""
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource("catalog")
@@ -114,51 +178,26 @@ def stremio_toggle_catalogs(params):
             filtered_addons.append(addon)
     addons = filtered_addons
 
-    dialog = xbmcgui.Dialog()
-    selected_addon_ids = [
-        addons.index(addon) for addon in addons if addon.key() in selected_ids
-    ]
-
-    name_counts = Counter(addon.manifest.name for addon in addons)
-
-    options = []
-    for addon in addons:
-        name = addon.manifest.name
-        if name_counts[name] > 1:
-            label = f"{name} ({addon.key()})"
-        else:
-            label = name
-
-        option = xbmcgui.ListItem(
-            label=label, label2=f"{addon.manifest.description}"
-        )
-
-        logo = addon.manifest.logo
-        if not logo or logo.endswith(".svg"):
-            logo = "DefaultAddon.png"
-
-        option.setArt({"icon": logo})
-        options.append(option)
+    if check_availability:
+        addons = _ping_addons_with_progress(addons)
 
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
     title = stremio_email or "Stremio Community Catalogs List"
-    selected_indexes = dialog.multiselect(
-        title, options, preselect=selected_addon_ids, useDetails=True
-    )
 
-    if selected_indexes is None:
+    selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
+
+    if selected_addon_keys is None:
         return
-
-    selected_addon_ids = [addons[index].key() for index in selected_indexes]
 
     cache.set(
         STREMIO_ADDONS_CATALOGS_KEY,
-        ",".join(selected_addon_ids),
+        ",".join(selected_addon_keys),
         timedelta(days=365 * 20),
     )
 
-def stremio_toggle_tv_addons(params):
+
+def stremio_toggle_tv_addons(params, check_availability=False):
     selected_ids = cache.get(STREMIO_TV_ADDONS_KEY) or ""
     addon_manager = get_addons()
 
@@ -179,68 +218,26 @@ def stremio_toggle_tv_addons(params):
                     addons.append(addon)
                     break
 
-    # De-duplicate addons by key
-    seen_keys = set()
-    unique_addons = []
-    for addon in addons:
-        if addon.key() not in seen_keys:
-            seen_keys.add(addon.key())
-            unique_addons.append(addon)
-    addons = unique_addons
+    addons = _deduplicate_addons(addons)
+    addons = _filter_excluded_addons(addons)
 
-    addons = [
-        addon
-        for addon in addons
-        if addon.key() not in excluded_addons
-        and (
-            not addon.manifest.isConfigurationRequired()
-            or addon.transport_name == "custom"
-        )
-    ]
+    if check_availability:
+        addons = _ping_addons_with_progress(addons)
 
     addons = list(reversed(addons))
-
-    dialog = xbmcgui.Dialog()
-    selected_addon_ids = [
-        addons.index(addon) for addon in addons if addon.key() in selected_ids
-    ]
-
-    name_counts = Counter(addon.manifest.name for addon in addons)
-
-    options = []
-    for addon in addons:
-        name = addon.manifest.name
-        if name_counts[name] > 1:
-            label = f"{name} ({addon.key()})"
-        else:
-            label = name
-
-        option = xbmcgui.ListItem(
-            label=label, label2=f"{addon.manifest.description}"
-        )
-
-        logo = addon.manifest.logo
-        if not logo or logo.endswith(".svg"):
-            logo = "DefaultAddon.png"
-
-        option.setArt({"icon": logo})
-        options.append(option)
 
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
     title = stremio_email or "Stremio Live TV Addons"
-    selected_indexes = dialog.multiselect(
-        title, options, preselect=selected_addon_ids, useDetails=True
-    )
 
-    if selected_indexes is None:
+    selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
+
+    if selected_addon_keys is None:
         return
-
-    selected_addon_ids = [addons[index].key() for index in selected_indexes]
 
     cache.set(
         STREMIO_TV_ADDONS_KEY,
-        ",".join(selected_addon_ids),
+        ",".join(selected_addon_keys),
         timedelta(days=365 * 20),
     )
 
@@ -302,7 +299,7 @@ def add_custom_stremio_addon(params):
                 if res == "stream":
                     # For string resource, rely on top-elevel types
                     if "movie" in types or "series" in types:
-                        is_stream = True # Assumption for now, though checking for 'tt' prefix is safer properly but here we just have string
+                        is_stream = True  # Assumption for now, though checking for 'tt' prefix is safer properly but here we just have string
                     if "tv" in types or "channel" in types:
                         is_tv_stream = True
                 if res == "catalog":

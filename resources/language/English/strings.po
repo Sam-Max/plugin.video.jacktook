@@ -2053,3 +2053,11 @@ msgstr ""
 msgctxt "#32306"
 msgid "Reset Filter"
 msgstr ""
+
+msgctxt "#30930"
+msgid "Ping Addons"
+msgstr "Ping Addons"
+
+msgctxt "#30931"
+msgid "Check availability of addons and show only reachable ones"
+msgstr "Check availability of addons and show only reachable ones"

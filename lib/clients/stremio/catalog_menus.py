@@ -36,8 +36,6 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         addon_name = addon.manifest.name
         addon_types = addon.manifest.types
 
-        kodilog(f"Addon url: {addon.url()}")
-
         if menu_type not in addon_types:
             continue
 
@@ -118,7 +116,6 @@ def list_catalog(params):
             extras[key] = params[key]
 
     response = catalogs_get_cache("list_catalog", params, skip=skip, **extras)
-    kodilog(f"Response: {response}")
     if not response:
         return
 
@@ -229,9 +226,6 @@ def search_catalog(params):
 
 
 def add_meta_items(metas, params):
-    kodilog(f"Add meta items")
-    kodilog(f"Params: {params}")
-    kodilog(f"Metas: {metas}")
     catalog_type = params["catalog_type"]
     menu_type = params["menu_type"]
     sub_menu_type = params.get("sub_menu_type", "")

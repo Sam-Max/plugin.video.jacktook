@@ -120,6 +120,7 @@ from lib.clients.stremio.authentication import (
 )
 from lib.clients.stremio.addon_selection import (
     add_custom_stremio_addon,
+    stremio_filtered_selection,
     remove_custom_stremio_addon,
     stremio_toggle_addons,
     stremio_toggle_catalogs,
@@ -256,6 +257,7 @@ def addon_router():
         "show_picture_webdav": show_picture_webdav,
         "show_changelog": show_changelog,
         "add_custom_stremio_addon": add_custom_stremio_addon,
+        "stremio_filtered_selection": stremio_filtered_selection,
         "remove_custom_stremio_addon": remove_custom_stremio_addon,
         "delete_last_title_entry": delete_last_title_entry,
         "kodi_logs": kodi_logs,
