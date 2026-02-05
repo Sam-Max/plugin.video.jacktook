@@ -16,7 +16,7 @@ from lib.utils.kodi.utils import (
     show_keyboard,
     kodilog,
 )
-from lib.utils.general.utils import info_hash_to_magnet
+from lib.utils.general.utils import info_hash_to_magnet, IndexerType
 
 from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
@@ -564,7 +564,7 @@ def list_stremio_tv(params):
     for stream in streams:
         url = build_url(
             "play_media",
-            data={"mode": "movie", "url": stream.url},
+            data={"mode": "movie", "url": stream.url, "type": IndexerType.DIRECT},
         )
 
         list_item = ListItem(label=stream.title)
@@ -583,7 +583,7 @@ def list_stremio_tv_streams(params):
     for stream in streams:
         url = build_url(
             "play_media",
-            data={"mode": "movie", "url": stream["url"]},
+            data={"mode": "movie", "url": stream["url"], "type": IndexerType.DIRECT},
         )
 
         list_item = ListItem(label=stream["name"])
