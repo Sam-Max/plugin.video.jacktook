@@ -38,13 +38,16 @@ ELEMENTUM_ADDON_ID = "plugin.video.elementum"
 JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
 
 
-try:
-    if xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
-        JACKTORR_ADDON = xbmcaddon.Addon(JACKTORR_ADDON_ID)
-    else:
-        JACKTORR_ADDON = None
-except:
-    JACKTORR_ADDON = None
+def _get_jacktorr_addon():
+    try:
+        if xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
+            return xbmcaddon.Addon(JACKTORR_ADDON_ID)
+    except Exception:
+        pass
+    return None
+
+
+JACKTORR_ADDON = _get_jacktorr_addon()
 
 ADDON = xbmcaddon.Addon()
 try:
