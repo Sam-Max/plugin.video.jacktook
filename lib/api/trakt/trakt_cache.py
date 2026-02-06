@@ -81,6 +81,7 @@ class TraktWatched:
         self._delete(PROGRESS_DELETE, ("movie",))
         self._executemany(PROGRESS_INSERT, insert_list)
 
+    def set_bulk_tvshow_progress(self, insert_list):
         self._delete(PROGRESS_DELETE, ("episode",))
         self._executemany(PROGRESS_INSERT, insert_list)
 
@@ -110,7 +111,7 @@ class TraktWatched:
             else:
                 command = "SELECT 1 FROM watched WHERE db_type=? AND media_id=? AND season=? AND episode=?"
                 args = (db_type, media_id, season, episode)
-            
+
             result = dbcon.execute(command, args).fetchone()
             return result is not None
         except:
@@ -120,15 +121,17 @@ class TraktWatched:
         try:
             dbcon = connect_database("trakt_db")
             if db_type == "movie":
-                command = "SELECT resume_point FROM progress WHERE db_type=? AND media_id=?"
+                command = (
+                    "SELECT resume_point FROM progress WHERE db_type=? AND media_id=?"
+                )
                 args = (db_type, media_id)
             else:
                 command = "SELECT resume_point FROM progress WHERE db_type=? AND media_id=? AND season=? AND episode=?"
                 args = (db_type, media_id, season, episode)
-            
+
             result = dbcon.execute(command, args).fetchone()
             if result:
-                 return float(result[0])
+                return float(result[0])
             return 0.0
         except:
             return 0.0
