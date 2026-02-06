@@ -224,7 +224,7 @@ def search_client(
                 Indexer.BURST,
                 perform_search,
                 listener.dialog,
-                tmdb_id,
+                imdb_id,
                 query,
                 mode,
                 media_type,
