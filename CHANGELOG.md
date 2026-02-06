@@ -1,3 +1,14 @@
+## 0.24.0
+- Stremio: Add manual addon availability ping and filtering.
+- Stremio: Support for movie items with custom IDs.
+- TMDB: Add 'Airing Today' section for TV shows.
+- TMDB: Display clearlogos in category listings.
+- Anime: Add new anime categories.
+- Fix: Trakt sync error related to 'set_bulk_tvshow_progress'.
+- Fix: Mark Stremio Live TV streams as direct type for proper playback.
+- Fix: JacktookBurst using wrong ID type (replace tmdb_id with imdb_id).
+- Fix: Routing conflict by renaming internal 'play_media' helper.
+
 ## 0.23.0
 - Implement hybrid cache and background preloading for better performance.
 - Add dedicated selection on Stremio settings for Stremio Live TV addons.
