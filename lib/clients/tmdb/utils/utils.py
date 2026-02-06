@@ -312,6 +312,8 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         ),
         "tv_similar": lambda p: TV().similar(tv_id=p["id"], page=p["page"]),
         "movie_similar": lambda p: Movie().similar(movie_id=p["id"], page=p["page"]),
+        "movie_images": lambda p: Movie().images(movie_id=p["id"]),
+        "tv_images": lambda p: TV().images(tv_id=p["id"]),
     }
 
     try:

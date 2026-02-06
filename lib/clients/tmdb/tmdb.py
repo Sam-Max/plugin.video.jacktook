@@ -193,6 +193,7 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         if results:
+            TmdbClient._enrich_results_with_images(results, mode)
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
@@ -253,6 +254,8 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         if results:
+            display_mode = submode if mode == "anime" and submode else mode
+            TmdbClient._enrich_results_with_images(results, display_mode)
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
@@ -308,6 +311,8 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         if results:
+            display_mode = submode if mode == "anime" and submode else mode
+            TmdbClient._enrich_results_with_images(results, display_mode)
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
@@ -359,7 +364,10 @@ class TmdbClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        for res in getattr(data, "results", []):
+        results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
@@ -376,6 +384,34 @@ class TmdbClient(BaseTmdbClient):
         end_of_directory()
 
     @staticmethod
+    def _enrich_results_with_images(results, mode):
+        def _fetch_image(item):
+            tmdb_id = getattr(item, "id", None)
+            if not tmdb_id:
+                return
+
+            media_type = getattr(item, "media_type", "") or mode
+            path = None
+            if media_type in ["movie", "movies"]:
+                path = "movie_images"
+            elif media_type in ["tv", "tvshow"]:
+                path = "tv_images"
+            elif mode == "movies":
+                path = "movie_images"
+            elif mode == "tv":
+                path = "tv_images"
+
+            if path:
+                images = tmdb_get(path, {"id": tmdb_id})
+                if images:
+                    if isinstance(item, dict):
+                        item["images"] = images
+                    else:
+                        setattr(item, "images", images)
+
+        execute_thread_pool(results, _fetch_image)
+
+    @staticmethod
     def show_trending_movies(mode, page):
         set_pluging_category(translation(90028))
         set_content_type(mode)
@@ -384,7 +420,10 @@ class TmdbClient(BaseTmdbClient):
             notification("No results found")
             return
 
-        for res in getattr(data, "results", []):
+        results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
+
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
@@ -479,6 +518,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
@@ -515,6 +555,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "name", "")
@@ -583,6 +624,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
@@ -668,6 +710,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        TmdbClient._enrich_results_with_images(results, mode)
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
