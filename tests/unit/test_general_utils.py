@@ -4,6 +4,11 @@ from lib.utils.general.utils import (
     is_magnet_link,
     info_hash_to_magnet,
     supported_video_extensions,
+    extract_publish_date,
+    extract_release_group,
+    unicode_flag_to_country_code,
+    is_video,
+    get_random_color,
 )
 
 
@@ -35,5 +40,39 @@ def test_supported_video_extensions():
     assert ".mp4" in exts
     assert ".mkv" in exts
     assert ".avi" in exts
-    # .ts is in getSupportedMedia but also in non_direct_exts? No, let's check non_direct_exts.
-    # Actually non_direct_exts contains .ts? Let's check.
+
+
+def test_extract_publish_date():
+    assert extract_publish_date("2023-10-27") == "2023-10-27"
+    assert extract_publish_date("Released on 2022-01-01") == "2022-01-01"
+    assert extract_publish_date("NoDate") == ""
+
+
+def test_extract_release_group():
+    assert extract_release_group("Movie.Title.2023.1080p-Groupname") == "Groupname"
+    assert extract_release_group("[Groupname] Movie Title") == "Groupname"
+    assert extract_release_group("Movie.Title.mkv") == ""
+    assert extract_release_group(None) == ""
+
+
+def test_unicode_flag_to_country_code():
+    # US Flag 🇺🇸 -> us
+    assert unicode_flag_to_country_code("🇺🇸") == "us"
+    # GB Flag 🇬🇧 -> gb
+    assert unicode_flag_to_country_code("🇬🇧") == "gb"
+    # Invalid length
+    assert unicode_flag_to_country_code("ABC") == "Invalid flag Unicode"
+
+
+def test_is_video():
+    assert is_video("movie.mp4") is True
+    assert is_video("show.mkv") is True
+    assert is_video("document.txt") is False
+    assert is_video("archive.zip") is False
+
+
+def test_get_random_color():
+    color = get_random_color("Netflix")
+    # Expected format: [B][COLOR FFRRGGBB]Netflix[/COLOR][/B]
+    assert color.startswith("[B][COLOR FF")
+    assert color.endswith("]Netflix[/COLOR][/B]")
