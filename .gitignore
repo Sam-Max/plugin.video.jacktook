@@ -2,8 +2,6 @@
 .idea
 *.log
 tmp/
-tests/
-test2/
 *.py[cod]
 *.egg
 build
