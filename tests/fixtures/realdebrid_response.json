@@ -1,0 +1,34 @@
+{
+    "user": {
+        "id": 12345,
+        "username": "testuser",
+        "email": "test@example.com",
+        "points": 1000,
+        "locale": "en",
+        "avatar": "https://example.com/avatar.png",
+        "type": "premium",
+        "premium": 1234567890,
+        "expiration": "2023-01-01T00:00:00.000Z"
+    },
+    "torrents": [
+        {
+            "id": "TORRENT123",
+            "filename": "Big Buck Bunny",
+            "hash": "1234567890abcdef1234567890abcdef12345678",
+            "bytes": 1073741824,
+            "host": "real-debrid.com",
+            "split": 10,
+            "progress": 100,
+            "status": "downloaded",
+            "added": "2023-01-01T00:00:00.000Z",
+            "links": [
+                "https://real-debrid.com/d/12345"
+            ],
+            "ended": "2023-01-01T00:10:00.000Z"
+        }
+    ],
+    "addMagnet": {
+        "id": "NEWTORRENT456",
+        "uri": "https://real-debrid.com/torrents/NEWTORRENT456"
+    }
+}
