@@ -13,13 +13,20 @@ from lib.utils.parsers import xmltodict
 
 
 class Jackett(BaseClient):
-    def __init__(self, host: str, apikey: str, port: str, notification) -> None:
+    def __init__(
+        self,
+        host: str,
+        apikey: str,
+        port: str,
+        notification,
+        session: Optional[requests.Session] = None,
+    ) -> None:
         super().__init__(host, notification)
         self.apikey = apikey
         self.port = port
         self.host = host
         self.base_url = self._make_base_url("all")
-        self.session = requests.Session()
+        self.session = session or requests.Session()
         self.session.headers.update(USER_AGENT_HEADER.copy())
 
     def _make_base_url(self, indexer_id: str) -> str:

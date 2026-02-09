@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed">
+  <channel>
+    <title>Jackett Indexer</title>
+    <item>
+      <title>Big Buck Bunny 1080p</title>
+      <guid>http://tracker.example.com/details/12345</guid>
+      <jackettindexer>
+        <id>example_tracker</id>
+        <text>Example Tracker</text>
+      </jackettindexer>
+      <link>magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&amp;dn=Big+Buck+Bunny+1080p</link>
+      <size>1073741824</size>
+      <pubDate>Sun, 01 Jan 2023 12:00:00 +0000</pubDate>
+      <torznab:attr name="seeders" value="100" />
+      <torznab:attr name="peers" value="200" />
+      <torznab:attr name="infohash" value="1234567890abcdef1234567890abcdef12345678" />
+    </item>
+    <item>
+      <title>Big Buck Bunny 720p</title>
+      <guid>http://tracker.example.com/details/67890</guid>
+      <jackettindexer>
+        <id>example_tracker</id>
+        <text>Example Tracker</text>
+      </jackettindexer>
+      <link>magnet:?xt=urn:btih:abcdef1234567890abcdef1234567890123456&amp;dn=Big+Buck+Bunny+720p</link>
+      <size>536870912</size>
+      <pubDate>Sun, 01 Jan 2023 13:00:00 +0000</pubDate>
+      <torznab:attr name="seeders" value="50" />
+      <torznab:attr name="peers" value="20" />
+      <torznab:attr name="infohash" value="abcdef1234567890abcdef1234567890123456" />
+    </item>
+  </channel>
+</rss>
