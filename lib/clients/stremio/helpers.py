@@ -94,6 +94,15 @@ def get_selected_tv_addons() -> List[Addon]:
     return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
 
 
+def get_addon_by_base_url(addon_url):
+    """Resolve an Addon object from its base URL."""
+    catalog = get_addons()
+    for addon in catalog.addons:
+        if addon.url() == addon_url:
+            return addon
+    return None
+
+
 def ping_addons(
     addons: List[Addon], progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> List[Addon]:

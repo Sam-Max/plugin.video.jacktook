@@ -64,7 +64,7 @@ class StremioAddonCatalogsClient(BaseClient):
         return data
 
     def get_meta_info(self) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/meta/{self.params['catalog_type']}/{self.params['video_id']}.json"
+        url = f"{self.base_url}/meta/{self.params['catalog_type']}/{self.params['meta_id']}.json"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
@@ -75,7 +75,7 @@ class StremioAddonCatalogsClient(BaseClient):
         return data
 
     def get_stream_info(self) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/stream/{self.params['catalog_type']}/{self.params['video_id']}.json"
+        url = f"{self.base_url}/stream/{self.params['catalog_type']}/{self.params['meta_id']}.json"
         res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
         if res.status_code != 200:
             return
