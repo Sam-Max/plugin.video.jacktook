@@ -2,7 +2,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 from typing import List, Optional
 
-from lib.clients.stremio.helpers import get_selected_stream_addons
+from lib.clients.stremio.helpers import (
+    get_addon_by_base_url,
+    get_selected_stream_addons,
+)
 from lib.clients.stremio.addon_client import StremioAddonClient
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
@@ -85,13 +88,31 @@ def run_search_entry(params: dict):
     episode = tv_data.get("episode", 1)
     season = tv_data.get("season", 1)
 
-    results = search_client(query, ids, mode, media_type, rescrape, season, episode)
+    scoped_addon_url = params.get("scoped_addon_url", "")
+
+    results = search_client(
+        query,
+        ids,
+        mode,
+        media_type,
+        rescrape,
+        season,
+        episode,
+        scoped_addon_url=scoped_addon_url,
+    )
     if not results:
         notification("No results found")
         cancel_playback()
         return
 
-    pre_results = pre_process_results(results, mode, ep_name, episode, season)
+    pre_results = pre_process_results(
+        results,
+        mode,
+        ep_name,
+        episode,
+        season,
+        skip_episode_filter=bool(scoped_addon_url),
+    )
     if not pre_results:
         notification("No results found")
         cancel_playback()
@@ -126,13 +147,18 @@ def search_client(
     season: int,
     episode: int,
     show_dialog: bool = True,
+    scoped_addon_url: str = "",
 ) -> List[TorrentStream]:
     close_busy_dialog()
     with DialogListener() as listener:
 
         def perform_search(indexer_key, dialog, *args, **kwargs):
             if indexer_key == Indexer.STREMIO:
-                stremio_addons = get_selected_stream_addons()
+                if scoped_addon_url:
+                    addon = get_addon_by_base_url(scoped_addon_url)
+                    stremio_addons = [addon] if addon else []
+                else:
+                    stremio_addons = get_selected_stream_addons()
                 if not stremio_addons:
                     notification("No Stremio addons selected")
                     return []
@@ -204,90 +230,106 @@ def search_client(
         with ThreadPoolExecutor(
             max_workers=int(get_setting("thread_number", 6))
         ) as executor:
-            add_task_if_enabled(
-                executor,
-                tasks,
-                "zilean_enabled",
-                Indexer.ZILEAN,
-                perform_search,
-                listener.dialog,
-                query,
-                mode,
-                media_type,
-                season,
-                episode,
-            )
-            add_task_if_enabled(
-                executor,
-                tasks,
-                "jacktookburst_enabled",
-                Indexer.BURST,
-                perform_search,
-                listener.dialog,
-                imdb_id,
-                query,
-                mode,
-                media_type,
-                season,
-                episode,
-            )
-            if get_setting("prowlarr_enabled"):
-                indexers_ids = get_setting("prowlarr_indexer_ids")
-                tasks.append(
-                    executor.submit(
-                        perform_search,
-                        Indexer.PROWLARR,
-                        listener.dialog,
-                        query,
-                        mode,
-                        season,
-                        episode,
-                        indexers_ids,
+            if scoped_addon_url:
+                # Scoped search: only search the specific addon
+                if ids.get("imdb_id") or ids.get("original_id"):
+                    tasks.append(
+                        executor.submit(
+                            perform_search,
+                            Indexer.STREMIO,
+                            listener.dialog,
+                            ids,
+                            mode,
+                            media_type,
+                            season,
+                            episode,
+                        )
                     )
+            else:
+                add_task_if_enabled(
+                    executor,
+                    tasks,
+                    "zilean_enabled",
+                    Indexer.ZILEAN,
+                    perform_search,
+                    listener.dialog,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
                 )
-            add_task_if_enabled(
-                executor,
-                tasks,
-                "jackett_enabled",
-                Indexer.JACKETT,
-                perform_search,
-                listener.dialog,
-                query,
-                mode,
-                season,
-                episode,
-            )
-            add_task_if_enabled(
-                executor,
-                tasks,
-                "jackgram_enabled",
-                Indexer.JACKGRAM,
-                perform_search,
-                listener.dialog,
-                tmdb_id,
-                query,
-                mode,
-                media_type,
-                season,
-                episode,
-            )
-            if (
-                get_setting("stremio_enabled")
-                and ids.get("imdb_id")
-                or ids.get("original_id")
-            ):
-                tasks.append(
-                    executor.submit(
-                        perform_search,
-                        Indexer.STREMIO,
-                        listener.dialog,
-                        ids,
-                        mode,
-                        media_type,
-                        season,
-                        episode,
+                add_task_if_enabled(
+                    executor,
+                    tasks,
+                    "jacktookburst_enabled",
+                    Indexer.BURST,
+                    perform_search,
+                    listener.dialog,
+                    imdb_id,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
+                if get_setting("prowlarr_enabled"):
+                    indexers_ids = get_setting("prowlarr_indexer_ids")
+                    tasks.append(
+                        executor.submit(
+                            perform_search,
+                            Indexer.PROWLARR,
+                            listener.dialog,
+                            query,
+                            mode,
+                            season,
+                            episode,
+                            indexers_ids,
+                        )
                     )
+                add_task_if_enabled(
+                    executor,
+                    tasks,
+                    "jackett_enabled",
+                    Indexer.JACKETT,
+                    perform_search,
+                    listener.dialog,
+                    query,
+                    mode,
+                    season,
+                    episode,
                 )
+                add_task_if_enabled(
+                    executor,
+                    tasks,
+                    "jackgram_enabled",
+                    Indexer.JACKGRAM,
+                    perform_search,
+                    listener.dialog,
+                    tmdb_id,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                )
+                if (
+                    get_setting("stremio_enabled")
+                    and ids.get("imdb_id")
+                    or ids.get("original_id")
+                ):
+                    tasks.append(
+                        executor.submit(
+                            perform_search,
+                            Indexer.STREMIO,
+                            listener.dialog,
+                            ids,
+                            mode,
+                            media_type,
+                            season,
+                            episode,
+                        )
+                    )
 
             total_tasks = len(tasks)
             completed_tasks = 0
@@ -319,9 +361,14 @@ def search_client(
 
 
 def pre_process_results(
-    results: List[TorrentStream], mode: str, ep_name: str, episode: int, season: int
+    results: List[TorrentStream],
+    mode: str,
+    ep_name: str,
+    episode: int,
+    season: int,
+    skip_episode_filter: bool = False,
 ) -> List[TorrentStream]:
-    return pre_process(results, mode, ep_name, episode, season)
+    return pre_process(results, mode, ep_name, episode, season, skip_episode_filter)
 
 
 def process_results(
