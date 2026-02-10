@@ -2,6 +2,7 @@ from lib.utils.kodi.utils import ADDON_HANDLE
 import json
 from dataclasses import asdict
 from lib.clients.stremio.helpers import (
+    get_addon_by_base_url,
     get_selected_catalogs_addons,
     get_selected_tv_addons,
 )
@@ -12,9 +13,11 @@ from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 from lib.utils.kodi.utils import (
     build_url,
     end_of_directory,
+    kodi_play_media,
     notification,
     show_keyboard,
     kodilog,
+    translation,
 )
 from lib.utils.general.utils import info_hash_to_magnet, IndexerType
 
@@ -179,7 +182,7 @@ def search_catalog(params):
                     "list_stremio_seasons",
                     addon_url=params["addon_url"],
                     catalog_type=params["catalog_type"],
-                    video_id=meta.id,
+                    meta_id=meta.id,
                 )
         elif meta.type == "movie":
             tmdb_id = ""
@@ -225,6 +228,28 @@ def search_catalog(params):
     end_of_directory()
 
 
+def addon_has_meta(addon_url, content_type):
+    """Check if the addon serves its own meta (seasons/episodes) for the given type."""
+    addon = get_addon_by_base_url(addon_url)
+    if not addon:
+        return False
+    for resource in addon.manifest.resources:
+        if resource.name == "meta" and content_type in resource.types:
+            return True
+    return False
+
+
+def addon_has_stream(addon_url, content_type):
+    """Check if the addon serves its own streams for the given type."""
+    addon = get_addon_by_base_url(addon_url)
+    if not addon:
+        return False
+    for resource in addon.manifest.resources:
+        if resource.name == "stream" and content_type in resource.types:
+            return True
+    return False
+
+
 def add_meta_items(metas, params):
     catalog_type = params["catalog_type"]
     menu_type = params["menu_type"]
@@ -252,19 +277,26 @@ def add_meta_items(metas, params):
 
     for meta in metas:
         name = meta.name
-        video_type = meta.type
-        video_id = meta.id
+        meta_type = meta.type
+        meta_id = meta.id
         tmdb_id = meta.moviedb_id
         imdb_id = meta.imdb_id
 
-        if "tmdb" in video_id:
-            tmdb_id = video_id.split(":")[1]
-        elif video_id.startswith("tt"):
-            imdb_id = video_id
+        if "tmdb" in meta_id:
+            tmdb_id = meta_id.split(":")[1]
+        elif meta_id.startswith("tt"):
+            imdb_id = meta_id
             tmdb_id = ""
 
-        if video_type == "series":
-            if tmdb_id or imdb_id:
+        if meta_type == "series":
+            if addon_has_meta(addon_url, catalog_type):
+                url = build_url(
+                    "list_stremio_seasons",
+                    addon_url=addon_url,
+                    catalog_type=catalog_type,
+                    meta_id=meta_id,
+                )
+            elif tmdb_id or imdb_id:
                 ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
                 url = build_url(
                     "show_seasons_details", ids=ids, mode="tv", media_type="tv"
@@ -274,10 +306,29 @@ def add_meta_items(metas, params):
                     "list_stremio_seasons",
                     addon_url=addon_url,
                     catalog_type=catalog_type,
-                    video_id=video_id,
+                    meta_id=meta_id,
                 )
-
-        elif video_type == "tv":
+        elif meta_type == "movie":
+            if addon_has_meta(addon_url, catalog_type) or ":" in meta_id:
+                is_custom_movie = True
+                url = build_url(
+                    "list_stremio_movie",
+                    addon_url=addon_url,
+                    catalog_type=catalog_type,
+                    meta_id=meta_id,
+                )
+            elif tmdb_id or imdb_id:
+                is_custom_movie = False
+                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+                url = build_url("search", mode="movies", query=name, ids=ids)
+            else:
+                url = build_url(
+                    "list_stremio_movie",
+                    addon_url=addon_url,
+                    catalog_type=catalog_type,
+                    meta_id=meta_id,
+                )
+        elif meta_type == "tv":
             if meta.streams:
                 streams_data = [asdict(s) for s in meta.streams]
                 url = build_url(
@@ -288,36 +339,20 @@ def add_meta_items(metas, params):
                     "list_stremio_tv",
                     addon_url=addon_url,
                     catalog_type=catalog_type,
-                    video_id=video_id,
+                    meta_id=meta_id,
                 )
-
-        elif video_type == "movie":
-            if not tmdb_id and not imdb_id and ":" in video_id:
-                is_custom_movie = True
-                url = build_url(
-                    "list_stremio_movie",
-                    addon_url=addon_url,
-                    catalog_type=catalog_type,
-                    video_id=video_id,
-                )
-            else:
-                is_custom_movie = False
-                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
-                url = build_url("search", mode="movies", query=name, ids=ids)
         else:
             continue
 
         list_item = ListItem(label=name)
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(
-            video_id, type="imdb" if video_id.startswith("tt") else "mf"
-        )
+        info_tag.setUniqueID(meta_id, type="imdb" if meta_id.startswith("tt") else "mf")
         info_tag.setTitle(name)
         info_tag.setPlot(meta.description or "")
         info_tag.setGenres(meta.genres)
         info_tag.setMediaType("video")
 
-        is_folder = video_type != "movie" or (video_type == "movie" and is_custom_movie)
+        is_folder = meta_type != "movie" or (meta_type == "movie" and is_custom_movie)
         if not is_folder:
             list_item.setProperty("IsPlayable", "true")
 
@@ -340,6 +375,7 @@ def add_meta_items(metas, params):
 
 
 def list_stremio_seasons(params):
+    kodilog("list_stremio_seasons")
     response = catalogs_get_cache("list_stremio_seasons", params)
     if not response:
         return
@@ -363,7 +399,7 @@ def list_stremio_seasons(params):
             "list_stremio_episodes",
             addon_url=params["addon_url"],
             catalog_type=params["catalog_type"],
-            video_id=params["video_id"],
+            meta_id=params["meta_id"],
             season=season,
         )
         list_item = ListItem(label=f"Season {season}")
@@ -396,6 +432,7 @@ def list_stremio_seasons(params):
 
 
 def list_stremio_episodes(params):
+    kodilog("list_stremio_episodes")
     response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
         return
@@ -468,6 +505,12 @@ def list_stremio_episodes(params):
             "original_id": original_id,
         }
 
+        scoped_addon_url = (
+            params["addon_url"]
+            if addon_has_stream(params["addon_url"], params["catalog_type"])
+            else ""
+        )
+
         url = build_url(
             "search",
             mode="tv",
@@ -475,6 +518,7 @@ def list_stremio_episodes(params):
             query=meta_data.name,
             ids=ids,
             tv_data=tv_data,
+            scoped_addon_url=scoped_addon_url,
         )
 
         list_item = ListItem(label=f"{season}x{episode}. {title}")
@@ -491,6 +535,23 @@ def list_stremio_episodes(params):
         info_tag.setEpisode(episode)
 
         list_item.setProperty("IsPlayable", "true")
+
+        context_menu = [
+            (
+                translation(90049),
+                kodi_play_media(
+                    name="search",
+                    mode="tv",
+                    media_type="tv",
+                    query=meta_data.name,
+                    ids=ids,
+                    tv_data=tv_data,
+                    scoped_addon_url=scoped_addon_url,
+                    rescrape=True,
+                ),
+            ),
+        ]
+        list_item.addContextMenuItems(context_menu)
 
         list_item.setArt(
             {
