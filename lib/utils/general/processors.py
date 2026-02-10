@@ -164,9 +164,12 @@ class PreProcessBuilder(BaseProcessBuilder):
 
         episode_fill = f"{int(episode_num):02}"
         season_fill = f"{int(season_num):02}"
+        str_season = str(int(season_num))
         patterns = [
             rf"S{season_fill}E{episode_fill}",  # SXXEXX format
-            rf"{season_fill}x{episode_fill}",  # XXxXX format
+            rf"S{str_season}E{episode_fill}",  # SXEXX format (non-padded season)
+            rf"{season_fill}x{episode_fill}",  # XXxXX format (zero-padded)
+            rf"{str_season}x{episode_fill}",  # XxXX format (non-padded season)
             rf"\.S{season_fill}E{episode_fill}",  # .SXXEXX format
             rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
             r"Cap\.",  # match "Cap."
@@ -252,7 +255,7 @@ class PreProcessBuilder(BaseProcessBuilder):
 
         def parse_size(res: TorrentStream) -> Optional[int]:
             size_bytes = getattr(res, "size", None)
-            if size_bytes is None:
+            if not size_bytes:
                 return None
             try:
                 return int(size_bytes) // (1024 * 1024)  # Convert bytes → MB
@@ -262,7 +265,7 @@ class PreProcessBuilder(BaseProcessBuilder):
         filtered = []
         for res in self.results:
             size = parse_size(res)
-            if size is not None and min_size <= size <= max_size:
+            if size is None or min_size <= size <= max_size:
                 filtered.append(res)
 
         self.results = filtered

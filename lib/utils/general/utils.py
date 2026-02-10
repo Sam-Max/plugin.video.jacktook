@@ -1091,18 +1091,15 @@ def pre_process(
     episode_name: str,
     episode: int,
     season: int,
+    skip_episode_filter: bool = False,
 ) -> List[TorrentStream]:
-    kodilog("Pre-processing results")
     builder = PreProcessBuilder(results).remove_duplicates()
-
-    if mode == "tv":
+    if mode == "tv" and not skip_episode_filter:
         builder.filter_sources(episode_name, episode, season)
     builder.filter_by_quality()
     if get_setting("filter_size_enabled"):
         builder.filter_by_size()
-
     results = builder.get_results()
-    kodilog(f"Pre-processed results count: {len(results)}")
     return results
 
 
