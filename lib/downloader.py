@@ -128,10 +128,19 @@ class Downloader:
 
     def _validate_url(self):
         try:
+            if not self.headers.get("User-Agent"):
+                from lib.utils.general.utils import USER_AGENT_STRING
+
+                self.headers["User-Agent"] = USER_AGENT_STRING
+
             request = Request(self.url, headers=self.headers)
-            response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+
+            response = urlopen(request, context=context)
             self.file_size = int(response.headers.get("Content-Length", 0))
-            return self.file_size > 0
+            return True
         except Exception as e:
             kodilog(f"[Downloader] Validation error: {str(e)}")
             return False
@@ -154,7 +163,10 @@ class Downloader:
                     return
 
             request = Request(self.url, headers=self.headers)
-            response = urlopen(request, context=ssl.SSLContext(ssl.PROTOCOL_SSLv23))
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            response = urlopen(request, context=context)
 
             with open_file(self.dest_path, file_mode) as file:
                 while not self.monitor.abortRequested():
@@ -244,11 +256,15 @@ def downloads_viewer(params):
             item_path = os.path.join(translated_path, item)
             list_item = xbmcgui.ListItem(label=item)
             if item in directories:
-                list_item.setInfo("video", {"title": item, "mediatype": "folder"})
+                info_tag = list_item.getVideoInfoTag()
+                info_tag.setTitle(item)
+                info_tag.setMediaType("folder")
                 list_item.setProperty("IsPlayable", "false")
                 is_folder = True
             else:
-                list_item.setInfo("video", {"title": item, "mediatype": "file"})
+                info_tag = list_item.getVideoInfoTag()
+                info_tag.setTitle(item)
+                info_tag.setMediaType("file")
                 context_menu = []
 
                 if is_active_download(item_path):
