@@ -1,10 +1,8 @@
 import hashlib
 import requests
-from lib.api.jacktorr.jacktorr import TorrServer
 from lib.utils.kodi.kodi_formats import is_picture, is_text, is_video, is_music
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
-    JACKTORR_ADDON,
     buffer_and_play,
     build_url,
     kodilog,
@@ -16,11 +14,6 @@ from lib.utils.kodi.utils import (
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
     build_list_item,
-    get_password,
-    get_port,
-    get_service_host,
-    get_username,
-    ssl_enabled,
 )
 from lib.vendor.bencodepy import bencodepy
 
