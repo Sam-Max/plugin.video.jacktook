@@ -54,7 +54,8 @@ def list_webdav(params):
 
         # --- AUDIO ---
         elif item["type"] == "audio":
-            list_item.setInfo("music", {"title": item["name"]})
+            info_tag = list_item.getMusicInfoTag()
+            info_tag.setTitle(item["name"])
             list_item.setProperty("IsPlayable", "true")
             url = build_url("play_url", url=item["url"], name=item["name"])
             is_folder = False

@@ -474,7 +474,9 @@ class TraktPresentation:
         )
 
         list_item = ListItem(list_title)
-        list_item.setInfo("video", info_labels)
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setTitle(list_title)
+        info_tag.setPlot(description)
 
         add_kodi_dir_item(
             list_item,
