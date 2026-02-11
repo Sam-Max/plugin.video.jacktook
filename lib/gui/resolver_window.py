@@ -69,7 +69,10 @@ class ResolverWindow(BaseWindow):
 
     def resolve_source(self) -> Optional[Dict[str, Any]]:
         try:
-            if self.source.isPack or self.pack_select:
+            is_pack = self.source.isPack or self.pack_select
+            has_debrid = bool(self.source.debridType)
+
+            if is_pack and has_debrid:
                 self.resolve_pack_source()
             else:
                 self.resolve_single_source()

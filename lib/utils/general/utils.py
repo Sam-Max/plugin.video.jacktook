@@ -742,10 +742,14 @@ def set_watched_file(data):
     title = data.get("title", "")
     is_torrent = data.get("is_torrent", False)
     is_direct = data.get("type", "") == IndexerType.DIRECT
+    is_stremio = data.get("type", "") == IndexerType.STREMIO_DEBRID
 
     if is_direct:
         color = get_random_color("Direct", formatted=False)
         title = f"[B][COLOR {color}][Direct][/COLOR][/B] - {title}"
+    elif is_stremio:
+        color = get_random_color("Stremio", formatted=False)
+        title = f"[B][COLOR {color}][Stremio Debrid][/COLOR][/B] - {title}"
     elif is_torrent:
         color = get_random_color("Torrent", formatted=False)
         title = f"[B][COLOR {color}][Torrent][/COLOR][/B] - {title}"

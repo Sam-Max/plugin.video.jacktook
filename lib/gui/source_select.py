@@ -181,7 +181,7 @@ class SourceSelect(BaseWindow):
         self.position = self.display_list.getSelectedPosition()
         selected_source = self.list_sources[self.position]
 
-        if selected_source.type == "Torrent":
+        if selected_source.type == IndexerType.TORRENT:
             response = xbmcgui.Dialog().contextmenu(
                 ["Download to Debrid", translation(90083)]
             )
@@ -189,10 +189,12 @@ class SourceSelect(BaseWindow):
                 self._download_to_debrid()
             elif response == 1:
                 self._download_file(selected_source)
-        elif selected_source.type == "Direct":
-            response = xbmcgui.Dialog().contextmenu([translation(90083)])
+        elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
+            response = xbmcgui.Dialog().contextmenu([translation(90083), translation(90082)])
             if response == 0:
                 self._download_file(selected_source)
+            elif response == 1:
+                self._resolve_item(selected_source, is_subtitle_download=True)
         else:
             response = xbmcgui.Dialog().contextmenu(
                 [translation(90084), translation(90083), translation(90082)]
