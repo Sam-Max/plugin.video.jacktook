@@ -56,6 +56,7 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
 
     if not magnet and info_hash:
         from lib.utils.general.utils import info_hash_to_magnet
+
         magnet = info_hash_to_magnet(info_hash)
 
     if get_setting("torrent_enable"):
@@ -64,13 +65,11 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
     if data.get("is_torrent"):
         selected_client = get_torrent_client_selection(magnet, url, mode, ids)
         if selected_client:
-            return get_torrent_url_for_client(
-                magnet, url, mode, ids, selected_client
-            )
+            return get_torrent_url_for_client(magnet, url, mode, ids, selected_client)
         else:
             raise TorrentException("No torrent client selected")
     return None
-    
+
 
 def get_torrent_url_for_client(
     magnet: str, url: str, mode: str, ids: Any, client: str = ""
@@ -117,7 +116,7 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
             notification(translation(30252))
             return None
 
-    tmdb_id = ids["tmdb_id"] if ids else ""
+    tmdb_id = ids.get("tmdb_id", "") if isinstance(ids, dict) else ""
 
     if magnet or url:
         return f"plugin://plugin.video.elementum/play?uri={quote(magnet or url)}&type={mode}&tmdb={tmdb_id}"

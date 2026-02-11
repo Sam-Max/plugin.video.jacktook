@@ -2,6 +2,7 @@ import os
 import re
 import hashlib
 import unicodedata
+import json
 from urllib.parse import unquote
 import requests
 from typing import Dict, List
@@ -1463,3 +1464,19 @@ def parse_time(item):
             kodilog(e)
             return datetime.min
     return datetime.min
+
+
+def safe_json_loads(value, default=None):
+    """
+    Safely load JSON string. Returns default if parsing fails or value is None/empty.
+    """
+    if default is None:
+        default = {}
+
+    if not value:
+        return default
+
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return default

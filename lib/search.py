@@ -23,6 +23,7 @@ from lib.utils.general.utils import (
     set_content_type,
     set_watched_title,
     clean_auto_play_undesired,
+    safe_json_loads,
 )
 from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.kodi.settings import auto_play_enabled, get_setting
@@ -41,11 +42,11 @@ from xbmcgui import Dialog
 
 def run_search_entry(params: dict):
     if get_setting("super_quick_play", False):
-        ids = json.loads(params.get("ids", "{}"))
+        ids = safe_json_loads(params.get("ids"))
         key = ""
         if "tmdb_id" in ids:
             key = str(ids["tmdb_id"])
-            tv_data = json.loads(params.get("tv_data", "{}"))
+            tv_data = safe_json_loads(params.get("tv_data"))
             if "season" in tv_data and "episode" in tv_data:
                 key += f'_{tv_data["season"]}_{tv_data["episode"]}'
 
@@ -76,8 +77,8 @@ def run_search_entry(params: dict):
     query = params.get("query", "")
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
-    ids = json.loads(params.get("ids", "{}"))
-    tv_data = json.loads(params.get("tv_data", "{}"))
+    ids = safe_json_loads(params.get("ids"))
+    tv_data = safe_json_loads(params.get("tv_data"))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
