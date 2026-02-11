@@ -81,8 +81,6 @@ def list_webdav(params):
             url = item["url"]
             is_folder = False
 
-        kodilog(f"Final URL: {url}")
-
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder
         )

@@ -27,15 +27,11 @@ from lib.vendor.bencodepy import bencodepy
 from xbmcplugin import addDirectoryItem, endOfDirectory
 from xbmcgui import Dialog
 
-
-if JACKTORR_ADDON:
-    torrserver_api = TorrServer(
-        get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
-    )
+from lib.utils.torrent.torrserver_init import get_torrserver_api
 
 
 def torrent_status(info_hash):
-    status = torrserver_api.get_torrent_info(link=info_hash)
+    status = get_torrserver_api().get_torrent_info(link=info_hash)
     notification(
         "{}".format(status.get("stat_string")),
         status.get("name"),
@@ -46,13 +42,13 @@ def torrent_status(info_hash):
 def torrent_files(params):
     info_hash = params.get("info_hash")
 
-    info = torrserver_api.get_torrent_info(link=info_hash)
+    info = get_torrserver_api().get_torrent_info(link=info_hash)
     file_stats = info.get("file_stats")
 
     for f in file_stats:
         name = f.get("path")
         id = f.get("id")
-        serve_url = torrserver_api.get_stream_url(
+        serve_url = get_torrserver_api().get_stream_url(
             link=info_hash, path=f.get("path"), file_id=id
         )
         file_li = build_list_item(name, "download.png")
@@ -106,9 +102,9 @@ def torrent_action(params):
     needs_refresh = True
 
     if action_str == "drop":
-        torrserver_api.drop_torrent(info_hash)
+        get_torrserver_api().drop_torrent(info_hash)
     elif action_str == "remove_torrent":
-        torrserver_api.remove_torrent(info_hash)
+        get_torrserver_api().remove_torrent(info_hash)
     elif action_str == "torrent_status":
         torrent_status(info_hash)
         needs_refresh = False
@@ -122,7 +118,7 @@ def torrent_action(params):
 
 def display_picture(params):
     show_picture(
-        torrserver_api.get_stream_url(
+        get_torrserver_api().get_stream_url(
             link=params.get("info_hash"),
             path=params.get("path"),
             file_id=params.get("file_id"),
@@ -132,7 +128,7 @@ def display_picture(params):
 
 def display_text(params):
     r = requests.get(
-        torrserver_api.get_stream_url(
+        get_torrserver_api().get_stream_url(
             link=params.get("info_hash"),
             path=params.get("path"),
             file_id=params.get("file_id"),

@@ -5,7 +5,6 @@ from threading import Thread
 from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.debrider import Debrider
 from lib.api.jacktorr.jacktorr import TorrServer
-from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.torbox import TorboxHelper
@@ -18,7 +17,6 @@ from lib.clients.stremio.catalog_menus import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
 )
-from lib.clients.tmdb.utils.utils import LANGUAGES
 
 from lib.db.cached import cache
 
@@ -99,23 +97,7 @@ from xbmcplugin import (
 )
 
 
-paginator = None
-
-if JACKTORR_ADDON:
-    torrserver_api = TorrServer(
-        get_service_host(), get_port(), get_username(), get_password(), ssl_enabled()
-    )
-
-tmdb = TMDb()
-tmdb.api_key = get_setting("tmdb_api_key", "b70756b7083d9ee60f849d82d94a0d80")
-
-try:
-    language_index = get_setting("language", 18)
-    tmdb.language = LANGUAGES[int(language_index)]
-except IndexError:
-    tmdb.language = "en-US"
-except ValueError:
-    tmdb.language = "en-US"
+from lib.utils.torrent.torrserver_init import get_torrserver_api
 
 
 def root_menu():
@@ -654,7 +636,7 @@ def torrents(params):
         notification(translation(30253))
         return
 
-    for torrent in torrserver_api.torrents():
+    for torrent in get_torrserver_api().torrents():
         info_hash = torrent.get("hash")
 
         context_menu_items = [(translation(30700), play_info_hash(info_hash))]
