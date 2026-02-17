@@ -107,9 +107,8 @@ class SubtitleManager(KodiJsonRpcClient):
 
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
         if not subtitles:
-            from lib.gui.resolver_window import SourceException
-
-            raise SourceException("No subtitles found for the current source")
+            self.notification("No subtitles found or selected")
+            return None
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(
             subtitles, imdb_id, title=title, season=season, episode=episode

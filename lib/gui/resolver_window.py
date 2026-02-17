@@ -141,16 +141,17 @@ class ResolverWindow(BaseWindow):
                 kodilog("Playback info cached")
 
     def _download_subtitle(self):
-        subtitle_manager = SubtitleManager(self.playback_info, notification)
-        subtitles_path = subtitle_manager.fetch_subtitles()
-        if not subtitles_path:
-            from lib.gui.resolver_window import SourceException
-
-            raise SourceException("Failed to download subtitles for the current source")
-
-        set_property("search_subtitles", "true")
-        if self.playback_info:
-            self.playback_info.update({"subtitles_path": subtitles_path})
+        try:
+            subtitle_manager = SubtitleManager(self.playback_info, notification)
+            subtitles_path = subtitle_manager.fetch_subtitles()
+            if subtitles_path:
+                set_property("search_subtitles", "true")
+                if self.playback_info:
+                    self.playback_info.update({"subtitles_path": subtitles_path})
+            else:
+                kodilog("No subtitles found or selected, continuing without subtitles")
+        except Exception as e:
+            kodilog(f"Subtitle download failed, continuing without subtitles: {e}")
 
     def _update_window_properties(self, source: TorrentStream) -> None:
         self.setProperty("enable_busy_spinner", "true")
