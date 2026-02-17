@@ -67,25 +67,38 @@ class UpdateCheck:
 
 
 def TMDBHelperAutoInstall():
-    try:
-        _ = xbmcaddon.Addon("plugin.video.themoviedb.helper")
-    except RuntimeError:
-        return
-
-    tmdb_helper_path = "special://home/addons/plugin.video.themoviedb.helper/resources/players/jacktook.select.json"
-    if xbmcvfs.exists(tmdb_helper_path):
-        return
     jacktook_select_path = (
         "special://home/addons/plugin.video.jacktook/jacktook.select.json"
     )
+
     if not xbmcvfs.exists(jacktook_select_path):
         kodilog("jacktook.select.json file not found!")
         return
 
-    ok = xbmcvfs.copy(jacktook_select_path, tmdb_helper_path)
-    if not ok:
-        kodilog("Error installing jacktook.select.json file!")
-        return
+    target_addons = [
+        "plugin.video.themoviedb.helper",
+        "plugin.video.tmdb.bingie.helper",
+    ]
+
+    for addon_id in target_addons:
+        try:
+            _ = xbmcaddon.Addon(addon_id)
+        except RuntimeError:
+            kodilog(f"{addon_id} addon not found, skipping auto-install.")
+            continue
+
+        tmdb_helper_path = (
+            f"special://home/addons/{addon_id}/resources/players/jacktook.select.json"
+        )
+
+        if xbmcvfs.exists(tmdb_helper_path):
+            continue
+
+        ok = xbmcvfs.copy(jacktook_select_path, tmdb_helper_path)
+        if ok:
+            kodilog(f"Installed jacktook.select.json file to {addon_id}!")
+        else:
+            kodilog(f"Error installing jacktook.select.json file to {addon_id}!")
 
 
 class DownloaderSetup:
@@ -111,18 +124,18 @@ class JacktookMOnitor(xbmc.Monitor):
         TMDBHelperAutoInstall()
 
     def onScreensaverActivated(self):
-        set_property_no_fallback(pause_services_prop, 'true')
+        set_property_no_fallback(pause_services_prop, "true")
         kodilog("PAUSING Jacktook Services Due to Device Sleep")
-        
+
     def onScreensaverDeactivated(self):
         clear_property(pause_services_prop)
         kodilog("UNPAUSING Jacktook Services Due to Device Awake")
-        
+
     def onNotification(self, sender, method, data):
-        if method == 'System.OnSleep':
+        if method == "System.OnSleep":
             set_property_no_fallback(pause_services_prop, "true")
             kodilog("PAUSING Jacktook Services Due to Device Sleep")
-        elif method == 'System.OnWake':
+        elif method == "System.OnWake":
             clear_property(pause_services_prop)
             kodilog("UNPAUSING Jacktook Services Due to Device Awake")
 
