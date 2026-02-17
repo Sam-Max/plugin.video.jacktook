@@ -213,6 +213,29 @@ def run_resume_dialog(params):
             del resume_window
 
 
+def run_skip_intro_dialog(params):
+    """Show skip intro/recap overlay during playback."""
+    window = None
+    try:
+        segment_data = json.loads(params.get("segment_data", "{}"))
+        label = params.get("skip_label", "Skip Intro")
+
+        from lib.gui.skip_intro_window import SkipIntroWindow
+
+        window = SkipIntroWindow(
+            "skip_intro.xml",
+            ADDON_PATH,
+            segment_data=segment_data,
+            label=label,
+        )
+        window.doModal()
+    except Exception as e:
+        kodilog(f"Error in run_skip_intro_dialog: {e}")
+    finally:
+        if window is not None:
+            del window
+
+
 def run_next_mock():
     window = None
     try:

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+	<onload>Dialog.Close(fullscreeninfo,true)</onload>
+    <onload>Dialog.Close(videoosd,true)</onload>
+
+	<defaultcontrol always="true">4001</defaultcontrol>
+
+	<controls>
+		<control type="group">
+			<right>40</right>
+			<bottom>120</bottom>
+			<width>300</width>
+			<height>60</height>
+
+            <animation type="WindowOpen" reversible="false">
+                <effect type="fade" start="0" end="100" time="300" tween="cubic" easing="in"/>
+                <effect type="slide" start="400,0" end="0,0" time="400" tween="cubic" easing="out"/>
+            </animation>
+
+            <animation type="WindowClose" reversible="false">
+                <effect type="fade" start="100" end="0" time="300"/>
+                <effect type="slide" start="0,0" end="400,0" time="400" tween="cubic" easing="in"/>
+            </animation>
+
+			<!-- Background with blue fill and white border -->
+			<control type="image">
+				<width>300</width>
+				<height>60</height>
+				<texture border="5" colordiffuse="DD1565C0">white.png</texture>
+			</control>
+			<control type="image">
+				<width>300</width>
+				<height>60</height>
+				<texture border="2" colordiffuse="EEFFFFFF">white-border.png</texture>
+			</control>
+
+			<!-- Skip Button -->
+			<control type="button" id="4001">
+				<width>300</width>
+				<height>60</height>
+				<label>$INFO[Window.Property(skip_label)]</label>
+				<font>font13_title</font>
+				<textcolor>FFFFFFFF</textcolor>
+				<focusedcolor>FFFFFFFF</focusedcolor>
+				<selectedcolor>FFFFFFFF</selectedcolor>
+				<align>center</align>
+				<aligny>center</aligny>
+				<texturefocus border="5" colordiffuse="FF1976D2">white.png</texturefocus>
+				<texturenofocus>-</texturenofocus>
+				<pulseonselect>no</pulseonselect>
+			</control>
+        </control>
+    </controls>
+</window>

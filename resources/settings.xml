@@ -815,6 +815,21 @@
                     <control type="list" format="string" />
                 </setting>
             </group>
+            <group id="skip_intro" label="90155">
+                <setting id="skip_intro_enabled" type="boolean" label="90156" help="90157">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="skip_intro_auto" type="boolean" label="90158" help="90159">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="skip_intro_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
         </category>
         <category id="filtering_category" label="30861">
             <group id="filtering_group" label="30865">

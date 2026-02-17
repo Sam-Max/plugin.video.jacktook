@@ -76,6 +76,7 @@ _GUI_ACTIONS = frozenset(
     {
         "run_next_dialog",
         "run_resume_dialog",
+        "run_skip_intro_dialog",
         "test_source_select",
         "test_run_next",
         "test_resume_dialog",
@@ -515,12 +516,17 @@ def _route_cache(action, params):
 
 
 def _route_gui(action, params):
-    if action in ("run_next_dialog", "run_resume_dialog"):
-        from lib.gui.custom_dialogs import run_next_dialog, run_resume_dialog
+    if action in ("run_next_dialog", "run_resume_dialog", "run_skip_intro_dialog"):
+        from lib.gui.custom_dialogs import (
+            run_next_dialog,
+            run_resume_dialog,
+            run_skip_intro_dialog,
+        )
 
         actions = {
             "run_next_dialog": run_next_dialog,
             "run_resume_dialog": run_resume_dialog,
+            "run_skip_intro_dialog": run_skip_intro_dialog,
         }
         actions[action](params)
     else:

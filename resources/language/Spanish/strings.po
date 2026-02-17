@@ -2005,3 +2005,31 @@ msgstr "Ping Addons"
 msgctxt "#30931"
 msgid "Check availability of addons and show only reachable ones"
 msgstr "Comprueba la disponibilidad de los addons y muestra solo los accesibles"
+
+msgctxt "#90155"
+msgid "Skip Intro / Recap"
+msgstr "Saltar Intro / Recap"
+
+msgctxt "#90156"
+msgid "Enable Skip Intro"
+msgstr "Habilitar Skip Intro"
+
+msgctxt "#90157"
+msgid "Detect intros and recaps using IntroDB and offer to skip them during playback"
+msgstr "Detectar intros y recaps usando IntroDB y ofrecer la opción de saltarlos durante la reproducción"
+
+msgctxt "#90158"
+msgid "Auto-skip"
+msgstr "Auto-saltar"
+
+msgctxt "#90159"
+msgid "Automatically skip intros and recaps without showing the button"
+msgstr "Saltar automáticamente intros y recaps sin mostrar el botón"
+
+msgctxt "#90160"
+msgid "Skip Intro"
+msgstr "Saltar Intro"
+
+msgctxt "#90161"
+msgid "Skip Recap"
+msgstr "Saltar Recap"

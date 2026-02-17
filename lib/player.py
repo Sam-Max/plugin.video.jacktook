@@ -116,6 +116,12 @@ class JacktookPLayer(xbmc.Player):
             self.handle_subtitle_selection()
             self.handle_playback_start()
 
+            # Fetch IntroDB segments in background if enabled
+            if self.skip_intro_enabled and self.data.get("mode") == "tv":
+                introdb_thread = Thread(target=self.fetch_introdb_segments)
+                introdb_thread.daemon = True
+                introdb_thread.start()
+
             # Monitor loop
             while self.isPlayingVideo():
                 self.update_playback_progress()
@@ -124,6 +130,7 @@ class JacktookPLayer(xbmc.Player):
                     ensure_dialog_closed = True
                     self.playback_close_dialogs()
 
+                self.check_skip_intro()
                 self.check_next_dialog()
                 sleep(1000)
 
@@ -358,6 +365,74 @@ class JacktookPLayer(xbmc.Player):
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))
+
+        # Skip intro state
+        self.skip_intro_enabled = get_setting("skip_intro_enabled")
+        self.skip_intro_auto = get_setting("skip_intro_auto")
+        self.skip_intro_segments = None
+        self.skip_intro_handled = {"intro": False, "recap": False}
+
+    def fetch_introdb_segments(self):
+        """Fetch segment data from IntroDB in a background thread."""
+        try:
+            ids = self.data.get("ids", {})
+            tv_data = self.data.get("tv_data", {})
+            imdb_id = ids.get("imdb_id")
+            season = tv_data.get("season")
+            episode = tv_data.get("episode")
+
+            if not imdb_id or not season or not episode:
+                kodilog("Skip intro: Missing IMDb ID, season, or episode")
+                return
+
+            from lib.clients.introdb import get_segments
+
+            self.skip_intro_segments = get_segments(imdb_id, season, episode)
+            kodilog(f"IntroDB segments: {self.skip_intro_segments}")
+        except Exception as e:
+            kodilog(f"Error fetching IntroDB segments: {e}")
+
+    def check_skip_intro(self):
+        try:
+            if not self.skip_intro_enabled or not self.skip_intro_segments:
+                return
+            if not getattr(self, "current_time", None):
+                return
+
+            current_ms = int(self.current_time * 1000)
+
+            for segment_type in ("recap", "intro"):
+                if self.skip_intro_handled.get(segment_type):
+                    continue
+
+                segment = self.skip_intro_segments.get(segment_type)
+                if not segment:
+                    continue
+
+                start_ms = segment.get("start_ms", 0)
+                end_ms = segment.get("end_ms", 0)
+                end_sec = segment.get("end_sec", end_ms / 1000)
+
+                if start_ms <= current_ms <= end_ms:
+                    self.skip_intro_handled[segment_type] = True
+
+                    if self.skip_intro_auto:
+                        self.seekTime(end_sec)
+                    else:
+                        label = (
+                            "Skip Intro" if segment_type == "intro" else "Skip Recap"
+                        )
+                        xbmc.executebuiltin(
+                            action_url_run(
+                                name="run_skip_intro_dialog",
+                                segment_data=json_dumps(segment),
+                                skip_label=label,
+                            )
+                        )
+                elif current_ms > end_ms:
+                    self.skip_intro_handled[segment_type] = True
+        except Exception as e:
+            kodilog(f"Error in check_skip_intro: {e}")
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")
