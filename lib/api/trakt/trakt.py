@@ -135,6 +135,7 @@ class TraktBase:
                 401: "Unauthorized",
                 403: "Forbidden",
                 404: "Not Found",
+                422: "Unprocessable Entity",
                 429: "Rate Limit Exceeded",
                 500: "Internal Server Error",
                 503: "Service Unavailable",
