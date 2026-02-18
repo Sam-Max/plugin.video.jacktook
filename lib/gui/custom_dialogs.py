@@ -53,17 +53,27 @@ class CustomDialog(WindowXMLDialog):
     _text = 32501
     _url = 32502
     _close_button_id = 32503
+    _qrcode = 32504
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.heading = kwargs.get("heading")
         self.text = kwargs.get("text")
         self.url = kwargs.get("url")
+        self.qrcode_path = kwargs.get("qrcode")
 
     def onInit(self):
         self.getControl(self._heading).setLabel(self.heading)
         self.getControl(self._text).setLabel(self.text)
         self.getControl(self._url).setLabel(self.url)
+        if self.qrcode_path:
+            self.getControl(self._qrcode).setImage(self.qrcode_path)
+            self.getControl(self._qrcode).setVisible(True)
+        else:
+            try:
+                self.getControl(self._qrcode).setVisible(False)
+            except:
+                pass
 
     def onClick(self, controlId):
         if controlId == self._close_button_id:

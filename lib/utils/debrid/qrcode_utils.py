@@ -3,7 +3,7 @@ from os import path
 from lib.jacktook.utils import ADDON_PATH, kodilog
 from lib.utils.kodi.utils import ADDON_PROFILE_PATH
 from lib.vendor.segno import make as segnomake
-
+import xbmcvfs
 import xbmcgui
 
 
@@ -11,6 +11,9 @@ def make_qrcode(url):
     if not url:
         return
     try:
+        if not path.exists(ADDON_PROFILE_PATH):
+            xbmcvfs.mkdir(ADDON_PROFILE_PATH)
+
         art_path = path.join(ADDON_PROFILE_PATH, "qr.png")
         kodilog(f"Creating QR code for URL: {art_path}")
         qrcode = segnomake(url, micro=False)

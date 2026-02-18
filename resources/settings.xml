@@ -15,6 +15,12 @@
                             <close>false</close>
                         </control>
                     </setting>
+                    <setting id="donate" type="action" label="90018" help="">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=donate)</data>
+                        <control type="button" format="action">
+                            <close>false</close>
+                        </control>
+                    </setting>
                 </group>
                 <group id="cache" label="30723">
                     <setting id="cache_enabled" type="boolean" label="30721" help="30809"> 

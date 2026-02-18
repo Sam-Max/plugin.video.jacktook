@@ -1,9 +1,9 @@
 <window type="dialog">
     <coordinates>
-        <left>600</left>
-        <top>300</top>
-        <width>800</width>
-        <height>400</height>
+        <left>460</left>
+        <top>290</top>
+        <width>1000</width>
+        <height>500</height>
     </coordinates>
 
     <defaultcontrol always="true">32503</defaultcontrol>
@@ -19,32 +19,46 @@
 
     <controls>
         <control type="group">
-            <width>800</width>
-            <height>400</height>
+            <width>1000</width>
+            <height>500</height>
 
             <!-- Card with Rounded Corners -->
             <control type="image">
-                <width>800</width>
-                <height>400</height>
+                <width>1000</width>
+                <height>500</height>
                 <texture border="30">circle.png</texture>
                 <colordiffuse>CC000000</colordiffuse>
             </control>
 
             <!-- Window Title -->
             <control type="label" id="32500">
-                <font>font14</font>
+                <top>20</top>
+                <width>1000</width>
+                <height>40</height>
+                <font>font25</font>
                 <align>center</align>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
             </control>
 
+            <!-- QR Code -->
+            <control type="image" id="32504">
+                <top>110</top>
+                <left>60</left>
+                <width>280</width>
+                <height>280</height>
+                <texture>qr_placeholder.png</texture>
+                <aspectratio>keep</aspectratio>
+            </control>
+
             <!-- Text Body -->
             <control type="label" id="32501">
                 <font>font14</font>
-                <top>90</top>
-                <width>780</width>
-                <height>150</height>
-                <align>center</align>
+                <top>110</top>
+                <left>400</left>
+                <width>550</width>
+                <height>180</height>
+                <align>left</align>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
                 <wrapmultiline>true</wrapmultiline>
@@ -52,7 +66,8 @@
 
              <!-- Close button -->
             <control type="button" id="32503">
-                <left>745</left>
+                <left>940</left>
+                <top>10</top>
                 <width>50</width>
                 <height>50</height>
                 <texturefocus colordiffuse="FF12A0C7">Button/close.png</texturefocus>
@@ -61,10 +76,10 @@
         </control>
 
         <control type="group">
-            <width>600</width>
+            <width>550</width>
             <height>100</height>
-            <top>280</top>
-            <left>90</left>
+            <top>320</top>
+            <left>400</left>
 
             <!-- Card with Rounded Corners -->
             <control type="image">

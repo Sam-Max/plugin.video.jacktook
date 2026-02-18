@@ -19,7 +19,6 @@ from lib.utils.kodi.utils import end_of_directory
 
 def has_continue_watching_items():
     all_items = PickleDatabase().get_key("jt:lfh").items()
-    kodilog(all_items)
     for title, data in all_items:
         progress = float(data.get("progress", 0))
         if 5 < progress < 90:

@@ -404,7 +404,6 @@ root_menu_items = [
     {"name": 90015, "icon": "download2.png", "action": "downloads_menu"},
     {"name": 90016, "icon": "settings.png", "action": "settings"},
     {"name": 90201, "icon": "library.png", "action": "library_menu"},  # Library
-    {"name": 90018, "icon": "donate.png", "action": "donate"},
 ]
 
 history_menu_items = [

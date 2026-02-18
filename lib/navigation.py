@@ -848,12 +848,18 @@ def show_changelog(params):
 
 
 def donate(params):
+    from lib.utils.debrid.qrcode_utils import make_qrcode
+
+    donation_url = "https://ko-fi.com/sammax09"
+    qr_code = make_qrcode(donation_url)
+
     dialog = CustomDialog(
         "customdialog.xml",
         ADDON_PATH,
         heading=translation(90023),
         text=translation(90022),
-        url="[COLOR snow]https://ko-fi.com/sammax09[/COLOR]",
+        url=f"[COLOR snow]{donation_url}[/COLOR]",
+        qrcode=qr_code,
     )
     dialog.doModal()
 
