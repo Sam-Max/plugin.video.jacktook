@@ -243,6 +243,8 @@ class JacktookPLayer(xbmc.Player):
                     float(self.current_time / self.total_time * 100), 1
                 )
                 self.data["progress"] = self.watched_percentage
+                self.data["current_time"] = self.current_time
+                self.data["total_time"] = self.total_time
         except Exception as e:
             kodilog(f"Error updating playback progress: {e}")
 
@@ -280,6 +282,10 @@ class JacktookPLayer(xbmc.Player):
             and self.data.get("ids")
         ):
             TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+
+        # Persist playback progress
+        set_watched_file(self.data)
+
         close_busy_dialog()
 
     def build_playlist(self):

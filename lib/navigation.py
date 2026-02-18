@@ -4,7 +4,6 @@ import os
 from threading import Thread
 from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.debrider import Debrider
-from lib.api.jacktorr.jacktorr import TorrServer
 from lib.api.trakt.trakt import TraktAPI
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.torbox import TorboxHelper
@@ -69,16 +68,11 @@ from lib.utils.general.utils import (
     clear_mdblist_cache as utils_clear_mdblist_cache,
     clear_database_cache as utils_clear_database_cache,
     clear_history_by_type,
-    get_password,
-    get_port,
     get_random_color,
-    get_service_host,
-    get_username,
     make_listing,
     set_content_type,
     set_pluging_category,
     show_log_export_dialog,
-    ssl_enabled,
 )
 from lib.utils.general.items_menus import (
     animation_items,
@@ -97,108 +91,40 @@ from xbmcplugin import (
 )
 
 
-from lib.utils.torrent.torrserver_init import get_torrserver_api
+from lib.utils.general.items_menus import (
+    root_menu_items,
+    history_menu_items,
+    library_menu_items,
+)
+
+
+def render_menu(items, cache=True):
+    for item in items:
+        if "condition" in item and not item["condition"]():
+            continue
+
+        name = item["name"]
+        if isinstance(name, int):
+            name = translation(name)
+
+        list_item = build_list_item(name, item["icon"])
+
+        params = item.get("params", {})
+
+        url = build_url(item["action"], **params)
+
+        addDirectoryItem(
+            ADDON_HANDLE,
+            url,
+            list_item,
+            isFolder=True,
+        )
+    end_of_directory(cache=cache)
 
 
 def root_menu():
     set_pluging_category(translation(90069))
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("handle_tmdb_search", mode="multi", page=1),
-        build_list_item(translation(90006), "search.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("tv_shows_items"),
-        build_list_item(translation(90007), "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("movies_items"),
-        build_list_item(translation(90008), "movies.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("anime_menu"),
-        build_list_item(translation(90009), "anime.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("tv_menu"),
-        build_list_item(translation(90010), "tv.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("direct_menu"),
-        build_list_item(translation(90011), "search.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("torrents"),
-        build_list_item(translation(90012), "magnet2.png"),
-        isFolder=True,
-    )
-
-    if get_setting("show_telegram_menu"):
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("telegram_menu"),
-            build_list_item(translation(90013), "telegram.png"),
-            isFolder=True,
-        )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("cloud"),
-        build_list_item(translation(90014), "cloud2.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("downloads_menu"),
-        build_list_item(translation(90015), "download2.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("settings"),
-        build_list_item(translation(90016), "settings.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("history_menu"),
-        build_list_item(translation(90017), "history.png"),
-        isFolder=True,
-    )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("donate"),
-        build_list_item(translation(90018), "donate.png"),
-        isFolder=True,
-    )
-
-    # addDirectoryItem(
-    #     ADDON_HANDLE,
-    #     build_url("test_download_dialog"),
-    #     build_list_item("Test", ""),
-    #     isFolder=False,
-    # )
-
-    end_of_directory()
+    render_menu(root_menu_items, cache=False)
 
 
 def animation_menu(params):
@@ -363,25 +289,62 @@ def anime_menu(params):
 
 def history_menu(params):
     set_pluging_category(translation(90017))
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("files_history"),
-        build_list_item(translation(90019), "history.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("titles_history"),
-        build_list_item(translation(90020), "history.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("titles_calendar"),
-        build_list_item(translation(90021), "history.png"),
-        isFolder=True,
-    )
-    end_of_directory()
+    render_menu(history_menu_items)
+
+
+def library_menu(params):
+    set_pluging_category(translation(90201))
+    render_menu(library_menu_items)
+
+
+def continue_watching_menu(params):
+    from lib.utils.views.continue_watching import show_continue_watching
+
+    show_continue_watching()
+
+
+def remove_from_continue_watching(params):
+    from lib.utils.views.continue_watching import remove_continue_watching_item
+
+    remove_continue_watching_item(params)
+
+
+def library_shows(params):
+    from lib.utils.views.library import show_library_items
+
+    show_library_items(mode="tv")
+
+
+def library_movies(params):
+    from lib.utils.views.library import show_library_items
+
+    show_library_items(mode="movies")
+
+
+def library_calendar(params):
+    from lib.utils.views.weekly_calendar import show_weekly_calendar
+
+    show_weekly_calendar(library=True)
+
+
+def remove_from_library(params):
+    from lib.utils.views.library import remove_library_item
+
+    remove_library_item(params)
+
+
+def add_to_library(params):
+    from lib.utils.general.utils import add_to_library as add_lib
+
+    import json
+
+    data = params.get("data")
+    if data:
+        add_lib(json.loads(data))
+
+    from xbmcgui import Dialog
+
+    Dialog().notification("Jacktook", translation(90205))
 
 
 def anime_item(params):

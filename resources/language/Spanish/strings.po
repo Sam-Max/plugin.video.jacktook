@@ -2033,3 +2033,31 @@ msgstr "Saltar Intro"
 msgctxt "#90161"
 msgid "Skip Recap"
 msgstr "Saltar Recap"
+
+msgctxt "#90200"
+msgid "Continue Watching"
+msgstr "Continuar Viendo"
+
+msgctxt "#90201"
+msgid "Library"
+msgstr "Biblioteca"
+
+msgctxt "#90202"
+msgid "My Shows"
+msgstr "Mis Series"
+
+msgctxt "#90203"
+msgid "My Movies"
+msgstr "Mis Películas"
+
+msgctxt "#90204"
+msgid "Remove from Library"
+msgstr "Quitar de la Biblioteca"
+
+msgctxt "#90205"
+msgid "Add to Library"
+msgstr "Añadir a la biblioteca"
+
+msgctxt "#90206"
+msgid "Remove"
+msgstr "Eliminar"

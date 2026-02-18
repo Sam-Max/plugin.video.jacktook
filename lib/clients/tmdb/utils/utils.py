@@ -1,4 +1,5 @@
-from datetime import timedelta
+import json
+from datetime import datetime, timedelta
 import os
 import threading
 from typing import List, Optional
@@ -457,6 +458,20 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
             ),
         ),
         (
+            translation(90205),
+            kodi_play_media(
+                name="add_to_library",
+                data=json.dumps(
+                    {
+                        "title": title,
+                        "ids": ids,
+                        "mode": media_type,
+                        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
+                    }
+                ),
+            ),
+        ),
+        (
             translation(90116),
             container_update(name="settings"),
         ),
@@ -487,6 +502,20 @@ def add_tmdb_show_context_menu(mode, ids={}):
                 name="search_people_by_id",
                 mode=mode,
                 ids=ids,
+            ),
+        ),
+        (
+            translation(90205),
+            kodi_play_media(
+                name="add_to_library",
+                data=json.dumps(
+                    {
+                        "title": ids.get("name") or ids.get("title"),
+                        "ids": ids,
+                        "mode": mode,
+                        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
+                    }
+                ),
             ),
         ),
         (

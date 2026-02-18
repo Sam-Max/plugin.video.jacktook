@@ -774,6 +774,31 @@ def set_watched_title(title, ids, mode, tg_data="", media_type=""):
             "tg_data": tg_data,
         },
     )
+    add_to_library(
+        {
+            "title": title,
+            "ids": ids,
+            "mode": media_type if mode == "multi" else mode,
+            "tg_data": tg_data,
+            "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
+        }
+    )
+
+
+def add_to_library(data):
+    title = data.get("title")
+    if not title:
+        return
+
+    pickle_db.set_item(key="jt:lib", subkey=title, value=data)
+
+
+def remove_from_library(title):
+    pickle_db.delete_item(key="jt:lib", subkey=title)
+
+
+def is_in_library(title):
+    return pickle_db.get_item("jt:lib", title) is not None
 
 
 def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):

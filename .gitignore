@@ -1,5 +1,6 @@
 .DS_Store
 .idea
+.agent
 *.log
 tmp/
 *.py[cod]
@@ -11,3 +12,5 @@ venv/
 __pycache__
 .aider*
 settings.json
+.worktrees/
+

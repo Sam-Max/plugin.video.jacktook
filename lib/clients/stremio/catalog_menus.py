@@ -1,5 +1,5 @@
-from lib.utils.kodi.utils import ADDON_HANDLE
 import json
+from datetime import datetime
 from dataclasses import asdict
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
@@ -23,6 +23,7 @@ from lib.utils.general.utils import info_hash_to_magnet, IndexerType
 
 from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
+from lib.utils.kodi.utils import ADDON_HANDLE
 
 
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
@@ -368,6 +369,28 @@ def add_meta_items(metas, params):
                 "landscape": background,
             }
         )
+
+        context_menu = [
+            (
+                translation(90205),
+                kodi_play_media(
+                    name="add_to_library",
+                    data=json.dumps(
+                        {
+                            "title": name,
+                            "ids": {"tmdb_id": tmdb_id, "imdb_id": imdb_id},
+                            "mode": (
+                                "tv" if meta_type in ["series", "anime"] else "movies"
+                            ),
+                            "timestamp": datetime.now().strftime(
+                                "%a, %d %b %Y %I:%M %p"
+                            ),
+                        }
+                    ),
+                ),
+            )
+        ]
+        list_item.addContextMenuItems(context_menu)
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder

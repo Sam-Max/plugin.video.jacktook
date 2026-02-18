@@ -692,3 +692,31 @@ msgstr "Stremio: Addons e catálogos"
 msgctxt "#90153"
 msgid "Stremio: Torrentio"
 msgstr "Stremio: Torrentio"
+
+msgctxt "#90200"
+msgid "Continue Watching"
+msgstr "Continuar a Ver"
+
+msgctxt "#90201"
+msgid "Library"
+msgstr "Biblioteca"
+
+msgctxt "#90202"
+msgid "My Shows"
+msgstr "Minhas Séries"
+
+msgctxt "#90203"
+msgid "My Movies"
+msgstr "Meus Filmes"
+
+msgctxt "#90204"
+msgid "Remove from Library"
+msgstr "Remover da Biblioteca"
+
+msgctxt "#90205"
+msgid "Add to Library"
+msgstr "Adicionar à Biblioteca"
+
+msgctxt "#90206"
+msgid "Remove"
+msgstr "Remover"

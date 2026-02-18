@@ -1,4 +1,5 @@
-from lib.utils.kodi.utils import translation
+from lib.utils.kodi.utils import translation, get_setting
+from lib.utils.views.continue_watching import has_continue_watching_items
 
 
 tv_items = [
@@ -372,4 +373,52 @@ animation_items = [
         "api": "tmdb",
         "icon": "tmdb.png",
     },
+]
+
+root_menu_items = [
+    {
+        "name": 90006,
+        "icon": "search.png",
+        "action": "handle_tmdb_search",
+        "params": {"mode": "multi", "page": 1},
+    },
+    {
+        "name": 90200,
+        "icon": "continue_watching.png",
+        "action": "continue_watching_menu",
+        "condition": has_continue_watching_items,
+    },  # Continue Watching
+    {"name": 90007, "icon": "tv.png", "action": "tv_shows_items"},
+    {"name": 90008, "icon": "movies.png", "action": "movies_items"},
+    {"name": 90009, "icon": "anime.png", "action": "anime_menu"},
+    {"name": 90010, "icon": "tv.png", "action": "tv_menu"},
+    {"name": 90011, "icon": "search.png", "action": "direct_menu"},
+    {"name": 90012, "icon": "magnet2.png", "action": "torrents"},
+    {
+        "name": 90013,
+        "icon": "telegram.png",
+        "action": "telegram_menu",
+        "condition": lambda: get_setting("show_telegram_menu") == "true",
+    },
+    {"name": 90014, "icon": "cloud2.png", "action": "cloud"},
+    {"name": 90015, "icon": "download2.png", "action": "downloads_menu"},
+    {"name": 90016, "icon": "settings.png", "action": "settings"},
+    {"name": 90201, "icon": "library.png", "action": "library_menu"},  # Library
+    {"name": 90018, "icon": "donate.png", "action": "donate"},
+]
+
+history_menu_items = [
+    {"name": 90019, "icon": "history.png", "action": "files_history"},
+    {"name": 90020, "icon": "history.png", "action": "titles_history"},
+    {"name": 90021, "icon": "history.png", "action": "titles_calendar"},
+]
+
+library_menu_items = [
+    {"name": 90202, "icon": "tv.png", "action": "library_shows"},  # My Shows
+    {"name": 90203, "icon": "movies.png", "action": "library_movies"},  # My Movies
+    {
+        "name": 90021,
+        "icon": "history.png",
+        "action": "library_calendar",
+    },  # Upcoming Episodes
 ]
