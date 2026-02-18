@@ -391,6 +391,7 @@ root_menu_items = [
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},
     {"name": 90009, "icon": "anime.png", "action": "anime_menu"},
     {"name": 90010, "icon": "tv.png", "action": "tv_menu"},
+    {"name": 90201, "icon": "library.png", "action": "library_menu"},  # Library
     {"name": 90012, "icon": "magnet2.png", "action": "torrents"},
     {
         "name": 90013,
@@ -401,7 +402,6 @@ root_menu_items = [
     {"name": 90014, "icon": "cloud2.png", "action": "cloud"},
     {"name": 90015, "icon": "download2.png", "action": "downloads_menu"},
     {"name": 90016, "icon": "settings.png", "action": "settings"},
-    {"name": 90201, "icon": "library.png", "action": "library_menu"},  # Library
 ]
 
 history_menu_items = [
