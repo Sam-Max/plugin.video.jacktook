@@ -1,4 +1,4 @@
-## 0.25.0
+## 1.0.0
 - Implement lazy loading for router and navigation for better performance. 
 - Add local web server for managing Stremio addons via phone/browser.
 - Add skip intro and recap feature using IntroDB API.
