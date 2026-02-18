@@ -1,3 +1,33 @@
+## 0.25.0
+- Implement lazy loading for router and navigation for better performance. 
+- Add local web server for managing Stremio addons via phone/browser.
+- Add skip intro and recap feature using IntroDB API.
+- Add support for Bingie Helper in TMDB auto-installer.
+- Add 'Continue Watching' and 'Library' section to main menu.
+- Grouped the main menu's 'Search' and 'Direct Search' entries into a single 'Search' menu to reduce clutter.
+- Add history management and clear options in the search menu.
+- Move the donation menu to addon settings.
+- Reordered main menu to place 'Library' below 'Live TV'.
+- Fix playback failure when subtitles were not found or selected
+- Fix QR code visibility in some custom dialogs (including donation).
+- Improved Kodi 21+ compatibility by addressing `setInfo()` deprecations.
+- Other minor fixes and improvements.
+
+Spanish:
+- Implementación de carga diferida (lazy loading) para el router y la navegación para mejorar el rendimiento.
+- Añadido servidor web local para gestionar addons de Stremio desde el teléfono/navegador.
+- Añadida función para saltar intros y resúmenes usando la API de IntroDB.
+- Añadida compatibilidad con Bingie Helper en el instalador automático de TMDB.
+- Añadida sección 'Seguir viendo' y 'Biblioteca' al menú principal.
+- Agrupadas las entradas 'Buscar' y 'Búsqueda directa' del menú principal en un único menú 'Buscar' para  mejor organizacion.
+- Añadido gestión de historial y opciones de borrado en el menú de búsqueda.
+- Movido el menú de donaciones a los ajustes del addon.
+- Reordenado el menú principal para colocar 'Biblioteca' debajo de 'TV en vivo'.
+- Corregido el fallo de reproducción cuando los subtítulos no se encontraban o no se seleccionaban.
+- Corregida la visibilidad del código QR en algunos diálogos personalizados (incluyendo donaciones).
+- Mejora de la compatibilidad con Kodi 21+ al abordar las depreciaciones de `setInfo()`.
+- Otras correcciones menores y mejoras.
+
 ## 0.24.0
 - Stremio: Add manual addon availability ping and filtering.
 - Stremio: Support for movie items with custom IDs.
