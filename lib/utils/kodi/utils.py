@@ -79,12 +79,12 @@ def get_jacktorr_setting(value, default=None):
     value = JACKTORR_ADDON.getSetting(value)
     if not value:
         return default
-    if value == "true":
-        return True
-    elif value == "false":
-        return False
-    else:
-        return value
+    if isinstance(value, str):
+        if value.lower() == "true":
+            return True
+        elif value.lower() == "false":
+            return False
+    return value
 
 
 def get_setting(id, default=None):
@@ -93,10 +93,11 @@ def get_setting(id, default=None):
         val = ADDON.getSetting(id)
         if not val:
             return default
-    if val.lower() == "true":
-        return True
-    if val.lower() == "false":
-        return False
+    if isinstance(val, str):
+        if val.lower() == "true":
+            return True
+        if val.lower() == "false":
+            return False
     return val
 
 
