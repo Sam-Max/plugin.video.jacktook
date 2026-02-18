@@ -27,6 +27,13 @@
 - **Rich Metadata**: Integration with TMDB, MDBList, Trakt, Fanart.tv, and Stremio catalogs.
 - **Smart Filtering**: Advanced results filtering by quality, size, and source.
 
+### 🧩 Stremio Ecosystem
+- **Cloud Configuration**: Import and sync your entire configuration, including installed addons and Debrid tokens, directly from your Stremio account.
+- **Catalog Navigation**: Browse and search Stremio's extensive metadata catalogs.
+- **Stream Scraper**: Scraping and filtering of Stremio streams by resolution, file size, and quality.
+- **Flexible Management**: Add new addons via URL, search for community addons, or toggle existing ones on/off on the fly.
+- **Web Server Manager**: A powerful local web interface to manage your Stremio sources from your phone or PC. Scan a QR code in Kodi and start managing!
+
 ### 🎥 Playback & Engines
 - **Direct Torrent Engines**: Integrated support for **Jacktorr**, **Torrest**, and **Elementum**.
 - **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, and Torbox.
@@ -115,9 +122,11 @@ CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
 
 ## 📸 Screenshots
 
-| Home Screen | TV Shows | Settings |
-| :---: | :---: | :---: |
-| ![Home](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/home.png) | ![TV](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/tv.png) | ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) |
+| Home Screen | TV Shows |
+| :---: | :---: |
+| ![Home](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/home.png) | ![TV](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/tv.png) |
+| **Settings** | **Web Server** |
+| ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) | ![Web Server](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/webserver.png) |
 
 ---
 
