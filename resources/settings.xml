@@ -501,6 +501,12 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_manage_phone" type="action" label="90162" help="90163">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_manage_phone)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
             </group>
             <group id="stremio_torrentio" label="90153">
                 <setting id="torrentio_enabled" type="boolean" label="90045" help="90046">

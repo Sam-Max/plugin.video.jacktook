@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacktook - Stremio Sources</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --surface-hover: #1c2333;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79c0ff;
+            --success: #3fb950;
+            --danger: #f85149;
+            --danger-hover: #ff6e67;
+            --warning: #d29922;
+            --badge-stream: #388bfd;
+            --badge-catalog: #a371f7;
+            --badge-tv: #f78166;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1e2e 0%, #0d1117 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+        .header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Container */
+        .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+
+        /* Add Section */
+        .add-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .add-section h2 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .input-row input {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            color: var(--text);
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-row input:focus {
+            border-color: var(--accent);
+        }
+        .input-row input::placeholder { color: var(--text-muted); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+        .btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .feedback {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            display: none;
+        }
+        .feedback.error {
+            display: block;
+            background: rgba(248, 81, 73, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+        .feedback.success {
+            display: block;
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        .feedback.loading {
+            display: block;
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+        }
+
+        /* Addon List */
+        .addon-list-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .addon-list-header h2 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .addon-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            background: var(--surface);
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+
+        .addon-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            margin-bottom: 10px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .addon-card:hover {
+            border-color: var(--accent);
+            background: var(--surface-hover);
+        }
+
+        .addon-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .addon-logo {
+            width: 42px; height: 42px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            background: var(--bg);
+            flex-shrink: 0;
+        }
+        .addon-info { flex: 1; min-width: 0; }
+        .addon-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .addon-desc {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .addon-url {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            word-break: break-all;
+            opacity: 0.7;
+        }
+
+        /* Badges + Controls */
+        .addon-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .badge-group {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+        .badge.stream { background: rgba(56, 139, 253, 0.15); color: var(--badge-stream); border-color: rgba(56, 139, 253, 0.3); }
+        .badge.stream.active { background: var(--badge-stream); color: #fff; }
+        .badge.catalog { background: rgba(163, 113, 247, 0.15); color: var(--badge-catalog); border-color: rgba(163, 113, 247, 0.3); }
+        .badge.catalog.active { background: var(--badge-catalog); color: #fff; }
+        .badge.tv { background: rgba(247, 129, 102, 0.15); color: var(--badge-tv); border-color: rgba(247, 129, 102, 0.3); }
+        .badge.tv.active { background: var(--badge-tv); color: #fff; }
+        .badge.disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+        .empty-state p { font-size: 0.85rem; }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px; height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 400px) {
+            .input-row { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>⚡ Jacktook</h1>
+    <div class="subtitle">Stremio Source Manager</div>
+    <div class="status-bar">
+        <span class="status-dot"></span>
+        <span id="status-text">Connected</span>
+        <span>·</span>
+        <span id="addon-count-status">0 addons</span>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Add Section -->
+    <div class="add-section">
+        <h2>Add Stremio Source</h2>
+        <div class="input-row">
+            <input type="text" id="addon-url" placeholder="Paste manifest URL (e.g. https://addon.example/manifest.json)">
+            <button class="btn btn-primary" id="add-btn" onclick="addAddon()">
+                <span id="add-btn-text">Add</span>
+            </button>
+        </div>
+        <div class="feedback" id="feedback"></div>
+    </div>
+
+    <!-- Addon List -->
+    <div class="addon-list-header">
+        <h2>Your Sources</h2>
+        <span class="addon-count" id="addon-count">0</span>
+    </div>
+    <div id="addon-list"></div>
+</div>
+
+<script>
+const API_BASE = '';
+
+function showFeedback(msg, type) {
+    const el = document.getElementById('feedback');
+    el.className = 'feedback ' + type;
+    el.textContent = msg;
+    if (type === 'success') setTimeout(() => { el.className = 'feedback'; }, 3000);
+}
+
+function clearFeedback() {
+    document.getElementById('feedback').className = 'feedback';
+}
+
+async function loadAddons() {
+    try {
+        const res = await fetch(API_BASE + '/api/addons');
+        const data = await res.json();
+        renderAddons(data.addons || []);
+    } catch (e) {
+        document.getElementById('addon-list').innerHTML =
+            '<div class="empty-state"><div class="icon">⚠️</div><p>Failed to connect to Kodi</p></div>';
+    }
+}
+
+function renderAddons(addons) {
+    const list = document.getElementById('addon-list');
+    document.getElementById('addon-count').textContent = addons.length;
+    document.getElementById('addon-count-status').textContent = addons.length + ' addon' + (addons.length !== 1 ? 's' : '');
+
+    if (!addons.length) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">📦</div><p>No custom sources added yet.<br>Paste a Stremio addon manifest URL above to get started.</p></div>';
+        return;
+    }
+
+    list.innerHTML = addons.map(a => {
+        const logoUrl = a.logo && !a.logo.endsWith('.svg') ? a.logo : '';
+        const logoHtml = logoUrl
+            ? `<img class="addon-logo" src="${escapeHtml(logoUrl)}" onerror="this.style.display='none'" alt="">`
+            : `<div class="addon-logo" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;">📦</div>`;
+
+        const badges = ['stream', 'catalog', 'tv'].map(cat => {
+            const capable = a.capabilities[cat];
+            const selected = a.selected[cat];
+            const cls = capable ? (selected ? 'active' : '') : 'disabled';
+            const title = capable
+                ? (selected ? `Click to disable ${cat}` : `Click to enable ${cat}`)
+                : `Not supported`;
+            const onclick = capable ? `onclick="toggleAddon('${escapeHtml(a.id)}', '${cat}', ${!selected})"` : '';
+            return `<span class="badge ${cat} ${cls}" ${onclick} title="${title}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>`;
+        }).join('');
+
+        return `
+        <div class="addon-card" id="card-${escapeAttr(a.id)}">
+            <div class="addon-top">
+                ${logoHtml}
+                <div class="addon-info">
+                    <div class="addon-name">${escapeHtml(a.name)}</div>
+                    <div class="addon-desc">${escapeHtml(a.description)}</div>
+                    <div class="addon-url">${escapeHtml(a.transportUrl)}</div>
+                </div>
+            </div>
+            <div class="addon-controls">
+                <div class="badge-group">${badges}</div>
+                <button class="btn btn-danger" onclick="removeAddon('${escapeHtml(a.id)}')">Remove</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function addAddon() {
+    const input = document.getElementById('addon-url');
+    const btn = document.getElementById('add-btn');
+    const btnText = document.getElementById('add-btn-text');
+    const url = input.value.trim();
+    if (!url) { showFeedback('Please enter a manifest URL', 'error'); return; }
+
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner"></span>';
+    showFeedback('Fetching manifest...', 'loading');
+
+    try {
+        const res = await fetch(API_BASE + '/api/addons', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.error) {
+            showFeedback(data.error, 'error');
+        } else {
+            showFeedback(`Added "${data.addon.name}" successfully!`, 'success');
+            input.value = '';
+            loadAddons();
+        }
+    } catch (e) {
+        showFeedback('Network error: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Add';
+    }
+}
+
+async function removeAddon(id) {
+    if (!confirm('Remove this addon?')) return;
+    try {
+        await fetch(API_BASE + '/api/addons/' + encodeURIComponent(id), { method: 'DELETE' });
+        loadAddons();
+    } catch (e) {
+        showFeedback('Failed to remove: ' + e.message, 'error');
+    }
+}
+
+async function toggleAddon(id, category, enabled) {
+    try {
+        await fetch(API_BASE + '/api/addons/' + encodeURIComponent(id) + '/toggle', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ category, enabled })
+        });
+        loadAddons();
+    } catch (e) {
+        showFeedback('Failed to toggle: ' + e.message, 'error');
+    }
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+}
+
+function escapeAttr(str) {
+    return (str || '').replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+// Enter key to add
+document.getElementById('addon-url').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addAddon();
+});
+
+// Initial load
+loadAddons();
+</script>
+
+</body>
+</html>

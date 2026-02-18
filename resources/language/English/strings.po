@@ -2098,6 +2098,14 @@ msgctxt "#90161"
 msgid "Skip Recap"
 msgstr "Skip Recap"
 
+msgctxt "#90162"
+msgid "Manage from Phone"
+msgstr "Manage from Phone"
+
+msgctxt "#90163"
+msgid "Start a local web server and show a QR code to manage Stremio sources from your phone"
+msgstr "Start a local web server and show a QR code to manage Stremio sources from your phone"
+
 msgctxt "#90200"
 msgid "Continue Watching"
 msgstr "Continue Watching"
@@ -2125,3 +2133,4 @@ msgstr "Add to Library"
 msgctxt "#90206"
 msgid "Remove"
 msgstr "Remove"
+

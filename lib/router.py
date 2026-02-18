@@ -212,6 +212,10 @@ def _route_stremio(action, params):
             "remove_custom_stremio_addon": remove_custom_stremio_addon,
         }
         actions[action](params)
+    elif action == "stremio_manage_phone":
+        from lib.clients.stremio.manage_phone import stremio_manage_phone
+
+        stremio_manage_phone(params)
     elif action in ("stremio_login", "stremio_logout", "stremio_update"):
         from lib.clients.stremio.authentication import (
             stremio_login,
