@@ -26,13 +26,16 @@ from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
 
 
-def show_weekly_calendar():
+def show_weekly_calendar(library=False):
     set_pluging_category(translation(90021))
 
+    if library:
+        source_dict = PickleDatabase().get_key("jt:lib")
+    else:
+        source_dict = PickleDatabase().get_key("jt:lth")
+
     tv_shows = [
-        (title, data)
-        for title, data in PickleDatabase().get_key("jt:lth").items()
-        if data.get("mode") == "tv"
+        (title, data) for title, data in source_dict.items() if data.get("mode") == "tv"
     ]
 
     results = []
@@ -179,7 +182,7 @@ def show_weekly_calendar():
             isFolder=False,
         )
 
-    end_of_directory()
+    end_of_directory(cache=False)
 
 
 def get_episodes_for_show(ids):

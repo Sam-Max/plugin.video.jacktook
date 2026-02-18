@@ -12,6 +12,7 @@ class PickleDatabase:
             "jt:watch": {},
             "jt:lth": {},
             "jt:lfh": {},
+            "jt:lib": {},
         }
 
         data_dir = xbmcvfs.translatePath(
@@ -71,5 +72,3 @@ class PickleDatabase:
     def database(self):
         """Expose internal database dict as read-only property."""
         return self._database
-
-

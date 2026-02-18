@@ -2097,3 +2097,31 @@ msgstr "Skip Intro"
 msgctxt "#90161"
 msgid "Skip Recap"
 msgstr "Skip Recap"
+
+msgctxt "#90200"
+msgid "Continue Watching"
+msgstr "Continue Watching"
+
+msgctxt "#90201"
+msgid "Library"
+msgstr "Library"
+
+msgctxt "#90202"
+msgid "My Shows"
+msgstr "My Shows"
+
+msgctxt "#90203"
+msgid "My Movies"
+msgstr "My Movies"
+
+msgctxt "#90204"
+msgid "Remove from Library"
+msgstr "Remove from Library"
+
+msgctxt "#90205"
+msgid "Add to Library"
+msgstr "Add to Library"
+
+msgctxt "#90206"
+msgid "Remove"
+msgstr "Remove"

@@ -510,5 +510,7 @@ def is_widget():
     return "jacktook" not in xbmc.getInfoLabel("Container.PluginName")
 
 
-def end_of_directory():
-    endOfDirectory(ADDON_HANDLE, cacheToDisc=False if is_widget() else True)
+def end_of_directory(cache=True):
+    endOfDirectory(
+        ADDON_HANDLE, cacheToDisc=False if is_widget() or not cache else True
+    )
