@@ -379,8 +379,7 @@ root_menu_items = [
     {
         "name": 90006,
         "icon": "search.png",
-        "action": "handle_tmdb_search",
-        "params": {"mode": "multi", "page": 1},
+        "action": "search_menu",
     },
     {
         "name": 90200,
@@ -392,7 +391,6 @@ root_menu_items = [
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},
     {"name": 90009, "icon": "anime.png", "action": "anime_menu"},
     {"name": 90010, "icon": "tv.png", "action": "tv_menu"},
-    {"name": 90011, "icon": "search.png", "action": "direct_menu"},
     {"name": 90012, "icon": "magnet2.png", "action": "torrents"},
     {
         "name": 90013,

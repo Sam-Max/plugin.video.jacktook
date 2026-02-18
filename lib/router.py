@@ -502,6 +502,7 @@ def _route_cache(action, params):
         clear_mdblist_cache,
         clear_database_cache,
         clear_history,
+        clear_search_history,
     )
 
     actions = {
@@ -513,6 +514,7 @@ def _route_cache(action, params):
         "clear_mdblist_cache": clear_mdblist_cache,
         "clear_database_cache": clear_database_cache,
         "clear_history": clear_history,
+        "clear_search_history": clear_search_history,
     }
     action_func = actions.get(action)
     if action_func:
@@ -581,6 +583,7 @@ def _route_core(action, params):
             tv_shows_items,
             movies_items,
             direct_menu,
+            search_menu,
             anime_menu,
             anime_item,
             anime_search,
@@ -618,6 +621,7 @@ def _route_core(action, params):
             "tv_shows_items": tv_shows_items,
             "movies_items": movies_items,
             "direct_menu": direct_menu,
+            "search_menu": search_menu,
             "anime_menu": anime_menu,
             "anime_item": anime_item,
             "anime_search": anime_search,

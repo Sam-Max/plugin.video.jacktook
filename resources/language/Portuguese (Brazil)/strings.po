@@ -196,8 +196,8 @@ msgid "Search on AniList:"
 msgstr "Pesquisar no AniList:"
 
 msgctxt "#30243"
-msgid "Search for torrents:"
-msgstr "Pesquisar por torrents:"
+msgid "Search for a keyword:"
+msgstr "Pesquisar por uma palavra-chave:"
 
 msgctxt "#30244"
 msgid "Cache cleared"

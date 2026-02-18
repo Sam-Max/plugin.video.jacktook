@@ -216,8 +216,8 @@ msgid "Search on AniList:"
 msgstr "Buscar en AniList"
 
 msgctxt "#30243"
-msgid "Search for torrents:"
-msgstr "Buscar torrents"
+msgid "Search for a keyword:"
+msgstr "Buscar por una palabra-clave:"
 
 msgctxt "#30244"
 msgid "Cache cleared"
@@ -2061,3 +2061,19 @@ msgstr "Añadir a la biblioteca"
 msgctxt "#90206"
 msgid "Remove"
 msgstr "Eliminar"
+
+msgctxt "#90207"
+msgid "Search Movies & TV"
+msgstr "Buscar Películas y Series"
+
+msgctxt "#90208"
+msgid "Recent Searches"
+msgstr "Búsquedas Recientes"
+
+msgctxt "#90209"
+msgid "Recent Direct Searches"
+msgstr "Búsquedas Directas Recientes"
+
+msgctxt "#90210"
+msgid "Clear All Search History"
+msgstr "Borrar Todo el Historial de Búsqueda"

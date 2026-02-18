@@ -237,13 +237,23 @@ class HybridCache(_BaseCache):
 
     def add_to_list(self, key, item, expires):
         existing_data = self.get_list(key)
+        if item in existing_data:
+            existing_data.remove(item)
         existing_data.append(item)
         self.set(key, existing_data, expires)
 
     def get_list(self, key):
         result = self.get(key)
         if result:
-            return [tuple(item) for item in result]
+            seen = set()
+            deduped = []
+            for item in reversed(result):
+                t = tuple(item)
+                if t not in seen:
+                    seen.add(t)
+                    deduped.append(t)
+            deduped.reverse()
+            return deduped
         return []
 
     def clear_list(self, key):
@@ -294,6 +304,8 @@ class SQLiteCache(_BaseCache):
     def add_to_list(self, key, item, expires):
         """Append an item to a list stored under the given key."""
         existing_data = self.get_list(key)
+        if item in existing_data:
+            existing_data.remove(item)
         existing_data.append(item)
         self.set(
             key,
@@ -305,7 +317,15 @@ class SQLiteCache(_BaseCache):
         """Retrieve the list stored under the given key."""
         result = self.get(key)
         if result:
-            return [tuple(item) for item in result]
+            seen = set()
+            deduped = []
+            for item in reversed(result):
+                t = tuple(item)
+                if t not in seen:
+                    seen.add(t)
+                    deduped.append(t)
+            deduped.reverse()
+            return deduped
         return []
 
     def get(self, key):

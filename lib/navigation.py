@@ -270,6 +270,81 @@ def direct_menu(params):
     search_direct({"mode": "direct"})
 
 
+def search_menu(params):
+    set_pluging_category(translation(90006))
+
+    # -- Search Movies & TV --
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("handle_tmdb_search", mode="multi", page=1),
+        build_list_item(translation(90207), "search.png"),
+        isFolder=True,
+    )
+
+    # -- Direct Search --
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("search_direct", mode="direct"),
+        build_list_item(translation(90011), "search.png"),
+        isFolder=True,
+    )
+
+    # -- Recent TMDb Searches --
+    tmdb_history = cache.get_list(key="multi")
+    if tmdb_history:
+        header = ListItem(label=f"[B][COLOR gray]— {translation(90208)} —[/COLOR][/B]")
+        header.setProperty("IsPlayable", "false")
+        addDirectoryItem(ADDON_HANDLE, "", header, isFolder=False)
+
+        for _, text in tmdb_history[:5]:
+            list_item = ListItem(label=f"[I]{text}[/I]")
+            list_item.setArt(
+                {"icon": os.path.join(ADDON_PATH, "resources", "img", "tmdb.png")}
+            )
+            list_item.setProperty("IsPlayable", "false")
+            addDirectoryItem(
+                ADDON_HANDLE,
+                build_url("handle_tmdb_search", mode="multi", page=1, query=text),
+                list_item,
+                isFolder=True,
+            )
+
+    # -- Recent Direct Searches --
+    direct_history = cache.get_list(key="direct")
+    if direct_history:
+        header = ListItem(label=f"[B][COLOR gray]— {translation(90209)} —[/COLOR][/B]")
+        header.setProperty("IsPlayable", "false")
+        addDirectoryItem(ADDON_HANDLE, "", header, isFolder=False)
+
+        for mode, text in direct_history[:5]:
+            list_item = ListItem(label=f"[I]{text}[/I]")
+            list_item.setArt(
+                {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
+            )
+            list_item.setProperty("IsPlayable", "true")
+            addDirectoryItem(
+                ADDON_HANDLE,
+                build_url("search", mode=mode, query=text, direct=True),
+                list_item,
+                isFolder=False,
+            )
+
+    # -- Clear All Search History --
+    if tmdb_history or direct_history:
+        clear_li = ListItem(label=translation(90210))
+        clear_li.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
+        )
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url("clear_search_history"),
+            clear_li,
+            isFolder=True,
+        )
+
+    end_of_directory()
+
+
 def anime_menu(params):
     set_pluging_category(translation(90009))
     addDirectoryItem(
@@ -900,6 +975,15 @@ def clear_database_cache(params):
 def clear_history(params):
     clear_history_by_type(type=params.get("type"))
     notification(translation(90114))
+
+
+def clear_search_history(params):
+    cache.clear_list(key="multi")
+    cache.clear_list(key="direct")
+    notification(translation(90114))
+    import xbmc
+
+    xbmc.executebuiltin("Container.Refresh")
 
 
 def kodi_logs(params):

@@ -224,7 +224,7 @@ msgid "Search on AniList:"
 msgstr ""
 
 msgctxt "#30243"
-msgid "Search for torrents:"
+msgid "Search for a keyword:"
 msgstr ""
 
 msgctxt "#30244"
@@ -2133,4 +2133,21 @@ msgstr "Add to Library"
 msgctxt "#90206"
 msgid "Remove"
 msgstr "Remove"
+
+msgctxt "#90207"
+msgid "Search Movies & TV"
+msgstr ""
+
+msgctxt "#90208"
+msgid "Recent Searches"
+msgstr ""
+
+msgctxt "#90209"
+msgid "Recent Direct Searches"
+msgstr ""
+
+msgctxt "#90210"
+msgid "Clear All Search History"
+msgstr ""
+
 
