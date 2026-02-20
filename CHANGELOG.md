@@ -1,3 +1,17 @@
+## 1.1.0
+- Add 'Downgrade Addon Version' functionality in settings to easily revert to previous releases.
+- Add 'Bypass Addon Filters' for selected Stremio addons, allowing them to skip Jacktook's native size/quality filtering.
+- Improve metadata resolution and movie detection for Stremio providers.
+- Improve Super Quick Play logic with better cache key handling for TV shows and movies.
+- Performance optimizations and improved error handling across several modules.
+
+Spanish:
+- Añadida función 'Revertir versión del addon' en los ajustes para volver fácilmente a versiones anteriores.
+- Añadida funcionalidad 'Omitir filtros de addons' para que los addons de Stremio seleccionados salten el filtrado nativo.
+- Mejora en la resolución de metadatos y detección de películas para los proveedores de Stremio.
+- Mejora en la lógica de 'Reproducción súper rápida' con un mejor manejo de claves de caché para series y películas.
+- Optimizaciones de rendimiento y mejora en el manejo de errores en varios módulos.
+
 ## 1.0.0
 - Implement lazy loading for router and navigation for better performance. 
 - Add local web server for managing Stremio addons via phone/browser.
