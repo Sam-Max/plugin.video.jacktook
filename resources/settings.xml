@@ -844,6 +844,28 @@
             </group>
         </category>
         <category id="filtering_category" label="30861">
+            <group id="filtering_stremio" label="90150">
+                <setting id="stremio_bypass_addons" type="boolean" label="90211" help="90212">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="stremio_bypass_addons_select" type="action" label="90213" help="90214">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_bypass_addons_select)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_bypass_addons">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="stremio_bypass_addon_list" type="string">
+                    <default>aiostreams</default>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+            </group>
             <group id="filtering_group" label="30865">
                 <setting id="indexers_total_results" type="integer" label="30029" help="30852">
                     <default>100</default>

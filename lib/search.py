@@ -1,6 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import json
-from typing import List, Optional
+from typing import List
 
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
@@ -40,39 +39,105 @@ import xbmc
 from xbmcgui import Dialog
 
 
+def _handle_super_quick_play(params: dict) -> bool:
+    kodilog(f"Super quick play: {params}")
+    if not get_setting("super_quick_play", False):
+        kodilog("Super quick play disabled")
+        return False
+
+    ids = safe_json_loads(params.get("ids"))
+    key = str(ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id") or "")
+
+    if key:
+        tv_data = safe_json_loads(params.get("tv_data") or "{}")
+        if tv_data and "season" in tv_data and "episode" in tv_data:
+            key += f'_{tv_data["season"]}_{tv_data["episode"]}'
+
+    if not key:
+        kodilog("Super quick play: No valid key found from ids")
+        return False
+
+    cached_torrent = cache.get(key)
+    if not cached_torrent:
+        kodilog("No cached media found")
+        return False
+
+    kodilog(f"Found cached media: {cached_torrent['title']}")
+    dialog = Dialog()
+    if dialog.yesno(
+        translation(90142),
+        translation(90143),
+    ):
+        playback_info = resolve_playback_url(cached_torrent)
+        if not playback_info:
+            notification(translation(90144))
+            return True
+
+        player = JacktookPLayer()
+        player.run(data=playback_info)
+        return True
+
+    kodilog("User chose not to play cached torrent")
+    return False
+
+
+def _process_search_results(
+    results,
+    mode,
+    ep_name,
+    episode,
+    season,
+    scoped_addon_url,
+    query,
+    media_type,
+    rescrape,
+):
+    bypassed_streams = []
+    other_results = results
+
+    if get_setting("stremio_bypass_addons", True):
+        bypass_list_str = get_setting("stremio_bypass_addon_list", "")
+        bypass_addons = [
+            a.strip().lower() for a in bypass_list_str.split(",") if a.strip()
+        ]
+
+        bypassed_streams = [
+            res
+            for res in results
+            if res.indexer
+            and any(addon in res.indexer.lower() for addon in bypass_addons)
+        ]
+        other_results = [
+            res
+            for res in results
+            if not res.indexer
+            or not any(addon in res.indexer.lower() for addon in bypass_addons)
+        ]
+
+    pre_results = []
+    if other_results:
+        pre_results = pre_process_results(
+            other_results,
+            mode,
+            ep_name,
+            episode,
+            season,
+            skip_episode_filter=bool(scoped_addon_url),
+        )
+
+    post_results = []
+    if pre_results:
+        post_results = process_results(
+            pre_results, query, mode, media_type, rescrape, episode
+        )
+
+    # Combine results, prioritizing bypassed streams exact native sorting
+    return bypassed_streams + post_results
+
+
 def run_search_entry(params: dict):
-    if get_setting("super_quick_play", False):
-        ids = safe_json_loads(params.get("ids"))
-        key = ""
-        if "tmdb_id" in ids:
-            key = str(ids["tmdb_id"])
-            tv_data = safe_json_loads(params.get("tv_data"))
-            if "season" in tv_data and "episode" in tv_data:
-                key += f'_{tv_data["season"]}_{tv_data["episode"]}'
-
-        if key:
-            cached_torrent = cache.get(key)
-            if cached_torrent:
-                kodilog(f"Found cached media: {cached_torrent['title']}")
-                dialog = Dialog()
-                if dialog.yesno(
-                    translation(90142),
-                    translation(90143),
-                ):
-                    playback_info = resolve_playback_url(cached_torrent)
-                    if not playback_info:
-                        notification(translation(90144))
-                        cancel_playback()
-                        return
-
-                    player = JacktookPLayer()
-                    player.run(data=playback_info)
-                    del player
-                    return
-                else:
-                    kodilog("User chose not to play cached torrent")
-            else:
-                kodilog("No cached media found")
+    if _handle_super_quick_play(params):
+        return
 
     query = params.get("query", "")
     mode = params.get("mode", "")
@@ -106,23 +171,19 @@ def run_search_entry(params: dict):
         cancel_playback()
         return
 
-    pre_results = pre_process_results(
+    final_results = _process_search_results(
         results,
         mode,
         ep_name,
         episode,
         season,
-        skip_episode_filter=bool(scoped_addon_url),
+        scoped_addon_url,
+        query,
+        media_type,
+        rescrape,
     )
-    if not pre_results:
-        notification("No results found")
-        cancel_playback()
-        return
 
-    post_results = process_results(
-        pre_results, query, mode, media_type, rescrape, episode
-    )
-    if not post_results:
+    if not final_results:
         notification("No cached results found")
         cancel_playback()
         return
@@ -131,12 +192,208 @@ def run_search_entry(params: dict):
     force_select = params.get("force_select", False)
 
     if auto_play_enabled() and not force_select:
-        if not auto_play(post_results, ids, tv_data, mode, preferred_group):
+        if not auto_play(final_results, ids, tv_data, mode, preferred_group):
             cancel_playback()
         return
 
-    if not show_source_select(post_results, mode, ids, tv_data, direct):
+    if not show_source_select(final_results, mode, ids, tv_data, direct):
         cancel_playback()
+
+
+def _perform_search(indexer_key, dialog, *args, **kwargs):
+    show_dialog = kwargs.pop("show_dialog", True)
+    scoped_addon_url = kwargs.pop("scoped_addon_url", "")
+
+    if indexer_key == Indexer.STREMIO:
+        if scoped_addon_url:
+            addon = get_addon_by_base_url(scoped_addon_url)
+            stremio_addons = [addon] if addon else []
+        else:
+            stremio_addons = get_selected_stream_addons()
+        if not stremio_addons:
+            notification("No Stremio addons selected")
+            return []
+
+        ids_dict = args[0]
+        rest_args = args[1:]
+        results = []
+
+        for addon in stremio_addons:
+            if show_dialog:
+                update_dialog(addon.manifest.name, "Searching...", dialog)
+
+            video_id = None
+            original_id = ids_dict.get("original_id")
+
+            if original_id:
+                prefix = original_id.split(":")[0]
+                if addon.isSupported(
+                    "stream",
+                    "series" if args[1] == "tv" or args[2] == "tv" else "movie",
+                    prefix,
+                ):
+                    video_id = original_id
+
+            if not video_id and ids_dict.get("imdb_id"):
+                if addon.isSupported(
+                    "stream",
+                    "series" if args[1] == "tv" or args[2] == "tv" else "movie",
+                    "tt",
+                ):
+                    video_id = ids_dict.get("imdb_id")
+
+            if video_id:
+                try:
+                    client = StremioAddonClient(addon)
+                    results.extend(client.search(video_id, *rest_args))
+                except Exception as e:
+                    kodilog(f"Error searching {addon.manifest.name}: {e}")
+
+        return results
+
+    client = get_client(indexer_key)
+    if not client:
+        return []
+    return client.search(*args, **kwargs)
+
+
+def _submit_search_tasks(
+    executor,
+    tasks,
+    dialog,
+    query,
+    mode,
+    media_type,
+    season,
+    episode,
+    ids,
+    scoped_addon_url,
+    tmdb_id,
+    imdb_id,
+    show_dialog,
+):
+    def submit_performer(*args, **kwargs):
+        return executor.submit(
+            _perform_search,
+            *args,
+            **kwargs,
+            show_dialog=show_dialog,
+            scoped_addon_url=scoped_addon_url,
+        )
+
+    if scoped_addon_url:
+        if ids.get("imdb_id") or ids.get("original_id"):
+            tasks.append(
+                submit_performer(
+                    Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
+                )
+            )
+    else:
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "zilean_enabled",
+            Indexer.ZILEAN,
+            _perform_search,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=show_dialog,
+            scoped_addon_url=scoped_addon_url,
+        )
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jacktookburst_enabled",
+            Indexer.BURST,
+            _perform_search,
+            dialog,
+            imdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=show_dialog,
+            scoped_addon_url=scoped_addon_url,
+        )
+        if get_setting("prowlarr_enabled"):
+            indexers_ids = get_setting("prowlarr_indexer_ids")
+            tasks.append(
+                submit_performer(
+                    Indexer.PROWLARR, dialog, query, mode, season, episode, indexers_ids
+                )
+            )
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jackett_enabled",
+            Indexer.JACKETT,
+            _perform_search,
+            dialog,
+            query,
+            mode,
+            season,
+            episode,
+            show_dialog=show_dialog,
+            scoped_addon_url=scoped_addon_url,
+        )
+        add_task_if_enabled(
+            executor,
+            tasks,
+            "jackgram_enabled",
+            Indexer.JACKGRAM,
+            _perform_search,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=show_dialog,
+            scoped_addon_url=scoped_addon_url,
+        )
+        if get_setting("stremio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id")
+        ):
+            tasks.append(
+                submit_performer(
+                    Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
+                )
+            )
+
+
+def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]:
+    total_results = []
+    total_tasks = len(tasks)
+    completed_tasks = 0
+
+    for future in as_completed(tasks):
+        try:
+            completed_tasks += 1
+            if show_dialog and total_tasks > 0:
+                percent = int(completed_tasks / total_tasks * 100)
+                update_dialog(
+                    "Searching", f"Searching... {percent}%", listener.dialog, percent
+                )
+
+            results = future.result()
+            kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
+            if results:
+                total_results.extend(results)
+        except Exception as e:
+            import traceback
+
+            error_details = traceback.format_exc()
+            kodilog(
+                f"Error resolving future result in thread pool: {e}\n{error_details}"
+            )
+
+    return total_results
 
 
 def search_client(
@@ -151,214 +408,43 @@ def search_client(
     scoped_addon_url: str = "",
 ) -> List[TorrentStream]:
     close_busy_dialog()
+
+    if not rescrape:
+        cached_results = get_cached_results(query, mode, media_type, episode)
+        if cached_results:
+            return cached_results
+
+    tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
+    total_results = []
+    tasks = []
+
     with DialogListener() as listener:
-
-        def perform_search(indexer_key, dialog, *args, **kwargs):
-            if indexer_key == Indexer.STREMIO:
-                if scoped_addon_url:
-                    addon = get_addon_by_base_url(scoped_addon_url)
-                    stremio_addons = [addon] if addon else []
-                else:
-                    stremio_addons = get_selected_stream_addons()
-                if not stremio_addons:
-                    notification("No Stremio addons selected")
-                    return []
-
-                ids_dict = args[0]
-                rest_args = args[1:]
-
-                results = []
-                for addon in stremio_addons:
-                    if show_dialog:
-                        update_dialog(addon.manifest.name, "Searching...", dialog)
-
-                    video_id = None
-                    original_id = ids_dict.get("original_id")
-
-                    # 1. Try Original ID (e.g. kitsu:123) if supported
-                    if original_id:
-                        prefix = original_id.split(":")[0]
-                        if addon.isSupported(
-                            "stream",
-                            "series" if args[1] == "tv" or args[2] == "tv" else "movie",
-                            prefix,
-                        ):
-                            video_id = original_id
-
-                    # 2. Try IMDB ID if supported and not already found
-                    if not video_id and ids_dict.get("imdb_id"):
-                        if addon.isSupported(
-                            "stream",
-                            "series" if args[1] == "tv" or args[2] == "tv" else "movie",
-                            "tt",
-                        ):
-                            video_id = ids_dict.get("imdb_id")
-
-                    if video_id:
-                        try:
-                            client = StremioAddonClient(addon)
-                            results.extend(client.search(video_id, *rest_args))
-                        except Exception as e:
-                            kodilog(f"Error searching {addon.manifest.name}: {e}")
-
-                return results
-
-            client = get_client(indexer_key)
-            if not client:
-                return []
-            return client.search(*args, **kwargs)
-
-        if not rescrape:
-            kodilog("Checking for cached results before searching")
-            kodilog(
-                f"Search parameters - Query: {query}, Mode: {mode}, Media Type: {media_type}, Episode: {episode}, ids: {ids}"
-            )
-            cached_results = get_cached_results(query, mode, media_type, episode)
-            if cached_results:
-                if show_dialog:
-                    listener.dialog.create("")
-                return cached_results
-
-        tmdb_id, imdb_id = (
-            (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
-        )
-
         if show_dialog:
             listener.dialog.create("")
-        total_results = []
-        tasks = []
 
         with ThreadPoolExecutor(
             max_workers=int(get_setting("thread_number", 6))
         ) as executor:
-            if scoped_addon_url:
-                # Scoped search: only search the specific addon
-                if ids.get("imdb_id") or ids.get("original_id"):
-                    tasks.append(
-                        executor.submit(
-                            perform_search,
-                            Indexer.STREMIO,
-                            listener.dialog,
-                            ids,
-                            mode,
-                            media_type,
-                            season,
-                            episode,
-                        )
-                    )
-            else:
-                add_task_if_enabled(
-                    executor,
-                    tasks,
-                    "zilean_enabled",
-                    Indexer.ZILEAN,
-                    perform_search,
-                    listener.dialog,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-                add_task_if_enabled(
-                    executor,
-                    tasks,
-                    "jacktookburst_enabled",
-                    Indexer.BURST,
-                    perform_search,
-                    listener.dialog,
-                    imdb_id,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-                if get_setting("prowlarr_enabled"):
-                    indexers_ids = get_setting("prowlarr_indexer_ids")
-                    tasks.append(
-                        executor.submit(
-                            perform_search,
-                            Indexer.PROWLARR,
-                            listener.dialog,
-                            query,
-                            mode,
-                            season,
-                            episode,
-                            indexers_ids,
-                        )
-                    )
-                add_task_if_enabled(
-                    executor,
-                    tasks,
-                    "jackett_enabled",
-                    Indexer.JACKETT,
-                    perform_search,
-                    listener.dialog,
-                    query,
-                    mode,
-                    season,
-                    episode,
-                )
-                add_task_if_enabled(
-                    executor,
-                    tasks,
-                    "jackgram_enabled",
-                    Indexer.JACKGRAM,
-                    perform_search,
-                    listener.dialog,
-                    tmdb_id,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                )
-                if (
-                    get_setting("stremio_enabled")
-                    and ids.get("imdb_id")
-                    or ids.get("original_id")
-                ):
-                    tasks.append(
-                        executor.submit(
-                            perform_search,
-                            Indexer.STREMIO,
-                            listener.dialog,
-                            ids,
-                            mode,
-                            media_type,
-                            season,
-                            episode,
-                        )
-                    )
+            _submit_search_tasks(
+                executor,
+                tasks,
+                listener.dialog,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                ids,
+                scoped_addon_url,
+                tmdb_id,
+                imdb_id,
+                show_dialog,
+            )
 
-            total_tasks = len(tasks)
-            completed_tasks = 0
+            total_results = _collect_search_results(tasks, listener, show_dialog)
 
-            for future in as_completed(tasks):
-                try:
-                    completed_tasks += 1
-                    if show_dialog and total_tasks > 0:
-                        percent = int(completed_tasks / total_tasks * 100)
-                        update_dialog(
-                            "Searching",
-                            f"Searching... {percent}%",
-                            listener.dialog,
-                            percent,
-                        )
-
-                    results = future.result()
-                    kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
-                    if results:
-                        total_results.extend(results)
-                except Exception as e:
-                    import traceback
-
-                    error_details = traceback.format_exc()
-                    kodilog(f"Error in {e}\n{error_details}")
-
-        cache_results(total_results, query, mode, media_type, episode)
-        return total_results
+    cache_results(total_results, query, mode, media_type, episode)
+    return total_results
 
 
 def pre_process_results(

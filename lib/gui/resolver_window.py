@@ -129,16 +129,23 @@ class ResolverWindow(BaseWindow):
         if get_setting("super_quick_play", False):
             kodilog("Super quick play enabled, caching playback info")
             key = ""
-            if "ids" in self.playback_info and "tmdb_id" in self.playback_info["ids"]:
-                key = str(self.playback_info["ids"]["tmdb_id"])
-                if "season" in self.playback_info.get(
-                    "tv_data", {}
-                ) and "episode" in self.playback_info.get("tv_data", {}):
-                    key += f'_{self.playback_info["tv_data"]["season"]}_{self.playback_info["tv_data"]["episode"]}'
+            if "ids" in self.playback_info:
+                ids = self.playback_info["ids"]
+                key = str(
+                    ids.get("original_id")
+                    or ids.get("imdb_id")
+                    or ids.get("tmdb_id")
+                    or ""
+                )
+
+            if key:
+                tv_data = self.playback_info.get("tv_data", {})
+                if tv_data and "season" in tv_data and "episode" in tv_data:
+                    key += f'_{tv_data["season"]}_{tv_data["episode"]}'
 
             if key:
                 cache.set(key, self.playback_info, timedelta(days=30))
-                kodilog("Playback info cached")
+                kodilog(f"Playback info cached with key: {key}")
 
     def _download_subtitle(self):
         try:

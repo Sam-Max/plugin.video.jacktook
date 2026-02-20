@@ -2077,3 +2077,19 @@ msgstr "Búsquedas Directas Recientes"
 msgctxt "#90210"
 msgid "Clear All Search History"
 msgstr "Borrar Todo el Historial de Búsqueda"
+
+msgctxt "#90211"
+msgid "Bypass Addon Filters For Native Sorting"
+msgstr "Omitir Filtros de Addons para Ordenado Nativo"
+
+msgctxt "#90212"
+msgid "If enabled, addons specified in BYPASS_FILTER_ADDONS won't have their results re-ordered or filtered by Jacktook's native quality and size thresholds."
+msgstr "Si se habilita, los addons especificados en BYPASS_FILTER_ADDONS no verán sus resultados re-ordenados ni filtrados por los umbrales de tamaño y calidad nativos de Jacktook."
+
+msgctxt "#90213"
+msgid "Select Bypassed Addons"
+msgstr "Seleccionar Addons para Omitir Filtros"
+
+msgctxt "#90214"
+msgid "Select which Stremio addons bypass Jacktook's native size and quality filtering."
+msgstr "Selecciona qué addons de Stremio omitirán el filtrado nativo de tamaño y calidad de Jacktook."

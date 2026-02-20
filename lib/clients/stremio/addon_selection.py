@@ -4,8 +4,10 @@ from collections import Counter
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import (
-    ADDON,
     kodilog,
+    get_setting,
+    set_setting,
+    ADDON,
 )
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_KEY,
@@ -432,3 +434,33 @@ def remove_custom_stremio_addon(params=None):
             cache.set(cache_key, ",".join(selected_keys), timedelta(days=365 * 20))
 
     xbmcgui.Dialog().ok("Remove Addon", "Selected addon(s) removed.")
+
+
+def stremio_bypass_addons_select(params=None):
+    addon_manager = get_addons()
+    addons = addon_manager.get_addons_with_resource("stream")
+    addons = _deduplicate_addons(addons)
+    addons = _filter_excluded_addons(addons)
+    addons = list(reversed(addons))
+
+    selected_list_str = get_setting("stremio_bypass_addon_list").strip()
+    selected_names_old = selected_list_str.split(",") if selected_list_str else []
+
+    selected_ids = [
+        addon.key()
+        for addon in addons
+        if addon.manifest.name.lower() in selected_names_old
+    ]
+
+    title = "Select Bypassed Addons"
+    selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
+
+    if selected_addon_keys is None:
+        return
+
+    selected_names = []
+    for addon in addons:
+        if addon.key() in selected_addon_keys:
+            selected_names.append(addon.manifest.name.lower())
+
+    set_setting("stremio_bypass_addon_list", ",".join(selected_names))

@@ -117,6 +117,7 @@ def addon_router():
             "add_custom_stremio_addon",
             "remove_custom_stremio_addon",
             "torrentio_toggle_providers",
+            "stremio_bypass_addons_select",
         ):
             _route_stremio(action, params)
 
@@ -193,6 +194,7 @@ def _route_stremio(action, params):
         "stremio_filtered_selection",
         "add_custom_stremio_addon",
         "remove_custom_stremio_addon",
+        "stremio_bypass_addons_select",
     ):
         from lib.clients.stremio.addon_selection import (
             stremio_toggle_addons,
@@ -201,6 +203,7 @@ def _route_stremio(action, params):
             stremio_filtered_selection,
             add_custom_stremio_addon,
             remove_custom_stremio_addon,
+            stremio_bypass_addons_select,
         )
 
         actions = {
@@ -210,6 +213,7 @@ def _route_stremio(action, params):
             "stremio_filtered_selection": stremio_filtered_selection,
             "add_custom_stremio_addon": add_custom_stremio_addon,
             "remove_custom_stremio_addon": remove_custom_stremio_addon,
+            "stremio_bypass_addons_select": stremio_bypass_addons_select,
         }
         actions[action](params)
     elif action == "stremio_manage_phone":
