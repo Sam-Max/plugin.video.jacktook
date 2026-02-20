@@ -694,6 +694,20 @@ def build_media_metadata(ids, mode: str) -> dict:
 
     tmdb_id = ids.get("tmdb_id", "")
     tvdb_id = ids.get("tvdb_id", "")
+    imdb_id = ids.get("imdb_id", "")
+
+    if not tmdb_id and imdb_id:
+        from lib.clients.tmdb.utils.utils import tmdb_get
+
+        res = tmdb_get("find_by_imdb_id", imdb_id)
+        if mode == "movies" and getattr(res, "movie_results", []):
+            tmdb_id = str(res.movie_results[0]["id"])
+            ids["tmdb_id"] = tmdb_id
+        elif mode in ("tv", "episode", "season", "anime") and getattr(
+            res, "tv_results", []
+        ):
+            tmdb_id = str(res.tv_results[0]["id"])
+            ids["tmdb_id"] = tmdb_id
 
     metadata["tmdb_id"] = str(tmdb_id)
     metadata["tvdb_id"] = str(tvdb_id)

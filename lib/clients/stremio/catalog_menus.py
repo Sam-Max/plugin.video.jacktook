@@ -310,7 +310,7 @@ def add_meta_items(metas, params):
                     meta_id=meta_id,
                 )
         elif meta_type == "movie":
-            if addon_has_meta(addon_url, catalog_type) or ":" in meta_id:
+            if addon_has_stream(addon_url, catalog_type):
                 is_custom_movie = True
                 url = build_url(
                     "list_stremio_movie",
@@ -318,11 +318,17 @@ def add_meta_items(metas, params):
                     catalog_type=catalog_type,
                     meta_id=meta_id,
                 )
-            elif tmdb_id or imdb_id:
+            elif tmdb_id or imdb_id or ":" in meta_id:
                 is_custom_movie = False
-                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+                ids = {
+                    "tmdb_id": tmdb_id,
+                    "tvdb_id": "",
+                    "imdb_id": imdb_id,
+                    "original_id": meta_id,
+                }
                 url = build_url("search", mode="movies", query=name, ids=ids)
             else:
+                is_custom_movie = True
                 url = build_url(
                     "list_stremio_movie",
                     addon_url=addon_url,
