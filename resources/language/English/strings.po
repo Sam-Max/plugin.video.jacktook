@@ -2165,3 +2165,7 @@ msgstr ""
 msgctxt "#90214"
 msgid "Select which Stremio addons bypass Jacktook's native size and quality filtering."
 msgstr ""
+
+msgctxt "#90215"
+msgid "Downgrade"
+msgstr ""

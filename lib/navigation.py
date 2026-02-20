@@ -81,7 +81,7 @@ from lib.utils.general.items_menus import (
     tv_items,
 )
 
-from lib.updater import updates_check_addon
+from lib.updater import updates_check_addon, downgrade_addon_menu
 
 from xbmcgui import ListItem
 from xbmcplugin import (
@@ -916,6 +916,10 @@ def downloads_menu(params):
 
 def addon_update(params):
     updates_check_addon()
+
+
+def downgrade_addon(params):
+    downgrade_addon_menu()
 
 
 def show_changelog(params):

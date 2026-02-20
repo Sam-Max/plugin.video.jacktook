@@ -720,3 +720,7 @@ msgstr "Adicionar à Biblioteca"
 msgctxt "#90206"
 msgid "Remove"
 msgstr "Remover"
+
+msgctxt "#90215"
+msgid "Downgrade"
+msgstr "Reverter"

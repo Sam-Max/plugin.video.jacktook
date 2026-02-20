@@ -2093,3 +2093,7 @@ msgstr "Seleccionar Addons para Omitir Filtros"
 msgctxt "#90214"
 msgid "Select which Stremio addons bypass Jacktook's native size and quality filtering."
 msgstr "Selecciona qué addons de Stremio omitirán el filtrado nativo de tamaño y calidad de Jacktook."
+
+msgctxt "#90215"
+msgid "Downgrade"
+msgstr "Revertir"

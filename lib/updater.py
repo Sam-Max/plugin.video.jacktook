@@ -16,6 +16,7 @@ from lib.utils.kodi.utils import (
     disable_enable_addon,
     update_kodi_addons_db,
     dialog_text,
+    dialog_select,
 )
 from lib.utils.general.utils import clear_cache_on_update, unzip
 from lib.utils.kodi.settings import cache_clear_update
@@ -102,6 +103,63 @@ def updates_check_addon():
 # =========================
 # Core Update Logic
 # =========================
+
+
+def downgrade_addon_menu():
+    """Fetch available versions from GitHub and display them in a selection dialog."""
+    repo_contents_url = "https://api.github.com/repos/Sam-Max/repository.jacktook/contents/repo/zips/plugin.video.jacktook"
+    try:
+        resp = requests.get(repo_contents_url)
+        resp.raise_for_status()
+        contents = resp.json()
+    except Exception as e:
+        dialog_ok(heading=HEADING, line1=f"Error fetching versions: {e}")
+        return
+
+    # Extract versions from zip filenames: plugin.video.jacktook-X.Y.Z.zip
+    versions = []
+    prefix = f"{ADDON_ID}-"
+    suffix = ".zip"
+    for item in contents:
+        name = item.get("name", "")
+        if name.startswith(prefix) and name.endswith(suffix):
+            version_str = name[len(prefix) : -len(suffix)]
+            versions.append(version_str)
+
+    if not versions:
+        dialog_ok(heading=HEADING, line1="No older versions found.")
+        return
+
+    # Create a nice sorted list
+    # E.g., ['1.0.0', '0.24.0', '0.23.0']
+    try:
+        from pkg_resources import parse_version
+
+        versions.sort(key=parse_version, reverse=True)
+    except ImportError:
+        versions.sort(reverse=True)
+
+    # Filter out current version? We could let them reinstall it if they want.
+    # We will just show all of them.
+
+    selected_index = dialog_select(
+        heading="Select Version to Downgrade", _list=versions
+    )
+
+    if selected_index == -1:
+        return
+
+    selected_version = versions[selected_index]
+
+    if not dialogyesno(
+        header=HEADING,
+        text=f"Are you sure you want to downgrade/reinstall to version [B]{selected_version}[/B]?",
+    ):
+        return
+
+    update_addon(selected_version)
+
+
 def update_addon(new_version):
     if cache_clear_update():
         clear_cache_on_update()
@@ -140,7 +198,9 @@ def update_addon(new_version):
     # Extract
     if not unzip(zip_path, HOME_ADDONS_DIR, DESTINATION_DIR):
         delete_file(zip_path)
-        dialog_ok(heading=HEADING, line1="Error extracting update. Please install manually.")
+        dialog_ok(
+            heading=HEADING, line1="Error extracting update. Please install manually."
+        )
         return
 
     delete_file(zip_path)

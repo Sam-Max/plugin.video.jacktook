@@ -9,6 +9,12 @@
                             <close>false</close>
                         </control>
                     </setting>
+                    <setting id="downgrade_addon" type="action" label="90215" help="">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=downgrade_addon)</data>
+                        <control type="button" format="action">
+                            <close>false</close>
+                        </control>
+                    </setting>
                     <setting id="show_changelog" type="action" label="30894" help="30895">
                         <data>RunPlugin(plugin://plugin.video.jacktook/?action=show_changelog)</data>
                         <control type="button" format="action">

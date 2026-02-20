@@ -269,6 +269,11 @@ def dialogyesno(header, text):
         return False
 
 
+def dialog_select(heading, _list):
+    dialog = xbmcgui.Dialog()
+    return dialog.select(heading, _list)
+
+
 def close_all_dialog():
     execute_builtin("Dialog.Close(all,true)")
 
