@@ -126,7 +126,7 @@ class Addon:
         return "/".join(self.transport_url.split("/")[:-1])
 
     def key(self):
-        return self.manifest.id
+        return f"{self.manifest.id}|{self.transport_url}"
 
     def isSupported(self, resource_name: str, type: str, id_prefix: str) -> bool:
         for resource in self.manifest.resources:
@@ -161,9 +161,7 @@ class AddonManager:
                         name=(
                             resource["name"] if isinstance(resource, dict) else resource
                         ),
-                        types=resource.get(
-                            "types", item["manifest"].get("types", [])
-                        ),
+                        types=resource.get("types", item["manifest"].get("types", [])),
                         id_prefixes=resource.get(
                             "idPrefixes", item["manifest"].get("idPrefixes", [])
                         ),

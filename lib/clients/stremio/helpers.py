@@ -24,7 +24,11 @@ def merge_addons_lists(*lists):
         else:
             addons = addon_source
         for addon in addons:
-            key = addon.get("manifest", {}).get("id") or addon.get("id")
+            key = (
+                addon.get("transportUrl")
+                or addon.get("manifest", {}).get("id")
+                or addon.get("id")
+            )
             if key and key not in seen:
                 seen.add(key)
                 merged.append(addon)

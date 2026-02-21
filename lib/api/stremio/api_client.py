@@ -3,6 +3,7 @@ from requests.exceptions import RequestException, Timeout, TooManyRedirects
 from requests import Session
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import kodilog
+from lib.utils.kodi.settings import get_int_setting
 
 
 class Stremio:
@@ -14,9 +15,11 @@ class Stremio:
     def _request(self, method, url, data=None):
         try:
             if method == "GET":
-                resp = self.session.get(url, timeout=10)
+                resp = self.session.get(url, timeout=get_int_setting("stremio_timeout"))
             elif method == "POST":
-                resp = self.session.post(url, json=data, timeout=10)
+                resp = self.session.post(
+                    url, json=data, timeout=get_int_setting("stremio_timeout")
+                )
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 

@@ -9,6 +9,7 @@ from lib.utils.kodi.utils import (
     set_setting,
     ADDON,
 )
+from lib.utils.kodi.settings import get_int_setting
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
@@ -55,7 +56,7 @@ def _build_addon_options(addons):
     for addon in addons:
         name = addon.manifest.name
         if name_counts[name] > 1:
-            label = f"{name} ({addon.key()})"
+            label = f"{name} ({addon.manifest.id})"
         else:
             label = name
 
@@ -258,7 +259,9 @@ def add_custom_stremio_addon(params):
 
     # Try to fetch the manifest from the URL
     try:
-        response = requests.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        response = requests.get(
+            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+        )
         response.raise_for_status()
         manifest = response.json()
     except Exception as e:

@@ -53,8 +53,13 @@ class StremioAddonCatalogsClient(BaseClient):
         else:
             path_suffix = f"{extra_path}.json"
 
-        url = f"{self.base_url}/catalog/{self.params['catalog_type']}/{self.params['catalog_id']}{path_suffix}"
-        res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        catalog_type = self.params.get("catalog_type")
+        catalog_id = self.params.get("catalog_id")
+        url = f"{self.base_url}/catalog/{catalog_type}/{catalog_id}{path_suffix}"
+
+        res = self.session.get(
+            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+        )
         if res.status_code != 200:
             return
 
@@ -64,8 +69,13 @@ class StremioAddonCatalogsClient(BaseClient):
         return data
 
     def get_meta_info(self) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/meta/{self.params['catalog_type']}/{self.params['meta_id']}.json"
-        res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        catalog_type = self.params.get("catalog_type")
+        meta_id = self.params.get("meta_id")
+        url = f"{self.base_url}/meta/{catalog_type}/{meta_id}.json"
+
+        res = self.session.get(
+            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+        )
         if res.status_code != 200:
             return
 
@@ -75,8 +85,13 @@ class StremioAddonCatalogsClient(BaseClient):
         return data
 
     def get_stream_info(self) -> Optional[Dict[str, Any]]:
-        url = f"{self.base_url}/stream/{self.params['catalog_type']}/{self.params['meta_id']}.json"
-        res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
+        catalog_type = self.params.get("catalog_type")
+        meta_id = self.params.get("meta_id")
+        url = f"{self.base_url}/stream/{catalog_type}/{meta_id}.json"
+
+        res = self.session.get(
+            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+        )
         if res.status_code != 200:
             return
 
