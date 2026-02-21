@@ -125,8 +125,8 @@ CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
 | Home Screen | TV Shows |
 | :---: | :---: |
 | ![Home](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/home.png) | ![TV](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/tv.png) |
-| **Settings** | **Web Server** |
-| ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) | ![Web Server](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/webserver.png) |
+| **Settings** | **Extras** |
+| ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) | ![Extras](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/extras.png) |
 
 ---
 
