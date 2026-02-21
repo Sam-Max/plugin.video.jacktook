@@ -1,3 +1,11 @@
+## 1.2.1
+- Skin: Add 'Extras' and 'Actor Info' windows to media details.
+- Add IMDB scraper for fetching extras and cast information.
+
+Spanish:
+- Skin: Añadidas ventanas de 'Extras' e 'Información del actor' a los detalles de los medios.
+- Añadido scraper de IMDB para obtener extras e información del reparto.
+
 ## 1.1.1
 - Stremio: Support multiple configurations of the same addon by identifying them via transport URL.
 - Stremio: Increase configurable request timeout range up to 120s and apply it globally to all requests.
