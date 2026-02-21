@@ -1,0 +1,1296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window>
+    <defaultcontrol always="true">10</defaultcontrol>
+    <controls>
+        <!-- ══════════════════════════════════════════════════════════════════════
+             BACKGROUND
+             ══════════════════════════════════════════════════════════════════════ -->
+        <control type="group">
+            <width>1920</width>
+            <height>1080</height>
+            <control type="image">
+                <texture colordiffuse="FF000000">white.png</texture>
+            </control>
+            <control type="image" id="202">
+                <aspectratio>scale</aspectratio>
+                <texture>$INFO[Window.Property(fanart)]</texture>
+                <animation effect="fade" end="20" time="400">WindowOpen</animation>
+            </control>
+        </control>
+
+        <!-- ══════════════════════════════════════════════════════════════════════
+             MAIN CONTENT
+             ══════════════════════════════════════════════════════════════════════ -->
+        <control type="group">
+            <animation effect="fade" end="100" time="200" delay="400">WindowOpen</animation>
+
+            <!-- ── Top Bar: Addon Icon + Clock ── -->
+            <control type="group">
+                <left>40</left>
+                <top>15</top>
+                <control type="image">
+                    <width>45</width>
+                    <height>45</height>
+                    <aspectratio aligny="top">keep</aspectratio>
+                    <texture>$INFO[Window(10000).Property(jacktook.addon_icon_mini)]</texture>
+                </control>
+                <control type="label">
+                    <left>1540</left>
+                    <width max="300">auto</width>
+                    <height>20</height>
+                    <font>font10</font>
+                    <textcolor>FF555555</textcolor>
+                    <align>right</align>
+                    <label>[B]$INFO[System.Time][/B]  •  $INFO[System.Date]</label>
+                </control>
+            </control>
+
+            <!-- ── Clearlogo (right side, centered in empty space) ── -->
+            <control type="image" id="201">
+                <left>950</left>
+                <top>120</top>
+                <width>920</width>
+                <height>250</height>
+                <aspectratio aligny="center" align="center">keep</aspectratio>
+                <texture>$INFO[Window.Property(clearlogo)]</texture>
+                <visible>!String.IsEqual(Window.Property(clearlogo),false)</visible>
+            </control>
+            <!-- ══════════════════════════════════════════════════════════════════
+                 HERO: Poster Left + Info Right
+                 ══════════════════════════════════════════════════════════════════ -->
+            <control type="group">
+                <left>60</left>
+                <top>75</top>
+
+                <!-- ── Poster ── -->
+                <control type="image" id="200">
+                    <width>260</width>
+                    <height>390</height>
+                    <aspectratio aligny="top">keep</aspectratio>
+                    <texture diffuse="poster_w217_h320.png">$INFO[Window.Property(poster)]</texture>
+                </control>
+
+                <!-- ── Info Panel (right of poster) ── -->
+                <control type="group">
+                    <left>300</left>
+                    <top>15</top>
+
+                    <!-- Title (always visible) -->
+                    <control type="label">
+                        <width>900</width>
+                        <height>50</height>
+                        <font>font_title</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <label>[B]$INFO[Window.Property(title)][/B]</label>
+                    </control>
+
+                    <!-- Tagline (italic) -->
+                    <control type="label" id="3001">
+                        <top>65</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FF777777</textcolor>
+                    </control>
+
+                    <!-- Genre -->
+                    <control type="label">
+                        <top>110</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FFBBBBBB</textcolor>
+                        <label>$INFO[Window.Property(genre)]</label>
+                    </control>
+                    <!-- Year / Runtime / Status -->
+                    <control type="label" id="2001">
+                        <top>145</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FFBBBBBB</textcolor>
+                    </control>
+
+                    <!-- Rating -->
+                    <control type="group">
+                        <top>190</top>
+                        <visible>String.IsEqual(Window.Property(tmdb_rating),true)</visible>
+                        <control type="label" id="4005">
+                            <width max="150">auto</width>
+                            <height>30</height>
+                            <font>font14</font>
+                            <textcolor>FFFFCC00</textcolor>
+                            <label>★ </label>
+                        </control>
+                    </control>
+
+                    <!-- Action Buttons (minimalist) -->
+                    <control type="group">
+                        <top>240</top>
+                        <control type="grouplist">
+                            <width>900</width>
+                            <height>50</height>
+                            <orientation>horizontal</orientation>
+                            <itemgap>5</itemgap>
+
+                            <control type="button" id="10">
+                                <width min="180">auto</width>
+                                <height>48</height>
+                                <onright>11</onright>
+                                <onleft>17</onleft>
+                                <ondown>20</ondown>
+                                <label>$INFO[Window.Property(button10.label)]</label>
+                                <font>font13</font>
+                                <textcolor>FF999999</textcolor>
+                                <focusedcolor>FFFFFFFF</focusedcolor>
+                                <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                                <texturenofocus>-</texturenofocus>
+                                <align>center</align>
+                                <aligny>center</aligny>
+                                <textoffsetx>30</textoffsetx>
+                                <textallowoverflow>false</textallowoverflow>
+                            </control>
+                            <control type="button" id="11">
+                                <width min="180">auto</width>
+                                <height>48</height>
+                                <onright>15</onright>
+                                <onleft>10</onleft>
+                                <ondown>20</ondown>
+                                <label>$INFO[Window.Property(button11.label)]</label>
+                                <font>font13</font>
+                                <textcolor>FF999999</textcolor>
+                                <focusedcolor>FFFFFFFF</focusedcolor>
+                                <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                                <texturenofocus>-</texturenofocus>
+                                <align>center</align>
+                                <aligny>center</aligny>
+                                <textoffsetx>30</textoffsetx>
+                                <textallowoverflow>false</textallowoverflow>
+                            </control>
+                            <control type="button" id="15">
+                                <width min="180">auto</width>
+                                <height>48</height>
+                                <onright>16</onright>
+                                <onleft>11</onleft>
+                                <ondown>20</ondown>
+                                <label>$INFO[Window.Property(button15.label)]</label>
+                                <font>font13</font>
+                                <textcolor>FF999999</textcolor>
+                                <focusedcolor>FFFFFFFF</focusedcolor>
+                                <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                                <texturenofocus>-</texturenofocus>
+                                <align>center</align>
+                                <aligny>center</aligny>
+                                <textoffsetx>30</textoffsetx>
+                                <textallowoverflow>false</textallowoverflow>
+                            </control>
+                            <control type="button" id="16">
+                                <width min="180">auto</width>
+                                <height>48</height>
+                                <onright>17</onright>
+                                <onleft>15</onleft>
+                                <ondown>20</ondown>
+                                <label>$INFO[Window.Property(button16.label)]</label>
+                                <font>font13</font>
+                                <textcolor>FF999999</textcolor>
+                                <focusedcolor>FFFFFFFF</focusedcolor>
+                                <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                                <texturenofocus>-</texturenofocus>
+                                <align>center</align>
+                                <aligny>center</aligny>
+                                <textoffsetx>30</textoffsetx>
+                                <textallowoverflow>false</textallowoverflow>
+                            </control>
+                            <control type="button" id="17">
+                                <width min="180">auto</width>
+                                <height>48</height>
+                                <onright>10</onright>
+                                <onleft>16</onleft>
+                                <ondown>20</ondown>
+                                <label>$INFO[Window.Property(button17.label)]</label>
+                                <font>font13</font>
+                                <textcolor>FF999999</textcolor>
+                                <focusedcolor>FFFFFFFF</focusedcolor>
+                                <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                                <texturenofocus>-</texturenofocus>
+                                <align>center</align>
+                                <aligny>center</aligny>
+                                <textoffsetx>30</textoffsetx>
+                                <textallowoverflow>false</textallowoverflow>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+            </control>
+
+            <!-- ══════════════════════════════════════════════════════════════════
+                 TAB PILLS ROW
+                 ══════════════════════════════════════════════════════════════════ -->
+            <control type="group">
+                <top>460</top>
+                <left>60</left>
+                <control type="grouplist">
+                    <width>1800</width>
+                    <height>50</height>
+                    <orientation>horizontal</orientation>
+                    <itemgap>5</itemgap>
+
+                    <control type="button" id="20">
+                        <width min="160">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,overview)</onfocus>
+                        <onright>21</onright>
+                        <onleft>26</onleft>
+                        <onup>10</onup>
+                        <ondown>2000</ondown>
+                        <label>Overview</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="21">
+                        <width min="120">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,cast)</onfocus>
+                        <onright>22</onright>
+                        <onleft>20</onleft>
+                        <onup>10</onup>
+                        <ondown>2050</ondown>
+                        <label>Cast</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="22">
+                        <width min="140">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,similar)</onfocus>
+                        <onright>23</onright>
+                        <onleft>21</onleft>
+                        <onup>10</onup>
+                        <ondown>2051</ondown>
+                        <label>Similar</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="23">
+                        <width min="160">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,reviews)</onfocus>
+                        <onright>24</onright>
+                        <onleft>22</onleft>
+                        <onup>10</onup>
+                        <ondown>2054</ondown>
+                        <label>Reviews</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="24">
+                        <width min="140">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,videos)</onfocus>
+                        <onright>25</onright>
+                        <onleft>23</onleft>
+                        <onup>10</onup>
+                        <ondown>2060</ondown>
+                        <label>Videos</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="25">
+                        <width min="140">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,trivia)</onfocus>
+                        <onright>26</onright>
+                        <onleft>24</onleft>
+                        <onup>10</onup>
+                        <ondown>2056</ondown>
+                        <label>Trivia</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                    <control type="button" id="26">
+                        <width min="140">auto</width>
+                        <height>48</height>
+                        <onfocus>SetProperty(active_tab,more)</onfocus>
+                        <onright>20</onright>
+                        <onleft>25</onleft>
+                        <onup>10</onup>
+                        <ondown>2061</ondown>
+                        <label>More</label>
+                        <font>font13</font>
+                        <textcolor>FF999999</textcolor>
+                        <focusedcolor>FFFFFFFF</focusedcolor>
+                        <texturefocus colordiffuse="33FFFFFF" border="8">panel-256-box.png</texturefocus>
+                        <texturenofocus>-</texturenofocus>
+                        <align>center</align>
+                        <aligny>center</aligny>
+                        <textoffsetx>30</textoffsetx>
+                        <textallowoverflow>false</textallowoverflow>
+                    </control>
+                </control>
+                <!-- Separator line -->
+                <control type="image">
+                    <top>52</top>
+                    <width>1800</width>
+                    <height>1</height>
+                    <texture colordiffuse="22FFFFFF">white.png</texture>
+                </control>
+            </control>
+
+            <!-- ══════════════════════════════════════════════════════════════════
+                 CONTENT AREA — 510px tall (y:510 to y:1020)
+                 ══════════════════════════════════════════════════════════════════ -->
+            <control type="group">
+                <top>510</top>
+                <left>60</left>
+                <width>1800</width>
+                <height>510</height>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: OVERVIEW — Full plot
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),overview)</visible>
+                    <!-- Card background -->
+                    <control type="image">
+                        <left>80</left>
+                        <top>15</top>
+                        <width>1640</width>
+                        <height>480</height>
+                        <texture colordiffuse="BB111115" border="20">circle.png</texture>
+                    </control>
+                    <!-- Synopsis label -->
+                    <control type="label">
+                        <left>120</left>
+                        <top>35</top>
+                        <width>200</width>
+                        <height>25</height>
+                        <font>font12</font>
+                        <textcolor>FF666666</textcolor>
+                        <label>[B]SYNOPSIS[/B]</label>
+                    </control>
+                    <!-- Plot text -->
+                    <control type="textbox" id="2000">
+                        <left>120</left>
+                        <top>70</top>
+                        <width>1560</width>
+                        <height>400</height>
+                        <font>font14</font>
+                        <align>left</align>
+                        <textcolor>FFCCCCCC</textcolor>
+                        <label>$INFO[Window.Property(plot)]</label>
+                        <autoscroll delay="10000" time="3000" repeat="5000">true</autoscroll>
+                        <onup>20</onup>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: CAST
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),cast)</visible>
+                    <control type="label">
+                        <width>800</width>
+                        <height>25</height>
+                        <font>font12</font>
+                        <textcolor>FF888888</textcolor>
+                        <label>Cast $INFO[Window.Property(cast.number)]  |  $INFO[Container(2050).ListItem.Property(name)]$INFO[Container(2050).ListItem.Property(role), • ]</label>
+                    </control>
+                    <control type="fixedlist" id="2050">
+                        <top>35</top>
+                        <width>1800</width>
+                        <height>460</height>
+                        <onup>21</onup>
+                        <orientation>horizontal</orientation>
+                        <scrolltime tween="sine">400</scrolltime>
+                        <focusposition>0</focusposition>
+                        <movement>3</movement>
+                        <itemlayout height="420" width="210">
+                            <control type="image">
+                                <left>10</left>
+                                <top>10</top>
+                                <height>310</height>
+                                <width>190</width>
+                                <aspectratio>scale</aspectratio>
+                                <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                            </control>
+                            <control type="label">
+                                <top>330</top>
+                                <left>10</left>
+                                <width>190</width>
+                                <height>22</height>
+                                <font>font12</font>
+                                <textcolor>FFAAAAAA</textcolor>
+                                <align>center</align>
+                                <label>$INFO[ListItem.Property(name)]</label>
+                            </control>
+                            <control type="label">
+                                <top>355</top>
+                                <left>10</left>
+                                <width>190</width>
+                                <height>20</height>
+                                <font>font10</font>
+                                <textcolor>FF666666</textcolor>
+                                <align>center</align>
+                                <label>$INFO[ListItem.Property(role)]</label>
+                            </control>
+                        </itemlayout>
+                        <focusedlayout height="420" width="210">
+                            <control type="image">
+                                <left>6</left>
+                                <top>6</top>
+                                <height>318</height>
+                                <width>198</width>
+                                <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                <visible>Control.HasFocus(2050)</visible>
+                            </control>
+                            <control type="image">
+                                <left>10</left>
+                                <top>10</top>
+                                <height>310</height>
+                                <width>190</width>
+                                <aspectratio>scale</aspectratio>
+                                <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                            </control>
+                            <control type="label">
+                                <top>330</top>
+                                <left>10</left>
+                                <width>190</width>
+                                <height>22</height>
+                                <font>font12</font>
+                                <textcolor>FFFFFFFF</textcolor>
+                                <align>center</align>
+                                <label>$INFO[ListItem.Property(name)]</label>
+                            </control>
+                            <control type="label">
+                                <top>355</top>
+                                <left>10</left>
+                                <width>190</width>
+                                <height>20</height>
+                                <font>font10</font>
+                                <textcolor>FFAAAAAA</textcolor>
+                                <align>center</align>
+                                <label>$INFO[ListItem.Property(role)]</label>
+                            </control>
+                        </focusedlayout>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: SIMILAR — Recommended, More Like This, AI Similar
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),similar)</visible>
+                    <control type="grouplist">
+                        <width>1800</width>
+                        <height>510</height>
+                        <orientation>vertical</orientation>
+                        <itemgap>15</itemgap>
+
+                        <!-- Recommended (2051) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2051).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Recommended $INFO[Window.Property(recommended.number)]  |  $INFO[Container(2051).ListItem.Property(name)]</label>
+                            </control>
+                            <control type="fixedlist" id="2051">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>22</onup>
+                                <ondown>2052</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2051)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- More Like This (2052) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2052).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>More Like This $INFO[Window.Property(similar.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2052">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>2051</onup>
+                                <ondown>2053</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2052)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- AI Similar (2053) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2053).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>AI Similar $INFO[Window.Property(ai_similar.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2053">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>2052</onup>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2053)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: REVIEWS
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),reviews)</visible>
+                    <control type="grouplist">
+                        <width>1800</width>
+                        <height>510</height>
+                        <orientation>vertical</orientation>
+                        <itemgap>15</itemgap>
+
+                        <!-- Reviews (2054) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2054).NumItems,0)</visible>
+                            <height>300</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Reviews $INFO[Window.Property(tmdb_reviews.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2054">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>260</height>
+                                <onup>23</onup>
+                                <ondown>2055</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>1</movement>
+                                <itemlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FF1F2020" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FFCCCCCC</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FFB7B4BB" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FF1F2020</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- Comments (2055) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2055).NumItems,0)</visible>
+                            <height>300</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Trakt Comments $INFO[Window.Property(trakt_comments.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2055">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>260</height>
+                                <onup>2054</onup>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>1</movement>
+                                <itemlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FF1F2020" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FFCCCCCC</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FFB7B4BB" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FF1F2020</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: VIDEOS — YouTube (2060)
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),videos)</visible>
+                    <control type="label">
+                        <width>600</width>
+                        <height>25</height>
+                        <font>font12</font>
+                        <textcolor>FF888888</textcolor>
+                        <label>YouTube Videos $INFO[Window.Property(youtube_videos.number)]</label>
+                    </control>
+                    <control type="fixedlist" id="2060">
+                        <top>35</top>
+                        <width>1800</width>
+                        <height>420</height>
+                        <onup>24</onup>
+                        <orientation>horizontal</orientation>
+                        <scrolltime tween="sine">400</scrolltime>
+                        <focusposition>0</focusposition>
+                        <movement>2</movement>
+                        <itemlayout height="350" width="500">
+                            <control type="image">
+                                <left>10</left>
+                                <top>10</top>
+                                <height>280</height>
+                                <width>480</width>
+                                <aspectratio>scale</aspectratio>
+                                <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                            </control>
+                            <control type="label">
+                                <top>300</top>
+                                <left>10</left>
+                                <width>480</width>
+                                <height>22</height>
+                                <font>font10</font>
+                                <textcolor>FFAAAAAA</textcolor>
+                                <label>$INFO[ListItem.Property(name)]</label>
+                            </control>
+                        </itemlayout>
+                        <focusedlayout height="350" width="500">
+                            <control type="image">
+                                <left>6</left>
+                                <top>6</top>
+                                <height>288</height>
+                                <width>488</width>
+                                <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                <visible>Control.HasFocus(2060)</visible>
+                            </control>
+                            <control type="image">
+                                <left>10</left>
+                                <top>10</top>
+                                <height>280</height>
+                                <width>480</width>
+                                <aspectratio>scale</aspectratio>
+                                <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                            </control>
+                            <control type="label">
+                                <top>300</top>
+                                <left>10</left>
+                                <width>480</width>
+                                <height>22</height>
+                                <font>font12</font>
+                                <textcolor>FFFFFFFF</textcolor>
+                                <label>$INFO[ListItem.Property(name)]</label>
+                            </control>
+                        </focusedlayout>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: TRIVIA — Trivia(2056), Blunders(2057), Parental(2058)
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),trivia)</visible>
+                    <control type="grouplist">
+                        <width>1800</width>
+                        <height>510</height>
+                        <orientation>vertical</orientation>
+                        <itemgap>15</itemgap>
+
+                        <!-- Trivia (2056) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2056).NumItems,0)</visible>
+                            <height>300</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Trivia $INFO[Window.Property(imdb_trivia.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2056">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>260</height>
+                                <onup>25</onup>
+                                <ondown>2057</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>1</movement>
+                                <itemlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FF1F2020" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FFCCCCCC</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FFB7B4BB" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FF1F2020</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- Blunders (2057) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2057).NumItems,0)</visible>
+                            <height>300</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Blunders $INFO[Window.Property(imdb_blunders.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2057">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>260</height>
+                                <onup>2056</onup>
+                                <ondown>2058</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>1</movement>
+                                <itemlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FF1F2020" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FFCCCCCC</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FFB7B4BB" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FF1F2020</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- Parental Guide (2058) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2058).NumItems,0)</visible>
+                            <height>300</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Parental Guide $INFO[Window.Property(imdb_parentsguide.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2058">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>260</height>
+                                <onup>2057</onup>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>1</movement>
+                                <itemlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FF1F2020" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FFCCCCCC</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="240" width="500">
+                                    <control type="image">
+                                        <width>480</width>
+                                        <height>230</height>
+                                        <texture colordiffuse="FFB7B4BB" border="25">circle.png</texture>
+                                    </control>
+                                    <control type="label">
+                                        <left>20</left>
+                                        <top>15</top>
+                                        <width>440</width>
+                                        <height>200</height>
+                                        <font>font12</font>
+                                        <textcolor>FF1F2020</textcolor>
+                                        <label>$INFO[ListItem.Property(text)]</label>
+                                        <wrapmultiline>true</wrapmultiline>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+
+                <!-- ═══════════════════════════════════════
+                     TAB: MORE — Year(2061), Genres(2062), Networks(2063), Collection(2064)
+                     ═══════════════════════════════════════ -->
+                <control type="group">
+                    <visible>String.IsEqual(Window.Property(active_tab),more)</visible>
+                    <control type="grouplist">
+                        <width>1800</width>
+                        <height>510</height>
+                        <orientation>vertical</orientation>
+                        <itemgap>15</itemgap>
+
+                        <!-- More from Year (2061) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2061).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>More from Year $INFO[Window.Property(more_from_year.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2061">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>26</onup>
+                                <ondown>2062</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2061)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- More from Genres (2062) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2062).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>More from Genres $INFO[Window.Property(more_from_genres.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2062">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>2061</onup>
+                                <ondown>2063</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2062)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- More from Networks (2063) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2063).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>More from Networks $INFO[Window.Property(more_from_networks.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2063">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>2062</onup>
+                                <ondown>2064</ondown>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2063)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+
+                        <!-- Collection (2064) -->
+                        <control type="group">
+                            <visible>Integer.IsGreater(Container(2064).NumItems,0)</visible>
+                            <height>460</height>
+                            <control type="label">
+                                <width>600</width>
+                                <height>25</height>
+                                <font>font12</font>
+                                <textcolor>FF888888</textcolor>
+                                <label>Collection $INFO[Window.Property(collection.number)]</label>
+                            </control>
+                            <control type="fixedlist" id="2064">
+                                <top>35</top>
+                                <width>1800</width>
+                                <height>420</height>
+                                <onup>2063</onup>
+                                <orientation>horizontal</orientation>
+                                <scrolltime tween="sine">400</scrolltime>
+                                <focusposition>0</focusposition>
+                                <movement>3</movement>
+                                <itemlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </itemlayout>
+                                <focusedlayout height="400" width="200">
+                                    <control type="image">
+                                        <left>6</left>
+                                        <top>1</top>
+                                        <height>398</height>
+                                        <width>188</width>
+                                        <texture colordiffuse="FFFFFFFF" border="10">panel-256-box.png</texture>
+                                        <visible>Control.HasFocus(2064)</visible>
+                                    </control>
+                                    <control type="image">
+                                        <left>10</left>
+                                        <top>5</top>
+                                        <height>390</height>
+                                        <width>180</width>
+                                        <aspectratio>scale</aspectratio>
+                                        <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Property(thumbnail)]</texture>
+                                    </control>
+                                </focusedlayout>
+                            </control>
+                        </control>
+                    </control>
+                </control>
+
+            </control>
+            <!-- END CONTENT AREA -->
+        </control>
+    </controls>
+</window>

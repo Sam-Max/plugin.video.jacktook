@@ -12,11 +12,17 @@ class AsObj:
         self._obj_list = []
         self._list_only = False
         if isinstance(self._json, list):
-            self._obj_list = [AsObj(o) if isinstance(o, (dict, list)) else o for o in self._json]
+            self._obj_list = [
+                AsObj(o) if isinstance(o, (dict, list)) else o for o in self._json
+            ]
             self._list_only = True
         elif dict_key:
             self._obj_list = [
-                AsObj({k: v}, key=k, dict_key_name=dict_key_name) if isinstance(v, (dict, list)) else v
+                (
+                    AsObj({k: v}, key=k, dict_key_name=dict_key_name)
+                    if isinstance(v, (dict, list))
+                    else v
+                )
                 for k, v in self._json.items()
             ]
             self._list_only = True
@@ -24,7 +30,9 @@ class AsObj:
             for key, value in self._json.items():
                 if isinstance(value, (dict, list)):
                     if self._key and key == self._key:
-                        final = AsObj(value, dict_key=isinstance(value, dict), dict_key_name=key)
+                        final = AsObj(
+                            value, dict_key=isinstance(value, dict), dict_key_name=key
+                        )
                         self._obj_list = final
                     else:
                         final = AsObj(value)
@@ -41,7 +49,7 @@ class AsObj:
         return delattr(self, key)
 
     def __getitem__(self, key):
-        if isinstance(key, int) and self._obj_list:
+        if isinstance(key, (int, slice)):
             return self._obj_list[key]
         else:
             return getattr(self, key)
@@ -57,15 +65,17 @@ class AsObj:
 
     def __setitem__(self, key, value):
         return setattr(self, key, value)
-    
+
     def __str__(self):
         return str(self._obj_list) if self._list_only else str(self._dict())
 
     if sys.version_info >= (3, 8):
+
         def __reversed__(self):
             return reversed(self._dict())
 
     if sys.version_info >= (3, 9):
+
         def __class_getitem__(self, key):
             return self.__dict__.__class_getitem__(key)
 
@@ -76,7 +86,12 @@ class AsObj:
             return self._dict().__or__(value)
 
     def copy(self):
-        return AsObj(self._json.copy(), key=self._key, dict_key=self._dict_key, dict_key_name=self._dict_key_name)
+        return AsObj(
+            self._json.copy(),
+            key=self._key,
+            dict_key=self._dict_key,
+            dict_key_name=self._dict_key_name,
+        )
 
     def get(self, key, value=None):
         return self._dict().get(key, value)
@@ -89,10 +104,10 @@ class AsObj:
 
     def pop(self, key, value=None):
         return self.__dict__.pop(key, value)
-    
+
     def popitem(self):
         return self.__dict__.popitem()
-    
+
     def setdefault(self, key, value=None):
         return self.__dict__.setdefault(key, value)
 
@@ -101,23 +116,17 @@ class AsObj:
 
     def values(self):
         return self._dict().values()
-    
+
     def to_dict(self):
         if self._list_only:
-            return [
-                o.to_dict() if isinstance(o, AsObj) else o
-                for o in self._obj_list
-            ]
+            return [o.to_dict() if isinstance(o, AsObj) else o for o in self._obj_list]
         else:
             result = {}
             for k, v in self._dict().items():
                 if isinstance(v, AsObj):
                     result[k] = v.to_dict()
                 elif isinstance(v, list):
-                    result[k] = [
-                        i.to_dict() if isinstance(i, AsObj) else i
-                        for i in v
-                    ]
+                    result[k] = [i.to_dict() if isinstance(i, AsObj) else i for i in v]
                 else:
                     result[k] = v
             return result

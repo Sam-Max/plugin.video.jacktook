@@ -81,6 +81,7 @@ _GUI_ACTIONS = frozenset(
         "test_run_next",
         "test_resume_dialog",
         "test_download_dialog",
+        "extras",
     }
 )
 
@@ -539,6 +540,25 @@ def _route_gui(action, params):
             "run_skip_intro_dialog": run_skip_intro_dialog,
         }
         actions[action](params)
+    elif action == "extras":
+        from lib.gui.extras_window import ExtrasWindow
+        from lib.jacktook.utils import ADDON_PATH
+
+        # Load the metadata properties needed by the Extras window
+        item_information = {
+            "tmdb_id": params.get("id"),
+            "imdb_id": params.get("imdb_id"),
+            "media_type": params.get("media_type"),
+            "title": params.get("title"),
+            "plot": params.get("plot", ""),
+            "genre": params.get("genre", ""),
+            "rating": params.get("rating", ""),
+            "tv_data": params.get("tv_data", "{}"),
+        }
+        xml_file = "extras.xml"
+        window = ExtrasWindow(xml_file, ADDON_PATH, item_information=item_information)
+        window.doModal()
+        del window
     else:
         from lib.navigation import (
             test_source_select,

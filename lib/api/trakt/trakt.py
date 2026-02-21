@@ -255,7 +255,6 @@ class TraktBase:
             "with_auth": False,
             "pagination": False,
         }
-        kodilog(f"get_trakt_id_by_tmdb params: {params}")
         results = self.get_trakt(params)
         if results and isinstance(results, list) and len(results) > 0:
             try:
@@ -669,6 +668,26 @@ class TraktLists(TraktBase):
         )
         lists_cache.delete_all_lists()
         return result
+
+    def trakt_comments(self, media_type, tmdb_id, sort_type="likes", page_no=1):
+        if media_type in ("movie", "movies"):
+            media_type = "movies"
+        else:
+            media_type = "shows"
+
+        trakt_id = self.get_trakt_id_by_tmdb(tmdb_id, media_type=media_type[:-1])
+        if not trakt_id:
+            return []
+
+        params = {
+            "path": f"{media_type}/%s/comments/%s",
+            "path_insert": (trakt_id, sort_type),
+            "with_auth": False,
+            "params": {"limit": 20},
+            "pagination": True,
+            "page_no": page_no,
+        }
+        return self.get_trakt(params)
 
     def add_to_collection(self, media_type, ids):
         if media_type in ("movie", "movies"):
@@ -1091,7 +1110,6 @@ class TraktScrobble(TraktBase):
                     except Exception:
                         continue
 
-            # kodilog("Trakt: No resume point found.")
         except Exception as e:
             kodilog(f"Trakt: Error fetching last tracked position: {e}")
             return 0.0

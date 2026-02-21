@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<window type="dialog" id="1200">
+    <defaultcontrol always="true">3000</defaultcontrol>
+    <zorder>1</zorder>
+    <animation effect="fade" start="0" end="100" time="300">WindowOpen</animation>
+    <animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+
+    <controls>
+        <control type="group">
+            <!-- Full-screen solid backdrop to hide previous window -->
+            <control type="image">
+                <left>0</left>
+                <top>0</top>
+                <width>1920</width>
+                <height>1080</height>
+                <texture colordiffuse="FF111111">white.png</texture>
+            </control>
+
+            <!-- Optional fanart background (dimmed) -->
+            <control type="image" id="300">
+                <left>0</left>
+                <top>0</top>
+                <width>1920</width>
+                <height>1080</height>
+                <texture colordiffuse="33FFFFFF">$INFO[Window.Property(fanart)]</texture>
+                <aspectratio>scale</aspectratio>
+            </control>
+
+            <!-- Fade-in animation -->
+            <animation effect="fade" end="100" time="200" delay="400">WindowOpen</animation>
+
+            <!-- ── Top Bar ── -->
+            <control type="group">
+                <left>40</left>
+                <top>15</top>
+                <control type="label">
+                    <left>0</left>
+                    <width>300</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>FF999999</textcolor>
+                    <label>[B]Actor Info[/B]</label>
+                </control>
+            </control>
+
+            <!-- ══════════════════════════════════════════════════════════════════
+                 ACTOR HERO: Photo Left + Info Right
+                 ══════════════════════════════════════════════════════════════════ -->
+            <control type="group">
+                <left>60</left>
+                <top>65</top>
+
+                <!-- ── Actor Photo ── -->
+                <control type="image" id="200">
+                    <width>300</width>
+                    <height>450</height>
+                    <aspectratio aligny="top">keep</aspectratio>
+                    <texture diffuse="poster_w217_h320.png">$INFO[Window.Property(photo)]</texture>
+                </control>
+
+                <!-- ── Info Panel ── -->
+                <control type="group">
+                    <left>340</left>
+                    <top>10</top>
+
+                    <!-- Actor Name -->
+                    <control type="label">
+                        <width>900</width>
+                        <height>50</height>
+                        <font>font_title</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <label>[B]$INFO[Window.Property(name)][/B]</label>
+                    </control>
+
+                    <!-- Known For -->
+                    <control type="label">
+                        <top>60</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FF999999</textcolor>
+                        <label>$INFO[Window.Property(known_for)]</label>
+                    </control>
+
+                    <!-- Birthday + Place of Birth -->
+                    <control type="label">
+                        <top>100</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FFBBBBBB</textcolor>
+                        <label>$INFO[Window.Property(birthday_info)]</label>
+                    </control>
+
+                    <!-- Deathday (if applicable) -->
+                    <control type="label">
+                        <top>138</top>
+                        <width>900</width>
+                        <height>30</height>
+                        <font>font14</font>
+                        <textcolor>FF888888</textcolor>
+                        <label>$INFO[Window.Property(deathday_info)]</label>
+                        <visible>!String.IsEmpty(Window.Property(deathday_info))</visible>
+                    </control>
+
+                    <!-- Biography -->
+                    <control type="group">
+                        <top>180</top>
+                        <!-- Card background -->
+                        <control type="image">
+                            <width>1440</width>
+                            <height>280</height>
+                            <texture colordiffuse="BB111115" border="20">circle.png</texture>
+                        </control>
+                        <control type="label">
+                            <left>25</left>
+                            <top>15</top>
+                            <width>200</width>
+                            <height>25</height>
+                            <font>font12</font>
+                            <textcolor>FF666666</textcolor>
+                            <label>[B]BIOGRAPHY[/B]</label>
+                        </control>
+                        <control type="textbox" id="100">
+                            <left>25</left>
+                            <top>45</top>
+                            <width>1390</width>
+                            <height>220</height>
+                            <font>font12</font>
+                            <textcolor>FFCCCCCC</textcolor>
+                            <label>$INFO[Window.Property(biography)]</label>
+                            <autoscroll delay="8000" time="3000" repeat="5000">true</autoscroll>
+                        </control>
+                    </control>
+                </control>
+            </control>
+
+            <!-- ══════════════════════════════════════════════════════════════════
+                 FILMOGRAPHY — Horizontal carousel
+                 ══════════════════════════════════════════════════════════════════ -->
+            <control type="group">
+                <left>60</left>
+                <top>540</top>
+
+                <!-- Section Label -->
+                <control type="label">
+                    <width>400</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>FF999999</textcolor>
+                    <label>[B]FILMOGRAPHY[/B]</label>
+                </control>
+
+                <!-- Film count -->
+                <control type="label">
+                    <left>230</left>
+                    <width>200</width>
+                    <height>30</height>
+                    <font>font12</font>
+                    <textcolor>FF555555</textcolor>
+                    <label>$INFO[Window.Property(filmography.count)]</label>
+                </control>
+
+                <!-- Filmography List -->
+                <control type="list" id="3000">
+                    <top>40</top>
+                    <width>1800</width>
+                    <height>490</height>
+                    <orientation>horizontal</orientation>
+                    <scrolltime tween="sine">400</scrolltime>
+                    <focusposition>0</focusposition>
+                    <movement>3</movement>
+                    <itemlayout height="460" width="220">
+                        <control type="image">
+                            <left>5</left>
+                            <width>200</width>
+                            <height>300</height>
+                            <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Art(thumb)]</texture>
+                            <aspectratio>scale</aspectratio>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>310</top>
+                            <width>200</width>
+                            <height>25</height>
+                            <font>font10</font>
+                            <textcolor>FFCCCCCC</textcolor>
+                            <label>$INFO[ListItem.Label]</label>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>338</top>
+                            <width>200</width>
+                            <height>20</height>
+                            <font>font12</font>
+                            <textcolor>FF777777</textcolor>
+                            <label>$INFO[ListItem.Property(role)]</label>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>362</top>
+                            <width>200</width>
+                            <height>20</height>
+                            <font>font10</font>
+                            <textcolor>FF555555</textcolor>
+                            <label>$INFO[ListItem.Property(year)]</label>
+                        </control>
+                    </itemlayout>
+                    <focusedlayout height="460" width="220">
+                        <control type="image">
+                            <left>0</left>
+                            <top>-5</top>
+                            <width>210</width>
+                            <height>310</height>
+                            <texture colordiffuse="FFFFFFFF" border="8">panel-256-box.png</texture>
+                        </control>
+                        <control type="image">
+                            <left>5</left>
+                            <width>200</width>
+                            <height>300</height>
+                            <texture diffuse="poster_w217_h320.png">$INFO[ListItem.Art(thumb)]</texture>
+                            <aspectratio>scale</aspectratio>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>310</top>
+                            <width>200</width>
+                            <height>25</height>
+                            <font>font10</font>
+                            <textcolor>FFFFFFFF</textcolor>
+                            <label>$INFO[ListItem.Label]</label>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>338</top>
+                            <width>200</width>
+                            <height>20</height>
+                            <font>font12</font>
+                            <textcolor>FFAAAAAA</textcolor>
+                            <label>$INFO[ListItem.Property(role)]</label>
+                        </control>
+                        <control type="label">
+                            <left>5</left>
+                            <top>362</top>
+                            <width>200</width>
+                            <height>20</height>
+                            <font>font10</font>
+                            <textcolor>FF777777</textcolor>
+                            <label>$INFO[ListItem.Property(year)]</label>
+                        </control>
+                    </focusedlayout>
+                </control>
+            </control>
+        </control>
+    </controls>
+</window>
