@@ -1,3 +1,11 @@
+## 1.1.1
+- Stremio: Support multiple configurations of the same addon by identifying them via transport URL.
+- Stremio: Increase configurable request timeout range up to 120s and apply it globally to all requests.
+
+Spanish:
+- Stremio: Soporte para múltiples configuraciones del mismo addon identificándolos mediante la URL de transporte.
+- Stremio: Aumento del rango de tiempo de espera (timeout) configurable hasta 120 segundos y aplicación global a todas las peticiones.
+
 ## 1.1.0
 - Add 'Downgrade Addon Version' functionality in settings to easily revert to previous releases.
 - Add 'Bypass Addon Filters' for selected Stremio addons, allowing them to skip Jacktook's native size/quality filtering.
