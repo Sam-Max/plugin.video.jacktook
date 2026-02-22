@@ -212,3 +212,22 @@ class AllDebrid(DebridClient):
     def get_user_info(self):
         response = self._make_request("GET", "/user")
         return response.get("data", {})
+
+    def days_remaining(self):
+        try:
+            user = self.get_user_info()
+            if not user or "subscription" not in user:
+                return None
+
+            premium_until = user["subscription"].get("premium_until")
+            if not premium_until:
+                return None
+
+            import datetime
+
+            expires = datetime.datetime.fromtimestamp(premium_until)
+            days = (expires - datetime.datetime.now()).days
+            return days
+        except Exception as e:
+            kodilog(f"Error calculating AllDebrid days remaining: {e}")
+            return None

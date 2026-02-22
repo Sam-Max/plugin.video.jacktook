@@ -83,10 +83,7 @@ class Premiumize(DebridClient):
         expires_in = int(response["expires_in"])
         sleep_interval = int(response["interval"])
         start, time_passed = time.time(), 0
-        while (
-            not progressDialog.iscanceled()
-            and time_passed < expires_in
-        ):
+        while not progressDialog.iscanceled() and time_passed < expires_in:
             ksleep(1000 * sleep_interval)
             response = self.authorize(device_code)
             if "error" in response:
@@ -195,3 +192,25 @@ class Premiumize(DebridClient):
                 or torrent_name == torrent["name"]
             ):
                 return torrent
+
+    def get_account_info(self):
+        return self._make_request("GET", f"{self.BASE_URL}/account/info")
+
+    def days_remaining(self):
+        try:
+            account = self.get_account_info()
+            if not account or account.get("status") != "success":
+                return None
+
+            premium_until = account.get("premium_until")
+            if not premium_until:
+                return None
+
+            import datetime
+
+            expires = datetime.datetime.fromtimestamp(premium_until)
+            days = (expires - datetime.datetime.now()).days
+            return days
+        except Exception as e:
+            # kodilog(f"Error calculating Premiumize days remaining: {e}")
+            return None

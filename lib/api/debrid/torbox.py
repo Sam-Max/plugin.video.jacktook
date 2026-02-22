@@ -159,11 +159,9 @@ class Torbox(DebridClient):
         response_data = self.get_token(device_code, is_expected_to_fail=True)
         if response_data.get("success"):
             token_data = response_data.get("data", {})
-            # The structure is data: { access_token: "...", ... }
             if isinstance(token_data, dict):
-                 return {"token": token_data.get("access_token")}
-            # Fallback if API changes or logical mismatch, though snippet suggests structure above
-            return {"token": token_data} 
+                return {"token": token_data.get("access_token")}
+            return {"token": token_data}
         return response_data
 
     def remove_auth(self):
@@ -217,8 +215,11 @@ class Torbox(DebridClient):
 
                         user_data = self.get_user()
                         if user_data.get("success"):
-                            set_setting("torbox_user", user_data.get("data", {}).get("customer_email", ""))
-                        
+                            set_setting(
+                                "torbox_user",
+                                user_data.get("data", {}).get("customer_email", ""),
+                            )
+
                         progressDialog.update_progress(100, "Authentication completed.")
                         progressDialog.close_dialog()
                         dialog_ok("Success", "Torbox authentication successful.")
@@ -240,20 +241,27 @@ class Torbox(DebridClient):
             account_info = self.get_user()
             if not account_info.get("success"):
                 return None
-            
+
             data = account_info.get("data", {})
             expires_at = data.get("premium_expires_at")
             if not expires_at:
                 return None
 
-            FormatDateTime = '%Y-%m-%dT%H:%M:%SZ'
-            try:
-                expires = datetime.datetime.strptime(expires_at, FormatDateTime)
-            except ValueError:
-                # Handle cases where microsecond might be missing or different format
-                expires = datetime.datetime(*(time_lib.strptime(expires_at, FormatDateTime)[0:6]))
-            
-            days = (expires - datetime.datetime.today()).days
+            # Try common ISO formats
+            for fmt in (
+                "%Y-%m-%dT%H:%M:%S.%fZ",
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S",
+            ):
+                try:
+                    expires = datetime.datetime.strptime(expires_at, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                return None
+
+            days = (expires - datetime.datetime.utcnow()).days
             return days
         except Exception as e:
             kodilog(f"Error calculating days remaining: {e}")

@@ -109,6 +109,74 @@ class DownloaderSetup:
             xbmcvfs.mkdir(translated_path)
 
 
+class DebridExpirationCheck:
+    def run(self):
+        kodilog("Debrid Expiration Check Service Started...")
+        if not get_setting("debrid_expiration_enabled"):
+            return
+
+        try:
+            threshold = int(get_setting("debrid_expiration_threshold", 3))
+
+            # Reusable notification function
+            def notify_expiration(name, days):
+                from lib.utils.kodi.utils import notification, translation
+
+                if days == 0:
+                    msg = translation(90231) % name
+                else:
+                    msg = translation(90230) % (name, days)
+                notification(msg, time=5000)
+
+            # Check Real-Debrid
+            if get_setting("real_debrid_enabled") and get_setting("real_debrid_token"):
+                from lib.api.debrid.realdebrid import RealDebrid
+
+                rd = RealDebrid(get_setting("real_debrid_token"))
+                days = rd.days_remaining()
+                if days is not None and days <= threshold:
+                    notify_expiration("Real-Debrid", days)
+
+            # Check AllDebrid
+            if get_setting("alldebrid_enabled") and get_setting("alldebrid_token"):
+                from lib.api.debrid.alldebrid import AllDebrid
+
+                ad = AllDebrid(get_setting("alldebrid_token"))
+                days = ad.days_remaining()
+                if days is not None and days <= threshold:
+                    notify_expiration("AllDebrid", days)
+
+            # Check TorBox
+            if get_setting("torbox_enabled") and get_setting("torbox_token"):
+                from lib.api.debrid.torbox import Torbox
+
+                tb = Torbox(get_setting("torbox_token"))
+                days = tb.days_remaining()
+                if days is not None and days <= threshold:
+                    notify_expiration("Torbox", days)
+
+            # Check Premiumize
+            if get_setting("premiumize_enabled") and get_setting("premiumize_token"):
+                from lib.api.debrid.premiumize import Premiumize
+
+                pm = Premiumize(get_setting("premiumize_token"))
+                days = pm.days_remaining()
+                if days is not None and days <= threshold:
+                    notify_expiration("Premiumize", days)
+
+            # Check Debrider (debrider.app)
+            if get_setting("debrider_enabled") and get_setting("debrider_token"):
+                from lib.api.debrid.debrider import Debrider
+
+                db = Debrider(get_setting("debrider_token"))
+                days = db.days_remaining()
+                if days is not None and days <= threshold:
+                    notify_expiration("Debrider", days)
+
+        except Exception as e:
+            kodilog(f"Error in DebridExpirationCheck: {e}")
+
+
 class JacktookMOnitor(xbmc.Monitor):
     def __init__(self):
         xbmc.Monitor.__init__(self)
@@ -119,6 +187,7 @@ class JacktookMOnitor(xbmc.Monitor):
         DatabaseSetup().run()
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
+        Thread(target=DebridExpirationCheck().run).start()
         StartupPreloader().run()
         DownloaderSetup().run()
         TMDBHelperAutoInstall()

@@ -1072,8 +1072,13 @@ msgid "Hours before cached data is automatically refreshed (e.g., 24)."
 msgstr "Horas antes de que los datos en caché se actualicen automáticamente (ej. 24)."
 
 msgctxt "#30814"
+<<<<<<< HEAD
 msgid "Premiumize Client Token (get from account page)."
 msgstr "Token de Cliente de Premiumize (obtén en la página de la cuenta)."
+=======
+msgid "Premiumize Access Token (get from account page)."
+msgstr "Token de Acceso de Premiumize (obtén en la página de la cuenta)."
+>>>>>>> a1c8859 (feat(debrid): move expiration settings to services and add torbox support)
 
 msgctxt "#30815"
 msgid "Jackett server URL (e.g., http://localhost)."
@@ -1144,8 +1149,13 @@ msgid "Enable EasyDebrid cached torrent support."
 msgstr "Habilitar soporte para torrents en caché de EasyDebrid."
 
 msgctxt "#30832"
+<<<<<<< HEAD
 msgid "Torbox Client Token (found in account settings)."
 msgstr "Token de Cliente de Torbox (se encuentra en la configuración de la cuenta)."
+=======
+msgid "Torbox Access Token (found in account settings)."
+msgstr "Token de Acceso de Torbox (se encuentra en la configuración de la cuenta)."
+>>>>>>> a1c8859 (feat(debrid): move expiration settings to services and add torbox support)
 
 msgctxt "#30833"
 msgid "Trakt refresh token (auto-managed)."
@@ -1193,7 +1203,11 @@ msgstr "Habilitar la integración de torrents en la nube de Torbox.de."
 
 msgctxt "#30844"
 msgid "Trakt Access Token (auto-filled after auth)."
+<<<<<<< HEAD
 msgstr "Token de acceso de Trakt (se autocompleta después de la autorización)."
+=======
+msgstr "Token de Acceso de Trakt (se autocompleta después de la autorización)."
+>>>>>>> a1c8859 (feat(debrid): move expiration settings to services and add torbox support)
 
 msgctxt "#30845"
 msgid "Link Premiumize.me account to add-on."
@@ -1208,8 +1222,13 @@ msgid "Click to delete all cached data immediately."
 msgstr "Haz clic para eliminar todos los datos en caché inmediatamente."
 
 msgctxt "#30848"
+<<<<<<< HEAD
 msgid "Real-Debrid Client Token (auto-filled after auth)."
 msgstr "Token de Cliente de Real-Debrid (se autocompleta después de la autorización)."
+=======
+msgid "Real-Debrid Access Token (auto-filled after auth)."
+msgstr "Token de Acceso de Real-Debrid (se autocompleta después de la autorización)."
+>>>>>>> a1c8859 (feat(debrid): move expiration settings to services and add torbox support)
 
 msgctxt "#30849"
 msgid "Enable Jackett torrent proxy support."
@@ -1249,7 +1268,11 @@ msgstr "Habilitar la integración de Zilean para obtener metadatos."
 
 msgctxt "#30858"
 msgid "Your Client Key (required for metadata)"
+<<<<<<< HEAD
 msgstr "Tu Clave de Cliente de TMDB (necesaria para metadatos)."
+=======
+msgstr "Tu Clave de Cliente (necesaria para metadatos)."
+>>>>>>> a1c8859 (feat(debrid): move expiration settings to services and add torbox support)
 
 msgctxt "#30859"
 msgid "Enable Burst mode for accelerated searches."
@@ -2152,3 +2175,31 @@ msgstr "Clave de Cliente"
 msgctxt "#90224"
 msgid "Your personal Fanart.tv client key for higher quality assets."
 msgstr "Introduce tu Clave de Cliente personal de Fanart.tv para obtener mejores resultados y mayor velocidad (opcional)."
+
+msgctxt "#90225"
+msgid "Debrid Notifications"
+msgstr "Notificaciones de Debrid"
+
+msgctxt "#90226"
+msgid "Debrid Expiration Notification"
+msgstr "Notificación de Expiración de Debrid"
+
+msgctxt "#90227"
+msgid "Enable or disable notifications when your Debrid subscription is about to expire."
+msgstr "Activa o desactiva las notificaciones cuando tu suscripción a Debrid esté a punto de expirar."
+
+msgctxt "#90228"
+msgid "Expiration Threshold (Days)"
+msgstr "Umbral de Expiración (Días)"
+
+msgctxt "#90229"
+msgid "How many days before expiration to start notifying."
+msgstr "Cuántos días antes de la expiración se debe empezar a notificar."
+
+msgctxt "#90230"
+msgid "%s expires in %d days."
+msgstr "%s caduca en %d días."
+
+msgctxt "#90231"
+msgid "%s expires today!"
+msgstr "¡%s caduca hoy!"

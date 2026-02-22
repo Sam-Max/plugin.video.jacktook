@@ -30,11 +30,7 @@ class Debrider(DebridClient):
             copy2clip(auth_url)
             progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
             progressDialog.setup(
-                "Debrider Auth",
-                qr_code,
-                auth_url,
-                user_code,
-                DebridType.DB
+                "Debrider Auth", qr_code, auth_url, user_code, DebridType.DB
             )
             progressDialog.show_dialog()
             start_time = time()
@@ -140,3 +136,30 @@ class Debrider(DebridClient):
 
     def get_user_info(self):
         return self._make_request("GET", f"{self.BASE_URL}/account")
+
+    def days_remaining(self):
+        try:
+            user = self.get_user_info()
+            if not user or "subscription" not in user:
+                return None
+
+            premium_until = user["subscription"].get("premium_until")
+            if not premium_until:
+                return None
+
+            import datetime
+
+            try:
+                expires = datetime.datetime.strptime(
+                    premium_until, "%Y-%m-%dT%H:%M:%S.%fZ"
+                )
+            except ValueError:
+                expires = datetime.datetime.strptime(
+                    premium_until, "%Y-%m-%dT%H:%M:%SZ"
+                )
+
+            days = (expires - datetime.datetime.utcnow()).days
+            return days
+        except Exception as e:
+            # kodilog(f"Error calculating Debrider days remaining: {e}")
+            return None

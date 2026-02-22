@@ -2224,3 +2224,31 @@ msgstr ""
 msgctxt "#90224"
 msgid "Your personal Fanart.tv client key for higher quality assets."
 msgstr ""
+
+msgctxt "#90225"
+msgid "Debrid Notifications"
+msgstr ""
+
+msgctxt "#90226"
+msgid "Debrid Expiration Notification"
+msgstr ""
+
+msgctxt "#90227"
+msgid "Enable or disable notifications when your Debrid subscription is about to expire."
+msgstr ""
+
+msgctxt "#90228"
+msgid "Expiration Threshold (Days)"
+msgstr ""
+
+msgctxt "#90229"
+msgid "How many days before expiration to start notifying."
+msgstr ""
+
+msgctxt "#90230"
+msgid "%s expires in %d days."
+msgstr ""
+
+msgctxt "#90231"
+msgid "%s expires today!"
+msgstr ""

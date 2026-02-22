@@ -224,7 +224,7 @@ class RealDebrid(DebridClient):
                         set_setting("real_debid_authorized", "true")
 
                         self.initialize_headers()
-                        
+
                         set_setting("real_debrid_user", self.get_user()["username"])
                         progressDialog.update_progress(100, "Authentication completed.")
                         progressDialog.close_dialog()
@@ -359,6 +359,31 @@ class RealDebrid(DebridClient):
 
     def get_user(self):
         return self._make_request("GET", f"{self.BASE_URL}/user")
+
+    def days_remaining(self):
+        try:
+            user = self.get_user()
+            if not user or "expiration" not in user:
+                return None
+
+            expiration = user["expiration"]
+            if not expiration:
+                return None
+
+            import datetime
+
+            try:
+                expires = datetime.datetime.strptime(
+                    expiration, "%Y-%m-%dT%H:%M:%S.%fZ"
+                )
+            except ValueError:
+                expires = datetime.datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%SZ")
+
+            days = (expires - datetime.datetime.utcnow()).days
+            return days
+        except Exception as e:
+            kodilog(f"Error calculating RealDebrid days remaining: {e}")
+            return None
 
     def get_torrent_active_count(self):
         return self._make_request("GET", f"{self.BASE_URL}/torrents/activeCount")
