@@ -13,4 +13,5 @@ __pycache__
 .aider*
 settings.json
 .worktrees/
+scripts/
 
