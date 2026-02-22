@@ -1137,6 +1137,15 @@
             </group>
         </category>
         <category id="metdata_category" label="90073">
+            <group id="fanart_tv" label="90222">
+                <setting id="fanart_client_key" type="string" label="90223" help="90224">
+                    <default/>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string"/>
+                </setting>
+            </group>
             <group id="tmdb" label="30102">
                 <setting id="tmdb_api_key" type="string" label="30103" help="30858">
                     <default/>

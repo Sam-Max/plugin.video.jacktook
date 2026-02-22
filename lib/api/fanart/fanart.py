@@ -1,4 +1,5 @@
 import requests
+from lib.utils.kodi.utils import get_setting
 
 API_KEY = "a7ad21743fd710fccb738232f2fbdcfc"
 CLIENT_KEY = "fe073550acf157bdb8a4217f215c0882"
@@ -32,7 +33,8 @@ def get_fanart(media_type: str, language: str, media_id: str) -> dict:
         return DEFAULT_FANART.copy()
 
     url = BASE_URL.format(media_type=media_type, media_id=media_id)
-    headers = {"client-key": CLIENT_KEY, "api-key": API_KEY}
+    client_key = get_setting("fanart_client_key") or CLIENT_KEY
+    headers = {"client-key": client_key, "api-key": API_KEY}
 
     try:
         response = session.get(url, headers=headers, timeout=TIMEOUT)
@@ -122,9 +124,7 @@ def select_art(art_list: list, language: str) -> str:
 
 
 # --- Helper: Merge Results into Existing Metadata ---
-def add_fanart(
-    media_type: str, language: str, media_id: str, meta: dict
-) -> dict:
+def add_fanart(media_type: str, language: str, media_id: str, meta: dict) -> dict:
     """
     Update an existing metadata dictionary with fanart data.
     Always returns a complete dict (never None).

@@ -40,7 +40,7 @@ msgid "Jackett Configuration:"
 msgstr ""
 
 msgctxt "#30023"
-msgid "API Key"
+msgid "Client Key"
 msgstr ""
 
 msgctxt "#30025"
@@ -76,7 +76,7 @@ msgid "Prowlarr Configuration:"
 msgstr ""
 
 msgctxt "#30051"
-msgid "API Key"
+msgid "Client Key"
 msgstr ""
 
 msgctxt "#30052"
@@ -100,7 +100,7 @@ msgid "TMDB Configuration"
 msgstr ""
 
 msgctxt "#30103"
-msgid "API Key"
+msgid "Client Key"
 msgstr ""
 
 msgctxt "#30104"
@@ -160,7 +160,7 @@ msgid "Client ID"
 msgstr ""
 
 msgctxt "#30221"
-msgid "No API key provided for"
+msgid "No Client Key provided for"
 msgstr ""
 
 msgctxt "#30223"
@@ -1076,7 +1076,7 @@ msgid "Display torrents not yet cached on your debrid service."
 msgstr ""
 
 msgctxt "#30808"
-msgid "Fanart.tv API client ID (for artwork)."
+msgid "Fanart.tv Client Key (for artwork)."
 msgstr ""
 
 msgctxt "#30809"
@@ -1100,7 +1100,7 @@ msgid "Hours before cached data is automatically refreshed (e.g., 24)."
 msgstr ""
 
 msgctxt "#30814"
-msgid "Premiumize API token (get from account page)."
+msgid "Premiumize Client Token (get from account page)."
 msgstr ""
 
 msgctxt "#30815"
@@ -1128,7 +1128,7 @@ msgid "Seconds before Zilean requests time out (e.g., 30)."
 msgstr ""
 
 msgctxt "#30821"
-msgid "Your Jackett API key (found in dashboard)."
+msgid "Your Jackett Client Key (found in dashboard)."
 msgstr ""
 
 msgctxt "#30822"
@@ -1156,7 +1156,7 @@ msgid "Jackgram server URL (e.g., http://localhost:9117)."
 msgstr ""
 
 msgctxt "#30828"
-msgid "Debrider API key for authentication."
+msgid "Debrider Client Key for authentication."
 msgstr ""
 
 msgctxt "#30829"
@@ -1172,7 +1172,7 @@ msgid "Enable Debrider cached torrent support."
 msgstr ""
 
 msgctxt "#30832"
-msgid "Torbox API token (found in account settings)."
+msgid "Torbox Client Token (found in account settings)."
 msgstr ""
 
 msgctxt "#30833"
@@ -1220,7 +1220,7 @@ msgid "Enable Torbox.de cloud torrent integration."
 msgstr ""
 
 msgctxt "#30844"
-msgid "Trakt API access token (auto-filled after auth)."
+msgid "Trakt Access Token (auto-filled after auth)."
 msgstr ""
 
 msgctxt "#30845"
@@ -1236,7 +1236,7 @@ msgid "Click to delete all cached data immediately."
 msgstr ""
 
 msgctxt "#30848"
-msgid "Real-Debrid API token (auto-filled after auth)."
+msgid "Real-Debrid Client Token (auto-filled after auth)."
 msgstr ""
 
 msgctxt "#30849"
@@ -1260,7 +1260,7 @@ msgid "Revoke Real-Debrid account access."
 msgstr ""
 
 msgctxt "#30854"
-msgid "Prowlarr API key (found in Settings > General)."
+msgid "Prowlarr Client Key (found in Settings > General)."
 msgstr ""
 
 msgctxt "#30855"
@@ -1276,7 +1276,7 @@ msgid "Enable Zilean integration for metadata fetching."
 msgstr ""
 
 msgctxt "#30858"
-msgid "Your API Key (required for metadata)"
+msgid "Your Client Key (required for metadata)"
 msgstr ""
 
 msgctxt "#30859"
@@ -1404,7 +1404,7 @@ msgid "Deepl Enabled"
 msgstr ""
 
 msgctxt "#30890"
-msgid "Deepl Api key"
+msgid "Deepl Client Key"
 msgstr ""
 
 msgctxt "#30891"
@@ -2212,3 +2212,15 @@ msgstr "High Volume Warning"
 msgctxt "#90221"
 msgid "High volume detected. Adjusting to %s%% for safety."
 msgstr "High volume detected. Adjusting to %s%% for safety."
+
+msgctxt "#90222"
+msgid "Fanart.tv Configuration"
+msgstr ""
+
+msgctxt "#90223"
+msgid "Client Key"
+msgstr ""
+
+msgctxt "#90224"
+msgid "Your personal Fanart.tv client key for higher quality assets."
+msgstr ""
