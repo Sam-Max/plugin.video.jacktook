@@ -57,7 +57,7 @@ class UpdateCheck:
                     monitor.waitForAbort(1)
                 while player.isPlayingVideo():
                     monitor.waitForAbort(1)
-                updates_check_addon()
+                updates_check_addon(automatic=True)
                 break
 
             set_property_no_fallback(first_run_update_prop, "true")

@@ -9,6 +9,17 @@
                             <close>false</close>
                         </control>
                     </setting>
+                    <setting id="update_action" type="string" label="30932" help="30933">
+                        <default>0</default>
+                        <constraints>
+                            <options>
+                                <option label="30934">0</option>
+                                <option label="30935">1</option>
+                                <option label="30732">2</option>
+                            </options>
+                        </constraints>
+                        <control type="spinner" format="string" />
+                    </setting>
                     <setting id="downgrade_addon" type="action" label="90215" help="">
                         <data>RunPlugin(plugin://plugin.video.jacktook/?action=downgrade_addon)</data>
                         <control type="button" format="action">
@@ -345,6 +356,7 @@
                     </dependencies>
                 </setting>
             </group>
+
             <group id="debrid_cleanup" label="30106">
                 <setting id="clear_debrid_cache" type="action" label="30926"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_debrid_cache)</data>

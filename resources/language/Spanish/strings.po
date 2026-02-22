@@ -2097,3 +2097,22 @@ msgstr "Selecciona qué addons de Stremio omitirán el filtrado nativo de tamañ
 msgctxt "#90215"
 msgid "Downgrade"
 msgstr "Revertir"
+
+msgid "Request timeout in seconds."
+msgstr "Tiempo de espera de la solicitud en segundos."
+
+msgctxt "#30932"
+msgid "Acción de Actualización"
+msgstr "Acción de Actualización"
+
+msgctxt "#30933"
+msgid "Elige cómo manejar las comprobaciones de actualización en segundo plano."
+msgstr "Elige cómo manejar las comprobaciones de actualización en segundo plano."
+
+msgctxt "#30934"
+msgid "Preguntar"
+msgstr "Preguntar"
+
+msgctxt "#30935"
+msgid "Notificar"
+msgstr "Notificar"

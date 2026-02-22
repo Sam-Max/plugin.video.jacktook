@@ -2169,3 +2169,22 @@ msgstr ""
 msgctxt "#90215"
 msgid "Downgrade"
 msgstr ""
+
+msgid "Request timeout in seconds."
+msgstr ""
+
+msgctxt "#30932"
+msgid "Update Action"
+msgstr ""
+
+msgctxt "#30933"
+msgid "Choose how to handle background update checks."
+msgstr ""
+
+msgctxt "#30934"
+msgid "Ask"
+msgstr ""
+
+msgctxt "#30935"
+msgid "Notify"
+msgstr ""

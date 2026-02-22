@@ -17,6 +17,9 @@ from lib.utils.kodi.utils import (
     update_kodi_addons_db,
     dialog_text,
     dialog_select,
+    show_busy_dialog,
+    close_busy_dialog,
+    refresh,
 )
 from lib.utils.general.utils import clear_cache_on_update, unzip
 from lib.utils.kodi.settings import cache_clear_update
@@ -59,10 +62,25 @@ def http_get(url, stream=False):
 
 def get_versions():
     """Return (current_version, online_version) or (None, None) on failure."""
+    show_busy_dialog()
     online_version = http_get(VERSION_FILE)
+    close_busy_dialog()
     if not online_version:
         return None, None
     return ADDON_VERSION, online_version.strip()
+
+
+def version_less_than(v1, v2):
+    """Return True if v1 < v2 using numeric comparison."""
+    try:
+        import re
+
+        def normalize(v):
+            return [int(x) for x in re.sub(r"[^0-9.]", "", v).split(".")]
+
+        return normalize(v1) < normalize(v2)
+    except Exception:
+        return v1 < v2
 
 
 def get_changes(online_version=None):
@@ -78,26 +96,43 @@ def get_changes(online_version=None):
 # =========================
 # Entry Point
 # =========================
-def updates_check_addon():
+def updates_check_addon(automatic=False):
     current_version, online_version = get_versions()
     if not current_version or not online_version:
-        dialog_ok(heading=HEADING, line1="[B]Unable to check for updates[/B]")
+        if not automatic:
+            dialog_ok(heading=HEADING, line1="[B]Unable to check for updates[/B]")
         return
 
     msg = f"Installed: [B]{current_version}[/B][CR]Online: [B]{online_version}[/B][CR][CR]"
 
     if current_version == online_version:
-        notification(heading=HEADING, message="[B]No update available[/B]")
+        if not automatic:
+            notification(heading=HEADING, message="[B]No update available[/B]")
         return
 
-    if current_version < online_version:
-        if not dialogyesno(
-            header=HEADING,
-            text=msg + "[B]Update available. Do you want to update?[/B]",
-        ):
-            return
+    if version_less_than(current_version, online_version):
+        if not automatic:
+            if not dialogyesno(
+                header=HEADING,
+                text=msg + "[B]Update available. Do you want to update?[/B]",
+            ):
+                return
+            update_addon(online_version)
+        else:
+            from lib.utils.kodi.settings import get_update_action
 
-        update_addon(online_version)
+            action = get_update_action()
+            if action == 0:  # Ask
+                if dialogyesno(
+                    header=HEADING,
+                    text=msg + "[B]Update available. Do you want to update?[/B]",
+                ):
+                    update_addon(online_version)
+            elif action == 1:  # Notify
+                notification(
+                    heading=HEADING,
+                    message=f"[B]Update Available (v{online_version}).[/B] [I]Check settings to update.[/I]",
+                )
 
 
 # =========================
@@ -126,21 +161,25 @@ def downgrade_addon_menu():
             version_str = name[len(prefix) : -len(suffix)]
             versions.append(version_str)
 
+    # Filter out current version
+    versions = [v for v in versions if v != ADDON_VERSION]
+
     if not versions:
-        dialog_ok(heading=HEADING, line1="No older versions found.")
+        dialog_ok(heading=HEADING, line1="No older/different versions found.")
         return
 
-    # Create a nice sorted list
-    # E.g., ['1.0.0', '0.24.0', '0.23.0']
+    # Sort versions
     try:
         from pkg_resources import parse_version
 
         versions.sort(key=parse_version, reverse=True)
     except ImportError:
-        versions.sort(reverse=True)
+        import re
 
-    # Filter out current version? We could let them reinstall it if they want.
-    # We will just show all of them.
+        def n(v):
+            return [int(x) for x in re.sub(r"[^0-9.]", "", v).split(".")]
+
+        versions.sort(key=n, reverse=True)
 
     selected_index = dialog_select(
         heading="Select Version to Downgrade", _list=versions
@@ -174,7 +213,9 @@ def update_addon(new_version):
     zip_path = ospath.join(PACKAGES_DIR, zip_name)
 
     # Download new version
+    show_busy_dialog()
     raw_data = http_get(zip_url, stream=True)
+    close_busy_dialog()
     if not raw_data:
         dialog_ok(heading=HEADING, line1="Error: Unable to download update.")
         return
@@ -215,5 +256,6 @@ def update_addon(new_version):
     update_local_addons()
     disable_enable_addon()
     update_kodi_addons_db()
+    refresh()
 
     notification(heading=HEADING, message="[B]Update complete.[/B]")
