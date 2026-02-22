@@ -188,10 +188,25 @@ class PeopleClient(BaseTmdbClient):
         add_kodi_dir_item(
             list_item=list_item,
             url=build_url(
-                "handle_tmdb_person_details", mode=mode, person_id=person.get("id")
+                "handle_tmdb_person_info", mode=mode, person_id=person.get("id")
             ),
-            is_folder=True,
+            is_folder=False,
         )
+
+    @staticmethod
+    def handle_tmdb_person_info(params):
+        from lib.gui.actor_info_window import ActorInfoWindow
+        from lib.utils.kodi.utils import ADDON_PATH
+
+        mode = params.get("mode")
+        person_id = params.get("person_id")
+        window = ActorInfoWindow(
+            "actor_info.xml",
+            ADDON_PATH,
+            person_id=person_id,
+        )
+        window.doModal()
+        del window
 
     @staticmethod
     def handle_tmdb_person_details(params):

@@ -284,12 +284,17 @@ def _route_tmdb(action, params):
                 int(params["page"]),
                 submode=params.get("submode"),
             )
-    elif action in ("search_people_by_id", "handle_tmdb_person_details"):
+    elif action in (
+        "search_people_by_id",
+        "handle_tmdb_person_details",
+        "handle_tmdb_person_info",
+    ):
         from lib.clients.tmdb.people_client import PeopleClient
 
         actions = {
             "search_people_by_id": PeopleClient.search_people_by_id,
             "handle_tmdb_person_details": PeopleClient.handle_tmdb_person_details,
+            "handle_tmdb_person_info": PeopleClient.handle_tmdb_person_info,
         }
         actions[action](params)
     elif action == "handle_collection_details":
