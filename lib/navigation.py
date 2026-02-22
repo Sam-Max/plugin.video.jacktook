@@ -289,6 +289,14 @@ def search_menu(params):
         isFolder=True,
     )
 
+    # -- Keyword Search --
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("handle_keyword_search", mode="multi"),
+        build_list_item("Search by Keyword", "tmdb.png"),
+        isFolder=True,
+    )
+
     # -- Recent TMDb Searches --
     tmdb_history = cache.get_list(key="multi")
     if tmdb_history:

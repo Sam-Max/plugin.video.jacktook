@@ -908,19 +908,138 @@ class TmdbClient(BaseTmdbClient):
                 add_kodi_dir_item(
                     list_item=list_item,
                     url=build_url(
-                        "search_tmdb_keywords",
+                        "show_keyword_results",
                         mode=mode,
                         keyword_id=keyword_id,
+                        keyword_name=keyword_name,
                         page=1,
                     ),
                     is_folder=True,
-                    icon_path=None,
+                    icon_path="tmdb.png",
                 )
-        add_next_button(
-            "handle_tmdb_movie_query", query="tmdb_keywords", page=page + 1, mode=mode
-        )
+        add_next_button("handle_keyword_search", query=query, page=page + 1, mode=mode)
         end_of_directory()
         set_view("widelist")
+
+    @staticmethod
+    def handle_keyword_search(params):
+        mode = params.get("mode", "multi")
+        query = params.get("query", "")
+        page = int(params.get("page", 1))
+
+        if not query:
+            query = show_keyboard(id=30243, default="")
+
+        if not query:
+            return
+
+        TmdbClient.show_keywords_items(query, page, mode)
+
+    @staticmethod
+    def show_keyword_results(params):
+        from lib.clients.tmdb.utils.utils import tmdb_get
+
+        keyword_id = params.get("keyword_id")
+        keyword_name = params.get("keyword_name", "")
+        page = int(params.get("page", 1))
+
+        if not keyword_id:
+            notification("No keyword ID provided")
+            return
+
+        set_pluging_category(f"Keyword: {keyword_name}")
+        set_content_type(
+            "movies"
+        )  # Using movies content type ensures better poster rendering in many skins
+
+        def fetch_movies():
+            return tmdb_get(
+                "discover_movie", {"with_keywords": keyword_id, "page": page}
+            )
+
+        def fetch_tv():
+            return tmdb_get("discover_tv", {"with_keywords": keyword_id, "page": page})
+
+        results = []
+        total_pages = 0
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            future_movies = executor.submit(fetch_movies)
+            future_tv = executor.submit(fetch_tv)
+
+            movie_data = future_movies.result()
+            if movie_data and getattr(movie_data, "results", None):
+                for item in movie_data.results:
+                    if isinstance(item, dict):
+                        item["media_type"] = "movie"
+                    else:
+                        setattr(item, "media_type", "movie")
+                results.extend(movie_data.results)
+                total_pages = max(total_pages, getattr(movie_data, "total_pages", 0))
+
+            tv_data = future_tv.result()
+            if tv_data and getattr(tv_data, "results", None):
+                for item in tv_data.results:
+                    if isinstance(item, dict):
+                        item["media_type"] = "tv"
+                    else:
+                        setattr(item, "media_type", "tv")
+                results.extend(tv_data.results)
+                total_pages = max(total_pages, getattr(tv_data, "total_pages", 0))
+
+        if not results:
+            notification("No results found for this keyword")
+            end_of_directory()
+            return
+
+        # Sort combined results by popularity
+        results.sort(
+            key=lambda x: (
+                getattr(x, "popularity", x.get("popularity", 0))
+                if isinstance(x, dict)
+                else getattr(x, "popularity", 0)
+            ),
+            reverse=True,
+        )
+
+        TmdbClient._enrich_results_with_images(results, "multi")
+
+        for res in results:
+            tmdb_id = (
+                getattr(res, "id", "")
+                if not isinstance(res, dict)
+                else res.get("id", "")
+            )
+            title = (
+                getattr(res, "title", "") or getattr(res, "name", "")
+                if not isinstance(res, dict)
+                else res.get("title", "") or res.get("name", "")
+            )
+            media_type = (
+                getattr(res, "media_type", "")
+                if not isinstance(res, dict)
+                else res.get("media_type", "")
+            )
+
+            list_item = ListItem(label=title)
+            set_media_infoTag(list_item, data=res, mode="multi")
+            BaseTmdbClient.add_media_directory_item(
+                list_item=list_item,
+                mode="multi",
+                title=title,
+                ids={"tmdb_id": tmdb_id},
+                media_type=media_type,
+            )
+
+        if total_pages > page:
+            add_next_button(
+                "show_keyword_results",
+                keyword_id=keyword_id,
+                keyword_name=keyword_name,
+                page=page + 1,
+            )
+        set_view("movies")
+        end_of_directory()
 
     @staticmethod
     def search_tmdb_recommendations(params):

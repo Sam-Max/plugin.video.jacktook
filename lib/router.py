@@ -132,6 +132,8 @@ def addon_router():
                 "show_tmdb",
                 "handle_collection",
                 "search_people",
+                "handle_keyword",
+                "show_keyword",
             )
         ):
             _route_tmdb(action, params)
@@ -314,6 +316,8 @@ def _route_tmdb(action, params):
             "rescrape_tmdb_media": TmdbClient.rescrape_tmdb_media,
             "show_tmdb_item": TmdbClient.show_tmdb_item,
             "handle_collection_query": TmdbClient.handle_collection_query,
+            "handle_keyword_search": TmdbClient.handle_keyword_search,
+            "show_keyword_results": TmdbClient.show_keyword_results,
         }
         action_func = actions.get(action)
         if action_func:
