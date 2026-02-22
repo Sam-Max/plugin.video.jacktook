@@ -2116,3 +2116,27 @@ msgstr "Preguntar"
 msgctxt "#30935"
 msgid "Notificar"
 msgstr "Notificar"
+
+msgctxt "#90216"
+msgid "Control de Volumen"
+msgstr "Control de Volumen"
+
+msgctxt "#90217"
+msgid "Limita automáticamente el volumen si está por encima del umbral antes de la reproducción."
+msgstr "Limita automáticamente el volumen si está por encima del umbral antes de la reproducción."
+
+msgctxt "#90218"
+msgid "Umbral de Volumen"
+msgstr "Umbral de Volumen"
+
+msgctxt "#90219"
+msgid "El porcentaje de volumen por encima del cual se activa el ajuste."
+msgstr "El porcentaje de volumen por encima del cual se activa el ajuste."
+
+msgctxt "#90220"
+msgid "Aviso de Volumen Alto"
+msgstr "Aviso de Volumen Alto"
+
+msgctxt "#90221"
+msgid "Volumen alto detectado. Ajustando al %s%% por seguridad."
+msgstr "Volumen alto detectado. Ajustando al %s%% por seguridad."

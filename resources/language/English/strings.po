@@ -2188,3 +2188,27 @@ msgstr ""
 msgctxt "#30935"
 msgid "Notify"
 msgstr ""
+
+msgctxt "#90216"
+msgid "Volume Check Enabled"
+msgstr "Volume Check Enabled"
+
+msgctxt "#90217"
+msgid "Automatically limits volume if it is above the threshold before playback."
+msgstr "Automatically limits volume if it is above the threshold before playback."
+
+msgctxt "#90218"
+msgid "Volume Threshold"
+msgstr "Volume Threshold"
+
+msgctxt "#90219"
+msgid "The volume percentage above which the warning triggers."
+msgstr "The volume percentage above which the warning triggers."
+
+msgctxt "#90220"
+msgid "High Volume Warning"
+msgstr "High Volume Warning"
+
+msgctxt "#90221"
+msgid "High volume detected. Adjusting to %s%% for safety."
+msgstr "High volume detected. Adjusting to %s%% for safety."

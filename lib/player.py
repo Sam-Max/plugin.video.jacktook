@@ -77,6 +77,10 @@ class JacktookPLayer(xbmc.Player):
     def play_video(self, list_item):
         close_busy_dialog()
 
+        if not self._check_volume():
+            self.cancel_playback()
+            return
+
         try:
             self._handle_trakt_scrobble(list_item)
             self.handle_subtitles(list_item)
@@ -85,6 +89,38 @@ class JacktookPLayer(xbmc.Player):
         except Exception as e:
             kodilog(f"Error during play_video: {e}")
             self.run_error(e)
+
+    def _check_volume(self):
+        try:
+            if not get_setting("volume_check_enabled") or get_visibility(
+                "Player.Muted"
+            ):
+                return True
+
+            threshold = int(get_setting("volume_check_threshold", 50))
+
+            request = {
+                "jsonrpc": "2.0",
+                "method": "Application.GetProperties",
+                "params": {"properties": ["volume"]},
+                "id": 1,
+            }
+            json_query = xbmc.executeJSONRPC(json_dumps(request))
+            response = loads(json_query)
+
+            volume = response.get("result", {}).get("volume", 0)
+            if volume > threshold:
+                execute_builtin(f"SetVolume({threshold})")
+                notification(
+                    translation(90221) % threshold,
+                    heading=translation(90220),
+                    time=3000,
+                )
+
+            return True
+        except Exception as e:
+            kodilog(f"Error checking volume: {e}")
+            return True
 
     def _handle_trakt_scrobble(self, list_item):
         if (
