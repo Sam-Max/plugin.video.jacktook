@@ -17,6 +17,7 @@ from lib.utils.kodi.utils import (
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
+    Indexer,
     Players,
     torrent_clients,
 )
@@ -31,6 +32,12 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     is_pack: bool = data.get("is_pack", False)
 
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
+        if data.get("indexer") == Indexer.EASYNEWS:
+            resolved_url = get_easynews_url(data)
+            if resolved_url:
+                data["url"] = resolved_url
+                return data
+            return None
         return data
 
     if is_supported_debrid_type(debrid_type):
@@ -45,6 +52,20 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return data
 
     return None
+
+
+def get_easynews_url(data: Dict[str, Any]) -> Optional[str]:
+    from lib.clients.easynews import Easynews
+
+    try:
+        user = str(get_setting("easynews_user"))
+        password = str(get_setting("easynews_password"))
+        timeout = int(get_setting("easynews_timeout", "10") or "10")
+        client = Easynews(user, password, timeout, notification)
+        return client.resolve_url(data.get("url"))
+    except Exception as e:
+        kodilog(f"Error resolving Easynews link: {e}")
+        return None
 
 
 def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:

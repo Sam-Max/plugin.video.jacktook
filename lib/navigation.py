@@ -642,6 +642,20 @@ def debrider_info(params):
     DebriderHelper().get_info()
 
 
+def easynews_info(params):
+    from lib.clients.easynews import Easynews
+
+    user = str(get_setting("easynews_user") or "")
+    password = str(get_setting("easynews_password") or "")
+    timeout = int(get_setting("easynews_timeout", "25") or "25")
+
+    if not user or not password:
+        notification("Easynews credentials required")
+        return
+
+    Easynews(user, password, timeout, notification).get_info()
+
+
 def get_rd_downloads(params):
     page = int(params.get("page", 1))
     type = DebridType.RD

@@ -209,6 +209,7 @@ class Indexer(Enum):
     ELHOSTED = "Elfhosted"
     BURST = "Burst"
     ZILEAN = "Zilean"
+    EASYNEWS = "Easynews"
 
 
 class Players(Enum):

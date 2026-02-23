@@ -40,6 +40,7 @@ _DEBRID_ACTIONS = frozenset(
         "tb_auth",
         "tb_remove_auth",
         "torbox_info",
+        "easynews_info",
     }
 )
 
@@ -381,6 +382,7 @@ def _route_debrid(action, params):
         tb_auth,
         tb_remove_auth,
         torbox_info,
+        easynews_info,
     )
 
     actions = {
@@ -400,6 +402,7 @@ def _route_debrid(action, params):
         "tb_auth": tb_auth,
         "tb_remove_auth": tb_remove_auth,
         "torbox_info": torbox_info,
+        "easynews_info": easynews_info,
     }
     actions[action](params)
 
@@ -649,6 +652,7 @@ def _route_core(action, params):
             show_changelog,
             open_burst_config,
             kodi_logs,
+            easynews_info,
         )
 
         actions = {
@@ -688,6 +692,7 @@ def _route_core(action, params):
             "show_changelog": show_changelog,
             "open_burst_config": open_burst_config,
             "kodi_logs": kodi_logs,
+            "easynews_info": easynews_info,
         }
         action_func = actions.get(action)
         if action_func:

@@ -2170,9 +2170,6 @@ msgctxt "#90215"
 msgid "Downgrade"
 msgstr ""
 
-msgid "Request timeout in seconds."
-msgstr ""
-
 msgctxt "#30932"
 msgid "Update Action"
 msgstr ""
@@ -2251,4 +2248,28 @@ msgstr ""
 
 msgctxt "#90231"
 msgid "%s expires today!"
+msgstr ""
+
+msgctxt "#90232"
+msgid "Easynews"
+msgstr ""
+
+msgctxt "#90233"
+msgid "Enable EasyNews as a direct stream provider."
+msgstr ""
+
+msgctxt "#90234"
+msgid "Your EasyNews username."
+msgstr ""
+
+msgctxt "#90235"
+msgid "Your EasyNews password."
+msgstr ""
+
+msgctxt "#90236"
+msgid "Request timeout in seconds."
+msgstr ""
+
+msgctxt "#90237"
+msgid "Account Information"
 msgstr ""

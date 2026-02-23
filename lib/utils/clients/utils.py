@@ -1,4 +1,5 @@
 from typing import Optional
+from lib.clients.easynews import Easynews
 from lib.clients.jackett import Jackett
 from lib.clients.jackgram.client import Jackgram
 from lib.clients.prowlarr import Prowlarr
@@ -74,3 +75,12 @@ def get_client(indexer: str) -> Optional[object]:
 
     elif indexer == Indexer.BURST:
         return Burst(notification)
+
+    elif indexer == Indexer.EASYNEWS:
+        user = str(get_setting("easynews_user"))
+        password = str(get_setting("easynews_password"))
+        timeout = get_int_setting("easynews_timeout")
+
+        if not validate_credentials(indexer, user, password):
+            return
+        return Easynews(user, password, timeout, notification)

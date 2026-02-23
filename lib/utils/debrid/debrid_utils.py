@@ -45,7 +45,7 @@ def check_debrid_cached(
     episode: int = 1,
 ) -> List[TorrentStream]:
     kodilog("Checking debrid cached results...")
-    
+
     if not rescrape:
         cached_results = get_cached_results(query, mode, media_type, episode)
         if cached_results:
@@ -65,7 +65,7 @@ def check_debrid_cached(
     if not check_functions:
         kodilog("No debrid services enabled for caching check.")
         return direct_results
-    
+
     execute_debrid_checks(
         check_functions, results, cached_results, uncached_results, dialog, lock
     )
@@ -190,7 +190,10 @@ def filter_results(
         if info_hash:
             res.infoHash = info_hash
             filtered_results.append(res)
-        elif res.indexer == Indexer.TELEGRAM or res.type == IndexerType.STREMIO_DEBRID:
+        elif res.indexer in [Indexer.TELEGRAM, Indexer.EASYNEWS] or res.type in [
+            IndexerType.STREMIO_DEBRID,
+            IndexerType.DIRECT,
+        ]:
             direct_results.append(res)
 
     results[:] = filtered_results
@@ -238,7 +241,7 @@ def get_magnet_from_uri(uri):
                 magnet = res.url
                 info_hash = get_info_hash_from_magnet(magnet).lower()
                 return magnet, info_hash
-            
+
             magnet = extract_torrent_metadata(res.content)
             kodilog(f"get_magnet_from_uri: Extracted magnet: {magnet}")
             if magnet:

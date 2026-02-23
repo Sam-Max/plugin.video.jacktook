@@ -356,7 +356,63 @@
                     </dependencies>
                 </setting>
             </group>
-
+            <group id="easynews" label="90232">
+                <setting id="easynews_enabled" type="boolean" label="30734" help="90233">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="easynews_user" type="string" label="90127" help="90234">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="easynews_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="easynews_password" type="string" label="90128" help="90235">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="easynews_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="easynews_timeout" type="integer" label="30031" help="90236">
+                    <default>25</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>60</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="easynews_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="easynews_info" type="action" label="90237" help="">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=easynews_info)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="easynews_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="debrid_cleanup" label="30106">
                 <setting id="clear_debrid_cache" type="action" label="30926"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_debrid_cache)</data>
