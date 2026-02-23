@@ -24,9 +24,11 @@ from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     build_url,
+    close_busy_dialog,
     end_of_directory,
     kodilog,
     set_view,
+    show_busy_dialog,
     show_keyboard,
     notification,
     translation,
@@ -185,6 +187,8 @@ class TmdbClient(BaseTmdbClient):
         if not query:
             return
 
+        show_busy_dialog()
+
         if page == 1:
             PickleDatabase().set_key("search_query", query)
             from datetime import timedelta
@@ -229,6 +233,8 @@ class TmdbClient(BaseTmdbClient):
                 )
             add_next_button("handle_tmdb_search", page=page + 1, mode=mode)
             end_of_directory()
+        
+        close_busy_dialog()
 
     @staticmethod
     def tmdb_search_genres(mode, genre_id, page, submode=None):
