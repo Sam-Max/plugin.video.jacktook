@@ -4,7 +4,6 @@ import json
 import re
 import sys
 import time
-import sqlite3 as database
 from typing import Any, Union
 
 from urllib.parse import quote, urlencode
@@ -231,6 +230,10 @@ def compat(line1, line2, line3):
     return message
 
 
+def kodi_refresh():
+	execute_builtin('UpdateLibrary(video,special://skin/foo)')
+
+
 def refresh():
     xbmc.executebuiltin("Container.Refresh")
 
@@ -382,6 +385,8 @@ def disable_enable_addon(addon_name=ADDON_NAME):
 
 def update_kodi_addons_db(addon_name=ADDON_NAME):
     try:
+        import sqlite3 as database
+        
         date = time.strftime("%Y-%m-%d %H:%M:%S")
         dbcon = database.connect(
             translate_path("special://database/Addons33.db"), timeout=40.0
