@@ -1,3 +1,21 @@
+## 1.3.1
+- Add 'Search by Keyword' functionality for Movies and TV Shows.
+- Add Easynews search support.
+- Add debrid subscription expiration notifications.
+- Add automatic volume safety check before starting playback.
+- Open actor info window when selecting a person from People menu.  
+- Add client key support for Fanart.tv
+- Improve updater mechanism with progress visibility and better UI refresh.
+
+Spanish:
+- Añadida funcionalidad de 'Búsqueda por palabra clave' para películas y series.
+- Añadido soporte de búsqueda en Easynews.
+- Añadidas notificaciones de expiración de suscripción de debrid.
+- Añadido control automático de seguridad de volumen antes de iniciar la reproducción.
+- Abre la ventana de información del actor al seleccionar una persona del menú de Personas.
+- Añadido soporte de clave personal para Fanart.tv
+- Mejora del mecanismo de actualización con visibilidad del progreso y mejor refresco de la interfaz.
+
 ## 1.2.1
 - Skin: Add 'Extras' and 'Actor Info' windows to media details.
 - Add IMDB scraper for fetching extras and cast information.
