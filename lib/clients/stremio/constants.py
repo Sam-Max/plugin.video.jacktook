@@ -1,3 +1,30 @@
+import json
+
+
+def encode_selected_ids(ids_list):
+    """Encode a list of addon IDs for cache storage as JSON."""
+    return json.dumps(ids_list)
+
+
+def decode_selected_ids(raw):
+    """Decode addon IDs from cache.
+
+    Handles both JSON list (new format) and comma-separated (old format).
+    """
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return raw
+    try:
+        result = json.loads(raw)
+        if isinstance(result, list):
+            return result
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+    # Fallback: comma-separated (old format — only safe if keys don't contain commas)
+    return [k for k in raw.split(",") if k]
+
+
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
 STREMIO_TV_ADDONS_KEY = "stremio_tv_addons"

@@ -22,6 +22,8 @@ from lib.clients.stremio.constants import (
     STREMIO_ADDONS_CATALOGS_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
+    encode_selected_ids,
+    decode_selected_ids,
 )
 
 _CACHE_EXPIRY = timedelta(days=365 * 20)
@@ -54,8 +56,7 @@ def _get_selected_ids():
         (STREMIO_ADDONS_CATALOGS_KEY, "catalog"),
         (STREMIO_TV_ADDONS_KEY, "tv"),
     ]:
-        val = cache.get(key) or ""
-        result[label] = [k for k in val.split(",") if k]
+        result[label] = decode_selected_ids(cache.get(key))
     return result
 
 
@@ -101,14 +102,13 @@ def _sync_add_addon(url):
     except Exception as e:
         return None, f"Failed to fetch manifest: {e}"
 
-    addon_key = manifest.get("id") or manifest.get("name")
-    if not addon_key:
-        return None, "Manifest missing 'id' or 'name'."
+    id_ = manifest.get("id") or manifest.get("name")
+    addon_key = f"{id_}|{resp.url}"
 
     # Check duplicate
     user_addons = cache.get(STREMIO_USER_ADDONS) or []
     if any(
-        (a.get("manifest", {}).get("id") or a.get("manifest", {}).get("name"))
+        f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
         == addon_key
         for a in user_addons
     ):
@@ -141,7 +141,7 @@ def _sync_remove_addon(addon_id):
     new_addons = [
         a
         for a in user_addons
-        if (a.get("manifest", {}).get("id") or a.get("manifest", {}).get("name"))
+        if f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
         != addon_id
     ]
     cache.set(STREMIO_USER_ADDONS, new_addons, _CACHE_EXPIRY)
@@ -153,8 +153,9 @@ def _sync_remove_addon(addon_id):
     ]:
         selected = cache.get(cache_key)
         if selected:
-            keys = [k for k in selected.split(",") if k != addon_id]
-            cache.set(cache_key, ",".join(keys), _CACHE_EXPIRY)
+            keys = decode_selected_ids(selected)
+            keys = [k for k in keys if k != addon_id]
+            cache.set(cache_key, encode_selected_ids(keys), _CACHE_EXPIRY)
 
 
 def _sync_toggle_addon(addon_id, category, enabled):
@@ -168,23 +169,21 @@ def _sync_toggle_addon(addon_id, category, enabled):
     if not cache_key:
         return
 
-    selected = cache.get(cache_key) or ""
-    keys = [k for k in selected.split(",") if k]
+    keys = decode_selected_ids(cache.get(cache_key))
 
     if enabled and addon_id not in keys:
         keys.append(addon_id)
     elif not enabled and addon_id in keys:
         keys.remove(addon_id)
 
-    cache.set(cache_key, ",".join(keys), _CACHE_EXPIRY)
+    cache.set(cache_key, encode_selected_ids(keys), _CACHE_EXPIRY)
 
 
 def _add_to_selection(cache_key, addon_id):
-    selected = cache.get(cache_key) or ""
-    keys = [k for k in selected.split(",") if k]
+    keys = decode_selected_ids(cache.get(cache_key))
     if addon_id not in keys:
         keys.append(addon_id)
-        cache.set(cache_key, ",".join(keys), _CACHE_EXPIRY)
+        cache.set(cache_key, encode_selected_ids(keys), _CACHE_EXPIRY)
 
 
 def _validate_manifest(url):
@@ -292,7 +291,9 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
         result = []
         for a in addons:
             manifest = a.get("manifest", {})
-            addon_key = manifest.get("id") or manifest.get("name") or ""
+            id_ = manifest.get("id") or manifest.get("name") or ""
+            transport_url = a.get("transportUrl", "")
+            addon_key = f"{id_}|{transport_url}"
             caps = _addon_capabilities(manifest)
             result.append(
                 {
@@ -302,7 +303,7 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
                     "logo": manifest.get("logo", ""),
                     "version": manifest.get("version", ""),
                     "types": manifest.get("types", []),
-                    "transportUrl": a.get("transportUrl", ""),
+                    "transportUrl": transport_url,
                     "capabilities": caps,
                     "selected": {
                         "stream": addon_key in selected.get("stream", []),
@@ -328,7 +329,9 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"error": error}, 400)
             return
         manifest = addon.get("manifest", {})
-        addon_key = manifest.get("id") or manifest.get("name") or ""
+        id_ = manifest.get("id") or manifest.get("name") or ""
+        transport_url = addon.get("transportUrl", "")
+        addon_key = f"{id_}|{transport_url}"
         caps = _addon_capabilities(manifest)
         self._send_json(
             {

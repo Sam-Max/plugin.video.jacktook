@@ -11,6 +11,7 @@ from lib.clients.stremio.constants import (
     STREMIO_ADDONS_CATALOGS_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
+    decode_selected_ids,
 )
 
 
@@ -73,29 +74,38 @@ def get_addons():
 
 def get_selected_stream_addons() -> List[Addon]:
     catalog = get_addons()
-    selected_ids = cache.get(STREMIO_ADDONS_KEY)
-    if not selected_ids:
+    selected_ids_list = decode_selected_ids(cache.get(STREMIO_ADDONS_KEY))
+    if not selected_ids_list:
         return []
-    selected_ids_list = selected_ids.split(",")
-    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
+    return [
+        addon
+        for addon in catalog.addons
+        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
+    ]
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons()
-    selected_ids = cache.get(STREMIO_ADDONS_CATALOGS_KEY)
-    if not selected_ids:
+    selected_ids_list = decode_selected_ids(cache.get(STREMIO_ADDONS_CATALOGS_KEY))
+    if not selected_ids_list:
         return []
-    selected_ids_list = selected_ids.split(",")
-    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
+    return [
+        addon
+        for addon in catalog.addons
+        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
+    ]
 
 
 def get_selected_tv_addons() -> List[Addon]:
     catalog = get_addons()
-    selected_ids = cache.get(STREMIO_TV_ADDONS_KEY)
-    if not selected_ids:
+    selected_ids_list = decode_selected_ids(cache.get(STREMIO_TV_ADDONS_KEY))
+    if not selected_ids_list:
         return []
-    selected_ids_list = selected_ids.split(",")
-    return [addon for addon in catalog.addons if addon.key() in selected_ids_list]
+    return [
+        addon
+        for addon in catalog.addons
+        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
+    ]
 
 
 def get_addon_by_base_url(addon_url):

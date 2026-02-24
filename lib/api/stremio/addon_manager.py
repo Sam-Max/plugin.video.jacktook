@@ -170,20 +170,21 @@ class AddonManager:
                 for resource in item["manifest"].get("resources", [])
             ]
 
+            manifest_data = item["manifest"]
             manifest = Manifest(
-                id=item["manifest"]["id"],
-                version=item["manifest"]["version"],
-                name=item["manifest"]["name"],
-                description=item["manifest"].get("description", ""),
-                catalogs=item["manifest"].get("catalogs", []),
-                addon_catalogs=item["manifest"].get("addonCatalogs", []),
-                config=item["manifest"].get("config", []),
+                id=manifest_data.get("id") or manifest_data.get("name"),
+                version=manifest_data["version"],
+                name=manifest_data["name"],
+                description=manifest_data.get("description", ""),
+                catalogs=manifest_data.get("catalogs", []),
+                addon_catalogs=manifest_data.get("addonCatalogs", []),
+                config=manifest_data.get("config", []),
                 resources=resources,
-                types=item["manifest"]["types"],
-                behavior_hints=item["manifest"].get("behaviorHints", {}),
-                contact_email=item["manifest"].get("contactEmail"),
-                logo=item["manifest"].get("logo"),
-                background=item["manifest"].get("background"),
+                types=manifest_data["types"],
+                behavior_hints=manifest_data.get("behaviorHints", {}),
+                contact_email=manifest_data.get("contactEmail"),
+                logo=manifest_data.get("logo"),
+                background=manifest_data.get("background"),
             )
 
             addons.append(
