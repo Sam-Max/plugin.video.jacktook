@@ -3,7 +3,7 @@ from urllib.parse import quote
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import kodilog
 from lib.utils.general.utils import IndexerType, Indexer
-from typing import List, Optional, Any, Callable
+from typing import List, Optional, Any, Callable, Tuple
 
 VIDEO_EXTENSIONS = (
     "m4v,3g2,3gp,nsv,tp,ts,ty,pls,rm,rmvb,mpd,ifo,mov,qt,divx,xvid,bivx,vob,nrg,img,iso,udf,pva,wmv,asf,asx,ogm,m2v,avi,bin,dat,mpg,mpeg,mp4,mkv,"
@@ -149,7 +149,7 @@ class Easynews(BaseClient):
             kodilog(f"Easynews resolve URL error: {e}")
             return None
 
-    def account(self) -> tuple[Optional[list], Optional[list]]:
+    def account(self) -> Tuple[Optional[List], Optional[List]]:
         account_info, usage_info = None, None
         try:
             account_html = self.session.get(

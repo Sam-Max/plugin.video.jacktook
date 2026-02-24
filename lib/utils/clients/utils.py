@@ -1,10 +1,4 @@
 from typing import Optional
-from lib.clients.easynews import Easynews
-from lib.clients.jackett import Jackett
-from lib.clients.jackgram.client import Jackgram
-from lib.clients.prowlarr import Prowlarr
-from lib.clients.zilean import Zilean
-from lib.jacktook.client import Burst
 from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.general.utils import Indexer
 from lib.utils.kodi.settings import get_int_setting
@@ -43,6 +37,8 @@ def validate_credentials(
 
 def get_client(indexer: str) -> Optional[object]:
     if indexer == Indexer.JACKETT:
+        from lib.clients.jackett import Jackett
+
         host = str(get_setting("jackett_host", ""))
         api_key = str(get_setting("jackett_apikey", ""))
         port = str(get_setting("jackett_port", "9117"))
@@ -52,6 +48,8 @@ def get_client(indexer: str) -> Optional[object]:
         return Jackett(host, api_key, port, notification)
 
     elif indexer == Indexer.PROWLARR:
+        from lib.clients.prowlarr import Prowlarr
+
         host = str(get_setting("prowlarr_host"))
         api_key = str(get_setting("prowlarr_apikey"))
         port = str(get_setting("prowlarr_port", "9696"))
@@ -61,12 +59,16 @@ def get_client(indexer: str) -> Optional[object]:
         return Prowlarr(host, api_key, port, notification)
 
     elif indexer == Indexer.JACKGRAM:
+        from lib.clients.jackgram.client import Jackgram
+
         host = str(get_setting("jackgram_host"))
         if not validate_credentials(indexer, host):
             return
         return Jackgram(host, notification)
 
     elif indexer == Indexer.ZILEAN:
+        from lib.clients.zilean import Zilean
+
         timeout = get_int_setting("zilean_timeout")
         host = str(get_setting("zilean_host"))
         if not validate_credentials(indexer, host):
@@ -74,9 +76,13 @@ def get_client(indexer: str) -> Optional[object]:
         return Zilean(host, timeout, notification)
 
     elif indexer == Indexer.BURST:
+        from lib.jacktook.client import Burst
+
         return Burst(notification)
 
     elif indexer == Indexer.EASYNEWS:
+        from lib.clients.easynews import Easynews
+
         user = str(get_setting("easynews_user"))
         password = str(get_setting("easynews_password"))
         timeout = get_int_setting("easynews_timeout")
