@@ -1,3 +1,16 @@
+## 1.3.2
+- Fix: Easynews crash on Python versions older than 3.9 (e.g. Kodi 20).
+- Fix 'No Stremio addon selected' error when adding custom addons with commas in the URL.
+- Implement lazy loading for client modules to improve startup performance and stability.
+- Improvements to the update flow.
+
+Spanish:
+- Corregido: Error de Easynews en versiones de Python anteriores a 3.9 (ej. Kodi 20).
+- Corregido error: 'No Stremio addon selected' al añadir addons personalizados con comas en la URL.
+- Implementación de carga diferida para los módulos de clientes para mejorar el rendimiento y la estabilidad.
+- Mejora del mecanismo de actualización.
+
+
 ## 1.3.1
 - Add 'Search by Keyword' functionality for Movies and TV Shows.
 - Add Easynews search support.
