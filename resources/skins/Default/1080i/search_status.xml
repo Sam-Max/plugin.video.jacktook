@@ -1,0 +1,441 @@
+<window type="dialog" id="13000">
+    <coordinates>
+        <left>0</left>
+        <top>0</top>
+        <width>1920</width>
+        <height>1080</height>
+    </coordinates>
+    <defaultcontrol always="true">13004</defaultcontrol>
+    <animation type="WindowOpen" reversible="false">
+        <effect type="fade" start="0" end="100" time="300" />
+    </animation>
+    <animation type="WindowClose" reversible="false">
+        <effect type="fade" start="100" end="0" time="300" />
+    </animation>
+    <controls>
+        <!-- Background Fanart -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture background="true">$INFO[Window.Property(info.fanart)]</texture>
+            <aspectratio align="center" aligny="center">scale</aspectratio>
+        </control>
+        <!-- Dark tint over background -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture>white.png</texture>
+            <colordiffuse>99000000</colordiffuse>
+        </control>
+
+        <control type="group">
+            <left>460</left>
+            <top>120</top>
+            <width>1000</width>
+            <height>840</height>
+
+            <!-- Clearlogo -->
+            <control type="image">
+                <top>0</top>
+                <width>1000</width>
+                <height>150</height>
+                <texture>$INFO[Window.Property(info.clearlogo)]</texture>
+                <aspectratio align="center" aligny="center">keep</aspectratio>
+                <visible>!String.IsEmpty(Window.Property(info.clearlogo))</visible>
+            </control>
+            <!-- Title fallback (no clearlogo) -->
+            <control type="label" id="13001">
+                <top>50</top>
+                <width>1000</width>
+                <height>50</height>
+                <align>center</align>
+                <font>font30_title</font>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+                <label></label>
+                <visible>String.IsEmpty(Window.Property(info.clearlogo))</visible>
+            </control>
+
+            <!-- Results Count -->
+            <control type="label">
+                <top>160</top>
+                <width>1000</width>
+                <height>30</height>
+                <align>center</align>
+                <font>font13</font>
+                <textcolor>EEEEEE</textcolor>
+                <label>$INFO[Window.Property(search_results_count)]</label>
+            </control>
+
+            <!-- Task List Area Background -->
+            <control type="image">
+                <top>210</top>
+                <width>1000</width>
+                <height>420</height>
+                <texture border="20">circle.png</texture>
+                <colordiffuse>33000000</colordiffuse>
+            </control>
+
+            <!-- Task Rows (up to 10 slots, each 40px high) -->
+            <!-- Task 0 -->
+            <control type="group">
+                <top>220</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_0_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_0_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_0_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_0_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_0_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 1 -->
+            <control type="group">
+                <top>260</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_1_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_1_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_1_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_1_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_1_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 2 -->
+            <control type="group">
+                <top>300</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_2_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_2_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_2_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_2_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_2_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 3 -->
+            <control type="group">
+                <top>340</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_3_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_3_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_3_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_3_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_3_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 4 -->
+            <control type="group">
+                <top>380</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_4_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_4_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_4_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_4_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_4_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 5 -->
+            <control type="group">
+                <top>420</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_5_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_5_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_5_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_5_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_5_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 6 -->
+            <control type="group">
+                <top>460</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_6_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_6_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_6_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_6_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_6_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 7 -->
+            <control type="group">
+                <top>500</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_7_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_7_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_7_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_7_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_7_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 8 -->
+            <control type="group">
+                <top>540</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_8_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_8_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_8_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_8_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_8_results)]</label>
+                </control>
+            </control>
+
+            <!-- Task 9 -->
+            <control type="group">
+                <top>580</top>
+                <left>30</left>
+                <width>940</width>
+                <height>40</height>
+                <visible>!String.IsEmpty(Window.Property(task_9_name))</visible>
+                <control type="label">
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_9_name)]</label>
+                </control>
+                <control type="label">
+                    <left>370</left>
+                    <width>350</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <textcolor>$INFO[Window.Property(task_9_color)]</textcolor>
+                    <label>$INFO[Window.Property(task_9_status)]</label>
+                </control>
+                <control type="label">
+                    <left>750</left>
+                    <width>180</width>
+                    <height>40</height>
+                    <font>font13</font>
+                    <align>right</align>
+                    <textcolor>white</textcolor>
+                    <label>$INFO[Window.Property(task_9_results)]</label>
+                </control>
+            </control>
+
+            <!-- Progress Bar -->
+            <control type="progress" id="13002">
+                <top>660</top>
+                <left>50</left>
+                <width>900</width>
+                <height>15</height>
+                <info>percentage</info>
+            </control>
+
+            <!-- Cancel Button -->
+            <control type="button" id="13004">
+                <top>710</top>
+                <left>250</left>
+                <width>500</width>
+                <height>60</height>
+                <label>$ADDON[plugin.video.jacktook 90242]</label>
+                <align>center</align>
+                <font>font13</font>
+                <textcolor>DDFFFFFF</textcolor>
+                <focusedcolor>EEFFFFFF</focusedcolor>
+                <selectedcolor>DDFFFFFF</selectedcolor>
+                <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                <pulseonselect>no</pulseonselect>
+            </control>
+        </control>
+    </controls>
+</window>

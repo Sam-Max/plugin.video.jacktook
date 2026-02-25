@@ -2,6 +2,18 @@
 <settings version="1">
     <section id="plugin.video.jacktook">
             <category id="general_category" label="30717">
+                <group id="search" label="90006">
+                    <setting id="search_dialog_style" type="string" label="90238" help="">
+                        <default>0</default>
+                        <constraints>
+                            <options>
+                                <option label="90239">0</option>
+                                <option label="90240">1</option>
+                            </options>
+                        </constraints>
+                        <control type="spinner" format="string" />
+                    </setting>
+                </group>
                 <group id="update" label="30724">
                     <setting id="addon_update" type="action" label="30724" help="30839"> 
                         <data>RunPlugin(plugin://plugin.video.jacktook/?action=addon_update)</data>

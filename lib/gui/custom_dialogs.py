@@ -8,6 +8,9 @@ from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, kodilog
 from lib.gui.source_select import SourceSelect
+from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
+from lib.domain.torrent import TorrentStream
+from concurrent.futures import ThreadPoolExecutor
 
 from xbmcgui import WindowXMLDialog, WindowXML
 import xbmcgui
@@ -305,3 +308,27 @@ def resolver_mock():
     )
     window.doModal()
     del window
+
+
+def search_status_mock():
+    # Create dummy tasks that succeed/fail slowly
+    import time
+
+    def dummy_task(sleep_time, fail=False, results=10):
+        time.sleep(sleep_time)
+        if fail:
+            raise Exception("Mock failure")
+        return [fake_torrent] * results
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        manager = SearchTaskManager(executor)
+        manager.submit_task("Torrentio", "torrentio", dummy_task, 3, False, 15)
+        manager.submit_task("Jackett", "jackett", dummy_task, 5, False, 5)
+        manager.submit_task("Stremio", "stremio", dummy_task, 8, False, 20)
+        manager.submit_task("Prowlarr", "prowlarr", dummy_task, 4, True, 0)
+
+        window = SearchStatusWindow(
+            "search_status.xml", ADDON_PATH, task_manager=manager
+        )
+        window.doModal()
+        del window

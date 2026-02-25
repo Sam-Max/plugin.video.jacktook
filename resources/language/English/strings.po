@@ -2273,3 +2273,47 @@ msgstr ""
 msgctxt "#90237"
 msgid "Account Information"
 msgstr ""
+
+msgctxt "#90238"
+msgid "Search Dialog Style"
+msgstr "Search Dialog Style"
+
+msgctxt "#90239"
+msgid "Background"
+msgstr "Background"
+
+msgctxt "#90240"
+msgid "Detailed Status"
+msgstr "Detailed Status"
+
+msgctxt "#90241"
+msgid "Search Status"
+msgstr "Search Status"
+
+msgctxt "#90242"
+msgid "Cancel"
+msgstr "Cancel"
+
+msgctxt "#90243"
+msgid "Results found: "
+msgstr "Results found: "
+
+msgctxt "#90244"
+msgid "Pending"
+msgstr "Pending"
+
+msgctxt "#90245"
+msgid "In Progress"
+msgstr "In Progress"
+
+msgctxt "#90246"
+msgid "Completed"
+msgstr "Completed"
+
+msgctxt "#90247"
+msgid "Failed"
+msgstr "Failed"
+
+msgctxt "#90248"
+msgid "Cancelled"
+msgstr "Cancelled"

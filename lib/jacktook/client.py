@@ -21,17 +21,20 @@ class Burst(BaseClient):
         media_type: str,
         season: Optional[int],
         episode: Optional[int],
+        silent: bool = False,
     ) -> Optional[List[TorrentStream]]:
         try:
             if mode == "tv" or media_type == "tv":
                 if get_setting("include_season_packs"):
-                    results = burst_search_season(tmdb_id, query, season)
+                    results = burst_search_season(tmdb_id, query, season, silent=silent)
                 else:
-                    results = burst_search_episode(tmdb_id, query, season, episode)
+                    results = burst_search_episode(
+                        tmdb_id, query, season, episode, silent=silent
+                    )
             elif mode == "movies" or media_type == "movies":
-                results = burst_search_movie(tmdb_id, query)
+                results = burst_search_movie(tmdb_id, query, silent=silent)
             else:
-                results = burst_search(query)
+                results = burst_search(query, silent=silent)
             if results:
                 results = self.parse_response(results)
             return results

@@ -33,14 +33,16 @@ from lib.utils.kodi.utils import (
     kodilog,
     translation,
     close_busy_dialog,
+    ADDON_PATH,
 )
+
+from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
 
 import xbmc
 from xbmcgui import Dialog
 
 
 def _handle_super_quick_play(params: dict) -> bool:
-    kodilog(f"Super quick play: {params}")
     if not get_setting("super_quick_play", False):
         kodilog("Super quick play disabled")
         return False
@@ -254,6 +256,10 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
     client = get_client(indexer_key)
     if not client:
         return []
+
+    if indexer_key == Indexer.BURST and not show_dialog:
+        kwargs["silent"] = True
+
     return client.search(*args, **kwargs)
 
 
@@ -273,12 +279,14 @@ def _submit_search_tasks(
     show_dialog,
 ):
     def submit_performer(*args, **kwargs):
+        if "show_dialog" not in kwargs:
+            kwargs["show_dialog"] = show_dialog
+        if "scoped_addon_url" not in kwargs:
+            kwargs["scoped_addon_url"] = scoped_addon_url
         return executor.submit(
             _perform_search,
             *args,
             **kwargs,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
         )
 
     if scoped_addon_url:
@@ -411,6 +419,148 @@ def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]
     return total_results
 
 
+def _submit_search_tasks_managed(
+    manager,
+    dialog,
+    query,
+    mode,
+    media_type,
+    season,
+    episode,
+    ids,
+    scoped_addon_url,
+    tmdb_id,
+    imdb_id,
+):
+    def submit_performer_managed(name, indexer_key, *args, **kwargs):
+        kwargs["show_dialog"] = False
+        if "scoped_addon_url" not in kwargs:
+            kwargs["scoped_addon_url"] = scoped_addon_url
+        return manager.submit_task(
+            name,
+            indexer_key,
+            _perform_search,
+            indexer_key,
+            *args,
+            **kwargs,
+        )
+
+    if scoped_addon_url:
+        addon = get_addon_by_base_url(scoped_addon_url)
+        if addon and (ids.get("imdb_id") or ids.get("original_id")):
+            submit_performer_managed(
+                addon.manifest.name,
+                Indexer.STREMIO,
+                dialog,
+                ids,
+                mode,
+                media_type,
+                season,
+                episode,
+                scoped_addon_url=scoped_addon_url,
+            )
+    else:
+        add_task_if_enabled_managed(
+            manager,
+            "zilean_enabled",
+            Indexer.ZILEAN,
+            _perform_search,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=False,
+            scoped_addon_url=scoped_addon_url,
+        )
+        add_task_if_enabled_managed(
+            manager,
+            "easynews_enabled",
+            Indexer.EASYNEWS,
+            _perform_search,
+            dialog,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=False,
+            scoped_addon_url=scoped_addon_url,
+        )
+        add_task_if_enabled_managed(
+            manager,
+            "jacktookburst_enabled",
+            Indexer.BURST,
+            _perform_search,
+            dialog,
+            imdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=False,
+            scoped_addon_url=scoped_addon_url,
+        )
+        if get_setting("prowlarr_enabled"):
+            indexers_ids = get_setting("prowlarr_indexer_ids")
+            submit_performer_managed(
+                "Prowlarr",
+                Indexer.PROWLARR,
+                dialog,
+                query,
+                mode,
+                season,
+                episode,
+                indexers_ids,
+            )
+        add_task_if_enabled_managed(
+            manager,
+            "jackett_enabled",
+            Indexer.JACKETT,
+            _perform_search,
+            dialog,
+            query,
+            mode,
+            season,
+            episode,
+            show_dialog=False,
+            scoped_addon_url=scoped_addon_url,
+        )
+        add_task_if_enabled_managed(
+            manager,
+            "jackgram_enabled",
+            Indexer.JACKGRAM,
+            _perform_search,
+            dialog,
+            tmdb_id,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            show_dialog=False,
+            scoped_addon_url=scoped_addon_url,
+        )
+        if get_setting("stremio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id")
+        ):
+            stremio_addons = get_selected_stream_addons()
+            for addon in stremio_addons:
+                submit_performer_managed(
+                    addon.manifest.name,
+                    Indexer.STREMIO,
+                    dialog,
+                    ids,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                    scoped_addon_url=addon.url(),
+                )
+
+
 def search_client(
     query: str,
     ids: dict,
@@ -433,30 +583,69 @@ def search_client(
     total_results = []
     tasks = []
 
-    with DialogListener() as listener:
-        if show_dialog:
-            listener.dialog.create("")
+    use_detailed_status = show_dialog and get_setting("search_dialog_style", "0") == "1"
 
-        with ThreadPoolExecutor(
-            max_workers=int(get_setting("thread_number", 6))
-        ) as executor:
-            _submit_search_tasks(
-                executor,
-                tasks,
-                listener.dialog,
-                query,
-                mode,
-                media_type,
-                season,
-                episode,
-                ids,
-                scoped_addon_url,
-                tmdb_id,
-                imdb_id,
-                show_dialog,
-            )
+    if use_detailed_status:
+        executor = ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6)))
+        manager = SearchTaskManager(executor)
+        _submit_search_tasks_managed(
+            manager,
+            None,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            ids,
+            scoped_addon_url,
+            tmdb_id,
+            imdb_id,
+        )
 
-            total_results = _collect_search_results(tasks, listener, show_dialog)
+        item_info = {"ids": ids, "mode": mode}
+        if ids:
+            item_info.update(build_media_metadata(ids, mode))
+
+        window = SearchStatusWindow(
+            "search_status.xml",
+            ADDON_PATH,
+            task_manager=manager,
+            item_information=item_info,
+        )
+        window.doModal()
+        del window
+
+        total_results = manager.collect_results()
+
+        if manager.is_cancelled:
+            executor.shutdown(wait=False)
+        else:
+            executor.shutdown(wait=False)
+    else:
+        with DialogListener() as listener:
+            if show_dialog:
+                listener.dialog.create("")
+
+            with ThreadPoolExecutor(
+                max_workers=int(get_setting("thread_number", 6))
+            ) as executor:
+                _submit_search_tasks(
+                    executor,
+                    tasks,
+                    listener.dialog,
+                    query,
+                    mode,
+                    media_type,
+                    season,
+                    episode,
+                    ids,
+                    scoped_addon_url,
+                    tmdb_id,
+                    imdb_id,
+                    show_dialog,
+                )
+
+                total_results = _collect_search_results(tasks, listener, show_dialog)
 
     cache_results(total_results, query, mode, media_type, episode)
     return total_results
@@ -582,4 +771,15 @@ def add_task_if_enabled(
     if get_setting(setting_key):
         tasks.append(
             executor.submit(perform_search, indexer_key, dialog, *args, **kwargs)
+        )
+
+
+def add_task_if_enabled_managed(
+    manager, setting_key, indexer_key, perform_search, dialog, *args, **kwargs
+):
+    """Add a managed search task if the corresponding setting is enabled."""
+    if get_setting(setting_key):
+        name = str(indexer_key).title()
+        manager.submit_task(
+            name, indexer_key, perform_search, indexer_key, dialog, *args, **kwargs
         )

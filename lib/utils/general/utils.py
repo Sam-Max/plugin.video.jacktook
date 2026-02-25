@@ -741,15 +741,20 @@ def build_media_metadata(ids, mode: str) -> dict:
         if tmdb_logo_path:
             metadata["clearlogo"] = tmdb_url(tmdb_logo_path, "original")
 
+        backdrop_path = getattr(details, "backdrop_path", "")
+        if backdrop_path:
+            metadata["fanart"] = tmdb_url(backdrop_path, "original")
+
     # Fanart details
     if tmdb_id or tvdb_id:
         fanart_details = get_fanart_details(tvdb_id=tvdb_id, tmdb_id=tmdb_id, mode=mode)
 
-        if not tmdb_logo_path:
+        if not tmdb_logo_path and fanart_details.get("clearlogo"):
             metadata["clearlogo"] = fanart_details.get("clearlogo")
 
         for key in ("fanart", "clearart", "keyart", "banner", "landscape"):
-            metadata[key] = fanart_details.get(key, "")
+            if fanart_details.get(key):
+                metadata[key] = fanart_details.get(key)
 
     return metadata
 

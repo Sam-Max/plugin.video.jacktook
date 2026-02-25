@@ -2197,3 +2197,47 @@ msgstr "Tiempo de espera de la solicitud en segundos."
 msgctxt "#90237"
 msgid "Account Information"
 msgstr "Información de la Cuenta"
+
+msgctxt "#90238"
+msgid "Search Dialog Style"
+msgstr "Estilo de Diálogo de Búsqueda"
+
+msgctxt "#90239"
+msgid "Background"
+msgstr "Segundo Plano"
+
+msgctxt "#90240"
+msgid "Detailed Status"
+msgstr "Estado Detallado"
+
+msgctxt "#90241"
+msgid "Search Status"
+msgstr "Estado de Búsqueda"
+
+msgctxt "#90242"
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgctxt "#90243"
+msgid "Results found: "
+msgstr "Resultados encontrados: "
+
+msgctxt "#90244"
+msgid "Pending"
+msgstr "Pendiente"
+
+msgctxt "#90245"
+msgid "In Progress"
+msgstr "En progreso"
+
+msgctxt "#90246"
+msgid "Completed"
+msgstr "Completado"
+
+msgctxt "#90247"
+msgid "Failed"
+msgstr "Fallido"
+
+msgctxt "#90248"
+msgid "Cancelled"
+msgstr "Cancelado"
