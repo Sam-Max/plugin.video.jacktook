@@ -190,7 +190,9 @@ class SourceSelect(BaseWindow):
             elif response == 1:
                 self._download_file(selected_source)
         elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
-            response = xbmcgui.Dialog().contextmenu([translation(90083), translation(90082)])
+            response = xbmcgui.Dialog().contextmenu(
+                [translation(90083), translation(90082)]
+            )
             if response == 0:
                 self._download_file(selected_source)
             elif response == 1:
@@ -241,12 +243,11 @@ class SourceSelect(BaseWindow):
             menu_item = xbmcgui.ListItem(label=source.title)
             menu_item.setProperty("title", source.title)
             if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
-                if source.subindexer:
-                    provider_name = source.subindexer
-                else:
-                    provider_name = source.type
+                provider_name = source.subindexer or source.type
+            elif source.type == IndexerType.DIRECT:
+                provider_name = source.indexer or source.type
             else:
-                provider_name = source.debridType
+                provider_name = source.debridType or source.type
             menu_item.setProperty("type", get_provider_color(provider_name))
             menu_item.setProperty("indexer", get_random_color(source.indexer))
             menu_item.setProperty("guid", source.guid)
