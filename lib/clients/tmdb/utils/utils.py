@@ -438,10 +438,6 @@ def filter_anime_by_keyword(results, mode):
 def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
     return [
         (
-            "Extras",
-            f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type={media_type}&title={parse.quote(title or '')})",
-        ),
-        (
             translation(90049),
             kodi_play_media(
                 name="rescrape_tmdb_media",
@@ -462,6 +458,10 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                 tmdb_id=ids.get("tmdb_id"),
                 force_select=True,
             ),
+        ),
+         (
+            "Extras",
+            f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type={media_type}&title={parse.quote(title or '')})",
         ),
         (
             translation(90050),
