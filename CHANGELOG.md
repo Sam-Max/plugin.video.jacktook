@@ -1,3 +1,11 @@
+## 1.4.1
+- Add fullscreen search status window with live task tracking.
+- Improve source provider name display for direct indexers.
+
+Spanish:
+- Añadida ventana de estado de búsqueda a pantalla completa con seguimiento de tareas en vivo.
+- Mejora en la visualización del nombre del proveedor de origen para indexadores directos.
+
 ## 1.3.2
 - Fix: Easynews crash on Python versions older than 3.9 (e.g. Kodi 20).
 - Fix 'No Stremio addon selected' error when adding custom addons with commas in the URL.
