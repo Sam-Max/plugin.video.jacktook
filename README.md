@@ -25,6 +25,7 @@
 ### 🔍 Search & Scraping
 - **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr. 
 - **Rich Metadata**: Integration with TMDB, MDBList, Trakt, Fanart.tv, and Stremio catalogs.
+- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, Easynews and Torbox.
 - **Smart Filtering**: Advanced results filtering by quality, size, and source.
 
 ### 🧩 Stremio Ecosystem
@@ -36,14 +37,14 @@
 
 ### 🎥 Playback & Engines
 - **Direct Torrent Engines**: Integrated support for **Jacktorr**, **Torrest**, and **Elementum**.
-- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, and Torbox.
 - **Telegram Streaming**: Stream directly from Telegram via Jackgram.
 
 ### 🛠️ Utilities
-- **Automatic Subtitles**: Download subtitles directly from Stremio sources.
+- **Automatic Subtitles**: Download subtitles directly from Stremio OpenSubtitles addon.
 - **DeepL Translation**: Real-time translation of subtitles and metadata using the DeepL API.
 - **TMDB Helper Integration**: Full compatibility with TMDB Helper via custom players.
-
+- **IntroDB**: Integration with IntroDB for automatic movie intros.
+- **WebDav**: Integration with WebDav for remote file management and streaming.
 ---
 
 ## 📥 Installation
