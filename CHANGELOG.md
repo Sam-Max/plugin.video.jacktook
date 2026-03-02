@@ -1,3 +1,11 @@
+## 1.4.2
+- Add new token setting for Jackgram.
+- Refactor internal Jackgram functions based on new API changes.
+
+Spanish:
+- Añadida nueva configuración de token para Jackgram.
+- Refactorización de funciones internas de Jackgram basado en los nuevos cambios de la API.
+
 ## 1.4.1
 - Add fullscreen search status window with live task tracking.
 - Improve source provider name display for direct indexers.
