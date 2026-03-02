@@ -38,6 +38,11 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 data["url"] = resolved_url
                 return data
             return None
+        elif data.get("indexer") in [Indexer.JACKGRAM, Indexer.TELEGRAM]:
+            token = get_setting("jackgram_token", "")
+            url = data.get("url", "")
+            if token and "|Authorization=Bearer" not in url:
+                data["url"] = f"{url}|Authorization=Bearer {token}"
         return data
 
     if is_supported_debrid_type(debrid_type):

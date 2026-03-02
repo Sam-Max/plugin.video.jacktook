@@ -63,9 +63,10 @@ def get_client(indexer: str) -> Optional[object]:
         from lib.clients.jackgram.client import Jackgram
 
         host = str(get_setting("jackgram_host"))
+        token = str(get_setting("jackgram_token", ""))
         if not validate_credentials(indexer, host):
             return
-        return Jackgram(host, notification)
+        return Jackgram(host, notification, token)
 
     elif indexer == Indexer.ZILEAN:
         from lib.clients.zilean import Zilean

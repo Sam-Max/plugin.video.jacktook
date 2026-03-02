@@ -187,14 +187,20 @@ def telegram_menu(params):
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("list_telegram_latest", page=1),
-        build_list_item("Latest", "cloud.png"),
+        build_url("list_jackgram_latest_movies", page=1),
+        build_list_item("Latest Movies", "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("list_telegram_files", page=1),
-        build_list_item("Video Files", "cloud.png"),
+        build_url("list_jackgram_latest_series", page=1),
+        build_list_item("Latest Series", "tv.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("list_jackgram_raw_files", page=1),
+        build_list_item("Raw Files", "cloud.png"),
         isFolder=True,
     )
     end_of_directory()

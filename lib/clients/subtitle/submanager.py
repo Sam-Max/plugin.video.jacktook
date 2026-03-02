@@ -74,9 +74,8 @@ class SubtitleManager(KodiJsonRpcClient):
         season = tv_data.get("season")
 
         if not imdb_id:
-            from lib.gui.resolver_window import SourceException
-
-            raise SourceException("No IMDb ID found for the current video")
+            kodilog("No IMDb ID found for the current video, skipping subtitles")
+            return None
 
         folder_path = (
             os.path.join(

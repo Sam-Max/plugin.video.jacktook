@@ -801,37 +801,15 @@
                         </dependency>
                     </dependencies>
                 </setting>
-            </group>
-            <group id="zilean" label="30771">
-                <setting id="zilean_enabled" type="boolean" label="30734" help="30857">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-                <setting id="zilean_host" type="string" label="30772" help="30801">
-                    <default>https://zilean.elfhosted.com</default>
+                <setting id="jackgram_token" type="string" label="30787" help="90249">
+                    <default>jack_ab7e96edbb8f4896958b480a64f3e6c1</default>
                     <constraints>
-                        <allowempty>false</allowempty>
+                        <allowempty>true</allowempty>
                     </constraints>
                     <control type="edit" format="string" />
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="zilean_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                </setting>
-                <setting id="zilean_timeout" type="integer" label="30774" help="30820">
-                    <default>25</default>
-                    <constraints>
-                        <minimum>1</minimum>
-                        <maximum>30</maximum>
-                        <step>1</step>
-                    </constraints>
-                    <control type="slider" format="integer">
-                        <popup>false</popup>
-                    </control>
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="zilean_enabled">true</condition>
+                            <condition operator="is" setting="jackgram_enabled">true</condition>
                         </dependency>
                     </dependencies>
                 </setting>

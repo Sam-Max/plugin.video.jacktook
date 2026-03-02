@@ -185,17 +185,21 @@ class JacktookPLayer(xbmc.Player):
             self.setSubtitleStream(0)
             self.subtitles_found = True
         elif get_setting("stremio_subtitle_enabled"):
-            from lib.clients.subtitle.submanager import SubtitleManager
+            try:
+                from lib.clients.subtitle.submanager import SubtitleManager
 
-            subtitle_manager = SubtitleManager(self.data, self.notification)
-            subs_paths = subtitle_manager.fetch_subtitles(auto_select=True)
-            if not subs_paths:
-                kodilog("No subtitles found, skipping subtitle loading")
+                subtitle_manager = SubtitleManager(self.data, self.notification)
+                subs_paths = subtitle_manager.fetch_subtitles(auto_select=True)
+                if not subs_paths:
+                    kodilog("No subtitles found, skipping subtitle loading")
+                    self.subtitles_found = False
+                    return
+                list_item.setSubtitles(subs_paths)
+                self.setSubtitleStream(0)
+                self.subtitles_found = True
+            except Exception as e:
+                kodilog(f"Error loading subtitles: {e}")
                 self.subtitles_found = False
-                return
-            list_item.setSubtitles(subs_paths)
-            self.setSubtitleStream(0)
-            self.subtitles_found = True
         elif get_setting("auto_subtitle_selection"):
             sub_language = str(get_setting("subtitle_language"))
             if sub_language and sub_language.lower() != "None":

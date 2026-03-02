@@ -148,7 +148,7 @@ def addon_router():
             _route_debrid(action, params)
 
         # --- Telegram routes ---
-        elif action.startswith(("telegram_", "list_telegram")):
+        elif action.startswith(("telegram_", "list_telegram", "list_jackgram")):
             _route_telegram(action, params)
 
         # --- TorrServer routes ---
@@ -414,15 +414,17 @@ def _route_telegram(action, params):
         telegram_menu(params)
     else:
         from lib.clients.jackgram.utils import (
-            list_telegram_files,
-            list_telegram_latest,
-            list_telegram_latest_files,
+            list_jackgram_raw_files,
+            list_jackgram_latest_movies,
+            list_jackgram_latest_series,
+            list_jackgram_title_sources,
         )
 
         actions = {
-            "list_telegram_files": list_telegram_files,
-            "list_telegram_latest": list_telegram_latest,
-            "list_telegram_latest_files": list_telegram_latest_files,
+            "list_jackgram_raw_files": list_jackgram_raw_files,
+            "list_jackgram_latest_movies": list_jackgram_latest_movies,
+            "list_jackgram_latest_series": list_jackgram_latest_series,
+            "list_jackgram_title_sources": list_jackgram_title_sources,
         }
         action_func = actions.get(action)
         if action_func:

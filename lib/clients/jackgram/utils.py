@@ -1,8 +1,7 @@
-from lib.clients.jackgram.client import Jackgram
 from lib.clients.tmdb.utils.utils import tmdb_get
-from lib.utils.clients.utils import validate_host
 from lib.utils.general.utils import (
     Indexer,
+    IndexerType,
     add_next_button,
     build_list_item,
     execute_thread_pool,
@@ -23,7 +22,6 @@ from lib.utils.kodi.utils import (
 
 from xbmcplugin import addDirectoryItem
 from xbmcgui import ListItem
-import xbmc
 import json
 
 
@@ -38,24 +36,54 @@ def check_jackgram_active():
 def check_and_get_jackgram_client():
     if not check_jackgram_active():
         return None
-    host = str(get_setting("jackgram_host"))
-    if not validate_host(host, Indexer.TELEGRAM):
-        return None
-    return Jackgram(host, notification)
+    from lib.utils.clients.utils import get_client
+
+    return get_client(Indexer.JACKGRAM)
 
 
-def list_telegram_files(query):
+def list_jackgram_latest_movies(query):
+    page = int(query.get("page"))
+    jackgram_client = check_and_get_jackgram_client()
+    if not jackgram_client:
+        return
+    results = jackgram_client.get_latest_movies(page=page)
+    process_results(
+        results, add_jackgram_title_item, "list_jackgram_latest_movies", page
+    )
+
+
+def list_jackgram_latest_series(query):
+    page = int(query.get("page"))
+    jackgram_client = check_and_get_jackgram_client()
+    if not jackgram_client:
+        return
+    results = jackgram_client.get_latest_series(page=page)
+    process_results(
+        results, add_jackgram_title_item, "list_jackgram_latest_series", page
+    )
+
+
+def list_jackgram_raw_files(query):
     page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         return
     results = jackgram_client.get_files(page=page)
-    process_results(results, add_telegram_file_item, "list_telegram_files", page)
+    process_results(
+        results, add_jackgram_raw_file_item, "list_jackgram_raw_files", page
+    )
 
 
-def add_telegram_file_item(item):
+def add_jackgram_raw_file_item(item):
     list_item = build_list_item(item["file_name"], icon="trending.png")
     list_item.setProperty("IsPlayable", "true")
+    item["type"] = IndexerType.DIRECT
+    item["is_torrent"] = False
+
+    token = get_setting("jackgram_token", "")
+    if token and "url" in item:
+        item["url"] = f"{item['url']}|Authorization=Bearer {token}"
+
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("play_media", data=item),
@@ -64,16 +92,7 @@ def add_telegram_file_item(item):
     )
 
 
-def list_telegram_latest(query):
-    page = int(query.get("page"))
-    jackgram_client = check_and_get_jackgram_client()
-    if not jackgram_client:
-        return
-    results = jackgram_client.get_latest(page=page)
-    process_results(results, add_telegram_latest_item, "list_telegram_latest", page)
-
-
-def add_telegram_latest_item(entry):
+def add_jackgram_title_item(entry):
     mode = entry["type"]
     title = entry["title"]
     tmdb_id = entry["tmdb_id"]
@@ -92,13 +111,13 @@ def add_telegram_latest_item(entry):
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("list_telegram_latest_files", data=json.dumps(entry)),
+        build_url("list_jackgram_title_sources", data=json.dumps(entry)),
         list_item,
         isFolder=True,
     )
 
 
-def list_telegram_latest_files(query):
+def list_jackgram_title_sources(query):
     parent_data = json.loads(query["data"])
     set_watched_title(
         title=parent_data["title"],
@@ -107,13 +126,11 @@ def list_telegram_latest_files(query):
         mode="tg_latest",
     )
     set_content_type(parent_data["type"])
-    execute_thread_pool(
-        parent_data["files"], add_telegram_latest_file_item, parent_data
-    )
+    execute_thread_pool(parent_data["files"], add_jackgram_source_item, parent_data)
     end_of_directory()
 
 
-def add_telegram_latest_file_item(file_entry, parent_data):
+def add_jackgram_source_item(file_entry, parent_data):
     mode = file_entry["mode"]
     title = file_entry["title"]
 
@@ -135,7 +152,12 @@ def add_telegram_latest_file_item(file_entry, parent_data):
 
     merged_data = {**parent_data, **file_entry}
 
-    kodilog(f"Adding Telegram file item: {merged_data}", level=xbmc.LOGDEBUG)
+    merged_data["type"] = IndexerType.DIRECT
+    merged_data["is_torrent"] = False
+
+    token = get_setting("jackgram_token", "")
+    if token and "url" in merged_data:
+        merged_data["url"] = f"{merged_data['url']}|Authorization=Bearer {token}"
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -146,14 +168,15 @@ def add_telegram_latest_file_item(file_entry, parent_data):
 
 
 def process_results(results, callback, next_button_action, page):
-    # Sort results by date (newest first)
-    results = sorted(
-        results,
-        key=lambda x: x.get("date") or "",
-        reverse=True
-    )
+    if not results:
+        kodilog("No results found or request failed.")
+        end_of_directory()
+        return
 
-    execute_thread_pool(results, callback)  
+    # Sort results by date (newest first)
+    results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
+
+    execute_thread_pool(results, callback)
     add_next_button(next_button_action, page=page)
     end_of_directory()
     set_view("widelist")

@@ -144,7 +144,7 @@ msgid "Real Debrid Configuration"
 msgstr ""
 
 msgctxt "#30154"
-msgid "Token:"
+msgid "Token"
 msgstr ""
 
 msgctxt "#30200"
@@ -580,7 +580,7 @@ msgid "Jackgram Configuration"
 msgstr ""
 
 msgctxt "#30768"
-msgid "Jackgram Host"
+msgid "Host"
 msgstr ""
 
 msgctxt "#30769"
@@ -648,7 +648,7 @@ msgid "Enabled"
 msgstr ""
 
 msgctxt "#30787"
-msgid "Token:"
+msgid "Token"
 msgstr ""
 
 msgctxt "#30788"
@@ -2317,3 +2317,7 @@ msgstr "Failed"
 msgctxt "#90248"
 msgid "Cancelled"
 msgstr "Cancelled"
+
+msgctxt "#90249"
+msgid "Your personal Jackgram API token for authentication."
+msgstr "Your personal Jackgram API token for authentication."

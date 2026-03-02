@@ -4,8 +4,13 @@ from lib.utils.kodi.utils import kodilog, translation
 
 
 class Jackgram(BaseClient):
-    def __init__(self, host: str, notification: Callable) -> None:
+    def __init__(
+        self, host: str, notification: Callable, token: Optional[str] = None
+    ) -> None:
         super().__init__(host, notification)
+        self.token = token
+        if token:
+            self.session.headers.update({"Authorization": f"Bearer {token}"})
 
     def search(
         self,
@@ -37,8 +42,15 @@ class Jackgram(BaseClient):
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
 
-    def get_latest(self, page: int) -> Optional[Dict[str, Any]]:
-        url = f"{self.host}/stream/latest?page={page}"
+    def get_latest_movies(self, page: int) -> Optional[Dict[str, Any]]:
+        url = f"{self.host}/stream/movies/latest?page={page}"
+        res = self.session.get(url, timeout=10)
+        if res.status_code != 200:
+            return
+        return res.json()
+
+    def get_latest_series(self, page: int) -> Optional[Dict[str, Any]]:
+        url = f"{self.host}/stream/series/latest?page={page}"
         res = self.session.get(url, timeout=10)
         if res.status_code != 200:
             return
@@ -55,6 +67,10 @@ class Jackgram(BaseClient):
         res = res.json()
         results = []
         for item in res["streams"]:
+            url = item["url"]
+            if self.token and url:
+                url = f"{url}|Authorization=Bearer {self.token}"
+
             results.append(
                 TorrentStream(
                     title=item["title"],
@@ -62,7 +78,7 @@ class Jackgram(BaseClient):
                     indexer=item["name"],
                     size=item["size"],
                     publishDate=item["date"],
-                    url=item["url"],
+                    url=url,
                     guid=item.get("guid", ""),
                     infoHash=item.get("infoHash", ""),
                     seeders=item.get("seeders", 0),
@@ -88,11 +104,15 @@ class Jackgram(BaseClient):
         return results
 
     def _extract_file_info(self, file):
+        url = file.get("url", "")
+        if self.token and url:
+            url = f"{url}|Authorization=Bearer {self.token}"
+
         return {
             "title": file.get("title", ""),
             "type": "Direct",
             "indexer": file.get("name", ""),
             "size": file.get("size", ""),
             "publishDate": file.get("date", ""),
-            "url": file.get("url", ""),
+            "url": url,
         }
