@@ -802,7 +802,7 @@
                     </dependencies>
                 </setting>
                 <setting id="jackgram_token" type="string" label="30787" help="90249">
-                    <default>jack_ab7e96edbb8f4896958b480a64f3e6c1</default>
+                    <default/>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
