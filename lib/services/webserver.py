@@ -9,8 +9,10 @@ import json
 import os
 import socket
 import threading
+import ipaddress
 from datetime import timedelta
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
@@ -70,43 +72,111 @@ def _addon_capabilities(manifest):
 
     for res in resources:
         if isinstance(res, dict):
+            res_name = res.get("name")
             res_types = res.get("types", types)
-            if res.get("name") == "stream":
-                id_prefixes = res.get("idPrefixes", [])
-                if "tt" in id_prefixes:
+            res_prefixes = res.get("idPrefixes", [])
+
+            if res_name == "stream":
+                # Stremio addon providing streams
+                if any(t in res_types for t in ("movie", "series", "anime")):
                     is_stream = True
-                if "tv" in res_types or "channel" in res_types:
+                elif "tt" in res_prefixes:  # Fallback to IMDb prefix
+                    is_stream = True
+
+                if any(t in res_types for t in ("tv", "channel")):
                     is_tv = True
-            if res.get("name") == "catalog":
+
+            if res_name == "catalog":
                 is_catalog = True
+
         elif isinstance(res, str):
             if res == "stream":
-                if "movie" in types or "series" in types:
+                if any(t in types for t in ("movie", "series", "anime")):
                     is_stream = True
-                if "tv" in types or "channel" in types:
+                if any(t in types for t in ("tv", "channel")):
                     is_tv = True
             if res == "catalog":
                 is_catalog = True
+
     return {"stream": is_stream, "catalog": is_catalog, "tv": is_tv}
+
+
+def _normalize_manifest_url(url):
+    normalized = url.strip()
+    if not normalized:
+        return ""
+
+    if normalized.startswith("stremio://"):
+        normalized = normalized.replace("stremio://", "https://", 1)
+
+    parts = urlsplit(normalized)
+    path = parts.path or ""
+    if not path.endswith("/manifest.json"):
+        if path.endswith("/"):
+            path = f"{path}manifest.json"
+        else:
+            path = f"{path}/manifest.json"
+
+    return urlunsplit((parts.scheme, parts.netloc, path, parts.query, parts.fragment))
+
+
+def _is_local_or_private_host(url):
+    host = (urlsplit(url).hostname or "").lower()
+    if not host:
+        return False
+    if host == "localhost":
+        return True
+
+    try:
+        ip = ipaddress.ip_address(host)
+        return ip.is_private or ip.is_loopback
+    except ValueError:
+        return False
+
+
+def _fetch_manifest(url, initial_url):
+    def try_fetch(target_url):
+        try:
+            kodilog(f"[WebServer] Fetching Stremio manifest: {target_url}")
+            resp = requests.get(target_url, headers=USER_AGENT_HEADER, timeout=10)
+            resp.raise_for_status()
+            return resp, resp.json(), None
+        except Exception as ex:
+            return None, None, str(ex)
+
+    resp, manifest, error = try_fetch(url)
+
+    if error and url.startswith("https://"):
+        if initial_url.startswith("stremio://") or _is_local_or_private_host(url):
+            http_url = url.replace("https://", "http://", 1)
+            kodilog(f"[WebServer] HTTPS failed, trying HTTP fallback: {http_url}")
+            r2, m2, e2 = try_fetch(http_url)
+            if not e2:
+                return r2, m2, None
+
+    return resp, manifest, error
 
 
 def _sync_add_addon(url):
     """Fetch manifest from URL, validate, store in cache.  Returns (addon_dict, error)."""
-    if url.startswith("stremio://"):
-        url = url.replace("stremio://", "https://")
+    url = (url or "").strip()
+    if not url:
+        return None, "Empty URL provided."
 
-    try:
-        resp = requests.get(url, headers=USER_AGENT_HEADER, timeout=10)
-        resp.raise_for_status()
-        manifest = resp.json()
-    except Exception as e:
-        return None, f"Failed to fetch manifest: {e}"
+    initial_url = url
+    url = _normalize_manifest_url(url)
+
+    resp, manifest, error = _fetch_manifest(url, initial_url)
+
+    if error or not resp or not manifest:
+        kodilog(f"[WebServer] Failed to add addon: {error}")
+        return None, f"Failed to fetch manifest: {error or 'unknown error'}"
 
     id_ = manifest.get("id") or manifest.get("name")
     addon_key = f"{id_}|{resp.url}"
 
     # Check duplicate
-    user_addons = cache.get(STREMIO_USER_ADDONS) or []
+    user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
     if any(
         f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
         == addon_key
@@ -137,7 +207,7 @@ def _sync_add_addon(url):
 
 def _sync_remove_addon(addon_id):
     """Remove addon by manifest ID from all caches."""
-    user_addons = cache.get(STREMIO_USER_ADDONS) or []
+    user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
     new_addons = [
         a
         for a in user_addons
@@ -169,7 +239,7 @@ def _sync_toggle_addon(addon_id, category, enabled):
     if not cache_key:
         return
 
-    keys = decode_selected_ids(cache.get(cache_key))
+    keys = list(decode_selected_ids(cache.get(cache_key)))
 
     if enabled and addon_id not in keys:
         keys.append(addon_id)
@@ -180,7 +250,7 @@ def _sync_toggle_addon(addon_id, category, enabled):
 
 
 def _add_to_selection(cache_key, addon_id):
-    keys = decode_selected_ids(cache.get(cache_key))
+    keys = list(decode_selected_ids(cache.get(cache_key)))
     if addon_id not in keys:
         keys.append(addon_id)
         cache.set(cache_key, encode_selected_ids(keys), _CACHE_EXPIRY)
@@ -188,14 +258,18 @@ def _add_to_selection(cache_key, addon_id):
 
 def _validate_manifest(url):
     """Fetch and validate a manifest URL.  Returns (manifest_dict, error)."""
-    if url.startswith("stremio://"):
-        url = url.replace("stremio://", "https://")
-    try:
-        resp = requests.get(url, headers=USER_AGENT_HEADER, timeout=10)
-        resp.raise_for_status()
-        manifest = resp.json()
-    except Exception as e:
-        return None, str(e)
+    url = (url or "").strip()
+    if not url:
+        return None, "Empty URL"
+
+    initial_url = url
+    url = _normalize_manifest_url(url)
+
+    kodilog(f"[WebServer] Validating Stremio manifest: {url}")
+    _, manifest, error = _fetch_manifest(url, initial_url)
+    if error or not manifest:
+        kodilog(f"[WebServer] Manifest validation failed: {error}")
+        return None, str(error or "unknown error")
 
     if not manifest.get("id") and not manifest.get("name"):
         return None, "Manifest missing 'id' and 'name'."
@@ -295,12 +369,19 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
             transport_url = a.get("transportUrl", "")
             addon_key = f"{id_}|{transport_url}"
             caps = _addon_capabilities(manifest)
+
+            logo = manifest.get("logo", "")
+            if logo and transport_url and not logo.startswith(("http://", "https://")):
+                from urllib.parse import urljoin
+
+                logo = urljoin(transport_url, logo)
+
             result.append(
                 {
                     "id": addon_key,
                     "name": manifest.get("name", "Unknown"),
                     "description": manifest.get("description", ""),
-                    "logo": manifest.get("logo", ""),
+                    "logo": logo,
                     "version": manifest.get("version", ""),
                     "types": manifest.get("types", []),
                     "transportUrl": transport_url,
@@ -325,7 +406,7 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"error": "URL is required"}, 400)
             return
         addon, error = _sync_add_addon(url)
-        if error:
+        if error or not addon:
             self._send_json({"error": error}, 400)
             return
         manifest = addon.get("manifest", {})
@@ -333,6 +414,13 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
         transport_url = addon.get("transportUrl", "")
         addon_key = f"{id_}|{transport_url}"
         caps = _addon_capabilities(manifest)
+
+        logo = manifest.get("logo", "")
+        if logo and transport_url and not logo.startswith(("http://", "https://")):
+            from urllib.parse import urljoin
+
+            logo = urljoin(transport_url, logo)
+
         self._send_json(
             {
                 "success": True,
@@ -340,7 +428,7 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
                     "id": addon_key,
                     "name": manifest.get("name", "Unknown"),
                     "description": manifest.get("description", ""),
-                    "logo": manifest.get("logo", ""),
+                    "logo": logo,
                     "version": manifest.get("version", ""),
                     "types": manifest.get("types", []),
                     "transportUrl": addon.get("transportUrl", ""),
