@@ -14,4 +14,4 @@ __pycache__
 settings.json
 .worktrees/
 scripts/
-
+.opencode/
