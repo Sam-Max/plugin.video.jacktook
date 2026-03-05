@@ -43,25 +43,37 @@ class Jackgram(BaseClient):
             self.handle_exception(f"{translation(30232)}: {e}")
 
     def get_latest_movies(self, page: int) -> Optional[Dict[str, Any]]:
-        url = f"{self.host}/stream/movies/latest?page={page}"
-        res = self.session.get(url, timeout=10)
-        if res.status_code != 200:
-            return
-        return res.json()
+        try:
+            url = f"{self.host}/stream/movies/latest?page={page}"
+            res = self.session.get(url, timeout=10)
+            if res.status_code != 200:
+                kodilog(f"get_latest_movies failed with status {res.status_code}")
+                return
+            return res.json()
+        except Exception as e:
+            self.handle_exception(f"{translation(30232)}: {e}")
 
     def get_latest_series(self, page: int) -> Optional[Dict[str, Any]]:
-        url = f"{self.host}/stream/series/latest?page={page}"
-        res = self.session.get(url, timeout=10)
-        if res.status_code != 200:
-            return
-        return res.json()
+        try:
+            url = f"{self.host}/stream/series/latest?page={page}"
+            res = self.session.get(url, timeout=10)
+            if res.status_code != 200:
+                kodilog(f"get_latest_series failed with status {res.status_code}")
+                return
+            return res.json()
+        except Exception as e:
+            self.handle_exception(f"{translation(30232)}: {e}")
 
     def get_files(self, page: int) -> Optional[Dict[str, Any]]:
-        url = f"{self.host}/stream/files?page={page}"
-        res = self.session.get(url, timeout=10)
-        if res.status_code != 200:
-            return
-        return res.json()
+        try:
+            url = f"{self.host}/stream/files?page={page}"
+            res = self.session.get(url, timeout=10)
+            if res.status_code != 200:
+                kodilog(f"get_files failed with status {res.status_code}")
+                return
+            return res.json()
+        except Exception as e:
+            self.handle_exception(f"{translation(30232)}: {e}")
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()

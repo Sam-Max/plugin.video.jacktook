@@ -93,14 +93,17 @@ def add_jackgram_raw_file_item(item):
 
 
 def add_jackgram_title_item(entry):
-    mode = entry["type"]
+    api_type = entry["type"]
     title = entry["title"]
     tmdb_id = entry["tmdb_id"]
 
-    details = tmdb_get(f"{mode}_details", tmdb_id)
+    details = tmdb_get(f"{api_type}_details", tmdb_id)
     if details is None:
-        kodilog(f"Failed to get details for {mode} with ID {tmdb_id}")
+        kodilog(f"Failed to get details for {api_type} with ID {tmdb_id}")
         return
+
+    # Normalize mode
+    mode = "movies" if api_type == "movie" else api_type
 
     imdb_id = getattr(details, "external_ids").get("imdb_id")
     tvdb_id = getattr(details, "external_ids").get("tvdb_id")
