@@ -129,13 +129,12 @@ class Addon:
         return f"{self.manifest.id}|{self.transport_url}"
 
     def isSupported(self, resource_name: str, type: str, id_prefix: str) -> bool:
+        norm_prefix = id_prefix.rstrip(":")
         for resource in self.manifest.resources:
-            if (
-                resource.name == resource_name
-                and type in resource.types
-                and id_prefix in resource.id_prefixes
-            ):
-                return True
+            if resource.name == resource_name and type in resource.types:
+                for rp in resource.id_prefixes:
+                    if rp.rstrip(":") == norm_prefix:
+                        return True
         return False
 
 
@@ -171,26 +170,39 @@ class AddonManager:
             ]
 
             manifest_data = item["manifest"]
+            transport_url = item.get("transportUrl") or ""
+
+            logo = manifest_data.get("logo")
+            background = manifest_data.get("background")
+
+            if transport_url:
+                from urllib.parse import urljoin
+
+                if logo and not logo.startswith(("http://", "https://")):
+                    logo = urljoin(transport_url, logo)
+                if background and not background.startswith(("http://", "https://")):
+                    background = urljoin(transport_url, background)
+
             manifest = Manifest(
-                id=manifest_data.get("id") or manifest_data.get("name"),
-                version=manifest_data["version"],
-                name=manifest_data["name"],
+                id=manifest_data.get("id") or manifest_data.get("name") or "unknown",
+                version=manifest_data.get("version", "0.0.1"),
+                name=manifest_data.get("name", "Unknown Addon"),
                 description=manifest_data.get("description", ""),
                 catalogs=manifest_data.get("catalogs", []),
                 addon_catalogs=manifest_data.get("addonCatalogs", []),
                 config=manifest_data.get("config", []),
                 resources=resources,
-                types=manifest_data["types"],
+                types=manifest_data.get("types", []),
                 behavior_hints=manifest_data.get("behaviorHints", {}),
                 contact_email=manifest_data.get("contactEmail"),
-                logo=manifest_data.get("logo"),
-                background=manifest_data.get("background"),
+                logo=logo,
+                background=background,
             )
 
             addons.append(
                 Addon(
-                    transport_url=item["transportUrl"],
-                    transport_name=item["transportName"],
+                    transport_url=transport_url,
+                    transport_name=item.get("transportName", ""),
                     manifest=manifest,
                 )
             )

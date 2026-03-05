@@ -120,6 +120,29 @@ def _filter_excluded_addons(addons):
     ]
 
 
+def _filter_stream_addons_by_id_prefix(addons, allowed_prefixes):
+    normalized_allowed = {
+        str(prefix).rstrip(":") for prefix in allowed_prefixes if prefix is not None
+    }
+    filtered = []
+
+    for addon in addons:
+        for resource in addon.manifest.resources:
+            if isinstance(resource, str):
+                continue
+            if resource.name != "stream":
+                continue
+
+            resource_prefixes = {
+                str(p).rstrip(":") for p in (resource.id_prefixes or []) if p is not None
+            }
+            if resource_prefixes.intersection(normalized_allowed):
+                filtered.append(addon)
+                break
+
+    return filtered
+
+
 def stremio_filtered_selection(params):
     dialog = xbmcgui.Dialog()
     options = ["Stream Addons", "Catalogs", "Live TV Addons"]
@@ -136,7 +159,8 @@ def stremio_filtered_selection(params):
 def stremio_toggle_addons(params, check_availability=False):
     selected_ids = cache.get(STREMIO_ADDONS_KEY) or ""
     addon_manager = get_addons()
-    addons = addon_manager.get_addons_with_resource_and_id_prefix("stream", "tt")
+    addons = addon_manager.get_addons_with_resource("stream")
+    addons = _filter_stream_addons_by_id_prefix(addons, ["tt", "tmdb"])
 
     addons = _deduplicate_addons(addons)
     addons = _filter_excluded_addons(addons)
@@ -397,7 +421,14 @@ def remove_custom_stremio_addon(params=None):
         )
         desc = manifest.get("description", "")
         item = xbmcgui.ListItem(label=name, label2=desc)
+
         logo = manifest.get("logo")
+        transport_url = addon.get("transportUrl")
+        if logo and transport_url and not logo.startswith(("http://", "https://")):
+            from urllib.parse import urljoin
+
+            logo = urljoin(transport_url, logo)
+
         if not logo or logo.endswith(".svg"):
             logo = "DefaultAddon.png"
         item.setArt({"icon": logo})
@@ -446,6 +477,7 @@ def remove_custom_stremio_addon(params=None):
 def stremio_bypass_addons_select(params=None):
     addon_manager = get_addons()
     addons = addon_manager.get_addons_with_resource("stream")
+    addons = _filter_stream_addons_by_id_prefix(addons, ["tt", "tmdb"])
     addons = _deduplicate_addons(addons)
     addons = _filter_excluded_addons(addons)
     addons = list(reversed(addons))

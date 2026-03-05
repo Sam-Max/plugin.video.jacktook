@@ -226,23 +226,24 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
 
             video_id = None
             original_id = ids_dict.get("original_id")
+            media_kind = "series" if args[1] == "tv" or args[2] == "tv" else "movie"
 
             if original_id:
                 prefix = original_id.split(":")[0]
-                if addon.isSupported(
-                    "stream",
-                    "series" if args[1] == "tv" or args[2] == "tv" else "movie",
-                    prefix,
-                ):
+                if addon.isSupported("stream", media_kind, prefix):
                     video_id = original_id
 
+            # Try IMDb ID for addons that declare tt: prefix
             if not video_id and ids_dict.get("imdb_id"):
-                if addon.isSupported(
-                    "stream",
-                    "series" if args[1] == "tv" or args[2] == "tv" else "movie",
-                    "tt",
-                ):
+                if addon.isSupported("stream", media_kind, "tt"):
                     video_id = ids_dict.get("imdb_id")
+
+            # Try TMDB ID for addons that declare tmdb: prefix
+            if not video_id and ids_dict.get("tmdb_id"):
+                if addon.isSupported("stream", media_kind, "tmdb:"):
+                    video_id = f"tmdb:{ids_dict['tmdb_id']}"
+                elif addon.isSupported("stream", media_kind, "tmdb"):
+                    video_id = f"tmdb:{ids_dict['tmdb_id']}"
 
             if video_id:
                 try:
