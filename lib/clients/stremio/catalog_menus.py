@@ -618,6 +618,7 @@ def list_stremio_movie(params):
                 playback_data["is_torrent"] = True
             else:
                 playback_data["url"] = stream.url
+                playback_data["type"] = IndexerType.DIRECT
         elif stream.infoHash:
             playback_data["magnet"] = info_hash_to_magnet(stream.infoHash)
             playback_data["info_hash"] = stream.infoHash

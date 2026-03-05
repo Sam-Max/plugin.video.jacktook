@@ -57,6 +57,8 @@ class StremioAddonCatalogsClient(BaseClient):
         catalog_id = self.params.get("catalog_id")
         url = f"{self.base_url}/catalog/{catalog_type}/{catalog_id}{path_suffix}"
 
+        kodilog(f"Using Stremio addon catalog URL: {url}")
+
         res = self.session.get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
         )
@@ -73,6 +75,8 @@ class StremioAddonCatalogsClient(BaseClient):
         meta_id = self.params.get("meta_id")
         url = f"{self.base_url}/meta/{catalog_type}/{meta_id}.json"
 
+        kodilog(f"Using Stremio addon meta URL: {url}")
+
         res = self.session.get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
         )
@@ -88,6 +92,8 @@ class StremioAddonCatalogsClient(BaseClient):
         catalog_type = self.params.get("catalog_type")
         meta_id = self.params.get("meta_id")
         url = f"{self.base_url}/stream/{catalog_type}/{meta_id}.json"
+
+        kodilog(f"Using Stremio addon stream URL: {url}")
 
         res = self.session.get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
