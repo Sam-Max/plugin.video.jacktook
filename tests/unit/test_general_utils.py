@@ -9,6 +9,7 @@ from lib.utils.general.utils import (
     unicode_flag_to_country_code,
     is_video,
     get_random_color,
+    format_season_episode,
 )
 
 
@@ -76,3 +77,19 @@ def test_get_random_color():
     # Expected format: [B][COLOR FFRRGGBB]Netflix[/COLOR][/B]
     assert color.startswith("[B][COLOR FF")
     assert color.endswith("]Netflix[/COLOR][/B]")
+
+
+@pytest.mark.parametrize(
+    "season, episode, expected",
+    [
+        (1, 2, "S01E02"),
+        ("1", "2", "S01E02"),
+        ("01", "02", "S01E02"),
+        ("special", "finale", "SspecialEfinale"),
+        (None, "2", "E02"),
+        ("3", None, "S03"),
+        ("", "", ""),
+    ],
+)
+def test_format_season_episode(season, episode, expected):
+    assert format_season_episode(season, episode) == expected

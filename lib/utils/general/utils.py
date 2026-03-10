@@ -1511,6 +1511,40 @@ def parse_time(item):
     return datetime.min
 
 
+def format_season_episode(season, episode):
+    def normalize(value):
+        if value in (None, ""):
+            return None
+        if isinstance(value, str):
+            value = value.strip()
+            if not value:
+                return None
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError):
+            return str(value)
+        if numeric_value.is_integer():
+            return int(numeric_value)
+        return str(value)
+
+    season_value = normalize(season)
+    episode_value = normalize(episode)
+
+    if isinstance(season_value, int) and isinstance(episode_value, int):
+        return "S{:02d}E{:02d}".format(season_value, episode_value)
+    if season_value is not None and episode_value is not None:
+        return "S{}E{}".format(season_value, episode_value)
+    if season_value is not None:
+        if isinstance(season_value, int):
+            return "S{:02d}".format(season_value)
+        return "S{}".format(season_value)
+    if episode_value is not None:
+        if isinstance(episode_value, int):
+            return "E{:02d}".format(episode_value)
+        return "E{}".format(episode_value)
+    return ""
+
+
 def safe_json_loads(value, default=None):
     """
     Safely load JSON string. Returns default if parsing fails or value is None/empty.

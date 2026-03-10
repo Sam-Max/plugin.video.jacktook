@@ -1,7 +1,11 @@
 import json
 import os
 from lib.db.pickle_db import PickleDatabase
-from lib.utils.general.utils import parse_time, set_pluging_category
+from lib.utils.general.utils import (
+    format_season_episode,
+    parse_time,
+    set_pluging_category,
+)
 from lib.utils.kodi.last_files_actions import add_last_files_context_menu
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
 
@@ -33,10 +37,14 @@ def show_last_files():
         formatted_time = data["timestamp"]
         tv_data = data.get("tv_data", {})
         if tv_data:
-            season = tv_data.get("season")
-            episode = tv_data.get("episode")
             name = tv_data.get("name", "")
-            label = f"{title} S{season:02d}E{episode:02d} - {name} — {formatted_time}"
+            episode_label = format_season_episode(
+                tv_data.get("season"), tv_data.get("episode")
+            )
+            if episode_label:
+                label = f"{title} {episode_label} - {name} — {formatted_time}"
+            else:
+                label = f"{title} - {name} — {formatted_time}"
         else:
             label = f"{title}—{formatted_time}"
 

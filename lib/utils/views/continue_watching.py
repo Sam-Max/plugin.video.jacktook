@@ -15,6 +15,7 @@ from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.views.last_files import add_last_files_context_menu, parse_time
 from lib.utils.kodi.utils import end_of_directory
+from lib.utils.general.utils import format_season_episode
 
 
 def has_continue_watching_items():
@@ -52,10 +53,14 @@ def show_continue_watching():
         label_title = data.get("title", "")
 
         if tv_data:
-            season = tv_data.get("season")
-            episode = tv_data.get("episode")
             show_name = tv_data.get("name", "")
-            label = f"{show_name} S{season:02d}E{episode:02d}"
+            episode_label = format_season_episode(
+                tv_data.get("season"), tv_data.get("episode")
+            )
+            if episode_label:
+                label = f"{show_name or label_title} {episode_label}"
+            else:
+                label = show_name or label_title
         else:
             label = label_title
 
