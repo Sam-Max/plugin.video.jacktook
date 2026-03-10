@@ -64,8 +64,13 @@ def _get_selected_ids():
 
 def _addon_capabilities(manifest):
     """Determine stream/catalog/tv capabilities from a manifest dict."""
+    def supports_searchable_stream(prefixes):
+        normalized = {str(prefix).rstrip(":") for prefix in (prefixes or []) if prefix}
+        return bool(normalized.intersection({"tt", "tmdb"}))
+
     resources = manifest.get("resources", [])
     types = manifest.get("types", [])
+    manifest_prefixes = manifest.get("idPrefixes", [])
     is_stream = False
     is_catalog = False
     is_tv = False
@@ -74,13 +79,13 @@ def _addon_capabilities(manifest):
         if isinstance(res, dict):
             res_name = res.get("name")
             res_types = res.get("types", types)
-            res_prefixes = res.get("idPrefixes", [])
+            res_prefixes = res.get("idPrefixes", manifest_prefixes)
 
             if res_name == "stream":
                 # Stremio addon providing streams
-                if any(t in res_types for t in ("movie", "series", "anime")):
+                if any(t in res_types for t in ("movie", "series", "anime")) and supports_searchable_stream(res_prefixes):
                     is_stream = True
-                elif "tt" in res_prefixes:  # Fallback to IMDb prefix
+                elif supports_searchable_stream(res_prefixes):
                     is_stream = True
 
                 if any(t in res_types for t in ("tv", "channel")):
@@ -91,7 +96,7 @@ def _addon_capabilities(manifest):
 
         elif isinstance(res, str):
             if res == "stream":
-                if any(t in types for t in ("movie", "series", "anime")):
+                if any(t in types for t in ("movie", "series", "anime")) and supports_searchable_stream(manifest_prefixes):
                     is_stream = True
                 if any(t in types for t in ("tv", "channel")):
                     is_tv = True
