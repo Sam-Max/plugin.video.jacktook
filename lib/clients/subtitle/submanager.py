@@ -38,6 +38,7 @@ class SubtitleManager(KodiJsonRpcClient):
         self.notification = notification
         self.opensub_client = OpenSubtitleStremioClient(notification)
         self.translator = DeepLTranslator(notification)
+        self.last_fetch_status = None
 
     def convert_language_iso(self, from_value: str) -> str:
         """Convert language to ISO 639-1 format."""
@@ -66,6 +67,7 @@ class SubtitleManager(KodiJsonRpcClient):
         return subtitle_files
 
     def fetch_subtitles(self, auto_select: bool = False) -> Optional[List[str]]:
+        self.last_fetch_status = None
         title = self.data.get("title")
         mode = self.data.get("mode")
         imdb_id = self.data.get("ids", {}).get("imdb_id")
@@ -105,8 +107,14 @@ class SubtitleManager(KodiJsonRpcClient):
                 return subtitle_files
 
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
+        if subtitles is None:
+            self.last_fetch_status = "not_found"
+            self.notification("No subtitles found")
+            return None
+
         if not subtitles:
-            self.notification("No subtitles found or selected")
+            self.last_fetch_status = "not_selected"
+            self.notification("No subtitles selected")
             return None
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(

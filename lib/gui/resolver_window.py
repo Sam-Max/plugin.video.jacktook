@@ -156,7 +156,12 @@ class ResolverWindow(BaseWindow):
                 if self.playback_info:
                     self.playback_info.update({"subtitles_path": subtitles_path})
             else:
-                kodilog("No subtitles found or selected, continuing without subtitles")
+                if subtitle_manager.last_fetch_status == "not_found":
+                    kodilog("No subtitles found, continuing without subtitles")
+                elif subtitle_manager.last_fetch_status == "not_selected":
+                    kodilog("No subtitles selected, continuing without subtitles")
+                else:
+                    kodilog("Subtitle download skipped, continuing without subtitles")
         except Exception as e:
             kodilog(f"Subtitle download failed, continuing without subtitles: {e}")
 
