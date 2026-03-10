@@ -9,7 +9,6 @@ from lib.api.debrid.realdebrid import RealDebrid
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
-    kodilog,
 )
 from lib.utils.general.utils import (
     DebridType,
@@ -169,7 +168,18 @@ class RealDebridHelper:
             data["url"] = create_download_for_link(links[file_index])
             return data
 
-        # --- Pack (no TV data) ---
+        selected_files = [f for f in files if f.get("selected") == 1]
+        if selected_files:
+            largest_file = max(selected_files, key=lambda f: f.get("bytes", 0))
+            try:
+                file_index = selected_files.index(largest_file)
+            except ValueError:
+                file_index = -1
+
+            if 0 <= file_index < len(links):
+                data["url"] = create_download_for_link(links[file_index])
+                return data
+
         data["is_pack"] = True
         return data
 
