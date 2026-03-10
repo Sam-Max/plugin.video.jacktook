@@ -811,10 +811,14 @@ def add_to_library(data):
         return
 
     pickle_db.set_item(key="jt:lib", subkey=title, value=data)
+    cache.delete("library_view|tv")
+    cache.delete("library_view|movies")
 
 
 def remove_from_library(title):
     pickle_db.delete_item(key="jt:lib", subkey=title)
+    cache.delete("library_view|tv")
+    cache.delete("library_view|movies")
 
 
 def is_in_library(title):

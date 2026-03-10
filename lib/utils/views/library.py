@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from lib.db.cached import cache
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from lib.utils.kodi.utils import (
@@ -18,6 +19,28 @@ from lib.utils.general.utils import (
 )
 from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import end_of_directory
+
+
+def _library_cache_key(mode):
+    return "library_view|{}".format(mode)
+
+
+def _get_library_entries(items, mode):
+    cached_entries = cache.get(_library_cache_key(mode))
+    if cached_entries:
+        return cached_entries
+
+    entries = []
+    details_path = "tv_details" if mode == "tv" else "movie_details"
+
+    for title, data in items:
+        ids = data.get("ids", {})
+        details = tmdb_get(details_path, ids.get("tmdb_id"))
+        if details:
+            entries.append((title, data, details))
+
+    cache.set(_library_cache_key(mode), entries)
+    return entries
 
 
 def show_library_items(mode="tv"):
@@ -42,17 +65,8 @@ def show_library_items(mode="tv"):
 
     items = sorted(items, key=parse_time, reverse=True)
 
-    for title, data in items:
+    for title, data, details in _get_library_entries(items, mode):
         ids = data.get("ids", {})
-
-        # Fetch details for rich metadata
-        if mode == "tv":
-            details = tmdb_get("tv_details", ids.get("tmdb_id"))
-        else:
-            details = tmdb_get("movie_details", ids.get("tmdb_id"))
-
-        if not details:
-            continue
 
         list_item = ListItem(label=f"{title}")
         set_media_infoTag(list_item, data=details, mode=mode)
