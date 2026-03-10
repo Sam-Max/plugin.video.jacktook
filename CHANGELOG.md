@@ -1,3 +1,13 @@
+## 1.4.4
+- Real-Debrid: Fix multi-file movie torrents by selecting the largest playable file
+- Split subtitle feedback so missing subtitles and unselected subtitles show different messages.
+- Localize subtitle download dialogs and subtitle status notifications.
+
+Spanish:
+- Real-Debrid: Corregidos los torrents de peliculas con multiples archivos seleccionando el archivo reproducible mas grande.
+- Separados los mensajes de subtitulos no encontrados y subtitulos no seleccionados.
+- Localizados los dialogos de descarga de subtitulos y las notificaciones de estado de subtitulos.
+
 ## 1.4.3
 - Improve loading speed for My Movies and My Shows by caching resolved library views.
 - Fix Continue Watching and Last Files labels when season or episode values are stored as strings.
@@ -670,5 +680,3 @@ Fixes:
     *  Torrest Integration
 
     *  TMDB Integration
-
-
