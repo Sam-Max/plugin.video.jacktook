@@ -744,3 +744,35 @@ msgstr "Palavra-passe do EasyNews."
 msgctxt "#90224"
 msgid "Request timeout in seconds."
 msgstr "Tempo limite do pedido em segundos."
+
+msgctxt "#90250"
+msgid "Subtitles Found"
+msgstr "Legendas Encontradas"
+
+msgctxt "#90251"
+msgid "There are already downloaded subtitles for this video.\nDo you want to use the existing subtitles?"
+msgstr "Ja existem legendas descarregadas para este video.\nDeseja usar as legendas existentes?"
+
+msgctxt "#90252"
+msgid "No subtitles found"
+msgstr "Nenhuma legenda encontrada"
+
+msgctxt "#90253"
+msgid "No subtitles selected"
+msgstr "Nenhuma legenda selecionada"
+
+msgctxt "#90254"
+msgid "Translate Subtitles"
+msgstr "Traduzir Legendas"
+
+msgctxt "#90255"
+msgid "Do you want to also translate the selected subtitles?"
+msgstr "Deseja tambem traduzir as legendas selecionadas?"
+
+msgctxt "#90256"
+msgid "Select Subtitle to Download"
+msgstr "Selecionar Legenda para Descarregar"
+
+msgctxt "#90257"
+msgid "Subtitles Loaded"
+msgstr "Legendas Carregadas"

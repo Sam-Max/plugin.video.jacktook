@@ -2321,3 +2321,35 @@ msgstr "Cancelled"
 msgctxt "#90249"
 msgid "Your personal Jackgram API token for authentication."
 msgstr "Your personal Jackgram API token for authentication."
+
+msgctxt "#90250"
+msgid "Subtitles Found"
+msgstr "Subtitles Found"
+
+msgctxt "#90251"
+msgid "There are already downloaded subtitles for this video.\nDo you want to use the existing subtitles?"
+msgstr "There are already downloaded subtitles for this video.\nDo you want to use the existing subtitles?"
+
+msgctxt "#90252"
+msgid "No subtitles found"
+msgstr "No subtitles found"
+
+msgctxt "#90253"
+msgid "No subtitles selected"
+msgstr "No subtitles selected"
+
+msgctxt "#90254"
+msgid "Translate Subtitles"
+msgstr "Translate Subtitles"
+
+msgctxt "#90255"
+msgid "Do you want to also translate the selected subtitles?"
+msgstr "Do you want to also translate the selected subtitles?"
+
+msgctxt "#90256"
+msgid "Select Subtitle to Download"
+msgstr "Select Subtitle to Download"
+
+msgctxt "#90257"
+msgid "Subtitles Loaded"
+msgstr "Subtitles Loaded"

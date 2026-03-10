@@ -8,6 +8,7 @@ from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
     kodilog,
+    translation,
 )
 
 import xbmc
@@ -97,9 +98,8 @@ class SubtitleManager(KodiJsonRpcClient):
 
             dialog = xbmcgui.Dialog()
             use_existing = dialog.yesno(
-                "Subtitles Found",
-                "There are already downloaded subtitles for this video.\n"
-                "Do you want to use the existing subtitles?",
+                translation(90250),
+                translation(90251),
                 yeslabel="Use Existing",
                 nolabel="Download New",
             )
@@ -109,12 +109,12 @@ class SubtitleManager(KodiJsonRpcClient):
         subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
         if subtitles is None:
             self.last_fetch_status = "not_found"
-            self.notification("No subtitles found")
+            self.notification(translation(90252))
             return None
 
         if not subtitles:
             self.last_fetch_status = "not_selected"
-            self.notification("No subtitles selected")
+            self.notification(translation(90253))
             return None
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(
@@ -124,8 +124,8 @@ class SubtitleManager(KodiJsonRpcClient):
         if get_setting("deepl_enabled"):
             dialog = xbmcgui.Dialog()
             yes = dialog.yesno(
-                "Translate Subtitles",
-                "Do you want to also translate the selected subtitles?",
+                translation(90254),
+                translation(90255),
             )
             if yes:
                 translated_subtitles_paths = (

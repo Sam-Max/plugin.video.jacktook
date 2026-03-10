@@ -10,6 +10,7 @@ from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
     kodilog,
+    translation,
 )
 import xbmcgui
 import xbmc
@@ -78,7 +79,7 @@ class OpenSubtitleStremioClient:
 
         dialog = xbmcgui.Dialog()
         selected_indices = dialog.multiselect(
-            "Select Subtitle to Download",
+            translation(90256),
             items,
             useDetails=True,
         )

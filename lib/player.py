@@ -17,6 +17,7 @@ from lib.utils.kodi.utils import (
     notification,
     set_property,
     sleep,
+    translation,
 )
 from lib.utils.general.utils import (
     make_listing,
@@ -218,7 +219,7 @@ class JacktookPLayer(xbmc.Player):
         if stremio_subtitle_enabled or search_subtitles:
             self.showSubtitles(True)
             if self.subtitles_found:
-                self.notification("Subtitles Loaded", time=2000)
+                self.notification(translation(90257), time=2000)
                 set_property("search_subtitles", "false")
                 return
 
