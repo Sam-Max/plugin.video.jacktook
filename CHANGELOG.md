@@ -1,3 +1,19 @@
+## 1.4.3
+- Improve loading speed for My Movies and My Shows by caching resolved library views.
+- Fix Continue Watching and Last Files labels when season or episode values are stored as strings.
+- Stremio: Fix scoped searches for TMDB-only addons and improve addon compatibility detection in the local web manager.
+- Stremio: Normalize manifest URLs, add better local HTTP fallback, and mark direct streams correctly for playback.
+- Jackett: Increase the configurable timeout range up to 300 seconds.
+- Jackgram: Harden latest endpoints and restore title source routing.
+
+Spanish:
+- Mejora la velocidad de carga de Mis Peliculas y Mis Series cacheando las vistas de biblioteca ya resueltas.
+- Corregidas las etiquetas de Seguir viendo y Ultimos archivos cuando los valores de temporada o episodio se guardan como texto.
+- Stremio: Corregidas las busquedas dirigidas para addons que solo usan TMDB y mejorada la deteccion de compatibilidad de addons en el gestor web local.
+- Stremio: Normalizadas las URLs de manifest, mejorado el fallback local por HTTP y corregido el marcado de streams directos para la reproduccion.
+- Jackett: Aumentado el rango configurable del tiempo de espera hasta 300 segundos.
+- Jackgram: Endurecidos los endpoints de ultimos y restaurado el enrutado del origen del titulo.
+
 ## 1.4.2
 - Add new token setting for Jackgram.
 - Refactor internal Jackgram functions based on new API changes.
@@ -654,6 +670,5 @@ Fixes:
     *  Torrest Integration
 
     *  TMDB Integration
-
 
 
