@@ -291,7 +291,7 @@ def _submit_search_tasks(
         )
 
     if scoped_addon_url:
-        if ids.get("imdb_id") or ids.get("original_id"):
+        if ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id"):
             tasks.append(
                 submit_performer(
                     Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
@@ -448,7 +448,9 @@ def _submit_search_tasks_managed(
 
     if scoped_addon_url:
         addon = get_addon_by_base_url(scoped_addon_url)
-        if addon and (ids.get("imdb_id") or ids.get("original_id")):
+        if addon and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ):
             submit_performer_managed(
                 addon.manifest.name,
                 Indexer.STREMIO,
