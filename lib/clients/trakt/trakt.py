@@ -1393,22 +1393,25 @@ class TraktPresentation:
         title = ep_data.get("title")
         season = ep_data.get("season")
         episode = ep_data.get("number")
+        if not show_title or not title or season is None or episode is None:
+            return
 
-        first_aired = res.get("first_aired")
+        first_aired = res.get("first_aired") or ep_data.get("first_aired")
 
-        tmdb_id = res.get("show", {}).get("ids", {}).get("tmdb")
-        imdb_id = res.get("show", {}).get("ids", {}).get("imdb")
-        tvdb_id = res.get("show", {}).get("ids", {}).get("tvdb")
+        ids = TraktPresentation._resolve_media_ids(
+            "tv", res.get("show", {}).get("ids", {})
+        )
+        tmdb_id = ids["tmdb_id"]
+        imdb_id = ids["imdb_id"]
+        tvdb_id = ids["tvdb_id"]
 
         if not tmdb_id:
             return
 
-        display_title = f"{show_title} - S{season}E{episode} - {title}"
+        display_title = f"{show_title} - S{int(season):02d}E{int(episode):02d} - {title}"
         if first_aired:
             date_part = first_aired.split("T")[0]
             display_title = f"{date_part} | {display_title}"
-
-        ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id, "tvdb_id": tvdb_id}
 
         details = tmdb_get("tv_details", tmdb_id) or {}
 
