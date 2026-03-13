@@ -2353,3 +2353,139 @@ msgstr "Select Subtitle to Download"
 msgctxt "#90257"
 msgid "Subtitles Loaded"
 msgstr "Subtitles Loaded"
+
+msgctxt "#90258"
+msgid "Backup"
+msgstr "Backup"
+
+msgctxt "#90259"
+msgid "Export Settings Backup"
+msgstr "Export Settings Backup"
+
+msgctxt "#90260"
+msgid "Export addon settings and custom Stremio addons to a JSON backup file."
+msgstr "Export addon settings and custom Stremio addons to a JSON backup file."
+
+msgctxt "#90261"
+msgid "Restore Settings Backup"
+msgstr "Restore Settings Backup"
+
+msgctxt "#90262"
+msgid "Restore addon settings and replace custom Stremio addons from a JSON backup file."
+msgstr "Restore addon settings and replace custom Stremio addons from a JSON backup file."
+
+msgctxt "#90263"
+msgid "Remove Sensitive Data"
+msgstr "Remove Sensitive Data"
+
+msgctxt "#90264"
+msgid "Remove API keys, passwords, usernames, emails, auth state, and custom Stremio addon URLs from exported backups."
+msgstr "Remove API keys, passwords, usernames, emails, auth state, and custom Stremio addon URLs from exported backups."
+
+msgctxt "#90265"
+msgid "Settings backup exported"
+msgstr "Settings backup exported"
+
+msgctxt "#90266"
+msgid "Settings backup restored"
+msgstr "Settings backup restored"
+
+msgctxt "#90267"
+msgid "Settings Backup Failed"
+msgstr "Settings Backup Failed"
+
+msgctxt "#90268"
+msgid "Select export folder"
+msgstr "Select export folder"
+
+msgctxt "#90269"
+msgid "Select backup file"
+msgstr "Select backup file"
+
+msgctxt "#90270"
+msgid "Backup file is invalid."
+msgstr "Backup file is invalid."
+
+msgctxt "#90271"
+msgid "No export folder selected."
+msgstr "No export folder selected."
+
+msgctxt "#90272"
+msgid "No backup file selected."
+msgstr "No backup file selected."
+
+msgctxt "#90273"
+msgid "Unable to export settings backup."
+msgstr "Unable to export settings backup."
+
+msgctxt "#90274"
+msgid "Unable to restore settings backup."
+msgstr "Unable to restore settings backup."
+
+msgctxt "#90275"
+msgid "Restore Settings Backup"
+msgstr "Restore Settings Backup"
+
+msgctxt "#90276"
+msgid "This will overwrite your current addon settings and replace your custom Stremio addons with the backup. Continue?"
+msgstr "This will overwrite your current addon settings and replace your custom Stremio addons with the backup. Continue?"
+
+msgctxt "#90277"
+msgid "Restore cancelled"
+msgstr "Restore cancelled"
+
+msgctxt "#90278"
+msgid "Reset All Settings"
+msgstr "Reset All Settings"
+
+msgctxt "#90279"
+msgid "This will reset all addon settings to their defaults and remove your custom Stremio addons. Continue?"
+msgstr "This will reset all addon settings to their defaults and remove your custom Stremio addons. Continue?"
+
+msgctxt "#90280"
+msgid "Reset cancelled"
+msgstr "Reset cancelled"
+
+msgctxt "#90281"
+msgid "All addon settings reset"
+msgstr "All addon settings reset"
+
+msgctxt "#90282"
+msgid "Reset Failed"
+msgstr "Reset Failed"
+
+msgctxt "#90283"
+msgid "Unable to reset addon settings."
+msgstr "Unable to reset addon settings."
+
+msgctxt "#90284"
+msgid "Reset every addon setting back to its default value and clear custom Stremio addons."
+msgstr "Reset every addon setting back to its default value and clear custom Stremio addons."
+
+msgctxt "#90285"
+msgid "Factory Reset"
+msgstr "Factory Reset"
+
+msgctxt "#90286"
+msgid "This will reset settings, clear caches, remove custom Stremio addons, and wipe local addon history/database data. Continue?"
+msgstr "This will reset settings, clear caches, remove custom Stremio addons, and wipe local addon history/database data. Continue?"
+
+msgctxt "#90287"
+msgid "Factory reset cancelled"
+msgstr "Factory reset cancelled"
+
+msgctxt "#90288"
+msgid "Factory reset completed"
+msgstr "Factory reset completed"
+
+msgctxt "#90289"
+msgid "Factory Reset Failed"
+msgstr "Factory Reset Failed"
+
+msgctxt "#90290"
+msgid "Unable to complete factory reset."
+msgstr "Unable to complete factory reset."
+
+msgctxt "#90291"
+msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
+msgstr "Reset settings to defaults, clear caches, and wipe local addon history/database data."

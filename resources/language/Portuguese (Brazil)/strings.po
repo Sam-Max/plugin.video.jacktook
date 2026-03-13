@@ -757,3 +757,139 @@ msgstr "Selecionar Legenda para Baixar"
 msgctxt "#90257"
 msgid "Subtitles Loaded"
 msgstr "Legendas Carregadas"
+
+msgctxt "#90258"
+msgid "Backup"
+msgstr "Backup das Configuracoes"
+
+msgctxt "#90259"
+msgid "Export Settings Backup"
+msgstr "Exportar Backup das Configuracoes"
+
+msgctxt "#90260"
+msgid "Export addon settings and custom Stremio addons to a JSON backup file."
+msgstr "Exporta as configuracoes do addon e os addons personalizados do Stremio para um arquivo JSON de backup."
+
+msgctxt "#90261"
+msgid "Restore Settings Backup"
+msgstr "Restaurar Backup das Configuracoes"
+
+msgctxt "#90262"
+msgid "Restore addon settings and replace custom Stremio addons from a JSON backup file."
+msgstr "Restaura as configuracoes do addon e substitui os addons personalizados do Stremio a partir de um arquivo JSON de backup."
+
+msgctxt "#90263"
+msgid "Remove Sensitive Data"
+msgstr "Remover Dados Sensiveis"
+
+msgctxt "#90264"
+msgid "Remove API keys, passwords, usernames, emails, auth state, and custom Stremio addon URLs from exported backups."
+msgstr "Remove chaves de API, senhas, nomes de usuario, emails, estado de autenticacao e URLs de addons personalizados do Stremio dos backups exportados."
+
+msgctxt "#90265"
+msgid "Settings backup exported"
+msgstr "Backup exportado"
+
+msgctxt "#90266"
+msgid "Settings backup restored"
+msgstr "Backup restaurado"
+
+msgctxt "#90267"
+msgid "Settings Backup Failed"
+msgstr "Falha no Backup das Configuracoes"
+
+msgctxt "#90268"
+msgid "Select export folder"
+msgstr "Selecionar pasta de exportacao"
+
+msgctxt "#90269"
+msgid "Select backup file"
+msgstr "Selecionar arquivo de backup"
+
+msgctxt "#90270"
+msgid "Backup file is invalid."
+msgstr "O arquivo de backup e invalido."
+
+msgctxt "#90271"
+msgid "No export folder selected."
+msgstr "Nenhuma pasta de exportacao selecionada."
+
+msgctxt "#90272"
+msgid "No backup file selected."
+msgstr "Nenhum arquivo de backup selecionado."
+
+msgctxt "#90273"
+msgid "Unable to export settings backup."
+msgstr "Nao foi possivel exportar o backup."
+
+msgctxt "#90274"
+msgid "Unable to restore settings backup."
+msgstr "Nao foi possivel restaurar o backup."
+
+msgctxt "#90275"
+msgid "Restore Settings Backup"
+msgstr "Restaurar Backup das Configuracoes"
+
+msgctxt "#90276"
+msgid "This will overwrite your current addon settings and replace your custom Stremio addons with the backup. Continue?"
+msgstr "Isso vai sobrescrever as configuracoes atuais do addon e substituir seus addons personalizados do Stremio pelos do backup. Deseja continuar?"
+
+msgctxt "#90277"
+msgid "Restore cancelled"
+msgstr "Restauracao cancelada"
+
+msgctxt "#90278"
+msgid "Reset All Settings"
+msgstr "Redefinir Todas as Configuracoes"
+
+msgctxt "#90279"
+msgid "This will reset all addon settings to their defaults and remove your custom Stremio addons. Continue?"
+msgstr "Isso vai redefinir todas as configuracoes do addon para os valores padrao e remover seus addons personalizados do Stremio. Deseja continuar?"
+
+msgctxt "#90280"
+msgid "Reset cancelled"
+msgstr "Redefinicao cancelada"
+
+msgctxt "#90281"
+msgid "All addon settings reset"
+msgstr "Todas as configuracoes do addon foram redefinidas"
+
+msgctxt "#90282"
+msgid "Reset Failed"
+msgstr "Falha ao Redefinir"
+
+msgctxt "#90283"
+msgid "Unable to reset addon settings."
+msgstr "Nao foi possivel redefinir as configuracoes do addon."
+
+msgctxt "#90284"
+msgid "Reset every addon setting back to its default value and clear custom Stremio addons."
+msgstr "Redefine cada configuracao do addon para o valor padrao e limpa os addons personalizados do Stremio."
+
+msgctxt "#90285"
+msgid "Factory Reset"
+msgstr "Redefinicao de Fabrica"
+
+msgctxt "#90286"
+msgid "This will reset settings, clear caches, remove custom Stremio addons, and wipe local addon history/database data. Continue?"
+msgstr "Isso vai redefinir as configuracoes, limpar caches, remover addons personalizados do Stremio e apagar o historico e os dados locais do addon. Deseja continuar?"
+
+msgctxt "#90287"
+msgid "Factory reset cancelled"
+msgstr "Redefinicao de fabrica cancelada"
+
+msgctxt "#90288"
+msgid "Factory reset completed"
+msgstr "Redefinicao de fabrica concluida"
+
+msgctxt "#90289"
+msgid "Factory Reset Failed"
+msgstr "Falha na Redefinicao de Fabrica"
+
+msgctxt "#90290"
+msgid "Unable to complete factory reset."
+msgstr "Nao foi possivel concluir a redefinicao de fabrica."
+
+msgctxt "#90291"
+msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
+msgstr "Redefine as configuracoes para os valores padrao, limpa caches e apaga o historico e os dados locais do addon."

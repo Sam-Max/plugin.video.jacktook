@@ -51,6 +51,36 @@
                         </control>
                     </setting>
                 </group>
+                <group id="backup" label="90258">
+                    <setting id="settings_backup_strip_sensitive" type="boolean" label="90263" help="90264">
+                        <default>true</default>
+                        <control type="toggle" />
+                    </setting>
+                    <setting id="export_settings_backup" type="action" label="90259" help="90260">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=export_settings_backup)</data>
+                        <control type="button" format="action">
+                            <close>false</close>
+                        </control>
+                    </setting>
+                    <setting id="restore_settings_backup" type="action" label="90261" help="90262">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=restore_settings_backup)</data>
+                        <control type="button" format="action">
+                            <close>true</close>
+                        </control>
+                    </setting>
+                    <setting id="reset_all_settings" type="action" label="90278" help="90284">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=reset_all_settings)</data>
+                        <control type="button" format="action">
+                            <close>true</close>
+                        </control>
+                    </setting>
+                    <setting id="factory_reset" type="action" label="90285" help="90291">
+                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=factory_reset)</data>
+                        <control type="button" format="action">
+                            <close>true</close>
+                        </control>
+                    </setting>
+                </group>
                 <group id="cache" label="30723">
                     <setting id="cache_enabled" type="boolean" label="30721" help="30809"> 
                         <default>true</default>
@@ -191,10 +221,20 @@
                     </dependencies>
                 </setting>
             </group>
-             <group id="alldebrid" label="90121">
+            <group id="alldebrid" label="90121">
                 <setting id="alldebrid_enabled" type="boolean" label="30734" help="30824">
                     <default>false</default>
                     <control type="toggle" />
+                </setting>
+                <setting id="alldebrid_authorized" type="boolean" label="" help="">
+                    <visible>false</visible>
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="alldebrid_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="alldebrid_user" type="string" label="30782" help="30817">
                     <default />
@@ -1553,13 +1593,13 @@
             </group>
              <group id="maintenance_logs" label="90057">
                 <setting id="kodi_logs" type="action" label="90054" help="90056"> 
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.log)</data>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&amp;log_file=kodi.log)</data>
                     <control type="button" format="action">
                         <close>true</close>
                     </control>
                 </setting>
                  <setting id="kodi_logs_old" type="action" label="90055" help="90056"> 
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&log_file=kodi.old.log)</data>
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=kodi_logs&amp;log_file=kodi.old.log)</data>
                     <control type="button" format="action">
                         <close>true</close>
                     </control>

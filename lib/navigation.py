@@ -39,6 +39,12 @@ from lib.utils.player.utils import resolve_playback_url
 from lib.utils.torrent.torrserver_init import get_torrserver_api
 from lib.utils.torrentio.utils import open_providers_selection
 from lib.utils.kodi.settings import addon_settings
+from lib.utils.kodi.settings_backup import (
+    export_settings_backup as kodi_export_settings_backup,
+    factory_reset_action as kodi_factory_reset_action,
+    reset_all_settings_action as kodi_reset_all_settings_action,
+    restore_settings_backup as kodi_restore_settings_backup,
+)
 from lib.utils.general.utils import (
     build_list_item,
     clear_all_cache,
@@ -734,6 +740,22 @@ def donate(params):
 
 def settings(params):
     addon_settings()
+
+
+def export_settings_backup(params):
+    kodi_export_settings_backup(params)
+
+
+def restore_settings_backup(params):
+    kodi_restore_settings_backup(params)
+
+
+def reset_all_settings(params):
+    kodi_reset_all_settings_action(params)
+
+
+def factory_reset(params):
+    kodi_factory_reset_action(params)
 
 
 def clear_all_cached(params):
