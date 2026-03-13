@@ -14,6 +14,8 @@ from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.trakt_cache import (
     cache_trakt_object,
+    clear_trakt_collection_watchlist_data,
+    clear_trakt_favorites,
     clear_trakt_list_contents_data,
     clear_trakt_list_data,
     trakt_watched_cache,
@@ -254,6 +256,15 @@ class TraktBase:
             set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
 
     def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
+        trakt_object = self.get_trakt_object_by_tmdb(tmdb_id, media_type)
+        if trakt_object:
+            try:
+                return trakt_object["ids"]["trakt"]
+            except (KeyError, TypeError):
+                return None
+        return None
+
+    def get_trakt_object_by_tmdb(self, tmdb_id, media_type="movie"):
         params = {
             "path": "search/tmdb/%s",
             "path_insert": tmdb_id,
@@ -264,7 +275,7 @@ class TraktBase:
         results = self.get_trakt(params)
         if results and isinstance(results, list) and len(results) > 0:
             try:
-                return results[0][media_type]["ids"]["trakt"]
+                return results[0][media_type]
             except (KeyError, IndexError, TypeError):
                 return None
         return None
@@ -492,14 +503,13 @@ class TraktMovies(TraktBase):
 
     def trakt_collection(self, page_no):
         set_pluging_category("Collection")
-        string = "trakt_movies_collection_%s" % page_no
         params = {
             "path": "sync/collection/movies",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
         }
-        return lists_cache_object(self.get_trakt, string, params)
+        return self.get_trakt(params)
 
 
 class TraktTV(TraktBase):
@@ -725,14 +735,13 @@ class TraktTV(TraktBase):
 
     def trakt_collection(self, page_no):
         set_pluging_category("Collection")
-        string = "trakt_tv_collection_%s" % page_no
         params = {
             "path": "sync/collection/shows",
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
         }
-        return lists_cache_object(self.get_trakt, string, params)
+        return self.get_trakt(params)
 
 
 class TraktAnime(TraktBase):
@@ -805,6 +814,71 @@ class TraktLists(TraktBase):
 
         return payload
 
+    @staticmethod
+    def _ids_match(candidate_ids, target_ids):
+        for key in ("trakt", "tmdb", "tvdb", "imdb"):
+            candidate = candidate_ids.get(key)
+            target = target_ids.get(key) or target_ids.get(f"{key}_id")
+            if candidate and target and str(candidate) == str(target):
+                return True
+        return False
+
+    def get_collection_items(self, media_type):
+        if media_type in ("movie", "movies"):
+            path = "sync/collection/movies"
+        else:
+            path = "sync/collection/shows"
+        return self.get_trakt(
+            {
+                "path": path,
+                "with_auth": True,
+                "pagination": False,
+                "params": {"extended": "full"},
+            }
+        )
+
+    def build_collection_remove_payload(self, media_type, ids):
+        if media_type in ("movie", "movies"):
+            return self._list_item_payload(media_type, ids)
+
+        items = self.get_collection_items(media_type)
+        if not items:
+            return None
+
+        for item in items:
+            show = item.get("show") or item
+            show_ids = show.get("ids", {})
+            if not self._ids_match(show_ids, ids):
+                continue
+
+            payload = {"shows": [{"ids": clean_ids(show_ids)}]}
+            if show.get("title"):
+                payload["shows"][0]["title"] = show.get("title")
+            if show.get("year"):
+                payload["shows"][0]["year"] = show.get("year")
+
+            seasons = item.get("seasons", []) or []
+            if seasons:
+                payload["shows"][0]["seasons"] = []
+                for season in seasons:
+                    season_number = season.get("number")
+                    if not season_number:
+                        continue
+                    season_payload = {"number": int(season_number)}
+                    episodes = season.get("episodes", []) or []
+                    if episodes:
+                        season_payload["episodes"] = []
+                        for episode in episodes:
+                            episode_number = episode.get("number")
+                            if episode_number:
+                                season_payload["episodes"].append(
+                                    {"number": int(episode_number)}
+                                )
+                    payload["shows"][0]["seasons"].append(season_payload)
+            return payload
+
+        return None
+
     def trakt_watchlist(self, media_type):
         kodilog("Fetching trakt watchlist")
         result = self.trakt_fetch_sorted_list("watchlist", media_type)
@@ -812,12 +886,13 @@ class TraktLists(TraktBase):
         return result
 
     def add_to_watchlist(self, media_type, ids):
+        original_media_type = media_type
         if media_type in ("movie", "movies"):
             media_type = "movies"
         else:
             media_type = "shows"
 
-        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        payload = self._list_item_payload(media_type, ids)
 
         result = self.call_trakt(
             "sync/watchlist",
@@ -825,23 +900,26 @@ class TraktLists(TraktBase):
             with_auth=True,
             pagination=False,
         )
-        lists_cache.delete_all_lists()
+        lists_cache.delete_prefix("trakt_%s_watchlist_" % ("movies" if media_type == "movies" else "tv"))
+        clear_trakt_collection_watchlist_data("watchlist", original_media_type)
         return result
 
     def remove_from_watchlist(self, media_type, ids):
+        original_media_type = media_type
         if media_type in ("movie", "movies"):
             media_type = "movies"
         else:
             media_type = "shows"
 
-        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        payload = self._list_item_payload(media_type, ids)
         result = self.call_trakt(
             "sync/watchlist/remove",
             data=payload,
             with_auth=True,
             pagination=False,
         )
-        lists_cache.delete_all_lists()
+        lists_cache.delete_prefix("trakt_%s_watchlist_" % ("movies" if media_type == "movies" else "tv"))
+        clear_trakt_collection_watchlist_data("watchlist", original_media_type)
         return result
 
     def trakt_comments(self, media_type, tmdb_id, sort_type="likes", page_no=1):
@@ -864,13 +942,14 @@ class TraktLists(TraktBase):
         }
         return self.get_trakt(params)
 
-    def add_to_collection(self, media_type, ids):
+    def add_to_collection(self, media_type, ids, payload=None):
+        original_media_type = media_type
         if media_type in ("movie", "movies"):
             media_type = "movies"
         else:
             media_type = "shows"
 
-        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        payload = payload or self._list_item_payload(media_type, ids)
 
         result = self.call_trakt(
             "sync/collection",
@@ -878,23 +957,26 @@ class TraktLists(TraktBase):
             with_auth=True,
             pagination=False,
         )
-        lists_cache.delete_all_lists()
+        lists_cache.delete_prefix("trakt_%s_collection_" % ("movies" if media_type == "movies" else "tv"))
+        clear_trakt_collection_watchlist_data("collection", original_media_type)
         return result
 
-    def remove_from_collection(self, media_type, ids):
+    def remove_from_collection(self, media_type, ids, payload=None):
+        original_media_type = media_type
         if media_type in ("movie", "movies"):
             media_type = "movies"
         else:
             media_type = "shows"
 
-        payload = {media_type: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        payload = payload or self._list_item_payload(media_type, ids)
         result = self.call_trakt(
             "sync/collection/remove",
             data=payload,
             with_auth=True,
             pagination=False,
         )
-        lists_cache.delete_all_lists()
+        lists_cache.delete_prefix("trakt_%s_collection_" % ("movies" if media_type == "movies" else "tv"))
+        clear_trakt_collection_watchlist_data("collection", original_media_type)
         return result
 
     def trakt_watched_history(self, media_type, page_no, sort_type="recent"):
@@ -1229,6 +1311,26 @@ class TraktLists(TraktBase):
         }
         return cache_trakt_object(_process, string, params)
 
+    def add_to_favorites(self, media_type, ids):
+        response = self.call_trakt(
+            "sync/favorites",
+            data=self._list_item_payload(media_type, ids),
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_favorites()
+        return response
+
+    def remove_from_favorites(self, media_type, ids):
+        response = self.call_trakt(
+            "sync/favorites/remove",
+            data=self._list_item_payload(media_type, ids),
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_favorites()
+        return response
+
     def create_list(self, name, description="", privacy="private"):
         response = self.call_trakt(
             "users/me/lists",
@@ -1278,19 +1380,26 @@ class TraktLists(TraktBase):
         clear_trakt_list_contents_data("liked_lists")
         return response
 
-    @staticmethod
-    def _list_item_payload(media_type, ids):
+    def _list_item_payload(self, media_type, ids):
         media_key = "movies" if media_type in ("movie", "movies") else "shows"
+        normalized_ids = clean_ids(
+            {
+                "tmdb": ids.get("tmdb") or ids.get("tmdb_id"),
+                "tvdb": ids.get("tvdb") or ids.get("tvdb_id"),
+                "imdb": ids.get("imdb") or ids.get("imdb_id"),
+            }
+        )
+        for key in ("tmdb", "tvdb"):
+            if key in normalized_ids:
+                try:
+                    normalized_ids[key] = int(normalized_ids[key])
+                except (TypeError, ValueError):
+                    pass
+
         payload = {
             media_key: [
                 {
-                    "ids": clean_ids(
-                        {
-                            "tmdb": ids.get("tmdb") or ids.get("tmdb_id"),
-                            "tvdb": ids.get("tvdb") or ids.get("tvdb_id"),
-                            "imdb": ids.get("imdb") or ids.get("imdb_id"),
-                        }
-                    )
+                    "ids": normalized_ids
                 }
             ]
         }

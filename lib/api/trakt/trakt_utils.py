@@ -16,7 +16,18 @@ def is_trakt_auth():
     return True
 
 
-def add_trakt_watchlist_context_menu(media_type, ids):
+def _filter_trakt_actions(actions, include_add=True, include_remove=True):
+    filtered = []
+    for label, command, action_type in actions:
+        if action_type == "add" and not include_add:
+            continue
+        if action_type == "remove" and not include_remove:
+            continue
+        filtered.append((label, command))
+    return filtered
+
+
+def add_trakt_watchlist_context_menu(media_type, ids, include_add=True, include_remove=True):
     filtered_ids = clean_ids(
         {
             "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
@@ -24,7 +35,7 @@ def add_trakt_watchlist_context_menu(media_type, ids):
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return [
+    return _filter_trakt_actions([
         (
             "Add to Trakt Watchlist",
             action_url_run(
@@ -32,6 +43,7 @@ def add_trakt_watchlist_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "add",
         ),
         (
             "Remove from Trakt Watchlist",
@@ -40,11 +52,14 @@ def add_trakt_watchlist_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "remove",
         ),
-    ]
+    ], include_add, include_remove)
 
 
-def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}):
+def add_trakt_watched_context_menu(
+    media_type, season=None, episode=None, ids={}, include_add=True, include_remove=True
+):
     filtered_ids = clean_ids(
         {
             "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
@@ -52,7 +67,7 @@ def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return [
+    return _filter_trakt_actions([
         (
             "Mark as Watched on Trakt",
             action_url_run(
@@ -62,6 +77,7 @@ def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}
                 season=json.dumps(season),
                 episode=json.dumps(episode),
             ),
+            "add",
         ),
         (
             "Mark as Unwatched on Trakt",
@@ -72,11 +88,12 @@ def add_trakt_watched_context_menu(media_type, season=None, episode=None, ids={}
                 season=json.dumps(season),
                 episode=json.dumps(episode),
             ),
+            "remove",
         ),
-    ]
+    ], include_add, include_remove)
 
 
-def add_trakt_collection_context_menu(media_type, ids):
+def add_trakt_collection_context_menu(media_type, ids, include_add=True, include_remove=True):
     filtered_ids = clean_ids(
         {
             "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
@@ -84,7 +101,7 @@ def add_trakt_collection_context_menu(media_type, ids):
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return [
+    return _filter_trakt_actions([
         (
             "Add to Collection",
             action_url_run(
@@ -92,6 +109,7 @@ def add_trakt_collection_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "add",
         ),
         (
             "Remove from Collection",
@@ -100,11 +118,12 @@ def add_trakt_collection_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "remove",
         ),
-    ]
+    ], include_add, include_remove)
 
 
-def add_trakt_custom_list_context_menu(media_type, ids):
+def add_trakt_favorites_context_menu(media_type, ids, include_add=True, include_remove=True):
     filtered_ids = clean_ids(
         {
             "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
@@ -112,7 +131,37 @@ def add_trakt_custom_list_context_menu(media_type, ids):
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return [
+    return _filter_trakt_actions([
+        (
+            "Add to Trakt Favorites",
+            action_url_run(
+                "trakt_add_to_favorites",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+            "add",
+        ),
+        (
+            "Remove from Trakt Favorites",
+            action_url_run(
+                "trakt_remove_from_favorites",
+                media_type=media_type,
+                ids=json.dumps(filtered_ids),
+            ),
+            "remove",
+        ),
+    ], include_add, include_remove)
+
+
+def add_trakt_custom_list_context_menu(media_type, ids, include_add=True, include_remove=True):
+    filtered_ids = clean_ids(
+        {
+            "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
+            "tvdb": ids.get("tvdb_id") or ids.get("tvdb"),
+            "imdb": ids.get("imdb_id") or ids.get("imdb"),
+        }
+    )
+    return _filter_trakt_actions([
         (
             "Add to Trakt List",
             action_url_run(
@@ -120,6 +169,7 @@ def add_trakt_custom_list_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "add",
         ),
         (
             "Remove from Trakt List",
@@ -128,8 +178,9 @@ def add_trakt_custom_list_context_menu(media_type, ids):
                 media_type=media_type,
                 ids=json.dumps(filtered_ids),
             ),
+            "remove",
         ),
-    ]
+    ], include_add, include_remove)
 
 
 def clean_ids(ids_dict):

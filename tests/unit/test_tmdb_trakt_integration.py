@@ -16,6 +16,8 @@ def test_movie_item_adds_trakt_context_actions_when_authenticated():
     ), patch(
         "lib.clients.tmdb.base.add_trakt_collection_context_menu", return_value=[("collection", "cmd")]
     ), patch(
+        "lib.clients.tmdb.base.add_trakt_favorites_context_menu", return_value=[("favorites", "cmd")]
+    ), patch(
         "lib.clients.tmdb.base.add_trakt_custom_list_context_menu", return_value=[("customlist", "cmd")]
     ), patch("lib.clients.tmdb.base.add_kodi_dir_item"):
         BaseTmdbClient.add_media_directory_item(list_item, "movies", "Demo Movie", ids)
@@ -26,6 +28,7 @@ def test_movie_item_adds_trakt_context_actions_when_authenticated():
             ("watchlist", "cmd"),
             ("watched", "cmd"),
             ("collection", "cmd"),
+            ("favorites", "cmd"),
             ("customlist", "cmd"),
         ]
     )

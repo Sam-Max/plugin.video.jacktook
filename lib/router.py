@@ -335,6 +335,8 @@ def _route_trakt(action, params):
     if action in (
         "trakt_add_to_watchlist",
         "trakt_remove_from_watchlist",
+        "trakt_add_to_favorites",
+        "trakt_remove_from_favorites",
         "trakt_mark_as_watched",
         "trakt_mark_as_unwatched",
         "add_to_collection",
@@ -351,6 +353,8 @@ def _route_trakt(action, params):
         actions = {
             "trakt_add_to_watchlist": TraktClient.trakt_add_to_watchlist,
             "trakt_remove_from_watchlist": TraktClient.trakt_remove_from_watchlist,
+            "trakt_add_to_favorites": TraktClient.trakt_add_to_favorites,
+            "trakt_remove_from_favorites": TraktClient.trakt_remove_from_favorites,
             "trakt_mark_as_watched": TraktClient.trakt_mark_as_watched,
             "trakt_mark_as_unwatched": TraktClient.trakt_mark_as_unwatched,
             "add_to_collection": TraktClient.trakt_add_to_collection,

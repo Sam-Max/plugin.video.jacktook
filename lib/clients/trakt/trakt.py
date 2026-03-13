@@ -1,9 +1,10 @@
 import json
-from datetime import timedelta
+from datetime import datetime, timedelta
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.api.trakt.trakt_utils import (
     add_trakt_custom_list_context_menu,
+    add_trakt_favorites_context_menu,
     add_trakt_watched_context_menu,
     add_trakt_watchlist_context_menu,
     is_trakt_auth,
@@ -63,7 +64,72 @@ class Trakt(Enum):
 
 class BaseTraktClient:
     @staticmethod
-    def _add_media_directory_item(list_item, mode, title, ids, media_type=None):
+    def _exclusive_context_flags(remove_action):
+        flags = {
+            "watchlist_add": False,
+            "watchlist_remove": False,
+            "watched_add": False,
+            "watched_remove": False,
+            "collection_add": False,
+            "collection_remove": False,
+            "favorites_add": False,
+            "favorites_remove": False,
+            "custom_list_add": False,
+            "custom_list_remove": False,
+        }
+        if remove_action == "watchlist":
+            flags["watchlist_remove"] = True
+        elif remove_action == "watched":
+            flags["watched_remove"] = True
+        elif remove_action == "collection":
+            flags["collection_remove"] = True
+        elif remove_action == "favorites":
+            flags["favorites_remove"] = True
+        elif remove_action == "custom_list":
+            flags["custom_list_remove"] = True
+        return flags
+
+    @staticmethod
+    def _trakt_context_menu(mode, ids, context_flags=None):
+        context_flags = context_flags or {}
+        media_type = "movies" if mode == "movies" else "shows"
+        return (
+            add_trakt_watchlist_context_menu(
+                media_type,
+                ids,
+                include_add=context_flags.get("watchlist_add", True),
+                include_remove=context_flags.get("watchlist_remove", True),
+            )
+            + add_trakt_watched_context_menu(
+                media_type,
+                ids=ids,
+                include_add=context_flags.get("watched_add", True),
+                include_remove=context_flags.get("watched_remove", True),
+            )
+            + add_trakt_collection_context_menu(
+                media_type,
+                ids,
+                include_add=context_flags.get("collection_add", True),
+                include_remove=context_flags.get("collection_remove", True),
+            )
+            + add_trakt_favorites_context_menu(
+                media_type,
+                ids,
+                include_add=context_flags.get("favorites_add", True),
+                include_remove=context_flags.get("favorites_remove", True),
+            )
+            + add_trakt_custom_list_context_menu(
+                media_type,
+                ids,
+                include_add=context_flags.get("custom_list_add", True),
+                include_remove=context_flags.get("custom_list_remove", True),
+            )
+        )
+
+    @staticmethod
+    def _add_media_directory_item(
+        list_item, mode, title, ids, media_type=None, context_flags=None
+    ):
         if mode == "movies":
             list_item.addContextMenuItems(
                 [
@@ -79,10 +145,9 @@ class BaseTraktClient:
                     ),
                 ]
                 + (
-                    add_trakt_watchlist_context_menu("movies", ids)
-                    + add_trakt_watched_context_menu("movies", ids=ids)
-                    + add_trakt_collection_context_menu("movies", ids)
-                    + add_trakt_custom_list_context_menu("movies", ids)
+                    BaseTraktClient._trakt_context_menu(
+                        "movies", ids, context_flags=context_flags
+                    )
                     if is_trakt_auth()
                     else []
                 )
@@ -101,10 +166,9 @@ class BaseTraktClient:
         else:
             if is_trakt_auth():
                 list_item.addContextMenuItems(
-                    add_trakt_watchlist_context_menu("shows", ids)
-                    + add_trakt_watched_context_menu("shows", ids=ids)
-                    + add_trakt_collection_context_menu("shows", ids)
-                    + add_trakt_custom_list_context_menu("shows", ids)
+                    BaseTraktClient._trakt_context_menu(
+                        "tv", ids, context_flags=context_flags
+                    )
                 )
             add_kodi_dir_item(
                 list_item=list_item,
@@ -119,6 +183,224 @@ class BaseTraktClient:
 
 
 class TraktClient:
+    @staticmethod
+    def _trakt_sync_result_count(result, key, media_type):
+        if not isinstance(result, dict):
+            return 0
+        section = result.get(key, {})
+        if not isinstance(section, dict):
+            return 0
+        media_keys = []
+        if media_type in ("movie", "movies"):
+            media_keys = ["movies", "movie"]
+        else:
+            media_keys = ["shows", "show"]
+        for media_key in media_keys:
+            value = section.get(media_key)
+            if isinstance(value, int):
+                return value
+        return 0
+
+    @staticmethod
+    def _normalize_trakt_media_type(media_type, ids):
+        if media_type in ("tv", "show", "shows", "tvshow", "tvshows", "anime"):
+            return "shows"
+        if media_type in ("movie", "movies"):
+            if ids.get("tvdb") or ids.get("tvdb_id"):
+                return "shows"
+        if ids.get("tvdb") or ids.get("tvdb_id"):
+            return "shows"
+
+        tmdb_id = ids.get("tmdb") or ids.get("tmdb_id")
+        if tmdb_id:
+            tv_details = tmdb_get("tv_details", tmdb_id)
+            tv_name = getattr(tv_details, "name", None)
+            if tv_name is None and isinstance(tv_details, dict):
+                tv_name = tv_details.get("name")
+            if tv_name:
+                return "shows"
+
+            movie_details = tmdb_get("movie_details", tmdb_id)
+            movie_title = getattr(movie_details, "title", None)
+            if movie_title is None and isinstance(movie_details, dict):
+                movie_title = movie_details.get("title")
+            if movie_title:
+                return "movies"
+
+        imdb_id = ids.get("imdb") or ids.get("imdb_id")
+        if imdb_id:
+            found = tmdb_get("find_by_imdb_id", imdb_id)
+            if getattr(found, "tv_results", []):
+                return "shows"
+            if getattr(found, "movie_results", []):
+                return "movies"
+
+        return "movies"
+
+    @staticmethod
+    def _build_show_collection_payload(ids):
+        resolved_ids = TraktPresentation._resolve_media_ids("tv", ids)
+        tmdb_id = resolved_ids.get("tmdb_id")
+        show_details = tmdb_get("tv_details", tmdb_id) if tmdb_id else None
+        trakt_object = (
+            TraktAPI().lists.get_trakt_object_by_tmdb(tmdb_id, media_type="show")
+            if tmdb_id
+            else None
+        )
+        normalized_ids = {}
+        if resolved_ids.get("tmdb_id"):
+            normalized_ids["tmdb"] = int(resolved_ids["tmdb_id"])
+            trakt_id = trakt_object.get("ids", {}).get("trakt") if trakt_object else None
+            if trakt_id:
+                normalized_ids["trakt"] = trakt_id
+        if resolved_ids.get("tvdb_id"):
+            normalized_ids["tvdb"] = int(resolved_ids["tvdb_id"])
+        if resolved_ids.get("imdb_id"):
+            normalized_ids["imdb"] = resolved_ids["imdb_id"]
+        slug = trakt_object.get("ids", {}).get("slug") if trakt_object else None
+        if slug:
+            normalized_ids["slug"] = slug
+        if not normalized_ids:
+            return None
+
+        show_item = {"ids": normalized_ids}
+        title = trakt_object.get("title") if trakt_object else None
+        if title is None:
+            title = getattr(show_details, "name", None)
+        if title is None and isinstance(show_details, dict):
+            title = show_details.get("name")
+        if title:
+            show_item["title"] = title
+        first_air_date = trakt_object.get("year") if trakt_object else None
+        if isinstance(first_air_date, int):
+            show_item["year"] = first_air_date
+            return {"shows": [show_item]}
+
+        first_air_date = getattr(show_details, "first_air_date", None)
+        if first_air_date is None and isinstance(show_details, dict):
+            first_air_date = show_details.get("first_air_date")
+        if first_air_date:
+            try:
+                show_item["year"] = int(str(first_air_date)[:4])
+            except (TypeError, ValueError):
+                pass
+
+        return {"shows": [show_item]}
+
+    @staticmethod
+    def _build_show_collection_episode_payload(ids):
+        resolved_ids = TraktPresentation._resolve_media_ids("tv", ids)
+        tmdb_id = resolved_ids.get("tmdb_id")
+        if not tmdb_id:
+            return None
+
+        show_details = tmdb_get("tv_details", tmdb_id)
+        total_seasons = getattr(show_details, "number_of_seasons", 0) or show_details.get(
+            "number_of_seasons", 0
+        )
+        today = datetime.utcnow().date()
+        seasons_payload = []
+
+        for season_number in range(1, int(total_seasons) + 1):
+            season_details = tmdb_get(
+                "season_details", {"id": tmdb_id, "season": season_number}
+            )
+            episodes = getattr(season_details, "episodes", None)
+            if episodes is None and isinstance(season_details, dict):
+                episodes = season_details.get("episodes", [])
+            if not episodes:
+                continue
+
+            episode_entries = []
+            for episode in episodes:
+                air_date = getattr(episode, "air_date", None)
+                if air_date is None and isinstance(episode, dict):
+                    air_date = episode.get("air_date")
+                if air_date:
+                    try:
+                        if datetime.strptime(air_date, "%Y-%m-%d").date() > today:
+                            continue
+                    except ValueError:
+                        pass
+
+                episode_number = getattr(episode, "episode_number", None)
+                if episode_number is None and isinstance(episode, dict):
+                    episode_number = episode.get("episode_number")
+                if not episode_number:
+                    continue
+                episode_entries.append({"number": int(episode_number)})
+
+            if episode_entries:
+                seasons_payload.append(
+                    {"number": int(season_number), "episodes": episode_entries}
+                )
+
+        if not seasons_payload:
+            return None
+
+        trakt_ids = {k: v for k, v in resolved_ids.items() if v}
+        trakt_object = TraktAPI().lists.get_trakt_object_by_tmdb(tmdb_id, media_type="show")
+        normalized_ids = {}
+        if trakt_ids.get("tmdb_id"):
+            normalized_ids["tmdb"] = int(trakt_ids["tmdb_id"])
+            trakt_id = trakt_object.get("ids", {}).get("trakt") if trakt_object else None
+            if trakt_id:
+                normalized_ids["trakt"] = trakt_id
+        if trakt_ids.get("tvdb_id"):
+            normalized_ids["tvdb"] = int(trakt_ids["tvdb_id"])
+        if trakt_ids.get("imdb_id"):
+            normalized_ids["imdb"] = trakt_ids["imdb_id"]
+        slug = trakt_object.get("ids", {}).get("slug") if trakt_object else None
+        if slug:
+            normalized_ids["slug"] = slug
+
+        show_item = {"ids": normalized_ids, "seasons": seasons_payload}
+        if trakt_object and trakt_object.get("title"):
+            show_item["title"] = trakt_object.get("title")
+        if trakt_object and trakt_object.get("year"):
+            show_item["year"] = trakt_object.get("year")
+        return {"shows": [show_item]}
+
+    @staticmethod
+    def _build_show_collection_season_payload(ids):
+        episode_payload = TraktClient._build_show_collection_episode_payload(ids)
+        if not episode_payload:
+            return None
+
+        show_item = episode_payload["shows"][0]
+        seasons = show_item.get("seasons", [])
+        if not seasons:
+            return None
+
+        season_payload = {
+            "shows": [
+                {
+                    "ids": show_item.get("ids", {}),
+                    "seasons": [{"number": season.get("number")} for season in seasons if season.get("number")],
+                }
+            ]
+        }
+        if show_item.get("title"):
+            season_payload["shows"][0]["title"] = show_item.get("title")
+        if show_item.get("year"):
+            season_payload["shows"][0]["year"] = show_item.get("year")
+        return season_payload
+
+    @staticmethod
+    def _result_has_collection_change(result, action):
+        if action == "add":
+            relevant_keys = ("added", "updated", "existing")
+        else:
+            relevant_keys = ("deleted",)
+
+        for key in relevant_keys:
+            section = result.get(key, {}) if isinstance(result, dict) else {}
+            if not isinstance(section, dict):
+                continue
+            if any(int(section.get(count_key, 0) or 0) > 0 for count_key in ("movies", "episodes")):
+                return True
+        return False
+
     @staticmethod
     def handle_trakt_query(query, category, mode, page, submode, api, params=None):
         set_content_type(mode)
@@ -241,22 +523,28 @@ class TraktClient:
 
     @staticmethod
     def trakt_add_to_watchlist(params):
-        media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
         try:
             TraktAPI().lists.add_to_watchlist(media_type, ids)
             notification("Added to Trakt watchlist", time=3000)
+            refresh()
         except Exception as e:
             kodilog(f"Error adding to Trakt watchlist: {e}")
             notification("Failed to add to Trakt watchlist", time=3000)
 
     @staticmethod
     def trakt_remove_from_watchlist(params):
-        media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
         try:
             TraktAPI().lists.remove_from_watchlist(media_type, ids)
             notification("Removed from Trakt watchlist", time=3000)
+            refresh()
         except Exception as e:
             kodilog(f"Error removing from Trakt watchlist: {e}")
             notification("Failed to remove from Trakt watchlist", time=3000)
@@ -288,25 +576,104 @@ class TraktClient:
 
     @staticmethod
     def trakt_add_to_collection(params):
-        media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
         try:
-            TraktAPI().lists.add_to_collection(media_type, ids)
-            notification("Added to Trakt collection", time=3000)
+            payload = None
+            if media_type not in ("movie", "movies"):
+                payload = TraktClient._build_show_collection_payload(ids)
+                if payload is None:
+                    notification("Could not build Trakt collection payload for show", time=3500)
+                    return
+            result = TraktAPI().lists.add_to_collection(media_type, ids, payload=payload)
+            if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "add"):
+                payload = TraktClient._build_show_collection_season_payload(ids)
+                if payload is not None:
+                    result = TraktAPI().lists.add_to_collection(media_type, ids, payload=payload)
+            if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "add"):
+                payload = TraktClient._build_show_collection_episode_payload(ids)
+                if payload is not None:
+                    result = TraktAPI().lists.add_to_collection(media_type, ids, payload=payload)
+            added_count = TraktClient._trakt_sync_result_count(result, "added", media_type)
+            existing_count = TraktClient._trakt_sync_result_count(result, "existing", media_type)
+            not_found_count = TraktClient._trakt_sync_result_count(result, "not_found", media_type)
+            if added_count > 0 or existing_count > 0:
+                notification("Added to Trakt collection", time=3000)
+                refresh()
+            elif not_found_count > 0:
+                notification("Trakt could not match this item for collection", time=3500)
+            else:
+                notification("No Trakt collection changes were applied", time=3500)
         except Exception as e:
             kodilog(f"Error adding to Trakt collection: {e}")
             notification("Failed to add to Trakt collection", time=3000)
 
     @staticmethod
     def trakt_remove_from_collection(params):
-        media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
         try:
-            TraktAPI().lists.remove_from_collection(media_type, ids)
-            notification("Removed from Trakt collection", time=3000)
+            payload = None
+            if media_type not in ("movie", "movies"):
+                payload = TraktAPI().lists.build_collection_remove_payload(media_type, ids)
+                if payload is None:
+                    payload = TraktClient._build_show_collection_payload(ids)
+                if payload is None:
+                    notification("Could not build Trakt collection payload for show", time=3500)
+                    return
+            result = TraktAPI().lists.remove_from_collection(media_type, ids, payload=payload)
+            if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "remove"):
+                payload = TraktClient._build_show_collection_season_payload(ids)
+                if payload is not None:
+                    result = TraktAPI().lists.remove_from_collection(media_type, ids, payload=payload)
+            if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "remove"):
+                payload = TraktClient._build_show_collection_episode_payload(ids)
+                if payload is not None:
+                    result = TraktAPI().lists.remove_from_collection(media_type, ids, payload=payload)
+            removed_count = TraktClient._trakt_sync_result_count(result, "deleted", media_type)
+            not_found_count = TraktClient._trakt_sync_result_count(result, "not_found", media_type)
+            if removed_count > 0:
+                notification("Removed from Trakt collection", time=3000)
+                refresh()
+            elif not_found_count > 0:
+                notification("Item not found in Trakt collection", time=3500)
+            else:
+                notification("No Trakt collection changes were applied", time=3500)
         except Exception as e:
             kodilog(f"Error removing from Trakt collection: {e}")
             notification("Failed to remove from Trakt collection", time=3000)
+
+    @staticmethod
+    def trakt_add_to_favorites(params):
+        ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
+        try:
+            TraktAPI().lists.add_to_favorites(media_type, ids)
+            notification("Added to Trakt favorites", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error adding to Trakt favorites: {e}")
+            notification("Failed to add to Trakt favorites", time=3000)
+
+    @staticmethod
+    def trakt_remove_from_favorites(params):
+        ids = json.loads(params.get("ids", "{}"))
+        media_type = TraktClient._normalize_trakt_media_type(
+            params.get("media_type"), ids
+        )
+        try:
+            TraktAPI().lists.remove_from_favorites(media_type, ids)
+            notification("Removed from Trakt favorites", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error removing from Trakt favorites: {e}")
+            notification("Failed to remove from Trakt favorites", time=3000)
 
     @staticmethod
     def trakt_create_list(params):
@@ -445,12 +812,12 @@ class TraktClient:
     ):
         if query == Trakt.ACCOUNT_INFO:
             TraktPresentation.show_account_info(results)
-            end_of_directory()
+            end_of_directory(cache=False)
             return
 
         if not results:
             if query == Trakt.SEARCH_LISTS and not search_term:
-                end_of_directory()
+                end_of_directory(cache=False)
                 return
             if query in (Trakt.CALENDAR, Trakt.UP_NEXT, Trakt.SEARCH_LISTS):
                 notification("No results found", time=3000)
@@ -484,7 +851,7 @@ class TraktClient:
                 results, TraktPresentation.show_watched_history
             ),
             Trakt.COLLECTION: lambda: execute_thread_pool(
-                results, TraktPresentation.show_common_categories, mode
+                results, TraktPresentation.show_collection, mode
             ),
             Trakt.CALENDAR: lambda: execute_thread_pool(
                 results, TraktPresentation.show_calendar_items
@@ -493,7 +860,7 @@ class TraktClient:
                 results, TraktPresentation.show_up_next_items
             ),
             Trakt.FAVORITES: lambda: execute_thread_pool(
-                results, TraktPresentation.show_watchlist, mode
+                results, TraktPresentation.show_favorites, mode
             ),
             Trakt.MY_LISTS: lambda: execute_thread_pool(
                 results, TraktPresentation.show_user_lists, mode
@@ -539,7 +906,7 @@ class TraktClient:
             if search_term:
                 next_kwargs["search_term"] = search_term
             add_next_button("search_item", page=page, **next_kwargs)
-        end_of_directory()
+        end_of_directory(cache=TraktClient._should_cache_directory(query))
 
     @staticmethod
     def _should_add_next_button(query, category):
@@ -562,19 +929,34 @@ class TraktClient:
         return query in paginated_queries or category in paginated_categories
 
     @staticmethod
+    def _should_cache_directory(query):
+        non_cached_queries = {
+            Trakt.WATCHLIST,
+            Trakt.WATCHED_HISTORY,
+            Trakt.CALENDAR,
+            Trakt.UP_NEXT,
+            Trakt.COLLECTION,
+            Trakt.FAVORITES,
+            Trakt.MY_LISTS,
+            Trakt.LIKED_LISTS,
+            Trakt.ACCOUNT_INFO,
+        }
+        return query not in non_cached_queries
+
+    @staticmethod
     def show_trakt_list_content(list_type, mode, user, slug, with_auth, page, trakt_id=None):
         data = TraktAPI().lists.get_trakt_list_contents(
             list_type, user, slug, with_auth, trakt_id
         )
         if not data:
             notification("No results found", time=3000)
-            end_of_directory()
+            end_of_directory(cache=not bool(with_auth))
             return
         paginator_db.initialize(data)
         items = paginator_db.get_page(page)
         execute_thread_pool(items, TraktPresentation.show_lists_content_items)
         add_next_button("list_trakt_page", page, mode=mode)
-        end_of_directory()
+        end_of_directory(cache=not bool(with_auth))
 
     @staticmethod
     def show_list_trakt_page(page, mode):
@@ -585,6 +967,29 @@ class TraktClient:
 
 
 class TraktPresentation:
+    @staticmethod
+    def _resolve_media_ids(mode, media_ids):
+        tmdb_id = media_ids.get("tmdb") or media_ids.get("tmdb_id")
+        imdb_id = media_ids.get("imdb") or media_ids.get("imdb_id", "")
+        tvdb_id = media_ids.get("tvdb") or media_ids.get("tvdb_id", "")
+
+        if mode == "tv":
+            if not tmdb_id and imdb_id:
+                found = tmdb_get("find_by_imdb_id", imdb_id)
+                if getattr(found, "tv_results", []):
+                    tmdb_id = str(found.tv_results[0]["id"])
+            if not tmdb_id and tvdb_id:
+                found = tmdb_get("find_by_tvdb", tvdb_id)
+                if getattr(found, "tv_results", []):
+                    tmdb_id = str(found.tv_results[0]["id"])
+        else:
+            if not tmdb_id and imdb_id:
+                found = tmdb_get("find_by_imdb_id", imdb_id)
+                if getattr(found, "movie_results", []):
+                    tmdb_id = str(found.movie_results[0]["id"])
+
+        return {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+
     @staticmethod
     def show_create_list_entry(mode):
         list_item = ListItem(f"[B]+ {translation(30926)}[/B]")
@@ -683,10 +1088,10 @@ class TraktPresentation:
     @staticmethod
     def show_watchlist(res, mode):
         title = res["title"]
-        tmdb_id = res["media_ids"]["tmdb"]
-        imdb_id = res["media_ids"]["imdb"]
-
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+        ids = TraktPresentation._resolve_media_ids(mode, res["media_ids"])
+        tmdb_id = ids["tmdb_id"]
+        if not tmdb_id:
+            return
 
         if mode == "tv":
             details = tmdb_get("tv_details", tmdb_id)
@@ -702,6 +1107,61 @@ class TraktPresentation:
             title=title,
             ids=ids,
             media_type=res.get("media_type"),
+            context_flags=BaseTraktClient._exclusive_context_flags("watchlist"),
+        )
+
+    @staticmethod
+    def show_favorites(res, mode):
+        title = res["title"]
+        ids = TraktPresentation._resolve_media_ids(mode, res["media_ids"])
+        tmdb_id = ids["tmdb_id"]
+        if not tmdb_id:
+            return
+
+        if mode == "tv":
+            details = tmdb_get("tv_details", tmdb_id)
+        else:
+            details = tmdb_get("movie_details", tmdb_id)
+
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, data=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
+            mode=mode,
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
+            context_flags=BaseTraktClient._exclusive_context_flags("favorites"),
+        )
+
+    @staticmethod
+    def show_collection(res, mode):
+        if mode == "tv":
+            title = res["show"]["title"]
+            ids = TraktPresentation._resolve_media_ids(mode, res["show"].get("ids", {}))
+            tmdb_id = ids["tmdb_id"]
+            if not tmdb_id:
+                return
+            details = tmdb_get("tv_details", tmdb_id)
+        else:
+            title = res["movie"]["title"]
+            ids = TraktPresentation._resolve_media_ids(mode, res["movie"].get("ids", {}))
+            tmdb_id = ids["tmdb_id"]
+            if not tmdb_id:
+                return
+            details = tmdb_get("movie_details", tmdb_id)
+
+        list_item = ListItem(label=title)
+        set_media_infoTag(list_item, data=details, mode=mode)
+
+        BaseTraktClient._add_media_directory_item(
+            list_item=list_item,
+            mode=mode,
+            title=title,
+            ids=ids,
+            media_type=res.get("media_type"),
+            context_flags=BaseTraktClient._exclusive_context_flags("collection"),
         )
 
     @staticmethod
@@ -840,13 +1300,14 @@ class TraktPresentation:
 
     @staticmethod
     def show_watched_history(res):
-        tmdb_id = res["media_ids"]["tmdb"]
-        imdb_id = res["media_ids"]["imdb"]
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
         title = res["title"]
 
         if res["type"] == "show":
             mode = "tv"
+            ids = TraktPresentation._resolve_media_ids(mode, res["media_ids"])
+            tmdb_id = ids["tmdb_id"]
+            if not tmdb_id:
+                return
             details = tmdb_get("tv_details", tmdb_id)
             url = build_url(
                 "search",
@@ -863,6 +1324,10 @@ class TraktPresentation:
             is_playable = False
         else:
             mode = "movies"
+            ids = TraktPresentation._resolve_media_ids(mode, res["media_ids"])
+            tmdb_id = ids["tmdb_id"]
+            if not tmdb_id:
+                return
             details = tmdb_get("movie_details", tmdb_id)
             url = build_url(
                 "search",
@@ -875,6 +1340,13 @@ class TraktPresentation:
 
         list_item = ListItem(title)
         set_media_infoTag(list_item, data=details, mode=mode)
+        list_item.addContextMenuItems(
+            BaseTraktClient._trakt_context_menu(
+                mode,
+                ids,
+                context_flags=BaseTraktClient._exclusive_context_flags("watched"),
+            )
+        )
 
         add_kodi_dir_item(
             list_item,
@@ -885,36 +1357,22 @@ class TraktPresentation:
 
     @staticmethod
     def show_lists_content_items(res):
-        media_ids = res.get("media_ids", {})
-        tmdb_id = media_ids.get("tmdb")
-        imdb_id = media_ids.get("imdb", "")
-        tvdb_id = media_ids.get("tvdb", "")
         title = res["title"]
 
         if res["type"] == "show":
             mode = "tv"
-            if not tmdb_id and imdb_id:
-                found = tmdb_get("find_by_imdb_id", imdb_id)
-                if getattr(found, "tv_results", []):
-                    tmdb_id = str(found.tv_results[0]["id"])
-            if not tmdb_id and tvdb_id:
-                found = tmdb_get("find_by_tvdb", tvdb_id)
-                if getattr(found, "tv_results", []):
-                    tmdb_id = str(found.tv_results[0]["id"])
+            ids = TraktPresentation._resolve_media_ids(mode, res.get("media_ids", {}))
+            tmdb_id = ids["tmdb_id"]
             if not tmdb_id:
                 return
             details = tmdb_get("tv_details", tmdb_id)
         else:
             mode = "movies"
-            if not tmdb_id and imdb_id:
-                found = tmdb_get("find_by_imdb_id", imdb_id)
-                if getattr(found, "movie_results", []):
-                    tmdb_id = str(found.movie_results[0]["id"])
+            ids = TraktPresentation._resolve_media_ids(mode, res.get("media_ids", {}))
+            tmdb_id = ids["tmdb_id"]
             if not tmdb_id:
                 return
             details = tmdb_get("movie_details", tmdb_id)
-
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
         list_item = ListItem(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
@@ -925,6 +1383,7 @@ class TraktPresentation:
             title=title,
             ids=ids,
             media_type=res.get("media_type"),
+            context_flags=BaseTraktClient._exclusive_context_flags("custom_list"),
         )
 
     @staticmethod
