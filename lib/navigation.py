@@ -1,17 +1,8 @@
-from datetime import timedelta
 import json
 import os
-from threading import Thread
-from lib.api.debrid.alldebrid import AllDebrid
-from lib.api.debrid.debrider import Debrider
 from lib.api.trakt.trakt import TraktAPI
-from lib.clients.debrid.alldebrid import AllDebridHelper
-from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.trakt.trakt import TraktClient
 
-from lib.api.debrid.premiumize import Premiumize
-from lib.api.debrid.realdebrid import RealDebrid
-from lib.api.debrid.torbox import Torbox
 from lib.clients.stremio.catalog_menus import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
@@ -29,7 +20,6 @@ from lib.gui.custom_dialogs import (
 )
 
 from lib.player import JacktookPLayer
-from lib.clients.debrid.debrider import DebriderHelper
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -38,28 +28,19 @@ from lib.utils.kodi.utils import (
     action_url_run,
     build_url,
     burst_addon_settings,
-    container_update,
     dialog_text,
     end_of_directory,
     get_setting,
     notification,
     play_info_hash,
-    kodi_play_media,
-    show_keyboard,
     translation,
 )
 from lib.utils.player.utils import resolve_playback_url
-from lib.utils.views.last_files import show_last_files
-from lib.utils.views.last_titles import show_last_titles
-from lib.utils.views.weekly_calendar import show_weekly_calendar
+from lib.utils.torrent.torrserver_init import get_torrserver_api
 from lib.utils.torrentio.utils import open_providers_selection
-from lib.clients.debrid.realdebrid import RealDebridHelper
-from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.settings import addon_settings
 from lib.utils.general.utils import (
-    DebridType,
     build_list_item,
-    check_debrid_enabled,
     clear_all_cache,
     clear_trakt_db_cache,
     clear_tmdb_cache as utils_clear_tmdb_cache,
@@ -67,21 +48,13 @@ from lib.utils.general.utils import (
     clear_debrid_cache as utils_clear_debrid_cache,
     clear_mdblist_cache as utils_clear_mdblist_cache,
     clear_database_cache as utils_clear_database_cache,
-    clear_history_by_type,
-    get_random_color,
     make_listing,
     set_content_type,
     set_pluging_category,
     show_log_export_dialog,
 )
-from lib.services.debrid.auth import (
-    run_alldebrid_auth,
-    run_debrider_auth,
-    run_premiumize_auth,
-    run_realdebrid_auth,
-    run_torbox_auth,
-)
-from lib.services.debrid.download import run_realdebrid_download
+import lib.nav.debrid as debrid_navigation
+import lib.nav.library_history as library_history_navigation
 from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
@@ -101,48 +74,7 @@ from xbmcplugin import (
 
 from lib.utils.general.items_menus import (
     root_menu_items,
-    history_menu_items,
-    library_menu_items,
 )
-
-
-def _start_realdebrid_download(magnet):
-    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    thread = Thread(target=run_realdebrid_download, args=(rd_client, magnet, False))
-    thread.start()
-
-
-def _start_torbox_download(magnet):
-    tb_client = Torbox(token=str(get_setting("torbox_token")))
-    thread = Thread(target=tb_client.download, args=(magnet,))
-    thread.start()
-
-
-def _start_premiumize_download(magnet):
-    pm_client = Premiumize(token=str(get_setting("premiumize_token")))
-    thread = Thread(target=pm_client.download, args=(magnet,), kwargs={"pack": False})
-    thread.start()
-
-
-DEBRID_CLOUD_ACTIONS = {
-    DebridType.RD: {"downloads": "get_rd_downloads", "info": "real_debrid_info"},
-    DebridType.DB: {"downloads": "get_db_downloads", "info": "debrider_info"},
-    DebridType.AD: {"downloads": "get_ad_downloads", "info": "alldebrid_info"},
-    DebridType.TB: {"downloads": "get_tb_downloads", "info": "torbox_info"},
-}
-
-DEBRID_DOWNLOAD_HANDLERS = {
-    "RD": _start_realdebrid_download,
-    "TB": _start_torbox_download,
-    "PM": _start_premiumize_download,
-}
-
-DEBRID_INFO_HANDLERS = {
-    DebridType.RD: lambda: RealDebridHelper().get_info(),
-    DebridType.AD: lambda: AllDebridHelper().get_info(),
-    DebridType.DB: lambda: DebriderHelper().get_info(),
-    DebridType.TB: lambda: TorboxHelper().get_info(),
-}
 
 
 def render_menu(items, cache=True):
@@ -424,63 +356,39 @@ def anime_menu(params):
 
 
 def history_menu(params):
-    set_pluging_category(translation(90017))
-    render_menu(history_menu_items)
+    return library_history_navigation.history_menu(params)
 
 
 def library_menu(params):
-    set_pluging_category(translation(90201))
-    render_menu(library_menu_items)
+    return library_history_navigation.library_menu(params)
 
 
 def continue_watching_menu(params):
-    from lib.utils.views.continue_watching import show_continue_watching
-
-    show_continue_watching()
+    return library_history_navigation.continue_watching_menu(params)
 
 
 def remove_from_continue_watching(params):
-    from lib.utils.views.continue_watching import remove_continue_watching_item
-
-    remove_continue_watching_item(params)
+    return library_history_navigation.remove_from_continue_watching(params)
 
 
 def library_shows(params):
-    from lib.utils.views.library import show_library_items
-
-    show_library_items(mode="tv")
+    return library_history_navigation.library_shows(params)
 
 
 def library_movies(params):
-    from lib.utils.views.library import show_library_items
-
-    show_library_items(mode="movies")
+    return library_history_navigation.library_movies(params)
 
 
 def library_calendar(params):
-    from lib.utils.views.weekly_calendar import show_weekly_calendar
-
-    show_weekly_calendar(library=True)
+    return library_history_navigation.library_calendar(params)
 
 
 def remove_from_library(params):
-    from lib.utils.views.library import remove_library_item
-
-    remove_library_item(params)
+    return library_history_navigation.remove_from_library(params)
 
 
 def add_to_library(params):
-    from lib.utils.general.utils import add_to_library as add_lib
-
-    import json
-
-    data = params.get("data")
-    if data:
-        add_lib(json.loads(data))
-
-    from xbmcgui import Dialog
-
-    Dialog().notification("Jacktook", translation(90205))
+    return library_history_navigation.add_to_library(params)
 
 
 def anime_item(params):
@@ -530,86 +438,7 @@ def tv_menu(params):
 
 
 def search_direct(params):
-    set_pluging_category(translation(90011))
-    mode = params.get("mode")
-    query = params.get("query", "")
-    is_clear = params.get("is_clear", False)
-    is_keyboard = params.get("is_keyboard", True)
-    update_listing = params.get("update_listing", False)
-    rename = params.get("rename", False)
-
-    if is_clear:
-        cache.clear_list(key=mode)
-        is_keyboard = False
-
-    if rename or is_clear:
-        update_listing = True
-
-    if is_keyboard:
-        text = show_keyboard(id=30243, default=query)
-        if text:
-            cache.add_to_list(
-                key=mode,
-                item=(mode, text),
-                expires=timedelta(hours=get_cache_expiration()),
-            )
-
-    list_item = ListItem(label=translation(90006))
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode=mode),
-        list_item,
-        isFolder=True,
-    )
-
-    for mode, text in cache.get_list(key=mode):
-        list_item = ListItem(label=f"[I]{text}[/I]")
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
-        )
-        list_item.setProperty("IsPlayable", "true")
-        list_item.addContextMenuItems(
-            [
-                (
-                    translation(90049),
-                    kodi_play_media(
-                        name="search",
-                        mode=mode,
-                        query=text,
-                        rescrape=True,
-                        direct=True,
-                    ),
-                ),
-                (
-                    "Modify Search",
-                    container_update(
-                        name="search_direct", mode=mode, query=text, rename=True
-                    ),
-                ),
-            ]
-        )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("search", mode=mode, query=text, direct=True),
-            list_item,
-            isFolder=False,
-        )
-
-    list_item = ListItem(label=f"Clear Searches")
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode=mode, is_clear=True),
-        list_item,
-        isFolder=True,
-    )
-
-    endOfDirectory(ADDON_HANDLE, updateListing=update_listing)
+    return library_history_navigation.search_direct(params)
 
 
 def search(params):
@@ -619,117 +448,31 @@ def search(params):
 
 
 def cloud_details(params):
-    debrid_name = params.get("debrid_name")
-    if debrid_name == DebridType.PM:
-        notification("Not yet implemented")
-        return
-
-    actions = DEBRID_CLOUD_ACTIONS.get(debrid_name)
-    if not actions:
-        notification("Unsupported debrid type")
-        return
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(actions["downloads"]),
-        build_list_item("Downloads", "download.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(actions["info"]),
-        build_list_item("Account Info", "download.png"),
-        isFolder=True,
-    )
-    end_of_directory()
+    return debrid_navigation.cloud_details(params)
 
 
 def cloud(params):
-    set_pluging_category(translation(90014))
-    activated_debrids = [
-        debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)
-    ]
-    for d in activated_debrids:
-        torrent_li = build_list_item(d, "download.png")
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "cloud_details",
-                debrid_name=d,
-            ),
-            torrent_li,
-            isFolder=True,
-        )
-
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("list_webdav"),
-        build_list_item("Webdav", "download.png"),
-        isFolder=True,
-    )
-
-    end_of_directory()
+    return debrid_navigation.cloud(params)
 
 
 def real_debrid_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.RD]()
+    return debrid_navigation.real_debrid_info(params)
 
 
 def alldebrid_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.AD]()
+    return debrid_navigation.alldebrid_info(params)
 
 
 def debrider_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.DB]()
+    return debrid_navigation.debrider_info(params)
 
 
 def easynews_info(params):
-    from lib.clients.easynews import Easynews
-
-    user = str(get_setting("easynews_user") or "")
-    password = str(get_setting("easynews_password") or "")
-    timeout = int(get_setting("easynews_timeout", "25") or "25")
-
-    if not user or not password:
-        notification("Easynews credentials required")
-        return
-
-    Easynews(user, password, timeout, notification).get_info()
+    return debrid_navigation.easynews_info(params)
 
 
 def get_rd_downloads(params):
-    page = int(params.get("page", 1))
-    type = DebridType.RD
-    debrid_color = get_random_color(type, formatted=False)
-    formated_type = f"[B][COLOR {debrid_color}]{type}[/COLOR][/B]"
-
-    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    downloads = rd_client.get_user_downloads_list(page=page)
-
-    sorted_downloads = sorted(
-        downloads, key=lambda x: x.get("filename", ""), reverse=False
-    )
-    for d in sorted_downloads:
-        torrent_li = build_list_item(
-            f"{formated_type} - {d.get('filename')}", "download.png"
-        )
-        torrent_li.setProperty("IsPlayable", "true")
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("play_url", url=d.get("download"), name=d.get("filename")),
-            torrent_li,
-            isFolder=False,
-        )
-
-    page = page + 1
-    next_li = build_list_item("Next", icon="nextpage.png")
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("get_rd_downloads", page=page),
-        next_li,
-        isFolder=True,
-    )
-    end_of_directory()
+    return debrid_navigation.get_rd_downloads(params)
 
 
 def torrents(params):
@@ -953,11 +696,7 @@ def next_page_anime(params):
 
 
 def download(magnet, type):
-    handler = DEBRID_DOWNLOAD_HANDLERS.get(type)
-    if not handler:
-        notification("Unsupported debrid type")
-        return
-    handler(magnet)
+    return debrid_navigation.download(magnet, type)
 
 
 def downloads_menu(params):
@@ -1027,17 +766,11 @@ def clear_database_cache(params):
 
 
 def clear_history(params):
-    clear_history_by_type(type=params.get("type"))
-    notification(translation(90114))
+    return library_history_navigation.clear_history(params)
 
 
 def clear_search_history(params):
-    cache.clear_list(key="multi")
-    cache.clear_list(key="direct")
-    notification(translation(90114))
-    import xbmc
-
-    xbmc.executebuiltin("Container.Refresh")
+    return library_history_navigation.clear_search_history(params)
 
 
 def kodi_logs(params):
@@ -1045,50 +778,43 @@ def kodi_logs(params):
 
 
 def files_history(params):
-    show_last_files()
+    return library_history_navigation.files_history(params)
 
 
 def titles_history(params):
-    show_last_titles(params)
+    return library_history_navigation.titles_history(params)
 
 
 def titles_calendar(params):
-    show_weekly_calendar()
+    return library_history_navigation.titles_calendar(params)
 
 
 def rd_auth(params):
-    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    run_realdebrid_auth(rd_client)
+    return debrid_navigation.rd_auth(params)
 
 
 def ad_auth(params):
-    ad_client = AllDebrid(token=str(get_setting("alldebrid_token", "")))
-    run_alldebrid_auth(ad_client)
+    return debrid_navigation.ad_auth(params)
 
 
 def rd_remove_auth(params):
-    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    rd_client.remove_auth()
+    return debrid_navigation.rd_remove_auth(params)
 
 
 def ad_remove_auth(params):
-    ad_client = AllDebrid(token=str(get_setting("alldebrid_token", "")))
-    ad_client.remove_auth()
+    return debrid_navigation.ad_remove_auth(params)
 
 
 def debrider_auth(params):
-    debrider_client = Debrider(token=str(get_setting("debrider_token")))
-    run_debrider_auth(debrider_client)
+    return debrid_navigation.debrider_auth(params)
 
 
 def debrider_remove_auth(params):
-    debrider_client = Debrider(token=str(get_setting("debrider_token")))
-    debrider_client.remove_auth()
+    return debrid_navigation.debrider_remove_auth(params)
 
 
 def pm_auth(params):
-    pm_client = Premiumize(token=str(get_setting("premiumize_token")))
-    run_premiumize_auth(pm_client)
+    return debrid_navigation.pm_auth(params)
 
 
 def trakt_auth(params):
@@ -1100,17 +826,15 @@ def trakt_auth_revoke(params):
 
 
 def tb_auth(params):
-    torbox_client = Torbox(token=str(get_setting("torbox_token")))
-    run_torbox_auth(torbox_client)
+    return debrid_navigation.tb_auth(params)
 
 
 def tb_remove_auth(params):
-    torbox_client = Torbox(token=str(get_setting("torbox_token")))
-    torbox_client.remove_auth()
+    return debrid_navigation.tb_remove_auth(params)
 
 
 def torbox_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.TB]()
+    return debrid_navigation.torbox_info(params)
 
 
 def open_burst_config(params):
