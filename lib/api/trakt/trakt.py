@@ -590,6 +590,16 @@ class TraktTV(TraktBase):
             return None
 
     @staticmethod
+    def _is_episode_aired(air_date, now_dt):
+        if not air_date:
+            return True
+        now_date = now_dt.date() if hasattr(now_dt, "date") else now_dt
+        try:
+            return datetime.datetime.strptime(air_date, "%Y-%m-%d").date() <= now_date
+        except ValueError:
+            return True
+
+    @staticmethod
     def _last_watched_episode(show_item):
         last_episode = None
         last_timestamp = None
@@ -624,8 +634,6 @@ class TraktTV(TraktBase):
         if not tmdb_id or not starting_point:
             return None
 
-        now_date = now_dt.date() if hasattr(now_dt, "date") else now_dt
-
         show_details = fetcher("tv_details", tmdb_id)
         total_seasons = getattr(show_details, "number_of_seasons", 0) or 0
         start_season, start_episode = starting_point
@@ -643,12 +651,8 @@ class TraktTV(TraktBase):
                     continue
 
                 air_date = getattr(episode, "air_date", None)
-                if air_date:
-                    try:
-                        if datetime.datetime.strptime(air_date, "%Y-%m-%d").date() > now_date:
-                            continue
-                    except ValueError:
-                        pass
+                if not TraktTV._is_episode_aired(air_date, now_dt):
+                    continue
 
                 return {
                     "season": season_number,
@@ -676,18 +680,39 @@ class TraktTV(TraktBase):
             if not tmdb_id or not episode:
                 continue
 
-            progress_by_show[int(tmdb_id)] = {
+            season_number = episode.get("season")
+            episode_number = episode.get("number")
+            if not season_number or int(season_number) == 0 or not episode_number:
+                continue
+            if not cls._is_episode_aired(episode.get("first_aired"), now_dt):
+                continue
+
+            progress_entry = {
                 "type": "resume",
                 "show": show,
                 "episode": {
-                    "season": episode.get("season"),
-                    "number": episode.get("number"),
+                    "season": season_number,
+                    "number": episode_number,
                     "title": episode.get("title", ""),
                     "first_aired": episode.get("first_aired"),
                 },
                 "progress": item.get("progress", 0),
                 "activity_at": item.get("paused_at") or "",
             }
+
+            existing_entry = progress_by_show.get(int(tmdb_id))
+            if existing_entry:
+                existing_activity = existing_entry.get("activity_at", "")
+                new_activity = progress_entry.get("activity_at", "")
+                if (new_activity, progress_entry.get("progress", 0)) <= (
+                    existing_activity,
+                    existing_entry.get("progress", 0),
+                ):
+                    continue
+
+            progress_by_show[int(tmdb_id)] = progress_entry
+
+        entries.extend(progress_by_show.values())
 
         for show_item in watched_shows or []:
             show = show_item.get("show", {})
@@ -698,7 +723,6 @@ class TraktTV(TraktBase):
 
             tmdb_id = int(tmdb_id)
             if tmdb_id in progress_by_show:
-                entries.append(progress_by_show[tmdb_id])
                 continue
 
             last_episode, last_timestamp = cls._last_watched_episode(show_item)
@@ -724,6 +748,7 @@ class TraktTV(TraktBase):
             key=lambda item: (
                 1 if item.get("type") == "resume" else 0,
                 item.get("activity_at", ""),
+                item.get("progress", 0),
             ),
             reverse=True,
         )

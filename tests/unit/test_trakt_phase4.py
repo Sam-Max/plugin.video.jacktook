@@ -34,6 +34,68 @@ def test_build_up_next_entries_prefers_resume_progress_items():
     assert entries[0]["progress"] == 42
 
 
+def test_build_up_next_entries_skips_specials_and_unaired_progress():
+    progress_items = [
+        {
+            "show": {"title": "Special Show", "ids": {"tmdb": 1}},
+            "episode": {
+                "season": 0,
+                "number": 1,
+                "title": "Special",
+                "first_aired": "2026-03-01",
+            },
+            "progress": 10,
+            "paused_at": "2026-03-13T18:00:00.000Z",
+        },
+        {
+            "show": {"title": "Future Show", "ids": {"tmdb": 2}},
+            "episode": {
+                "season": 1,
+                "number": 1,
+                "title": "Future Episode",
+                "first_aired": "2999-03-01",
+            },
+            "progress": 20,
+            "paused_at": "2026-03-13T18:00:00.000Z",
+        },
+    ]
+
+    entries = TraktTV._build_up_next_entries(
+        [],
+        progress_items,
+        fetcher=lambda *_args, **_kwargs: None,
+        now_dt=datetime.datetime(2026, 3, 13),
+    )
+
+    assert entries == []
+
+
+def test_build_up_next_entries_orders_resumes_by_activity_and_progress():
+    progress_items = [
+        {
+            "show": {"title": "Show One", "ids": {"tmdb": 1}},
+            "episode": {"season": 1, "number": 2, "title": "Ep2"},
+            "progress": 20,
+            "paused_at": "2026-03-13T10:00:00.000Z",
+        },
+        {
+            "show": {"title": "Show Two", "ids": {"tmdb": 2}},
+            "episode": {"season": 1, "number": 3, "title": "Ep3"},
+            "progress": 85,
+            "paused_at": "2026-03-13T11:00:00.000Z",
+        },
+    ]
+
+    entries = TraktTV._build_up_next_entries(
+        [],
+        progress_items,
+        fetcher=lambda *_args, **_kwargs: None,
+        now_dt=datetime.datetime(2026, 3, 13),
+    )
+
+    assert [item["show"]["title"] for item in entries] == ["Show Two", "Show One"]
+
+
 def test_build_up_next_entries_finds_next_aired_episode():
     watched_shows = [
         {

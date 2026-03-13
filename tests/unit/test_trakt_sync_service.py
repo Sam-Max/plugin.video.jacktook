@@ -35,6 +35,24 @@ def test_sync_activities_applies_changed_buckets():
     assert result == {"watched_movies", "lists"}
 
 
+def test_sync_activities_logs_changed_buckets():
+    api = MagicMock()
+    api.sync.get_last_activities.return_value = {"movies": {"watched_at": "new"}}
+    service = TraktSyncService(api=api, monitor=MagicMock())
+
+    with patch("lib.services.trakt_sync.reset_activity", return_value={"movies": {"watched_at": "old"}}), patch.object(
+        service, "_get_changed_buckets", return_value={"watched_movies", "lists"}
+    ), patch.object(service, "_apply_activity_changes"), patch(
+        "lib.services.trakt_sync.kodilog"
+    ) as kodilog:
+        service.sync_activities()
+
+    assert any(
+        "changed buckets = lists, watched_movies" in str(call.args[0])
+        for call in kodilog.call_args_list
+    )
+
+
 def test_invalidate_cached_buckets_targets_expected_caches():
     service = TraktSyncService(api=MagicMock(), monitor=MagicMock())
 

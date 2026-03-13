@@ -28,15 +28,23 @@ class TraktSyncService:
             kodilog("Trakt not enabled or not authenticated, skipping sync.")
             return
 
-        kodilog("Starting Trakt Sync service...")
+        kodilog(
+            "Starting Trakt Sync service (interval=%s minutes)"
+            % (self._get_sync_interval_seconds() // 60)
+        )
 
         try:
             self.sync_activities(force=True)
             while not self.monitor.abortRequested():
                 if self._wait_for_next_cycle():
                     return
-                if not self._is_trakt_available() or self._services_paused():
+                if not self._is_trakt_available():
+                    kodilog("Trakt sync: skipping cycle because Trakt is unavailable")
                     continue
+                if self._services_paused():
+                    kodilog("Trakt sync: skipping cycle because services are paused")
+                    continue
+                kodilog("Trakt sync: checking remote activity")
                 self.sync_activities()
         except Exception as e:
             kodilog(f"Error during Trakt Sync: {e}")
@@ -65,6 +73,7 @@ class TraktSyncService:
     def sync_activities(self, force=False):
         latest_activities = self.api.sync.get_last_activities()
         if not latest_activities:
+            kodilog("Trakt sync: last activities request returned no data")
             return set()
 
         previous_activities = reset_activity(latest_activities)
@@ -81,6 +90,10 @@ class TraktSyncService:
             kodilog("Trakt sync: no remote activity changes detected")
             return changes
 
+        kodilog(
+            "Trakt sync: changed buckets = %s"
+            % ", ".join(sorted(changes))
+        )
         self._apply_activity_changes(changes)
         return changes
 

@@ -1,6 +1,6 @@
 import json
 import os
-from lib.api.trakt.trakt import TraktAPI
+from lib.api.trakt.trakt import ProviderException, TraktAPI
 from lib.clients.trakt.trakt import TraktClient
 
 from lib.clients.stremio.catalog_menus import list_stremio_catalogs
@@ -645,20 +645,28 @@ def search_item(params):
     page = int(params.get("page", 1))
 
     if api == "trakt":
-        result = TraktClient.handle_trakt_query(
-            query, category, mode, page, submode, api, params=params
-        )
-        if result is not None:
-            TraktClient.process_trakt_result(
-                result,
-                query,
-                category,
-                mode,
-                submode,
-                api,
-                page,
-                search_term=params.get("search_term", ""),
+        try:
+            result = TraktClient.handle_trakt_query(
+                query, category, mode, page, submode, api, params=params
             )
+            if result is not None:
+                TraktClient.process_trakt_result(
+                    result,
+                    query,
+                    category,
+                    mode,
+                    submode,
+                    api,
+                    page,
+                    search_term=params.get("search_term", ""),
+                )
+        except ProviderException as error:
+            message = str(error)
+            if "Internal Server Error" in message or "Service Unavailable" in message:
+                notification("Trakt is temporarily unavailable", time=3500)
+            else:
+                notification(message.replace("Trakt API error: ", ""), time=3500)
+            end_of_directory(cache=False)
     elif api == "tmdb":
         if submode == "people_menu":
             people_menu(mode)
