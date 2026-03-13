@@ -54,6 +54,8 @@ class JacktookPLayer(xbmc.Player):
         self.subtitles_found = False
         self.on_started = on_started
         self.on_error = on_error
+        self._is_trakt_scrobble_active = False
+        self._playback_was_paused = False
 
     def run(self, data={}):
         self.set_constants(data)
@@ -135,6 +137,29 @@ class JacktookPLayer(xbmc.Player):
             if last_position > 0:
                 list_item.setProperty("StartPercent", str(last_position))
             TraktAPI().scrobble.trakt_start_scrobble(self.data)
+            self._is_trakt_scrobble_active = True
+
+    def _is_trakt_scrobble_enabled(self):
+        return (
+            self._is_trakt_scrobble_active
+            and is_trakt_auth()
+            and get_setting("trakt_scrobbling_enabled")
+            and self.data.get("ids")
+        )
+
+    def handle_trakt_pause_resume(self):
+        is_paused = bool(get_visibility("Player.Paused"))
+
+        if not self._is_trakt_scrobble_enabled():
+            self._playback_was_paused = is_paused
+            return
+
+        if is_paused and not self._playback_was_paused:
+            TraktAPI().scrobble.trakt_pause_scrobble(self.data)
+        elif self._playback_was_paused and not is_paused:
+            TraktAPI().scrobble.trakt_start_scrobble(self.data)
+
+        self._playback_was_paused = is_paused
 
     def monitor(self):
         ensure_dialog_closed = False
@@ -162,6 +187,7 @@ class JacktookPLayer(xbmc.Player):
             # Monitor loop
             while self.isPlayingVideo():
                 self.update_playback_progress()
+                self.handle_trakt_pause_resume()
 
                 if not ensure_dialog_closed:
                     ensure_dialog_closed = True
@@ -317,12 +343,9 @@ class JacktookPLayer(xbmc.Player):
             kodilog(f"Error in check_next_dialog: {e}")
 
     def handle_playback_stop(self):
-        if (
-            is_trakt_auth()
-            and get_setting("trakt_scrobbling_enabled")
-            and self.data.get("ids")
-        ):
+        if self._is_trakt_scrobble_enabled():
             TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+            self._is_trakt_scrobble_active = False
 
         # Persist playback progress
         set_watched_file(self.data)
@@ -409,6 +432,8 @@ class JacktookPLayer(xbmc.Player):
         self.current_time = 0
         self.playback_started_properly = False
         self.next_dialog = get_setting("playnext_dialog_enabled")
+        self._is_trakt_scrobble_active = False
+        self._playback_was_paused = False
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))

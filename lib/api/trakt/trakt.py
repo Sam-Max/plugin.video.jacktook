@@ -630,6 +630,28 @@ class TraktAnime(TraktBase):
 
 
 class TraktLists(TraktBase):
+    @staticmethod
+    def _history_payload(media_type, season, episode, ids):
+        if media_type in ("movie", "movies"):
+            media_type_key = "movies"
+            payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        else:
+            media_type_key = "shows"
+
+            show_item: Dict[str, Any] = {"ids": {"tmdb": int(ids["tmdb"])}}
+
+            if season:
+                show_item["seasons"] = [{"number": int(season)}]
+
+            if season and episode:
+                show_item["seasons"] = [
+                    {"number": int(season), "episodes": [{"number": int(episode)}]}
+                ]
+
+            payload = {media_type_key: [show_item]}
+
+        return payload
+
     def trakt_watchlist(self, media_type):
         kodilog("Fetching trakt watchlist")
         result = self.trakt_fetch_sorted_list("watchlist", media_type)
@@ -778,23 +800,7 @@ class TraktLists(TraktBase):
         return _process(params, media_type)
 
     def mark_as_watched(self, media_type, season, episode, ids):
-        if media_type in ("movie", "movies"):
-            media_type_key = "movies"
-            payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
-        else:
-            media_type_key = "shows"
-
-            show_item: Dict[str, Any] = {"ids": {"tmdb": int(ids["tmdb"])}}
-
-            if season:
-                show_item["seasons"] = [{"number": int(season)}]
-
-            if season and episode:
-                show_item["seasons"] = [
-                    {"number": int(season), "episodes": [{"number": int(episode)}]}
-                ]
-
-            payload = {media_type_key: [show_item]}
+        payload = self._history_payload(media_type, season, episode, ids)
 
         kodilog("Payload: %s" % payload)
 
@@ -819,12 +825,7 @@ class TraktLists(TraktBase):
         return response
 
     def mark_as_unwatched(self, media_type, season, episode, ids):
-        if media_type in ("movie", "movies"):
-            media_type_key = "movies"
-        else:
-            media_type_key = "shows"
-
-        payload = {media_type_key: [{"ids": {"tmdb": int(ids["tmdb"])}}]}
+        payload = self._history_payload(media_type, season, episode, ids)
         return self.call_trakt(
             "sync/history/remove",
             data=payload,
@@ -1074,51 +1075,43 @@ class TraktLists(TraktBase):
 
 
 class TraktScrobble(TraktBase):
-    def trakt_start_scrobble(self, data):
-        payload: Dict[str, Any] = {"progress": 0}
+    @staticmethod
+    def _scrobble_payload(data):
+        payload: Dict[str, Any] = {"progress": data.get("progress", 0)}
 
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
         elif data["mode"] == "tv":
             if data.get("tv_data") is None:
-                return
+                return None
             payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
             payload["episode"] = {
                 "season": data.get("tv_data").get("season"),
                 "number": data.get("tv_data").get("episode"),
             }
+
+        return payload
+
+    def trakt_start_scrobble(self, data):
+        payload = self._scrobble_payload(data)
+        if payload is None:
+            return
 
         self.call_trakt("scrobble/start", data=payload, with_auth=True)
 
     def trakt_pause_scrobble(self, data):
-        payload: Dict[str, Any] = {"progress": 0}
-
-        if data["mode"] == "movies":
-            payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
-        elif data["mode"] == "tv":
-            payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
-            payload["episode"] = {
-                "season": data.get("tv_data").get("season"),
-                "number": data.get("tv_data").get("episode"),
-            }
+        payload = self._scrobble_payload(data)
+        if payload is None:
+            return
 
         self.call_trakt("scrobble/pause", data=payload, with_auth=True)
 
     def trakt_stop_scrobble(self, data):
         kodilog("Stopping scrobble")
 
-        progress = data["progress"]
-        payload = {
-            "progress": progress,
-        }
-        if data["mode"] == "movies":
-            payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
-        elif data["mode"] == "tv":
-            payload["show"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
-            payload["episode"] = {
-                "season": data.get("tv_data").get("season"),
-                "number": data.get("tv_data").get("episode"),
-            }
+        payload = self._scrobble_payload(data)
+        if payload is None:
+            return
 
         self.call_trakt("scrobble/stop", data=payload, with_auth=True)
 
