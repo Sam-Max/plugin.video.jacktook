@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
+from lib.clients.debrid.easydebrid import EasyDebridHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
@@ -33,6 +34,34 @@ from lib.domain.torrent import TorrentStream
 
 from xbmcgui import Dialog
 from xbmc import LOGDEBUG
+
+
+DEBRID_HELPERS = {
+    DebridType.RD: RealDebridHelper,
+    DebridType.PM: PremiumizeHelper,
+    DebridType.TB: TorboxHelper,
+    DebridType.DB: DebriderHelper,
+    DebridType.AD: AllDebridHelper,
+    DebridType.ED: EasyDebridHelper,
+}
+
+DEBRID_CHECKS = {
+    DebridType.RD: is_rd_enabled,
+    DebridType.TB: is_tb_enabled,
+    DebridType.PM: is_pm_enabled,
+    DebridType.DB: is_debrider_enabled,
+    DebridType.AD: is_ad_enabled,
+}
+
+PACK_DIRECT_DEBRID_TYPES = {DebridType.RD, DebridType.TB, DebridType.AD}
+
+
+def get_debrid_helper(debrid_type: str):
+    helper_cls = DEBRID_HELPERS.get(debrid_type)
+    if not helper_cls:
+        notification(f"Unknown debrid type: {debrid_type}")
+        raise ValueError(f"Unknown debrid type: {debrid_type}")
+    return helper_cls()
 
 
 def check_debrid_cached(
@@ -80,25 +109,21 @@ def check_debrid_cached(
     return cached_results
 
 
-def get_cached_results(query: Optional[str], mode: str, media_type: str, episode: int):
+def get_cached_results(
+    query: Optional[str], mode: str, media_type: str, episode: int
+) -> Optional[List[TorrentStream]]:
     if query:
         params = (episode, "deb") if mode == "tv" or media_type == "tv" else ("deb",)
-        return get_cached(query, params=params)
+        cached_results = get_cached(query, params=params)
+        return cached_results if isinstance(cached_results, list) else None
     return None
 
 
 def get_debrid_check_functions() -> List:
     check_functions = []
-    if is_rd_enabled():
-        check_functions.append(RealDebridHelper().check_cached)
-    if is_tb_enabled():
-        check_functions.append(TorboxHelper().check_cached)
-    if is_pm_enabled():
-        check_functions.append(PremiumizeHelper().check_cached)
-    if is_debrider_enabled():
-        check_functions.append(DebriderHelper().check_cached)
-    if is_ad_enabled():
-        check_functions.append(AllDebridHelper().check_cached)
+    for debrid_type, is_enabled in DEBRID_CHECKS.items():
+        if is_enabled():
+            check_functions.append(get_debrid_helper(debrid_type).check_cached)
     return check_functions
 
 
@@ -164,20 +189,7 @@ def get_source_status(res: TorrentStream) -> str:
 
 
 def get_pack_info(debrid_type, info_hash):
-    if debrid_type == DebridType.PM:
-        info = PremiumizeHelper().get_pack_info(info_hash)
-    elif debrid_type == DebridType.TB:
-        info = TorboxHelper().get_pack_info(info_hash)
-    elif debrid_type == DebridType.RD:
-        info = RealDebridHelper().get_pack_info(info_hash)
-    elif debrid_type == DebridType.DB:
-        info = DebriderHelper().get_pack_info(info_hash)
-    elif debrid_type == DebridType.AD:
-        info = AllDebridHelper().get_pack_info(info_hash)
-    else:
-        notification(f"Unknown debrid type for pack info: {debrid_type}")
-        raise ValueError(f"Unknown debrid type: {debrid_type}")
-    return info
+    return get_debrid_helper(debrid_type).get_pack_info(info_hash)
 
 
 def filter_results(
@@ -253,47 +265,23 @@ def get_magnet_from_uri(uri):
 
 def get_debrid_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:
     info_hash = data.get("info_hash", "")
-
-    helpers = {
-        DebridType.RD: RealDebridHelper,
-        DebridType.PM: PremiumizeHelper,
-        DebridType.TB: TorboxHelper,
-        DebridType.DB: DebriderHelper,
-        DebridType.AD: AllDebridHelper,
-    }
-
-    helper_cls = helpers.get(debrid_type)
-    if not helper_cls:
+    try:
+        return get_debrid_helper(debrid_type).get_link(info_hash, data)
+    except ValueError:
         kodilog(f"Unknown debrid type: {debrid_type}")
         return None
 
-    return helper_cls().get_link(info_hash, data)
-
 
 def get_debrid_pack_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:
-    helpers = {
-        DebridType.RD: RealDebridHelper,
-        DebridType.TB: TorboxHelper,
-        DebridType.AD: AllDebridHelper,
-    }
-
-    helper_cls = helpers.get(debrid_type)
-    if not helper_cls:
+    if debrid_type not in PACK_DIRECT_DEBRID_TYPES:
         kodilog(f"Unknown debrid type for pack link: {debrid_type}")
         return None
 
-    return helper_cls().get_pack_link(data)
+    return get_debrid_helper(debrid_type).get_pack_link(data)
 
 
 def is_supported_debrid_type(debrid_type: str) -> bool:
-    return debrid_type in [
-        DebridType.RD,
-        DebridType.AD,
-        DebridType.TB,
-        DebridType.ED,
-        DebridType.PM,
-        DebridType.DB,
-    ]
+    return debrid_type in DEBRID_HELPERS
 
 
 def process_external_cache(data: dict, debrid: str, token: str, url: str):

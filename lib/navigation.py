@@ -106,6 +106,45 @@ from lib.utils.general.items_menus import (
 )
 
 
+def _start_realdebrid_download(magnet):
+    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
+    thread = Thread(target=run_realdebrid_download, args=(rd_client, magnet, False))
+    thread.start()
+
+
+def _start_torbox_download(magnet):
+    tb_client = Torbox(token=str(get_setting("torbox_token")))
+    thread = Thread(target=tb_client.download, args=(magnet,))
+    thread.start()
+
+
+def _start_premiumize_download(magnet):
+    pm_client = Premiumize(token=str(get_setting("premiumize_token")))
+    thread = Thread(target=pm_client.download, args=(magnet,), kwargs={"pack": False})
+    thread.start()
+
+
+DEBRID_CLOUD_ACTIONS = {
+    DebridType.RD: {"downloads": "get_rd_downloads", "info": "real_debrid_info"},
+    DebridType.DB: {"downloads": "get_db_downloads", "info": "debrider_info"},
+    DebridType.AD: {"downloads": "get_ad_downloads", "info": "alldebrid_info"},
+    DebridType.TB: {"downloads": "get_tb_downloads", "info": "torbox_info"},
+}
+
+DEBRID_DOWNLOAD_HANDLERS = {
+    "RD": _start_realdebrid_download,
+    "TB": _start_torbox_download,
+    "PM": _start_premiumize_download,
+}
+
+DEBRID_INFO_HANDLERS = {
+    DebridType.RD: lambda: RealDebridHelper().get_info(),
+    DebridType.AD: lambda: AllDebridHelper().get_info(),
+    DebridType.DB: lambda: DebriderHelper().get_info(),
+    DebridType.TB: lambda: TorboxHelper().get_info(),
+}
+
+
 def render_menu(items, cache=True):
     for item in items:
         if "condition" in item and not item["condition"]():
@@ -581,36 +620,24 @@ def search(params):
 
 def cloud_details(params):
     debrid_name = params.get("debrid_name")
-    if debrid_name == DebridType.RD:
-        downloads_method = "get_rd_downloads"
-        info_method = "real_debrid_info"
-    elif debrid_name == DebridType.DB:
-        downloads_method = "get_db_downloads"
-        info_method = "debrider_info"
-    elif debrid_name == DebridType.AD:
-        downloads_method = "get_ad_downloads"
-        info_method = "alldebrid_info"
-    elif debrid_name == DebridType.PM:
+    if debrid_name == DebridType.PM:
         notification("Not yet implemented")
         return
-    elif debrid_name == DebridType.TB:
-        downloads_method = (
-            "get_tb_downloads"  # Placeholder, will implement later if needed
-        )
-        info_method = "torbox_info"
-    else:
+
+    actions = DEBRID_CLOUD_ACTIONS.get(debrid_name)
+    if not actions:
         notification("Unsupported debrid type")
         return
 
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url(downloads_method),
+        build_url(actions["downloads"]),
         build_list_item("Downloads", "download.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url(info_method),
+        build_url(actions["info"]),
         build_list_item("Account Info", "download.png"),
         isFolder=True,
     )
@@ -645,15 +672,15 @@ def cloud(params):
 
 
 def real_debrid_info(params):
-    RealDebridHelper().get_info()
+    DEBRID_INFO_HANDLERS[DebridType.RD]()
 
 
 def alldebrid_info(params):
-    AllDebridHelper().get_info()
+    DEBRID_INFO_HANDLERS[DebridType.AD]()
 
 
 def debrider_info(params):
-    DebriderHelper().get_info()
+    DEBRID_INFO_HANDLERS[DebridType.DB]()
 
 
 def easynews_info(params):
@@ -926,22 +953,11 @@ def next_page_anime(params):
 
 
 def download(magnet, type):
-    if type == "RD":
-        rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-        thread = Thread(target=run_realdebrid_download, args=(rd_client, magnet, False))
-    elif type == "TB":
-        tb_client = Torbox(token=str(get_setting("torbox_token")))
-        thread = Thread(target=tb_client.download, args=(magnet,))
-    elif type == "PM":
-        pm_client = Premiumize(token=str(get_setting("premiumize_token")))
-        thread = Thread(
-            target=pm_client.download, args=(magnet,), kwargs={"pack": False}
-        )
-    else:
+    handler = DEBRID_DOWNLOAD_HANDLERS.get(type)
+    if not handler:
         notification("Unsupported debrid type")
         return
-
-    thread.start()
+    handler(magnet)
 
 
 def downloads_menu(params):
@@ -1094,7 +1110,7 @@ def tb_remove_auth(params):
 
 
 def torbox_info(params):
-    TorboxHelper().get_info()
+    DEBRID_INFO_HANDLERS[DebridType.TB]()
 
 
 def open_burst_config(params):
