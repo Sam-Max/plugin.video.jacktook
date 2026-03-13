@@ -771,6 +771,22 @@ msgctxt "#30917"
 msgid "View your Trakt account profile and library stats."
 msgstr "Ver el perfil de tu cuenta de Trakt y las estadisticas de tu biblioteca."
 
+msgctxt "#30924"
+msgid "Trakt List Name"
+msgstr "Nombre de la lista de Trakt"
+
+msgctxt "#30925"
+msgid "Trakt List Description"
+msgstr "Descripcion de la lista de Trakt"
+
+msgctxt "#30926"
+msgid "Create Trakt List"
+msgstr "Crear lista de Trakt"
+
+msgctxt "#30927"
+msgid "Choose Trakt List"
+msgstr "Elegir lista de Trakt"
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr "Árabe (Emiratos Árabes Unidos)"

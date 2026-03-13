@@ -928,3 +928,19 @@ msgstr "Informacoes da conta Trakt"
 msgctxt "#30917"
 msgid "View your Trakt account profile and library stats."
 msgstr "Veja o perfil da sua conta Trakt e as estatisticas da biblioteca."
+
+msgctxt "#30924"
+msgid "Trakt List Name"
+msgstr "Nome da lista Trakt"
+
+msgctxt "#30925"
+msgid "Trakt List Description"
+msgstr "Descricao da lista Trakt"
+
+msgctxt "#30926"
+msgid "Create Trakt List"
+msgstr "Criar lista Trakt"
+
+msgctxt "#30927"
+msgid "Choose Trakt List"
+msgstr "Escolher lista Trakt"

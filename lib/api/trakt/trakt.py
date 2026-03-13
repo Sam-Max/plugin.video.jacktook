@@ -12,8 +12,13 @@ from lib.api.trakt.base_cache import BASE_DELETE, connect_database
 from lib.api.trakt.lists_cache import lists_cache_object
 from lib.api.trakt.main_cache import cache_object
 from lib.api.trakt.main_cache import cache_object
-from lib.api.trakt.trakt_cache import cache_trakt_object, trakt_watched_cache
-from lib.api.trakt.trakt_utils import sort_for_article, sort_list
+from lib.api.trakt.trakt_cache import (
+    cache_trakt_object,
+    clear_trakt_list_contents_data,
+    clear_trakt_list_data,
+    trakt_watched_cache,
+)
+from lib.api.trakt.trakt_utils import clean_ids, sort_for_article, sort_list
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import ADDON_PATH
 from lib.utils.debrid.qrcode_utils import make_qrcode
@@ -157,9 +162,9 @@ class TraktBase:
         url = self.api_endpoint % path
         kodilog("Trakt URL: %s" % url)
         if method == "post":
-            return requests.post(url, headers=headers, timeout=self.timeout)
+            return requests.post(url, json=data, headers=headers, timeout=self.timeout)
         elif method == "delete":
-            return requests.delete(url, headers=headers, timeout=self.timeout)
+            return requests.delete(url, json=data, headers=headers, timeout=self.timeout)
         elif method == "sort_by_headers":
             return requests.get(
                 url, params=params, headers=headers, timeout=self.timeout
@@ -1084,6 +1089,7 @@ class TraktLists(TraktBase):
                         "item_count": list_data.get("item_count", 0),
                         "privacy": list_data.get("privacy", "public"),
                         "with_auth": False,
+                        "can_like": True,
                     }
                 )
 
@@ -1137,11 +1143,20 @@ class TraktLists(TraktBase):
             ]
 
         string = "trakt_list_contents_%s_%s_%s_%s" % (list_type, user, slug, trakt_id)
-        if user == "Trakt Official" or (not user and trakt_id):
+        if list_type == "my_lists" and trakt_id:
+            params = {
+                "path": "users/me/lists/%s/items",
+                "path_insert": trakt_id,
+                "params": {"extended": "full"},
+                "with_auth": True,
+                "method": "sort_by_headers",
+            }
+        elif trakt_id:
             params = {
                 "path": "lists/%s/items",
-                "path_insert": trakt_id or slug,
+                "path_insert": trakt_id,
                 "params": {"extended": "full"},
+                "with_auth": with_auth,
                 "method": "sort_by_headers",
             }
         else:
@@ -1190,6 +1205,8 @@ class TraktLists(TraktBase):
                         "item_count": list_data.get("item_count", 0),
                         "privacy": list_data.get("privacy", "public"),
                         "with_auth": True,
+                        "can_delete": list_type == "my_lists",
+                        "can_unlike": list_type == "liked_lists",
                     }
                 )
 
@@ -1211,6 +1228,95 @@ class TraktLists(TraktBase):
             "with_auth": True,
         }
         return cache_trakt_object(_process, string, params)
+
+    def create_list(self, name, description="", privacy="private"):
+        response = self.call_trakt(
+            "users/me/lists",
+            data={
+                "name": name,
+                "description": description,
+                "privacy": privacy,
+                "display_numbers": True,
+                "allow_comments": True,
+            },
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("my_lists")
+        clear_trakt_list_contents_data("my_lists")
+        return response
+
+    def delete_list(self, trakt_id):
+        response = self.call_trakt(
+            "users/me/lists/%s" % trakt_id,
+            method="delete",
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("my_lists")
+        clear_trakt_list_contents_data("my_lists")
+        return response
+
+    def like_list(self, user_slug, trakt_id):
+        response = self.call_trakt(
+            "users/%s/lists/%s/like" % (user_slug, trakt_id),
+            data={},
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("liked_lists")
+        return response
+
+    def unlike_list(self, user_slug, trakt_id):
+        response = self.call_trakt(
+            "users/%s/lists/%s/like" % (user_slug, trakt_id),
+            method="delete",
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("liked_lists")
+        clear_trakt_list_contents_data("liked_lists")
+        return response
+
+    @staticmethod
+    def _list_item_payload(media_type, ids):
+        media_key = "movies" if media_type in ("movie", "movies") else "shows"
+        payload = {
+            media_key: [
+                {
+                    "ids": clean_ids(
+                        {
+                            "tmdb": ids.get("tmdb") or ids.get("tmdb_id"),
+                            "tvdb": ids.get("tvdb") or ids.get("tvdb_id"),
+                            "imdb": ids.get("imdb") or ids.get("imdb_id"),
+                        }
+                    )
+                }
+            ]
+        }
+        return payload
+
+    def add_item_to_list(self, trakt_id, media_type, ids):
+        response = self.call_trakt(
+            "users/me/lists/%s/items" % trakt_id,
+            data=self._list_item_payload(media_type, ids),
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("my_lists")
+        clear_trakt_list_contents_data("my_lists")
+        return response
+
+    def remove_item_from_list(self, trakt_id, media_type, ids):
+        response = self.call_trakt(
+            "users/me/lists/%s/items/remove" % trakt_id,
+            data=self._list_item_payload(media_type, ids),
+            with_auth=True,
+            pagination=False,
+        )
+        clear_trakt_list_data("my_lists")
+        clear_trakt_list_contents_data("my_lists")
+        return response
 
     def make_trakt_slug(self, name):
         import re

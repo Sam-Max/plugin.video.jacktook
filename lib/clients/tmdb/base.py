@@ -17,6 +17,7 @@ from lib.clients.tmdb.utils.utils import (
 )
 from lib.api.trakt.trakt_utils import (
     add_trakt_collection_context_menu,
+    add_trakt_custom_list_context_menu,
     add_trakt_watchlist_context_menu,
     add_trakt_watched_context_menu,
     is_trakt_auth,
@@ -37,6 +38,7 @@ class BaseTmdbClient:
                     add_trakt_watchlist_context_menu("movies", ids)
                     + add_trakt_watched_context_menu("movies", ids=ids)
                     + add_trakt_collection_context_menu("movies", ids)
+                    + add_trakt_custom_list_context_menu("movies", ids)
                 )
             list_item.addContextMenuItems(context_menu)
             list_item.setProperty("IsPlayable", "true")
@@ -48,6 +50,7 @@ class BaseTmdbClient:
                     add_trakt_watchlist_context_menu("shows", ids)
                     + add_trakt_watched_context_menu("shows", ids=ids)
                     + add_trakt_collection_context_menu("shows", ids)
+                    + add_trakt_custom_list_context_menu("shows", ids)
                 )
             list_item.addContextMenuItems(context_menu)
             is_folder = True

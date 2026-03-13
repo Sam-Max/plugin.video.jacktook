@@ -339,6 +339,12 @@ def _route_trakt(action, params):
         "trakt_mark_as_unwatched",
         "add_to_collection",
         "remove_from_collection",
+        "trakt_create_list",
+        "trakt_delete_list",
+        "trakt_like_list",
+        "trakt_unlike_list",
+        "trakt_add_item_to_list",
+        "trakt_remove_item_from_list",
     ):
         from lib.clients.trakt.trakt import TraktClient
 
@@ -349,6 +355,12 @@ def _route_trakt(action, params):
             "trakt_mark_as_unwatched": TraktClient.trakt_mark_as_unwatched,
             "add_to_collection": TraktClient.trakt_add_to_collection,
             "remove_from_collection": TraktClient.trakt_remove_from_collection,
+            "trakt_create_list": TraktClient.trakt_create_list,
+            "trakt_delete_list": TraktClient.trakt_delete_list,
+            "trakt_like_list": TraktClient.trakt_like_list,
+            "trakt_unlike_list": TraktClient.trakt_unlike_list,
+            "trakt_add_item_to_list": TraktClient.trakt_add_item_to_list,
+            "trakt_remove_item_from_list": TraktClient.trakt_remove_item_from_list,
         }
         actions[action](params)
     else:

@@ -3,6 +3,7 @@ from datetime import timedelta
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.api.trakt.trakt_utils import (
+    add_trakt_custom_list_context_menu,
     add_trakt_watched_context_menu,
     add_trakt_watchlist_context_menu,
     is_trakt_auth,
@@ -18,14 +19,18 @@ from lib.utils.general.utils import (
     set_media_infoTag,
 )
 from lib.utils.kodi.utils import (
+    action_url_run,
     build_url,
+    dialog_select,
     dialog_text,
+    dialogyesno,
     end_of_directory,
     get_datetime,
     get_setting,
     kodilog,
     notification,
     kodi_play_media,
+    refresh,
     show_keyboard,
     translation,
 )
@@ -53,6 +58,7 @@ class Trakt(Enum):
     LIKED_LISTS = "trakt_liked_lists"
     SEARCH_LISTS = "trakt_search_lists"
     ACCOUNT_INFO = "trakt_account_info"
+    CREATE_LIST = "trakt_create_list"
 
 
 class BaseTraktClient:
@@ -76,6 +82,7 @@ class BaseTraktClient:
                     add_trakt_watchlist_context_menu("movies", ids)
                     + add_trakt_watched_context_menu("movies", ids=ids)
                     + add_trakt_collection_context_menu("movies", ids)
+                    + add_trakt_custom_list_context_menu("movies", ids)
                     if is_trakt_auth()
                     else []
                 )
@@ -97,6 +104,7 @@ class BaseTraktClient:
                     add_trakt_watchlist_context_menu("shows", ids)
                     + add_trakt_watched_context_menu("shows", ids=ids)
                     + add_trakt_collection_context_menu("shows", ids)
+                    + add_trakt_custom_list_context_menu("shows", ids)
                 )
             add_kodi_dir_item(
                 list_item=list_item,
@@ -301,6 +309,109 @@ class TraktClient:
             notification("Failed to remove from Trakt collection", time=3000)
 
     @staticmethod
+    def trakt_create_list(params):
+        name = show_keyboard(id=30924, default="")
+        if not name:
+            return
+
+        description = show_keyboard(id=30925, default="") or ""
+        try:
+            TraktAPI().lists.create_list(name=name, description=description)
+            notification("Created Trakt list", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error creating Trakt list: {e}")
+            notification("Failed to create Trakt list", time=3000)
+
+    @staticmethod
+    def trakt_delete_list(params):
+        trakt_id = params.get("trakt_id")
+        if not trakt_id:
+            return
+        if not dialogyesno("Trakt", "Delete this Trakt list?"):
+            return
+        try:
+            TraktAPI().lists.delete_list(trakt_id)
+            notification("Deleted Trakt list", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error deleting Trakt list: {e}")
+            notification("Failed to delete Trakt list", time=3000)
+
+    @staticmethod
+    def trakt_like_list(params):
+        trakt_id = params.get("trakt_id")
+        user_slug = params.get("user")
+        if not trakt_id or not user_slug:
+            return
+        try:
+            TraktAPI().lists.like_list(user_slug, trakt_id)
+            notification("Liked Trakt list", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error liking Trakt list: {e}")
+            notification("Failed to like Trakt list", time=3000)
+
+    @staticmethod
+    def trakt_unlike_list(params):
+        trakt_id = params.get("trakt_id")
+        user_slug = params.get("user")
+        if not trakt_id or not user_slug:
+            return
+        try:
+            TraktAPI().lists.unlike_list(user_slug, trakt_id)
+            notification("Unliked Trakt list", time=3000)
+            refresh()
+        except Exception as e:
+            kodilog(f"Error unliking Trakt list: {e}")
+            notification("Failed to unlike Trakt list", time=3000)
+
+    @staticmethod
+    def _select_trakt_list():
+        my_lists = TraktAPI().lists.trakt_get_lists("my_lists") or []
+        if not my_lists:
+            notification("No Trakt lists found", time=3000)
+            return None
+
+        options = [item.get("name", "Untitled List") for item in my_lists]
+        choice = dialog_select(translation(30927), options)
+        if choice < 0:
+            return None
+        return my_lists[choice]
+
+    @staticmethod
+    def trakt_add_item_to_list(params):
+        media_type = params.get("media_type")
+        ids = json.loads(params.get("ids", "{}"))
+        selected_list = TraktClient._select_trakt_list()
+        if not selected_list:
+            return
+        try:
+            TraktAPI().lists.add_item_to_list(
+                selected_list.get("trakt_id"), media_type, ids
+            )
+            notification("Added to Trakt list", time=3000)
+        except Exception as e:
+            kodilog(f"Error adding item to Trakt list: {e}")
+            notification("Failed to add to Trakt list", time=3000)
+
+    @staticmethod
+    def trakt_remove_item_from_list(params):
+        media_type = params.get("media_type")
+        ids = json.loads(params.get("ids", "{}"))
+        selected_list = TraktClient._select_trakt_list()
+        if not selected_list:
+            return
+        try:
+            TraktAPI().lists.remove_item_from_list(
+                selected_list.get("trakt_id"), media_type, ids
+            )
+            notification("Removed from Trakt list", time=3000)
+        except Exception as e:
+            kodilog(f"Error removing item from Trakt list: {e}")
+            notification("Failed to remove from Trakt list", time=3000)
+
+    @staticmethod
     def handle_calendar_request():
         previous_days = int(get_setting("trakt_calendar_previous_days", 0))
         future_days = int(get_setting("trakt_calendar_future_days", 14))
@@ -412,6 +523,8 @@ class TraktClient:
 
         if query in query_handlers:
             query_handlers[query]()
+            if query == Trakt.MY_LISTS:
+                TraktPresentation.show_create_list_entry(mode)
         if category in anime_handlers:
             anime_handlers[category]()
 
@@ -453,6 +566,10 @@ class TraktClient:
         data = TraktAPI().lists.get_trakt_list_contents(
             list_type, user, slug, with_auth, trakt_id
         )
+        if not data:
+            notification("No results found", time=3000)
+            end_of_directory()
+            return
         paginator_db.initialize(data)
         items = paginator_db.get_page(page)
         execute_thread_pool(items, TraktPresentation.show_lists_content_items)
@@ -468,6 +585,15 @@ class TraktClient:
 
 
 class TraktPresentation:
+    @staticmethod
+    def show_create_list_entry(mode):
+        list_item = ListItem(f"[B]+ {translation(30926)}[/B]")
+        add_kodi_dir_item(
+            list_item=list_item,
+            url=build_url("trakt_create_list", mode=mode),
+            is_folder=False,
+        )
+
     @staticmethod
     def _format_account_info(results):
         settings = results.get("settings", {}) if isinstance(results, dict) else {}
@@ -600,6 +726,18 @@ class TraktPresentation:
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
         info_tag.setPlot(description)
+        list_item.addContextMenuItems(
+            [
+                (
+                    "Like Trakt List",
+                    action_url_run(
+                        "trakt_like_list",
+                        trakt_id=res["list"]["ids"].get("trakt"),
+                        user=res["list"]["user"]["ids"].get("slug", ""),
+                    ),
+                )
+            ]
+        )
 
         add_kodi_dir_item(
             list_item,
@@ -626,6 +764,42 @@ class TraktPresentation:
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
         info_tag.setPlot(description)
+
+        context_menu = []
+        if res.get("can_delete"):
+            context_menu.append(
+                (
+                    "Delete Trakt List",
+                    action_url_run(
+                        "trakt_delete_list",
+                        trakt_id=res.get("trakt_id", ""),
+                    ),
+                )
+            )
+        if res.get("can_unlike"):
+            context_menu.append(
+                (
+                    "Unlike Trakt List",
+                    action_url_run(
+                        "trakt_unlike_list",
+                        trakt_id=res.get("trakt_id", ""),
+                        user=res.get("user_slug", ""),
+                    ),
+                )
+            )
+        if res.get("can_like"):
+            context_menu.append(
+                (
+                    "Like Trakt List",
+                    action_url_run(
+                        "trakt_like_list",
+                        trakt_id=res.get("trakt_id", ""),
+                        user=res.get("user_slug", ""),
+                    ),
+                )
+            )
+        if context_menu:
+            list_item.addContextMenuItems(context_menu)
 
         add_kodi_dir_item(
             list_item=list_item,
@@ -711,17 +885,36 @@ class TraktPresentation:
 
     @staticmethod
     def show_lists_content_items(res):
-        tmdb_id = res["media_ids"]["tmdb"]
-        imdb_id = res["media_ids"]["imdb"]
-        ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
+        media_ids = res.get("media_ids", {})
+        tmdb_id = media_ids.get("tmdb")
+        imdb_id = media_ids.get("imdb", "")
+        tvdb_id = media_ids.get("tvdb", "")
         title = res["title"]
 
         if res["type"] == "show":
             mode = "tv"
+            if not tmdb_id and imdb_id:
+                found = tmdb_get("find_by_imdb_id", imdb_id)
+                if getattr(found, "tv_results", []):
+                    tmdb_id = str(found.tv_results[0]["id"])
+            if not tmdb_id and tvdb_id:
+                found = tmdb_get("find_by_tvdb", tvdb_id)
+                if getattr(found, "tv_results", []):
+                    tmdb_id = str(found.tv_results[0]["id"])
+            if not tmdb_id:
+                return
             details = tmdb_get("tv_details", tmdb_id)
         else:
             mode = "movies"
+            if not tmdb_id and imdb_id:
+                found = tmdb_get("find_by_imdb_id", imdb_id)
+                if getattr(found, "movie_results", []):
+                    tmdb_id = str(found.movie_results[0]["id"])
+            if not tmdb_id:
+                return
             details = tmdb_get("movie_details", tmdb_id)
+
+        ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
         list_item = ListItem(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)

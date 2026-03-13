@@ -15,11 +15,19 @@ def test_movie_item_adds_trakt_context_actions_when_authenticated():
         "lib.clients.tmdb.base.add_trakt_watched_context_menu", return_value=[("watched", "cmd")]
     ), patch(
         "lib.clients.tmdb.base.add_trakt_collection_context_menu", return_value=[("collection", "cmd")]
+    ), patch(
+        "lib.clients.tmdb.base.add_trakt_custom_list_context_menu", return_value=[("customlist", "cmd")]
     ), patch("lib.clients.tmdb.base.add_kodi_dir_item"):
         BaseTmdbClient.add_media_directory_item(list_item, "movies", "Demo Movie", ids)
 
     list_item.addContextMenuItems.assert_called_once_with(
-        [("tmdb", "cmd"), ("watchlist", "cmd"), ("watched", "cmd"), ("collection", "cmd")]
+        [
+            ("tmdb", "cmd"),
+            ("watchlist", "cmd"),
+            ("watched", "cmd"),
+            ("collection", "cmd"),
+            ("customlist", "cmd"),
+        ]
     )
     list_item.setProperty.assert_called_once_with("IsPlayable", "true")
 
