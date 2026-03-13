@@ -1,4 +1,5 @@
 import json
+import datetime
 import random
 import time
 from typing import Any, Dict
@@ -272,6 +273,14 @@ class TraktAuthentication(TraktBase):
         params = {
             "path": "users/settings",
             "path_insert": (),
+            "with_auth": True,
+            "pagination": False,
+        }
+        return self.get_trakt(params)
+
+    def get_account_stats(self):
+        params = {
+            "path": "users/me/stats",
             "with_auth": True,
             "pagination": False,
         }
@@ -556,19 +565,158 @@ class TraktTV(TraktBase):
         }
         return self.get_trakt(params)
 
-    def trakt_up_next(self, days=7):
-        # This is a basic implementation fetching calendar.
-        # True "Up Next" might require syncing progress.
-        # Using calendar for now as "Upcoming"
-        start_date = get_datetime(string=True)
-        params = {
-            "path": "calendars/my/shows/%s/%s",
-            "path_insert": (start_date, days),
-            "with_auth": True,
-            "pagination": False,
-            "params": {"extended": "full"},
-        }
-        return self.get_trakt(params)
+    @staticmethod
+    def _parse_iso_date(value):
+        if not value:
+            return None
+        try:
+            return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    @staticmethod
+    def _last_watched_episode(show_item):
+        last_episode = None
+        last_timestamp = None
+
+        for season in show_item.get("seasons", []):
+            season_number = season.get("number")
+            if not season_number or season_number == 0:
+                continue
+
+            for episode in season.get("episodes", []):
+                episode_number = episode.get("number")
+                if not episode_number:
+                    continue
+
+                episode_key = (int(season_number), int(episode_number))
+                watched_at = episode.get("last_watched_at") or show_item.get(
+                    "last_watched_at"
+                )
+                watched_dt = TraktTV._parse_iso_date(watched_at)
+
+                if watched_dt:
+                    if last_timestamp is None or watched_dt > last_timestamp:
+                        last_timestamp = watched_dt
+                        last_episode = episode_key
+                elif last_episode is None or episode_key > last_episode:
+                    last_episode = episode_key
+
+        return last_episode, last_timestamp
+
+    @staticmethod
+    def _find_next_episode(fetcher, tmdb_id, starting_point, now_dt):
+        if not tmdb_id or not starting_point:
+            return None
+
+        now_date = now_dt.date() if hasattr(now_dt, "date") else now_dt
+
+        show_details = fetcher("tv_details", tmdb_id)
+        total_seasons = getattr(show_details, "number_of_seasons", 0) or 0
+        start_season, start_episode = starting_point
+
+        for season_number in range(max(1, int(start_season)), int(total_seasons) + 1):
+            season_details = fetcher(
+                "season_details", {"id": tmdb_id, "season": season_number}
+            )
+            episodes = getattr(season_details, "episodes", []) or []
+            for episode in episodes:
+                episode_number = getattr(episode, "episode_number", 0) or 0
+                if season_number == int(start_season) and episode_number <= int(
+                    start_episode
+                ):
+                    continue
+
+                air_date = getattr(episode, "air_date", None)
+                if air_date:
+                    try:
+                        if datetime.datetime.strptime(air_date, "%Y-%m-%d").date() > now_date:
+                            continue
+                    except ValueError:
+                        pass
+
+                return {
+                    "season": season_number,
+                    "number": episode_number,
+                    "title": getattr(episode, "name", ""),
+                    "first_aired": air_date,
+                }
+
+        return None
+
+    @classmethod
+    def _build_up_next_entries(cls, watched_shows, progress_items, fetcher=None, now_dt=None):
+        if fetcher is None:
+            from lib.clients.tmdb.utils.utils import tmdb_get as fetcher
+
+        now_dt = now_dt or get_datetime(string=False)
+        entries = []
+        progress_by_show = {}
+
+        for item in progress_items or []:
+            show = item.get("show", {})
+            ids = show.get("ids", {})
+            tmdb_id = ids.get("tmdb")
+            episode = item.get("episode", {})
+            if not tmdb_id or not episode:
+                continue
+
+            progress_by_show[int(tmdb_id)] = {
+                "type": "resume",
+                "show": show,
+                "episode": {
+                    "season": episode.get("season"),
+                    "number": episode.get("number"),
+                    "title": episode.get("title", ""),
+                    "first_aired": episode.get("first_aired"),
+                },
+                "progress": item.get("progress", 0),
+                "activity_at": item.get("paused_at") or "",
+            }
+
+        for show_item in watched_shows or []:
+            show = show_item.get("show", {})
+            ids = show.get("ids", {})
+            tmdb_id = ids.get("tmdb")
+            if not tmdb_id:
+                continue
+
+            tmdb_id = int(tmdb_id)
+            if tmdb_id in progress_by_show:
+                entries.append(progress_by_show[tmdb_id])
+                continue
+
+            last_episode, last_timestamp = cls._last_watched_episode(show_item)
+            if not last_episode:
+                continue
+
+            next_episode = cls._find_next_episode(fetcher, tmdb_id, last_episode, now_dt)
+            if not next_episode:
+                continue
+
+            entries.append(
+                {
+                    "type": "next",
+                    "show": show,
+                    "episode": next_episode,
+                    "progress": 0,
+                    "activity_at": last_timestamp.isoformat() if last_timestamp else "",
+                }
+            )
+
+        return sorted(
+            entries,
+            key=lambda item: (
+                1 if item.get("type") == "resume" else 0,
+                item.get("activity_at", ""),
+            ),
+            reverse=True,
+        )
+
+    def trakt_up_next(self):
+        watched_shows = self.get_watched_shows()
+        progress_items = TraktScrobble().trakt_get_playback_progress("episodes")
+        return self._build_up_next_entries(watched_shows, progress_items)
 
     def trakt_collection(self, page_no):
         set_pluging_category("Collection")

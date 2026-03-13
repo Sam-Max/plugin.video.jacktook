@@ -791,6 +791,14 @@ msgctxt "#30915"
 msgid "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
 msgstr "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
 
+msgctxt "#30916"
+msgid "Account Info"
+msgstr "Account Info"
+
+msgctxt "#30917"
+msgid "View your Trakt account profile and library stats."
+msgstr "View your Trakt account profile and library stats."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

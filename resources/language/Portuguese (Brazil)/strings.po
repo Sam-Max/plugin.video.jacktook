@@ -901,3 +901,11 @@ msgstr "Intervalo de sincronizacao do Trakt (minutos)"
 msgctxt "#30915"
 msgid "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
 msgstr "Com que frequencia o Jacktook verifica mudancas remotas de atividade no Trakt enquanto o Kodi estiver em execucao."
+
+msgctxt "#30916"
+msgid "Account Info"
+msgstr "Informacoes da conta Trakt"
+
+msgctxt "#30917"
+msgid "View your Trakt account profile and library stats."
+msgstr "Veja o perfil da sua conta Trakt e as estatisticas da biblioteca."

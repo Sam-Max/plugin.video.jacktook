@@ -19,6 +19,7 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import (
     build_url,
+    dialog_text,
     end_of_directory,
     get_datetime,
     get_setting,
@@ -51,6 +52,7 @@ class Trakt(Enum):
     MY_LISTS = "trakt_my_lists"
     LIKED_LISTS = "trakt_liked_lists"
     SEARCH_LISTS = "trakt_search_lists"
+    ACCOUNT_INFO = "trakt_account_info"
 
 
 class BaseTraktClient:
@@ -144,6 +146,7 @@ class TraktClient:
             Trakt.MY_LISTS: lambda: TraktLists().trakt_get_lists("my_lists"),
             Trakt.LIKED_LISTS: lambda: TraktLists().trakt_get_lists("liked_lists"),
             Trakt.SEARCH_LISTS: lambda: TraktClient._search_trakt_lists(params, page),
+            Trakt.ACCOUNT_INFO: TraktClient.get_account_info,
         }
 
         list_handlers = {
@@ -177,6 +180,7 @@ class TraktClient:
             Trakt.MY_LISTS: lambda: TraktLists().trakt_get_lists("my_lists"),
             Trakt.LIKED_LISTS: lambda: TraktLists().trakt_get_lists("liked_lists"),
             Trakt.SEARCH_LISTS: lambda: TraktClient._search_trakt_lists(params, page),
+            Trakt.ACCOUNT_INFO: TraktClient.get_account_info,
         }
 
         list_handlers = {
@@ -219,6 +223,13 @@ class TraktClient:
         params.pop("_trakt_search_cancelled", None)
         params["search_term"] = search_term
         return TraktLists().trakt_search_lists(search_term, page)
+
+    @staticmethod
+    def get_account_info():
+        auth_api = TraktAPI().auth
+        settings = auth_api.get_user_settings() or {}
+        stats = auth_api.get_account_stats() or {}
+        return {"settings": settings, "stats": stats}
 
     @staticmethod
     def trakt_add_to_watchlist(params):
@@ -321,6 +332,11 @@ class TraktClient:
     def process_trakt_result(
         results, query, category, mode, submode, api, page, search_term=""
     ):
+        if query == Trakt.ACCOUNT_INFO:
+            TraktPresentation.show_account_info(results)
+            end_of_directory()
+            return
+
         if not results:
             if query == Trakt.SEARCH_LISTS and not search_term:
                 end_of_directory()
@@ -363,7 +379,7 @@ class TraktClient:
                 results, TraktPresentation.show_calendar_items
             ),
             Trakt.UP_NEXT: lambda: execute_thread_pool(
-                results, TraktPresentation.show_calendar_items
+                results, TraktPresentation.show_up_next_items
             ),
             Trakt.FAVORITES: lambda: execute_thread_pool(
                 results, TraktPresentation.show_watchlist, mode
@@ -452,6 +468,42 @@ class TraktClient:
 
 
 class TraktPresentation:
+    @staticmethod
+    def _format_account_info(results):
+        settings = results.get("settings", {}) if isinstance(results, dict) else {}
+        stats = results.get("stats", {}) if isinstance(results, dict) else {}
+        user = settings.get("user", {})
+        account = settings.get("account", {})
+        connections = settings.get("connections", {})
+
+        lines = [str(translation(30916)), ""]
+        lines.append(f"Username: {user.get('username', '')}")
+        lines.append(f"Name: {user.get('name', '')}")
+        lines.append(f"Joined: {user.get('joined_at', '')}")
+        lines.append(f"Private: {str(account.get('private', False))}")
+        lines.append(f"VIP: {str(user.get('vip', False))}")
+        lines.append(f"Timezone: {account.get('timezone', '')}")
+        lines.append(f"Locale: {account.get('locale', '')}")
+        lines.append("")
+        lines.append("Stats")
+        lines.append(f"Movies Watched: {stats.get('movies', {}).get('watched', 0)}")
+        lines.append(f"Shows Watched: {stats.get('shows', {}).get('watched', 0)}")
+        lines.append(f"Episodes Watched: {stats.get('episodes', {}).get('watched', 0)}")
+        lines.append(f"Movies Collected: {stats.get('movies', {}).get('collected', 0)}")
+        lines.append(f"Shows Collected: {stats.get('shows', {}).get('collected', 0)}")
+        lines.append(f"Lists: {stats.get('lists', {}).get('count', 0)}")
+        lines.append("")
+        lines.append("Connections")
+        for key in ("facebook", "google", "twitter", "mastodon"):
+            connection = connections.get(key, False)
+            lines.append(f"{key.title()}: {str(bool(connection))}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def show_account_info(results):
+        content = TraktPresentation._format_account_info(results)
+        dialog_text(translation(30916), content)
+
     @staticmethod
     def show_anime_common(res, mode):
         ids = extract_ids(res, mode)
@@ -734,3 +786,51 @@ class TraktPresentation:
             url=url,
             is_folder=True,
         )
+
+    @staticmethod
+    def show_up_next_items(res):
+        show_data = res.get("show", {})
+        episode = res.get("episode", {})
+        show_title = show_data.get("title", "")
+        title = episode.get("title", "")
+        season = episode.get("season")
+        episode_number = episode.get("number")
+        progress = res.get("progress", 0)
+        tmdb_id = show_data.get("ids", {}).get("tmdb")
+        imdb_id = show_data.get("ids", {}).get("imdb")
+        tvdb_id = show_data.get("ids", {}).get("tvdb")
+
+        if not tmdb_id or season is None or episode_number is None:
+            return
+
+        prefix = "[Resume]" if res.get("type") == "resume" else "[Next]"
+        display_title = (
+            f"{prefix} {show_title} - S{int(season):02d}E{int(episode_number):02d} - {title}"
+        )
+        if progress:
+            display_title = f"{display_title} ({int(progress)}%)"
+
+        ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id, "tvdb_id": tvdb_id}
+        details = tmdb_get("tv_details", tmdb_id) or {}
+
+        list_item = ListItem(label=display_title)
+        set_media_infoTag(list_item, data=details, mode="tv")
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setTitle(display_title)
+        info_tag.setPlot(details.get("overview", ""))
+        if progress:
+            list_item.setProperty("PercentPlayed", str(progress))
+
+        url = build_url(
+            "search",
+            ids=ids,
+            mode="tv",
+            query=show_title,
+            tv_data={
+                "name": title,
+                "episode": episode_number,
+                "season": season,
+            },
+        )
+
+        add_kodi_dir_item(list_item=list_item, url=url, is_folder=True)

@@ -166,6 +166,13 @@ tv_items = [
         "icon": "trakt.png",
     },
     {
+        "name": translation(30916),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_account_info",
+        "icon": "trakt.png",
+    },
+    {
         "name": "Calendar",
         "mode": "tv",
         "api": "trakt",
@@ -336,6 +343,13 @@ movie_items = [
         "mode": "movies",
         "api": "trakt",
         "query": "trakt_search_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(30916),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_account_info",
         "icon": "trakt.png",
     },
 ]
