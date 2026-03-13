@@ -96,6 +96,76 @@ _MDBLIST_ACTIONS = frozenset(
 )
 
 
+def _is_stremio_action(action):
+    return action.startswith(("stremio_", "list_stremio")) or action in {
+        "list_catalog",
+        "search_catalog",
+        "add_custom_stremio_addon",
+        "remove_custom_stremio_addon",
+        "torrentio_toggle_providers",
+        "stremio_bypass_addons_select",
+    }
+
+
+def _is_tmdb_action(action):
+    return action.startswith(
+        (
+            "handle_tmdb",
+            "search_tmdb",
+            "search_tmbd",
+            "rescrape_tmdb",
+            "show_tmdb",
+            "handle_collection",
+            "search_people",
+            "handle_keyword",
+            "show_keyword",
+        )
+    )
+
+
+def _is_trakt_action(action):
+    return action.startswith("trakt_") or action in _TRAKT_EXTRAS
+
+
+def _is_debrid_action(action):
+    return action in _DEBRID_ACTIONS
+
+
+def _is_telegram_action(action):
+    return action.startswith(("telegram_", "list_telegram", "list_jackgram"))
+
+
+def _is_torrserver_action(action):
+    return action in _TORRSERVER_ACTIONS
+
+
+def _is_webdav_action(action):
+    return action in _WEBDAV_ACTIONS
+
+
+def _is_download_action(action):
+    return action in _DOWNLOAD_ACTIONS
+
+
+def _is_mdblist_action(action):
+    return action in _MDBLIST_ACTIONS
+
+
+def _is_cache_action(action):
+    return action.startswith("clear_")
+
+
+def _is_gui_action(action):
+    return action in _GUI_ACTIONS
+
+
+def _get_route_handler(action):
+    for matcher, handler in ROUTE_GROUPS:
+        if matcher(action):
+            return handler
+    return _route_core
+
+
 # ---------------------------------------------------------------------------
 # Main router
 # ---------------------------------------------------------------------------
@@ -112,72 +182,8 @@ def addon_router():
 
         ensure_tmdb_init()
 
-        # --- Stremio routes ---
-        if action.startswith(("stremio_", "list_stremio")) or action in (
-            "list_catalog",
-            "search_catalog",
-            "add_custom_stremio_addon",
-            "remove_custom_stremio_addon",
-            "torrentio_toggle_providers",
-            "stremio_bypass_addons_select",
-        ):
-            _route_stremio(action, params)
-
-        # --- TMDB routes ---
-        elif action.startswith(
-            (
-                "handle_tmdb",
-                "search_tmdb",
-                "search_tmbd",
-                "rescrape_tmdb",
-                "show_tmdb",
-                "handle_collection",
-                "search_people",
-                "handle_keyword",
-                "show_keyword",
-            )
-        ):
-            _route_tmdb(action, params)
-
-        # --- Trakt routes ---
-        elif action.startswith("trakt_") or action in _TRAKT_EXTRAS:
-            _route_trakt(action, params)
-
-        # --- Debrid / Cloud routes ---
-        elif action in _DEBRID_ACTIONS:
-            _route_debrid(action, params)
-
-        # --- Telegram routes ---
-        elif action.startswith(("telegram_", "list_telegram", "list_jackgram")):
-            _route_telegram(action, params)
-
-        # --- TorrServer routes ---
-        elif action in _TORRSERVER_ACTIONS:
-            _route_torrserver(action, params)
-
-        # --- WebDAV routes ---
-        elif action in _WEBDAV_ACTIONS:
-            _route_webdav(action, params)
-
-        # --- Download routes ---
-        elif action in _DOWNLOAD_ACTIONS:
-            _route_downloads(action, params)
-
-        # --- MDBList routes ---
-        elif action in _MDBLIST_ACTIONS:
-            _route_mdblist(action, params)
-
-        # --- Cache / Clear routes ---
-        elif action.startswith("clear_"):
-            _route_cache(action, params)
-
-        # --- GUI / Dialog routes ---
-        elif action in _GUI_ACTIONS:
-            _route_gui(action, params)
-
-        # --- Core navigation (fallback) ---
-        else:
-            _route_core(action, params)
+        route_handler = _get_route_handler(action)
+        route_handler(action, params)
         return
 
     from lib.navigation import root_menu
@@ -699,3 +705,18 @@ def _route_core(action, params):
         action_func = actions.get(action)
         if action_func:
             action_func(params)
+
+
+ROUTE_GROUPS = (
+    (_is_stremio_action, _route_stremio),
+    (_is_tmdb_action, _route_tmdb),
+    (_is_trakt_action, _route_trakt),
+    (_is_debrid_action, _route_debrid),
+    (_is_telegram_action, _route_telegram),
+    (_is_torrserver_action, _route_torrserver),
+    (_is_webdav_action, _route_webdav),
+    (_is_download_action, _route_downloads),
+    (_is_mdblist_action, _route_mdblist),
+    (_is_cache_action, _route_cache),
+    (_is_gui_action, _route_gui),
+)
