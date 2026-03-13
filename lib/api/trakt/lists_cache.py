@@ -3,6 +3,7 @@ from lib.api.trakt.base_cache import BaseCache, get_timestamp
 
 GET_ALL = "SELECT id FROM lists"
 DELETE_ALL = "DELETE FROM lists"
+DELETE_PREFIX = 'DELETE FROM lists WHERE id LIKE "%s%%"'
 CLEAN = "DELETE from lists WHERE CAST(expires AS INT) <= ?"
 
 
@@ -16,6 +17,19 @@ class ListsCache(BaseCache):
             for i in dbcon.execute(GET_ALL):
                 self.delete_memory_cache(str(i[0]))
             dbcon.execute(DELETE_ALL)
+            dbcon.execute("VACUUM")
+            return True
+        except:
+            return False
+
+    def delete_prefix(self, prefix):
+        try:
+            dbcon = self.manual_connect("lists_db")
+            for item in dbcon.execute(GET_ALL):
+                cache_key = str(item[0])
+                if cache_key.startswith(prefix):
+                    self.delete_memory_cache(cache_key)
+            dbcon.execute(DELETE_PREFIX % prefix)
             dbcon.execute("VACUUM")
             return True
         except:

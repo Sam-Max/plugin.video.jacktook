@@ -755,6 +755,14 @@ msgctxt "#30913"
 msgid "Revoke Torbox account access."
 msgstr "Revocar acceso a la cuenta de Torbox."
 
+msgctxt "#30914"
+msgid "Trakt Sync Interval (minutes)"
+msgstr "Intervalo de sincronizacion de Trakt (minutos)"
+
+msgctxt "#30915"
+msgid "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
+msgstr "Con que frecuencia Jacktook comprueba cambios remotos de actividad en Trakt mientras Kodi esta en ejecucion."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr "Árabe (Emiratos Árabes Unidos)"

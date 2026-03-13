@@ -1233,6 +1233,15 @@ class TraktCalendar(TraktBase):
         return self.get_trakt(params)
 
 
+class TraktSync(TraktBase):
+    def get_last_activities(self):
+        return self.call_trakt(
+            "sync/last_activities",
+            with_auth=True,
+            pagination=False,
+        )
+
+
 class TraktAPI:
     def __init__(self):
         self.auth = TraktAuthentication()
@@ -1241,6 +1250,7 @@ class TraktAPI:
         self.anime = TraktAnime()
         self.lists = TraktLists()
         self.scrobble = TraktScrobble()
+        self.sync = TraktSync()
         self.cache = TraktCache()
         self.calendar = TraktCalendar()
 

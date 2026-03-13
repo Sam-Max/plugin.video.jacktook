@@ -893,3 +893,11 @@ msgstr "Nao foi possivel concluir a redefinicao de fabrica."
 msgctxt "#90291"
 msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
 msgstr "Redefine as configuracoes para os valores padrao, limpa caches e apaga o historico e os dados locais do addon."
+
+msgctxt "#30914"
+msgid "Trakt Sync Interval (minutes)"
+msgstr "Intervalo de sincronizacao do Trakt (minutos)"
+
+msgctxt "#30915"
+msgid "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
+msgstr "Com que frequencia o Jacktook verifica mudancas remotas de atividade no Trakt enquanto o Kodi estiver em execucao."

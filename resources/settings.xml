@@ -1490,6 +1490,22 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="trakt_sync_interval" type="integer" label="30914" help="30915">
+                    <default>15</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>120</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="trakt_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="clear_trakt_cache" type="action" label="30920"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_trakt_cache)</data>
                     <control type="button" format="action">
