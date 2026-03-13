@@ -15,6 +15,12 @@ from lib.clients.tmdb.utils.utils import (
     add_tmdb_show_context_menu,
     tmdb_get,
 )
+from lib.api.trakt.trakt_utils import (
+    add_trakt_collection_context_menu,
+    add_trakt_watchlist_context_menu,
+    add_trakt_watched_context_menu,
+    is_trakt_auth,
+)
 
 from xbmcgui import ListItem
 
@@ -26,19 +32,23 @@ class BaseTmdbClient:
             context_menu = add_tmdb_movie_context_menu(
                 mode, media_type, title=title, ids=ids
             )
-            # if is_trakt_auth():
-            #     context_menu += add_trakt_watchlist_context_menu(
-            #         "movies", ids
-            #     ) + add_trakt_watched_context_menu("movies", ids=ids)
+            if is_trakt_auth():
+                context_menu += (
+                    add_trakt_watchlist_context_menu("movies", ids)
+                    + add_trakt_watched_context_menu("movies", ids=ids)
+                    + add_trakt_collection_context_menu("movies", ids)
+                )
             list_item.addContextMenuItems(context_menu)
             list_item.setProperty("IsPlayable", "true")
             is_folder = False
         elif mode == "tv" or (mode == "multi" and media_type == "tv"):
             context_menu = add_tmdb_show_context_menu(mode, ids=ids)
-            # if is_trakt_auth():
-            #     context_menu += add_trakt_watchlist_context_menu(
-            #         "shows", ids
-            #     ) + add_trakt_watched_context_menu("shows", ids=ids)
+            if is_trakt_auth():
+                context_menu += (
+                    add_trakt_watchlist_context_menu("shows", ids)
+                    + add_trakt_watched_context_menu("shows", ids=ids)
+                    + add_trakt_collection_context_menu("shows", ids)
+                )
             list_item.addContextMenuItems(context_menu)
             is_folder = True
         else:
