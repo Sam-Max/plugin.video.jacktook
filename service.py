@@ -132,16 +132,17 @@ class DebridExpirationCheck:
             if get_setting("real_debrid_enabled") and get_setting("real_debrid_token"):
                 from lib.api.debrid.realdebrid import RealDebrid
 
-                rd = RealDebrid(get_setting("real_debrid_token"))
+                rd = RealDebrid(str(get_setting("real_debrid_token", "")))
                 days = rd.days_remaining()
                 if days is not None and days <= threshold:
                     notify_expiration("Real-Debrid", days)
 
             # Check AllDebrid
-            if get_setting("alldebrid_enabled") and get_setting("alldebrid_token"):
+            alldebrid_token = get_setting("alldebrid_token")
+            if get_setting("alldebrid_enabled") and alldebrid_token:
                 from lib.api.debrid.alldebrid import AllDebrid
 
-                ad = AllDebrid(get_setting("alldebrid_token"))
+                ad = AllDebrid(str(alldebrid_token))
                 days = ad.days_remaining()
                 if days is not None and days <= threshold:
                     notify_expiration("AllDebrid", days)
@@ -159,7 +160,7 @@ class DebridExpirationCheck:
             if get_setting("premiumize_enabled") and get_setting("premiumize_token"):
                 from lib.api.debrid.premiumize import Premiumize
 
-                pm = Premiumize(get_setting("premiumize_token"))
+                pm = Premiumize(str(get_setting("premiumize_token", "")))
                 days = pm.days_remaining()
                 if days is not None and days <= threshold:
                     notify_expiration("Premiumize", days)

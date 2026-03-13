@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ast
 import os
 import time
 import sqlite3 as database
@@ -101,6 +102,7 @@ def get_timestamp(offset=0):
 def check_databases_integrity():
     def _process(database_name, tables):
         database_location = database_locations[database_name]
+        dbcon = None
         try:
             dbcon = database.connect(database_location)
             for db_table in tables:
@@ -144,7 +146,7 @@ class BaseCache(object):
                 cache_data = dbcon.execute(BASE_GET % self.table, (string,)).fetchone()
                 if cache_data:
                     if cache_data[0] > current_time:
-                        result = eval(cache_data[1])
+                        result = self._deserialize(cache_data[1])
                         self.set_memory_cache(result, string, cache_data[0])
                     else:
                         self.delete(string)
@@ -156,7 +158,9 @@ class BaseCache(object):
         try:
             dbcon = connect_database(self.dbfile)
             expires = get_timestamp(expiration)
-            dbcon.execute(BASE_SET % self.table, (string, repr(data), int(expires)))
+            dbcon.execute(
+                BASE_SET % self.table, (string, self._serialize(data), int(expires))
+            )
             self.set_memory_cache(data, string, int(expires))
         except:
             return None
@@ -166,7 +170,7 @@ class BaseCache(object):
         try:
             cachedata = get_property(media_prop % string)
             if cachedata:
-                cachedata = eval(cachedata)
+                cachedata = self._deserialize(cachedata)
                 if cachedata[0] > current_time:
                     result = cachedata[1]
         except:
@@ -176,10 +180,18 @@ class BaseCache(object):
     def set_memory_cache(self, data, string, expires):
         try:
             cachedata = (expires, data)
-            cachedata_repr = repr(cachedata)
+            cachedata_repr = self._serialize(cachedata)
             set_property(media_prop % string, cachedata_repr)
         except:
             pass
+
+    @staticmethod
+    def _serialize(data):
+        return repr(data)
+
+    @staticmethod
+    def _deserialize(data):
+        return ast.literal_eval(data)
 
     def delete(self, string):
         try:

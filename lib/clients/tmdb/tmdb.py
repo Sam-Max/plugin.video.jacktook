@@ -1092,12 +1092,12 @@ class TmdbClient(BaseTmdbClient):
                 media_type=media_type,
             )
 
-        if getattr(results, "total_pages", 0) > page:
+        if getattr(data, "total_pages", 0) > page:
             add_next_button(
                 "search_tmdb_recommendations",
                 ids=ids,
                 mode=mode,
-                page=page,
+                page=page + 1,
             )
         end_of_directory()
 
@@ -1131,7 +1131,7 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
 
-        for res in getattr(results, "results", []):
+        for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
@@ -1146,12 +1146,12 @@ class TmdbClient(BaseTmdbClient):
                 media_type=media_type,
             )
 
-        if getattr(results, "total_pages", 0) > page:
+        if getattr(data, "total_pages", 0) > page:
             add_next_button(
                 "search_tmdb_similar",
                 ids=ids,
                 mode=mode,
-                page=page,
+                page=page + 1,
             )
         end_of_directory()
 

@@ -1040,7 +1040,7 @@ def rd_auth(params):
 
 
 def ad_auth(params):
-    ad_client = AllDebrid(token=str(get_setting("all_debrid_token", "")))
+    ad_client = AllDebrid(token=str(get_setting("alldebrid_token", "")))
     ad_client.auth()
 
 
@@ -1050,7 +1050,7 @@ def rd_remove_auth(params):
 
 
 def ad_remove_auth(params):
-    ad_client = AllDebrid(token=str(get_setting("all_debrid_token", "")))
+    ad_client = AllDebrid(token=str(get_setting("alldebrid_token", "")))
     ad_client.remove_auth()
 
 
