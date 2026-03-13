@@ -25,6 +25,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     kodi_play_media,
+    show_keyboard,
     translation,
 )
 from .paginator import paginator_db
@@ -46,6 +47,10 @@ class Trakt(Enum):
     CALENDAR = "trakt_calendar"
     UP_NEXT = "trakt_up_next"
     COLLECTION = "trakt_collection"
+    FAVORITES = "trakt_favorites"
+    MY_LISTS = "trakt_my_lists"
+    LIKED_LISTS = "trakt_liked_lists"
+    SEARCH_LISTS = "trakt_search_lists"
 
 
 class BaseTraktClient:
@@ -105,11 +110,16 @@ class BaseTraktClient:
 
 class TraktClient:
     @staticmethod
-    def handle_trakt_query(query, category, mode, page, submode, api):
+    def handle_trakt_query(query, category, mode, page, submode, api, params=None):
         set_content_type(mode)
+        params = params or {}
         handlers = {
-            "movies": TraktClient.handle_trakt_movie_query,
-            "tv": TraktClient.handle_trakt_show_query,
+            "movies": lambda q, m, p: TraktClient.handle_trakt_movie_query(
+                q, m, p, params
+            ),
+            "tv": lambda q, m, p: TraktClient.handle_trakt_show_query(
+                q, m, p, params
+            ),
             "anime": lambda q, m, p: TraktClient.handle_trakt_anime_query(
                 category, p, submode
             ),
@@ -119,7 +129,8 @@ class TraktClient:
             return handler(query, mode, page)
 
     @staticmethod
-    def handle_trakt_movie_query(query, mode, page):
+    def handle_trakt_movie_query(query, mode, page, params=None):
+        params = params or {}
         query_handlers = {
             Trakt.TRENDING: lambda: TraktMovies().trakt_movies_trending(page),
             Trakt.TOP10: lambda: TraktMovies().trakt_movies_top10_boxoffice(),
@@ -129,6 +140,10 @@ class TraktClient:
             ),
             Trakt.FAVORITED: lambda: TraktMovies().trakt_movies_most_favorited(page),
             Trakt.RECOMENDATIONS: lambda: TraktMovies().trakt_recommendations("movies"),
+            Trakt.FAVORITES: lambda: TraktLists().trakt_favorites(mode),
+            Trakt.MY_LISTS: lambda: TraktLists().trakt_get_lists("my_lists"),
+            Trakt.LIKED_LISTS: lambda: TraktLists().trakt_get_lists("liked_lists"),
+            Trakt.SEARCH_LISTS: lambda: TraktClient._search_trakt_lists(params, page),
         }
 
         list_handlers = {
@@ -148,7 +163,8 @@ class TraktClient:
             return list_handlers[query]()
 
     @staticmethod
-    def handle_trakt_show_query(query, mode, page):
+    def handle_trakt_show_query(query, mode, page, params=None):
+        params = params or {}
         query_handlers = {
             Trakt.TRENDING: lambda: TraktTV().trakt_tv_trending(page),
             Trakt.WATCHED: lambda: TraktTV().trakt_tv_most_watched(page),
@@ -157,6 +173,10 @@ class TraktClient:
             ),
             Trakt.FAVORITED: lambda: TraktTV().trakt_tv_most_favorited(page),
             Trakt.RECOMENDATIONS: lambda: TraktTV().trakt_recommendations("shows"),
+            Trakt.FAVORITES: lambda: TraktLists().trakt_favorites(mode),
+            Trakt.MY_LISTS: lambda: TraktLists().trakt_get_lists("my_lists"),
+            Trakt.LIKED_LISTS: lambda: TraktLists().trakt_get_lists("liked_lists"),
+            Trakt.SEARCH_LISTS: lambda: TraktClient._search_trakt_lists(params, page),
         }
 
         list_handlers = {
@@ -187,6 +207,18 @@ class TraktClient:
             return TraktAPI().anime.trakt_anime_most_watched(page, submode)
         elif query == Anime.FAVORITED:
             return TraktAPI().anime.trakt_anime_most_favorited(page, submode)
+
+    @staticmethod
+    def _search_trakt_lists(params, page):
+        search_term = params.get("search_term", "")
+        if not search_term:
+            search_term = show_keyboard(id=30243, default="")
+        if not search_term:
+            params["_trakt_search_cancelled"] = True
+            return []
+        params.pop("_trakt_search_cancelled", None)
+        params["search_term"] = search_term
+        return TraktLists().trakt_search_lists(search_term, page)
 
     @staticmethod
     def trakt_add_to_watchlist(params):
@@ -286,9 +318,14 @@ class TraktClient:
         return TraktAPI().calendar.trakt_my_calendar(start_date=start_date, days=days)
 
     @staticmethod
-    def process_trakt_result(results, query, category, mode, submode, api, page):
+    def process_trakt_result(
+        results, query, category, mode, submode, api, page, search_term=""
+    ):
         if not results:
-            if query in (Trakt.CALENDAR, Trakt.UP_NEXT):
+            if query == Trakt.SEARCH_LISTS and not search_term:
+                end_of_directory()
+                return
+            if query in (Trakt.CALENDAR, Trakt.UP_NEXT, Trakt.SEARCH_LISTS):
                 notification("No results found", time=3000)
 
         query_handlers = {
@@ -328,6 +365,18 @@ class TraktClient:
             Trakt.UP_NEXT: lambda: execute_thread_pool(
                 results, TraktPresentation.show_calendar_items
             ),
+            Trakt.FAVORITES: lambda: execute_thread_pool(
+                results, TraktPresentation.show_watchlist, mode
+            ),
+            Trakt.MY_LISTS: lambda: execute_thread_pool(
+                results, TraktPresentation.show_user_lists, mode
+            ),
+            Trakt.LIKED_LISTS: lambda: execute_thread_pool(
+                results, TraktPresentation.show_user_lists, mode
+            ),
+            Trakt.SEARCH_LISTS: lambda: execute_thread_pool(
+                results, TraktPresentation.show_user_lists, mode
+            ),
         }
 
         anime_handlers = {
@@ -350,21 +399,43 @@ class TraktClient:
         if category in anime_handlers:
             anime_handlers[category]()
 
-        add_next_button(
-            "search_item",
-            page=page,
-            query=query,
-            category=category,
-            mode=mode,
-            submode=submode,
-            api=api,
-        )
+        if TraktClient._should_add_next_button(query, category):
+            next_kwargs = {
+                "query": query,
+                "category": category,
+                "mode": mode,
+                "submode": submode,
+                "api": api,
+            }
+            if search_term:
+                next_kwargs["search_term"] = search_term
+            add_next_button("search_item", page=page, **next_kwargs)
         end_of_directory()
 
     @staticmethod
-    def show_trakt_list_content(list_type, mode, user, slug, with_auth, page):
+    def _should_add_next_button(query, category):
+        paginated_queries = {
+            Trakt.TRENDING,
+            Trakt.WATCHED,
+            Trakt.FAVORITED,
+            Trakt.TRENDING_LISTS,
+            Trakt.POPULAR_LISTS,
+            Trakt.WATCHED_HISTORY,
+            Trakt.COLLECTION,
+            Trakt.SEARCH_LISTS,
+        }
+        paginated_categories = {
+            Anime.TRENDING,
+            Anime.TRENDING_RECENT,
+            Anime.MOST_WATCHED,
+            Anime.FAVORITED,
+        }
+        return query in paginated_queries or category in paginated_categories
+
+    @staticmethod
+    def show_trakt_list_content(list_type, mode, user, slug, with_auth, page, trakt_id=None):
         data = TraktAPI().lists.get_trakt_list_contents(
-            list_type, user, slug, with_auth
+            list_type, user, slug, with_auth, trakt_id
         )
         paginator_db.initialize(data)
         items = paginator_db.get_page(page)
@@ -481,6 +552,40 @@ class TraktPresentation:
         add_kodi_dir_item(
             list_item,
             url=url,
+            is_folder=True,
+        )
+
+    @staticmethod
+    def show_user_lists(res, mode):
+        list_title = res.get("name", "Untitled List")
+        description = res.get("description", "")
+        item_count = res.get("item_count")
+        username = res.get("username") or res.get("user_slug", "")
+
+        if item_count:
+            label = f"{list_title} ({item_count})"
+        else:
+            label = list_title
+
+        if username:
+            label = f"{label} - [I]{username}[/I]"
+
+        list_item = ListItem(label)
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setTitle(list_title)
+        info_tag.setPlot(description)
+
+        add_kodi_dir_item(
+            list_item=list_item,
+            url=build_url(
+                "trakt_list_content",
+                list_type=res.get("list_type", "user_lists"),
+                mode=mode,
+                user=res.get("user_slug", ""),
+                slug=res.get("slug", ""),
+                with_auth=res.get("with_auth", False),
+                trakt_id=res.get("trakt_id", ""),
+            ),
             is_folder=True,
         )
 

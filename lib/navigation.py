@@ -646,11 +646,18 @@ def search_item(params):
 
     if api == "trakt":
         result = TraktClient.handle_trakt_query(
-            query, category, mode, page, submode, api
+            query, category, mode, page, submode, api, params=params
         )
         if result is not None:
             TraktClient.process_trakt_result(
-                result, query, category, mode, submode, api, page
+                result,
+                query,
+                category,
+                mode,
+                submode,
+                api,
+                page,
+                search_term=params.get("search_term", ""),
             )
     elif api == "tmdb":
         if submode == "people_menu":
@@ -673,6 +680,7 @@ def trakt_list_content(params):
         params.get("slug"),
         params.get("with_auth", ""),
         params.get("page", 1),
+        params.get("trakt_id"),
     )
 
 

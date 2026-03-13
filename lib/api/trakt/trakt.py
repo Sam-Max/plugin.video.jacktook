@@ -895,7 +895,7 @@ class TraktLists(TraktBase):
 
     def trakt_search_lists(self, search_title, page_no):
         def _process(dummy_arg):
-            return self.call_trakt(
+            result = self.call_trakt(
                 "search",
                 params={
                     "type": "list",
@@ -906,6 +906,39 @@ class TraktLists(TraktBase):
                 pagination=True,
                 page_no=page_no,
             )
+            if isinstance(result, tuple):
+                result = result[0]
+            if not result:
+                return []
+
+            normalized = []
+            for item in result:
+                list_data = item.get("list", {})
+                user_data = list_data.get("user", {}) or item.get("user", {}) or {}
+                ids = list_data.get("ids", {})
+                user_ids = user_data.get("ids", {})
+                user_slug = (
+                    user_ids.get("slug")
+                    or user_data.get("username")
+                    or list_data.get("username")
+                    or ""
+                )
+                normalized.append(
+                    {
+                        "list_type": "search_lists",
+                        "name": list_data.get("name", ""),
+                        "description": list_data.get("description", ""),
+                        "slug": ids.get("slug", ""),
+                        "trakt_id": ids.get("trakt"),
+                        "user_slug": user_slug,
+                        "username": user_data.get("username", ""),
+                        "item_count": list_data.get("item_count", 0),
+                        "privacy": list_data.get("privacy", "public"),
+                        "with_auth": False,
+                    }
+                )
+
+            return normalized
 
         string = "trakt_search_lists_%s_%s" % (search_title, page_no)
         return cache_object(_process, string, "dummy_arg", False, 4)
@@ -921,7 +954,9 @@ class TraktLists(TraktBase):
                         "tmdb": i[i["type"]]["ids"].get("tmdb", ""),
                         "imdb": i[i["type"]]["ids"].get("imdb", ""),
                         "tvdb": i[i["type"]]["ids"].get("tvdb", ""),
-                    }
+                    },
+                    "title": i[i["type"]].get("title", ""),
+                    "type": i["type"],
                 }
                 for i in result
             ]
@@ -936,7 +971,7 @@ class TraktLists(TraktBase):
         }
         return cache_trakt_object(_process, string, params)
 
-    def get_trakt_list_contents(self, list_type, user, slug, with_auth):
+    def get_trakt_list_contents(self, list_type, user, slug, with_auth, trakt_id=None):
         def _process(params):
             result = self.get_trakt(params)
             if not result:
@@ -952,11 +987,11 @@ class TraktLists(TraktBase):
                 if i["type"] in ("movie", "show")
             ]
 
-        string = "trakt_list_contents_%s_%s_%s" % (list_type, user, slug)
-        if user == "Trakt Official":
+        string = "trakt_list_contents_%s_%s_%s_%s" % (list_type, user, slug, trakt_id)
+        if user == "Trakt Official" or (not user and trakt_id):
             params = {
                 "path": "lists/%s/items",
-                "path_insert": slug,
+                "path_insert": trakt_id or slug,
                 "params": {"extended": "full"},
                 "method": "sort_by_headers",
             }
@@ -982,12 +1017,41 @@ class TraktLists(TraktBase):
         return cache_object(self.get_trakt, string, params, False)
 
     def trakt_get_lists(self, list_type):
+        def _process(params):
+            result = self.get_trakt(params)
+            if not result:
+                return []
+
+            normalized = []
+            for item in result:
+                list_data = item.get("list", item)
+                user_data = list_data.get("user", {})
+                ids = list_data.get("ids", {})
+                user_ids = user_data.get("ids", {})
+                user_slug = user_ids.get("slug") or user_data.get("username") or ""
+                normalized.append(
+                    {
+                        "list_type": list_type,
+                        "name": list_data.get("name", ""),
+                        "description": list_data.get("description", ""),
+                        "slug": ids.get("slug", ""),
+                        "trakt_id": ids.get("trakt"),
+                        "user_slug": user_slug,
+                        "username": user_data.get("username", ""),
+                        "item_count": list_data.get("item_count", 0),
+                        "privacy": list_data.get("privacy", "public"),
+                        "with_auth": True,
+                    }
+                )
+
+            return normalized
+
         if list_type == "my_lists":
             string = "trakt_my_lists"
-            path = "users/me/lists%s"
+            path = "users/me/lists"
         elif list_type == "liked_lists":
             string = "trakt_liked_lists"
-            path = "users/likes/lists%s"
+            path = "users/likes/lists"
         else:
             return []
 
@@ -997,7 +1061,7 @@ class TraktLists(TraktBase):
             "pagination": False,
             "with_auth": True,
         }
-        return cache_trakt_object(self.get_trakt, string, params)
+        return cache_trakt_object(_process, string, params)
 
     def make_trakt_slug(self, name):
         import re
