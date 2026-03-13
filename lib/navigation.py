@@ -74,6 +74,14 @@ from lib.utils.general.utils import (
     set_pluging_category,
     show_log_export_dialog,
 )
+from lib.services.debrid.auth import (
+    run_alldebrid_auth,
+    run_debrider_auth,
+    run_premiumize_auth,
+    run_realdebrid_auth,
+    run_torbox_auth,
+)
+from lib.services.debrid.download import run_realdebrid_download
 from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
@@ -920,9 +928,7 @@ def next_page_anime(params):
 def download(magnet, type):
     if type == "RD":
         rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-        thread = Thread(
-            target=rd_client.download, args=(magnet,), kwargs={"pack": False}
-        )
+        thread = Thread(target=run_realdebrid_download, args=(rd_client, magnet, False))
     elif type == "TB":
         tb_client = Torbox(token=str(get_setting("torbox_token")))
         thread = Thread(target=tb_client.download, args=(magnet,))
@@ -1036,12 +1042,12 @@ def titles_calendar(params):
 
 def rd_auth(params):
     rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    rd_client.auth()
+    run_realdebrid_auth(rd_client)
 
 
 def ad_auth(params):
     ad_client = AllDebrid(token=str(get_setting("alldebrid_token", "")))
-    ad_client.auth()
+    run_alldebrid_auth(ad_client)
 
 
 def rd_remove_auth(params):
@@ -1056,7 +1062,7 @@ def ad_remove_auth(params):
 
 def debrider_auth(params):
     debrider_client = Debrider(token=str(get_setting("debrider_token")))
-    debrider_client.auth()
+    run_debrider_auth(debrider_client)
 
 
 def debrider_remove_auth(params):
@@ -1066,7 +1072,7 @@ def debrider_remove_auth(params):
 
 def pm_auth(params):
     pm_client = Premiumize(token=str(get_setting("premiumize_token")))
-    pm_client.auth()
+    run_premiumize_auth(pm_client)
 
 
 def trakt_auth(params):
@@ -1079,7 +1085,7 @@ def trakt_auth_revoke(params):
 
 def tb_auth(params):
     torbox_client = Torbox(token=str(get_setting("torbox_token")))
-    torbox_client.auth()
+    run_torbox_auth(torbox_client)
 
 
 def tb_remove_auth(params):

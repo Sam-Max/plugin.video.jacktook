@@ -1,10 +1,7 @@
-from time import time
 from lib.api.debrid.base import DebridClient
-from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import kodilog
-from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.utils.general.utils import DebridType
-from lib.utils.kodi.utils import ADDON_PATH, copy2clip, dialog_ok, set_setting, sleep
+from lib.utils.kodi.utils import dialog_ok, set_setting
+from lib.services.debrid.auth import run_debrider_auth
 
 
 class Debrider(DebridClient):
@@ -16,46 +13,8 @@ class Debrider(DebridClient):
         super().__init__(token)
 
     def auth(self):
-        response = self.get_device_code()
         kodilog("Debrider: Requesting device code for authentication.")
-        kodilog("Debrider: Response received: %s" % response)
-
-        if response:
-            interval = int(response["interval"])
-            expires_in = int(response["expires_in"])
-            device_code = response["device_code"]
-            user_code = response["user_code"]
-            auth_url = response["verification_url"]
-            qr_code = make_qrcode(auth_url)
-            copy2clip(auth_url)
-            progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-            progressDialog.setup(
-                "Debrider Auth", qr_code, auth_url, user_code, DebridType.DB
-            )
-            progressDialog.show_dialog()
-            start_time = time()
-            while time() - start_time < expires_in:
-                if progressDialog.iscanceled:
-                    progressDialog.close_dialog()
-                    return
-                elapsed = time() - start_time
-                percent = int((elapsed / expires_in) * 100)
-                progressDialog.update_progress(percent)
-                try:
-                    response = self.get_device_auth_status(device_code)
-                    if "apikey" in response:
-                        self.token = response["apikey"]
-                        progressDialog.close_dialog()
-                        set_setting("debrider_token", self.token)
-                        set_setting("debrider_authorized", "true")
-                        self.initialize_headers()
-                        dialog_ok("Success", "Authentication completed.")
-                        return
-                    sleep(1000 * interval)
-                except Exception as e:
-                    progressDialog.close_dialog()
-                    dialog_ok("Error:", f"Error: {e}.")
-                    return
+        run_debrider_auth(self)
 
     def remove_auth(self):
         set_setting("debrider_token", "")

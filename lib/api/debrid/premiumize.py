@@ -1,12 +1,5 @@
-import time
 from lib.api.debrid.base import DebridClient, ProviderException
-from lib.utils.kodi.utils import (
-    dialog_ok,
-    set_setting,
-    progressDialog,
-    copy2clip,
-    sleep as ksleep,
-)
+from lib.services.debrid.auth import run_premiumize_auth
 
 
 class Premiumize(DebridClient):
@@ -69,40 +62,7 @@ class Premiumize(DebridClient):
         )
 
     def auth(self):
-        response = self.get_device_code()
-        user_code = response["user_code"]
-        copy2clip(user_code)
-        content = "%s[CR]%s[CR]%s" % (
-            "Authorize Debrid Services",
-            "Navigate to: [B]%s[/B]" % response.get("verification_uri"),
-            "Enter the following code: [COLOR orangered][B]%s[/B][/COLOR]" % user_code,
-        )
-        progressDialog.create("Premiumize Auth")
-        progressDialog.update(-1, content)
-        device_code = response["device_code"]
-        expires_in = int(response["expires_in"])
-        sleep_interval = int(response["interval"])
-        start, time_passed = time.time(), 0
-        while not progressDialog.iscanceled() and time_passed < expires_in:
-            ksleep(1000 * sleep_interval)
-            response = self.authorize(device_code)
-            if "error" in response:
-                time_passed = time.time() - start
-                progress = int(100 * time_passed / float(expires_in))
-                progressDialog.update(progress, content)
-                continue
-            try:
-                progressDialog.close()
-                self.token = str(response["access_token"])
-                set_setting("premiumize_token", self.token)
-                dialog_ok("Success:", "Authentication completed.")
-            except Exception as e:
-                dialog_ok("Error:", f"Error: {e}.")
-                break
-        try:
-            progressDialog.close()
-        except:
-            pass
+        run_premiumize_auth(self)
 
     def download(self):
         pass

@@ -1,21 +1,12 @@
-from time import time
-import traceback
 from lib.api.debrid.base import DebridClient, ProviderException
 from base64 import b64encode, b64decode
-from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.jacktook.utils import ADDON_PATH
-from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.utils.general.utils import DebridType, supported_video_extensions
 from lib.utils.kodi.utils import (
-    copy2clip,
     dialog_ok,
-    dialogyesno,
     kodilog,
-    notification,
     set_setting,
-    sleep as ksleep,
 )
-from xbmcgui import DialogProgress
+from lib.services.debrid.auth import run_realdebrid_auth
+from lib.services.debrid.download import run_realdebrid_download
 
 
 class RealDebrid(DebridClient):
@@ -186,160 +177,10 @@ class RealDebrid(DebridClient):
         dialog_ok("Success", "Authentification Removed.")
 
     def auth(self):
-        response = self.get_device_code()
-        if response:
-            sleep_interval = int(response["interval"])
-            expires_in = int(response["expires_in"])
-            device_code = response["device_code"]
-            user_code = response["user_code"]
-            auth_url = response["direct_verification_url"]
-
-            qr_code = make_qrcode(auth_url)
-            copy2clip(auth_url)
-
-            progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-            progressDialog.setup(
-                "Real Debrid Auth",
-                qr_code,
-                auth_url,
-                user_code,
-                DebridType.RD,
-            )
-            progressDialog.show_dialog()
-
-            start_time = time()
-            while time() - start_time < expires_in:
-                ksleep(1000 * sleep_interval)
-                if progressDialog.iscanceled:
-                    progressDialog.close_dialog()
-                    return
-                try:
-                    response = self.authorize(device_code)
-                except:
-                    continue
-                try:
-                    if "token" in response:
-                        self.token = response["token"]
-                        set_setting("real_debrid_token", self.token)
-                        set_setting("real_debid_authorized", "true")
-
-                        self.initialize_headers()
-
-                        set_setting("real_debrid_user", self.get_user()["username"])
-                        progressDialog.update_progress(100, "Authentication completed.")
-                        progressDialog.close_dialog()
-                        return
-                    else:
-                        elapsed = time() - start_time
-                        percent = int((elapsed / expires_in) * 100)
-                        progressDialog.update_progress(percent)
-                except Exception as e:
-                    progressDialog.close_dialog()
-                    dialog_ok("Auth Error:", f"Error: {e}")
-                    return
+        run_realdebrid_auth(self)
 
     def download(self, magnet_url, pack=False):
-        interval = 5
-        cancelled = False
-        DEBRID_ERROR_STATUS = ("magnet_error", "error", "virus", "dead")
-        response = self.add_magnet_link(magnet_url)
-        if response:
-            torrent_id = response["id"]
-            progressDialog = DialogProgress()
-            torrent_info = self.get_torrent_info(torrent_id)
-            if torrent_info:
-                status = torrent_info["status"]
-                if status == "magnet_conversion":
-                    msg = "Converting Magnet...\n\n"
-                    msg += torrent_info["filename"]
-                    progress_timeout = 100
-                    progressDialog.create("Cloud Transfer")
-                    while status == "magnet_conversion" and progress_timeout > 0:
-                        progressDialog.update(progress_timeout, msg)
-                        if progressDialog.iscanceled():
-                            cancelled = True
-                            break
-                        progress_timeout -= interval
-                        ksleep(1000 * interval)
-                        torrent_info = self.get_torrent_info(torrent_id)
-                        status = torrent_info["status"]
-                        if any(x in status for x in DEBRID_ERROR_STATUS):
-                            notification("Real Debrid Error.")
-                            break
-                elif status == "downloaded":
-                    notification("File already cached")
-                    return
-                elif status == "waiting_files_selection":
-                    files = torrent_info["files"]
-                    extensions = supported_video_extensions()[:-1]
-                    items = [
-                        item
-                        for item in files
-                        for x in extensions
-                        if item["path"].lower().endswith(x)
-                    ]
-                    try:
-                        video = max(items, key=lambda x: x["bytes"])
-                        file_id = video["id"]
-                    except ValueError as e:
-                        notification(e)
-                        return
-                    self.select_files(torrent_id, str(file_id))
-                    ksleep(2000)
-                    torrent_info = self.get_torrent_info(torrent_id)
-                    if torrent_info:
-                        status = torrent_info["status"]
-                        if status == "downloaded":
-                            notification("File cached")
-                            return
-                        file_size = round(float(video["bytes"]) / (1000**3), 2)
-                        msg = "Saving File to the Real Debrid Cloud...\n"
-                        msg += f"{torrent_info['filename']}\n\n"
-                        progressDialog.create("Cloud Transfer")
-                        progressDialog.update(1, msg)
-                        while not status == "downloaded":
-                            ksleep(1000 * interval)
-                            torrent_info = self.get_torrent_info(torrent_id)
-                            status = torrent_info["status"]
-                            if status == "downloading":
-                                msg2 = (
-                                    "Downloading %s GB @ %s mbps from %s peers, %s %% completed"
-                                    % (
-                                        file_size,
-                                        round(
-                                            float(torrent_info["speed"]) / (1000**2), 2
-                                        ),
-                                        torrent_info["seeders"],
-                                        torrent_info["progress"],
-                                    )
-                                )
-                            else:
-                                msg2 = status
-                            progressDialog.update(
-                                int(float(torrent_info["progress"])), msg + msg2
-                            )
-                            try:
-                                if progressDialog.iscanceled():
-                                    cancelled = True
-                                    break
-                            except Exception:
-                                pass
-                            if any(x in status for x in DEBRID_ERROR_STATUS):
-                                notification("Real Debrid Error.")
-                                break
-                try:
-                    progressDialog.close()
-                except Exception:
-                    pass
-                ksleep(500)
-                if cancelled:
-                    response = dialogyesno(
-                        "Kodi", "Do you want to continue transfer in background?"
-                    )
-                    if response:
-                        notification("Saving file to the Real Debrid Cloud")
-                    else:
-                        self.delete_torrent(torrent_id)
+        run_realdebrid_download(self, magnet_url, pack=pack)
 
     def get_hosts(self):
         return self._make_request("GET", f"{self.BASE_URL}/hosts")

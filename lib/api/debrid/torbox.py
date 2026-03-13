@@ -4,23 +4,17 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     set_setting,
-    copy2clip,
-    sleep as ksleep,
 )
-from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.jacktook.utils import ADDON_PATH
-from lib.utils.general.utils import DebridType
-from time import time
 import datetime
-import time as time_lib
 import requests
+from requests.adapters import HTTPAdapter
+from lib.services.debrid.auth import run_torbox_auth
 
 
 class Torbox(DebridClient):
     def __init__(self, token, timeout=15):
         session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(max_retries=1)
+        adapter = HTTPAdapter(max_retries=1)
         session.mount("https://", adapter)
         super().__init__(token, timeout, session)
 
@@ -172,66 +166,7 @@ class Torbox(DebridClient):
         dialog_ok("Success", "Authentification Removed.")
 
     def auth(self):
-        response = self.get_device_code()
-        if response and response.get("success"):
-            data = response.get("data", {})
-            sleep_interval = int(data.get("interval", 5))
-            expires_in = int(data.get("expires_in", 600))
-            device_code = data.get("device_code")
-            user_code = data.get("code")
-            auth_url = data.get("verification_url")
-            friendly_url = data.get("friendly_verification_url") or auth_url
-
-            qr_code = make_qrcode(auth_url)
-            copy2clip(auth_url)
-
-            progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-            progressDialog.setup(
-                "Torbox Auth",
-                qr_code,
-                friendly_url,
-                user_code,
-                DebridType.TB,
-            )
-            progressDialog.show_dialog()
-
-            start_time = time()
-            while time() - start_time < expires_in:
-                ksleep(1000 * sleep_interval)
-                if progressDialog.iscanceled:
-                    progressDialog.close_dialog()
-                    return
-                try:
-                    response = self.authorize(device_code)
-                except:
-                    continue
-                try:
-                    if "token" in response:
-                        self.token = response["token"]
-                        set_setting("torbox_token", self.token)
-                        set_setting("torbox_enabled", "true")
-
-                        self.initialize_headers()
-
-                        user_data = self.get_user()
-                        if user_data.get("success"):
-                            set_setting(
-                                "torbox_user",
-                                user_data.get("data", {}).get("customer_email", ""),
-                            )
-
-                        progressDialog.update_progress(100, "Authentication completed.")
-                        progressDialog.close_dialog()
-                        dialog_ok("Success", "Torbox authentication successful.")
-                        return
-                    else:
-                        elapsed = time() - start_time
-                        percent = int((elapsed / expires_in) * 100)
-                        progressDialog.update_progress(percent)
-                except Exception as e:
-                    progressDialog.close_dialog()
-                    dialog_ok("Auth Error:", f"Error: {e}")
-                    return
+        run_torbox_auth(self)
 
     def get_user(self):
         return self._make_request("GET", "/user/me")

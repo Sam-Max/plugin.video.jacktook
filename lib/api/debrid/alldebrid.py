@@ -1,11 +1,8 @@
 import requests
 from lib.api.debrid.base import DebridClient, ProviderException
-from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.jacktook.utils import ADDON_PATH, kodilog
-from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.utils.general.utils import DebridType
-from lib.utils.kodi.utils import copy2clip, dialog_ok, set_setting, sleep
-from time import time
+from lib.jacktook.utils import kodilog
+from lib.utils.kodi.utils import dialog_ok, set_setting
+from lib.services.debrid.auth import run_alldebrid_auth
 
 
 class AllDebrid(DebridClient):
@@ -44,67 +41,7 @@ class AllDebrid(DebridClient):
         )
 
     def auth(self):
-        """
-        Start PIN-based auth flow for AllDebrid.
-        """
-        response = self.get_ping()
-        result = response["data"]
-
-        expires_in = result["expires_in"]
-        sleep_interval = 5
-        user_code = result["pin"]
-        check_id = result["check"]
-        user_url = result["user_url"]
-
-        qr_code = make_qrcode(user_url)
-        copy2clip(user_url)
-
-        progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-        progressDialog.setup(
-            f"{DebridType.AD} Auth",
-            qr_code,
-            user_url,
-            user_code,
-            DebridType.AD,
-        )
-        progressDialog.show_dialog()
-
-        start_time = time()
-        while time() - start_time < expires_in and not self.token:
-            sleep(1000 * sleep_interval)
-            if progressDialog.iscanceled:
-                progressDialog.close_dialog()
-                return
-            response = self.poll_auth(check_id, user_code)
-            activated = response["activated"]
-            if not activated:
-                elapsed = time() - start_time
-                percent = int((elapsed / expires_in) * 100)
-                progressDialog.update_progress(percent)
-                continue
-            try:
-                if "apikey" in response:
-                    self.token = response.get("apikey", "")
-                    set_setting("alldebrid_token", self.token)
-                    set_setting("alldebrid_authorized", "true")
-
-                    self.initialize_headers()
-
-                    response = self.get_user_info()
-                    username = response["user"]["username"]
-                    set_setting("alldebrid_user", str(username))
-
-                    progressDialog.update_progress(100, "Authentication completed.")
-                    progressDialog.close_dialog()
-                    return
-                else:
-                    elapsed = time() - start_time
-                    percent = int((elapsed / expires_in) * 100)
-                    progressDialog.update_progress(percent)
-            except Exception as e:
-                progressDialog.close_dialog()
-                dialog_ok("Auth Error", f"Error: {e}")
-                return
+        run_alldebrid_auth(self)
 
     def poll_auth(self, check_id: str, pin: str):
         response = self._make_request(
