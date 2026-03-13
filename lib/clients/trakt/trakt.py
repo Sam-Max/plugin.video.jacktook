@@ -968,6 +968,18 @@ class TraktClient:
 
 class TraktPresentation:
     @staticmethod
+    def _format_bool_label(value):
+        return "Yes" if value else "No"
+
+    @staticmethod
+    def _format_iso_date(value):
+        if not value:
+            return ""
+        if "T" in str(value):
+            return str(value).split("T")[0]
+        return str(value)
+
+    @staticmethod
     def _resolve_media_ids(mode, media_ids):
         tmdb_id = media_ids.get("tmdb") or media_ids.get("tmdb_id")
         imdb_id = media_ids.get("imdb") or media_ids.get("imdb_id", "")
@@ -1010,9 +1022,15 @@ class TraktPresentation:
         lines = [str(translation(30916)), ""]
         lines.append(f"Username: {user.get('username', '')}")
         lines.append(f"Name: {user.get('name', '')}")
-        lines.append(f"Joined: {user.get('joined_at', '')}")
-        lines.append(f"Private: {str(account.get('private', False))}")
-        lines.append(f"VIP: {str(user.get('vip', False))}")
+        lines.append(
+            f"Joined: {TraktPresentation._format_iso_date(user.get('joined_at', ''))}"
+        )
+        lines.append(
+            f"Private: {TraktPresentation._format_bool_label(account.get('private', False))}"
+        )
+        lines.append(
+            f"VIP: {TraktPresentation._format_bool_label(user.get('vip', False))}"
+        )
         lines.append(f"Timezone: {account.get('timezone', '')}")
         lines.append(f"Locale: {account.get('locale', '')}")
         lines.append("")
@@ -1023,11 +1041,14 @@ class TraktPresentation:
         lines.append(f"Movies Collected: {stats.get('movies', {}).get('collected', 0)}")
         lines.append(f"Shows Collected: {stats.get('shows', {}).get('collected', 0)}")
         lines.append(f"Lists: {stats.get('lists', {}).get('count', 0)}")
+        lines.append(f"Ratings: {stats.get('ratings', {}).get('total', 0)}")
         lines.append("")
         lines.append("Connections")
         for key in ("facebook", "google", "twitter", "mastodon"):
             connection = connections.get(key, False)
-            lines.append(f"{key.title()}: {str(bool(connection))}")
+            lines.append(
+                f"{key.title()}: {TraktPresentation._format_bool_label(bool(connection))}"
+            )
         return "\n".join(lines)
 
     @staticmethod

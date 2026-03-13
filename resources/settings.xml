@@ -1481,7 +1481,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="Enable or disable Trakt.tv scrobbling and resume playback from last tracked position.">
+                <setting id="trakt_scrobbling_enabled" type="boolean" label="30877" help="30936">
                     <default>true</default>
                     <control type="toggle" />
                     <dependencies>
@@ -1506,7 +1506,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="clear_trakt_cache" type="action" label="30920"> 
+                <setting id="clear_trakt_cache" type="action" label="30920" help="30937"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_trakt_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>

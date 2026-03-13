@@ -787,6 +787,14 @@ msgctxt "#30927"
 msgid "Choose Trakt List"
 msgstr "Elegir lista de Trakt"
 
+msgctxt "#30936"
+msgid "Enable or disable Trakt scrobbling and resume playback from the last tracked position."
+msgstr "Activar o desactivar el scrobbling de Trakt y reanudar la reproduccion desde la ultima posicion registrada."
+
+msgctxt "#30937"
+msgid "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
+msgstr "Borrar los datos en cache de Trakt y forzar a Jacktook a obtener resultados nuevos la proxima vez que abras una vista de Trakt."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr "Árabe (Emiratos Árabes Unidos)"
