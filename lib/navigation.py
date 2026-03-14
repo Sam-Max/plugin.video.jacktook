@@ -65,6 +65,10 @@ from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
     movie_items,
+    trakt_movie_discovery_items,
+    trakt_movie_library_items,
+    trakt_tv_discovery_items,
+    trakt_tv_library_items,
     tv_items,
 )
 
@@ -219,15 +223,19 @@ def tv_shows_items(params):
 
     if not stremio_only:
         for item in tv_items:
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url(
+            if item.get("action"):
+                url = build_url(item["action"], **item.get("params", {}))
+            else:
+                url = build_url(
                     "search_item",
                     mode=item["mode"],
                     submode=item.get("submode", ""),
                     query=item["query"],
                     api=item["api"],
-                ),
+                )
+            addDirectoryItem(
+                ADDON_HANDLE,
+                url,
                 build_list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
@@ -241,15 +249,19 @@ def movies_items(params):
 
     if not stremio_only:
         for item in movie_items:
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url(
+            if item.get("action"):
+                url = build_url(item["action"], **item.get("params", {}))
+            else:
+                url = build_url(
                     "search_item",
                     mode=item["mode"],
                     submode=item.get("submode", ""),
                     query=item["query"],
                     api=item["api"],
-                ),
+                )
+            addDirectoryItem(
+                ADDON_HANDLE,
+                url,
                 build_list_item(item["name"], item["icon"]),
                 isFolder=True,
             )
@@ -259,6 +271,49 @@ def movies_items(params):
 
 def direct_menu(params):
     search_direct({"mode": "direct"})
+
+
+def trakt_group_menu(params):
+    mode = params["mode"]
+    group = params["group"]
+
+    def _group_items(items):
+        return [
+            {
+                "name": item["name"],
+                "icon": item["icon"],
+                "action": "search_item",
+                "params": {
+                    "mode": item["mode"],
+                    "submode": item.get("submode", ""),
+                    "query": item["query"],
+                    "api": item["api"],
+                },
+            }
+            for item in items
+        ]
+
+    if mode == "tv" and group == "library":
+        set_pluging_category(translation(90292))
+        render_menu(_group_items(trakt_tv_library_items), cache=False)
+        return
+
+    if mode == "tv" and group == "discovery":
+        set_pluging_category(translation(90293))
+        render_menu(_group_items(trakt_tv_discovery_items), cache=False)
+        return
+
+    if mode == "movies" and group == "library":
+        set_pluging_category(translation(90292))
+        render_menu(_group_items(trakt_movie_library_items), cache=False)
+        return
+
+    if mode == "movies" and group == "discovery":
+        set_pluging_category(translation(90293))
+        render_menu(_group_items(trakt_movie_discovery_items), cache=False)
+        return
+
+    end_of_directory(cache=False)
 
 
 def search_menu(params):

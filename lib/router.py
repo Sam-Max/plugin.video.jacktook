@@ -371,6 +371,7 @@ def _route_trakt(action, params):
         from lib.navigation import (
             trakt_auth,
             trakt_auth_revoke,
+            trakt_group_menu,
             trakt_list_content,
             list_trakt_page,
         )
@@ -378,6 +379,7 @@ def _route_trakt(action, params):
         actions = {
             "trakt_auth": trakt_auth,
             "trakt_auth_revoke": trakt_auth_revoke,
+            "trakt_group_menu": trakt_group_menu,
             "trakt_list_content": trakt_list_content,
             "list_trakt_page": list_trakt_page,
         }
@@ -642,6 +644,7 @@ def _route_core(action, params):
         from lib.navigation import (
             tv_shows_items,
             movies_items,
+            trakt_group_menu,
             direct_menu,
             search_menu,
             anime_menu,
@@ -686,6 +689,7 @@ def _route_core(action, params):
         actions = {
             "tv_shows_items": tv_shows_items,
             "movies_items": movies_items,
+            "trakt_group_menu": trakt_group_menu,
             "direct_menu": direct_menu,
             "search_menu": search_menu,
             "anime_menu": anime_menu,

@@ -61,3 +61,13 @@ def test_addon_router_without_params_opens_root_menu():
         router.addon_router()
 
     root_menu.assert_called_once_with()
+
+
+def test_route_trakt_dispatches_trakt_group_menu_action():
+    router = _load_router_module()
+
+    params = {"mode": "tv", "group": "library"}
+    with patch("lib.navigation.trakt_group_menu") as trakt_group_menu:
+        router._route_trakt("trakt_group_menu", params)
+
+    trakt_group_menu.assert_called_once_with(params)

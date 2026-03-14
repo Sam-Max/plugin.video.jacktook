@@ -502,7 +502,7 @@ class TraktMovies(TraktBase):
         return self.get_trakt(params)
 
     def trakt_collection(self, page_no):
-        set_pluging_category("Collection")
+        set_pluging_category(translation(90294))
         params = {
             "path": "sync/collection/movies",
             "params": {"limit": 20, "extended": "full"},
@@ -759,7 +759,7 @@ class TraktTV(TraktBase):
         return self._build_up_next_entries(watched_shows, progress_items)
 
     def trakt_collection(self, page_no):
-        set_pluging_category("Collection")
+        set_pluging_category(translation(90294))
         params = {
             "path": "sync/collection/shows",
             "params": {"limit": 20, "extended": "full"},

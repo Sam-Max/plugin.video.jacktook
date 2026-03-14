@@ -913,6 +913,34 @@ msgctxt "#90291"
 msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
 msgstr "Repoe as definicoes para os valores predefinidos, limpa as caches e apaga o historico e os dados locais do addon."
 
+msgctxt "#90292"
+msgid "Trakt Library"
+msgstr "Biblioteca do Trakt"
+
+msgctxt "#90293"
+msgid "Trakt Discovery"
+msgstr "Descoberta do Trakt"
+
+msgctxt "#90294"
+msgid "Collection"
+msgstr "Colecao"
+
+msgctxt "#90295"
+msgid "Favorites"
+msgstr "Favoritos"
+
+msgctxt "#90296"
+msgid "Up Next"
+msgstr "A Seguir"
+
+msgctxt "#90297"
+msgid "My Lists"
+msgstr "As Minhas Listas"
+
+msgctxt "#90298"
+msgid "Liked Lists"
+msgstr "Listas com Gostos"
+
 msgctxt "#30914"
 msgid "Trakt Sync Interval (minutes)"
 msgstr "Intervalo de sincronizacao do Trakt (minutos)"

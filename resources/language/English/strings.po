@@ -2529,3 +2529,31 @@ msgstr "Unable to complete factory reset."
 msgctxt "#90291"
 msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
 msgstr "Reset settings to defaults, clear caches, and wipe local addon history/database data."
+
+msgctxt "#90292"
+msgid "Trakt Library"
+msgstr "Trakt Library"
+
+msgctxt "#90293"
+msgid "Trakt Discovery"
+msgstr "Trakt Discovery"
+
+msgctxt "#90294"
+msgid "Collection"
+msgstr "Collection"
+
+msgctxt "#90295"
+msgid "Favorites"
+msgstr "Favorites"
+
+msgctxt "#90296"
+msgid "Up Next"
+msgstr "Up Next"
+
+msgctxt "#90297"
+msgid "My Lists"
+msgstr "My Lists"
+
+msgctxt "#90298"
+msgid "Liked Lists"
+msgstr "Liked Lists"

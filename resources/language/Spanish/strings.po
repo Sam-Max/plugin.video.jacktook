@@ -2453,3 +2453,31 @@ msgstr "No se pudo completar el restablecimiento de fabrica."
 msgctxt "#90291"
 msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
 msgstr "Restablece la configuracion a los valores predeterminados, limpia las cache y borra el historial y los datos locales del addon."
+
+msgctxt "#90292"
+msgid "Trakt Library"
+msgstr "Biblioteca de Trakt"
+
+msgctxt "#90293"
+msgid "Trakt Discovery"
+msgstr "Descubrimiento de Trakt"
+
+msgctxt "#90294"
+msgid "Collection"
+msgstr "Coleccion"
+
+msgctxt "#90295"
+msgid "Favorites"
+msgstr "Favoritos"
+
+msgctxt "#90296"
+msgid "Up Next"
+msgstr "A continuacion"
+
+msgctxt "#90297"
+msgid "My Lists"
+msgstr "Mis listas"
+
+msgctxt "#90298"
+msgid "Liked Lists"
+msgstr "Listas con Me gusta"
