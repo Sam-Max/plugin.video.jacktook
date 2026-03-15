@@ -2035,21 +2035,6 @@ msgctxt "#30923"
 msgid "Clear Settings Cache"
 msgstr "Clear Settings Cache"
 
-msgctxt "#30924"
-msgid "Clear Database Cache"
-msgstr "Clear Database Cache"
-
-msgctxt "#30925"
-msgid "Clear Stremio Cache"
-msgstr "Clear Stremio Cache"
-
-msgctxt "#30926"
-msgid "Clear Debrid Cache"
-msgstr "Clear Debrid Cache"
-
-msgctxt "#30927"
-msgid "Clear MDBList Cache"
-msgstr "Clear MDBList Cache"
 msgctxt "#90149"
 msgid "Maintenance"
 msgstr "Maintenance"
@@ -2597,3 +2582,23 @@ msgstr "Choose which imported or custom Stremio Live TV addons to use. If none a
 msgctxt "#90340"
 msgid "Remove custom Stremio addons you previously added manually."
 msgstr "Remove custom Stremio addons you previously added manually."
+
+msgctxt "#90341"
+msgid "Choose Torrent Client"
+msgstr "Choose Torrent Client"
+
+msgctxt "#90342"
+msgid "Clear Database Cache"
+msgstr "Clear Database Cache"
+
+msgctxt "#90343"
+msgid "Clear Stremio Cache"
+msgstr "Clear Stremio Cache"
+
+msgctxt "#90344"
+msgid "Clear Debrid Cache"
+msgstr "Clear Debrid Cache"
+
+msgctxt "#90345"
+msgid "Clear MDBList Cache"
+msgstr "Clear MDBList Cache"

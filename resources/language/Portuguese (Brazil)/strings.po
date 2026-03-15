@@ -1001,3 +1001,23 @@ msgstr "Escolha quais addons de TV ao vivo do Stremio, importados ou personaliza
 msgctxt "#90340"
 msgid "Remove custom Stremio addons you previously added manually."
 msgstr "Remova os addons personalizados do Stremio que voce adicionou manualmente."
+
+msgctxt "#90341"
+msgid "Choose Torrent Client"
+msgstr "Escolher cliente de torrent"
+
+msgctxt "#90342"
+msgid "Clear Database Cache"
+msgstr "Limpar cache do banco de dados"
+
+msgctxt "#90343"
+msgid "Clear Stremio Cache"
+msgstr "Limpar cache do Stremio"
+
+msgctxt "#90344"
+msgid "Clear Debrid Cache"
+msgstr "Limpar cache de Debrid"
+
+msgctxt "#90345"
+msgid "Clear MDBList Cache"
+msgstr "Limpar cache do MDBList"

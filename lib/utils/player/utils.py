@@ -114,7 +114,7 @@ def get_torrent_url_for_client(
 def get_torrent_client_selection(
     magnet: str, url: str, mode: str, ids: Any
 ) -> Optional[str]:
-    chosen_client = Dialog().select(translation(30800), torrent_clients)
+    chosen_client = Dialog().select(translation(90341), torrent_clients)
     if chosen_client < 0:
         return None
     return torrent_clients[chosen_client]

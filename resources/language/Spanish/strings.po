@@ -339,7 +339,7 @@ msgctxt "#30708"
 msgid "Stop"
 msgstr "Detener"
 
-msgctxt "#30800"
+msgctxt "#90341"
 msgid "Choose Torrent Client"
 msgstr "Cliente Torrent"
 
@@ -711,7 +711,7 @@ msgctxt "#30806"
 msgid "Clear cache when update"
 msgstr "Limpiar cache al actualizar"
 
-msgctxt "#30808"
+msgctxt "#30807"
 msgid "Peerfix Configuration"
 msgstr "Configuración de Peerfix"
 
@@ -2521,3 +2521,19 @@ msgstr "Elige que complementos de TV en vivo de Stremio importados o personaliza
 msgctxt "#90340"
 msgid "Remove custom Stremio addons you previously added manually."
 msgstr "Elimina los complementos personalizados de Stremio que agregaste manualmente."
+
+msgctxt "#90342"
+msgid "Clear Database Cache"
+msgstr "Limpiar cache de la base de datos"
+
+msgctxt "#90343"
+msgid "Clear Stremio Cache"
+msgstr "Limpiar cache de Stremio"
+
+msgctxt "#90344"
+msgid "Clear Debrid Cache"
+msgstr "Limpiar cache de Debrid"
+
+msgctxt "#90345"
+msgid "Clear MDBList Cache"
+msgstr "Limpiar cache de MDBList"

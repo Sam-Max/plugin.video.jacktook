@@ -466,7 +466,7 @@
                 </setting>
             </group>
             <group id="debrid_cleanup" label="30106">
-                <setting id="clear_debrid_cache" type="action" label="30926"> 
+                <setting id="clear_debrid_cache" type="action" label="90344"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_debrid_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>
@@ -549,7 +549,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="clear_stremio_cache" type="action" label="30925"> 
+                <setting id="clear_stremio_cache" type="action" label="90343"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_stremio_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>
@@ -1352,7 +1352,7 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="clear_mdblist_cache" type="action" label="30927"> 
+                <setting id="clear_mdblist_cache" type="action" label="90345"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_mdblist_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>
@@ -1578,7 +1578,7 @@
                 </setting>
             </group>
             <group id="cleanup" label="30106">
-                <setting id="clear_database_cache" type="action" label="30924"> 
+                <setting id="clear_database_cache" type="action" label="90342"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_database_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>
