@@ -16,16 +16,19 @@
 
 ## 🌟 Overview
 
-**Jacktook** is a powerful Kodi addon designed to aggregate torrents and metadata from a vast array of sources. Whether you prefer P2P streaming, Stremio addons, or Debrid services, Jacktook provides a unified, streamlined interface for a seamless media discovery and playback experience.
+**Jacktook** is a Kodi addon designed to aggregate torrents and metadata from a vast array of sources. Whether you prefer P2P streaming, Stremio addons, or Debrid services, Jacktook provides a unified, streamlined interface for a seamless media discovery and playback experience.
 
 ---
 
 ## ✨ Features
 
 ### 🔍 Search & Scraping
-- **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr. 
+- **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Usenet, Debrid Services.
+- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, and Torbox.
+- **Torrent Scraping**: Integration with Jackett and Prowlarr for torrent sources.
+- **Usenet Scraping**: EasyNews integration for Usenet sources.
+- **Telegram Scraping**: Jackgram integration for streaming from Telegram channels.
 - **Rich Metadata**: Integration with TMDB, MDBList, Trakt, Fanart.tv, and Stremio catalogs.
-- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, Easynews and Torbox.
 - **Smart Filtering**: Advanced results filtering by quality, size, and source.
 
 ### 🧩 Stremio Ecosystem
@@ -33,16 +36,19 @@
 - **Catalog Navigation**: Browse and search Stremio's extensive metadata catalogs.
 - **Stream Scraper**: Scraping and filtering of Stremio streams by resolution, file size, and quality.
 - **Flexible Management**: Add new addons via URL, search for community addons, or toggle existing ones on/off on the fly.
-- **Web Server Manager**: A powerful local web interface to manage your Stremio sources from your phone or PC. Scan a QR code in Kodi and start managing!
+- **Web Server Manager**: A powerful local web interface to manage your Stremio sources from your phone or PC.
 
 ### 🎥 Playback & Engines
-- **Direct Torrent Engines**: Integrated support for **Jacktorr**, **Torrest**, and **Elementum**.
+- **Torrent Engines**: Integrated support for **Jacktorr**, **Torrest**, and **Elementum** for seamless P2P streaming.
+- **Debrid Streaming**: Stream directly from your Debrid accounts.
+- **Usenet Support**: Stream from Usenet sources via EasyNews.
 - **Telegram Streaming**: Stream directly from Telegram via Jackgram.
 
 ### 🛠️ Utilities
 - **Automatic Subtitles**: Download subtitles directly from Stremio OpenSubtitles addon.
 - **DeepL Translation**: Real-time translation of subtitles and metadata using the DeepL API.
 - **TMDB Helper Integration**: Full compatibility with TMDB Helper via custom players.
+- **Backup & Restore**: Easily backup and restore your entire configuration, including Stremio addons and Debrid tokens.
 - **IntroDB**: Integration with IntroDB for automatic movie intros.
 - **WebDav**: Integration with WebDav for remote file management and streaming.
 ---
@@ -63,6 +69,7 @@ The recommended installation method is via the official repository to ensure you
 Jacktook can import configurations and Debrid services directly from your Stremio account.
 - Enable Stremio in settings.
 - Login to your Stremio account to sync your installed addons and Debrid tokens.
+- Or manually add addons via URL or search for community addons.
 
 ### 🔍 Jackett & Prowlarr
 To optimize search performance:
@@ -80,9 +87,8 @@ Translate subtitles and metadata instantly.
 For the best experience with TMDB Helper, use the following configuration file:
 - [jacktook.select.json](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/jacktook.select.json)
 
----
 
-## 🏗️ External Engines (Optional)
+### 🏗️ External Engines
 
 If you are not using Debrid services, you can use these engines for P2P streaming:
 
@@ -91,33 +97,6 @@ If you are not using Debrid services, you can use these engines for P2P streamin
 | **Jacktorr** | Advanced TorrServer wrapper | Android / Docker |
 | **Torrest** | Lightweight C++ BitTorrent engine | Linux / Docker |
 | **Elementum** | Proven P2P streaming solution | All Kodi platforms |
-
-### 🐳 Docker Setup Examples
-
-#### TorrServer (Jacktorr)
-```yaml
-services:
-  torrserver:
-    image: ghcr.io/yourok/torrserver
-    container_name: torrserver
-    environment:
-      - TS_PORT=5665
-    ports:
-      - "5665:5665"
-    restart: unless-stopped
-```
-
-#### Torrest Engine
-```dockerfile
-FROM ubuntu:22.04
-RUN apt-get update && apt-get install -y curl unzip
-ARG VERSION=0.0.5 OS=linux ARCH=x64
-RUN curl -L https://github.com/i96751414/torrest-cpp/releases/download/v${VERSION}/torrest.${VERSION}.${OS}_${ARCH}.zip -o torrest.zip \
-    && unzip torrest.zip -d /usr/local/lib \
-    && rm torrest.zip
-RUN chmod +x /usr/local/lib/torrest
-CMD ["/usr/local/lib/torrest", "--log-level", "INFO"]
-```
 
 ---
 
