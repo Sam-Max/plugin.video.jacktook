@@ -992,7 +992,7 @@
         <category id="filtering_category" label="30861">
             <group id="filtering_stremio" label="90150">
                 <setting id="stremio_bypass_addons" type="boolean" label="90211" help="90212">
-                    <default>true</default>
+                    <default>false</default>
                     <control type="toggle" />
                 </setting>
                 <setting id="stremio_bypass_addons_select" type="action" label="90213" help="90214">

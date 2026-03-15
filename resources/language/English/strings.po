@@ -2195,7 +2195,7 @@ msgid "Bypass Stremio Addons Native Sorting"
 msgstr ""
 
 msgctxt "#90212"
-msgid "If enabled, addons specified in BYPASS_FILTER_ADDONS won't have their results re-ordered or filtered by Jacktook's native quality and size thresholds."
+msgid "If enabled, addons specified won't have their results re-ordered or filtered by Jacktook's native quality and size thresholds."
 msgstr ""
 
 msgctxt "#90213"
