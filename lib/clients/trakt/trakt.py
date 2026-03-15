@@ -22,10 +22,12 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.utils import (
     action_url_run,
     build_url,
+    container_update,
     dialog_select,
     dialog_text,
     dialogyesno,
     end_of_directory,
+    execute_builtin,
     get_datetime,
     get_setting,
     kodilog,
@@ -38,6 +40,12 @@ from lib.utils.kodi.utils import (
 from .paginator import paginator_db
 
 from xbmcgui import ListItem
+
+
+def _normalize_user_slug(value):
+    if value in (None, "", "None"):
+        return ""
+    return str(value)
 
 
 class Trakt(Enum):
@@ -183,6 +191,24 @@ class BaseTraktClient:
 
 
 class TraktClient:
+    @staticmethod
+    def _refresh_after_list_action(params):
+        if params.get("query") == Trakt.SEARCH_LISTS and params.get("search_term"):
+            execute_builtin(
+                container_update(
+                    "search_item",
+                    query=params.get("query"),
+                    category=params.get("category"),
+                    mode=params.get("mode"),
+                    submode=params.get("submode", ""),
+                    api=params.get("api", "trakt"),
+                    page=params.get("page", 1),
+                    search_term=params.get("search_term"),
+                )
+            )
+            return
+        refresh()
+
     @staticmethod
     def _trakt_sync_result_count(result, key, media_type):
         if not isinstance(result, dict):
@@ -708,13 +734,13 @@ class TraktClient:
     @staticmethod
     def trakt_like_list(params):
         trakt_id = params.get("trakt_id")
-        user_slug = params.get("user")
-        if not trakt_id or not user_slug:
+        user_slug = _normalize_user_slug(params.get("user"))
+        if not trakt_id:
             return
         try:
-            TraktAPI().lists.like_list(user_slug, trakt_id)
+            TraktAPI().lists.like_list(trakt_id, user_slug)
             notification("Liked Trakt list", time=3000)
-            refresh()
+            TraktClient._refresh_after_list_action(params)
         except Exception as e:
             kodilog(f"Error liking Trakt list: {e}")
             notification("Failed to like Trakt list", time=3000)
@@ -722,13 +748,13 @@ class TraktClient:
     @staticmethod
     def trakt_unlike_list(params):
         trakt_id = params.get("trakt_id")
-        user_slug = params.get("user")
-        if not trakt_id or not user_slug:
+        user_slug = _normalize_user_slug(params.get("user"))
+        if not trakt_id:
             return
         try:
-            TraktAPI().lists.unlike_list(user_slug, trakt_id)
+            TraktAPI().lists.unlike_list(trakt_id, user_slug)
             notification("Unliked Trakt list", time=3000)
-            refresh()
+            TraktClient._refresh_after_list_action(params)
         except Exception as e:
             kodilog(f"Error unliking Trakt list: {e}")
             notification("Failed to unlike Trakt list", time=3000)
@@ -863,13 +889,37 @@ class TraktClient:
                 results, TraktPresentation.show_favorites, mode
             ),
             Trakt.MY_LISTS: lambda: execute_thread_pool(
-                results, TraktPresentation.show_user_lists, mode
+                results,
+                TraktPresentation.show_user_lists,
+                mode,
+                query=query,
+                page=page,
+                search_term=search_term,
+                api=api,
+                category=category,
+                submode=submode,
             ),
             Trakt.LIKED_LISTS: lambda: execute_thread_pool(
-                results, TraktPresentation.show_user_lists, mode
+                results,
+                TraktPresentation.show_user_lists,
+                mode,
+                query=query,
+                page=page,
+                search_term=search_term,
+                api=api,
+                category=category,
+                submode=submode,
             ),
             Trakt.SEARCH_LISTS: lambda: execute_thread_pool(
-                results, TraktPresentation.show_user_lists, mode
+                results,
+                TraktPresentation.show_user_lists,
+                mode,
+                query=query,
+                page=page,
+                search_term=search_term,
+                api=api,
+                category=category,
+                submode=submode,
             ),
         }
 
@@ -1189,6 +1239,11 @@ class TraktPresentation:
     def show_trending_lists(res, mode):
         list_title = res["list"]["name"]
         description = res["list"]["description"]
+        user_data = res["list"].get("user", {})
+        user_ids = user_data.get("ids", {})
+        user_slug = _normalize_user_slug(
+            user_ids.get("slug") or user_data.get("username")
+        )
 
         info_labels = {
             "title": list_title,
@@ -1199,7 +1254,7 @@ class TraktPresentation:
             "trakt_list_content",
             list_type=res["list"]["type"],
             mode=mode,
-            user=res["list"]["user"]["ids"]["slug"],
+            user=user_slug,
             slug=res["list"]["ids"]["slug"],
         )
 
@@ -1207,18 +1262,19 @@ class TraktPresentation:
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
         info_tag.setPlot(description)
-        list_item.addContextMenuItems(
-            [
-                (
-                    "Like Trakt List",
-                    action_url_run(
-                        "trakt_like_list",
-                        trakt_id=res["list"]["ids"].get("trakt"),
-                        user=res["list"]["user"]["ids"].get("slug", ""),
-                    ),
-                )
-            ]
-        )
+        if user_slug:
+            list_item.addContextMenuItems(
+                [
+                    (
+                        "Like Trakt List",
+                        action_url_run(
+                            "trakt_like_list",
+                            trakt_id=res["list"]["ids"].get("trakt"),
+                            user=user_slug,
+                        ),
+                    )
+                ]
+            )
 
         add_kodi_dir_item(
             list_item,
@@ -1227,7 +1283,7 @@ class TraktPresentation:
         )
 
     @staticmethod
-    def show_user_lists(res, mode):
+    def show_user_lists(res, mode, query=None, page=1, search_term="", api="trakt", category=None, submode=""):
         list_title = res.get("name", "Untitled List")
         description = res.get("description", "")
         item_count = res.get("item_count")
@@ -1265,6 +1321,13 @@ class TraktPresentation:
                         "trakt_unlike_list",
                         trakt_id=res.get("trakt_id", ""),
                         user=res.get("user_slug", ""),
+                        query=query,
+                        category=category,
+                        mode=mode,
+                        submode=submode,
+                        api=api,
+                        page=page,
+                        search_term=search_term,
                     ),
                 )
             )
@@ -1276,6 +1339,13 @@ class TraktPresentation:
                         "trakt_like_list",
                         trakt_id=res.get("trakt_id", ""),
                         user=res.get("user_slug", ""),
+                        query=query,
+                        category=category,
+                        mode=mode,
+                        submode=submode,
+                        api=api,
+                        page=page,
+                        search_term=search_term,
                     ),
                 )
             )
