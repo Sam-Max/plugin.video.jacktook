@@ -76,13 +76,6 @@ class Stremio:
         )
         return dataExport
 
-    def get_community_addons(self):
-        """Get community addons."""
-        response = self._get(
-            "https://stremio-addons.net/api/addon_catalog/all/stremio-addons.net.json"
-        )
-        return response
-
     def get_my_addons(self):
         """Get user addons."""
         response = self.dataExport()

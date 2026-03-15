@@ -2557,3 +2557,43 @@ msgstr "My Lists"
 msgctxt "#90298"
 msgid "Liked Lists"
 msgstr "Liked Lists"
+
+msgctxt "#90331"
+msgid "Stremio Addons"
+msgstr "Stremio Addons"
+
+msgctxt "#90332"
+msgid "No addons available yet. Use Log In to Stremio or Add Custom Addon first."
+msgstr "No addons available yet. Use Log In to Stremio or Add Custom Addon first."
+
+msgctxt "#90333"
+msgid "Stremio Stream Addons"
+msgstr "Stremio Stream Addons"
+
+msgctxt "#90334"
+msgid "Stremio Catalog Addons"
+msgstr "Stremio Catalog Addons"
+
+msgctxt "#90335"
+msgid "Stremio Live TV Addons"
+msgstr "Stremio Live TV Addons"
+
+msgctxt "#90336"
+msgid "Refresh addons imported from your Stremio account. Custom addons remain unchanged."
+msgstr "Refresh addons imported from your Stremio account. Custom addons remain unchanged."
+
+msgctxt "#90337"
+msgid "Choose which imported or custom Stremio stream addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Choose which imported or custom Stremio stream addons to use. If none are available yet, log in or add a custom addon first."
+
+msgctxt "#90338"
+msgid "Choose which imported or custom Stremio catalog addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Choose which imported or custom Stremio catalog addons to use. If none are available yet, log in or add a custom addon first."
+
+msgctxt "#90339"
+msgid "Choose which imported or custom Stremio Live TV addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Choose which imported or custom Stremio Live TV addons to use. If none are available yet, log in or add a custom addon first."
+
+msgctxt "#90340"
+msgid "Remove custom Stremio addons you previously added manually."
+msgstr "Remove custom Stremio addons you previously added manually."

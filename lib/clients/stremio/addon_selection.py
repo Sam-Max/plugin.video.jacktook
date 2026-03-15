@@ -8,6 +8,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     set_setting,
     ADDON,
+    translation,
 )
 from lib.utils.kodi.settings import get_int_setting
 from lib.clients.stremio.constants import (
@@ -96,6 +97,13 @@ def _show_addon_multiselect(title, addons, selected_ids):
     return [addons[index].key() for index in selected_indexes]
 
 
+def _show_no_addons_dialog():
+    xbmcgui.Dialog().ok(
+        translation(90331),
+        translation(90332),
+    )
+
+
 def _deduplicate_addons(addons):
     """Remove duplicate addons by key."""
     seen_keys = set()
@@ -170,9 +178,13 @@ def stremio_toggle_addons(params, check_availability=False):
 
     addons = list(reversed(addons))
 
+    if not addons:
+        _show_no_addons_dialog()
+        return
+
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Community Addons List"
+    title = stremio_email or translation(90333)
 
     selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
 
@@ -213,9 +225,13 @@ def stremio_toggle_catalogs(params, check_availability=False):
     if check_availability:
         addons = _ping_addons_with_progress(addons)
 
+    if not addons:
+        _show_no_addons_dialog()
+        return
+
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Community Catalogs List"
+    title = stremio_email or translation(90334)
 
     selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
 
@@ -258,9 +274,13 @@ def stremio_toggle_tv_addons(params, check_availability=False):
 
     addons = list(reversed(addons))
 
+    if not addons:
+        _show_no_addons_dialog()
+        return
+
     settings = ADDON.getSettings()
     stremio_email = settings.getString("stremio_email")
-    title = stremio_email or "Stremio Live TV Addons"
+    title = stremio_email or translation(90335)
 
     selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
 

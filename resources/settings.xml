@@ -610,7 +610,7 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="stremio_update" type="action" label="30874" help="">
+                <setting id="stremio_update" type="action" label="30874" help="90336">
                     <dependencies>
                         <dependency type="visible">
                             <and>
@@ -625,19 +625,19 @@
                 </setting>
             </group>
             <group id="stremio_addons" label="90152">
-                <setting id="stremio_toggle_addons" type="action" label="30870" help="30872">
+                <setting id="stremio_toggle_addons" type="action" label="30870" help="90337">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_addons)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="stremio_toggle_catalogs" type="action" label="30875" help="30872">
+                <setting id="stremio_toggle_catalogs" type="action" label="30875" help="90338">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_catalogs)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="stremio_toggle_tv_addons" type="action" label="30903" help="30904">
+                <setting id="stremio_toggle_tv_addons" type="action" label="30903" help="90339">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_tv_addons)</data>
                     <control type="button" format="action">
                         <close>false</close>
@@ -649,7 +649,7 @@
                         <close>false</close>
                     </control>
                 </setting>
-                <setting id="stremio_remove_custom_addon" type="action" label="90138" help="">
+                <setting id="stremio_remove_custom_addon" type="action" label="90138" help="90340">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=remove_custom_stremio_addon)</data>
                     <control type="button" format="action">
                         <close>false</close>

@@ -980,3 +980,43 @@ msgstr "Ativa ou desativa o scrobbling do Trakt e retoma a reproducao a partir d
 msgctxt "#30937"
 msgid "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
 msgstr "Limpa os dados em cache do Trakt e obriga o Jacktook a obter resultados novos do Trakt na proxima vez que abrir uma vista do Trakt."
+
+msgctxt "#90331"
+msgid "Stremio Addons"
+msgstr "Addons do Stremio"
+
+msgctxt "#90332"
+msgid "No addons available yet. Use Log In to Stremio or Add Custom Addon first."
+msgstr "Ainda nao ha addons disponiveis. Use Iniciar sessao no Stremio ou Adicionar Addon Personalizado primeiro."
+
+msgctxt "#90333"
+msgid "Stremio Stream Addons"
+msgstr "Addons de streams do Stremio"
+
+msgctxt "#90334"
+msgid "Stremio Catalog Addons"
+msgstr "Addons de catalogo do Stremio"
+
+msgctxt "#90335"
+msgid "Stremio Live TV Addons"
+msgstr "Addons de TV ao vivo do Stremio"
+
+msgctxt "#90336"
+msgid "Refresh addons imported from your Stremio account. Custom addons remain unchanged."
+msgstr "Atualiza os addons importados da sua conta Stremio. Os addons personalizados permanecem inalterados."
+
+msgctxt "#90337"
+msgid "Choose which imported or custom Stremio stream addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Escolha quais addons de streams do Stremio, importados ou personalizados, deseja usar. Se ainda nao houver addons disponiveis, inicie sessao ou adicione primeiro um addon personalizado."
+
+msgctxt "#90338"
+msgid "Choose which imported or custom Stremio catalog addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Escolha quais addons de catalogo do Stremio, importados ou personalizados, deseja usar. Se ainda nao houver addons disponiveis, inicie sessao ou adicione primeiro um addon personalizado."
+
+msgctxt "#90339"
+msgid "Choose which imported or custom Stremio Live TV addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Escolha quais addons de TV ao vivo do Stremio, importados ou personalizados, deseja usar. Se ainda nao houver addons disponiveis, inicie sessao ou adicione primeiro um addon personalizado."
+
+msgctxt "#90340"
+msgid "Remove custom Stremio addons you previously added manually."
+msgstr "Remova os addons personalizados do Stremio que adicionou manualmente."

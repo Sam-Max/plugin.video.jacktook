@@ -1,7 +1,6 @@
 from typing import List, Callable, Optional
 import requests
 import concurrent.futures
-from datetime import timedelta
 from lib.api.stremio.addon_manager import Addon, AddonManager
 from lib.api.stremio.api_client import Stremio
 from lib.db.cached import cache
@@ -39,6 +38,7 @@ def merge_addons_lists(*lists):
 def get_addons():
     all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
     custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
+    user_addons = []
 
     logged_in = get_setting("stremio_loggedin")
     if logged_in:
@@ -51,22 +51,9 @@ def get_addons():
                 user_addons = stremio.get_my_addons() or []
             else:
                 kodilog("Stremio credentials missing, cannot fetch user addons.")
-                user_addons = []
         except Exception as e:
             kodilog(f"Failed to fetch user addons: {e}")
-            user_addons = []
-        merged_addons = merge_addons_lists(custom_addons, user_addons)
-    else:
-        community_addons = cache.get("stremio_community_addons")
-        if community_addons is None:
-            stremio = Stremio()
-            try:
-                community_addons = stremio.get_community_addons()
-            except Exception as e:
-                kodilog(f"Failed to fetch community addons: {e}")
-                community_addons = []
-            cache.set("stremio_community_addons", community_addons, timedelta(hours=12))
-        merged_addons = merge_addons_lists(custom_addons, community_addons)
+    merged_addons = merge_addons_lists(custom_addons, user_addons)
 
     kodilog(f"Loaded {len(merged_addons)} addons from catalog")
     return AddonManager(merged_addons)
