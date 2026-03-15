@@ -513,6 +513,25 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="stremio_loggedin" type="string">
+                    <default>false</default>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_email" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_pass" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
                 <setting id="stremio_timeout" type="integer" label="90123" help="">
                     <default>25</default>
                     <constraints>
@@ -563,31 +582,11 @@
                         </dependency>
                     </dependencies>
                 </setting>
-            </group>
-            <group id="stremio_account" label="90151">
-                <setting id="stremio_loggedin" type="string">
-                    <default>false</default>
-                    <control type="edit" format="string" />
-                    <visible>false</visible>
-                </setting>
-                <setting id="stremio_email" type="string">
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <visible>false</visible>
-                </setting>
-                <setting id="stremio_pass" type="string">
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                    <visible>false</visible>
-                </setting>
                 <setting id="stremio_login" type="action" label="30871" help="30866">
                     <dependencies>
                         <dependency type="visible">
                             <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
                                 <condition operator="is" setting="stremio_loggedin">false</condition>
                             </and>
                         </dependency>
@@ -601,6 +600,7 @@
                     <dependencies>
                         <dependency type="visible">
                             <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
                                 <condition operator="is" setting="stremio_loggedin">true</condition>
                             </and>
                         </dependency>
@@ -614,6 +614,7 @@
                     <dependencies>
                         <dependency type="visible">
                             <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
                                 <condition operator="is" setting="stremio_loggedin">true</condition>
                             </and>
                         </dependency>
@@ -623,43 +624,71 @@
                         <close>false</close>
                     </control>
                 </setting>
-            </group>
-            <group id="stremio_addons" label="90152">
                 <setting id="stremio_toggle_addons" type="action" label="30870" help="90337">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_addons)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_toggle_catalogs" type="action" label="30875" help="90338">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_catalogs)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_toggle_tv_addons" type="action" label="30903" help="90339">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_tv_addons)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_add_custom_addon" type="action" label="90001" help="90002">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=add_custom_stremio_addon)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_remove_custom_addon" type="action" label="90138" help="90340">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=remove_custom_stremio_addon)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_manage_phone" type="action" label="90162" help="90163">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_manage_phone)</data>
                     <control type="button" format="action">
                         <close>false</close>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
             </group>
             <group id="jackett" label="30775">
@@ -977,6 +1006,11 @@
                 <setting id="stremio_bypass_addons" type="boolean" label="90211" help="90212">
                     <default>false</default>
                     <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_bypass_addons_select" type="action" label="90213" help="90214">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_bypass_addons_select)</data>
@@ -985,7 +1019,10 @@
                     </control>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_bypass_addons">true</condition>
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_bypass_addons">true</condition>
+                            </and>
                         </dependency>
                     </dependencies>
                 </setting>
@@ -1117,6 +1154,11 @@
                 <setting id="stremio_subtitle_enabled" type="boolean" label="30734" help="">
                     <default>false</default>
                     <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="stremio_sub_addon_host" type="string" label="30885" help="">
                     <default>https://opensubtitles-v3.strem.io/</default>
@@ -1125,7 +1167,10 @@
                     </constraints>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
+                            <and>
+                                <condition operator="is" setting="stremio_enabled">true</condition>
+                                <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
+                            </and>
                         </dependency>
                     </dependencies>
                     <control type="edit" format="string" />
@@ -1156,6 +1201,11 @@
                         </options>
                     </constraints>
                     <control type="list" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
             </group>
             <group id="deepl_translator" label="30891">
