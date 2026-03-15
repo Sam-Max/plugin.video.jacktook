@@ -26,6 +26,9 @@ from xbmcgui import ListItem
 from lib.utils.kodi.utils import ADDON_HANDLE
 
 
+CATALOG_PAGE_SIZE = 25
+
+
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     if menu_type == "tv":
         selected_addons = get_selected_tv_addons()
@@ -107,6 +110,26 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 )
 
 
+def _get_manifest_catalog(addon_url, catalog_type, catalog_id):
+    addon = get_addon_by_base_url(addon_url)
+    if not addon:
+        return None
+
+    for catalog in addon.manifest.catalogs:
+        if catalog.type == catalog_type and catalog.id == catalog_id:
+            return catalog
+
+    return None
+
+
+def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name):
+    catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id)
+    if not catalog:
+        return False
+
+    return any(extra.get("name") == extra_name for extra in (catalog.extra or []))
+
+
 def list_catalog(params):
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
@@ -119,18 +142,39 @@ def list_catalog(params):
         if key in params:
             extras[key] = params[key]
 
-    response = catalogs_get_cache("list_catalog", params, skip=skip, **extras)
+    supports_skip = _catalog_supports_extra(
+        params["addon_url"], params["catalog_type"], params["catalog_id"], "skip"
+    )
+
+    request_kwargs = dict(extras)
+    if supports_skip and skip:
+        request_kwargs["skip"] = skip
+
+    response = catalogs_get_cache("list_catalog", params, **request_kwargs)
     if not response:
+        end_of_directory()
         return
 
     metas = response.get("metas", [])
+    total_metas = len(metas)
+
+    if not supports_skip:
+        metas = metas[skip : skip + CATALOG_PAGE_SIZE]
+
     if not metas:
         notification("No metas available")
+        end_of_directory()
         return
 
     add_meta_items(metas, params)
 
-    if len(metas) >= 25:
+    has_next_page = False
+    if supports_skip:
+        has_next_page = len(metas) >= CATALOG_PAGE_SIZE
+    else:
+        has_next_page = total_metas > skip + len(metas)
+
+    if has_next_page:
         next_url = build_url(
             "list_catalog",
             addon_url=params["addon_url"],
@@ -519,7 +563,7 @@ def list_stremio_episodes(params):
         if season != int(params["season"]):
             continue
 
-        title = video.title or video.name
+        title = video.title or getattr(video, "name", "") or meta_data.name
 
         tv_data = {
             "name": title,

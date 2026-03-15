@@ -1,6 +1,7 @@
 from typing import List, Callable, Optional
 import requests
 import concurrent.futures
+from urllib.parse import urlsplit, urlunsplit
 from lib.api.stremio.addon_manager import Addon, AddonManager
 from lib.api.stremio.api_client import Stremio
 from lib.db.cached import cache
@@ -14,6 +15,38 @@ from lib.clients.stremio.constants import (
 )
 
 
+def normalize_transport_url(url):
+    if not url:
+        return ""
+
+    normalized_url = str(url).strip()
+    if normalized_url.startswith("stremio://"):
+        normalized_url = normalized_url.replace("stremio://", "https://", 1)
+
+    parts = urlsplit(normalized_url)
+    path = parts.path.rstrip("/")
+    if path.endswith("/manifest.json"):
+        path = path[: -len("/manifest.json")]
+
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
+    )
+
+
+def get_addon_merge_key(addon):
+    manifest = addon.get("manifest", {}) if isinstance(addon, dict) else {}
+    addon_id = (manifest.get("id") or addon.get("id") or "").strip().lower()
+    normalized_url = normalize_transport_url(addon.get("transportUrl"))
+
+    if addon_id:
+        return addon_id
+    if normalized_url:
+        return normalized_url
+
+    name = (manifest.get("name") or addon.get("name") or "").strip().lower()
+    return name
+
+
 def merge_addons_lists(*lists):
     seen = set()
     merged = []
@@ -24,11 +57,7 @@ def merge_addons_lists(*lists):
         else:
             addons = addon_source
         for addon in addons:
-            key = (
-                addon.get("transportUrl")
-                or addon.get("manifest", {}).get("id")
-                or addon.get("id")
-            )
+            key = get_addon_merge_key(addon)
             if key and key not in seen:
                 seen.add(key)
                 merged.append(addon)
@@ -38,7 +67,10 @@ def merge_addons_lists(*lists):
 def get_addons():
     all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
     custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
-    user_addons = []
+    cached_account_addons = [
+        a for a in all_user_addons if a.get("transportName") != "custom"
+    ]
+    user_addons = list(cached_account_addons)
 
     logged_in = get_setting("stremio_loggedin")
     if logged_in:
@@ -48,7 +80,8 @@ def get_addons():
             password = get_setting("stremio_pass")
             if email and password:
                 stremio.login(email, password)
-                user_addons = stremio.get_my_addons() or []
+                live_user_addons = stremio.get_my_addons() or []
+                user_addons = merge_addons_lists(live_user_addons, cached_account_addons)
             else:
                 kodilog("Stremio credentials missing, cannot fetch user addons.")
         except Exception as e:

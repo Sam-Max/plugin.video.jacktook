@@ -20,7 +20,7 @@ from lib.clients.stremio.constants import (
     encode_selected_ids,
     decode_selected_ids,
 )
-from lib.clients.stremio.helpers import get_addons, ping_addons
+from lib.clients.stremio.helpers import get_addons, ping_addons, get_addon_merge_key
 import xbmcgui
 
 
@@ -396,18 +396,15 @@ def add_custom_stremio_addon(params):
                 )
 
         # Always add custom addon to user addons catalog
-        user_addons = cache.get(STREMIO_USER_ADDONS) or []
+        user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
 
         custom_addon = {
             "manifest": manifest,
             "transportUrl": response.url,
             "transportName": "custom",
         }
-        if not any(
-            f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
-            == addon_key
-            for a in user_addons
-        ):
+        custom_merge_key = get_addon_merge_key(custom_addon)
+        if not any(get_addon_merge_key(a) == custom_merge_key for a in user_addons):
             user_addons.append(custom_addon)
             cache.set(STREMIO_USER_ADDONS, user_addons, timedelta(days=365 * 20))
 
