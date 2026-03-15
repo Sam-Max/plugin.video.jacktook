@@ -16,7 +16,7 @@
 
 ## 🌟 Overview
 
-**Jacktook** is a Kodi addon designed to aggregate torrents and metadata from a vast array of sources. Whether you prefer P2P streaming, Stremio addons, or Debrid services, Jacktook provides a unified, streamlined interface for a seamless media discovery and playback experience.
+**Jacktook** is a Kodi addon designed to aggregate streaming sources and metadata from a wide range of providers. Whether you prefer P2P streaming, Stremio addons, or Debrid services, Jacktook offers a unified and streamlined interface for seamless media discovery and playback.
 
 ---
 
@@ -35,7 +35,7 @@
 - **Cloud Configuration**: Import and sync your entire configuration, including installed addons and Debrid tokens, directly from your Stremio account.
 - **Catalog Navigation**: Browse and search Stremio's extensive metadata catalogs.
 - **Stream Scraper**: Scraping and filtering of Stremio streams by resolution, file size, and quality.
-- **Flexible Management**: Add new addons via URL, search for community addons, or toggle existing ones on/off on the fly.
+- **Flexible Management**: Add custom addons via URL, or toggle existing ones on/off on the fly.
 - **Web Server Manager**: A powerful local web interface to manage your Stremio sources from your phone or PC.
 
 ### 🎥 Playback & Engines
