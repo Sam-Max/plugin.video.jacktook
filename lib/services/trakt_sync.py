@@ -63,7 +63,8 @@ class TraktSyncService:
     def _log_sync_failure(self, cycle_context, force, error):
         kodilog(
             "Trakt sync[%s]: failed force=%s error=%s"
-            % (cycle_context, force, error)
+            % (cycle_context, force, error),
+            level=xbmc.LOGERROR,
         )
 
     def run(self):
@@ -102,7 +103,7 @@ class TraktSyncService:
                     self._log_sync_failure("periodic", False, e)
                     return
         except Exception as e:
-            kodilog(f"Error during Trakt Sync: {e}")
+            kodilog(f"Error during Trakt Sync: {e}", level=xbmc.LOGERROR)
         finally:
             self._cycle_context = None
 

@@ -8,6 +8,7 @@ from typing import Any, Union
 
 from urllib.parse import quote, urlencode
 from lib.db.cached import cache
+from lib.utils.kodi.logging import kodilog
 
 import xbmc
 import xbmcaddon
@@ -518,10 +519,6 @@ def cancel_playback():
     except Exception:
         pass
     setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
-
-
-def kodilog(message, level=xbmc.LOGINFO):
-    xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
 
 
 def is_widget():

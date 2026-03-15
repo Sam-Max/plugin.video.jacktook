@@ -2,16 +2,14 @@ import json
 import xbmc
 import xbmcaddon
 
+from lib.utils.kodi.logging import kodilog
+
 
 ADDON = xbmcaddon.Addon()
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
-
-
-def kodilog(message, level=xbmc.LOGINFO):
-    xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
 
 
 def get_installed_addons(addon_type="", content="unknown", enabled="all"):

@@ -147,8 +147,11 @@ class MemoryCache(_BaseCache):
             blob = self._dump_func(val_to_store)
             self._window.setProperty(self._database + key, b64encode(blob).decode())
         except Exception as e:
-            kodilog(f"[MemoryCache] Error storing key {key!r}: {str(e)}")
-            kodilog(traceback.format_exc())
+            kodilog(
+                f"[MemoryCache] Error storing key {key!r}: {str(e)}",
+                level=xbmc.LOGERROR,
+            )
+            kodilog(traceback.format_exc(), level=xbmc.LOGERROR)
 
     def delete(self, key):
         self._remove_key_from_index(key)
@@ -343,8 +346,8 @@ class SQLiteCache(_BaseCache):
                     "SELECT data, expires FROM `cached` WHERE key = ?", (key,)
                 ).fetchone()
             except Exception as e:
-                kodilog(f"SQL error for key {key!r}: {e}")
-                kodilog(traceback.format_exc())
+                kodilog(f"SQL error for key {key!r}: {e}", level=xbmc.LOGERROR)
+                kodilog(traceback.format_exc(), level=xbmc.LOGERROR)
                 return None
             if result:
                 data, expires = result
@@ -369,7 +372,10 @@ class SQLiteCache(_BaseCache):
                     level=xbmc.LOGDEBUG,
                 )
             except Exception as e:
-                kodilog("Failed to set cache for key '{}': {}".format(key, str(e)))
+                kodilog(
+                    "Failed to set cache for key '{}': {}".format(key, str(e)),
+                    level=xbmc.LOGERROR,
+                )
                 # fallback to raw in‑memory store
                 self._object_store[key] = (data, expires)
 
