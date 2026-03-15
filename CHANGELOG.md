@@ -1,14 +1,37 @@
+## 1.5.0
+- Trakt Expansion: Added personal lists, search lists by keyword, create custom lists, favorites, account info.
+- Enhanced Trakt Sync: Improved scrobbling, progress tracking, and added periodic syncing service.
+- Added backup/reset tool for addon settings.
+- Modernized routing, provider registries, and service-based auth flows.
+- Fix Update flow that was partially broken cause of using incorrect addon identifier.
+- Improved scrobbler notifications and calendar item rendering.
+- Aligned logging with Kodi levels.
+- Other minor improvements.
+
+Spanish:
+- Expansión de Trakt: Añadidas listas personales, búsqueda de listas por palabra clave, creación de listas personalizadas, favoritos, información de la cuenta.
+- Sincronización mejorada de Trakt: Mejor scrobbling, seguimiento del progreso y servicio de sincronización periódica añadido.
+- Añadida herramienta de respaldo/restablecimiento de los ajustes del addon.
+- Modernizado el enrutamiento, los registros de proveedores y los flujos de autenticación basados en servicios.
+- Corregido el flujo de actualización que estaba parcialmente roto debido al uso de un identificador del addon incorrecto.
+- Mejoradas las notificaciones del scrobbler y la representación de los elementos del calendario.
+- Alineado el registro con los niveles de Kodi.
+- Otras mejoras menores.
+
 ## 1.4.4
+
 - Real-Debrid: Fix multi-file movie torrents by selecting the largest playable file
 - Split subtitle feedback so missing subtitles and unselected subtitles show different messages.
 - Localize subtitle download dialogs and subtitle status notifications.
 
 Spanish:
+
 - Real-Debrid: Corregidos los torrents de peliculas con multiples archivos seleccionando el archivo reproducible mas grande.
 - Separados los mensajes de subtitulos no encontrados y subtitulos no seleccionados.
 - Localizados los dialogos de descarga de subtitulos y las notificaciones de estado de subtitulos.
 
 ## 1.4.3
+
 - Improve loading speed for My Movies and My Shows by caching resolved library views.
 - Fix Continue Watching and Last Files labels when season or episode values are stored as strings.
 - Stremio: Fix scoped searches for TMDB-only addons and improve addon compatibility detection in the local web manager.
@@ -17,6 +40,7 @@ Spanish:
 - Jackgram: Harden latest endpoints and restore title source routing.
 
 Spanish:
+
 - Mejora la velocidad de carga de Mis Peliculas y Mis Series cacheando las vistas de biblioteca ya resueltas.
 - Corregidas las etiquetas de Seguir viendo y Ultimos archivos cuando los valores de temporada o episodio se guardan como texto.
 - Stremio: Corregidas las busquedas dirigidas para addons que solo usan TMDB y mejorada la deteccion de compatibilidad de addons en el gestor web local.
@@ -25,44 +49,51 @@ Spanish:
 - Jackgram: Endurecidos los endpoints de ultimos y restaurado el enrutado del origen del titulo.
 
 ## 1.4.2
+
 - Add new token setting for Jackgram.
 - Refactor internal Jackgram functions based on new API changes.
 
 Spanish:
+
 - Añadida nueva configuración de token para Jackgram.
 - Refactorización de funciones internas de Jackgram basado en los nuevos cambios de la API.
 
 ## 1.4.1
+
 - Add fullscreen search status window with live task tracking.
 - Improve source provider name display for direct indexers.
 
 Spanish:
+
 - Añadida ventana de estado de búsqueda a pantalla completa con seguimiento de tareas en vivo.
 - Mejora en la visualización del nombre del proveedor de origen para indexadores directos.
 
 ## 1.3.2
+
 - Fix: Easynews crash on Python versions older than 3.9 (e.g. Kodi 20).
 - Fix 'No Stremio addon selected' error when adding custom addons with commas in the URL.
 - Implement lazy loading for client modules to improve startup performance and stability.
 - Improvements to the update flow.
 
 Spanish:
+
 - Corregido: Error de Easynews en versiones de Python anteriores a 3.9 (ej. Kodi 20).
 - Corregido error: 'No Stremio addon selected' al añadir addons personalizados con comas en la URL.
 - Implementación de carga diferida para los módulos de clientes para mejorar el rendimiento y la estabilidad.
 - Mejora del mecanismo de actualización.
 
-
 ## 1.3.1
+
 - Add 'Search by Keyword' functionality for Movies and TV Shows.
 - Add Easynews search support.
 - Add debrid subscription expiration notifications.
 - Add automatic volume safety check before starting playback.
-- Open actor info window when selecting a person from People menu.  
+- Open actor info window when selecting a person from People menu.
 - Add client key support for Fanart.tv
 - Improve updater mechanism with progress visibility and better UI refresh.
 
 Spanish:
+
 - Añadida funcionalidad de 'Búsqueda por palabra clave' para películas y series.
 - Añadido soporte de búsqueda en Easynews.
 - Añadidas notificaciones de expiración de suscripción de debrid.
@@ -72,22 +103,27 @@ Spanish:
 - Mejora del mecanismo de actualización con visibilidad del progreso y mejor refresco de la interfaz.
 
 ## 1.2.1
+
 - Skin: Add 'Extras' and 'Actor Info' windows to media details.
 - Add IMDB scraper for fetching extras and cast information.
 
 Spanish:
+
 - Skin: Añadidas ventanas de 'Extras' e 'Información del actor' a los detalles de los medios.
 - Añadido scraper de IMDB para obtener extras e información del reparto.
 
 ## 1.1.1
+
 - Stremio: Support multiple configurations of the same addon by identifying them via transport URL.
 - Stremio: Increase configurable request timeout range up to 120s and apply it globally to all requests.
 
 Spanish:
+
 - Stremio: Soporte para múltiples configuraciones del mismo addon identificándolos mediante la URL de transporte.
 - Stremio: Aumento del rango de tiempo de espera (timeout) configurable hasta 120 segundos y aplicación global a todas las peticiones.
 
 ## 1.1.0
+
 - Add 'Downgrade Addon Version' functionality in settings to easily revert to previous releases.
 - Add 'Bypass Addon Filters' for selected Stremio addons, allowing them to skip Jacktook's native size/quality filtering.
 - Improve metadata resolution and movie detection for Stremio providers.
@@ -95,6 +131,7 @@ Spanish:
 - Performance optimizations and improved error handling across several modules.
 
 Spanish:
+
 - Añadida función 'Revertir versión del addon' en los ajustes para volver fácilmente a versiones anteriores.
 - Añadida funcionalidad 'Omitir filtros de addons' para que los addons de Stremio seleccionados salten el filtrado nativo.
 - Mejora en la resolución de metadatos y detección de películas para los proveedores de Stremio.
@@ -102,7 +139,8 @@ Spanish:
 - Optimizaciones de rendimiento y mejora en el manejo de errores en varios módulos.
 
 ## 1.0.0
-- Implement lazy loading for router and navigation for better performance. 
+
+- Implement lazy loading for router and navigation for better performance.
 - Add local web server for managing Stremio addons via phone/browser.
 - Add skip intro and recap feature using IntroDB API.
 - Add support for Bingie Helper in TMDB auto-installer.
@@ -117,12 +155,13 @@ Spanish:
 - Other minor fixes and improvements.
 
 Spanish:
+
 - Implementación de carga diferida (lazy loading) para el router y la navegación para mejorar el rendimiento.
 - Añadido servidor web local para gestionar addons de Stremio desde el teléfono/navegador.
 - Añadida función para saltar intros y resúmenes usando la API de IntroDB.
 - Añadida compatibilidad con Bingie Helper en el instalador automático de TMDB.
 - Añadida sección 'Seguir viendo' y 'Biblioteca' al menú principal.
-- Agrupadas las entradas 'Buscar' y 'Búsqueda directa' del menú principal en un único menú 'Buscar' para  mejor organizacion.
+- Agrupadas las entradas 'Buscar' y 'Búsqueda directa' del menú principal en un único menú 'Buscar' para mejor organizacion.
 - Añadido gestión de historial y opciones de borrado en el menú de búsqueda.
 - Movido el menú de donaciones a los ajustes del addon.
 - Reordenado el menú principal para colocar 'Biblioteca' debajo de 'TV en vivo'.
@@ -132,6 +171,7 @@ Spanish:
 - Otras correcciones menores y mejoras.
 
 ## 0.24.0
+
 - Stremio: Add manual addon availability ping and filtering.
 - Stremio: Support for movie items with custom IDs.
 - TMDB: Add 'Airing Today' section for TV shows.
@@ -143,6 +183,7 @@ Spanish:
 - Fix: Routing conflict by renaming internal 'play_media' helper.
 
 ## 0.23.0
+
 - Implement hybrid cache and background preloading for better performance.
 - Add dedicated selection on Stremio settings for Stremio Live TV addons.
 - Add setting to show only Stremio catalogs instead of native catalogs.
@@ -160,11 +201,11 @@ Spanish:
 - Localize many UI strings.
 - Many other internal refactors and improvements to the Stremio client.
 
-
 Spanish:
+
 - Implementación de caché híbrida y precarga en segundo plano para un mejor rendimiento.
 - Añadida en la configuración de Stremio la selección dedicada para addons de TV en vivo.
-- Añadido ajuste para mostrar solo catálogos de Stremio en lugar de los catálogos nativos.  
+- Añadido ajuste para mostrar solo catálogos de Stremio en lugar de los catálogos nativos.
 - Añadido limpiado granular de caché.
 - Añadido ajuste para habilitar la precarga de los siguientes episodios.
 - Añadido servicio de sincronización con Trakt, autenticación con QR y mejora en la capacidad de reanudación.
@@ -180,18 +221,20 @@ Spanish:
 - Muchas otras refactorizaciones internas y mejoras en el cliente de Stremio.
 
 ## 0.22.0
+
 - Add super quick play feature (last played dialog) for faster playback.
 - Add torrent and debrid filter options on source select window.
 - Add precaching of next episodes with settings option.
 - Add automatic subtitle selection.
 - Add broadcast day adjustment setting for the weekly calendar.
-- Add context menu actions for last files 
+- Add context menu actions for last files
 - Add context menu actions for weekly calendar episodes
 - Implement accurate search progress indicator.
 - Fix search with non-ASCII characters.
 - Improve magnet link extraction from torrent files.
 
 Spanish:
+
 - Añadida función de reproducción súper rápida (diálogo de última reproducción) para una reproducción más veloz.
 - Añadidas opciones de filtrado de torrent y debrid en la ventana de selección de fuente.
 - Añadida precarga (precaching) de los siguientes episodios con opción en los ajustes.
@@ -203,28 +246,32 @@ Spanish:
 - Corregida la búsqueda con caracteres no ASCII.
 - Mejorada la extracción de enlaces magnet de archivos torrent.
 
-## 0.21.0 
+## 0.21.0
+
 - Implemented parallel Debrid/P2P resolution.
 - Redesigned settings for more intuitive setup.
 - Fixed next dialog triggering at wrong time in player.
 - Enhanced update notifications for better user feedback.
 - Other minor fixes and improvements.
 
-## 0.20.0 
+## 0.20.0
+
 - Added functionality to remove custom addons from settings.
 - Fixed subtitle translation not working.
 
-## 0.19.0 
+## 0.19.0
+
 - Added WebDAV client integration with browsing and playback support.
 - Improved magnet extraction and fixed URLs not being passed correctly to torrent clients.
 - Increased the default maximum size and adjusted the slider step for better control.
 - Added configurable timeout setting for Stremio requests.
 - Removed debrid cached search logic to avoid inconsistencies.
-- Fixed correct values display for addons like UsenetStreamer. 
+- Fixed correct values display for addons like UsenetStreamer.
 - Fixed correct rendering of addons names on source selection when using AIOStreams addon.
 - Other minor fixes and improvements.
 
-## 0.18.0 
+## 0.18.0
+
 - Rewrite TMDB directory handling to include full metadata only when needed and simplify search result rendering.
 - Add automatic subtitle download and improved storage/retrieval for individual episodes.
 - Automatically convert URLs starting with stremio:// to https:// when adding custom addons.
@@ -232,36 +279,39 @@ Spanish:
 - Other minor fixes and improvements.
 
 Spanish:
+
 - Reescritura del manejo de directorios de TMDb para incluir solo los metadatos completos cuando sea necesario y simplificar la visualización de resultados de búsqueda.
 - Añadida descarga automática de subtítulos y mejora en el almacenamiento/recuperación de episodios individuales.
 - Conversión automática de URLs que comienzan con stremio:// a https:// al añadir addons personalizados.
 - Corrección en la búsqueda de Jackett cuando se establece una contraseña.
 - Otras mejoras y correcciones menores.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
+## 0.17.0
 
-## 0.17.0 
-- Add AllDebrid support 
-- Add cached search for AllDebrid 
+- Add AllDebrid support
+- Add cached search for AllDebrid
 - Fix RealDebrid episodes match not reliable.
 - Other minor fixes and improvements.
 
 Spanish:
+
 - Se añadió soporte para AllDebrid
 - Se añadió búsqueda con caché para AllDebrid
 - Se arreglo errores con la coincidencia de episodios en RealDebrid que no era 100% fiable.
 - Otras mejoras y correcciones menores.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
 ## 0.16.0
+
 - Add TMDB logo support for clearlogo.
 - Prowlarr: add parallel query execution and refined TV search.
 - Jackett: add multi-indexer parallel search and improved URL building.
@@ -277,12 +327,14 @@ If you enjoy this addon, please consider supporting the project with a donation.
 - Many other minor fixes and improvements.
 
 ## 0.15.1
+
 - HOTFIXED: Resolved multiple issues preventing addon updates.
 - Ensured ordered results in show and episode listings.
 
 ## 0.15.0
+
 - Delay closing resolve source window until playback starts.
-- Added context menu options for selecting stremio sources and opening addon settings. 
+- Added context menu options for selecting stremio sources and opening addon settings.
 - Added option on settings to clear all history
 - Updated several menu icons for better consistency.
 - Improved tvshow and movie metadata handling.
@@ -290,24 +342,26 @@ If you enjoy this addon, please consider supporting the project with a donation.
 - Improved display and sorting of last files and titles.
 - Other minor improvements and fixes.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
 ## 0.14.0
+
 - Updated menu icons for Telegram and Downloads.
 - Added filtering options setting for quality/source.
 - Improved initialization and handling of invalid tokens on Real Debrid
 - Simplified addon display name in jacktook.select.json.
 - Other minor improvements.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
-## 0.13.0 
+## 0.13.0
+
 - Added support for [MDBList](https://mdblist.com/)
 - Added people category for movies and TV shows.
 - Added context menu option to search people for movies and TV shows.
@@ -320,6 +374,7 @@ If you enjoy this addon, please consider supporting the project with a donation.
 - Other minor improvements and fixes.
 
 Spanish:
+
 - Se añadió soporte para [MDBList](https://mdblist.com/)
 - Se añadió la categoría de personas para películas y series de TV.
 - Se añadió una opción en el menú contextual para buscar personas en películas y series de TV.
@@ -331,13 +386,14 @@ Spanish:
 - Se añadió un filtro interno de addons excluidos al cuadro de diálogo de seleccion de addons de Stremio para mostrar solo addons funcionales y testeados.
 - Otras mejoras y correcciones menores.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
-## 0.12.0 
-- Added TMDB collections, languages, networks, and popular filters. 
+## 0.12.0
+
+- Added TMDB collections, languages, networks, and popular filters.
 - Added QR code dialog to simplify authentication for debrid services
 - Updated Stremio community addons URL to stable version (https://stremio-addons.net/).
 - Added notification messages to users when no stremio addons or catalogs are selected.
@@ -345,6 +401,7 @@ If you enjoy this addon, please consider supporting the project with a donation.
 - Other minor improvements and fixes.
 
 Spanish:
+
 - Se añadieron colecciones, idiomas, cadenas de televisión y filtros populares de TMDB.
 - Se añadió un diálogo de código QR para simplificar la autenticación de los servicios de debrid.
 - Se actualizó la URL de los addons de la comunidad de Stremio a la version estable (https://stremio-addons.net/).
@@ -352,16 +409,18 @@ Spanish:
 - Se añadieron categorías para una identificación más clara de las ventanas.
 - Otras mejoras y correcciones menores.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
-## 0.11.0 
+## 0.11.0
+
 - Added support for Debrider (https://debrider.app/)
 - Other minor improvements and fixes.
 
 ## 0.10.0
+
 - Added external cached search support for Real-Debrid.
 - Updated URL for fetching community addons (migrated to beta.stremio-addons.net).
 - Added resumable downloads and active download status.
@@ -371,7 +430,8 @@ If you enjoy this addon, please consider supporting the project with a donation.
 - Improved Stremio catalog fetching to shows more catalogs.
 - Other minor improvements and fixes.
 
-Spanish: 
+Spanish:
+
 - Se añadió compatibilidad con búsqueda externa en caché para Real-Debrid.
 - Se actualizó la URL para obtener addons de la comunidad (migracion a beta.stremio-addons.net).
 - Se añadieron descargas reanudables y estado de descarga activa.
@@ -381,36 +441,40 @@ Spanish:
 - Se mejoró la obtención de catálogos de Stremio para mostrar más catálogos.
 - Otras mejoras y correcciones menores.
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
 ## 0.9.0
-- Added Torrentio providers selection and settings UI. 
-- Episodes are now marked as playable in TMDB and calendar views. 
+
+- Added Torrentio providers selection and settings UI.
+- Episodes are now marked as playable in TMDB and calendar views.
 - Replaced hardcoded context menu labels with translation entries (English and Spanish).
 - Replaced hardcoded menus labels with translation entries. (English and Spanish).
 
-Note: 
+Note:
 Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
 
 If you enjoy this addon, please consider supporting the project with a donation. Your contributions helps keep improving and maintaining it. Thank you!
 
 ## 0.8.0
+
 Features:
+
 - Implement TV calendar on History and TV Shows menus, to show weekly episodes.
 - Add context menu items for TMDB recommendations and similar content.
-- Add installation prompts for missing addons: Elementum, Jacktorr, and Torrest. 
+- Add installation prompts for missing addons: Elementum, Jacktorr, and Torrest.
 - Update filter options label to indicate usage of the left key.
 - Adjust thread pool max workers calculation for better performance on low end devices.
-Refactors:
-- Replace usage of main_db with PickleDatabase across the addon. 
-Fixes:
-- Handle empty Stremio addons to prevent crashes. 
-- Make Cache class thread-safe and more robust. 
+  Refactors:
+- Replace usage of main_db with PickleDatabase across the addon.
+  Fixes:
+- Handle empty Stremio addons to prevent crashes.
+- Make Cache class thread-safe and more robust.
 
 ## 0.7.0
+
 - Add audio language selection for playback.
 - Add functionality to add custom Stremio addons via URL.
 - Add support for searching and filtering season packs (Jackett & Prowlarr).
@@ -422,20 +486,24 @@ Fixes:
 - Other minor improvements and fixes.
 
 ## 0.6.0
-- Improve source select layout with clickable quality header. 
+
+- Improve source select layout with clickable quality header.
 - Add more filtering options on source select window (languages, sources)
 - Minor improvements and fixes
 
 ## 0.5.4
+
 - HOTFIX: Fix Burst client not working.
 
 ## 0.5.3
+
 - Added support to downloasd subtitles using Stremio OpenSubtitle addon.
 - Added support for subtitle translation using DeepL (AI translation).
 - Added auto-play with quality selection.
 - Added auto-subtitle activation and selection on playback.
 
 ## 0.5.2
+
 - Added download functionality
 - Added Trakt scrobbling
 - Added new menu item to add to Trakt watchlist.
@@ -444,201 +512,241 @@ Fixes:
 - Many other improvements.
 
 ## 0.5.1
-- UI Improvements 
+
+- UI Improvements
 - TMDB Helper json updated
 - Some fixes and improvements
 
 ## 0.5.0
+
 - Add support to import and use Stremio catalogs.
 - Add setting button action to update Stremio addons after logged in.
 - Some fixes and improvements with with Real Debrid packs detection.
 
 ## 0.4.10
-* Hotfix: not detecting season pack when using debrid
+
+- Hotfix: not detecting season pack when using debrid
 
 ## 0.4.9
-* Add Priority Language selection setting to filter results.
-* Fix missing some supported Stremio Addons.
-* Fix autoplay
+
+- Add Priority Language selection setting to filter results.
+- Fix missing some supported Stremio Addons.
+- Fix autoplay
 
 ## 0.4.8
-* Add support to import Stremio Addons from Stremio.io Account.
+
+- Add support to import Stremio Addons from Stremio.io Account.
 
 ## 0.4.7
-* Add Peerflix indexer support.
-* Fix Mediafusion not playing sources when using torrents
-* Other minor improvements and fixes
+
+- Add Peerflix indexer support.
+- Fix Mediafusion not playing sources when using torrents
+- Other minor improvements and fixes
 
 ## 0.4.6
-* Fix a bug that was causing fanart media details not been updating correctly
+
+- Fix a bug that was causing fanart media details not been updating correctly
 
 ## 0.4.5
-* Add language and region selection setting for TMDB.
-* Fix RealDebrid episode selection on season packs
-* Fix and handle torrents where its url redirects to magnets.
-* Refactor settings.xml to new Kodi format.
-* Other minor improvements and fixes
+
+- Add language and region selection setting for TMDB.
+- Fix RealDebrid episode selection on season packs
+- Fix and handle torrents where its url redirects to magnets.
+- Refactor settings.xml to new Kodi format.
+- Other minor improvements and fixes
 
 ## 0.4.4
-* some fixes and improvements
+
+- some fixes and improvements
 
 ## 0.4.3
-* Add search capability across multiple indexers
-* Add filter by episode and season option 
-* Some visual improvements for Arctic Horizon 2 skin.
-* Other minor improvements and fixes
+
+- Add search capability across multiple indexers
+- Add filter by episode and season option
+- Some visual improvements for Arctic Horizon 2 skin.
+- Other minor improvements and fixes
 
 ## 0.4.2
-* Add Telegram menu (with option to enable/disable) with submenus to access Jackgram cached files (for advanced users)
-* Add Anime year and genre search.
-* Add TMDB year search for TV and Movies.
-* Add Trakt popular lists.
-* Some visual improvements on direct search source selection.
-* Others minor improvements and fixes.
+
+- Add Telegram menu (with option to enable/disable) with submenus to access Jackgram cached files (for advanced users)
+- Add Anime year and genre search.
+- Add TMDB year search for TV and Movies.
+- Add Trakt popular lists.
+- Some visual improvements on direct search source selection.
+- Others minor improvements and fixes.
 
 ## 0.4.1
-* Add play next dialog for episodes playback
-* Add automatic playlist creation for shows episodes.
-* Update tmdb helper to work with the new routing system.
-* Update Jackgram Indexer.
-* Others minor improvements and fixes.
+
+- Add play next dialog for episodes playback
+- Add automatic playlist creation for shows episodes.
+- Update tmdb helper to work with the new routing system.
+- Update Jackgram Indexer.
+- Others minor improvements and fixes.
 
 ## 0.4.0
-* Add custom source select and resolve windows dialog.
-* Improvements and fixes.
+
+- Add custom source select and resolve windows dialog.
+- Improvements and fixes.
 
 ## 0.3.9
-* Add EasyDebrid support.
-* Add MediaFusion indexer.
+
+- Add EasyDebrid support.
+- Add MediaFusion indexer.
 
 ## 0.3.8
-* Real Debrid Improvements.
-    - check if the torrent is on user torrents list, so not to add again.
-    - add a check for max activate downloads, and delete one if limit achieved.
-* Direct Search Improvements.
-    - save search queries, and added menu item option to modify search queries by the user
-* Torbox Improvements
-    - use public ip address of user for torbox cdn selecction
-* Multi Debrid Search support
-* Add jackgram_results_per_page setting option for Jackgram client.
+
+- Real Debrid Improvements.
+  - check if the torrent is on user torrents list, so not to add again.
+  - add a check for max activate downloads, and delete one if limit achieved.
+- Direct Search Improvements.
+  - save search queries, and added menu item option to modify search queries by the user
+- Torbox Improvements
+  - use public ip address of user for torbox cdn selecction
+- Multi Debrid Search support
+- Add jackgram_results_per_page setting option for Jackgram client.
 
 ## 0.3.7
-* Update Premiumize.
-* Update Zilean (now supports movies and tv search)
-* Update TMDB Helper json file with zip file
+
+- Update Premiumize.
+- Update Zilean (now supports movies and tv search)
+- Update TMDB Helper json file with zip file
 
 ## 0.3.6
-* Fix tmdb movies results not showing on main search
-* Improve Jackett/Prowlarr integration with Debrid for faster results
-* Add mechanism to detect indexers change when making a search
-* Minor fixes and improvements.
+
+- Fix tmdb movies results not showing on main search
+- Improve Jackett/Prowlarr integration with Debrid for faster results
+- Add mechanism to detect indexers change when making a search
+- Minor fixes and improvements.
 
 ## 0.3.5
-* Fix Real Debrid Authentification not working
-* Add Real Debrid remove authorization button and username info on settings
-* Add option to select Kodi language for TMDB metadata.
-* Playback improvements
+
+- Fix Real Debrid Authentification not working
+- Add Real Debrid remove authorization button and username info on settings
+- Add option to select Kodi language for TMDB metadata.
+- Playback improvements
 
 ## 0.3.4
-* Improvements on Torbox
+
+- Improvements on Torbox
 
 ## 0.3.3
-* Refactor Real Debrid due to recent API changes
-* Fixed Torrentio not getting results
-* Improvements on Torbox
-* Other minor improvements and fixes
+
+- Refactor Real Debrid due to recent API changes
+- Fixed Torrentio not getting results
+- Improvements on Torbox
+- Other minor improvements and fixes
 
 ## 0.3.2
-* Switch to tmdb and trakt for Anime section
-* Add Jackgram Support
-* Remove Plex Support 
-* Bug fixes and improvements
+
+- Switch to tmdb and trakt for Anime section
+- Add Jackgram Support
+- Remove Plex Support
+- Bug fixes and improvements
 
 ## 0.3.1
-* Add "rescrape item" context menu item to anime shows results
-* Several bug fixes and some improvements
+
+- Add "rescrape item" context menu item to anime shows results
+- Several bug fixes and some improvements
 
 ## 0.3.0
-* Add Trakt support with several categories
-* Update on genres menu and zilean indexer
+
+- Add Trakt support with several categories
+- Update on genres menu and zilean indexer
 
 ## 0.2.9
-* Add Zilean indexer support
-* Minor bug fixes
+
+- Add Zilean indexer support
+- Minor bug fixes
 
 ## 0.2.8
-* Add resume playback for videos
-* Add new icons for main menu
+
+- Add resume playback for videos
+- Add new icons for main menu
 
 ## 0.2.7
-* add "check if pack" context menu item
-* several fixes and improvements
+
+- add "check if pack" context menu item
+- several fixes and improvements
 
 ## 0.2.6
-* Added service for auto-update addon 
-* Added update addon setting action
-* Whole refactoring of jacktook repository
+
+- Added service for auto-update addon
+- Added update addon setting action
+- Whole refactoring of jacktook repository
 
 ## 0.2.5
-* Added Plex support (beta)
-* Added support for torbox debrid
-* Major anime improvements
-* Faster debrid fetch
+
+- Added Plex support (beta)
+- Added support for torbox debrid
+- Major anime improvements
+- Faster debrid fetch
 
 ## 0.2.4 (2024-04-12)
-* Added jacktorr burst support
-* Improvements on torrent fetch (faster resolve)
-* Other minor improvements and fixes
+
+- Added jacktorr burst support
+- Improvements on torrent fetch (faster resolve)
+- Other minor improvements and fixes
 
 ## 0.2.3 (2024-04-06)
-* Added jacktorr torrent client support
-* Added jacktorr managment from addon instead of torrest
-* Other minor improvements and fixes
+
+- Added jacktorr torrent client support
+- Added jacktorr managment from addon instead of torrest
+- Other minor improvements and fixes
 
 ## 0.2.2 (2024-03-22)
-* Added autoplay feature
-* Added clients timeouts and cache activation settings
-* Added new Tmdb helper addon json
-* Torrentio language improvements
-* Fixed kodi 19 compatibility
-* Other minor improvements and fixes
+
+- Added autoplay feature
+- Added clients timeouts and cache activation settings
+- Added new Tmdb helper addon json
+- Torrentio language improvements
+- Fixed kodi 19 compatibility
+- Other minor improvements and fixes
 
 ## 0.2.1 (2024-03-12)
-* torrentio improvements (priority language, sort by language, etc)
-* added portugese translation
-* added trakt scrobbling support
-* others improvements and fixes
+
+- torrentio improvements (priority language, sort by language, etc)
+- added portugese translation
+- added trakt scrobbling support
+- others improvements and fixes
 
 ## 0.2.0 (2024-03-04)
-* Add option to select and use all torrents clients at the same time.
-* Add pagination to tmdb and anilist search
-* Fix for real debrid download history issue (only played videos will be saved)
+
+- Add option to select and use all torrents clients at the same time.
+- Add pagination to tmdb and anilist search
+- Fix for real debrid download history issue (only played videos will be saved)
 
 ## 0.1.9 (2024-02-21)
- * Fixed RD torrent stored on cloud
- * Add sort by quality to torrentio and elfhosted
+
+- Fixed RD torrent stored on cloud
+- Add sort by quality to torrentio and elfhosted
 
 ## 0.1.8 (2024-02-21)
- * Add TMDB helper Addon support
- * Add new torrents menu
- * Add Elementum as another torrent client
+
+- Add TMDB helper Addon support
+- Add new torrents menu
+- Add Elementum as another torrent client
 
 ## 0.1.7 (2024-02-21)
- * Add anime episode search
- * Add Premiumize support
- * Add Elfhosted support
+
+- Add anime episode search
+- Add Premiumize support
+- Add Elfhosted support
 
 ## 0.1.6 (2024-02-12)
+
     * Fix a critical bug for Prowlarr
 
 ## 0.1.5 (2024-02-12)
+
     * Improvements for Prowlarr
     * Some UI changes
 
 ## 0.1.4 (2024-02-10)
+
     * Add Torrentio support
 
 ## 0.1.3 (2024-02-7)
+
     * Add "clear all cache" option on addon settings
     * Caching of indexers results
     * Improvements and fixes
@@ -656,7 +764,7 @@ Fixes:
 ### Features
 
     * Add authentifcation flow for Realdebrid from Kodi
-    
+
     * Fix and Update Debrid with Prowlarr Integration
 
     * Add new title history menu
