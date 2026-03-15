@@ -1,3 +1,5 @@
+from time import monotonic
+
 import xbmc
 from lib.api.trakt.trakt import TraktAPI
 from lib.api.trakt.lists_cache import lists_cache
@@ -22,10 +24,51 @@ class TraktSyncService:
     def __init__(self, api=None, monitor=None):
         self.api = api or TraktAPI()
         self.monitor = monitor or xbmc.Monitor()
+        self._cycle_context = None
+
+    def _format_buckets(self, buckets):
+        if not buckets:
+            return "none"
+        return ",".join(sorted(buckets))
+
+    def _get_cycle_context(self, force=False):
+        if self._cycle_context:
+            return self._cycle_context
+        return "startup" if force else "periodic"
+
+    def _log_sync_summary(
+        self,
+        cycle_context,
+        force,
+        outcome,
+        detected_buckets,
+        applied_buckets,
+        forced_defaults,
+        started_at,
+    ):
+        duration_ms = int((monotonic() - started_at) * 1000)
+        kodilog(
+            "Trakt sync[%s]: completed outcome=%s force=%s forced_defaults=%s detected_buckets=%s applied_buckets=%s duration_ms=%s"
+            % (
+                cycle_context,
+                outcome,
+                force,
+                forced_defaults,
+                self._format_buckets(detected_buckets),
+                self._format_buckets(applied_buckets),
+                duration_ms,
+            )
+        )
+
+    def _log_sync_failure(self, cycle_context, force, error):
+        kodilog(
+            "Trakt sync[%s]: failed force=%s error=%s"
+            % (cycle_context, force, error)
+        )
 
     def run(self):
         if not self._is_trakt_available():
-            kodilog("Trakt not enabled or not authenticated, skipping sync.")
+            kodilog("Trakt sync[startup]: skipped because Trakt is disabled or unauthenticated")
             return
 
         kodilog(
@@ -34,20 +77,34 @@ class TraktSyncService:
         )
 
         try:
-            self.sync_activities(force=True)
+            self._cycle_context = "startup"
+            kodilog("Trakt sync[startup]: beginning initial sync (force=True)")
+            try:
+                self.sync_activities(force=True)
+            except Exception as e:
+                self._log_sync_failure("startup", True, e)
+                return
+
             while not self.monitor.abortRequested():
                 if self._wait_for_next_cycle():
                     return
                 if not self._is_trakt_available():
-                    kodilog("Trakt sync: skipping cycle because Trakt is unavailable")
+                    kodilog("Trakt sync[periodic]: skipped cycle because Trakt is unavailable")
                     continue
                 if self._services_paused():
-                    kodilog("Trakt sync: skipping cycle because services are paused")
+                    kodilog("Trakt sync[periodic]: skipped cycle because services are paused")
                     continue
-                kodilog("Trakt sync: checking remote activity")
-                self.sync_activities()
+                self._cycle_context = "periodic"
+                kodilog("Trakt sync[periodic]: beginning cycle")
+                try:
+                    self.sync_activities()
+                except Exception as e:
+                    self._log_sync_failure("periodic", False, e)
+                    return
         except Exception as e:
             kodilog(f"Error during Trakt Sync: {e}")
+        finally:
+            self._cycle_context = None
 
     def _is_trakt_available(self):
         return get_setting("trakt_enabled") and get_setting("is_trakt_auth")
@@ -71,31 +128,68 @@ class TraktSyncService:
         return False
 
     def sync_activities(self, force=False):
-        latest_activities = self.api.sync.get_last_activities()
-        if not latest_activities:
-            kodilog("Trakt sync: last activities request returned no data")
-            return set()
+        cycle_context = self._get_cycle_context(force=force)
+        started_at = monotonic()
+        forced_defaults = False
+        detected_buckets = set()
+        applied_buckets = set()
 
-        previous_activities = reset_activity(latest_activities)
-        changes = self._get_changed_buckets(previous_activities, latest_activities)
-        if force and not changes:
-            changes = {
-                "watched_movies",
-                "watched_shows",
-                "progress_movies",
-                "progress_episodes",
-            }
+        try:
+            latest_activities = self.api.sync.get_last_activities()
+            if not latest_activities:
+                self._log_sync_summary(
+                    cycle_context,
+                    force,
+                    "no_data",
+                    detected_buckets,
+                    applied_buckets,
+                    forced_defaults,
+                    started_at,
+                )
+                return set()
 
-        if not changes:
-            kodilog("Trakt sync: no remote activity changes detected")
-            return changes
+            previous_activities = reset_activity(latest_activities)
+            detected_buckets = self._get_changed_buckets(previous_activities, latest_activities)
+            applied_buckets = set(detected_buckets)
+            if force and not applied_buckets:
+                applied_buckets = {
+                    "watched_movies",
+                    "watched_shows",
+                    "progress_movies",
+                    "progress_episodes",
+                }
+                forced_defaults = True
 
-        kodilog(
-            "Trakt sync: changed buckets = %s"
-            % ", ".join(sorted(changes))
-        )
-        self._apply_activity_changes(changes)
-        return changes
+            if not applied_buckets:
+                self._log_sync_summary(
+                    cycle_context,
+                    force,
+                    "no_changes",
+                    detected_buckets,
+                    applied_buckets,
+                    forced_defaults,
+                    started_at,
+                )
+                return applied_buckets
+
+            kodilog(
+                "Trakt sync: changed buckets = %s"
+                % ", ".join(sorted(applied_buckets))
+            )
+            self._apply_activity_changes(applied_buckets)
+            self._log_sync_summary(
+                cycle_context,
+                force,
+                "applied_changes",
+                detected_buckets,
+                applied_buckets,
+                forced_defaults,
+                started_at,
+            )
+            return applied_buckets
+        except Exception as e:
+            self._log_sync_failure(cycle_context, force, e)
+            raise
 
     def _activity_changed(self, previous, latest, *path):
         prev_value = previous
