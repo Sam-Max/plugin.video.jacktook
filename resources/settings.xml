@@ -138,7 +138,7 @@
         <category id="services_category" label="30150">
             <group id="torrents" label="30862">
                 <setting id="torrent_enable" type="boolean" label="30713" help="30836">
-                    <default>true</default>
+                    <default>false</default>
                     <control type="toggle" />
                 </setting>
                 <setting id="torrent_client" type="string" label="30002" help="30863">
