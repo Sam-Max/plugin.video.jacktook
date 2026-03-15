@@ -510,7 +510,7 @@
         <category id="sources_category" label="30864">
             <group id="stremio_general" label="90150">
                 <setting id="stremio_enabled" type="boolean" label="30734" help="30869">
-                    <default>true</default>
+                    <default>false</default>
                     <control type="toggle" />
                 </setting>
                 <setting id="stremio_timeout" type="integer" label="90123" help="">
