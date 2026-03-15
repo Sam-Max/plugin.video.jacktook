@@ -662,23 +662,6 @@
                     </control>
                 </setting>
             </group>
-            <group id="stremio_torrentio" label="90153">
-                <setting id="torrentio_enabled" type="boolean" label="90045" help="90046">
-                    <default>true</default>
-                    <control type="toggle"/>
-                </setting>
-                <setting id="torrentio_providers" type="action" label="90047" help="90048">
-                    <dependencies>
-                        <dependency type="visible">
-                            <condition operator="is" setting="torrentio_enabled">true</condition>
-                        </dependency>
-                    </dependencies>
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=torrentio_toggle_providers)</data>
-                    <control type="button" format="action">
-                        <close>false</close>
-                    </control>
-                </setting>
-            </group>
             <group id="jackett" label="30775">
                 <setting id="jackett_enabled" type="boolean" label="30734" help="30849">
                     <default>false</default>
