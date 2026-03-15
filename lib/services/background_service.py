@@ -58,10 +58,10 @@ class UpdateCheck:
                     monitor.waitForAbort(1)
                 while player.isPlayingVideo():
                     monitor.waitForAbort(1)
+                set_property_no_fallback(first_run_update_prop, "true")
                 updates_check_addon(automatic=True)
                 break
 
-            set_property_no_fallback(first_run_update_prop, "true")
             kodilog("Update Check Service Finished", level=xbmc.LOGINFO)
         except Exception as e:
             kodilog(e, level=xbmc.LOGERROR)

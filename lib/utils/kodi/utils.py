@@ -358,7 +358,7 @@ def update_local_addons():
     sleep(2500)
 
 
-def disable_enable_addon(addon_name=ADDON_NAME):
+def disable_enable_addon(addon_id=ADDON_ID):
     try:
         xbmc.executeJSONRPC(
             json.dumps(
@@ -366,7 +366,7 @@ def disable_enable_addon(addon_name=ADDON_NAME):
                     "jsonrpc": "2.0",
                     "id": 1,
                     "method": "Addons.SetAddonEnabled",
-                    "params": {"addonid": addon_name, "enabled": False},
+                    "params": {"addonid": addon_id, "enabled": False},
                 }
             )
         )
@@ -376,7 +376,7 @@ def disable_enable_addon(addon_name=ADDON_NAME):
                     "jsonrpc": "2.0",
                     "id": 1,
                     "method": "Addons.SetAddonEnabled",
-                    "params": {"addonid": addon_name, "enabled": True},
+                    "params": {"addonid": addon_id, "enabled": True},
                 }
             )
         )
@@ -384,7 +384,7 @@ def disable_enable_addon(addon_name=ADDON_NAME):
         pass
 
 
-def update_kodi_addons_db(addon_name=ADDON_NAME):
+def update_kodi_addons_db(addon_id=ADDON_ID):
     try:
         import sqlite3 as database
         
@@ -394,7 +394,7 @@ def update_kodi_addons_db(addon_name=ADDON_NAME):
         )
         dbcon.execute(
             "INSERT OR REPLACE INTO installed (addonID, enabled, lastUpdated) VALUES (?, ?, ?)",
-            (addon_name, 1, date),
+            (addon_id, 1, date),
         )
         dbcon.close()
     except:
