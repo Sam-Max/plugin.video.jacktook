@@ -371,6 +371,7 @@ def make_listing(data):
 
 
 def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=False):
+    mode = "movies" if mode in ("movie", "movies") else mode
     info_tag = list_item.getVideoInfoTag()
 
     _set_basic_info(info_tag, data)
@@ -378,7 +379,7 @@ def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=Fa
     _set_identification(info_tag, data)
     _set_artwork(list_item, data, fanart_data)
     _set_released_info(info_tag, data)
-    _set_watched_status(info_tag, data, mode)
+    _set_trakt_ui_state(list_item, info_tag, data, mode)
 
     if mode == "tv" or mode == "season" or mode == "episode":
         _set_show_info(info_tag, data, mode)
@@ -469,24 +470,97 @@ def _set_detailed_info(info_tag, data, mode):
     info_tag.setCast(get_cast_and_crew(data))
 
 
-def _set_watched_status(info_tag, data, mode):
-    tmdb_id = str(data.get("id") or data.get("tmdb_id", ""))
-    if not tmdb_id:
+def _get_valid_media_id(*raw_ids):
+    for raw_id in raw_ids:
+        if raw_id in (None, ""):
+            continue
+        return str(raw_id)
+    return ""
+
+
+def _coerce_int(value):
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _get_runtime_seconds(data):
+    runtime = data.get("runtime")
+    if runtime in (None, ""):
+        return None
+
+    try:
+        runtime_seconds = int(float(runtime) * 60)
+    except (TypeError, ValueError):
+        return None
+
+    if runtime_seconds <= 0:
+        return None
+
+    return runtime_seconds
+
+
+def _is_valid_trakt_progress(progress):
+    try:
+        progress = float(progress)
+    except (TypeError, ValueError):
+        return False
+
+    return 0 < progress <= 100
+
+
+def _set_trakt_progress_state(list_item, info_tag, data, progress):
+    if not _is_valid_trakt_progress(progress):
         return
 
-    is_watched = False
-    if mode == "movies":
-        is_watched = trakt_watched_cache.get_watched_status("movie", tmdb_id)
-    elif mode == "episode":
-        season = data.get("season")
-        episode = data.get("episode")
-        if season is not None and episode is not None:
-            is_watched = trakt_watched_cache.get_watched_status(
-                "episode", tmdb_id, int(season), int(episode)
-            )
+    progress = float(progress)
 
+    list_item.setProperty("PercentPlayed", str(progress))
+
+    total = _get_runtime_seconds(data)
+    if total is None:
+        return
+
+    current = total * progress / 100
+    info_tag.setResumePoint(current, total)
+
+
+def _set_trakt_ui_state(list_item, info_tag, data, mode):
+    normalized_mode = "movies" if mode in ("movie", "movies") else mode
+
+    if normalized_mode == "movies":
+        tmdb_id = _get_valid_media_id(data.get("tmdb_id"), data.get("id"))
+        if not tmdb_id:
+            return
+
+        is_watched = trakt_watched_cache.get_watched_status("movie", tmdb_id)
+        if is_watched:
+            info_tag.setPlaycount(1)
+            return
+
+        progress = trakt_watched_cache.get_progress("movie", tmdb_id)
+        _set_trakt_progress_state(list_item, info_tag, data, progress)
+        return
+
+    if normalized_mode != "episode":
+        return
+
+    tmdb_id = _get_valid_media_id(data.get("tmdb_id"))
+    season = _coerce_int(data.get("season"))
+    episode = _coerce_int(data.get("episode"))
+    if not tmdb_id or season is None or episode is None:
+        return
+
+    is_watched = trakt_watched_cache.get_watched_status(
+        "episode", tmdb_id, season, episode
+    )
     if is_watched:
         info_tag.setPlaycount(1)
+        return
+
+    progress = trakt_watched_cache.get_progress("episode", tmdb_id, season, episode)
+    _set_trakt_progress_state(list_item, info_tag, data, progress)
 
 
 def _set_show_info(info_tag, data, mode):
@@ -503,11 +577,17 @@ def _set_show_info(info_tag, data, mode):
 
     if mode == "tv" or mode == "season":
         info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
-        info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
+        season = _coerce_int(data.get("season", data.get("season_number", 0)))
+        if season is not None:
+            info_tag.setSeason(season)
     elif mode == "episode":
         info_tag.setTvShowTitle(data.get("title", data.get("name", "")))
-        info_tag.setSeason(int(data.get("season", data.get("season_number", 0))))
-        info_tag.setEpisode(int(data.get("episode", data.get("episode_number", 0))))
+        season = _coerce_int(data.get("season", data.get("season_number", 0)))
+        episode = _coerce_int(data.get("episode", data.get("episode_number", 0)))
+        if season is not None:
+            info_tag.setSeason(season)
+        if episode is not None:
+            info_tag.setEpisode(episode)
 
 
 def extract_genres(genres, media_type="movies"):
