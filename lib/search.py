@@ -98,22 +98,25 @@ def _process_search_results(
     other_results = results
 
     if get_setting("stremio_bypass_addons", True):
-        bypass_list_str = get_setting("stremio_bypass_addon_list", "")
-        bypass_addons = [
-            a.strip().lower() for a in bypass_list_str.split(",") if a.strip()
-        ]
+        bypass_list_str = str(get_setting("stremio_bypass_addon_list", "") or "")
+        bypass_addons = [value.strip() for value in bypass_list_str.split(",") if value.strip()]
+
+        def is_bypassed(result):
+            if result.addonKey and result.addonKey in bypass_addons:
+                return True
+
+            legacy_name = (result.addonName or result.indexer or "").lower()
+            return any(addon == legacy_name for addon in bypass_addons)
 
         bypassed_streams = [
             res
             for res in results
-            if res.indexer
-            and any(addon in res.indexer.lower() for addon in bypass_addons)
+            if is_bypassed(res)
         ]
         other_results = [
             res
             for res in results
-            if not res.indexer
-            or not any(addon in res.indexer.lower() for addon in bypass_addons)
+            if not is_bypassed(res)
         ]
 
     pre_results = []

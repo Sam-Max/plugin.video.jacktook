@@ -21,6 +21,7 @@ from lib.clients.stremio.constants import (
     decode_selected_ids,
 )
 from lib.clients.stremio.helpers import get_addons, ping_addons, get_addon_merge_key
+from lib.api.stremio.addon_manager import build_addon_instance_key
 import xbmcgui
 
 
@@ -59,7 +60,7 @@ def _build_addon_options(addons):
     for addon in addons:
         name = addon.manifest.name
         if name_counts[name] > 1:
-            label = f"{name} ({addon.manifest.id})"
+            label = addon.label()
         else:
             label = name
 
@@ -81,10 +82,12 @@ def _show_addon_multiselect(title, addons, selected_ids):
 
     dialog = xbmcgui.Dialog()
     selected_ids_list = decode_selected_ids(selected_ids)
+    addon_ids = Counter(addon.manifest.id for addon in addons)
     selected_addon_ids = [
         addons.index(addon)
         for addon in addons
-        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
+        if addon.key() in selected_ids_list
+        or (addon.manifest.id in selected_ids_list and addon_ids[addon.manifest.id] == 1)
     ]
 
     selected_indexes = dialog.multiselect(
@@ -323,7 +326,9 @@ def add_custom_stremio_addon(params):
         if not id_:
             dialog.ok("Custom Addon", "Manifest missing 'id' or 'name'.")
             return
-        addon_key = f"{id_}|{response.url}"
+        addon_key = build_addon_instance_key(
+            {"manifest": manifest, "transportUrl": response.url}
+        )
 
         resources = manifest.get("resources", [])
         # Normalize resources to list of dicts or strings
@@ -460,18 +465,15 @@ def remove_custom_stremio_addon(params=None):
     to_remove_keys = set()
     for idx in selected:
         addon = removable_addons[idx]
-        manifest = addon.get("manifest", {})
-        id_ = manifest.get("id") or manifest.get("name")
-        url = addon.get("transportUrl")
-        if id_ and url:
-            to_remove_keys.add(f"{id_}|{url}")
+        addon_key = build_addon_instance_key(addon)
+        if addon_key:
+            to_remove_keys.add(addon_key)
 
     # Remove from user_addons
     new_user_addons = [
         a
         for a in user_addons
-        if f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
-        not in to_remove_keys
+        if build_addon_instance_key(a) not in to_remove_keys
     ]
     cache.set(STREMIO_USER_ADDONS, new_user_addons, timedelta(days=365 * 20))
 
@@ -499,14 +501,15 @@ def stremio_bypass_addons_select(params=None):
     addons = _filter_excluded_addons(addons)
     addons = list(reversed(addons))
 
-    selected_list_str = get_setting("stremio_bypass_addon_list").strip()
-    selected_names_old = selected_list_str.split(",") if selected_list_str else []
+    selected_list_str = str(get_setting("stremio_bypass_addon_list", "") or "").strip()
+    selected_values = [value.strip() for value in selected_list_str.split(",") if value.strip()]
 
-    selected_ids = [
-        addon.key()
-        for addon in addons
-        if addon.manifest.name.lower() in selected_names_old
-    ]
+    selected_ids = []
+    for addon in addons:
+        if addon.key() in selected_values:
+            selected_ids.append(addon.key())
+        elif addon.manifest.name.lower() in selected_values:
+            selected_ids.append(addon.key())
 
     title = "Select Bypassed Addons"
     selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
@@ -514,9 +517,4 @@ def stremio_bypass_addons_select(params=None):
     if selected_addon_keys is None:
         return
 
-    selected_names = []
-    for addon in addons:
-        if addon.key() in selected_addon_keys:
-            selected_names.append(addon.manifest.name.lower())
-
-    set_setting("stremio_bypass_addon_list", ",".join(selected_names))
+    set_setting("stremio_bypass_addon_list", ",".join(selected_addon_keys))

@@ -19,6 +19,9 @@ def resolve_for_pack_selection(params):
         provider=data.get("provider"),
         indexer=data.get("indexer"),
         subindexer=data.get("subindexer"),
+        addonKey=data.get("addonKey", ""),
+        addonName=data.get("addonName", ""),
+        addonInstanceLabel=data.get("addonInstanceLabel", ""),
         quality=data.get("quality"),
         isPack=data.get("isPack", False),
         languages=data.get("languages", []),
@@ -59,6 +62,9 @@ def resolve_for_subtitles(params):
         provider=data.get("provider"),
         indexer=data.get("indexer"),
         subindexer=data.get("subindexer"),
+        addonKey=data.get("addonKey", ""),
+        addonName=data.get("addonName", ""),
+        addonInstanceLabel=data.get("addonInstanceLabel", ""),
         quality=data.get("quality"),
         isPack=data.get("isPack"),
         languages=data.get("languages"),
@@ -83,6 +89,5 @@ def resolve_for_subtitles(params):
     )
     resolver_window.doModal()
     del resolver_window
-
 
 

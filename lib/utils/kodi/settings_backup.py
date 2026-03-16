@@ -14,6 +14,7 @@ from lib.clients.stremio.constants import (
     decode_selected_ids,
     encode_selected_ids,
 )
+from lib.api.stremio.addon_manager import build_addon_instance_key
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
@@ -140,12 +141,7 @@ def _setting_clear_value(setting_id, schema_entry):
 
 
 def _custom_addon_key(addon):
-    manifest = addon.get("manifest") or {}
-    addon_id = manifest.get("id") or manifest.get("name")
-    transport_url = addon.get("transportUrl")
-    if not addon_id or not transport_url:
-        return None
-    return f"{addon_id}|{transport_url}"
+    return build_addon_instance_key(addon) or None
 
 
 def _get_custom_stremio_addons(user_addons=None):

@@ -102,18 +102,18 @@ def test_build_backup_payload_includes_custom_stremio_addons(monkeypatch, tmp_pa
         "transportName": "stremio-account",
         "transportUrl": "https://account.example/manifest.json",
     }
-    custom_key = "custom.one|https://example.com/manifest.json"
+    custom_key = "custom.one|https://example.com"
     fake_cache = FakeCache(
         {
             settings_backup.STREMIO_USER_ADDONS: [custom_addon, another_addon],
             settings_backup.STREMIO_ADDONS_KEY: settings_backup.encode_selected_ids(
-                [custom_key, "builtin.one|https://account.example/manifest.json"]
+                [custom_key, "builtin.one|https://account.example"]
             ),
             settings_backup.STREMIO_ADDONS_CATALOGS_KEY: settings_backup.encode_selected_ids(
                 [custom_key]
             ),
             settings_backup.STREMIO_TV_ADDONS_KEY: settings_backup.encode_selected_ids(
-                ["builtin.one|https://account.example/manifest.json"]
+                ["builtin.one|https://account.example"]
             ),
         }
     )
@@ -175,9 +175,9 @@ def test_apply_backup_payload_replaces_custom_stremio_addons(monkeypatch, tmp_pa
         "transportName": "stremio-account",
         "transportUrl": "https://account.example/manifest.json",
     }
-    old_key = "custom.old|https://old.example/manifest.json"
-    new_key = "custom.new|https://new.example/manifest.json"
-    account_key = "account.one|https://account.example/manifest.json"
+    old_key = "custom.old|https://old.example"
+    new_key = "custom.new|https://new.example"
+    account_key = "account.one|https://account.example"
     fake_cache = FakeCache(
         {
             settings_backup.STREMIO_USER_ADDONS: [old_custom, account_addon],
@@ -268,8 +268,8 @@ def test_apply_backup_payload_clears_scrubbed_fields_and_custom_addons(
         "transportName": "stremio-account",
         "transportUrl": "https://account.example/manifest.json",
     }
-    old_key = "custom.old|https://old.example/manifest.json"
-    account_key = "account.one|https://account.example/manifest.json"
+    old_key = "custom.old|https://old.example"
+    account_key = "account.one|https://account.example"
     fake_cache = FakeCache(
         {
             settings_backup.STREMIO_USER_ADDONS: [old_custom, account_addon],
@@ -349,8 +349,8 @@ def test_reset_all_settings_restores_defaults_and_clears_custom_addons(
         "transportName": "stremio-account",
         "transportUrl": "https://account.example/manifest.json",
     }
-    old_key = "custom.old|https://old.example/manifest.json"
-    account_key = "account.one|https://account.example/manifest.json"
+    old_key = "custom.old|https://old.example"
+    account_key = "account.one|https://account.example"
     fake_cache = FakeCache(
         {
             settings_backup.STREMIO_USER_ADDONS: [old_custom, account_addon],

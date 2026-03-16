@@ -1,12 +1,15 @@
 from unittest.mock import MagicMock
 
+from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Meta, MetaPreview
 from lib.clients.stremio import helpers
 from lib.clients.stremio.catalog_menus import CATALOG_PAGE_SIZE
 from lib.clients.stremio import catalog_menus
+from lib.domain.torrent import TorrentStream
+from lib import search
 
 
-def test_merge_addons_lists_dedupes_account_and_custom_by_manifest_id():
+def test_merge_addons_lists_keeps_same_manifest_id_with_different_urls():
     custom_addon = {
         "manifest": {"id": "org.example.addon", "name": "Example"},
         "transportUrl": "https://example.com/custom/manifest.json",
@@ -20,7 +23,87 @@ def test_merge_addons_lists_dedupes_account_and_custom_by_manifest_id():
 
     merged = helpers.merge_addons_lists([custom_addon], [account_addon])
 
-    assert merged == [custom_addon]
+    assert merged == [custom_addon, account_addon]
+
+
+def test_get_selected_stream_addons_skips_ambiguous_legacy_ids(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Example",
+                    "resources": [{"name": "stream", "types": ["movie"], "idPrefixes": ["tt"]}],
+                    "types": ["movie"],
+                },
+                "transportUrl": "https://example.com/one/manifest.json",
+                "transportName": "custom",
+            },
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Example",
+                    "resources": [{"name": "stream", "types": ["movie"], "idPrefixes": ["tt"]}],
+                    "types": ["movie"],
+                },
+                "transportUrl": "https://example.com/two/manifest.json",
+                "transportName": "stremio-account",
+            },
+        ]
+    )
+
+    fake_cache = MagicMock()
+    fake_cache.get.return_value = "org.example.addon"
+
+    monkeypatch.setattr(helpers, "get_addons", lambda: addon_manager)
+    monkeypatch.setattr(helpers, "cache", fake_cache)
+
+    selected = helpers.get_selected_stream_addons()
+
+    assert selected == []
+
+
+def test_process_search_results_bypasses_exact_addon_instance(monkeypatch):
+    bypass_result = TorrentStream(
+        title="Bypassed",
+        indexer="Torrentio",
+        addonKey="org.example.addon|https://example.com/one",
+        addonName="Torrentio",
+    )
+    native_result = TorrentStream(
+        title="Native",
+        indexer="Torrentio",
+        addonKey="org.example.addon|https://example.com/two",
+        addonName="Torrentio",
+    )
+
+    processed_batches = []
+
+    monkeypatch.setattr(search, "get_setting", lambda key, default=None: {
+        "stremio_bypass_addons": True,
+        "stremio_bypass_addon_list": "org.example.addon|https://example.com/one",
+    }.get(key, default))
+    monkeypatch.setattr(search, "pre_process_results", lambda results, *args, **kwargs: results)
+    monkeypatch.setattr(
+        search,
+        "process_results",
+        lambda results, *args, **kwargs: processed_batches.append(results) or results,
+    )
+
+    results = search._process_search_results(
+        [bypass_result, native_result],
+        "movies",
+        "",
+        1,
+        1,
+        "",
+        "query",
+        "movies",
+        False,
+    )
+
+    assert results == [bypass_result, native_result]
+    assert processed_batches == [[native_result]]
 
 
 def test_get_addons_uses_cached_account_addons_before_settings_refresh(monkeypatch):

@@ -1,5 +1,82 @@
 import json
 from typing import List, Optional, Any
+from urllib.parse import urlsplit, urlunsplit
+
+
+def normalize_transport_url(url: str) -> str:
+    if not url:
+        return ""
+
+    normalized_url = str(url).strip()
+    if normalized_url.startswith("stremio://"):
+        normalized_url = normalized_url.replace("stremio://", "https://", 1)
+
+    parts = urlsplit(normalized_url)
+    path = parts.path.rstrip("/")
+    if path.endswith("/manifest.json"):
+        path = path[: -len("/manifest.json")]
+
+    return urlunsplit(
+        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
+    )
+
+
+def build_addon_base_url(transport_url: str) -> str:
+    return normalize_transport_url(transport_url)
+
+
+def build_addon_instance_key(addon_like: Any) -> str:
+    manifest = {}
+    addon_id = ""
+    transport_url = ""
+
+    if isinstance(addon_like, Addon):
+        addon_id = addon_like.manifest.id or ""
+        transport_url = addon_like.transport_url or ""
+    elif isinstance(addon_like, dict):
+        manifest = addon_like.get("manifest") or {}
+        addon_id = (
+            manifest.get("id")
+            or addon_like.get("id")
+            or addon_like.get("name")
+            or ""
+        )
+        transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
+
+    normalized_url = normalize_transport_url(transport_url)
+    if addon_id and normalized_url:
+        return f"{addon_id}|{normalized_url}"
+    return addon_id or normalized_url
+
+
+def build_addon_instance_label(addon_like: Any) -> str:
+    if isinstance(addon_like, Addon):
+        name = addon_like.manifest.name or addon_like.manifest.id or "Unknown Addon"
+        transport_url = addon_like.transport_url
+        transport_name = addon_like.transport_name
+    else:
+        manifest = addon_like.get("manifest") or {}
+        name = (
+            manifest.get("name")
+            or manifest.get("id")
+            or addon_like.get("name")
+            or "Unknown Addon"
+        )
+        transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
+        transport_name = addon_like.get("transportName") or addon_like.get("transport_name") or ""
+
+    normalized_url = normalize_transport_url(transport_url)
+    parts = urlsplit(normalized_url)
+    host = parts.netloc or "local"
+
+    if transport_name == "custom":
+        origin = "custom"
+    elif transport_name:
+        origin = "account"
+    else:
+        origin = "addon"
+
+    return f"{name} ({host}, {origin})"
 
 
 class Catalog:
@@ -123,10 +200,13 @@ class Addon:
         self.manifest = manifest
 
     def url(self):
-        return "/".join(self.transport_url.split("/")[:-1])
+        return build_addon_base_url(self.transport_url)
 
     def key(self):
-        return f"{self.manifest.id}|{self.transport_url}"
+        return build_addon_instance_key(self)
+
+    def label(self):
+        return build_addon_instance_label(self)
 
     def isSupported(self, resource_name: str, type: str, id_prefix: str) -> bool:
         norm_prefix = id_prefix.rstrip(":")

@@ -1,4 +1,4 @@
-from lib.api.stremio.addon_manager import Addon
+from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Stream, Meta, MetaPreview
 from lib.clients.base import BaseClient, TorrentStream
 
@@ -111,6 +111,7 @@ class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon) -> None:
         super().__init__(None, None)
         self.addon = addon
+        self.instance_label = build_addon_instance_label(addon)
 
     def search(
         self,
@@ -198,6 +199,9 @@ class StremioAddonClient(BaseClient):
                     type=(IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT),
                     indexer=self.addon.manifest.name.split(" ")[0],
                     subindexer=stream.get_sub_indexer(self.addon),
+                    addonKey=self.addon.key(),
+                    addonName=self.addon.manifest.name,
+                    addonInstanceLabel=self.instance_label,
                     guid=info_hash_to_magnet(info_hash) if info_hash else "",
                     infoHash=info_hash,
                     size=stream.get_parsed_size()

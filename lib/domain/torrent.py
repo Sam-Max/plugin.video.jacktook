@@ -10,6 +10,9 @@ class TorrentStream:
     debridType: str = ""
     indexer: str = ""
     subindexer: str = ""
+    addonKey: str = ""
+    addonName: str = ""
+    addonInstanceLabel: str = ""
     guid: str = ""
     infoHash: str = ""
 
@@ -33,4 +36,3 @@ class TorrentStream:
     # Flags
     isPack: bool = False
     isCached: bool = False
-

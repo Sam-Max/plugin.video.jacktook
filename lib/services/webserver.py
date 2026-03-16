@@ -27,6 +27,7 @@ from lib.clients.stremio.constants import (
     encode_selected_ids,
     decode_selected_ids,
 )
+from lib.api.stremio.addon_manager import build_addon_instance_key
 
 _CACHE_EXPIRY = timedelta(days=365 * 20)
 _WEB_DIR = os.path.join(
@@ -177,14 +178,14 @@ def _sync_add_addon(url):
         kodilog(f"[WebServer] Failed to add addon: {error}")
         return None, f"Failed to fetch manifest: {error or 'unknown error'}"
 
-    id_ = manifest.get("id") or manifest.get("name")
-    addon_key = f"{id_}|{resp.url}"
+    addon_key = build_addon_instance_key(
+        {"manifest": manifest, "transportUrl": resp.url}
+    )
 
     # Check duplicate
     user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
     if any(
-        f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
-        == addon_key
+        build_addon_instance_key(a) == addon_key
         for a in user_addons
     ):
         return None, "This addon is already added."
@@ -216,8 +217,7 @@ def _sync_remove_addon(addon_id):
     new_addons = [
         a
         for a in user_addons
-        if f"{a.get('manifest', {}).get('id') or a.get('manifest', {}).get('name')}|{a.get('transportUrl')}"
-        != addon_id
+        if build_addon_instance_key(a) != addon_id
     ]
     cache.set(STREMIO_USER_ADDONS, new_addons, _CACHE_EXPIRY)
 
@@ -370,9 +370,8 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
         result = []
         for a in addons:
             manifest = a.get("manifest", {})
-            id_ = manifest.get("id") or manifest.get("name") or ""
             transport_url = a.get("transportUrl", "")
-            addon_key = f"{id_}|{transport_url}"
+            addon_key = build_addon_instance_key(a)
             caps = _addon_capabilities(manifest)
 
             logo = manifest.get("logo", "")
@@ -415,9 +414,8 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
             self._send_json({"error": error}, 400)
             return
         manifest = addon.get("manifest", {})
-        id_ = manifest.get("id") or manifest.get("name") or ""
         transport_url = addon.get("transportUrl", "")
-        addon_key = f"{id_}|{transport_url}"
+        addon_key = build_addon_instance_key(addon)
         caps = _addon_capabilities(manifest)
 
         logo = manifest.get("logo", "")

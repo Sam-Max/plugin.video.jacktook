@@ -248,8 +248,9 @@ class SourceSelect(BaseWindow):
                 provider_name = source.indexer or source.type
             else:
                 provider_name = source.debridType or source.type
+            indexer_label = source.addonInstanceLabel or source.indexer
             menu_item.setProperty("type", get_provider_color(provider_name))
-            menu_item.setProperty("indexer", get_random_color(source.indexer))
+            menu_item.setProperty("indexer", get_random_color(indexer_label))
             menu_item.setProperty("guid", source.guid)
             menu_item.setProperty("infoHash", source.infoHash)
             menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))

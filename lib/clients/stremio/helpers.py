@@ -1,8 +1,12 @@
 from typing import List, Callable, Optional
 import requests
 import concurrent.futures
-from urllib.parse import urlsplit, urlunsplit
-from lib.api.stremio.addon_manager import Addon, AddonManager
+from lib.api.stremio.addon_manager import (
+    Addon,
+    AddonManager,
+    build_addon_instance_key,
+    normalize_transport_url,
+)
 from lib.api.stremio.api_client import Stremio
 from lib.db.cached import cache
 from lib.utils.kodi.utils import get_setting, kodilog
@@ -13,38 +17,8 @@ from lib.clients.stremio.constants import (
     STREMIO_USER_ADDONS,
     decode_selected_ids,
 )
-
-
-def normalize_transport_url(url):
-    if not url:
-        return ""
-
-    normalized_url = str(url).strip()
-    if normalized_url.startswith("stremio://"):
-        normalized_url = normalized_url.replace("stremio://", "https://", 1)
-
-    parts = urlsplit(normalized_url)
-    path = parts.path.rstrip("/")
-    if path.endswith("/manifest.json"):
-        path = path[: -len("/manifest.json")]
-
-    return urlunsplit(
-        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
-    )
-
-
 def get_addon_merge_key(addon):
-    manifest = addon.get("manifest", {}) if isinstance(addon, dict) else {}
-    addon_id = (manifest.get("id") or addon.get("id") or "").strip().lower()
-    normalized_url = normalize_transport_url(addon.get("transportUrl"))
-
-    if addon_id:
-        return addon_id
-    if normalized_url:
-        return normalized_url
-
-    name = (manifest.get("name") or addon.get("name") or "").strip().lower()
-    return name
+    return build_addon_instance_key(addon)
 
 
 def merge_addons_lists(*lists):
@@ -62,6 +36,41 @@ def merge_addons_lists(*lists):
                 seen.add(key)
                 merged.append(addon)
     return merged
+
+
+def _resolve_selected_addons(catalog: AddonManager, selected_ids_list: List[str]) -> List[Addon]:
+    if not selected_ids_list:
+        return []
+
+    addons_by_key = {addon.key(): addon for addon in catalog.addons}
+    addons_by_id = {}
+    for addon in catalog.addons:
+        addons_by_id.setdefault(addon.manifest.id, []).append(addon)
+
+    selected_addons = []
+    seen_keys = set()
+
+    for selected_id in selected_ids_list:
+        addon = addons_by_key.get(selected_id)
+        if addon:
+            if addon.key() not in seen_keys:
+                seen_keys.add(addon.key())
+                selected_addons.append(addon)
+            continue
+
+        legacy_matches = addons_by_id.get(selected_id, [])
+        if len(legacy_matches) == 1:
+            addon = legacy_matches[0]
+            if addon.key() not in seen_keys:
+                seen_keys.add(addon.key())
+                selected_addons.append(addon)
+        elif len(legacy_matches) > 1:
+            kodilog(
+                "Ambiguous legacy Stremio addon selection for id "
+                f"'{selected_id}', please reselect addons."
+            )
+
+    return selected_addons
 
 
 def get_addons():
@@ -95,37 +104,19 @@ def get_addons():
 def get_selected_stream_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids_list = decode_selected_ids(cache.get(STREMIO_ADDONS_KEY))
-    if not selected_ids_list:
-        return []
-    return [
-        addon
-        for addon in catalog.addons
-        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
-    ]
+    return _resolve_selected_addons(catalog, selected_ids_list)
 
 
 def get_selected_catalogs_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids_list = decode_selected_ids(cache.get(STREMIO_ADDONS_CATALOGS_KEY))
-    if not selected_ids_list:
-        return []
-    return [
-        addon
-        for addon in catalog.addons
-        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
-    ]
+    return _resolve_selected_addons(catalog, selected_ids_list)
 
 
 def get_selected_tv_addons() -> List[Addon]:
     catalog = get_addons()
     selected_ids_list = decode_selected_ids(cache.get(STREMIO_TV_ADDONS_KEY))
-    if not selected_ids_list:
-        return []
-    return [
-        addon
-        for addon in catalog.addons
-        if addon.key() in selected_ids_list or addon.manifest.id in selected_ids_list
-    ]
+    return _resolve_selected_addons(catalog, selected_ids_list)
 
 
 def get_addon_by_base_url(addon_url):
