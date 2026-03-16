@@ -51,36 +51,6 @@
                         </control>
                     </setting>
                 </group>
-                <group id="backup" label="90258">
-                    <setting id="settings_backup_strip_sensitive" type="boolean" label="90263" help="90264">
-                        <default>true</default>
-                        <control type="toggle" />
-                    </setting>
-                    <setting id="export_settings_backup" type="action" label="90259" help="90260">
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=export_settings_backup)</data>
-                        <control type="button" format="action">
-                            <close>false</close>
-                        </control>
-                    </setting>
-                    <setting id="restore_settings_backup" type="action" label="90261" help="90262">
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=restore_settings_backup)</data>
-                        <control type="button" format="action">
-                            <close>true</close>
-                        </control>
-                    </setting>
-                    <setting id="reset_all_settings" type="action" label="90278" help="90284">
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=reset_all_settings)</data>
-                        <control type="button" format="action">
-                            <close>true</close>
-                        </control>
-                    </setting>
-                    <setting id="factory_reset" type="action" label="90285" help="90291">
-                        <data>RunPlugin(plugin://plugin.video.jacktook/?action=factory_reset)</data>
-                        <control type="button" format="action">
-                            <close>true</close>
-                        </control>
-                    </setting>
-                </group>
                 <group id="cache" label="30723">
                     <setting id="cache_enabled" type="boolean" label="30721" help="30809"> 
                         <default>true</default>
@@ -108,28 +78,6 @@
                         <dependencies>
                             <dependency type="visible">
                                 <condition operator="is" setting="cache_enabled">true</condition>
-                            </dependency>
-                        </dependencies>
-                    </setting>
-                </group>
-                <group id="calendar" label="30896">
-                    <setting id="use_broadcast_adjustment" type="boolean" label="30897" help="30898">
-                        <default>false</default>
-                        <control type="toggle" />
-                    </setting>
-                    <setting id="broadcast_offset" type="integer" label="30899" help="30900">
-                        <default>0</default>
-                        <constraints>
-                            <minimum>-24</minimum>
-                            <maximum>24</maximum>
-                            <step>1</step>
-                        </constraints>
-                        <control type="slider" format="integer">
-                            <popup>false</popup>
-                        </control>
-                        <dependencies>
-                            <dependency type="visible">
-                                <condition operator="is" setting="use_broadcast_adjustment">true</condition>
                             </dependency>
                         </dependencies>
                     </setting>
@@ -985,12 +933,12 @@
                     <control type="list" format="string" />
                 </setting>
             </group>
-            <group id="skip_intro" label="90155">
-                <setting id="skip_intro_enabled" type="boolean" label="90156" help="90157">
+            <group id="skip_intro" label="90164">
+                <setting id="skip_intro_enabled" type="boolean" label="90165" help="90166">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="skip_intro_auto" type="boolean" label="90158" help="90159">
+                <setting id="skip_intro_auto" type="boolean" label="90167" help="90168">
                     <default>false</default>
                     <control type="toggle" />
                     <dependencies>
@@ -1002,7 +950,7 @@
             </group>
         </category>
         <category id="filtering_category" label="30861">
-            <group id="filtering_stremio" label="90150">
+            <group id="filtering_stremio" label="90155">
                 <setting id="stremio_bypass_addons" type="boolean" label="90211" help="90212">
                     <default>false</default>
                     <control type="toggle" />
@@ -1385,6 +1333,28 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="calendar" label="30896">
+                <setting id="use_broadcast_adjustment" type="boolean" label="30897" help="30898">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="broadcast_offset" type="integer" label="30899" help="30900">
+                    <default>0</default>
+                    <constraints>
+                        <minimum>-24</minimum>
+                        <maximum>24</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="use_broadcast_adjustment">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="mdblist_group" label="90077">
                 <setting id="mdblist_enabled" type="boolean" label="30786" help="">
                     <default>false</default>
@@ -1599,6 +1569,38 @@
                 <setting id="show_telegram_menu" type="boolean" label="30805" help="30816">
                     <default>false</default>
                     <control type="toggle" />
+                </setting>
+            </group>
+        </category>
+        <category id="backup_category" label="90258">
+            <group id="backup" label="90258">
+                <setting id="settings_backup_strip_sensitive" type="boolean" label="90263" help="90264">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="export_settings_backup" type="action" label="90259" help="90260">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=export_settings_backup)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
+                <setting id="restore_settings_backup" type="action" label="90261" help="90262">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=restore_settings_backup)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
+                <setting id="reset_all_settings" type="action" label="90278" help="90284">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=reset_all_settings)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
+                <setting id="factory_reset" type="action" label="90285" help="90291">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=factory_reset)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
                 </setting>
             </group>
         </category>

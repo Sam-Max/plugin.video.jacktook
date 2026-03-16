@@ -1344,7 +1344,7 @@ msgid "Sources"
 msgstr ""
 
 msgctxt "#30865"
-msgid "Filters and Sorting"
+msgid "General Filters"
 msgstr ""
 
 msgctxt "#30866"
@@ -1396,7 +1396,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Automatically select subtitle when playing"
+msgid "Auto select subtitle when playing"
 msgstr ""
 
 msgctxt "#30879"
@@ -1904,7 +1904,7 @@ msgid "All Debrid Configuration"
 msgstr ""
 
 msgctxt "#90122"
-msgid "Automatically download subtitles"
+msgid "Auto download subtitles"
 msgstr ""
 
 msgctxt "#90123"
@@ -2059,6 +2059,10 @@ msgctxt "#90154"
 msgid "Trending Recent"
 msgstr ""
 
+msgctxt "#90155"
+msgid "Stremio: Filters"
+msgstr "Stremio: Filters"
+
 msgctxt "#32300"
 msgid "Filter by Quality"
 msgstr ""
@@ -2095,23 +2099,23 @@ msgctxt "#30931"
 msgid "Check availability of addons and show only reachable ones"
 msgstr "Check availability of addons and show only reachable ones"
 
-msgctxt "#90155"
+msgctxt "#90164"
 msgid "Skip Intro / Recap"
 msgstr "Skip Intro / Recap"
 
-msgctxt "#90156"
+msgctxt "#90165"
 msgid "Enable Skip Intro"
 msgstr "Enable Skip Intro"
 
-msgctxt "#90157"
+msgctxt "#90166"
 msgid "Detect intros and recaps using IntroDB and offer to skip them during playback"
 msgstr "Detect intros and recaps using IntroDB and offer to skip them during playback"
 
-msgctxt "#90158"
+msgctxt "#90167"
 msgid "Auto-skip"
 msgstr "Auto-skip"
 
-msgctxt "#90159"
+msgctxt "#90168"
 msgid "Automatically skip intros and recaps without showing the button"
 msgstr "Automatically skip intros and recaps without showing the button"
 
@@ -2384,16 +2388,16 @@ msgid "Backup"
 msgstr "Backup"
 
 msgctxt "#90259"
-msgid "Export Settings Backup"
-msgstr "Export Settings Backup"
+msgid "Export Backup"
+msgstr "Export Backup"
 
 msgctxt "#90260"
 msgid "Export addon settings and custom Stremio addons to a JSON backup file."
 msgstr "Export addon settings and custom Stremio addons to a JSON backup file."
 
 msgctxt "#90261"
-msgid "Restore Settings Backup"
-msgstr "Restore Settings Backup"
+msgid "Restore Backup"
+msgstr "Restore Backup"
 
 msgctxt "#90262"
 msgid "Restore addon settings and replace custom Stremio addons from a JSON backup file."
@@ -2448,8 +2452,8 @@ msgid "Unable to restore settings backup."
 msgstr "Unable to restore settings backup."
 
 msgctxt "#90275"
-msgid "Restore Settings Backup"
-msgstr "Restore Settings Backup"
+msgid "Restore Backup"
+msgstr "Restore Backup"
 
 msgctxt "#90276"
 msgid "This will overwrite your current addon settings and replace your custom Stremio addons with the backup. Continue?"
@@ -2602,3 +2606,27 @@ msgstr "Clear Debrid Cache"
 msgctxt "#90345"
 msgid "Clear MDBList Cache"
 msgstr "Clear MDBList Cache"
+
+msgctxt "#90346"
+msgid "Restore backup from"
+msgstr "Restore backup from"
+
+msgctxt "#90347"
+msgid "File"
+msgstr "File"
+
+msgctxt "#90348"
+msgid "URL"
+msgstr "URL"
+
+msgctxt "#90349"
+msgid "Enter backup URL"
+msgstr "Enter backup URL"
+
+msgctxt "#90350"
+msgid "No backup URL provided."
+msgstr "No backup URL provided."
+
+msgctxt "#90351"
+msgid "Unable to download settings backup."
+msgstr "Unable to download settings backup."

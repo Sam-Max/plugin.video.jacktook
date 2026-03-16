@@ -436,7 +436,7 @@ msgid "Indicates if Real-Debrid account is linked."
 msgstr "Indica se a conta Real-Debrid está vinculada."
 
 msgctxt "#30838"
-msgid "Automatically play next media item when current playback ends."
+msgid "Auto play next media item when current playback ends."
 msgstr "Reproduzir automaticamente o próximo item ao terminar a reprodução atual."
 
 msgctxt "#30839"
@@ -544,7 +544,7 @@ msgid "Sources"
 msgstr "Pesquisar"
 
 msgctxt "#30865"
-msgid "Filters and Sorting"
+msgid "General Filters"
 msgstr "Filtro e ordem dos resultados"
 
 msgctxt "#30866"
@@ -693,6 +693,10 @@ msgctxt "#90153"
 msgid "Stremio: Torrentio"
 msgstr "Stremio: Torrentio"
 
+msgctxt "#90155"
+msgid "Stremio: Filters"
+msgstr "Stremio: Filters"
+
 msgctxt "#90200"
 msgid "Continue Watching"
 msgstr "Continuar a Ver"
@@ -782,7 +786,7 @@ msgid "Backup"
 msgstr "Copia de Seguranca das Definicoes"
 
 msgctxt "#90259"
-msgid "Export Settings Backup"
+msgid "Export Backup"
 msgstr "Exportar Copia de Seguranca"
 
 msgctxt "#90260"
@@ -790,7 +794,7 @@ msgid "Export addon settings and custom Stremio addons to a JSON backup file."
 msgstr "Exporta as definicoes do addon e os addons personalizados do Stremio para um ficheiro JSON de copia de seguranca."
 
 msgctxt "#90261"
-msgid "Restore Settings Backup"
+msgid "Restore Backup"
 msgstr "Restaurar Copia de Seguranca"
 
 msgctxt "#90262"
@@ -846,7 +850,7 @@ msgid "Unable to restore settings backup."
 msgstr "Nao foi possivel restaurar a copia de seguranca."
 
 msgctxt "#90275"
-msgid "Restore Settings Backup"
+msgid "Restore Backup"
 msgstr "Restaurar Copia de Seguranca"
 
 msgctxt "#90276"
@@ -1040,3 +1044,27 @@ msgstr "Limpar cache de Debrid"
 msgctxt "#90345"
 msgid "Clear MDBList Cache"
 msgstr "Limpar cache do MDBList"
+
+msgctxt "#90346"
+msgid "Restore backup from"
+msgstr "Restaurar copia de seguranca de"
+
+msgctxt "#90347"
+msgid "File"
+msgstr "Arquivo"
+
+msgctxt "#90348"
+msgid "URL"
+msgstr "URL"
+
+msgctxt "#90349"
+msgid "Enter backup URL"
+msgstr "Introduza o URL da copia de seguranca"
+
+msgctxt "#90350"
+msgid "No backup URL provided."
+msgstr "Nao foi fornecido nenhum URL de copia de seguranca."
+
+msgctxt "#90351"
+msgid "Unable to download settings backup."
+msgstr "Nao foi possivel transferir a copia de seguranca."

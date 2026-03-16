@@ -1207,7 +1207,7 @@ msgid "Indicates if Real-Debrid account is linked."
 msgstr "Indica si la cuenta Real-Debrid está vinculada."
 
 msgctxt "#30838"
-msgid "Automatically play next media item when current playback ends."
+msgid "Auto play next media item when current playback ends."
 msgstr "Reproducir automáticamente el siguiente elemento al terminar la reproducción actual."
 
 msgctxt "#30839"
@@ -1312,8 +1312,8 @@ msgid "Sources"
 msgstr "Fuentes"
 
 msgctxt "#30865"
-msgid "Filters and Sorting"
-msgstr "Filtros y orden de resultados"
+msgid "General Filters"
+msgstr "Filtros Generales"
 
 msgctxt "#30866"
 msgid "Sign in to your Stremio account to access add-ons and personalized features."
@@ -1364,8 +1364,8 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr "Habilitar Trakt.tv Scrobbling"
 
 msgctxt "#30878"
-msgid "Automatically select subtitle when playing"
-msgstr "Seleccionar automaticamente subtitulo al reproducir"
+msgid "Auto select subtitle when playing"
+msgstr "Auto Seleccionar subtitulo al reproducir"
 
 msgctxt "#30879"
 msgid "Auto-play quality"
@@ -1871,8 +1871,8 @@ msgid "All Debrid Configuration"
 msgstr "Configuracion de AllDebrid"
 
 msgctxt "#90122"
-msgid "Automatically download subtitles"
-msgstr "Descargar subtitulos de manera automática"
+msgid "Auto download subtitles"
+msgstr "Auto Descargar subtitulos"
 
 msgctxt "#90123"
 msgid "Stremio Timeout"
@@ -2006,6 +2006,10 @@ msgctxt "#90154"
 msgid "Trending Recent"
 msgstr "Tendencias Recientes"
 
+msgctxt "#90155"
+msgid "Stremio: Filters"
+msgstr "Stremio: Filtros"
+
 msgctxt "#32300"
 msgid "Filter by Quality"
 msgstr "Filtrar por Calidad"
@@ -2042,24 +2046,24 @@ msgctxt "#30931"
 msgid "Check availability of addons and show only reachable ones"
 msgstr "Comprueba la disponibilidad de los addons y muestra solo los accesibles"
 
-msgctxt "#90155"
+msgctxt "#90164"
 msgid "Skip Intro / Recap"
 msgstr "Saltar Intro / Recap"
 
-msgctxt "#90156"
+msgctxt "#90165"
 msgid "Enable Skip Intro"
 msgstr "Habilitar Skip Intro"
 
-msgctxt "#90157"
+msgctxt "#90166"
 msgid "Detect intros and recaps using IntroDB and offer to skip them during playback"
 msgstr "Detectar intros y recaps usando IntroDB y ofrecer la opción de saltarlos durante la reproducción"
 
-msgctxt "#90158"
+msgctxt "#90167"
 msgid "Auto-skip"
 msgstr "Auto-saltar"
 
-msgctxt "#90159"
-msgid "Automatically skip intros and recaps without showing the button"
+msgctxt "#90168"
+msgid "Auto skip intros and recaps without showing the button"
 msgstr "Saltar automáticamente intros y recaps sin mostrar el botón"
 
 msgctxt "#90160"
@@ -2323,7 +2327,7 @@ msgid "Backup"
 msgstr "Copia de seguridad de configuracion"
 
 msgctxt "#90259"
-msgid "Export Settings Backup"
+msgid "Export Backup"
 msgstr "Exportar copia de seguridad"
 
 msgctxt "#90260"
@@ -2331,7 +2335,7 @@ msgid "Export addon settings and custom Stremio addons to a JSON backup file."
 msgstr "Exporta la configuracion del addon y los addons personalizados de Stremio a un archivo JSON de copia de seguridad."
 
 msgctxt "#90261"
-msgid "Restore Settings Backup"
+msgid "Restore Backup"
 msgstr "Restaurar copia de seguridad"
 
 msgctxt "#90262"
@@ -2387,7 +2391,7 @@ msgid "Unable to restore settings backup."
 msgstr "No se pudo restaurar la copia de seguridad."
 
 msgctxt "#90275"
-msgid "Restore Settings Backup"
+msgid "Restore Backup"
 msgstr "Restaurar copia de seguridad"
 
 msgctxt "#90276"
@@ -2537,3 +2541,27 @@ msgstr "Limpiar cache de Debrid"
 msgctxt "#90345"
 msgid "Clear MDBList Cache"
 msgstr "Limpiar cache de MDBList"
+
+msgctxt "#90346"
+msgid "Restore backup from"
+msgstr "Restaurar copia desde"
+
+msgctxt "#90347"
+msgid "File"
+msgstr "Archivo"
+
+msgctxt "#90348"
+msgid "URL"
+msgstr "URL"
+
+msgctxt "#90349"
+msgid "Enter backup URL"
+msgstr "Introduce la URL de la copia"
+
+msgctxt "#90350"
+msgid "No backup URL provided."
+msgstr "No se proporciono ninguna URL de copia."
+
+msgctxt "#90351"
+msgid "Unable to download settings backup."
+msgstr "No se pudo descargar la copia de seguridad."
