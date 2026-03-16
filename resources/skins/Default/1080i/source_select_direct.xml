@@ -247,7 +247,7 @@
 
 							<!-- Indexer -->
 							<control type="label">
-								<width>600</width>
+								<width>330</width>
 								<height>20</height>
 								<font>font12</font>
 								<left>200</left>
@@ -410,7 +410,7 @@
 
 							<!-- Indexer -->
 							<control type="label">
-								<width>600</width>
+								<width>330</width>
 								<height>20</height>
 								<font>font12</font>
 								<left>200</left>
@@ -574,7 +574,7 @@
 
 							<!-- Indexer -->
 							<control type="label">
-								<width>600</width>
+								<width>330</width>
 								<height>20</height>
 								<font>font12</font>
 								<left>200</left>
