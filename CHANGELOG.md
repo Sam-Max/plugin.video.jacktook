@@ -1,3 +1,14 @@
+## 1.5.2
+- Stremio: Distinguish addon instances by transport URL to support multiple accounts/configurations of the same addon with different flows.
+- Stremio: Support bypassing specific addon instances from Jacktook's filtering.
+- Settings: Reorganize backup options and add URL restore
+
+Spanish:
+- Stremio: Diferenciación de instancias de addons por URL de transporte para soportar múltiples cuentas/configuraciones del mismo addon con diferentes flujos.
+- Stremio: Soporte para omitir el filtrado de Jacktook en instancias específicas de addons.
+- Ajustes: Reorganización de las opciones de backup y añadido restauración por URL.
+
+
 ## 1.5.1
 - Stremio: Limit imported addons to account and custom sources and improved large catalog handling.
 - Settings: Simplify Stremio-related visibility rules, remove the old Torrentio settings group, and set safer disabled-by-default values for Stremio, torrents, and bypassed addons.
