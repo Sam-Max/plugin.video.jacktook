@@ -1,3 +1,13 @@
+## 1.5.1
+- Stremio: Limit imported addons to account and custom sources and improved large catalog handling.
+- Settings: Simplify Stremio-related visibility rules, remove the old Torrentio settings group, and set safer disabled-by-default values for Stremio, torrents, and bypassed addons.
+- Localization: Fix conflicting string IDs.
+
+Spanish:
+- Stremio: Limitadas las importaciones de addons a las fuentes de cuenta y personalizadas y mejorado el manejo de catalogos grandes.
+- Ajustes: Simplificadas las reglas de visibilidad relacionadas con Stremio, eliminado el antiguo grupo de ajustes de Torrentio y establecidos valores mas seguros desactivados por defecto para Stremio, torrents y addons omitidos.
+- Localizacion: Corregidos los IDs de cadenas en conflicto.
+
 ## 1.5.0
 - Trakt Expansion: Added personal lists, search lists by keyword, create custom lists, favorites, account info.
 - Enhanced Trakt Sync: Improved scrobbling, progress tracking, and added periodic syncing service.
