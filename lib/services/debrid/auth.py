@@ -218,7 +218,7 @@ def run_torbox_auth(client):
                 if user_data.get("success"):
                     set_setting(
                         "torbox_user",
-                        user_data.get("data", {}).get("customer_email", ""),
+                        user_data.get("data", {}).get("email", ""),
                     )
 
                 progress_dialog.update_progress(100, "Authentication completed.")
