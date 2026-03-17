@@ -664,20 +664,21 @@ class TraktTV(TraktBase):
         return None
 
     @classmethod
-    def _build_up_next_entries(cls, watched_shows, progress_items, fetcher=None, now_dt=None):
+    def _build_up_next_entries(cls, watched_shows, progress_items, fetcher=None, now_dt=None, hidden_items=None):
         if fetcher is None:
             from lib.clients.tmdb.utils.utils import tmdb_get as fetcher
 
         now_dt = now_dt or get_datetime(string=False)
         entries = []
         progress_by_show = {}
+        hidden_items = hidden_items or []
 
         for item in progress_items or []:
             show = item.get("show", {})
             ids = show.get("ids", {})
             tmdb_id = ids.get("tmdb")
             episode = item.get("episode", {})
-            if not tmdb_id or not episode:
+            if not tmdb_id or int(tmdb_id) in hidden_items or not episode:
                 continue
 
             season_number = episode.get("season")
@@ -722,7 +723,7 @@ class TraktTV(TraktBase):
                 continue
 
             tmdb_id = int(tmdb_id)
-            if tmdb_id in progress_by_show:
+            if tmdb_id in progress_by_show or tmdb_id in hidden_items:
                 continue
 
             last_episode, last_timestamp = cls._last_watched_episode(show_item)
@@ -753,10 +754,32 @@ class TraktTV(TraktBase):
             reverse=True,
         )
 
+    def trakt_get_hidden_items(self, section="progress_watched"):
+        def _process(params):
+            result = self.get_trakt(params)
+            hidden = []
+            if result:
+                for item in result:
+                    if item.get("type") == "show":
+                        tmdb_id = item.get("show", {}).get("ids", {}).get("tmdb")
+                        if tmdb_id:
+                            hidden.append(int(tmdb_id))
+            return hidden
+
+        string = "trakt_hidden_items_%s" % section
+        params = {
+            "path": "users/hidden/%s" % section,
+            "params": {"limit": 1000},
+            "with_auth": True,
+            "pagination": False,
+        }
+        return cache_trakt_object(_process, string, params)
+
     def trakt_up_next(self):
         watched_shows = self.get_watched_shows()
         progress_items = TraktScrobble().trakt_get_playback_progress("episodes")
-        return self._build_up_next_entries(watched_shows, progress_items)
+        hidden_items = self.trakt_get_hidden_items("progress_watched")
+        return self._build_up_next_entries(watched_shows, progress_items, hidden_items=hidden_items)
 
     def trakt_collection(self, page_no):
         set_pluging_category(translation(90294))
@@ -1093,7 +1116,7 @@ class TraktLists(TraktBase):
             pagination=False,
         )
 
-    def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=20):
+    def trakt_fetch_sorted_list(self, list_type, media_type, sort_type=None, limit=None):
         data = self.trakt_fetch_watchlist(list_type, media_type)
 
         if sort_type == "recent":
@@ -1109,7 +1132,7 @@ class TraktLists(TraktBase):
             else:
                 data.sort(key=lambda k: k["released"], reverse=True)
 
-        return data[:limit]
+        return data[:limit] if limit else data
 
     def trakt_fetch_watchlist(self, list_type, media_type):
         def _process(params):
