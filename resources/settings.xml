@@ -1423,12 +1423,12 @@
                     </dependencies>
                 </setting>
                 <setting id="trakt_client" type="string" label="30798" help="30818">
-                    <default>1038ef327e86e7f6d39d80d2eb5479bff66dd8394e813c5e0e387af0f84d89fb</default>
+                    <default>687c707dc7073be777a6dd6869ffd9034109d75dcda6599a7273f49a68266ff8</default>
                     <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="trakt_secret" type="string" label="30800" help="30811">
-                    <default>8d27a92e1d17334dae4a0590083a4f26401cb8f721f477a79fd3f218f8534fd1</default>
+                    <default>3191ae63a3cf60d767b1d6fc1e39b1dedc6f3346b826d62901f9f2c3c9925e26</default>
                     <visible>false</visible>
                     <control type="edit" format="string" />
                 </setting>

@@ -6,6 +6,7 @@ import xbmcaddon
 import xbmcvfs
 
 from lib.api.trakt.base_cache import setup_databases
+from lib.services.migrations import run_migrations
 from lib.services.preloader import StartupPreloader
 from lib.services.trakt_sync import TraktSyncService
 from lib.updater import updates_check_addon
@@ -190,6 +191,7 @@ class JacktookMOnitor(xbmc.Monitor):
     def startServices(self):
         CheckKodiVersion().run()
         DatabaseSetup().run()
+        run_migrations()
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
         Thread(target=DebridExpirationCheck().run).start()
