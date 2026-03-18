@@ -1,3 +1,22 @@
+## 1.5.3
+- Trakt: Add 'Continue Watching' option for movies to easily resume playback.
+- Trakt: Fix Unprocessable Entity (422) error when scrobbling items with no playback progress.
+- Trakt: Filter hidden items in Up Next and remove list limits.
+- UI: Overhaul source select window with advanced technical metadata, modern layout, and dynamic color themes.
+- Stremio: Improve source labeling to show real indexer names.
+- Torbox: Fix authentication response parsing.
+- Settings: Add Trakt credentials migration and update defaults.
+
+Spanish:
+- Trakt: Añadida opción 'Continuar Viendo' para películas para reanudar fácilmente la reproducción.
+- Trakt: Corregido error 'Unprocessable Entity' (422) al registrar progreso (scrobbling) de elementos sin avance.
+- Trakt: Filtrar elementos ocultos en Up Next y eliminar límites de listas.
+- UI: Renovación de la ventana de selección de fuentes con metadatos técnicos avanzados, diseño moderno y temas de color dinámicos.
+- Stremio: Mejorado el etiquetado de fuentes para mostrar los nombres reales de los indexadores.
+- Torbox: Corregido el análisis de la respuesta de autenticación.
+- Ajustes: Añadida migración de credenciales de Trakt y actualizados los valores por defecto.
+
+
 ## 1.5.2
 - Stremio: Distinguish addon instances by transport URL to support multiple accounts/configurations of the same addon with different flows.
 - Stremio: Support bypassing specific addon instances from Jacktook's filtering.
