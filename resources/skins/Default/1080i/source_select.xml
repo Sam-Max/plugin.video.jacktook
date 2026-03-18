@@ -197,7 +197,7 @@
 					</control>
 
                     <control type="label">
-                        <top>10</top>
+                        <top>20</top>
                         <left>220</left>
                         <width>1000</width>
                         <height>25</height>
@@ -208,7 +208,7 @@
                     </control>
 
 					<control type="label">
-						<top>60</top>
+						<top>70</top>
 						<left>220</left>
 						<width>1000</width>
 						<height>20</height>
@@ -219,7 +219,7 @@
 					</control>
 
 					<control type="group">
-						<top>95</top>
+						<top>105</top>
 						<control type="label">
 							<left>220</left>
 							<width>320</width>
@@ -250,7 +250,7 @@
 					</control>
 
 					<control type="group">
-						<top>130</top>
+						<top>140</top>
 						<control type="label">
 							<left>220</left>
 							<width>320</width>
@@ -281,7 +281,7 @@
 					</control>
 
 					<control type="label">
-						<top>165</top>
+						<top>175</top>
 						<left>220</left>
 						<width>1000</width>
 						<height>20</height>
@@ -331,7 +331,7 @@
 					</control>
 
                     <control type="label">
-                        <top>10</top>
+                        <top>20</top>
                         <left>220</left>
                         <width>1000</width>
                         <height>25</height>
@@ -343,7 +343,7 @@
                     </control>
 
 					<control type="label">
-						<top>60</top>
+						<top>70</top>
 						<left>220</left>
 						<width>1000</width>
 						<height>20</height>
@@ -354,7 +354,7 @@
 					</control>
 
 					<control type="group">
-						<top>95</top>
+						<top>105</top>
 						<control type="label">
 							<left>220</left>
 							<width>320</width>
@@ -385,7 +385,7 @@
 					</control>
 
 					<control type="group">
-						<top>130</top>
+						<top>140</top>
 						<control type="label">
 							<left>220</left>
 							<width>320</width>
@@ -416,7 +416,7 @@
 					</control>
 
 					<control type="label">
-						<top>165</top>
+						<top>175</top>
 						<left>220</left>
 						<width>1000</width>
 						<height>20</height>
