@@ -8,13 +8,9 @@ from lib.utils.kodi.settings import get_int_setting
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
 
-from lib.db.cached import cache
-
 import re
 from typing import List, Dict, Optional, Any
 
-
-from lib.clients.stremio.constants import TORRENTIO_PROVIDERS_KEY
 
 EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
 
@@ -203,7 +199,7 @@ class StremioAddonClient(BaseClient):
                     addonName=self.addon.manifest.name,
                     addonInstanceLabel=self.instance_label,
                     guid=info_hash_to_magnet(info_hash) if info_hash else "",
-                    infoHash=info_hash,
+                    infoHash=info_hash if info_hash else "",
                     size=stream.get_parsed_size()
                     or item.get("sizebytes")
                     or parsed["size"],
@@ -213,7 +209,7 @@ class StremioAddonClient(BaseClient):
                     provider=stream.get_provider() or parsed["provider"],
                     publishDate="",
                     peers=0,
-                    url=url,
+                    url=url if url else "",
                     isCached=is_cached,
                 )
             )
@@ -256,9 +252,9 @@ class StremioAddonClient(BaseClient):
             "languages": find_languages_in_string(desc),
         }
 
-    def should_use_rd_cache(self) -> Optional[bool]:
+    def should_use_rd_cache(self) -> bool:
         """Checks if RD cache should be used for this addon."""
-        return (
+        return bool(
             get_setting("real_debrid_enabled")
             and get_setting("real_debrid_cached_check")
             and not get_setting("torrent_enable")
@@ -266,9 +262,9 @@ class StremioAddonClient(BaseClient):
             and self.addon.manifest.id not in EXCLUDED_RD_ADDONS
         )
 
-    def should_use_ad_cache(self) -> Optional[bool]:
-        """Checks if RD cache should be used for this addon."""
-        return (
+    def should_use_ad_cache(self) -> bool:
+        """Checks if AD cache should be used for this addon."""
+        return bool(
             get_setting("alldebrid_enabled")
             and get_setting("alldebrid_cached_check")
             and not get_setting("torrent_enable")

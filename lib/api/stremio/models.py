@@ -91,9 +91,14 @@ class Stream:
         return title.splitlines()[0] if title else ""
     
     def get_sub_indexer(self, addon: Any) -> str:
-        if addon.manifest.name.split(" ")[0] == "AIOStreams":
-            return self.name.split()[1] if self.name else ""
-        return ""
+        if not self.name:
+            return ""
+        
+        name_parts = self.name.split()
+        if len(name_parts) > 1:
+            return name_parts[1]
+        
+        return "" 
         
     def get_parsed_size(self) -> int:
         size = self.behaviorHints.videoSize if self.behaviorHints else None
