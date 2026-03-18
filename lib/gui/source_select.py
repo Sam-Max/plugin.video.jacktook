@@ -276,9 +276,9 @@ class SourceSelect(BaseWindow):
             menu_item.setProperty("guid", source.guid)
             menu_item.setProperty("infoHash", source.infoHash)
             menu_item.setProperty("size", bytes_to_human_readable(int(source.size)))
-            if source.seeders:
+            if source.seeders and not source.isCached:
                 menu_item.setProperty("seeders", str(source.seeders))
-            if source.peers:
+            if source.peers and not source.isCached:
                 menu_item.setProperty("peers", str(source.peers))
             menu_item.setProperty(
                 "fullLanguages", get_colored_languages(source.fullLanguages)

@@ -217,24 +217,13 @@
 								
 							</control>
 
-							<!-- Peers -->
-							<control type="label">
-								<height>20</height>
-								<font>font12</font>
-								<align>left</align>
-								<left>550</left>
-								<textcolor>CCFFFFFF</textcolor>
-								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
-								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
-							</control>
-
 							<!-- Seeders -->
 							<control type="label">
 								<right>20</right>
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>900</left>
+								<left>550</left>
 								<textcolor>CCFFFFFF</textcolor>
 								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
@@ -381,24 +370,13 @@
 								<visible>!String.IsEmpty(ListItem.Property(size))</visible>
 							</control>
 
-							<!-- Peers -->
-							<control type="label">
-								<height>20</height>
-								<font>font12</font>
-								<align>left</align>
-								<left>550</left>
-								<textcolor>FFFFFFFF</textcolor>
-								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
-								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
-							</control>
-
 							<!-- Seeders -->
 							<control type="label">
 								<right>20</right>
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>900</left>
+								<left>550</left>
 								<textcolor>FFFFFFFF</textcolor>
 								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
@@ -544,24 +522,13 @@
 								<visible>!String.IsEmpty(ListItem.Property(size))</visible>
 							</control>
 
-							<!-- Peers -->
-							<control type="label">
-								<height>20</height>
-								<font>font12</font>
-								<align>left</align>
-								<left>550</left>
-								<textcolor>FFFFFFFF</textcolor>
-								<label>[UPPERCASE]PEERS: $INFO[ListItem.Property(peers)][/UPPERCASE]</label>
-								<visible>!String.IsEmpty(ListItem.Property(peers))</visible>
-							</control>
-
 							<!-- Seeders -->
 							<control type="label">
 								<right>20</right>
 								<height>20</height>
 								<font>font12</font>
 								<align>left</align>
-								<left>900</left>
+								<left>550</left>
 								<textcolor>FFFFFFFF</textcolor>
 								<label>[UPPERCASE]SEEDERS: $INFO[ListItem.Property(seeders)][/UPPERCASE]</label>
 								<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
