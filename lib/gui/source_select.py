@@ -29,6 +29,15 @@ import xbmcgui
 import xbmc
 
 
+THEMES = {
+    "0": {"card_bg": "FF362e33", "card_focus": "992A3E5C", "card_accent": "FF00559D"},
+    "1": {"card_bg": "FF000000", "card_focus": "FF1A1A1A", "card_accent": "FF333333"},
+    "2": {"card_bg": "FF1A0B2E", "card_focus": "994D004D", "card_accent": "FF00F3FF"},
+    "3": {"card_bg": "FF1B261B", "card_focus": "992D402D", "card_accent": "FF7CFC00"},
+    "4": {"card_bg": "FF141414", "card_focus": "992B2510", "card_accent": "FFD4AF37"},
+}
+
+
 class SourceSelect(BaseWindow):
     def __init__(
         self,
@@ -56,6 +65,12 @@ class SourceSelect(BaseWindow):
         self.resolved = False
 
     def onInit(self) -> None:
+        theme_index = get_setting("source_select_theme", "0")
+        theme = THEMES.get(str(theme_index), THEMES["0"])
+        self.setProperty("style.card_bg", theme["card_bg"])
+        self.setProperty("style.card_focus", theme["card_focus"])
+        self.setProperty("style.card_accent", theme["card_accent"])
+
         self.display_list: xbmcgui.ControlList = self.getControlList(1000)
         self.populate_qualities_header()
         self.populate_sources_list()

@@ -169,15 +169,14 @@
 						<width>200</width>
 						<height>200</height>
 						<texture border="30">left-circle.png</texture>
-						<colordiffuse>FF00559D</colordiffuse>
+						<colordiffuse>$INFO[Window().Property(style.card_accent)]</colordiffuse>
 					</control>
                     <control type="image">
                         <top>10</top>
 						<height>200</height>
 						<texture border="30">circle.png</texture>
-                        <colordiffuse>FF362e33</colordiffuse>
-                    </control>
-
+						<colordiffuse>$INFO[Window().Property(style.card_bg)]</colordiffuse>
+						</control>
 					<control type="label">
 						<font>font30</font>
 						<top>75</top>
@@ -303,13 +302,13 @@
 						<width>200</width>
 						<height>200</height>
 						<texture border="30">left-circle.png</texture>
-						<colordiffuse>FF00559D</colordiffuse>
+						<colordiffuse>$INFO[Window().Property(style.card_accent)]</colordiffuse>
 					</control>
                     <control type="image">
                         <top>10</top>
 						<height>200</height>
                         <texture border="30">circle.png</texture>
-                        <colordiffuse>992A3E5C</colordiffuse>
+                        <colordiffuse>$INFO[Window().Property(style.card_focus)]</colordiffuse>
                     </control>
 
 					<control type="label">

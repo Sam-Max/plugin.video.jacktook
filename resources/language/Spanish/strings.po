@@ -2565,3 +2565,27 @@ msgstr "No se proporciono ninguna URL de copia."
 msgctxt "#90351"
 msgid "Unable to download settings backup."
 msgstr "No se pudo descargar la copia de seguridad."
+
+msgctxt "#90352"
+msgid "Source Select Style"
+msgstr "Estilo de selección de fuente"
+
+msgctxt "#90353"
+msgid "Modern"
+msgstr "Moderno"
+
+msgctxt "#90354"
+msgid "OLED"
+msgstr "OLED"
+
+msgctxt "#90355"
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+msgctxt "#90356"
+msgid "Forest"
+msgstr "Bosque"
+
+msgctxt "#90357"
+msgid "Gold"
+msgstr "Oro"

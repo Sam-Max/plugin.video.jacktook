@@ -2630,3 +2630,27 @@ msgstr "No backup URL provided."
 msgctxt "#90351"
 msgid "Unable to download settings backup."
 msgstr "Unable to download settings backup."
+
+msgctxt "#90352"
+msgid "Source Select Style"
+msgstr "Source Select Style"
+
+msgctxt "#90353"
+msgid "Modern"
+msgstr "Modern"
+
+msgctxt "#90354"
+msgid "OLED"
+msgstr "OLED"
+
+msgctxt "#90355"
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+msgctxt "#90356"
+msgid "Forest"
+msgstr "Forest"
+
+msgctxt "#90357"
+msgid "Gold"
+msgstr "Gold"
