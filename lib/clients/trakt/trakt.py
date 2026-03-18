@@ -61,6 +61,7 @@ class Trakt(Enum):
     WATCHLIST = "trakt_watchlist"
     CALENDAR = "trakt_calendar"
     UP_NEXT = "trakt_up_next"
+    MOVIES_PROGRESS = "trakt_movies_progress"
     COLLECTION = "trakt_collection"
     FAVORITES = "trakt_favorites"
     MY_LISTS = "trakt_my_lists"
@@ -474,6 +475,7 @@ class TraktClient:
             ),
             Trakt.WATCHLIST: lambda: TraktLists().trakt_watchlist(mode),
             Trakt.COLLECTION: lambda: TraktMovies().trakt_collection(page),
+            Trakt.MOVIES_PROGRESS: lambda: TraktMovies().trakt_movies_progress(),
         }
 
         if query in query_handlers:
@@ -884,6 +886,9 @@ class TraktClient:
             ),
             Trakt.UP_NEXT: lambda: execute_thread_pool(
                 results, TraktPresentation.show_up_next_items
+            ),
+            Trakt.MOVIES_PROGRESS: lambda: execute_thread_pool(
+                results, TraktPresentation.show_movies_progress_items
             ),
             Trakt.FAVORITES: lambda: execute_thread_pool(
                 results, TraktPresentation.show_favorites, mode
@@ -1577,6 +1582,41 @@ class TraktPresentation:
                 "episode": episode_number,
                 "season": season,
             },
+        )
+
+        add_kodi_dir_item(list_item=list_item, url=url, is_folder=True)
+
+    @staticmethod
+    def show_movies_progress_items(res):
+        movie_data = res.get("movie", {})
+        title = movie_data.get("title", "")
+        progress = res.get("progress", 0)
+        tmdb_id = movie_data.get("ids", {}).get("tmdb")
+        imdb_id = movie_data.get("ids", {}).get("imdb")
+
+        if not tmdb_id:
+            return
+
+        display_title = f"[Resume] {title}"
+        if progress:
+            display_title = f"{display_title} ({int(progress)}%)"
+
+        ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id}
+        details = tmdb_get("movie_details", tmdb_id) or {}
+
+        list_item = ListItem(label=display_title)
+        set_media_infoTag(list_item, data=details, mode="movies")
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setTitle(display_title)
+        info_tag.setPlot(details.get("overview", ""))
+        if progress:
+            list_item.setProperty("PercentPlayed", str(progress))
+
+        url = build_url(
+            "search",
+            ids=ids,
+            mode="movies",
+            query=title,
         )
 
         add_kodi_dir_item(list_item=list_item, url=url, is_folder=True)

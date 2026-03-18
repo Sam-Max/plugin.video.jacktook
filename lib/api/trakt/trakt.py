@@ -501,6 +501,13 @@ class TraktMovies(TraktBase):
         }
         return self.get_trakt(params)
 
+    def trakt_movies_progress(self):
+        set_pluging_category(translation(90200))
+        try:
+            return TraktScrobble().trakt_get_playback_progress("movies")
+        except Exception:
+            return []
+
     def trakt_collection(self, page_no):
         set_pluging_category(translation(90294))
         params = {
@@ -1488,7 +1495,20 @@ class TraktLists(TraktBase):
 class TraktScrobble(TraktBase):
     @staticmethod
     def _scrobble_payload(data):
-        payload: Dict[str, Any] = {"progress": data.get("progress", 0)}
+        from lib.utils.kodi.utils import ADDON_VERSION
+        from datetime import datetime
+        progress = data.get("progress", 0)
+        if isinstance(progress, str):
+            try:
+                progress = float(progress)
+            except ValueError:
+                progress = 0.0
+
+        payload: Dict[str, Any] = {
+            "progress": progress,
+            "app_version": ADDON_VERSION,
+            "app_date": datetime.now().strftime("%Y-%m-%d")
+        }
 
         if data["mode"] == "movies":
             payload["movie"] = {"ids": {"tmdb": data["ids"]["tmdb_id"]}}
@@ -1512,7 +1532,7 @@ class TraktScrobble(TraktBase):
 
     def trakt_pause_scrobble(self, data):
         payload = self._scrobble_payload(data)
-        if payload is None:
+        if payload is None or payload.get("progress", 0) < 1.0:
             return
 
         self.call_trakt("scrobble/pause", data=payload, with_auth=True)
@@ -1521,7 +1541,7 @@ class TraktScrobble(TraktBase):
         kodilog("Stopping scrobble")
 
         payload = self._scrobble_payload(data)
-        if payload is None:
+        if payload is None or payload.get("progress", 0) < 1.0:
             return
 
         self.call_trakt("scrobble/stop", data=payload, with_auth=True)

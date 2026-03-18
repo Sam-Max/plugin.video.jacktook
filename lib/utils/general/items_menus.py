@@ -30,6 +30,7 @@ trakt_movie_library_items = [
     {"name": translation(90035), "mode": "movies", "api": "trakt", "query": "trakt_watchlist", "icon": "trakt.png"},
     {"name": translation(90294), "mode": "movies", "api": "trakt", "query": "trakt_collection", "icon": "trakt.png"},
     {"name": translation(90295), "mode": "movies", "api": "trakt", "query": "trakt_favorites", "icon": "trakt.png"},
+    {"name": translation(90200), "mode": "movies", "api": "trakt", "query": "trakt_movies_progress", "icon": "trakt.png"},
     {"name": translation(90034), "mode": "movies", "api": "trakt", "query": "trakt_watched_history", "icon": "trakt.png"},
     {"name": translation(90297), "mode": "movies", "api": "trakt", "query": "trakt_my_lists", "icon": "trakt.png"},
     {"name": translation(90298), "mode": "movies", "api": "trakt", "query": "trakt_liked_lists", "icon": "trakt.png"},
