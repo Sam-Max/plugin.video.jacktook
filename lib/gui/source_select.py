@@ -23,6 +23,7 @@ from lib.utils.general.utils import (
     get_provider_color,
     get_random_color,
 )
+from lib.utils.parsers.title_parser import parse_title_info
 
 import xbmcgui
 import xbmc
@@ -240,8 +241,14 @@ class SourceSelect(BaseWindow):
         )
 
         for source in self.list_sources:
+            info = parse_title_info(source.title)
             menu_item = xbmcgui.ListItem(label=source.title)
             menu_item.setProperty("title", source.title)
+            menu_item.setProperty("display_title", info["clean_title"])
+            menu_item.setProperty("codec", info["codec"])
+            menu_item.setProperty("audio", info["audio"])
+            menu_item.setProperty("hdr_info", info["badges"])
+            menu_item.setProperty("release_group", info["release_group"])
             if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
                 provider_name = source.subindexer or source.type
             elif source.type == IndexerType.DIRECT:
