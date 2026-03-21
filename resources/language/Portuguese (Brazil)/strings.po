@@ -1049,3 +1049,7 @@ msgstr "Nenhuma URL de backup foi informada."
 msgctxt "#90351"
 msgid "Unable to download settings backup."
 msgstr "Nao foi possivel baixar o backup de configuracoes."
+
+msgctxt "#90358"
+msgid "No playable results found"
+msgstr "Nenhum resultado reproduzivel foi encontrado"

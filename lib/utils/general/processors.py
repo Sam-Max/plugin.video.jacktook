@@ -103,6 +103,25 @@ class PostProcessBuilder(BaseProcessBuilder):
     def __init__(self, results: List[TorrentStream]):
         super().__init__(results)
 
+    @staticmethod
+    def _resolve_sort_field(sort_by: str) -> Optional[SortField]:
+        if not sort_by:
+            return None
+
+        normalized = str(sort_by).strip()
+        if not normalized or normalized.lower() == "none":
+            return None
+
+        member = SortField.__members__.get(normalized.upper())
+        if member:
+            return member
+
+        for field in SortField:
+            if field.value.casefold() == normalized.casefold():
+                return field
+
+        return None
+
     def check_season_pack(self, season: int) -> "PostProcessBuilder":
         season_patterns = self.get_season_pack_patterns(season)
         for res in self.results:
@@ -111,10 +130,11 @@ class PostProcessBuilder(BaseProcessBuilder):
 
     def sort_results(self) -> "PostProcessBuilder":
         sort_by = get_setting("indexers_sort_by")
-        if sort_by in SortField.__members__:
+        sort_field = self._resolve_sort_field(sort_by)
+        if sort_field:
             self.results = sorted(
                 self.results,
-                key=lambda r: getattr(r, SortField[sort_by].value, 0),
+                key=lambda r: getattr(r, sort_field.value, 0),
                 reverse=True,
             )
         return self

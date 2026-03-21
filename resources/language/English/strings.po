@@ -2654,3 +2654,7 @@ msgstr "Forest"
 msgctxt "#90357"
 msgid "Gold"
 msgstr "Gold"
+
+msgctxt "#90358"
+msgid "No playable results found"
+msgstr "No playable results found"

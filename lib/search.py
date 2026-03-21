@@ -286,7 +286,7 @@ def run_search_entry(params: dict):
     )
 
     if not final_results:
-        notification("No cached results found")
+        notification(translation(90358))
         cancel_playback()
         return
 

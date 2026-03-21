@@ -1068,3 +1068,7 @@ msgstr "Nao foi fornecido nenhum URL de copia de seguranca."
 msgctxt "#90351"
 msgid "Unable to download settings backup."
 msgstr "Nao foi possivel transferir a copia de seguranca."
+
+msgctxt "#90358"
+msgid "No playable results found"
+msgstr "Nao foram encontrados resultados reproduziveis"
