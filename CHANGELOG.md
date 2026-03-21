@@ -1,3 +1,17 @@
+## 1.6.0
+- Search: Add English TMDB title fallback for Jackett and Prowlarr when localized titles return no matches.
+- Playback: Handle magnet redirects and torrent URLs from indexers more reliably.
+- Search: Fix result sorting across all sort modes.
+- Search: Clarify the final no-results notification when no playable sources remain.
+- UI: Hide peers and seeders metadata when a source is already cached.
+
+Spanish:
+- Busqueda: Anadido fallback al titulo en ingles de TMDB para Jackett y Prowlarr cuando los titulos localizados no devuelven coincidencias.
+- Reproduccion: Mejorado el manejo de redirecciones magnet y URLs torrent de indexadores.
+- Busqueda: Corregida la ordenacion de resultados en todos los modos de ordenacion.
+- Busqueda: Aclarada la notificacion final cuando no quedan fuentes reproducibles.
+- UI: Ocultados los metadatos de peers y seeders cuando una fuente ya esta en cache.
+
 ## 1.5.3
 - Trakt: Add 'Continue Watching' option for movies to easily resume playback.
 - Trakt: Fix Unprocessable Entity (422) error when scrobbling items with no playback progress.
