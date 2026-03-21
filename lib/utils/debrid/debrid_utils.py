@@ -4,7 +4,8 @@ import copy
 import json
 import requests
 from threading import Lock
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
+from urllib.parse import urljoin
 
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
@@ -31,6 +32,7 @@ from lib.utils.general.utils import (
     set_cached,
 )
 from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.logging import summarize_locator_for_log
 
 from xbmcgui import Dialog
 from xbmc import LOGDEBUG
@@ -232,35 +234,83 @@ def extract_info_hash(res: TorrentStream) -> Optional[str]:
     return None
 
 
-def get_magnet_from_uri(uri):
+def get_magnet_from_uri(uri: str) -> Tuple[str, str, str]:
     kodilog(f"get_magnet_from_uri: Checking URI: {uri}", level=LOGDEBUG)
     magnet = ""
     info_hash = ""
+    torrent_url = ""
 
     if not is_url(uri):
-        return magnet, info_hash
+        return magnet, info_hash, torrent_url
 
     try:
-        res = requests.get(
-            uri, allow_redirects=True, timeout=10, headers=USER_AGENT_HEADER
-        )
-        kodilog(
-            f"get_magnet_from_uri: GET request to {uri} (final url: {res.url}) returned status code: {res.status_code}"
-        )
-        if res.status_code == 200:
-            kodilog(f"get_magnet_from_uri: Processing content from {uri}")
-            if res.url.startswith("magnet:"):
-                magnet = res.url
-                info_hash = get_info_hash_from_magnet(magnet).lower()
-                return magnet, info_hash
+        current_uri = uri
+        for redirect_count in range(5):
+            res = requests.get(
+                current_uri,
+                allow_redirects=False,
+                timeout=10,
+                headers=USER_AGENT_HEADER,
+            )
+            kodilog(
+                "get_magnet_from_uri: GET request to {} returned status code: {}".format(
+                    summarize_locator_for_log(current_uri),
+                    res.status_code,
+                )
+            )
 
-            magnet = extract_torrent_metadata(res.content)
-            kodilog(f"get_magnet_from_uri: Extracted magnet: {magnet}")
-            if magnet:
-                info_hash = get_info_hash_from_magnet(magnet).lower()
+            if 300 <= res.status_code < 400:
+                location = res.headers.get("Location", "")
+                if not location:
+                    break
+
+                kodilog(
+                    "get_magnet_from_uri: Redirect {} -> {}".format(
+                        summarize_locator_for_log(current_uri),
+                        summarize_locator_for_log(location),
+                    )
+                )
+
+                if location.startswith("magnet:?"):
+                    magnet = location
+                    info_hash = get_info_hash_from_magnet(magnet).lower()
+                    return magnet, info_hash, torrent_url
+
+                current_uri = urljoin(current_uri, location)
+                continue
+
+            if res.status_code == 200:
+                kodilog(
+                    "get_magnet_from_uri: Processing content from {}".format(
+                        summarize_locator_for_log(current_uri)
+                    )
+                )
+                if res.url.startswith("magnet:"):
+                    magnet = str(res.url or "")
+                    info_hash = get_info_hash_from_magnet(magnet).lower()
+                    return magnet, info_hash, torrent_url
+
+                magnet = extract_torrent_metadata(res.content)
+                kodilog(
+                    "get_magnet_from_uri: Extracted magnet: {}".format(
+                        summarize_locator_for_log(magnet)
+                    )
+                )
+                if magnet:
+                    info_hash = get_info_hash_from_magnet(magnet).lower()
+                    torrent_url = current_uri
+                    kodilog(
+                        "get_magnet_from_uri: Preserving torrent URL for playback: {}".format(
+                            summarize_locator_for_log(torrent_url)
+                        )
+                    )
+                    return "", info_hash, torrent_url
+                return str(magnet or ""), str(info_hash or ""), str(torrent_url or "")
+
+            break
     except Exception as e:
         kodilog(f"get_magnet_from_uri: Exception occurred for uri: {uri}: {e}")
-    return magnet, info_hash
+    return str(magnet or ""), str(info_hash or ""), str(torrent_url or "")
 
 
 def get_debrid_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:

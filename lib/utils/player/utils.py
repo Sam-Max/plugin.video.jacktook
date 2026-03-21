@@ -14,6 +14,7 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -85,6 +86,17 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
 
         magnet = info_hash_to_magnet(info_hash)
 
+    kodilog(
+        "Torrent playback resolution: indexer={!r}, client={!r}, magnet={!r}, url={!r}, infohash={!r}, is_torrent={}".format(
+            data.get("indexer", ""),
+            str(get_setting("torrent_client")),
+            summarize_locator_for_log(magnet),
+            summarize_locator_for_log(url),
+            str(info_hash).lower()[:12],
+            data.get("is_torrent", False),
+        )
+    )
+
     if get_setting("torrent_enable"):
         return get_torrent_url_for_client(magnet, url, mode, ids)
 
@@ -152,7 +164,13 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
 def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
     kodilog(
-        f"Preparing Jacktorr URL with magnet: {magnet} and url: {url}", level=LOGDEBUG
+        "Preparing Jacktorr URL with magnet={!r}, url={!r}, has_magnet={}, has_url={}".format(
+            summarize_locator_for_log(magnet),
+            summarize_locator_for_log(url),
+            bool(magnet),
+            bool(url),
+        ),
+        level=LOGDEBUG,
     )
     if not is_jacktorr_addon():
         if Dialog().yesno(
@@ -170,6 +188,9 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
     elif url:
         _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
     else:
+        kodilog(
+            "Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG
+        )
         raise TorrentException("No magnet or url found for Jacktorr playback")
     return _url
 

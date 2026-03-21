@@ -1,4 +1,6 @@
 from lib.clients.base import BaseClient, TorrentStream
+from lib.jacktook.utils import kodilog
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.kodi.settings import get_prowlarr_timeout
 
@@ -120,21 +122,52 @@ class Prowlarr(BaseClient):
         response = res.json()
         results = []
         for res in response:
+            title = res.get("title", "")
+            provider = res.get("indexer")
+            guid = res.get("guid", "")
+            download_url = res.get("downloadUrl", "")
+            magnet_url = res.get("magnetUrl", "")
+            info_url = res.get("infoUrl", "")
+            info_hash = res.get("infoHash", "")
+
+            kodilog(
+                "Prowlarr parsed result: title={!r}, provider={!r}, guid={!r}, download={!r}, magnet={!r}, info={!r}, infohash={!r}, has_magnet={}, has_http_url={}, has_infohash={}".format(
+                    title,
+                    provider,
+                    summarize_locator_for_log(guid),
+                    summarize_locator_for_log(download_url),
+                    summarize_locator_for_log(magnet_url),
+                    summarize_locator_for_log(info_url),
+                    str(info_hash).lower()[:12],
+                    bool(
+                        str(magnet_url).startswith("magnet:?")
+                        or str(download_url).startswith("magnet:?")
+                        or str(guid).startswith("magnet:?")
+                    ),
+                    bool(
+                        str(download_url).startswith(("http://", "https://"))
+                        or str(info_url).startswith(("http://", "https://"))
+                        or str(guid).startswith(("http://", "https://"))
+                    ),
+                    bool(info_hash),
+                )
+            )
+
             results.append(
                 TorrentStream(
-                    title=res.get("title", ""),
+                    title=title,
                     type="Torrent",
                     indexer="Prowlarr",
-                    provider=res.get("indexer"),
+                    provider=provider,
                     peers=int(res.get("peers", 0)),
                     seeders=int(res.get("seeders", 0)),
-                    guid=res.get("guid", ""),
-                    infoHash=res.get("infoHash", ""),
+                    guid=guid,
+                    infoHash=info_hash,
                     size=int(res.get("size", 0)),
                     languages=res.get("languages", []),
                     fullLanguages=res.get("fullLanguages", ""),
                     publishDate=res.get("publishDate", ""),
-                    url=res.get("downloadUrl", ""),
+                    url=download_url,
                 )
             )
         return results

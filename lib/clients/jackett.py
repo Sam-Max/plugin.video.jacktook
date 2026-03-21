@@ -6,6 +6,7 @@ import requests
 from lib.clients.base import BaseClient
 from lib.domain.torrent import TorrentStream
 from lib.jacktook.utils import kodilog
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.settings import get_jackett_timeout
 from lib.utils.kodi.utils import get_setting, notification, translation
@@ -186,19 +187,46 @@ class Jackett(BaseClient):
         if isinstance(attrs, dict):
             attrs = [attrs]
         attributes = {attr.get("@name"): attr.get("@value") for attr in attrs}
+        enclosure = item.get("enclosure", {})
+        if not isinstance(enclosure, dict):
+            enclosure = {}
+        link = item.get("link", "")
+        guid = item.get("guid", "")
+        info_hash = str(attributes.get("infohash", ""))
+        enclosure_url = enclosure.get("@url", "")
+        provider = item.get("jackettindexer", {}).get("#text", "")
+
+        kodilog(
+            "Jackett parsed result: title={!r}, provider={!r}, guid={!r}, link={!r}, enclosure={!r}, infohash={!r}, has_magnet={}, has_http_url={}, has_infohash={}".format(
+                item.get("title", ""),
+                provider,
+                summarize_locator_for_log(guid),
+                summarize_locator_for_log(link),
+                summarize_locator_for_log(enclosure_url),
+                info_hash[:12].lower(),
+                bool(str(link).startswith("magnet:?") or str(guid).startswith("magnet:?")),
+                bool(
+                    str(link).startswith(("http://", "https://"))
+                    or str(guid).startswith(("http://", "https://"))
+                    or str(enclosure_url).startswith(("http://", "https://"))
+                ),
+                bool(info_hash),
+            )
+        )
+
         results.append(
             TorrentStream(
                 title=item.get("title", ""),
                 type="Torrent",
                 indexer="Jackett",
                 publishDate=item.get("pubDate", ""),
-                provider=item.get("jackettindexer", {}).get("#text", ""),
-                guid=item.get("guid", ""),
-                url=item.get("link", ""),
+                provider=provider,
+                guid=guid,
+                url=link,
                 size=item.get("size", ""),
                 seeders=int(attributes.get("seeders", 0) or 0),
                 peers=int(attributes.get("peers", 0) or 0),
-                infoHash=str(attributes.get("infohash", "")),
+                infoHash=info_hash,
                 languages=[],
                 fullLanguages="",
             )

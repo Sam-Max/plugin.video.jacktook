@@ -6,6 +6,7 @@ from lib.domain.torrent import TorrentStream
 from lib.utils.debrid.debrid_utils import get_magnet_from_uri
 from lib.utils.player.utils import resolve_playback_url
 from lib.utils.general.utils import Indexer, IndexerType
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import ADDON, kodilog
 import xbmcgui
 
@@ -136,6 +137,16 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         source_type = source.type
         is_torrent = source.type == IndexerType.TORRENT
 
+        kodilog(
+            "Source extraction input: indexer={!r}, type={!r}, guid={!r}, url={!r}, infohash={!r}".format(
+                indexer,
+                source_type,
+                summarize_locator_for_log(guid),
+                summarize_locator_for_log(url),
+                str(source.infoHash or "").lower()[:12],
+            )
+        )
+
         if source_type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
             return url, magnet, is_torrent
 
@@ -153,26 +164,40 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
         # Try to extract magnet from url 
         if url.startswith("http"):
-            magnet_candidate, _ = get_magnet_from_uri(url)
+            magnet_candidate, _, torrent_url = get_magnet_from_uri(url)
             if magnet_candidate:
                 magnet = magnet_candidate
+            elif torrent_url:
+                url = torrent_url
                 
         # Try to extract magnet from guid if it's a details page
         elif not magnet and guid.startswith("http"):
-            magnet_candidate, _ = get_magnet_from_uri(guid)
+            magnet_candidate, _, torrent_url = get_magnet_from_uri(guid)
             if magnet_candidate:
                 magnet = magnet_candidate
+            elif torrent_url:
+                url = torrent_url
 
-         # --- Fallback: magnet from url ---
+        # --- Fallback: magnet from url ---
         if not magnet and url.startswith("magnet:?"):
             magnet, url = url, ""
 
         # --- Fallback: magnet from infoHash ---
+        used_infohash_fallback = False
         if not magnet and source.infoHash:
             from lib.utils.general.utils import info_hash_to_magnet
-            magnet = info_hash_to_magnet(source.infoHash)
 
-        kodilog(f"Extracted source details - URL: {url}, Magnet: {magnet}, Is Torrent: {is_torrent}")
+            magnet = info_hash_to_magnet(source.infoHash)
+            used_infohash_fallback = True
+
+        kodilog(
+            "Source extraction output: url={!r}, magnet={!r}, is_torrent={}, used_infohash_fallback={}".format(
+                summarize_locator_for_log(url),
+                summarize_locator_for_log(magnet),
+                is_torrent,
+                used_infohash_fallback,
+            )
+        )
 
         return url, magnet, is_torrent
 
