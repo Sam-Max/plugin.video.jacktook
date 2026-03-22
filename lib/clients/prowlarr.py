@@ -30,6 +30,8 @@ class Prowlarr(BaseClient):
             "X-Api-Key": self.apikey,
         }
         try:
+            season = self._coerce_int(season)
+            episode = self._coerce_int(episode)
             results = []
             futures = []
             with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -116,6 +118,13 @@ class Prowlarr(BaseClient):
             return results if results else None
         except Exception as e:
             self.handle_exception(f"{translation(30230)}: {str(e)}")
+            return None
+
+    @staticmethod
+    def _coerce_int(value: Any) -> Optional[int]:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
             return None
 
     def parse_response(self, res: Any) -> List[TorrentStream]:

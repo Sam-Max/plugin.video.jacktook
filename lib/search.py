@@ -22,6 +22,7 @@ from lib.utils.general.utils import (
     set_content_type,
     set_watched_title,
     clean_auto_play_undesired,
+    normalize_tv_data,
     safe_json_loads,
 )
 from lib.utils.debrid.debrid_utils import check_debrid_cached
@@ -245,7 +246,7 @@ def run_search_entry(params: dict):
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
     ids = safe_json_loads(params.get("ids"))
-    tv_data = safe_json_loads(params.get("tv_data"))
+    tv_data = normalize_tv_data(safe_json_loads(params.get("tv_data")))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 

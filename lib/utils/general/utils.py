@@ -1643,3 +1643,19 @@ def safe_json_loads(value, default=None):
         return json.loads(value)
     except (json.JSONDecodeError, TypeError, ValueError):
         return default
+
+
+def normalize_tv_data(tv_data):
+    if not isinstance(tv_data, dict):
+        return {}
+
+    normalized = dict(tv_data)
+
+    for key in ("season", "episode"):
+        value = _coerce_int(normalized.get(key))
+        if value is None:
+            normalized.pop(key, None)
+        else:
+            normalized[key] = value
+
+    return normalized
