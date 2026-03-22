@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.debrider import Debrider
+from lib.clients.debrid.common import get_file_name, get_packed_release_message
 from lib.utils.kodi.utils import dialog_text, get_setting, notification
 from lib.utils.general.utils import (
     DebridType,
@@ -69,11 +70,11 @@ class DebriderHelper:
         torrent_files = [
             item
             for item in torrent_files
-            if any(item["name"].lower().endswith(x) for x in extensions)
+            if any(get_file_name(item).lower().endswith(x) for x in extensions)
         ]
 
         if not torrent_files:
-            raise ProviderException("No valid files found in torrent")
+            raise ProviderException(get_packed_release_message("Debrider"))
 
         if len(torrent_files) > 1:
             if data["tv_data"]:

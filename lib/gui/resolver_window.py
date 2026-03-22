@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, cast
 from datetime import timedelta
 
 from lib.clients.subtitle.submanager import SubtitleManager
@@ -67,6 +67,11 @@ class ResolverWindow(BaseWindow):
         self.resolved = True
         self.close_windows()
 
+    def handle_playback_error(self):
+        self.resolved = False
+        self.setProperty("resolving", "false")
+        self.close()
+
     def resolve_source(self) -> Optional[Dict[str, Any]]:
         try:
             is_pack = self.source.isPack or self.pack_select
@@ -85,7 +90,7 @@ class ResolverWindow(BaseWindow):
 
             player = JacktookPLayer(
                 on_started=self.handle_playback_started,
-                on_error=self.handle_playback_started,
+                on_error=self.handle_playback_error,
             )
             player.run(data=self.playback_info)
         except Exception as e:
@@ -93,6 +98,7 @@ class ResolverWindow(BaseWindow):
 
             kodilog(f"Error in resolver window: {e}")
             kodilog(traceback.format_exc())
+            notification(str(e), time=5000)
             if self.previous_window:
                 self.previous_window.setProperty("instant_close", "true")
                 self.previous_window.close()
@@ -126,11 +132,12 @@ class ResolverWindow(BaseWindow):
         del self.window
 
     def _cache_playback_info(self) -> None:
+        playback_info = cast(Dict[str, Any], self.playback_info or {})
         if get_setting("super_quick_play", False):
             kodilog("Super quick play enabled, caching playback info")
             key = ""
-            if "ids" in self.playback_info:
-                ids = self.playback_info["ids"]
+            if "ids" in playback_info:
+                ids = cast(Dict[str, Any], playback_info["ids"] or {})
                 key = str(
                     ids.get("original_id")
                     or ids.get("imdb_id")
@@ -139,12 +146,12 @@ class ResolverWindow(BaseWindow):
                 )
 
             if key:
-                tv_data = self.playback_info.get("tv_data", {})
+                tv_data = cast(Dict[str, Any], playback_info.get("tv_data", {}) or {})
                 if tv_data and "season" in tv_data and "episode" in tv_data:
                     key += f'_{tv_data["season"]}_{tv_data["episode"]}'
 
             if key:
-                cache.set(key, self.playback_info, timedelta(days=30))
+                cache.set(key, playback_info, timedelta(days=30))
                 kodilog(f"Playback info cached with key: {key}")
 
     def _download_subtitle(self):

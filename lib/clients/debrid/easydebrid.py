@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.easydebrid import EasyDebrid
+from lib.clients.debrid.common import get_file_name, get_packed_release_message
 from lib.utils.kodi.utils import dialog_text, get_setting, notification
 from lib.utils.general.utils import (
     DebridType,
@@ -69,11 +70,11 @@ class EasyDebridHelper:
         torrent_files = [
             item
             for item in torrent_files
-            if any(item["filename"].lower().endswith(x) for x in extensions)
+            if any(get_file_name(item).lower().endswith(x) for x in extensions)
         ]
 
         if not torrent_files:
-            notification("No valid files found in torrent")
+            notification(get_packed_release_message("EasyDebrid"))
             return
 
         if len(torrent_files) > 1:

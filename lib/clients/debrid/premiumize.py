@@ -1,6 +1,10 @@
 import copy
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.premiumize import Premiumize
+from lib.clients.debrid.common import (
+    ensure_direct_playable_file_for_provider,
+    get_file_name,
+)
 from lib.utils.kodi.utils import get_setting, kodilog, notification
 from lib.utils.general.utils import (
     DebridType,
@@ -17,7 +21,8 @@ from lib.domain.torrent import TorrentStream
 
 class PremiumizeHelper:
     def __init__(self):
-        self.client = Premiumize(token=get_setting("premiumize_token"))
+        token = str(get_setting("premiumize_token") or "")
+        self.client = Premiumize(token=token)
 
     def check_cached(
         self,
@@ -72,6 +77,9 @@ class PremiumizeHelper:
                 data["is_pack"] = True
                 return data
         else:
+            ensure_direct_playable_file_for_provider(
+                get_file_name(content[0]), "Premiumize"
+            )
             data["url"] = content[0].get("stream_link")
             return data
 
@@ -97,9 +105,9 @@ class PremiumizeHelper:
             return None
 
         files = [
-            (item.get("link"), item.get("path").rsplit("/", 1)[-1])
+            (item.get("link"), get_file_name(item).rsplit("/", 1)[-1])
             for item in torrent_content
-            if any(item.get("path", "").lower().endswith(ext) for ext in extensions)
+            if any(get_file_name(item).lower().endswith(ext) for ext in extensions)
             and item.get("link")
         ]
 

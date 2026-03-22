@@ -459,6 +459,10 @@ msgctxt "#30843"
 msgid "Enable Torbox.de cloud torrent integration."
 msgstr "Habilitar integração com torrents na nuvem do Torbox.de."
 
+msgctxt "#30918"
+msgid "{provider} cannot directly play packed releases (.rar/.zip). Choose a source with video files instead."
+msgstr "{provider} não pode reproduzir diretamente releases compactados (.rar/.zip). Escolha uma fonte com arquivos de vídeo."
+
 msgctxt "#30844"
 msgid "Trakt API access token (auto-filled after auth)."
 msgstr "Token de acesso da API Trakt (preenchido automaticamente após autenticação)."

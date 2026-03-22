@@ -1,8 +1,7 @@
 import copy
 from typing import Dict, List, Any, Optional
-from datetime import datetime
 from lib.api.debrid.torbox import Torbox
-from lib.jacktook.utils import kodilog
+from lib.clients.debrid.common import get_file_name, get_packed_release_message
 from lib.utils.kodi.utils import get_setting, notification, dialog_text
 from lib.utils.general.utils import (
     DebridType,
@@ -86,7 +85,15 @@ class TorboxHelper:
         if not torrent_info:
             return None
 
-        file = max(torrent_info["files"], key=lambda x: x.get("size", 0))
+        video_files = [
+            item
+            for item in torrent_info["files"]
+            if any(get_file_name(item).lower().endswith(ext) for ext in EXTENSIONS)
+        ]
+        if not video_files:
+            raise TorboxException(get_packed_release_message("Torbox"))
+
+        file = max(video_files, key=lambda x: x.get("size", 0))
         response_data = self.client.create_download_link(
             torrent_info.get("id"), file.get("id"), get_public_ip()
         )
@@ -127,7 +134,7 @@ class TorboxHelper:
         files = [
             (item.get("id"), item["name"])
             for id, item in enumerate(torrent_files)
-            if any(item["short_name"].lower().endswith(ext) for ext in EXTENSIONS)
+            if any(get_file_name(item).lower().endswith(ext) for ext in EXTENSIONS)
         ]
 
         info["files"] = files

@@ -743,6 +743,10 @@ msgctxt "#30900"
 msgid "Manual hour adjustment for broadcast day simulation"
 msgstr "Ajuste manual de horas para simulación de emisión"
 
+msgctxt "#30918"
+msgid "{provider} cannot directly play packed releases (.rar/.zip). Choose a source with video files instead."
+msgstr "{provider} no puede reproducir directamente releases empaquetados (.rar/.zip). Elige una fuente con archivos de video."
+
 msgctxt "#30911"
 msgid "Your Torbox account username/email."
 msgstr "Tu nombre de usuario/email de cuenta Torbox."

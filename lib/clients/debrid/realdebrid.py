@@ -2,10 +2,14 @@ import copy
 import threading
 import time
 from datetime import datetime
-from typing import Any, List, Dict, Optional
+from typing import Any, List, Dict, Optional, cast
 
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
+from lib.clients.debrid.common import (
+    ensure_direct_playable_file_for_provider,
+    get_file_name,
+)
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
@@ -138,6 +142,10 @@ class RealDebridHelper:
 
         # --- Single-file torrent ---
         if len(links) == 1:
+            single_file = files[0] if files else {}
+            ensure_direct_playable_file_for_provider(
+                get_file_name(single_file), "Real-Debrid"
+            )
             data["url"] = create_download_for_link(links[0])
             return data
 
@@ -159,6 +167,10 @@ class RealDebridHelper:
             if not match_file:
                 raise ValueError("File is not cached")
 
+            ensure_direct_playable_file_for_provider(
+                get_file_name(match_file), "Real-Debrid"
+            )
+
             selected_files = [f for f in files if f.get("selected") == 1]
             try:
                 file_index = selected_files.index(match_file)
@@ -171,6 +183,9 @@ class RealDebridHelper:
         selected_files = [f for f in files if f.get("selected") == 1]
         if selected_files:
             largest_file = max(selected_files, key=lambda f: f.get("bytes", 0))
+            ensure_direct_playable_file_for_provider(
+                get_file_name(largest_file), "Real-Debrid"
+            )
             try:
                 file_index = selected_files.index(largest_file)
             except ValueError:
@@ -186,7 +201,7 @@ class RealDebridHelper:
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
 
-        pack_info = data.get("pack_info", {})
+        pack_info = cast(Dict[str, Any], data.get("pack_info", {}) or {})
         file_position = pack_info.get("file_position", "")
         torrent_id = pack_info.get("torrent_id", "")
 
@@ -201,11 +216,11 @@ class RealDebridHelper:
         data["url"] = url
         return data
 
-    def get_pack_info(self, info_hash: str) -> Optional[Dict]:
+    def get_pack_info(self, info_hash: str) -> Optional[Dict[str, Any]]:
         """Retrieves information about a torrent pack, including file names."""
-        info = get_cached(info_hash)
-        if info:
-            return info
+        cached_info = get_cached(info_hash)
+        if cached_info:
+            return cast(Dict[str, Any], cached_info)
 
         torrent_id = self.add_magnet(info_hash, is_pack=True)
         if not torrent_id:
@@ -250,12 +265,17 @@ class RealDebridHelper:
         """Ensures Real-Debrid does not exceed active torrent limit."""
         active_count = self.client.get_torrent_active_count()
 
-        if active_count["nb"] >= active_count["limit"]:
-            hashes = active_count["list"]
+        if active_count.get("nb", 0) >= active_count.get("limit", 0):
+            hashes = active_count.get("list", [])
             if hashes:
                 torrents = self.client.get_user_torrent_list()
                 torrent_info = next(
-                    (i for i in torrents if i.get("hash", "") == hashes[0]), None
+                    (
+                        item
+                        for item in torrents
+                        if isinstance(item, dict) and item.get("hash", "") == hashes[0]
+                    ),
+                    None,
                 )
 
                 if torrent_info:
