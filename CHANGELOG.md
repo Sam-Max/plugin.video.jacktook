@@ -1,3 +1,23 @@
+## 1.7.0
+- Torrents: Add source actions to send torrents directly to Debrid cloud or TorrServer from the source select menu.
+- Torbox: Add Cloud downloads browsing.
+- Downloads: Fix `Download video` routing so source downloads start correctly.
+- Filters: Fix unknown source filtering and add a separate toggle for unknown quality results.
+- Debrid: Block direct playback of packed releases (zip, rar, etc) across debrid providers.
+- Fix: Update TMDBHelper json when outdated.
+- TMDB: Fix the Collections menu circular import crash.
+- Fix Prowlarr client search failing when receiving season and episode from TMDBHelper.
+
+Spanish:
+- Torrents: Añadidas acciones en la seleccion de fuentes para enviar torrents directamente a la nube de Debrid o a TorrServer.
+- Torbox: Añadida navegacion de descargas en Cloud.
+- Descargas: Corregido el enrutado de `Download video` para que las descargas desde fuentes se inicien correctamente.
+- Filtros: Corregido el filtrado de fuentes desconocidas y añadido un ajuste independiente para calidad desconocida.
+- Debrid: Bloqueada la reproducción directa de lanzamientos empaquetados (zip, rar, etc) en los proveedores de debrid.
+- Corregida la actualización del json de TMDBHelper cuando está desactualizado.
+- TMDB: Corregido el fallo por importacion circular en el menu de Collections.
+- Corregido el fallo en la búsqueda del cliente de Prowlarr al recibir temporada y episodio de TMDBHelper.
+
 ## 1.6.0
 - Search: Add English TMDB title fallback for Jackett and Prowlarr when localized titles return no matches.
 - Playback: Handle magnet redirects and torrent URLs from indexers more reliably.
