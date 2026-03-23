@@ -7,7 +7,6 @@ from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.clients.tmdb.anime import TmdbAnimeClient
 from lib.clients.tmdb.base import BaseTmdbClient
-from lib.clients.tmdb.collections import TmdbCollections
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.api.tmdbv3api.objs.search import Search
 from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
@@ -885,6 +884,7 @@ class TmdbClient(BaseTmdbClient):
         page = int(params.get("page", 1))
 
         set_content_type(mode)
+        from lib.clients.tmdb.collections import TmdbCollections
 
         if submode == "popular":
             TmdbCollections.get_popular_collections(mode, page)

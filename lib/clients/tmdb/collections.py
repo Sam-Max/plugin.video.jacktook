@@ -2,7 +2,7 @@ from lib.clients.tmdb.utils.collections_utils import (
     POPULAR_COLLECTIONS,
     TOP_RATED_COLLECTIONS,
 )
-from lib.clients.tmdb.tmdb import BaseTmdbClient
+from lib.clients.tmdb.base import BaseTmdbClient
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     add_next_button,
