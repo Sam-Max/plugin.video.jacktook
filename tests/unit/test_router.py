@@ -21,6 +21,12 @@ def test_get_route_handler_returns_cache_dispatcher():
     assert router._get_route_handler("clear_tmdb_cache") is router._route_cache
 
 
+def test_get_route_handler_returns_download_dispatcher_for_handle_download_file():
+    router = _load_router_module()
+
+    assert router._get_route_handler("handle_download_file") is router._route_downloads
+
+
 def test_get_route_handler_falls_back_to_core_dispatcher():
     router = _load_router_module()
 
@@ -71,3 +77,13 @@ def test_route_trakt_dispatches_trakt_group_menu_action():
         router._route_trakt("trakt_group_menu", params)
 
     trakt_group_menu.assert_called_once_with(params)
+
+
+def test_route_downloads_dispatches_handle_download_file():
+    router = _load_router_module()
+
+    params = {"url": "https://example.com/video.mp4"}
+    with patch("lib.downloader.handle_download_file") as handle_download_file:
+        router._route_downloads("handle_download_file", params)
+
+    handle_download_file.assert_called_once_with(params)

@@ -68,6 +68,7 @@ _WEBDAV_ACTIONS = frozenset(
 _DOWNLOAD_ACTIONS = frozenset(
     {
         "download_video",
+        "handle_download_file",
         "handle_cancel_download",
         "handle_delete_file",
         "downloads_menu",
@@ -502,15 +503,22 @@ def _route_webdav(action, params):
 
 
 def _route_downloads(action, params):
-    if action in ("download_video", "handle_cancel_download", "handle_delete_file"):
+    if action in (
+        "download_video",
+        "handle_download_file",
+        "handle_cancel_download",
+        "handle_delete_file",
+    ):
         from lib.downloader import (
             download_video,
+            handle_download_file,
             handle_cancel_download,
             handle_delete_file,
         )
 
         actions = {
             "download_video": download_video,
+            "handle_download_file": handle_download_file,
             "handle_cancel_download": handle_cancel_download,
             "handle_delete_file": handle_delete_file,
         }
