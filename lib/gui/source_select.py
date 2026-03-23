@@ -5,7 +5,7 @@ from lib.gui.filter_items_window import FilterWindow
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.debrid.debrid_utils import get_source_status
+from lib.utils.debrid.debrid_utils import add_source_to_debrid, get_source_status
 from lib.utils.kodi.utils import (
     action_url_run,
     bytes_to_human_readable,
@@ -19,11 +19,13 @@ from lib.utils.kodi.utils import (
 from lib.utils.general.utils import (
     IndexerType,
     extract_publish_date,
+    get_info_hash_from_magnet,
     get_colored_languages,
     get_provider_color,
     get_random_color,
 )
 from lib.utils.parsers.title_parser import parse_title_info
+from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
 
 import xbmcgui
 import xbmc
@@ -199,11 +201,13 @@ class SourceSelect(BaseWindow):
 
         if selected_source.type == IndexerType.TORRENT:
             response = xbmcgui.Dialog().contextmenu(
-                ["Download to Debrid", translation(90083)]
+                [translation(90365), translation(90359), translation(90083)]
             )
             if response == 0:
-                self._download_to_debrid()
+                self._download_to_debrid(selected_source)
             elif response == 1:
+                self._add_to_torrserver(selected_source)
+            elif response == 2:
                 self._download_file(selected_source)
         elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
             response = xbmcgui.Dialog().contextmenu(
@@ -293,8 +297,34 @@ class SourceSelect(BaseWindow):
 
             self.display_list.addItem(menu_item)
 
-    def _download_to_debrid(self) -> None:
-        pass
+    def _download_to_debrid(self, selected_source) -> None:
+        url, magnet, _ = self._extract_source_details(selected_source)
+        info_hash = selected_source.infoHash or ""
+
+        if not info_hash and magnet:
+            info_hash = get_info_hash_from_magnet(magnet).lower()
+
+        if not info_hash and url.startswith("magnet:?"):
+            info_hash = get_info_hash_from_magnet(url).lower()
+
+        if not info_hash:
+            notification(translation(90361))
+            return
+
+        add_source_to_debrid(info_hash, selected_source.debridType)
+
+    def _add_to_torrserver(self, selected_source) -> None:
+        url, magnet, _ = self._extract_source_details(selected_source)
+        title = selected_source.title or self.item_information.get("title", "")
+        poster = self.item_information.get("poster", "")
+
+        add_source_to_torrserver(
+            magnet=magnet,
+            url=url,
+            info_hash=selected_source.infoHash or "",
+            title=title,
+            poster=poster,
+        )
 
     def _download_file(self, selected_source) -> None:
         self.playback_info = self._ensure_playback_info(selected_source)

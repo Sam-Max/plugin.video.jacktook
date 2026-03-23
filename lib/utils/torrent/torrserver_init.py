@@ -6,7 +6,7 @@ from lib.utils.general.utils import (
     get_password,
     ssl_enabled,
 )
-from lib.utils.kodi.utils import get_setting, JACKTORR_ADDON
+from lib.utils.kodi.utils import JACKTORR_ADDON
 
 _torrserver_api = None
 
@@ -14,9 +14,7 @@ _torrserver_api = None
 def get_torrserver_api():
     global _torrserver_api
 
-    jacktorr_selected = get_setting("torrent_client", "Jacktorr") == "Jacktorr"
-
-    if _torrserver_api is None and jacktorr_selected and JACKTORR_ADDON:
+    if _torrserver_api is None and JACKTORR_ADDON:
         _torrserver_api = TorrServer(
             get_service_host(),
             get_port(),

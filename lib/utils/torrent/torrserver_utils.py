@@ -1,8 +1,10 @@
 import hashlib
+from io import BytesIO
 import requests
 from lib.utils.kodi.kodi_formats import is_picture, is_text, is_video, is_music
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    JACKTORR_ADDON,
     buffer_and_play,
     build_url,
     kodilog,
@@ -128,6 +130,42 @@ def display_text(params):
         )
     )
     Dialog().textviewer(params.get("path"), r.text)
+
+
+def add_source_to_torrserver(
+    magnet="", url="", info_hash="", title="", poster=""
+):
+    if not JACKTORR_ADDON:
+        notification(translation(30253))
+        return None
+
+    api = get_torrserver_api()
+    if api is None:
+        notification(translation(30253))
+        return None
+
+    if not magnet and info_hash:
+        magnet = convert_info_hash_to_magnet(info_hash)
+
+    try:
+        if magnet:
+            added_hash = api.add_magnet(magnet, title=title, poster=poster)
+        elif url and url.startswith("http"):
+            response = requests.get(url, timeout=15, headers=USER_AGENT_HEADER)
+            response.raise_for_status()
+            torrent_obj = BytesIO(response.content)
+            torrent_obj.name = "torrent.torrent"
+            added_hash = api.add_torrent_obj(torrent_obj, title=title, poster=poster)
+        else:
+            notification(translation(90361))
+            return None
+
+        notification(translation(90360))
+        return added_hash
+    except Exception as exc:
+        kodilog(f"Failed to add source to TorrServer: {exc}")
+        notification(str(exc))
+        return None
 
 
 def extract_magnet_from_url(url: str):

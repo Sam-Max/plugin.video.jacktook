@@ -13,7 +13,7 @@ from lib.clients.debrid.easydebrid import EasyDebridHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
-from lib.utils.kodi.utils import get_setting, kodilog, notification
+from lib.utils.kodi.utils import get_setting, kodilog, notification, translation
 from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
@@ -22,6 +22,7 @@ from lib.utils.general.utils import (
     IndexerType,
     get_cached,
     get_info_hash_from_magnet,
+    info_hash_to_magnet,
     is_ad_enabled,
     is_debrider_enabled,
     is_ed_enabled,
@@ -57,6 +58,13 @@ DEBRID_CHECKS = {
 
 PACK_DIRECT_DEBRID_TYPES = {DebridType.RD, DebridType.TB, DebridType.AD}
 
+SUPPORTED_CLOUD_TRANSFER_DEBRIDS = (
+    DebridType.RD,
+    DebridType.AD,
+    DebridType.TB,
+    DebridType.DB,
+)
+
 
 def get_debrid_helper(debrid_type: str):
     helper_cls = DEBRID_HELPERS.get(debrid_type)
@@ -64,6 +72,61 @@ def get_debrid_helper(debrid_type: str):
         notification(f"Unknown debrid type: {debrid_type}")
         raise ValueError(f"Unknown debrid type: {debrid_type}")
     return helper_cls()
+
+
+def get_enabled_cloud_transfer_debrids() -> List[str]:
+    return [
+        debrid_type
+        for debrid_type in SUPPORTED_CLOUD_TRANSFER_DEBRIDS
+        if DEBRID_CHECKS.get(debrid_type, lambda: False)()
+    ]
+
+
+def choose_debrid_for_transfer(preferred_debrid: str = "") -> Optional[str]:
+    enabled_debrids = get_enabled_cloud_transfer_debrids()
+    if not enabled_debrids:
+        notification(translation(90364))
+        return None
+
+    if preferred_debrid in enabled_debrids:
+        return preferred_debrid
+
+    if len(enabled_debrids) == 1:
+        return enabled_debrids[0]
+
+    selected = Dialog().select(translation(90363), enabled_debrids)
+    if selected < 0:
+        return None
+    return enabled_debrids[selected]
+
+
+def add_source_to_debrid(info_hash: str, preferred_debrid: str = "") -> Optional[str]:
+    if not info_hash:
+        notification(translation(90361))
+        return None
+
+    debrid_type = choose_debrid_for_transfer(preferred_debrid)
+    if not debrid_type:
+        return None
+
+    try:
+        if debrid_type == DebridType.RD:
+            RealDebridHelper().add_magnet(info_hash)
+        elif debrid_type == DebridType.AD:
+            AllDebridHelper().client.add_magnet(info_hash_to_magnet(info_hash))
+        elif debrid_type == DebridType.TB:
+            TorboxHelper().add_torbox_torrent(info_hash)
+        elif debrid_type == DebridType.DB:
+            DebriderHelper().add_magnet(info_hash)
+        else:
+            raise ValueError(f"Unsupported debrid cloud transfer type: {debrid_type}")
+
+        notification(translation(90362) % debrid_type)
+        return debrid_type
+    except Exception as exc:
+        kodilog(f"Failed to add source to debrid cloud: {exc}")
+        notification(str(exc))
+        return None
 
 
 def check_debrid_cached(

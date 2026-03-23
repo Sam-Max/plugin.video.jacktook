@@ -2597,3 +2597,31 @@ msgstr "Oro"
 msgctxt "#90358"
 msgid "No playable results found"
 msgstr "No se encontraron resultados reproducibles"
+
+msgctxt "#90359"
+msgid "Add to TorrServer"
+msgstr "Agregar a TorrServer"
+
+msgctxt "#90360"
+msgid "Added to TorrServer"
+msgstr "Agregado a TorrServer"
+
+msgctxt "#90361"
+msgid "Could not resolve torrent details"
+msgstr "No se pudieron resolver los detalles del torrent"
+
+msgctxt "#90362"
+msgid "Added to %s cloud"
+msgstr "Agregado a la nube de %s"
+
+msgctxt "#90363"
+msgid "Choose Debrid Service"
+msgstr "Elegir servicio Debrid"
+
+msgctxt "#90364"
+msgid "No supported debrid service is enabled"
+msgstr "No hay ningun servicio Debrid compatible habilitado"
+
+msgctxt "#90365"
+msgid "Download to Debrid"
+msgstr "Descargar a Debrid"

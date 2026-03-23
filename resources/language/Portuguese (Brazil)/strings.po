@@ -1057,3 +1057,31 @@ msgstr "Nao foi possivel baixar o backup de configuracoes."
 msgctxt "#90358"
 msgid "No playable results found"
 msgstr "Nenhum resultado reproduzivel foi encontrado"
+
+msgctxt "#90359"
+msgid "Add to TorrServer"
+msgstr "Adicionar ao TorrServer"
+
+msgctxt "#90360"
+msgid "Added to TorrServer"
+msgstr "Adicionado ao TorrServer"
+
+msgctxt "#90361"
+msgid "Could not resolve torrent details"
+msgstr "Nao foi possivel resolver os detalhes do torrent"
+
+msgctxt "#90362"
+msgid "Added to %s cloud"
+msgstr "Adicionado a nuvem do %s"
+
+msgctxt "#90363"
+msgid "Choose Debrid Service"
+msgstr "Escolher servico Debrid"
+
+msgctxt "#90364"
+msgid "No supported debrid service is enabled"
+msgstr "Nenhum servico Debrid compativel esta habilitado"
+
+msgctxt "#90365"
+msgid "Download to Debrid"
+msgstr "Transferir para Debrid"

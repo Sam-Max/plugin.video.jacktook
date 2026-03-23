@@ -2662,3 +2662,31 @@ msgstr "Gold"
 msgctxt "#90358"
 msgid "No playable results found"
 msgstr "No playable results found"
+
+msgctxt "#90359"
+msgid "Add to TorrServer"
+msgstr "Add to TorrServer"
+
+msgctxt "#90360"
+msgid "Added to TorrServer"
+msgstr "Added to TorrServer"
+
+msgctxt "#90361"
+msgid "Could not resolve torrent details"
+msgstr "Could not resolve torrent details"
+
+msgctxt "#90362"
+msgid "Added to %s cloud"
+msgstr "Added to %s cloud"
+
+msgctxt "#90363"
+msgid "Choose Debrid Service"
+msgstr "Choose Debrid Service"
+
+msgctxt "#90364"
+msgid "No supported debrid service is enabled"
+msgstr "No supported debrid service is enabled"
+
+msgctxt "#90365"
+msgid "Download to Debrid"
+msgstr "Download to Debrid"
