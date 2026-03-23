@@ -1,4 +1,5 @@
 from threading import Thread
+from typing import Any, Dict, List
 
 from xbmcplugin import addDirectoryItem
 
@@ -21,6 +22,7 @@ from lib.services.debrid.auth import (
 from lib.services.debrid.download import run_realdebrid_download
 from lib.utils.general.utils import (
     DebridType,
+    IndexerType,
     build_list_item,
     check_debrid_enabled,
     get_random_color,
@@ -159,10 +161,13 @@ def get_rd_downloads(params):
     formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
 
     rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    downloads = rd_client.get_user_downloads_list(page=page)
+    raw_downloads = rd_client.get_user_downloads_list(page=page)
+    downloads: List[Dict[str, Any]] = [
+        item for item in raw_downloads if isinstance(item, dict)
+    ]
 
     sorted_downloads = sorted(
-        downloads, key=lambda item: item.get("filename", ""), reverse=False
+        downloads, key=lambda item: str(item.get("filename", "")), reverse=False
     )
     for download in sorted_downloads:
         torrent_li = build_list_item(
@@ -187,6 +192,59 @@ def get_rd_downloads(params):
             build_url("get_rd_downloads", page=page + 1),
             build_list_item("Next Page", "next.png"),
             isFolder=True,
+        )
+
+    end_of_directory()
+
+
+def get_tb_downloads(params):
+    debrid_type = DebridType.TB
+    debrid_color = get_random_color(debrid_type, formatted=False)
+    formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
+
+    raw_downloads = TorboxHelper().get_cloud_downloads()
+    downloads: List[Dict[str, Any]] = [
+        item for item in raw_downloads if isinstance(item, dict)
+    ]
+
+    def _torbox_sort_key(item: Dict[str, Any]):
+        return (
+            str(item.get("updated_at") or item.get("created_at") or ""),
+            str(item.get("name", "")),
+        )
+
+    sorted_downloads = sorted(
+        downloads,
+        key=_torbox_sort_key,
+        reverse=True,
+    )
+
+    notification(
+        f"Torbox Cloud: {len(sorted_downloads)} playable items found", time=2500, sound=False
+    ) if params.get("debug") else None
+
+    for download in sorted_downloads:
+        torrent_li = build_list_item(
+            f"{formatted_type} - {download.get('name')}", "download.png"
+        )
+        torrent_li.setProperty("IsPlayable", "true")
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "play_media",
+                data={
+                    "title": download.get("name"),
+                    "url": "",
+                    "mode": "movie",
+                    "type": IndexerType.DEBRID,
+                    "debrid_type": debrid_type,
+                    "torrent_id": download.get("torrent_id"),
+                    "file_id": download.get("file_id"),
+                    "info_hash": download.get("info_hash", ""),
+                },
+            ),
+            torrent_li,
+            isFolder=False,
         )
 
     end_of_directory()

@@ -2,7 +2,7 @@ import copy
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.torbox import Torbox
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import get_setting, notification, dialog_text
+from lib.utils.kodi.utils import get_setting, notification, dialog_text, kodilog
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -80,7 +80,76 @@ class TorboxHelper:
         if "Found Cached" in response.get("detail", ""):
             return self.client.get_available_torrent(info_hash)
 
+    def get_cloud_downloads(self) -> List[Dict[str, Any]]:
+        response = self.client.get_user_torrent_list()
+        torrents = response.get("data", {}) or []
+        downloads = []
+        skipped_not_dict = 0
+        skipped_not_present = 0
+        skipped_no_playable = 0
+
+        for torrent in torrents:
+            if not isinstance(torrent, dict):
+                skipped_not_dict += 1
+                continue
+
+            if not torrent.get("download_present"):
+                skipped_not_present += 1
+                continue
+
+            files = torrent.get("files", []) or []
+            video_files = [
+                item
+                for item in files
+                if any(get_file_name(item).lower().endswith(ext) for ext in EXTENSIONS)
+            ]
+            if not video_files:
+                skipped_no_playable += 1
+                continue
+
+            file_item = max(video_files, key=lambda item: item.get("size", 0))
+
+            downloads.append(
+                {
+                    "name": file_item.get("name") or torrent.get("name") or "Unknown",
+                    "torrent_id": torrent.get("id"),
+                    "file_id": file_item.get("id"),
+                    "info_hash": torrent.get("hash", ""),
+                    "created_at": torrent.get("created_at", ""),
+                    "updated_at": torrent.get("updated_at", ""),
+                }
+            )
+
+        kodilog(
+            "Torbox cloud listing: total={}, playable={}, skipped_not_dict={}, skipped_not_present={}, skipped_no_playable={}".format(
+                len(torrents),
+                len(downloads),
+                skipped_not_dict,
+                skipped_not_present,
+                skipped_no_playable,
+            )
+        )
+
+        return downloads
+
     def get_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
+        torrent_id = data.get("torrent_id", "")
+        file_id = data.get("file_id", "")
+
+        if torrent_id and file_id:
+            response_data = self.client.create_download_link(
+                torrent_id, file_id, get_public_ip()
+            )
+            if response_data:
+                data["url"] = response_data.get("data", {})
+                return data
+            kodilog(
+                "Torbox cloud playback failed to create link for torrent_id={!r}, file_id={!r}".format(
+                    torrent_id, file_id
+                )
+            )
+            return None
+
         torrent_info = self.add_torbox_torrent(info_hash)
         if not torrent_info:
             return None

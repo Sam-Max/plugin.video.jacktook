@@ -536,6 +536,10 @@ def get_rd_downloads(params):
     return debrid_navigation.get_rd_downloads(params)
 
 
+def get_tb_downloads(params):
+    return debrid_navigation.get_tb_downloads(params)
+
+
 def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
