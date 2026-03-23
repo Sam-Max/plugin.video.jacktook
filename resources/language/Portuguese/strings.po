@@ -1104,3 +1104,11 @@ msgstr "Nenhum servico Debrid compativel esta habilitado"
 msgctxt "#90365"
 msgid "Download to Debrid"
 msgstr "Transferir para Debrid"
+
+msgctxt "#90366"
+msgid "Include Unknown quality"
+msgstr "Incluir qualidade desconhecida"
+
+msgctxt "#90367"
+msgid "Includes releases where video quality could not be identified"
+msgstr "Inclui releases onde a qualidade do video nao pode ser identificada"

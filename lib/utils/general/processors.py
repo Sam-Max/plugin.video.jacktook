@@ -227,8 +227,9 @@ class PreProcessBuilder(BaseProcessBuilder):
             + quality_buckets[Quality.HIGH]
             + quality_buckets[Quality.MEDIUM]
             + quality_buckets[Quality.LOW]
-            + quality_buckets[Quality.UNKNOWN]
         )
+        if get_setting("unknown_quality_enabled", True):
+            self.results += quality_buckets[Quality.UNKNOWN]
         return self
 
     def filter_by_source(self) -> "PreProcessBuilder":

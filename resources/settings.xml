@@ -1062,6 +1062,10 @@
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="unknown_quality_enabled" type="boolean" label="90366" help="90367">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
             </group>
             <group id="size_filter" label="90058">
                 <setting id="filter_size_enabled" type="boolean" label="90059" help="">

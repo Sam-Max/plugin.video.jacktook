@@ -1230,6 +1230,7 @@ def pre_process(
     builder = PreProcessBuilder(results).remove_duplicates()
     if mode == "tv" and not skip_episode_filter:
         builder.filter_sources(episode_name, episode, season)
+    builder.filter_by_source()
     builder.filter_by_quality()
     if get_setting("filter_size_enabled"):
         builder.filter_by_size()

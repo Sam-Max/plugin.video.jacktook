@@ -2690,3 +2690,11 @@ msgstr "No supported debrid service is enabled"
 msgctxt "#90365"
 msgid "Download to Debrid"
 msgstr "Download to Debrid"
+
+msgctxt "#90366"
+msgid "Include Unknown quality"
+msgstr "Include Unknown quality"
+
+msgctxt "#90367"
+msgid "Includes releases where video quality could not be identified"
+msgstr "Includes releases where video quality could not be identified"
