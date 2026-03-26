@@ -1,3 +1,19 @@
+## 1.7.1
+- Localization: Add Russian language support and expand/update translations for Spanish, Russian, and Portuguese.
+- UI: Replace remaining hardcoded dialog text with translated strings.
+- AllDebrid: Keep the authorization dialog open during reauthorization when a previous token exists.
+- Playback: Make the skip intro/recap popup interactive so the user can manually trigger the skip action.
+- Stremio: Show `Local URL` instead of `Pastebin Link` in Manage from Phone QR dialogs.
+- Updater: Clarify automatic update action handling and preserve explicit `Ask`, `Notify`, and `None` modes.
+
+Spanish:
+- Localizacion: Añadido soporte para ruso y ampliadas/actualizadas las traducciones de espanol, ruso y portugues.
+- UI: Sustituidos los textos de dialogos que quedaban hardcodeados por cadenas traducidas.
+- AllDebrid: Mantiene abierto el dialogo de autorizacion durante la reautorizacion cuando existe un token previo.
+- Reproduccion: Hace interactivo el popup de saltar intro/recap para que el usuario pueda ejecutar manualmente el salto.
+- Stremio: Muestra `URL local` en lugar de `Pastebin Link` en los dialogos QR de Manage from Phone.
+- Actualizador: Aclara el manejo de acciones de actualizacion automatica y mantiene los modos explicitos `Ask`, `Notify` y `None`.
+
 ## 1.7.0
 - Torrents: Add source actions to send torrents directly to Debrid cloud or TorrServer from the source select menu.
 - Torbox: Add Cloud downloads browsing.
