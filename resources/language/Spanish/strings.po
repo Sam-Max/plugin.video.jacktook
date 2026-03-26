@@ -8,19 +8,19 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-19 19:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Language: es_ES\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-# Settings
+
 msgctxt "#30000"
 msgid "Players"
 msgstr "Players"
 
 msgctxt "#30001"
-msgid "Clients:"
+msgid "Clients"
 msgstr "Clientes"
 
 msgctxt "#30002"
@@ -203,6 +203,14 @@ msgctxt "#30236"
 msgid "Stremio add-ons"
 msgstr "Addons de Stremio"
 
+msgctxt "#30237"
+msgid "Import your config"
+msgstr "Importar tu configuración"
+
+msgctxt "#30238"
+msgid "Manage add-ons"
+msgstr "Gestionar add-ons"
+
 msgctxt "#30240"
 msgid "TMDB cache cleared"
 msgstr "Cache de TMDB limpiada"
@@ -223,9 +231,9 @@ msgctxt "#30244"
 msgid "Cache cleared"
 msgstr "Cache limpiada"
 
-msgctxt #30249"
+msgctxt "#30249"
 msgid "Addon Jacktook Burst not found - (script.jacktook.burst)"
-msgstr "El Addon Jacktook Burst no esta instalado - (script.jacktook.burst)"
+msgstr "Addon Jacktook Burst no encontrado - (script.jacktook.burst)"
 
 msgctxt "#30250"
 msgid "Addon Torrest not found - (plugin.video.torrest)"
@@ -252,7 +260,7 @@ msgid "Do you want to install Jacktorr?"
 msgstr "¿Quieres instalar Jacktorr?"
 
 msgctxt "#30256"
-msgid "Do you want to instalar Torrest?"
+msgid "Do you want to install Torrest?"
 msgstr "¿Quieres instalar Torrest?"
 
 msgctxt "#30257"
@@ -338,10 +346,6 @@ msgstr "Estado del torrent"
 msgctxt "#30708"
 msgid "Stop"
 msgstr "Detener"
-
-msgctxt "#90341"
-msgid "Choose Torrent Client"
-msgstr "Cliente Torrent"
 
 msgctxt "#30709"
 msgid "Drop torrent"
@@ -743,9 +747,33 @@ msgctxt "#30900"
 msgid "Manual hour adjustment for broadcast day simulation"
 msgstr "Ajuste manual de horas para simulación de emisión"
 
+msgctxt "#30905"
+msgid "Trakt Calendar Previous Days"
+msgstr "Días anteriores del calendario Trakt"
+
+msgctxt "#30906"
+msgid "Number of days in the past to show in the Trakt calendar."
+msgstr "Número de días pasados a mostrar en el calendario de Trakt."
+
+msgctxt "#30907"
+msgid "Trakt Calendar Future Days"
+msgstr "Días futuros del calendario Trakt"
+
+msgctxt "#30908"
+msgid "Number of days in the future to show in the Trakt calendar."
+msgstr "Número de días futuros a mostrar en el calendario de Trakt."
+
+msgctxt "#30909"
+msgid "Show All Shows in Calendar"
+msgstr "Mostrar todas las series en el calendario"
+
 msgctxt "#30918"
 msgid "{provider} cannot directly play packed releases (.rar/.zip). Choose a source with video files instead."
 msgstr "{provider} no puede reproducir directamente releases empaquetados (.rar/.zip). Elige una fuente con archivos de video."
+
+msgctxt "#30910"
+msgid "Show all airing shows instead of just your watchlist/collection."
+msgstr "Muestra todas las series en emisión en lugar de solo las de tu lista/colección."
 
 msgctxt "#30911"
 msgid "Your Torbox account username/email."
@@ -1116,7 +1144,7 @@ msgid "Hours before cached data is automatically refreshed (e.g., 24)."
 msgstr "Horas antes de que los datos en caché se actualicen automáticamente (ej. 24)."
 
 msgctxt "#30814"
-msgid "Premiumize Client Key (get from account page)."
+msgid "Premiumize Client Token (get from account page)."
 msgstr "Clave de Cliente de Premiumize (obtener en la página de la cuenta)."
 
 msgctxt "#30815"
@@ -1184,12 +1212,13 @@ msgid "Specify the torrent client."
 msgstr "Especificar el ejecutable del cliente de torrent."
 
 msgctxt "#30831"
-msgid "Enable EasyDebrid cached torrent support."
+msgid "Enable Debrider cached torrent support."
 msgstr "Habilitar soporte para torrents en caché de EasyDebrid."
 
 msgctxt "#30832"
-msgid "Torbox Client Key (found in account settings)."
+msgid "Torbox Client Token (found in account settings)."
 msgstr "Clave de Cliente de Torbox (se encuentra en la configuración de la cuenta)."
+
 msgctxt "#30833"
 msgid "Trakt refresh token (auto-managed)."
 msgstr "Token de actualización de Trakt (gestionado automáticamente)."
@@ -1211,7 +1240,7 @@ msgid "Indicates if Real-Debrid account is linked."
 msgstr "Indica si la cuenta Real-Debrid está vinculada."
 
 msgctxt "#30838"
-msgid "Auto play next media item when current playback ends."
+msgid "Automatically play next media item when current playback ends."
 msgstr "Reproducir automáticamente el siguiente elemento al terminar la reproducción actual."
 
 msgctxt "#30839"
@@ -1237,6 +1266,7 @@ msgstr "Habilitar la integración de torrents en la nube de Torbox.de."
 msgctxt "#30844"
 msgid "Trakt Access Token (auto-filled after auth)."
 msgstr "Token de Acceso de Trakt (se autocompleta después de la autorización)."
+
 msgctxt "#30845"
 msgid "Link Premiumize.me account to add-on."
 msgstr "Vincular cuenta de Premiumize.me al complemento."
@@ -1250,8 +1280,9 @@ msgid "Click to delete all cached data immediately."
 msgstr "Haz clic para eliminar todos los datos en caché inmediatamente."
 
 msgctxt "#30848"
-msgid "Real-Debrid Access Token (auto-filled after auth)."
+msgid "Real-Debrid Client Token (auto-filled after auth)."
 msgstr "Token de Acceso de Real-Debrid (se autocompleta después de la autorización)."
+
 msgctxt "#30849"
 msgid "Enable Jackett torrent proxy support."
 msgstr "Habilitar soporte de proxy de torrents de Jackett."
@@ -1291,6 +1322,7 @@ msgstr "Habilitar la integración de Zilean para obtener metadatos."
 msgctxt "#30858"
 msgid "Your Client Key (required for metadata)"
 msgstr "Tu Clave de Cliente (necesaria para metadatos)."
+
 msgctxt "#30859"
 msgid "Enable Burst mode for accelerated searches."
 msgstr "Habilitar modo Burst para búsquedas aceleradas."
@@ -1623,8 +1655,6 @@ msgctxt "#90048"
 msgid "Choose which providers to include in the stream request."
 msgstr "Elige qué proveedores incluir en las peticiones de reproducción."
 
-# Context menus
-
 msgctxt "#90049"
 msgid "Scrape again"
 msgstr "Volver a escanear"
@@ -1738,8 +1768,8 @@ msgid "Search Lists"
 msgstr "Buscar Listas"
 
 msgctxt "#90077"
-msgid "Configuracion de MDbList"
-msgstr ""
+msgid "MDbList Configuration"
+msgstr "Configuración de MDbList"
 
 msgctxt "#90078"
 msgid "People"
@@ -1781,7 +1811,6 @@ msgctxt "#90099"
 msgid "Filter by Source Type"
 msgstr "Filtrar por tipo de fuente"
 
-# BluRay/UHD
 msgctxt "#90100"
 msgid "Include BluRay/UHD sources"
 msgstr "Incluir fuentes BluRay/UHD"
@@ -1790,7 +1819,6 @@ msgctxt "#90105"
 msgid "Includes releases such as: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
 msgstr "Incluye lanzamientos como: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
 
-# WEB/HD
 msgctxt "#90101"
 msgid "Include WEB/HD sources"
 msgstr "Incluir fuentes WEB/HD"
@@ -1799,7 +1827,6 @@ msgctxt "#90106"
 msgid "Includes releases such as: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
 msgstr "Incluye lanzamientos como: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
 
-# DVD/TV/SAT
 msgctxt "#90102"
 msgid "Include DVD/TV/SAT sources"
 msgstr "Incluir fuentes DVD/TV/SAT"
@@ -1808,7 +1835,6 @@ msgctxt "#90107"
 msgid "Includes releases such as: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
 msgstr "Incluye lanzamientos como: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
 
-# CAM/Screener
 msgctxt "#90103"
 msgid "Include CAM/Screener sources"
 msgstr "Incluir fuentes CAM/Screener"
@@ -1817,7 +1843,6 @@ msgctxt "#90108"
 msgid "Includes releases such as: CAM, TeleSync, TeleCine, SCR"
 msgstr "Incluye lanzamientos como: CAM, TeleSync, TeleCine, SCR"
 
-# Unknown
 msgctxt "#90104"
 msgid "Include Unknown sources"
 msgstr "Incluir fuentes desconocidas"
@@ -1990,6 +2015,26 @@ msgctxt "#30904"
 msgid "Choose specific Stremio addons for Live TV content"
 msgstr "Seleccionar complementos de Stremio para contenido de Live TV"
 
+msgctxt "#30920"
+msgid "Clear Trakt Cache"
+msgstr "Limpiar caché de Trakt"
+
+msgctxt "#30921"
+msgid "Clear TMDB Cache"
+msgstr "Limpiar caché de TMDB"
+
+msgctxt "#30922"
+msgid "Clear Providers Cache"
+msgstr "Limpiar caché de Proveedores"
+
+msgctxt "#30923"
+msgid "Clear Settings Cache"
+msgstr "Limpiar caché de Configuración"
+
+msgctxt "#90149"
+msgid "Maintenance"
+msgstr "Mantenimiento"
+
 msgctxt "#90150"
 msgid "Stremio: General"
 msgstr "Stremio: General"
@@ -2067,7 +2112,7 @@ msgid "Auto-skip"
 msgstr "Auto-saltar"
 
 msgctxt "#90168"
-msgid "Auto skip intros and recaps without showing the button"
+msgid "Automatically skip intros and recaps without showing the button"
 msgstr "Saltar automáticamente intros y recaps sin mostrar el botón"
 
 msgctxt "#90160"
@@ -2077,6 +2122,14 @@ msgstr "Saltar Intro"
 msgctxt "#90161"
 msgid "Skip Recap"
 msgstr "Saltar Recap"
+
+msgctxt "#90162"
+msgid "Manage from Phone"
+msgstr "Gestionar desde el teléfono"
+
+msgctxt "#90163"
+msgid "Start a local web server and show a QR code to manage Stremio sources from your phone"
+msgstr "Iniciar un servidor web local y mostrar un código QR para gestionar las fuentes de Stremio desde tu teléfono"
 
 msgctxt "#90200"
 msgid "Continue Watching"
@@ -2123,7 +2176,7 @@ msgid "Clear All Search History"
 msgstr "Borrar Todo el Historial de Búsqueda"
 
 msgctxt "#90211"
-msgid "Bypass Addon Filters For Native Sorting"
+msgid "Bypass Stremio Addons Native Sorting"
 msgstr "Omitir Filtros de Addons para Ordenado Nativo"
 
 msgctxt "#90212"
@@ -2143,43 +2196,43 @@ msgid "Downgrade"
 msgstr "Revertir"
 
 msgctxt "#30932"
-msgid "Acción de Actualización"
+msgid "Update Action"
 msgstr "Acción de Actualización"
 
 msgctxt "#30933"
-msgid "Elige cómo manejar las comprobaciones de actualización en segundo plano."
+msgid "Choose how to handle background update checks."
 msgstr "Elige cómo manejar las comprobaciones de actualización en segundo plano."
 
 msgctxt "#30934"
-msgid "Preguntar"
+msgid "Ask"
 msgstr "Preguntar"
 
 msgctxt "#30935"
-msgid "Notificar"
+msgid "Notify"
 msgstr "Notificar"
 
 msgctxt "#90216"
-msgid "Control de Volumen"
+msgid "Volume Check Enabled"
 msgstr "Control de Volumen"
 
 msgctxt "#90217"
-msgid "Limita automáticamente el volumen si está por encima del umbral antes de la reproducción."
+msgid "Automatically limits volume if it is above the threshold before playback."
 msgstr "Limita automáticamente el volumen si está por encima del umbral antes de la reproducción."
 
 msgctxt "#90218"
-msgid "Umbral de Volumen"
+msgid "Volume Threshold"
 msgstr "Umbral de Volumen"
 
 msgctxt "#90219"
-msgid "El porcentaje de volumen por encima del cual se activa el ajuste."
+msgid "The volume percentage above which the warning triggers."
 msgstr "El porcentaje de volumen por encima del cual se activa el ajuste."
 
 msgctxt "#90220"
-msgid "Aviso de Volumen Alto"
+msgid "High Volume Warning"
 msgstr "Aviso de Volumen Alto"
 
 msgctxt "#90221"
-msgid "Volumen alto detectado. Ajustando al %s%% por seguridad."
+msgid "High volume detected. Adjusting to %s%% for safety."
 msgstr "Volumen alto detectado. Ajustando al %s%% por seguridad."
 
 msgctxt "#90222"
@@ -2529,6 +2582,10 @@ msgstr "Elige que complementos de TV en vivo de Stremio importados o personaliza
 msgctxt "#90340"
 msgid "Remove custom Stremio addons you previously added manually."
 msgstr "Elimina los complementos personalizados de Stremio que agregaste manualmente."
+
+msgctxt "#90341"
+msgid "Choose Torrent Client"
+msgstr "Cliente Torrent"
 
 msgctxt "#90342"
 msgid "Clear Database Cache"

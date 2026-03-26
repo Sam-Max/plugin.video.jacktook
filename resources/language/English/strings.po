@@ -231,7 +231,7 @@ msgctxt "#30244"
 msgid "Cache cleared"
 msgstr ""
 
-msgctxt #30249"
+msgctxt "#30249"
 msgid "Addon Jacktook Burst not found - (script.jacktook.burst)"
 msgstr ""
 
