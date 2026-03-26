@@ -35,6 +35,7 @@ def stremio_manage_phone(params):
             url=url,
             user_code="",
             is_debrid=False,
+            url_label_id=90670,
         )
         dialog.doModal()
     finally:

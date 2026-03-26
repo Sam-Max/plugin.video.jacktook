@@ -3127,6 +3127,10 @@ msgctxt "#90557"
 msgid "Pastebin Link:\n[COLOR cyan]%s[/COLOR]"
 msgstr "Ссылка Pastebin:\n[COLOR cyan]%s[/COLOR]"
 
+msgctxt "#90670"
+msgid "Local URL:\n[COLOR cyan]%s[/COLOR]"
+msgstr "Локальный URL:\n[COLOR cyan]%s[/COLOR]"
+
 msgctxt "#90558"
 msgid "QR Code Authentication"
 msgstr "Аутентификация по QR-коду"

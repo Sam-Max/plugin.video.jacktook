@@ -16,7 +16,16 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
         self.iscanceled = False
         self.qr_image_path = ""
 
-    def setup(self, title, qr_code, url, user_code="", debrid_type="", is_debrid=True):
+    def setup(
+        self,
+        title,
+        qr_code,
+        url,
+        user_code="",
+        debrid_type="",
+        is_debrid=True,
+        url_label_id=90557,
+    ):
         self.title = title
         self.qr_image_path = qr_code
         if is_debrid:
@@ -32,7 +41,7 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
             if user_code:
                 self.message = translation(90556) % (url, user_code)
             else:
-                self.message = translation(90557) % url
+                self.message = translation(url_label_id) % url
 
     def show_dialog(self):
         self.show()
