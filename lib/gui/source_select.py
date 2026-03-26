@@ -172,7 +172,7 @@ class SourceSelect(BaseWindow):
         elif selected_type in filter_map:
             items = filter_map[selected_type]["items"]()
             if selected_type == "language" and not items:
-                notification("No languages found")
+                notification(translation(90406))
                 return
             popup = FilterWindow("filter_items.xml", ADDON_PATH, filter=items)
             popup.doModal()
@@ -331,7 +331,7 @@ class SourceSelect(BaseWindow):
         if self.playback_info:
             self.playback_info.update(self.item_information)
         else:
-            notification("Failed to resolve playback source")
+            notification(translation(90407))
             return
 
         download_dir = get_setting("download_dir")
@@ -347,7 +347,7 @@ class SourceSelect(BaseWindow):
         except Exception as e:
             kodilog(f"Failed to start download: {str(e)}")
             xbmcgui.Dialog().notification(
-                "Download", f"Failed to start download: {str(e)}"
+                translation(90653), translation(90654) % str(e)
             )
 
     def _resolve_item(

@@ -4,7 +4,7 @@ from typing import Dict, List, Any, Optional
 from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.base import ProviderException
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification
+from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification, translation
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -187,4 +187,4 @@ class AllDebridHelper:
             f"[B]Days Remaining:[/B] {days_remaining}",
             f"[B]Fidelity Points:[/B] {user['fidelityPoints']}",
         ]
-        dialog_text("All-Debrid", "\n".join(body))
+        dialog_text(translation(90658), "\n".join(body))

@@ -553,10 +553,10 @@ class JacktookPLayer(xbmc.Player):
     def ask_user_retry(self):
         dialog = Dialog()
         choice = dialog.yesno(
-            "Playback Failed",
-            "The video could not be played.\nDo you want to retry?",
-            yeslabel="Retry",
-            nolabel="Cancel",
+            translation(90629),
+            translation(90630),
+            yeslabel=translation(90631),
+            nolabel=translation(90242),
         )
         if choice:
             try:

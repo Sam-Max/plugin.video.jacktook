@@ -211,7 +211,7 @@ class Easynews(BaseClient):
                 f"Gigs Remaining: {usage_info[1]}",
             ]
 
-            dialog_text("Easynews Account Info", "\n\n".join(body))
+            dialog_text(translation(90651), "\n\n".join(body))
         except Exception as e:
             import traceback
 

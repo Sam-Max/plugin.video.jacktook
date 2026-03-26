@@ -1,7 +1,7 @@
 import requests
 from lib.api.debrid.base import DebridClient, ProviderException
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import dialog_ok, set_setting
+from lib.utils.kodi.utils import dialog_ok, set_setting, translation
 from lib.services.debrid.auth import run_alldebrid_auth
 
 
@@ -61,7 +61,7 @@ class AllDebrid(DebridClient):
         set_setting("alldebrid_token", "")
         set_setting("alldebrid_authorized", "false")
         set_setting("alldebrid_user", "")
-        dialog_ok("Success", "Authentification Removed.")
+        dialog_ok(translation(90544), translation(90561))
 
     @staticmethod
     def _validate_error_response(response_data):

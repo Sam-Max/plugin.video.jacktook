@@ -20,6 +20,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     set_property_no_fallback,
+    translation,
     translatePath,
 )
 
@@ -33,8 +34,8 @@ class CheckKodiVersion:
         kodilog("Checking Kodi version...")
         if get_kodi_version() < 20:
             dialog_ok(
-                heading="Jacktook",
-                line1="Kodi 20 or above required. Please update Kodi to use thid addon-",
+                heading=xbmcaddon.Addon().getAddonInfo("name"),
+                line1=translation(90559),
             )
 
 

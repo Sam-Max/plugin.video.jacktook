@@ -66,11 +66,11 @@ class TraktBase:
                 kodilog(f"Error checking token expiry: {e}")
 
     def no_client_key(self):
-        notification("Please set a valid Trakt Client ID Key")
+        notification(translation(90382))
         return None
 
     def no_secret_key(self):
-        notification("Please set a valid Trakt Client Secret Key")
+        notification(translation(90383))
         return None
 
     def _handle_unauthorized(self):
@@ -80,7 +80,7 @@ class TraktBase:
         set_property("trakt_expires", "")
         set_setting("trakt_user", EMPTY_USER)
         set_setting("is_trakt_auth", "false")
-        notification("Trakt not authorized. Please authenticate.", time=5000)
+        notification(translation(90408), time=5000)
         try:
             TraktCache().clear_all_trakt_cache_data()
         except:
@@ -343,7 +343,7 @@ class TraktAuthentication(TraktBase):
         # Create and display QR code dialog
         progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
         progressDialog.setup(
-            "Trakt Authorization",
+            translation(90563),
             qr_code,
             verification_url,
             user_code,
@@ -365,7 +365,7 @@ class TraktAuthentication(TraktBase):
                 status_code = response.status_code
                 if status_code == 200:
                     result = response.json()
-                    progressDialog.update_progress(100, "Authentication completed.")
+                    progressDialog.update_progress(100, translation(90545))
                     break
                 elif status_code == 400:
                     time_passed = time.time() - start
@@ -386,7 +386,7 @@ class TraktAuthentication(TraktBase):
         token = self.trakt_get_device_token(code)
         if not token:
             kodilog("Trakt authentication failed, no token received")
-            notification("Trakt Error Authorizing", time=3000)
+            notification(translation(90384), time=3000)
             return False
         set_property("trakt_token", str(token["access_token"]))
         set_property("trakt_refresh", str(token["refresh_token"]))
@@ -396,12 +396,12 @@ class TraktAuthentication(TraktBase):
             if user and isinstance(user, dict):
                 set_setting("trakt_user", str(user["username"]))
                 set_setting("is_trakt_auth", "true")
-                notification("Trakt Account Authorized", time=3000)
+                notification(translation(90385), time=3000)
                 return True
         except:
             kodilog("Trakt user not found, setting to empty user")
             set_setting("is_trakt_auth", "false")
-            notification("Trakt Error Authorizing", time=3000)
+            notification(translation(90384), time=3000)
             return False
 
     def trakt_revoke_authentication(self):
@@ -424,7 +424,7 @@ class TraktAuthentication(TraktBase):
         set_setting("trakt_user", EMPTY_USER)
         set_setting("is_trakt_auth", "false")
         self.call_trakt("oauth/revoke", data=data, with_auth=False)
-        notification("You are now logged out from Trakt.tv", time=3000)
+        notification(translation(90386), time=3000)
 
 
 class TraktMovies(TraktBase):
@@ -1108,9 +1108,9 @@ class TraktLists(TraktBase):
             and response["added"].get("movies", 0) == 0
             and response["added"].get("episodes", 0) == 0
         ):
-            notification("Failed to mark as watched", time=3000)
+            notification(translation(90387), time=3000)
         else:
-            notification("Marked as watched", time=3000)
+            notification(translation(90388), time=3000)
 
         return response
 

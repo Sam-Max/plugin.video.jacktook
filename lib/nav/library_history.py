@@ -93,7 +93,7 @@ def add_to_library(params):
     if data:
         add_lib(json.loads(data))
 
-    Dialog().notification("Jacktook", translation(90205))
+    Dialog().notification(translation(90069), translation(90205))
 
 
 def search_direct(params):
@@ -149,7 +149,7 @@ def search_direct(params):
                     ),
                 ),
                 (
-                    "Modify Search",
+                    translation(90655),
                     container_update(
                         "search_direct",
                         mode=item_mode,

@@ -285,14 +285,14 @@ anime_items = [
 
 animation_items = [
     {
-        "name": "Cartoons Popular",
+        "name": translation(90496),
         "mode": "cartoon",
         "category": "Cartoons_Popular",
         "api": "tmdb",
         "icon": "tmdb.png",
     },
     {
-        "name": "Animation Popular",
+        "name": translation(90497),
         "mode": "animation",
         "category": "Animation_Popular",
         "api": "tmdb",

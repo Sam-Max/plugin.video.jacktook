@@ -30,11 +30,11 @@ def _ping_addons_with_progress(addons):
     total_addons = len(addons)
 
     progress_dialog = xbmcgui.DialogProgress()
-    progress_dialog.create("Stremio", "Pinging addons for availability...")
+    progress_dialog.create(translation(90153), translation(90607))
 
     def update_progress(completed, total):
         percent = int((completed / total) * 100)
-        progress_dialog.update(percent, f"Pinging addons... {completed}/{total}")
+        progress_dialog.update(percent, translation(90608) % (completed, total))
 
     reachable_addons = ping_addons(addons, progress_callback=update_progress)
     progress_dialog.close()
@@ -45,8 +45,8 @@ def _ping_addons_with_progress(addons):
 
     dialog = xbmcgui.Dialog()
     dialog.ok(
-        "Ping Results",
-        f"Reachable: {reachable_count}\nUnreachable: {unreachable_count}",
+        translation(90609),
+        translation(90610) % (reachable_count, unreachable_count),
     )
 
     return reachable_addons
@@ -156,8 +156,8 @@ def _filter_stream_addons_by_id_prefix(addons, allowed_prefixes):
 
 def stremio_filtered_selection(params):
     dialog = xbmcgui.Dialog()
-    options = ["Stream Addons", "Catalogs", "Live TV Addons"]
-    selection = dialog.select("Select Category to Filter", options)
+    options = [translation(90333), translation(90334), translation(90335)]
+    selection = dialog.select(translation(90611), options)
 
     if selection == 0:
         stremio_toggle_addons(params, check_availability=True)
@@ -300,10 +300,10 @@ def stremio_toggle_tv_addons(params, check_availability=False):
 def add_custom_stremio_addon(params):
     dialog = xbmcgui.Dialog()
     url = dialog.input(
-        "Enter the custom Stremio addon URL", type=xbmcgui.INPUT_ALPHANUM
+        translation(90523), type=xbmcgui.INPUT_ALPHANUM
     )
     if not url:
-        dialog.ok("Custom Addon", "No URL provided.")
+        dialog.ok(translation(90522), translation(90524))
         return
 
     if url.startswith("stremio://"):
@@ -318,13 +318,13 @@ def add_custom_stremio_addon(params):
         manifest = response.json()
     except Exception as e:
         kodilog(f"Failed to fetch custom addon manifest: {e}")
-        dialog.ok("Custom Addon", f"Failed to fetch manifest: {e}")
+        dialog.ok(translation(90522), translation(90525) % e)
         return
 
     try:
         id_ = manifest.get("id") or manifest.get("name")
         if not id_:
-            dialog.ok("Custom Addon", "Manifest missing 'id' or 'name'.")
+            dialog.ok(translation(90522), translation(90526))
             return
         addon_key = build_addon_instance_key(
             {"manifest": manifest, "transportUrl": response.url}
@@ -414,23 +414,20 @@ def add_custom_stremio_addon(params):
             cache.set(STREMIO_USER_ADDONS, user_addons, timedelta(days=365 * 20))
 
             if is_stream or is_catalog or is_tv_stream:
-                dialog.ok("Custom Addon", "Custom Stremio addon added successfully!")
+                dialog.ok(translation(90522), translation(90527))
             else:
-                dialog.ok(
-                    "Custom Addon",
-                    "Addon does not provide 'stream' or 'catalog' resources.",
-                )
+                dialog.ok(translation(90522), translation(90528))
         else:
-            dialog.ok("Custom Addon", "This addon is already added to your list.")
+            dialog.ok(translation(90522), translation(90529))
     except Exception as e:
-        dialog.ok("Custom Addon", f"Failed to add custom addon: {e}")
+        dialog.ok(translation(90522), translation(90530) % e)
 
 
 def remove_custom_stremio_addon(params=None):
     user_addons = cache.get(STREMIO_USER_ADDONS) or []
     removable_addons = [a for a in user_addons if a.get("transportName") == "custom"]
     if not removable_addons:
-        xbmcgui.Dialog().ok("Remove Addon", "No custom Stremio addons to remove.")
+        xbmcgui.Dialog().ok(translation(90531), translation(90532))
         return
 
     options = []
@@ -457,7 +454,7 @@ def remove_custom_stremio_addon(params=None):
         options.append(item)
 
     dialog = xbmcgui.Dialog()
-    selected = dialog.multiselect("Remove Stremio Addons", options, useDetails=True)
+    selected = dialog.multiselect(translation(90533), options, useDetails=True)
     if not selected:
         return
 
@@ -490,7 +487,7 @@ def remove_custom_stremio_addon(params=None):
                 cache_key, encode_selected_ids(selected_keys), timedelta(days=365 * 20)
             )
 
-    xbmcgui.Dialog().ok("Remove Addon", "Selected addon(s) removed.")
+    xbmcgui.Dialog().ok(translation(90531), translation(90534))
 
 
 def stremio_bypass_addons_select(params=None):
@@ -511,7 +508,7 @@ def stremio_bypass_addons_select(params=None):
         elif addon.manifest.name.lower() in selected_values:
             selected_ids.append(addon.key())
 
-    title = "Select Bypassed Addons"
+    title = translation(90213)
     selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
 
     if selected_addon_keys is None:

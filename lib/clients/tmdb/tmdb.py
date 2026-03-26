@@ -66,7 +66,7 @@ class TmdbClient(BaseTmdbClient):
         if handler:
             return handler()
         else:
-            notification("Invalid mode")
+            notification(translation(90518))
 
     @staticmethod
     def handle_tmdb_movie_query(params):
@@ -90,7 +90,7 @@ class TmdbClient(BaseTmdbClient):
         if handler:
             handler()
         else:
-            notification("Invalid query")
+            notification(translation(90390))
 
     @staticmethod
     def handle_tmdb_people(subquery="", mode="", page=1):
@@ -202,7 +202,7 @@ class TmdbClient(BaseTmdbClient):
 
         data = tmdb_get("search_multi", {"query": query, "page": page})
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         results = getattr(data, "results", [])
@@ -214,9 +214,9 @@ class TmdbClient(BaseTmdbClient):
                 media_type = item.get("media_type", "")
 
                 if media_type == "movie":
-                    label_title = f"[B]MOVIE -[/B] {title}"
+                    label_title = f"[B]{translation(90008)} -[/B] {title}"
                 elif media_type == "tv":
-                    label_title = f"[B]TV -[/B] {title}"
+                    label_title = f"[B]{translation(90007)} -[/B] {title}"
                 else:
                     continue
 
@@ -260,12 +260,12 @@ class TmdbClient(BaseTmdbClient):
         params = params_map.get(mode)
 
         if not path or not params:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         data = tmdb_get(path=path, params=params)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         results = getattr(data, "results", [])
@@ -478,7 +478,7 @@ class TmdbClient(BaseTmdbClient):
         elif mode == "tv" or (mode == "multi" and media_type == "tv"):
             TmdbClient._show_tmdb_shows(tmdb_obj, mode, title, tmdb_id, media_type)
         else:
-            notification("Unsupported media type or missing external_ids")
+            notification(translation(90401))
 
     @staticmethod
     def _show_tmdb_movie(tmdb_obj, mode, title, tmdb_id):
@@ -530,7 +530,7 @@ class TmdbClient(BaseTmdbClient):
         path = "popular_shows" if mode == "tv" else "popular_movie"
         data = tmdb_get(path, page)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         results = getattr(data, "results", [])
@@ -567,7 +567,7 @@ class TmdbClient(BaseTmdbClient):
 
         data = tmdb_get("discover_tv", params)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No shows airing today")
+            notification(translation(90395))
             return
 
         results = getattr(data, "results", [])
@@ -629,14 +629,14 @@ class TmdbClient(BaseTmdbClient):
 
         path = route_map.get(mode)
         if not path:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         route_params = {"with_original_language": lang, "page": page}
 
         data = tmdb_get(path=path, params=route_params)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         results = getattr(data, "results", [])
@@ -711,7 +711,7 @@ class TmdbClient(BaseTmdbClient):
 
         path = route_map.get(mode)
         if not path:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         route_params = {"page": page}
@@ -722,7 +722,7 @@ class TmdbClient(BaseTmdbClient):
 
         data = tmdb_get(path=path, params=route_params)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         results = getattr(data, "results", [])
@@ -756,7 +756,7 @@ class TmdbClient(BaseTmdbClient):
         set_pluging_category(translation(90021))
         trending_data = tmdb_get("tv_week", page)
         if not trending_data or getattr(trending_data, "total_results") == 0:
-            notification("No TV shows found")
+            notification(translation(90394))
             end_of_directory()
             return
 
@@ -856,9 +856,9 @@ class TmdbClient(BaseTmdbClient):
     def show_collections_menu(mode):
         set_pluging_category(translation(90067))
         collections_menu = [
-            ("Search Collections", "search", "search.png"),
-            ("Popular Collections", "popular", "tmdb.png"),
-            ("Top Rated Collections", "top_rated", "tmdb.png"),
+            (translation(90376), "search", "search.png"),
+            (translation(90377), "popular", "tmdb.png"),
+            (translation(90378), "top_rated", "tmdb.png"),
         ]
 
         for label, submode, icon_path in collections_menu:
@@ -893,13 +893,13 @@ class TmdbClient(BaseTmdbClient):
         elif submode == "search":
             TmdbCollections.search_collections(mode, page)
         else:
-            notification("Invalid collection query")
+            notification(translation(90396))
 
     @staticmethod
     def show_keywords_items(query, page, mode):
         keywords_data = Search().keywords(query, page=page)
         if not keywords_data or len(keywords_data) == 0:
-            notification("No keywords found")
+            notification(translation(90397))
             end_of_directory()
             return
 
@@ -950,10 +950,10 @@ class TmdbClient(BaseTmdbClient):
         page = int(params.get("page", 1))
 
         if not keyword_id:
-            notification("No keyword ID provided")
+            notification(translation(90398))
             return
 
-        set_pluging_category(f"Keyword: {keyword_name}")
+        set_pluging_category(translation(90381) % keyword_name)
         set_content_type(
             "movies"
         )  # Using movies content type ensures better poster rendering in many skins
@@ -994,7 +994,7 @@ class TmdbClient(BaseTmdbClient):
                 total_pages = max(total_pages, getattr(tv_data, "total_pages", 0))
 
         if not results:
-            notification("No results found for this keyword")
+            notification(translation(90399))
             end_of_directory()
             return
 
@@ -1055,10 +1055,10 @@ class TmdbClient(BaseTmdbClient):
         page = int(params.get("page", 1))
 
         if not tmdb_id:
-            notification("No TMDB ID found")
+            notification(translation(90400))
             return
 
-        set_pluging_category("Recommendations")
+        set_pluging_category(translation(90379))
         set_content_type(mode)
 
         if mode == "tv":
@@ -1066,11 +1066,11 @@ class TmdbClient(BaseTmdbClient):
         elif mode == "movies":
             data = tmdb_get("movie_recommendations", {"id": tmdb_id, "page": page})
         else:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No recommendations found")
+            notification(translation(90391))
             end_of_directory()
             return
 
@@ -1109,10 +1109,10 @@ class TmdbClient(BaseTmdbClient):
         page = int(params.get("page", 1))
 
         if not tmdb_id:
-            notification("No TMDB ID found")
+            notification(translation(90400))
             return
 
-        set_pluging_category("Similar")
+        set_pluging_category(translation(90380))
         set_content_type(mode)
 
         if mode == "tv":
@@ -1120,11 +1120,11 @@ class TmdbClient(BaseTmdbClient):
         elif mode == "movies":
             data = tmdb_get("movie_similar", {"id": tmdb_id, "page": page})
         else:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No similar items found")
+            notification(translation(90392))
             end_of_directory()
             return
 
@@ -1172,7 +1172,7 @@ class TmdbClient(BaseTmdbClient):
 
         tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, tmdb_id)
         if not tmdb_obj:
-            notification("TMDB metadata not found")
+            notification(translation(90393))
             return
 
         external_ids = tmdb_obj.get("external_ids") or {}

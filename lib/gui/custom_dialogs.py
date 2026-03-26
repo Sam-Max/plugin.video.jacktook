@@ -6,7 +6,7 @@ from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.play_next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, kodilog
+from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, kodilog, translation
 from lib.gui.source_select import SourceSelect
 from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
 from lib.domain.torrent import TorrentStream
@@ -44,7 +44,7 @@ class MyWindow(WindowXML):
             selected_item = self.list_control.getSelectedItem()
             if selected_item:
                 xbmcgui.Dialog().notification(
-                    "Selected Item",
+                    translation(90664),
                     selected_item.getLabel(),
                     xbmcgui.NOTIFICATION_INFO,
                     3000,
@@ -231,7 +231,7 @@ def run_skip_intro_dialog(params):
     window = None
     try:
         segment_data = json.loads(params.get("segment_data", "{}"))
-        label = params.get("skip_label", "Skip Intro")
+        label = params.get("skip_label", translation(90160))
 
         from lib.gui.skip_intro_window import SkipIntroWindow
 

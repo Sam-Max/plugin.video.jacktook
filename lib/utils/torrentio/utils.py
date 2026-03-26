@@ -1,6 +1,7 @@
 from datetime import timedelta
 from lib.db.cached import cache
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
+from lib.utils.kodi.utils import translation
 import xbmcgui
 
 
@@ -32,10 +33,10 @@ def open_providers_selection(identifier="torrentio_providers"):
     cached_providers = cache.get(identifier)
     if cached_providers:
         choice = xbmcgui.Dialog().yesno(
-            "Providers Selection Dialog",
-            f"Your current Providers are: \n{','.join(cached_providers)}\n\nDo you want to change?",
-            yeslabel="Ok",
-            nolabel="No",
+            translation(90570),
+            translation(90571) % ",".join(cached_providers),
+            yeslabel=translation(90605),
+            nolabel=translation(90606),
         )
         if not choice:
             return
@@ -45,7 +46,7 @@ def open_providers_selection(identifier="torrentio_providers"):
 
 
 def providers_selection(identifier="torrentio_providers"):
-    selected = xbmcgui.Dialog().multiselect("Select Providers", items)
+    selected = xbmcgui.Dialog().multiselect(translation(90572), items)
     if selected:
         providers = [items[i] for i in selected]
         cache.set(
@@ -54,11 +55,11 @@ def providers_selection(identifier="torrentio_providers"):
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         )
         xbmcgui.Dialog().ok(
-            "Selection Dialog", f"Successfully selected: {',' .join(providers)}"
+            translation(90573), translation(90574) % ",".join(providers)
         )
     else:
         xbmcgui.Dialog().notification(
-            "Selection", "No providers selected", xbmcgui.NOTIFICATION_INFO
+            translation(90575), translation(90576), xbmcgui.NOTIFICATION_INFO
         )
 
 

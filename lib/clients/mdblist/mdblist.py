@@ -12,6 +12,7 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     notification,
     show_keyboard,
+    translation,
 )
 
 from xbmcplugin import addDirectoryItem
@@ -29,10 +30,7 @@ def search_mdbd_lists(params):
         return
     results = mdblist_get(path="search_lists", params={"query": query, "page": page})
     if not results:
-        notification("No results found")
-        return
-    if not results:
-        notification("No lists found")
+        notification(translation(90519))
         return
     for item in results:
         label = item.get("name", "Unnamed List")
@@ -52,10 +50,7 @@ def user_mdbd_lists(params):
     set_pluging_category("MDblist - User Lists")
     results = mdblist_get(path="get_user_lists")
     if not results:
-        notification("No results found")
-        return
-    if not results:
-        notification("No user lists found")
+        notification(translation(90520))
         return
     for item in results:
         label = item.get("name", "Unnamed List")
@@ -75,10 +70,7 @@ def top_mdbd_lists(params):
     set_pluging_category("MDblist - Top Lists")
     results = mdblist_get(path="top_mdbd_lists")
     if not results:
-        notification("No results found")
-        return
-    if not results:
-        notification("No top lists found")
+        notification(translation(90521))
         return
     for item in results:
         label = item.get("name", "Unnamed List")
@@ -113,7 +105,7 @@ def show_mdblist_list(params):
         },
     )
     if not result:
-        notification("No items found in this list")
+        notification(translation(90431))
         return
 
     for item in result:

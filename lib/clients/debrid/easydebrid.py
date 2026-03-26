@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.easydebrid import EasyDebrid
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import dialog_text, get_setting, notification
+from lib.utils.kodi.utils import dialog_text, get_setting, notification, translation
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -130,4 +130,4 @@ class EasyDebridHelper:
             f"[B]Expires:[/B] {expires}",
             f"[B]Days Remaining:[/B] {days_remaining}",
         ]
-        dialog_text("Easy-Debrid", "\n".join(body))
+        dialog_text(translation(90657), "\n".join(body))

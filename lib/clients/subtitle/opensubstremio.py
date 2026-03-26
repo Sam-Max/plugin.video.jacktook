@@ -72,7 +72,7 @@ class OpenSubtitleStremioClient:
 
         items = [
             xbmcgui.ListItem(
-                label=f"Subtitle No. {i}", label2=language_code_to_name(s["lang"])
+                label=translation(90665) % i, label2=language_code_to_name(s["lang"])
             )
             for i, s in enumerate(subtitles)
         ]

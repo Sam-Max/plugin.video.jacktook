@@ -1,12 +1,12 @@
-from lib.utils.kodi.utils import kodilog
+from lib.utils.kodi.utils import kodilog, translation
 import xbmcgui
 
 
 class CustomProgressDialog(xbmcgui.WindowXMLDialog):
     def __init__(self, xml_file: str, location: str):
         super().__init__(xml_file, location)
-        self.title = "Downloading"
-        self.message = "Please wait..."
+        self.title = translation(30653)
+        self.message = translation(90554)
         self.progress = 0
         self.cancelled = False
 

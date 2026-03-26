@@ -557,11 +557,11 @@ class TraktClient:
         )
         try:
             TraktAPI().lists.add_to_watchlist(media_type, ids)
-            notification("Added to Trakt watchlist", time=3000)
+            notification(translation(90434), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error adding to Trakt watchlist: {e}")
-            notification("Failed to add to Trakt watchlist", time=3000)
+            notification(translation(90435), time=3000)
 
     @staticmethod
     def trakt_remove_from_watchlist(params):
@@ -571,11 +571,11 @@ class TraktClient:
         )
         try:
             TraktAPI().lists.remove_from_watchlist(media_type, ids)
-            notification("Removed from Trakt watchlist", time=3000)
+            notification(translation(90436), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error removing from Trakt watchlist: {e}")
-            notification("Failed to remove from Trakt watchlist", time=3000)
+            notification(translation(90437), time=3000)
 
     @staticmethod
     def trakt_mark_as_watched(params):
@@ -587,7 +587,7 @@ class TraktClient:
             TraktAPI().lists.mark_as_watched(media_type, season, episode, ids)
         except Exception as e:
             kodilog(f"Error marking as watched on Trakt: {e}")
-            notification("Failed to mark as watched on Trakt", time=3000)
+            notification(translation(90438), time=3000)
 
     @staticmethod
     def trakt_mark_as_unwatched(params):
@@ -597,10 +597,10 @@ class TraktClient:
         ids = json.loads(params.get("ids", "{}"))
         try:
             TraktAPI().lists.mark_as_unwatched(media_type, season, episode, ids)
-            notification("Marked as unwatched on Trakt", time=3000)
+            notification(translation(90439), time=3000)
         except Exception as e:
             kodilog(f"Error marking as unwatched on Trakt: {e}")
-            notification("Failed to mark as unwatched on Trakt", time=3000)
+            notification(translation(90440), time=3000)
 
     @staticmethod
     def trakt_add_to_collection(params):
@@ -613,7 +613,7 @@ class TraktClient:
             if media_type not in ("movie", "movies"):
                 payload = TraktClient._build_show_collection_payload(ids)
                 if payload is None:
-                    notification("Could not build Trakt collection payload for show", time=3500)
+                    notification(translation(90465), time=3500)
                     return
             result = TraktAPI().lists.add_to_collection(media_type, ids, payload=payload)
             if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "add"):
@@ -628,15 +628,15 @@ class TraktClient:
             existing_count = TraktClient._trakt_sync_result_count(result, "existing", media_type)
             not_found_count = TraktClient._trakt_sync_result_count(result, "not_found", media_type)
             if added_count > 0 or existing_count > 0:
-                notification("Added to Trakt collection", time=3000)
+                notification(translation(90441), time=3000)
                 refresh()
             elif not_found_count > 0:
-                notification("Trakt could not match this item for collection", time=3500)
+                notification(translation(90463), time=3500)
             else:
-                notification("No Trakt collection changes were applied", time=3500)
+                notification(translation(90464), time=3500)
         except Exception as e:
             kodilog(f"Error adding to Trakt collection: {e}")
-            notification("Failed to add to Trakt collection", time=3000)
+            notification(translation(90443), time=3000)
 
     @staticmethod
     def trakt_remove_from_collection(params):
@@ -651,7 +651,7 @@ class TraktClient:
                 if payload is None:
                     payload = TraktClient._build_show_collection_payload(ids)
                 if payload is None:
-                    notification("Could not build Trakt collection payload for show", time=3500)
+                    notification(translation(90465), time=3500)
                     return
             result = TraktAPI().lists.remove_from_collection(media_type, ids, payload=payload)
             if media_type not in ("movie", "movies") and not TraktClient._result_has_collection_change(result, "remove"):
@@ -665,15 +665,15 @@ class TraktClient:
             removed_count = TraktClient._trakt_sync_result_count(result, "deleted", media_type)
             not_found_count = TraktClient._trakt_sync_result_count(result, "not_found", media_type)
             if removed_count > 0:
-                notification("Removed from Trakt collection", time=3000)
+                notification(translation(90442), time=3000)
                 refresh()
             elif not_found_count > 0:
-                notification("Item not found in Trakt collection", time=3500)
+                notification(translation(90462), time=3500)
             else:
-                notification("No Trakt collection changes were applied", time=3500)
+                notification(translation(90464), time=3500)
         except Exception as e:
             kodilog(f"Error removing from Trakt collection: {e}")
-            notification("Failed to remove from Trakt collection", time=3000)
+            notification(translation(90444), time=3000)
 
     @staticmethod
     def trakt_add_to_favorites(params):
@@ -683,11 +683,11 @@ class TraktClient:
         )
         try:
             TraktAPI().lists.add_to_favorites(media_type, ids)
-            notification("Added to Trakt favorites", time=3000)
+            notification(translation(90445), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error adding to Trakt favorites: {e}")
-            notification("Failed to add to Trakt favorites", time=3000)
+            notification(translation(90447), time=3000)
 
     @staticmethod
     def trakt_remove_from_favorites(params):
@@ -697,11 +697,11 @@ class TraktClient:
         )
         try:
             TraktAPI().lists.remove_from_favorites(media_type, ids)
-            notification("Removed from Trakt favorites", time=3000)
+            notification(translation(90446), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error removing from Trakt favorites: {e}")
-            notification("Failed to remove from Trakt favorites", time=3000)
+            notification(translation(90448), time=3000)
 
     @staticmethod
     def trakt_create_list(params):
@@ -712,26 +712,26 @@ class TraktClient:
         description = show_keyboard(id=30925, default="") or ""
         try:
             TraktAPI().lists.create_list(name=name, description=description)
-            notification("Created Trakt list", time=3000)
+            notification(translation(90449), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error creating Trakt list: {e}")
-            notification("Failed to create Trakt list", time=3000)
+            notification(translation(90450), time=3000)
 
     @staticmethod
     def trakt_delete_list(params):
         trakt_id = params.get("trakt_id")
         if not trakt_id:
             return
-        if not dialogyesno("Trakt", "Delete this Trakt list?"):
+        if not dialogyesno(translation(90645), translation(90466)):
             return
         try:
             TraktAPI().lists.delete_list(trakt_id)
-            notification("Deleted Trakt list", time=3000)
+            notification(translation(90451), time=3000)
             refresh()
         except Exception as e:
             kodilog(f"Error deleting Trakt list: {e}")
-            notification("Failed to delete Trakt list", time=3000)
+            notification(translation(90452), time=3000)
 
     @staticmethod
     def trakt_like_list(params):
@@ -741,11 +741,11 @@ class TraktClient:
             return
         try:
             TraktAPI().lists.like_list(trakt_id, user_slug)
-            notification("Liked Trakt list", time=3000)
+            notification(translation(90453), time=3000)
             TraktClient._refresh_after_list_action(params)
         except Exception as e:
             kodilog(f"Error liking Trakt list: {e}")
-            notification("Failed to like Trakt list", time=3000)
+            notification(translation(90454), time=3000)
 
     @staticmethod
     def trakt_unlike_list(params):
@@ -755,20 +755,20 @@ class TraktClient:
             return
         try:
             TraktAPI().lists.unlike_list(trakt_id, user_slug)
-            notification("Unliked Trakt list", time=3000)
+            notification(translation(90455), time=3000)
             TraktClient._refresh_after_list_action(params)
         except Exception as e:
             kodilog(f"Error unliking Trakt list: {e}")
-            notification("Failed to unlike Trakt list", time=3000)
+            notification(translation(90456), time=3000)
 
     @staticmethod
     def _select_trakt_list():
         my_lists = TraktAPI().lists.trakt_get_lists("my_lists") or []
         if not my_lists:
-            notification("No Trakt lists found", time=3000)
+            notification(translation(90461), time=3000)
             return None
 
-        options = [item.get("name", "Untitled List") for item in my_lists]
+        options = [item.get("name", translation(90535)) for item in my_lists]
         choice = dialog_select(translation(30927), options)
         if choice < 0:
             return None
@@ -785,10 +785,10 @@ class TraktClient:
             TraktAPI().lists.add_item_to_list(
                 selected_list.get("trakt_id"), media_type, ids
             )
-            notification("Added to Trakt list", time=3000)
+            notification(translation(90457), time=3000)
         except Exception as e:
             kodilog(f"Error adding item to Trakt list: {e}")
-            notification("Failed to add to Trakt list", time=3000)
+            notification(translation(90459), time=3000)
 
     @staticmethod
     def trakt_remove_item_from_list(params):
@@ -801,10 +801,10 @@ class TraktClient:
             TraktAPI().lists.remove_item_from_list(
                 selected_list.get("trakt_id"), media_type, ids
             )
-            notification("Removed from Trakt list", time=3000)
+            notification(translation(90536), time=3000)
         except Exception as e:
             kodilog(f"Error removing item from Trakt list: {e}")
-            notification("Failed to remove from Trakt list", time=3000)
+            notification(translation(90537), time=3000)
 
     @staticmethod
     def handle_calendar_request():

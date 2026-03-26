@@ -244,7 +244,7 @@ def downloads_viewer(params):
             f for f in files if is_active_download(os.path.join(translated_path, f))
         ]
 
-        active_label = f"[COLOR red]Active Downloads: {len(active_downloads)}[/COLOR]"
+        active_label = f"[COLOR red]{translation(90373)}: {len(active_downloads)}[/COLOR]"
         active_item = xbmcgui.ListItem(label=active_label)
         active_item.setProperty("IsPlayable", "false")
         active_item.setArt(
@@ -270,7 +270,7 @@ def downloads_viewer(params):
                 if is_active_download(item_path):
                     context_menu.append(
                         (
-                            "Cancel Download",
+                            translation(90374),
                             action_url_run(
                                 "handle_cancel_download",
                                 file_path=json.dumps(item_path),
@@ -280,7 +280,7 @@ def downloads_viewer(params):
 
                 context_menu.append(
                     (
-                        "Delete File",
+                        translation(90375),
                         action_url_run(
                             "handle_delete_file", file_path=json.dumps(item_path)
                         ),
@@ -294,7 +294,7 @@ def downloads_viewer(params):
         addDirectoryItems(ADDON_HANDLE, item_list)
         endOfDirectory(ADDON_HANDLE)
     except Exception as e:
-        notification(f"Error: {str(e)}", "Downloads Viewer")
+        notification(f"Error: {str(e)}", translation(90662))
         endOfDirectory(ADDON_HANDLE, succeeded=False)
 
 

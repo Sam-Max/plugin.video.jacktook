@@ -100,8 +100,8 @@ class SubtitleManager(KodiJsonRpcClient):
             use_existing = dialog.yesno(
                 translation(90250),
                 translation(90251),
-                yeslabel="Use Existing",
-                nolabel="Download New",
+                yeslabel=translation(90627),
+                nolabel=translation(90628),
             )
             if use_existing:
                 return subtitle_files

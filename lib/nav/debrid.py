@@ -81,12 +81,12 @@ DEBRID_INFO_HANDLERS = {
 def cloud_details(params):
     debrid_name = params.get("debrid_name")
     if debrid_name == DebridType.PM:
-        notification("Not yet implemented")
+        notification(translation(90423))
         return
 
     actions = DEBRID_CLOUD_ACTIONS.get(debrid_name)
     if not actions:
-        notification("Unsupported debrid type")
+        notification(translation(90424))
         return
 
     addDirectoryItem(
@@ -148,7 +148,7 @@ def easynews_info(params):
     timeout = int(get_setting("easynews_timeout", "25") or "25")
 
     if not user or not password:
-        notification("Easynews credentials required")
+        notification(translation(90425))
         return
 
     Easynews(user, password, timeout, notification).get_info()
@@ -253,7 +253,7 @@ def get_tb_downloads(params):
 def download(magnet, debrid_type):
     handler = DEBRID_DOWNLOAD_HANDLERS.get(debrid_type)
     if not handler:
-        notification("Unsupported debrid type")
+        notification(translation(90424))
         return
     handler(magnet)
 

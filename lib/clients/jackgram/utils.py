@@ -18,6 +18,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     set_view,
+    translation,
 )
 
 from xbmcplugin import addDirectoryItem
@@ -28,7 +29,7 @@ import json
 def check_jackgram_active():
     jackgram_enabled = get_setting("jackgram_enabled")
     if not jackgram_enabled:
-        notification("Jackgram indexer not activated.")
+        notification(translation(90422))
         return False
     return True
 

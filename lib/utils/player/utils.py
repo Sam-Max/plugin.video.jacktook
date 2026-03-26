@@ -146,8 +146,8 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
         if Dialog().yesno(
             translation(30252),
             translation(30254),
-            yeslabel="Ok",
-            nolabel="No",
+            yeslabel=translation(90605),
+            nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.elementum)")
         else:
@@ -176,8 +176,8 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
         if Dialog().yesno(
             translation(30253),
             translation(30255),
-            yeslabel="Ok",
-            nolabel="No",
+            yeslabel=translation(90605),
+            nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.jacktorr)")
         else:
@@ -200,8 +200,8 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
         if Dialog().yesno(
             translation(30250),
             translation(30256),
-            yeslabel="Ok",
-            nolabel="No",
+            yeslabel=translation(90605),
+            nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.torrest)")
         else:

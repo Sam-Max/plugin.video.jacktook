@@ -21,6 +21,7 @@ from lib.utils.kodi.utils import (
     show_busy_dialog,
     close_busy_dialog,
     kodilog,
+    translation,
 )
 from lib.utils.general.utils import unzip
 
@@ -88,9 +89,9 @@ def get_changes(online_version=None):
     if online_version:
         changelog = http_get(CHANGELOG_FILE)
         if changelog:
-            dialog_text(f"New Release v{online_version} - Changelog", str(changelog))
+            dialog_text(translation(90592) % online_version, str(changelog))
     else:
-        dialog_text("Changelog", file=CHANGELOG_PATH)
+        dialog_text(translation(90577), file=CHANGELOG_PATH)
 
 
 # =========================
@@ -102,17 +103,17 @@ def updates_check_addon(automatic=False):
     if not current_version or not online_version:
         kodilog("Failed to fetch versions for update check.")
         if not automatic:
-            dialog_ok(heading=HEADING, line1="[B]Unable to check for updates[/B]")
+            dialog_ok(heading=HEADING, line1=translation(90578))
         return
 
     kodilog(f"Update check - Current: {current_version}, Online: {online_version}")
 
-    msg = f"Installed: [B]{current_version}[/B][CR]Online: [B]{online_version}[/B][CR][CR]"
+    msg = translation(90580) % (current_version, online_version)
 
     if current_version == online_version:
         kodilog("No update available.")
         if not automatic:
-            notification(heading=HEADING, message="[B]No update available[/B]")
+            notification(heading=HEADING, message=translation(90579))
         return
 
     if version_less_than(current_version, online_version):
@@ -120,7 +121,7 @@ def updates_check_addon(automatic=False):
         if not automatic:
             if not dialogyesno(
                 header=HEADING,
-                text=msg + "[B]Update available. Do you want to update?[/B]",
+                text=msg + translation(90581),
             ):
                 return
             update_addon(online_version)
@@ -131,13 +132,13 @@ def updates_check_addon(automatic=False):
             if action == 0:  # Ask
                 if dialogyesno(
                     header=HEADING,
-                    text=msg + "[B]Update available. Do you want to update?[/B]",
+                    text=msg + translation(90581),
                 ):
                     update_addon(online_version)
             elif action == 1:  # Notify
                 notification(
                     heading=HEADING,
-                    message=f"[B]Update Available (v{online_version}).[/B] [I]Check settings to update.[/I]",
+                    message=translation(90582) % online_version,
                 )
 
 
@@ -154,7 +155,7 @@ def downgrade_addon_menu():
         resp.raise_for_status()
         contents = resp.json()
     except Exception as e:
-        dialog_ok(heading=HEADING, line1=f"Error fetching versions: {e}")
+        dialog_ok(heading=HEADING, line1=translation(90583) % e)
         return
 
     # Extract versions from zip filenames: plugin.video.jacktook-X.Y.Z.zip
@@ -173,7 +174,7 @@ def downgrade_addon_menu():
     versions = [v for v in versions if v != ADDON_VERSION]
 
     if not versions:
-        dialog_ok(heading=HEADING, line1="No older/different versions found.")
+        dialog_ok(heading=HEADING, line1=translation(90584))
         return
 
     # Sort versions
@@ -190,7 +191,7 @@ def downgrade_addon_menu():
         versions.sort(key=n, reverse=True)
 
     selected_index = dialog_select(
-        heading="Select Version to Downgrade", _list=versions
+        heading=translation(90585), _list=versions
     )
 
     if selected_index == -1:
@@ -200,7 +201,7 @@ def downgrade_addon_menu():
 
     if not dialogyesno(
         header=HEADING,
-        text=f"Are you sure you want to downgrade/reinstall to version [B]{selected_version}[/B]?",
+        text=translation(90586) % selected_version,
     ):
         return
 
@@ -211,7 +212,7 @@ def update_addon(new_version):
     kodilog(f"Starting update to version: {new_version}")
     close_all_dialog()
     execute_builtin("ActivateWindow(Home)", True)
-    notification(heading=HEADING, message="[B]Downloading update...[/B]")
+    notification(heading=HEADING, message=translation(90587))
 
     zip_name = f"{ADDON_ID}-{new_version}.zip"
     zip_url = f"{BASE_ZIP_URL}/{ADDON_ID}/{zip_name}"
@@ -226,7 +227,7 @@ def update_addon(new_version):
     close_busy_dialog()
     if not raw_data:
         kodilog("Error: Unable to download update.")
-        dialog_ok(heading=HEADING, line1="Error: Unable to download update.")
+        dialog_ok(heading=HEADING, line1=translation(90588))
         return
 
     try:
@@ -235,7 +236,7 @@ def update_addon(new_version):
         kodilog("Zip file downloaded successfully.")
     except Exception as e:
         kodilog(f"Error saving update file: {e}")
-        dialog_ok(heading=HEADING, line1=f"Error saving update file: {e}")
+        dialog_ok(heading=HEADING, line1=translation(90589) % e)
         return
 
     # Remove old addon
@@ -262,7 +263,7 @@ def update_addon(new_version):
         kodilog("Error extracting update.")
         delete_file(zip_path)
         dialog_ok(
-            heading=HEADING, line1="Error extracting update. Please install manually."
+            heading=HEADING, line1=translation(90590)
         )
         return
 
@@ -270,7 +271,7 @@ def update_addon(new_version):
 
     if dialogyesno(
         header=HEADING,
-        text="Do you want to view the changelog for the new version?",
+        text=translation(90591),
     ):
         get_changes()
 
@@ -280,5 +281,5 @@ def update_addon(new_version):
     update_kodi_addons_db()
     kodi_refresh()
 
-    notification(heading=HEADING, message="[B]Update complete.[/B]")
+    notification(heading=HEADING, message=translation(90593))
     kodilog("Update process finished successfully.")

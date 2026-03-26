@@ -69,7 +69,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             )
 
             if search_capabilities:
-                listitem = ListItem(label=f"Search {catalog_name}")
+                listitem = ListItem(label=f"{translation(90006)} {catalog_name}")
                 listitem.setArt({"icon": addon.manifest.logo})
 
                 addDirectoryItem(
@@ -162,7 +162,7 @@ def list_catalog(params):
         metas = metas[skip : skip + CATALOG_PAGE_SIZE]
 
     if not metas:
-        notification("No metas available")
+        notification(translation(90516))
         end_of_directory()
         return
 
@@ -184,7 +184,7 @@ def list_catalog(params):
             catalog_id=params["catalog_id"],
             skip=skip + len(metas),
         )
-        list_item = ListItem(label="Next Page")
+        list_item = ListItem(label=translation(90515))
         addDirectoryItem(
             handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
         )
@@ -316,7 +316,7 @@ def add_meta_items(metas, params):
 
     metas = [m for m in metas if should_include(m)]
     if not metas:
-        notification(f"No content available for {menu_type}")
+        notification(f"{translation(90511)} {menu_type}")
         end_of_directory()
         return
 
@@ -455,12 +455,12 @@ def list_stremio_seasons(params):
 
     meta_data = response.get("meta")
     if not meta_data:
-        notification("No meta available")
+        notification(translation(90517))
         return
 
     videos = meta_data.videos
     if not videos:
-        notification("No seasons available")
+        notification(translation(90517))
         return
 
     available_seasons = set(
@@ -475,7 +475,7 @@ def list_stremio_seasons(params):
             meta_id=params["meta_id"],
             season=season,
         )
-        list_item = ListItem(label=f"Season {season}")
+        list_item = ListItem(label=f"{translation(90512)} {season}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
             meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
@@ -512,12 +512,12 @@ def list_stremio_episodes(params):
 
     meta_data = response.get("meta")
     if not meta_data:
-        notification("No meta available")
+        notification(translation(90510))
         return
 
     videos = meta_data.videos
     if not videos:
-        notification("No episodes available")
+        notification(translation(90513))
         return
 
     # Resolve IDs once for the show
@@ -650,7 +650,7 @@ def list_stremio_movie(params):
 
     streams = response.get("streams", [])
     if not streams:
-        notification("No videos available")
+        notification(translation(90514))
         return
 
     for stream in streams:
@@ -693,7 +693,7 @@ def list_stremio_tv(params):
 
     streams = response.get("streams", [])
     if not streams:
-        notification("No videos available")
+        notification(translation(90514))
         return
 
     for stream in streams:

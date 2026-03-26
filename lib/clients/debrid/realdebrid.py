@@ -13,6 +13,7 @@ from lib.clients.debrid.common import (
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
+    translation,
 )
 from lib.utils.general.utils import (
     DebridType,
@@ -259,7 +260,7 @@ class RealDebridHelper:
             f"[B]Days Remaining:[/B] {days_remaining}",
             f"[B]Fidelity Points:[/B] {user['points']}",
         ]
-        dialog_text("Real-Debrid", "\n".join(body))
+        dialog_text(translation(90659), "\n".join(body))
 
     def check_max_active_count(self) -> None:
         """Ensures Real-Debrid does not exceed active torrent limit."""

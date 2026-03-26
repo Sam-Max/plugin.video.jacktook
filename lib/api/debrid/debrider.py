@@ -1,6 +1,6 @@
 from lib.api.debrid.base import DebridClient
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import dialog_ok, set_setting
+from lib.utils.kodi.utils import dialog_ok, set_setting, translation
 from lib.services.debrid.auth import run_debrider_auth
 
 
@@ -19,7 +19,7 @@ class Debrider(DebridClient):
     def remove_auth(self):
         set_setting("debrider_token", "")
         set_setting("debrider_authorized", "false")
-        dialog_ok("Success", "Authentification Removed.")
+        dialog_ok(translation(90544), translation(90561))
 
     def initialize_headers(self):
         self.headers = {

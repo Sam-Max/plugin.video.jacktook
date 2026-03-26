@@ -1,7 +1,7 @@
 import os
 import threading
 from sqlite3 import dbapi2 as db
-from lib.utils.kodi.utils import notification
+from lib.utils.kodi.utils import notification, translation
 
 import xbmcaddon
 from xbmcvfs import translatePath
@@ -27,7 +27,7 @@ mappingDB_lock = threading.Lock()
 
 def get_all_ids(anilist_id):
     if OTAKU_ADDON is None:
-        notification("Otaku (script.otaku.mappings) not found")
+        notification(translation(90427))
         return
     mappingDB_lock.acquire()
     conn = db.connect(mappingDB, timeout=60.0)

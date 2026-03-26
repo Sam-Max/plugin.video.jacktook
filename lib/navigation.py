@@ -177,19 +177,19 @@ def telegram_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_jackgram_latest_movies", page=1),
-        build_list_item("Latest Movies", "movies.png"),
+        build_list_item(translation(90369), "movies.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_jackgram_latest_series", page=1),
-        build_list_item("Latest Series", "tv.png"),
+        build_list_item(translation(90370), "tv.png"),
         isFolder=True,
     )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_jackgram_raw_files", page=1),
-        build_list_item("Raw Files", "cloud.png"),
+        build_list_item(translation(90371), "cloud.png"),
         isFolder=True,
     )
     end_of_directory()
@@ -339,7 +339,7 @@ def search_menu(params):
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("handle_keyword_search", mode="multi"),
-        build_list_item("Search by Keyword", "tmdb.png"),
+        build_list_item(translation(90368), "tmdb.png"),
         isFolder=True,
     )
 
@@ -620,7 +620,7 @@ def play_from_pack(params):
 
 
 def people_menu(mode):
-    set_pluging_category("People")
+    set_pluging_category(translation(90078))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(
@@ -661,7 +661,7 @@ def people_menu(mode):
 
 
 def mdblist_menu(mode):
-    set_pluging_category("MDblist")
+    set_pluging_category(translation(90372))
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(
@@ -669,7 +669,7 @@ def mdblist_menu(mode):
             mode=mode,
             page=1,
         ),
-        build_list_item("Search Lists", "search.png"),
+        build_list_item(translation(90076), "search.png"),
         isFolder=True,
     )
     addDirectoryItem(
@@ -679,7 +679,7 @@ def mdblist_menu(mode):
             mode=mode,
             page=1,
         ),
-        build_list_item("Top Lists", "mdblist.png"),
+        build_list_item(translation(90074), "mdblist.png"),
         isFolder=True,
     )
     addDirectoryItem(
@@ -689,7 +689,7 @@ def mdblist_menu(mode):
             mode=mode,
             page=1,
         ),
-        build_list_item("User Lists", "mdblist.png"),
+        build_list_item(translation(90075), "mdblist.png"),
         isFolder=True,
     )
     end_of_directory()
@@ -793,7 +793,7 @@ def downgrade_addon(params):
 
 
 def show_changelog(params):
-    dialog_text("Changelog", file=CHANGELOG_PATH)
+        dialog_text(translation(90577), file=CHANGELOG_PATH)
 
 
 def donate(params):

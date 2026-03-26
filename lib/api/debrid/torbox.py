@@ -4,6 +4,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     set_setting,
+    translation,
 )
 import datetime
 import requests
@@ -163,7 +164,7 @@ class Torbox(DebridClient):
         set_setting("torbox_token", "")
         set_setting("torbox_user", "")
         set_setting("torbox_enabled", "false")
-        dialog_ok("Success", "Authentification Removed.")
+        dialog_ok(translation(90544), translation(90561))
 
     def auth(self):
         run_torbox_auth(self)

@@ -4,6 +4,7 @@ from lib.utils.kodi.utils import (
     dialog_ok,
     kodilog,
     set_setting,
+    translation,
 )
 from lib.services.debrid.auth import run_realdebrid_auth
 from lib.services.debrid.download import run_realdebrid_download
@@ -174,7 +175,7 @@ class RealDebrid(DebridClient):
         set_setting("real_debrid_token", "")
         set_setting("real_debid_authorized", "false")
         set_setting("real_debrid_user", "")
-        dialog_ok("Success", "Authentification Removed.")
+        dialog_ok(translation(90544), translation(90561))
 
     def auth(self):
         run_realdebrid_auth(self)

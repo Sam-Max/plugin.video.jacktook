@@ -5,6 +5,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     set_setting,
+    translation,
 )
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_KEY,
@@ -18,15 +19,15 @@ import xbmcgui
 def stremio_login(params):
     dialog = xbmcgui.Dialog()
     dialog.ok(
-        "Stremio Add-ons Import",
-        "To import your add-ons, please log in with your Stremio email and password."
+        translation(90612),
+        translation(90613)
     )
 
-    email = dialog.input(heading="Enter your Email", type=xbmcgui.INPUT_ALPHANUM)
+    email = dialog.input(heading=translation(90614), type=xbmcgui.INPUT_ALPHANUM)
     if not email:
         return
 
-    password = dialog.input(heading="Enter your Password", type=xbmcgui.INPUT_ALPHANUM)
+    password = dialog.input(heading=translation(90615), type=xbmcgui.INPUT_ALPHANUM)
     if not password:
         return
 
@@ -38,7 +39,7 @@ def log_in(email, password, dialog):
         stremio = Stremio()
         stremio.login(email, password)
     except Exception as e:
-        dialog.ok("Login Failed", f"Failed to login: {e}")
+        dialog.ok(translation(90616), translation(90617) % e)
         return
 
     try:
@@ -58,22 +59,22 @@ def log_in(email, password, dialog):
         kodilog(f"Stremio addons imported: {len(all_addons)}")
     except Exception as e:
         dialog.ok(
-            "Add-ons Import Failed",
-            "Please try again later and report the issue if the problem persists. For more details, check the log file.",
+            translation(90618),
+            translation(90619),
         )
         kodilog(f"Failed to import addons: {e}")
         return
 
-    dialog.ok("Addons Imported", f"Successfully imported addons from your account.")
+    dialog.ok(translation(90620), translation(90621))
 
 
 def stremio_update(params):
     dialog = xbmcgui.Dialog()
     confirm = dialog.yesno(
-        "Update Stremio Addons",
-        "Do you want to update the Addons from you account?",
-        nolabel="Cancel",
-        yeslabel="Yes",
+        translation(90622),
+        translation(90623),
+        nolabel=translation(90242),
+        yeslabel=translation(32043),
     )
     if not confirm:
         return
@@ -88,10 +89,10 @@ def stremio_logout(params):
     dialog = xbmcgui.Dialog()
 
     confirm = dialog.yesno(
-        "Log Out from Stremio",
-        "Are you sure you want to log out? You can continue using Stremio without logging in, but your settings will be reset to the default configuration.",
-        nolabel="Cancel",
-        yeslabel="Log Out",
+        translation(90624),
+        translation(90625),
+        nolabel=translation(90242),
+        yeslabel=translation(90626),
     )
     if confirm:
         cache.set(STREMIO_ADDONS_KEY, None, timedelta(seconds=1))

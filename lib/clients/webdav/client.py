@@ -9,6 +9,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     show_picture,
+    translation,
 )
 from xbmcgui import ListItem
 from xbmcplugin import (
@@ -102,14 +103,14 @@ def webdav_provider_test(params):
     )
     result = client.test_connection()
     if result["success"]:
-        dialog_ok("WebDAV", result["message"])
+        dialog_ok(translation(90131), result["message"])
     else:
-        dialog_ok("WebDAV Error", result["message"])
+        dialog_ok(translation(90562), result["message"])
 
 
 def display_text_webdav(params):
     url = params.get("url")
-    title = params.get("title", "WebDAV Text Viewer")
+    title = params.get("title", translation(90663))
     if not url:
         return
     try:
@@ -120,10 +121,10 @@ def display_text_webdav(params):
         Dialog().textviewer(title, content)
     except requests.exceptions.RequestException as e:
         kodilog(f"Error downloading text file ({url}): {e}")
-        notification("Download Error", f"Failed to download text: {title}")
+        notification(translation(90597), translation(90598) % title)
     except Exception as e:
         kodilog(f"General error displaying text: {e}")
-        notification("General Error", "Could not display text file.")
+        notification(translation(90599), translation(90600))
 
 
 def show_picture_webdav(params):

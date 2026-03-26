@@ -28,7 +28,7 @@ class PeopleClient(BaseTmdbClient):
         return f"{base_url}{path}"
 
     def search_people(self, mode, page=1):
-        set_pluging_category("Search People")
+        set_pluging_category(translation(90081))
         set_content_type(mode)
 
         query = show_keyboard(id=30241) if page == 1 else None
@@ -37,7 +37,7 @@ class PeopleClient(BaseTmdbClient):
 
         data = tmdb_get("search_people", params={"query": query, "page": page})
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         execute_thread_pool(
@@ -62,7 +62,7 @@ class PeopleClient(BaseTmdbClient):
         ids = json.loads(params.get("ids", "{}"))
         tmdb_id = ids.get("tmdb_id")
         if not tmdb_id:
-            notification("No TMDB ID found")
+            notification(translation(90400))
             return
 
         if mode == "movies":
@@ -71,7 +71,7 @@ class PeopleClient(BaseTmdbClient):
             credits = tmdb_get("tv_credits", params=tmdb_id)
 
         if not credits:
-            notification("No credits found for this ID")
+            notification(translation(90418))
             return
 
         def get_media_credits(person):
@@ -90,7 +90,7 @@ class PeopleClient(BaseTmdbClient):
 
         data = tmdb_get("popular_people", params=page)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         execute_thread_pool(
@@ -112,7 +112,7 @@ class PeopleClient(BaseTmdbClient):
 
         data = tmdb_get("trending_people", params=page)
         if not data or getattr(data, "total_results", 0) == 0:
-            notification("No results found")
+            notification(translation(90389))
             return
 
         execute_thread_pool(
@@ -131,7 +131,7 @@ class PeopleClient(BaseTmdbClient):
 
     @staticmethod
     def show_credited_people(credit, mode, media_type):
-        set_pluging_category("Credited People")
+        set_pluging_category(translation(90419))
         title = credit.get("title") or credit.get("name") or "Unknown"
 
         # Extract year
@@ -211,7 +211,7 @@ class PeopleClient(BaseTmdbClient):
     @staticmethod
     def handle_tmdb_person_details(params):
         mode = params.get("mode")
-        set_pluging_category("Person Details")
+        set_pluging_category(translation(90420))
         set_content_type(mode)
 
         if mode == "movies":
@@ -220,7 +220,7 @@ class PeopleClient(BaseTmdbClient):
                 "person_movie_credits", params=params.get("person_id")
             )
             if not person_credits:
-                notification("Person not found")
+                notification(translation(90421))
                 return
         elif mode == "tv":
             media_type = "tv"
@@ -228,10 +228,10 @@ class PeopleClient(BaseTmdbClient):
                 "person_tv_credits", params=params.get("person_id")
             )
             if not person_credits:
-                notification("Person not found")
+                notification(translation(90421))
                 return
         else:
-            notification("Invalid mode")
+            notification(translation(90390))
             return
 
         # Sort credits by release date (newest first)

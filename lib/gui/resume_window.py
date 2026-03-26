@@ -1,4 +1,5 @@
 from lib.gui.base_window import BaseWindow
+from lib.utils.kodi.utils import translation
 
 class ResumeDialog(BaseWindow):
     def __init__(self, xml_file, xml_location, **kwargs):
@@ -11,10 +12,8 @@ class ResumeDialog(BaseWindow):
 
     def onInit(self):
         super().onInit()
-        self.getControl(1002).setLabel(
-            f"Resume from {self.resume_percent:.1f}%"
-        )  # Resume Button
-        self.getControl(1003).setLabel("Start from Beginning")  # Start Button
+        self.getControl(1002).setLabel(translation(90538) % self.resume_percent)
+        self.getControl(1003).setLabel(translation(90539))
 
     def onClick(self, control_id):
         if control_id == 1002:  # Resume button ID

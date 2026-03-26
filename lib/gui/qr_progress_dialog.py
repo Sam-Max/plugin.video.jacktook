@@ -1,5 +1,7 @@
 import xbmcgui
 
+from lib.utils.kodi.utils import translation
+
 
 class QRProgressDialog(xbmcgui.WindowXMLDialog):
     def __init__(
@@ -8,7 +10,7 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
         location: str,
     ):
         super().__init__(xml_file, location)
-        self.title = "QR Code Authentication"
+        self.title = translation(90558)
         self.message = ""
         self.progress = 0
         self.iscanceled = False
@@ -19,15 +21,18 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
         self.qr_image_path = qr_code
         if is_debrid:
             if debrid_type == "RealDebrid":
-                self.message = f"Navigate to: https://real-debrid.com/device\n\nEnter the following code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+                self.message = "%s\n\n%s" % (
+                    translation(90541) % "https://real-debrid.com/device",
+                    translation(90542) % user_code,
+                )
             else:
-                self.message = f"Go to:\n[COLOR cyan]{url}[/COLOR]\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+                self.message = translation(90555) % (url, user_code)
         else:
             # For non-debrid services (like Trakt)
             if user_code:
-                self.message = f"Go to:\n[COLOR cyan]{url}[/COLOR]\n\nEnter code: [COLOR seagreen][B]{user_code}[/B][/COLOR]"
+                self.message = translation(90556) % (url, user_code)
             else:
-                self.message = f"Pastebin Link:\n[COLOR cyan]{url}[/COLOR]"
+                self.message = translation(90557) % url
 
     def show_dialog(self):
         self.show()

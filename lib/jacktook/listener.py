@@ -1,6 +1,6 @@
 from .utils import NoProvidersError
 from .provider_base import ProviderListener
-from lib.utils.kodi.utils import ADDON_NAME
+from lib.utils.kodi.utils import ADDON_NAME, translation
 from xbmcgui import DialogProgressBG
 
 
@@ -20,7 +20,7 @@ class ProviderListenerDialog(ProviderListener):
     def __enter__(self):
         ret = super(ProviderListenerDialog, self).__enter__()
         if self._dialog:
-            self._dialog.create(ADDON_NAME, "Getting results from providers...")
+            self._dialog.create(ADDON_NAME, translation(90660))
         return ret
 
     def __exit__(self, exc_type, exc_val, exc_tb):

@@ -2,7 +2,7 @@ import copy
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.torbox import Torbox
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import get_setting, notification, dialog_text, kodilog
+from lib.utils.kodi.utils import get_setting, notification, dialog_text, kodilog, translation
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -240,4 +240,4 @@ class TorboxHelper:
         days = self.client.days_remaining()
         if days is not None:
              body.append(f"[B]Days Remaining:[/B] {days}")
-        dialog_text("Torbox", "\n".join(body))
+        dialog_text(translation(90656), "\n".join(body))

@@ -9,6 +9,7 @@ from lib.utils.kodi.utils import (
     notification,
     get_setting,
     build_url,
+    translation,
 )
 from lib.clients.tmdb.utils.utils import tmdb_get, LANGUAGES
 from lib.api.fanart.fanart import get_fanart
@@ -263,11 +264,11 @@ class ExtrasWindow(BaseWindow):
     # ─── Button Labels ────────────────────────────────────────────────────────
 
     def set_button_labels(self):
-        self.setProperty("button10.label", "Play")
-        self.setProperty("button11.label", "Trailer")
-        self.setProperty("button15.label", "Watchlist")
-        self.setProperty("button16.label", "Watched")
-        self.setProperty("button17.label", "Refresh")
+        self.setProperty("button10.label", translation(90413))
+        self.setProperty("button11.label", translation(90414))
+        self.setProperty("button15.label", translation(90035))
+        self.setProperty("button16.label", translation(90415))
+        self.setProperty("button17.label", translation(90416))
 
     # ─── Cast ─────────────────────────────────────────────────────────────────
 
@@ -807,10 +808,10 @@ class ExtrasWindow(BaseWindow):
                 TraktAPI().lists.add_to_watchlist(
                     self.media_type, {"tmdb": self.tmdb_id}
                 )
-                notification("Added to Trakt Watchlist")
+                notification(translation(90409))
             except Exception as e:
                 kodilog(f"Error modifying trakt watchlist: {e}")
-                notification("Error modifying Trakt Watchlist")
+                notification(translation(90410))
 
         elif control_id == 16:  # Watched
             try:
@@ -824,13 +825,13 @@ class ExtrasWindow(BaseWindow):
                     TraktAPI().lists.mark_as_watched(
                         "show", None, None, {"tmdb": self.tmdb_id}
                     )
-                notification("Marked as Watched on Trakt")
+                notification(translation(90411))
             except Exception as e:
                 kodilog(f"Error marking watched on trakt: {e}")
-                notification("Error modifying Trakt Watched status")
+                notification(translation(90412))
 
         elif control_id == 17:  # Refresh
-            notification("Refreshed Metadata")
+            notification(translation(90402))
             self.close()
 
         # ── YouTube video click ──
@@ -899,16 +900,16 @@ class ExtrasWindow(BaseWindow):
                     .replace("[/I]", "")
                 )
 
-                heading = "Information"
+                heading = translation(90632)
                 if control_id == self.reviews_list_id:
-                    heading = "Review"
+                    heading = translation(90633)
                 elif control_id == self.comments_list_id:
-                    heading = "Comment"
+                    heading = translation(90634)
                 elif control_id == self.trivia_list_id:
-                    heading = "Trivia"
+                    heading = translation(90635)
                 elif control_id == self.blunders_list_id:
-                    heading = "Goof"
+                    heading = translation(90636)
                 elif control_id == self.parental_guide_list_id:
-                    heading = "Parental Guide"
+                    heading = translation(90637)
 
                 xbmcgui.Dialog().textviewer(heading, clean_text)

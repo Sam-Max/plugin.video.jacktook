@@ -5,6 +5,7 @@ from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
     kodilog,
+    translation,
 )
 from os import path as ospath, stat
 from time import sleep
@@ -48,7 +49,7 @@ class DeepLTranslator:
         )
 
         msg = f"DeepL API error during {context}.\n" f"{user_message}\n\n"
-        self.notification(heading="DeepL API Error", message=msg)
+        self.notification(heading=translation(90652), message=msg)
         return False
 
     def download_and_save_translation(
@@ -283,27 +284,18 @@ class DeepLTranslator:
         )
 
         if free_chars_left > total_characters:
-            message = (
-                f"Free DeepL usage available!\n"
-                f"Characters left in free quota: {free_chars_left}\n"
-                f"Characters to translate: {total_characters}\n\n"
-                "Do you want to proceed with the translation?"
-            )
-            return show_dialog("Free DeepL Usage", message)
+            message = translation(90666) % (free_chars_left, total_characters)
+            return show_dialog(translation(90667), message)
 
-        message = (
-            f"Total characters to translate: {total_characters}\n"
-            f"Estimated cost: ${estimated_cost:.2f} USD\n\n"
-            "Do you want to proceed with the translation?"
-        )
-        return show_dialog("Translation Cost", message)
+        message = translation(90668) % (total_characters, estimated_cost)
+        return show_dialog(translation(90669), message)
 
     def translate_file(self, filepath, idx, imdbid, season, episode):
         """
         Upload a document for translation, wait for completion, then download and save the result.
         """
         try:
-            self.notification("Translating subtitle...")
+            self.notification(translation(90500))
             url = f"{self.base_url}/document"
             with open(filepath, "rb") as file_handle:
                 files = {
@@ -332,7 +324,7 @@ class DeepLTranslator:
 
             self.wait_until_translation_complete(document_id, document_key)
 
-            self.notification("Translation done.")
+            self.notification(translation(90501))
 
             return self.download_and_save_translation(
                 idx,

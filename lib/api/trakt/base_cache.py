@@ -10,6 +10,7 @@ from lib.utils.kodi.utils import (
     notification,
     set_property,
     clear_property,
+    translation,
 )
 
 import xbmcaddon
@@ -123,12 +124,12 @@ def check_databases_integrity():
     setup_databases()
     if database_errors:
         dialog_ok(
-            heading="Databases Rebuilt",
-            line1="[B]Following Databases Rebuilt:[/B][CR][CR]%s"
+            heading=translation(90432),
+            line1=translation(90433)
             % ", ".join(database_errors),
         )
     else:
-        notification("No Corrupt or Missing Databases", time=3000)
+        notification(translation(90426), time=3000)
 
 
 class BaseCache(object):

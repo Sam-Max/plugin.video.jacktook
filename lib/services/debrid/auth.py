@@ -10,6 +10,7 @@ from lib.utils.kodi.utils import (
     progressDialog,
     set_setting,
     sleep as ksleep,
+    translation,
 )
 
 
@@ -29,7 +30,7 @@ def run_realdebrid_auth(client):
 
     progress_dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
     progress_dialog.setup(
-        "Real Debrid Auth",
+        translation(90594),
         qr_code,
         auth_url,
         user_code,
@@ -56,7 +57,7 @@ def run_realdebrid_auth(client):
                 client.initialize_headers()
 
                 set_setting("real_debrid_user", client.get_user()["username"])
-                progress_dialog.update_progress(100, "Authentication completed.")
+                progress_dialog.update_progress(100, translation(90545))
                 progress_dialog.close_dialog()
                 return
 
@@ -65,7 +66,7 @@ def run_realdebrid_auth(client):
             progress_dialog.update_progress(percent)
         except Exception as error:
             progress_dialog.close_dialog()
-            dialog_ok("Auth Error:", f"Error: {error}")
+            dialog_ok(translation(90548), translation(90547) % error)
             return
 
 
@@ -84,7 +85,7 @@ def run_alldebrid_auth(client):
 
     progress_dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
     progress_dialog.setup(
-        f"{DebridType.AD} Auth",
+        translation(90604) % DebridType.AD,
         qr_code,
         user_url,
         user_code,
@@ -115,7 +116,7 @@ def run_alldebrid_auth(client):
                 user = client.get_user_info()
                 set_setting("alldebrid_user", str(user["user"]["username"]))
 
-                progress_dialog.update_progress(100, "Authentication completed.")
+                progress_dialog.update_progress(100, translation(90545))
                 progress_dialog.close_dialog()
                 return
 
@@ -124,7 +125,7 @@ def run_alldebrid_auth(client):
             progress_dialog.update_progress(percent)
         except Exception as error:
             progress_dialog.close_dialog()
-            dialog_ok("Auth Error", f"Error: {error}")
+            dialog_ok(translation(90548), translation(90547) % error)
             return
 
 
@@ -133,11 +134,11 @@ def run_premiumize_auth(client):
     user_code = response["user_code"]
     copy2clip(user_code)
     content = "%s[CR]%s[CR]%s" % (
-        "Authorize Debrid Services",
-        "Navigate to: [B]%s[/B]" % response.get("verification_uri"),
-        "Enter the following code: [COLOR orangered][B]%s[/B][/COLOR]" % user_code,
+        translation(90540),
+        translation(90541) % response.get("verification_uri"),
+        translation(90542) % user_code,
     )
-    progressDialog.create("Premiumize Auth")
+    progressDialog.create(translation(90543))
     progressDialog.update(-1, content)
 
     device_code = response["device_code"]
@@ -158,10 +159,10 @@ def run_premiumize_auth(client):
             progressDialog.close()
             client.token = str(auth_response["access_token"])
             set_setting("premiumize_token", client.token)
-            dialog_ok("Success:", "Authentication completed.")
+            dialog_ok(translation(90544), translation(90545))
             return
         except Exception as error:
-            dialog_ok("Error:", f"Error: {error}.")
+            dialog_ok(translation(90546), translation(90547) % error)
             break
 
     try:
@@ -188,7 +189,7 @@ def run_torbox_auth(client):
 
     progress_dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
     progress_dialog.setup(
-        "Torbox Auth",
+        translation(90595),
         qr_code,
         friendly_url,
         user_code,
@@ -221,9 +222,9 @@ def run_torbox_auth(client):
                         user_data.get("data", {}).get("email", ""),
                     )
 
-                progress_dialog.update_progress(100, "Authentication completed.")
+                progress_dialog.update_progress(100, translation(90545))
                 progress_dialog.close_dialog()
-                dialog_ok("Success", "Torbox authentication successful.")
+                dialog_ok(translation(90544), translation(90549))
                 return
 
             elapsed = time() - start_time
@@ -231,7 +232,7 @@ def run_torbox_auth(client):
             progress_dialog.update_progress(percent)
         except Exception as error:
             progress_dialog.close_dialog()
-            dialog_ok("Auth Error:", f"Error: {error}")
+            dialog_ok(translation(90548), translation(90547) % error)
             return
 
 
@@ -249,7 +250,7 @@ def run_debrider_auth(client):
     copy2clip(auth_url)
 
     progress_dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-    progress_dialog.setup("Debrider Auth", qr_code, auth_url, user_code, DebridType.DB)
+    progress_dialog.setup(translation(90596), qr_code, auth_url, user_code, DebridType.DB)
     progress_dialog.show_dialog()
 
     start_time = time()
@@ -268,10 +269,10 @@ def run_debrider_auth(client):
                 set_setting("debrider_token", client.token)
                 set_setting("debrider_authorized", "true")
                 client.initialize_headers()
-                dialog_ok("Success", "Authentication completed.")
+                dialog_ok(translation(90544), translation(90545))
                 return
             ksleep(1000 * interval)
         except Exception as error:
             progress_dialog.close_dialog()
-            dialog_ok("Error:", f"Error: {error}.")
+            dialog_ok(translation(90546), translation(90547) % error)
             return
