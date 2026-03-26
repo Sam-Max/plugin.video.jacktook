@@ -5,7 +5,7 @@
         <width>900</width>
         <height>450</height>
     </coordinates>
-    <defaultcontrol always="true">12005</defaultcontrol>
+    <defaultcontrol always="true">12003</defaultcontrol>
     <animation type="WindowOpen" reversible="false">
         <effect type="zoom" start="80" end="100" center="50%,50%" delay="160" tween="back" time="240"/>
         <effect type="fade" delay="160" end="100" time="240"/>

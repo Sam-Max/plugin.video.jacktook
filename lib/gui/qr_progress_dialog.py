@@ -62,4 +62,5 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
 
     def onAction(self, action):
         if action.getId() in (10, 92):
+            self.iscanceled = True
             self.close_dialog()

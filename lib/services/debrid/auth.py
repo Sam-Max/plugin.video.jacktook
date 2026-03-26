@@ -71,6 +71,9 @@ def run_realdebrid_auth(client):
 
 
 def run_alldebrid_auth(client):
+    client.token = ""
+    client.initialize_headers()
+
     response = client.get_ping()
     result = response["data"]
 
