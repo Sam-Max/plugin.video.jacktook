@@ -46,6 +46,10 @@ BASE_ZIP_URL = (
 VERSION_FILE = f"{BASE_REPO_URL}/jacktook_version"
 CHANGELOG_FILE = f"{BASE_REPO_URL}/jacktook_changelog"
 
+UPDATE_ACTION_ASK = 0
+UPDATE_ACTION_NOTIFY = 1
+UPDATE_ACTION_NONE = 2
+
 
 # =========================
 # Helpers
@@ -129,17 +133,19 @@ def updates_check_addon(automatic=False):
             from lib.utils.kodi.settings import get_update_action
 
             action = get_update_action()
-            if action == 0:  # Ask
+            if action == UPDATE_ACTION_ASK:
                 if dialogyesno(
                     header=HEADING,
                     text=msg + translation(90581),
                 ):
                     update_addon(online_version)
-            elif action == 1:  # Notify
+            elif action == UPDATE_ACTION_NOTIFY:
                 notification(
                     heading=HEADING,
                     message=translation(90582) % online_version,
                 )
+            elif action == UPDATE_ACTION_NONE:
+                return
 
 
 # =========================
