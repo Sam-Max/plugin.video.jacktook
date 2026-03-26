@@ -29,6 +29,13 @@ def get_segments(imdb_id, season, episode):
         return None
 
     cache_key = f"{imdb_id}.S{season}E{episode}"
+    request_params = {
+        "imdb_id": imdb_id,
+        "season": int(season),
+        "episode": int(episode),
+    }
+
+    kodilog(f"IntroDB: get_segments called for {imdb_id} S{season}E{episode}")
 
     # Check cache first
     cached = _cache.get(cache_key)
@@ -36,18 +43,22 @@ def get_segments(imdb_id, season, episode):
         if cached == _SENTINEL:
             kodilog(f"IntroDB: Cache hit (no data) for {imdb_id} S{season}E{episode}")
             return None
-        kodilog(f"IntroDB: Cache hit for {imdb_id} S{season}E{episode}")
+        kodilog(
+            f"IntroDB: Cache hit for {imdb_id} S{season}E{episode} data={cached}"
+        )
         return cached
 
     try:
+        kodilog(
+            f"IntroDB: Requesting /segments for {imdb_id} S{season}E{episode} with params {request_params}"
+        )
         response = requests.get(
             f"{INTRODB_BASE_URL}/segments",
-            params={
-                "imdb_id": imdb_id,
-                "season": int(season),
-                "episode": int(episode),
-            },
+            params=request_params,
             timeout=INTRODB_TIMEOUT,
+        )
+        kodilog(
+            f"IntroDB: Response status {response.status_code} for {imdb_id} S{season}E{episode} body={response.text}"
         )
 
         if response.status_code == 404:

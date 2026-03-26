@@ -1,3 +1,5 @@
+from threading import Thread
+
 import xbmc
 import xbmcgui
 
@@ -21,11 +23,20 @@ class SkipIntroWindow(xbmcgui.WindowXMLDialog):
         self.label = label
         self.action = None
         self.closed = False
+        self.monitor_thread = None
         self.player = xbmc.Player()
 
     def onInit(self):
         self.setProperty("skip_label", self.label)
-        self._background_monitor()
+        self._start_background_monitor()
+
+    def _start_background_monitor(self):
+        if self.monitor_thread and self.monitor_thread.is_alive():
+            return
+
+        self.monitor_thread = Thread(target=self._background_monitor)
+        self.monitor_thread.daemon = True
+        self.monitor_thread.start()
 
     def _background_monitor(self):
         """Monitor playback and auto-close when segment ends or playback stops."""
