@@ -435,8 +435,39 @@ def filter_anime_by_keyword(results, mode):
     return results
 
 
+def _build_trailer_ids(ids, title=None, title_key="title"):
+    trailer_ids = dict(ids or {})
+    if title and not trailer_ids.get(title_key):
+        trailer_ids[title_key] = title
+    return trailer_ids
+
+
+def build_play_trailer_context_menu_item(ids, media_type, title=None, title_key="title"):
+    trailer_ids = _build_trailer_ids(ids=ids, title=title, title_key=title_key)
+    if not any(
+        trailer_ids.get(key) for key in ("trailer_yt_id", "trailer_url", "tmdb_id")
+    ):
+        return None
+
+    params = {
+        "name": "play_trailer",
+        "media_type": media_type,
+        "tmdb_id": trailer_ids.get("tmdb_id"),
+        "title": trailer_ids.get(title_key),
+    }
+    if trailer_ids.get("trailer_yt_id"):
+        params["yt_id"] = trailer_ids.get("trailer_yt_id")
+    if trailer_ids.get("trailer_url"):
+        params["youtube_url"] = trailer_ids.get("trailer_url")
+
+    return (
+        translation(90672),
+        kodi_play_media(**params),
+    )
+
+
 def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
-    return [
+    context_menu = [
         (
             translation(90049),
             kodi_play_media(
@@ -459,10 +490,19 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                 force_select=True,
             ),
         ),
-         (
+        (
             "Extras",
             f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type={media_type}&title={parse.quote(title or '')})",
         ),
+    ]
+    trailer_item = build_play_trailer_context_menu_item(
+        ids=ids,
+        media_type="tv" if media_type == "tv" else "movie",
+        title=title,
+    )
+    if trailer_item:
+        context_menu.append(trailer_item)
+    context_menu += [
         (
             translation(90050),
             container_update(
@@ -506,14 +546,25 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
             container_update(name="settings"),
         ),
     ]
+    return context_menu
 
 
-def add_tmdb_show_context_menu(mode, ids={}):
-    return [
+def add_tmdb_show_context_menu(mode, ids={}, title=None):
+    context_menu = [
         (
             "Extras",
-            f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type=tv&title={parse.quote(ids.get('name') or ids.get('title') or '')})",
+            f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type=tv&title={parse.quote(title or ids.get('name') or ids.get('title') or '')})",
         ),
+    ]
+    trailer_item = build_play_trailer_context_menu_item(
+        ids=ids,
+        media_type="tv",
+        title=title or ids.get("name") or ids.get("title"),
+        title_key="name",
+    )
+    if trailer_item:
+        context_menu.append(trailer_item)
+    context_menu += [
         (
             translation(90050),
             container_update(
@@ -557,6 +608,7 @@ def add_tmdb_show_context_menu(mode, ids={}):
             container_update(name="settings"),
         ),
     ]
+    return context_menu
 
 
 def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):

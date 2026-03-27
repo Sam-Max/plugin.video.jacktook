@@ -31,6 +31,7 @@ def test_get_route_handler_falls_back_to_core_dispatcher():
     router = _load_router_module()
 
     assert router._get_route_handler("history_menu") is router._route_core
+    assert router._get_route_handler("play_trailer") is router._route_core
 
 
 def test_get_route_handler_routes_settings_backup_actions_to_core_dispatcher():

@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta
-from lib.clients.tmdb.utils.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import build_play_trailer_context_menu_item, tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.api.trakt.trakt_utils import (
     add_trakt_custom_list_context_menu,
@@ -139,28 +139,35 @@ class BaseTraktClient:
     def _add_media_directory_item(
         list_item, mode, title, ids, media_type=None, context_flags=None
     ):
+        trailer_item = build_play_trailer_context_menu_item(
+            ids=ids,
+            media_type="movie" if mode == "movies" else "tv",
+            title=title,
+            title_key="title",
+        )
         if mode == "movies":
-            list_item.addContextMenuItems(
-                [
-                    (
-                        translation(90049),
-                        kodi_play_media(
-                            name="search",
-                            mode=mode,
-                            query=title,
-                            ids=ids,
-                            rescrape=True,
-                        ),
+            context_menu = [
+                (
+                    translation(90049),
+                    kodi_play_media(
+                        name="search",
+                        mode=mode,
+                        query=title,
+                        ids=ids,
+                        rescrape=True,
                     ),
-                ]
-                + (
+                ),
+            ]
+            if trailer_item:
+                context_menu.append(trailer_item)
+            context_menu += (
                     BaseTraktClient._trakt_context_menu(
                         "movies", ids, context_flags=context_flags
                     )
                     if is_trakt_auth()
                     else []
                 )
-            )
+            list_item.addContextMenuItems(context_menu)
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
@@ -173,12 +180,15 @@ class BaseTraktClient:
                 is_playable=True,
             )
         else:
+            context_menu = []
+            if trailer_item:
+                context_menu.append(trailer_item)
             if is_trakt_auth():
-                list_item.addContextMenuItems(
-                    BaseTraktClient._trakt_context_menu(
-                        "tv", ids, context_flags=context_flags
-                    )
+                context_menu += BaseTraktClient._trakt_context_menu(
+                    "tv", ids, context_flags=context_flags
                 )
+            if context_menu:
+                list_item.addContextMenuItems(context_menu)
             add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(

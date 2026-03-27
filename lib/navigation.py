@@ -30,7 +30,10 @@ from lib.utils.kodi.utils import (
     burst_addon_settings,
     dialog_text,
     end_of_directory,
+    execute_builtin,
     get_setting,
+    is_youtube_addon_enabled,
+    kodilog,
     notification,
     play_info_hash,
     translation,
@@ -58,6 +61,11 @@ from lib.utils.general.utils import (
     set_content_type,
     set_pluging_category,
     show_log_export_dialog,
+)
+from lib.clients.youtube_resolver import (
+    extract_video_id,
+    resolve_item_trailer,
+    resolve_item_trailer_playback,
 )
 import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
@@ -607,6 +615,62 @@ def play_url(params):
     url = params.get("url")
     list_item = ListItem(label=params.get("name"), path=url)
     list_item.setPath(url)
+    setResolvedUrl(ADDON_HANDLE, True, list_item)
+
+
+def play_trailer(params):
+    ids = json.loads(params.get("ids", "{}")) if params.get("ids") else {}
+    media_type = params.get("media_type") or params.get("mode")
+    tmdb_id = params.get("tmdb_id") or ids.get("tmdb_id")
+    yt_id = params.get("yt_id") or ids.get("trailer_yt_id") or ids.get("yt_id")
+    youtube_url = params.get("youtube_url") or ids.get("trailer_url") or ids.get("youtube_url")
+    title = params.get("title") or ids.get("title") or ids.get("name")
+
+    kodilog(
+        f"Trailer: resolving title={title!r} media_type={media_type!r} tmdb_id={tmdb_id!r} yt_id={yt_id!r} youtube_url={youtube_url!r}"
+    )
+    resolved = resolve_item_trailer(
+        yt_id=yt_id,
+        youtube_url=youtube_url,
+        tmdb_id=tmdb_id,
+        media_type=media_type,
+    )
+    playback = (resolved or {}).get("playback") or {}
+    trailer = (resolved or {}).get("trailer") or {}
+    video_url = playback.get("video_url") if playback else None
+    if not video_url:
+        fallback_yt_id = extract_video_id(
+            trailer.get("yt_id") or trailer.get("youtube_url") or yt_id or youtube_url
+        )
+        kodilog(
+            f"Trailer: fallback attempt title={title!r} media_type={media_type!r} tmdb_id={tmdb_id!r} fallback_yt_id={fallback_yt_id!r}"
+        )
+        addon_available = False
+        if fallback_yt_id:
+            addon_available = is_youtube_addon_enabled()
+        if fallback_yt_id and addon_available:
+            execute_builtin(
+                f"PlayMedia(plugin://plugin.video.youtube/play/?video_id={fallback_yt_id})"
+            )
+            return
+        if fallback_yt_id and not addon_available:
+            kodilog(
+                f"Trailer: youtube addon unavailable title={title!r} media_type={media_type!r} tmdb_id={tmdb_id!r} fallback_yt_id={fallback_yt_id!r}"
+            )
+        kodilog(
+            f"Trailer: unavailable title={title!r} media_type={media_type!r} tmdb_id={tmdb_id!r} yt_id={yt_id!r} youtube_url={youtube_url!r}"
+        )
+        notification(translation(90673))
+        return
+
+    kodilog(
+        f"Trailer: resolved title={title!r} source_type={playback.get('source_type')!r} video_url={video_url!r}"
+    )
+    list_item = ListItem(label=title, path=video_url)
+    list_item.setPath(video_url)
+    list_item.setProperty("IsPlayable", "true")
+    if playback.get("source_type") == "adaptive" and playback.get("audio_url"):
+        list_item.setProperty("inputstream.adaptive.manifest_type", "mpd")
     setResolvedUrl(ADDON_HANDLE, True, list_item)
 
 

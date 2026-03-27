@@ -797,8 +797,9 @@ class ExtrasWindow(BaseWindow):
             )
 
         elif control_id == 11:  # Trailer
+            self.close()
             execute_builtin(
-                f'RunPlugin(plugin://plugin.video.youtube/play/?video_id=search="{self.title} Trailer")'
+                f"PlayMedia({build_url('play_trailer', tmdb_id=self.tmdb_id, media_type=self.media_type, title=self.title)})"
             )
 
         elif control_id == 15:  # Watchlist

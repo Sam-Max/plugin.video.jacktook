@@ -3559,3 +3559,11 @@ msgstr "Caracteres totales a traducir: %s\nCoste estimado: $%.2f USD\n\n¿Quiere
 msgctxt "#90669"
 msgid "Translation Cost"
 msgstr "Coste de traduccion"
+
+msgctxt "#90672"
+msgid "Play Trailer"
+msgstr "Reproducir trailer"
+
+msgctxt "#90673"
+msgid "Trailer unavailable"
+msgstr "Trailer no disponible"

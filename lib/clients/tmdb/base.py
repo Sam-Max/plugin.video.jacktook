@@ -46,7 +46,7 @@ class BaseTmdbClient:
             list_item.setProperty("IsPlayable", "true")
             is_folder = False
         elif mode == "tv" or (mode == "multi" and media_type == "tv"):
-            context_menu = add_tmdb_show_context_menu(mode, ids=ids)
+            context_menu = add_tmdb_show_context_menu(mode, ids=ids, title=title)
             if is_trakt_auth():
                 context_menu += (
                     add_trakt_watchlist_context_menu("shows", ids)

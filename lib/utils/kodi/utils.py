@@ -35,6 +35,7 @@ TITLES_TYPE = "titles"
 TORREST_ADDON_ID = "plugin.video.torrest"
 JACKTORR_ADDON_ID = "plugin.video.jacktorr"
 ELEMENTUM_ADDON_ID = "plugin.video.elementum"
+YOUTUBE_ADDON_ID = "plugin.video.youtube"
 JACKTOOK_BURST_ADOON_ID = "script.jacktook.burst"
 
 
@@ -158,6 +159,18 @@ def is_jacktorr_addon_enabled():
         if not xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
             return False
         addon = xbmcaddon.Addon(JACKTORR_ADDON_ID)
+        # If the addon is disabled, this will raise RuntimeError
+        return True
+    except RuntimeError:
+        # Addon exists but is disabled
+        return False
+
+
+def is_youtube_addon_enabled():
+    try:
+        if not xbmc.getCondVisibility(f"System.HasAddon({YOUTUBE_ADDON_ID})"):
+            return False
+        addon = xbmcaddon.Addon(YOUTUBE_ADDON_ID)
         # If the addon is disabled, this will raise RuntimeError
         return True
     except RuntimeError:
