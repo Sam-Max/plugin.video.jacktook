@@ -3,6 +3,7 @@ import re
 import hashlib
 import unicodedata
 import json
+from email.utils import parsedate_to_datetime
 from urllib.parse import unquote
 import requests
 from typing import Dict, List
@@ -1590,7 +1591,61 @@ def parse_time(item):
     ts = item[1].get("timestamp")
     if ts:
         try:
-            return datetime.strptime(ts, "%a, %d %b %Y %I:%M %p")
+            normalized = (
+                unicodedata.normalize("NFKC", ts)
+                .replace("a. m.", "AM")
+                .replace("p. m.", "PM")
+                .replace("a.m.", "AM")
+                .replace("p.m.", "PM")
+                .replace("a. m", "AM")
+                .replace("p. m", "PM")
+            )
+            normalized = re.sub(r"\s+", " ", normalized).strip()
+            day_replacements = {
+                "lun": "Mon",
+                "mar": "Tue",
+                "mie": "Wed",
+                "mié": "Wed",
+                "jue": "Thu",
+                "vie": "Fri",
+                "sab": "Sat",
+                "sáb": "Sat",
+                "dom": "Sun",
+            }
+            month_replacements = {
+                "ene": "Jan",
+                "feb": "Feb",
+                "mar": "Mar",
+                "abr": "Apr",
+                "may": "May",
+                "jun": "Jun",
+                "jul": "Jul",
+                "ago": "Aug",
+                "sep": "Sep",
+                "oct": "Oct",
+                "nov": "Nov",
+                "dic": "Dec",
+            }
+
+            if "," in normalized:
+                weekday_part, remainder = normalized.split(",", 1)
+                weekday_key = weekday_part.strip().lower()
+                normalized = "{},{}".format(
+                    day_replacements.get(weekday_key, weekday_part.strip()), remainder
+                )
+
+            normalized = re.sub(
+                r"(?<=,\s\d{2}\s)([A-Za-zÁÉÍÓÚáéíóú]{3})(?=\s\d{4})",
+                lambda match: month_replacements.get(match.group(1).lower(), match.group(1)),
+                normalized,
+            )
+
+            try:
+                return datetime.strptime(normalized, "%a, %d %b %Y %I:%M %p")
+            except Exception:
+                parsed = parsedate_to_datetime(normalized)
+                if parsed:
+                    return parsed.replace(tzinfo=None) if parsed.tzinfo else parsed
         except Exception as e:
             kodilog(e)
             return datetime.min

@@ -3567,3 +3567,19 @@ msgstr "Reproducir trailer"
 msgctxt "#90673"
 msgid "Trailer unavailable"
 msgstr "Trailer no disponible"
+
+msgctxt "#90690"
+msgid "Clear All Items"
+msgstr "Eliminar todos los elementos"
+
+msgctxt "#90691"
+msgid "Remove all items from this library?"
+msgstr "¿Eliminar todos los elementos de esta biblioteca?"
+
+msgctxt "#90692"
+msgid "Library cleared"
+msgstr "Biblioteca vaciada"
+
+msgctxt "#90693"
+msgid "No items to remove"
+msgstr "No hay elementos para eliminar"

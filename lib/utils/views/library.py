@@ -7,8 +7,9 @@ from xbmcplugin import addDirectoryItem, setContent
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
+from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import remove_from_library, set_media_infoTag, set_pluging_category
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, notification, translation
 from lib.utils.views.last_titles import parse_time
 
 
@@ -90,6 +91,12 @@ def _build_library_context_menu(title):
     return [(translation(90204), f"RunPlugin({remove_url})")]
 
 
+def _library_mode_matches(item_mode, mode):
+    if mode == "tv":
+        return item_mode == "tv"
+    return item_mode in ["movie", "movies"]
+
+
 def _get_stremio_library_url(data, mode):
     ids = data.get("ids", {})
     if mode == "tv":
@@ -138,9 +145,7 @@ def show_library_items(mode="tv"):
     items = []
     for title, data in all_items:
         item_mode = data.get("mode")
-        if mode == "tv" and item_mode == "tv":
-            items.append((title, data))
-        elif mode == "movies" and item_mode in ["movie", "movies"]:
+        if _library_mode_matches(item_mode, mode):
             items.append((title, data))
 
     items = sorted(items, key=parse_time, reverse=True)
@@ -175,3 +180,47 @@ def remove_library_item(params):
         from xbmc import executebuiltin
 
         executebuiltin("Container.Refresh")
+
+
+def clear_library_items(params):
+    mode = params.get("mode", "tv")
+    pickle_db = PickleDatabase()
+    library_items = dict(pickle_db.get_key("jt:lib") or {})
+    kodilog(
+        "clear_library_items start: mode={!r} total_items={} keys={}".format(
+            mode, len(library_items), list(library_items.keys())
+        )
+    )
+
+    titles_to_remove = []
+    removed_count = 0
+    for title, data in library_items.items():
+        if _library_mode_matches(data.get("mode"), mode):
+            titles_to_remove.append(title)
+            removed_count += 1
+    kodilog(
+        "clear_library_items matched: mode={!r} removed_titles={}".format(
+            mode, titles_to_remove
+        )
+    )
+    for title in titles_to_remove:
+        pickle_db.delete_item("jt:lib", title, commit=False)
+    if titles_to_remove:
+        pickle_db.commit()
+
+    cache.delete(_library_cache_key("tv"))
+    cache.delete(_library_cache_key("movies"))
+
+    kodilog(
+        "Cleared library items: mode={!r} removed_count={} remaining_count={}".format(
+            mode,
+            removed_count,
+            len(pickle_db.get_key("jt:lib") or {}),
+        )
+    )
+
+    if removed_count:
+        notification("", translation(90692))
+    else:
+        notification("", translation(90693))
+    return removed_count

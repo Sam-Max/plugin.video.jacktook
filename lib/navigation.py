@@ -456,6 +456,10 @@ def remove_from_library(params):
     return library_history_navigation.remove_from_library(params)
 
 
+def clear_library(params):
+    return library_history_navigation.clear_library(params)
+
+
 def add_to_library(params):
     return library_history_navigation.add_to_library(params)
 

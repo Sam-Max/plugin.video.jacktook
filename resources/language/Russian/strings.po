@@ -3566,3 +3566,19 @@ msgstr "Смотреть трейлер"
 msgctxt "#90673"
 msgid "Trailer unavailable"
 msgstr "Трейлер недоступен"
+
+msgctxt "#90690"
+msgid "Clear All Items"
+msgstr "Clear All Items"
+
+msgctxt "#90691"
+msgid "Remove all items from this library?"
+msgstr "Remove all items from this library?"
+
+msgctxt "#90692"
+msgid "Library cleared"
+msgstr "Library cleared"
+
+msgctxt "#90693"
+msgid "No items to remove"
+msgstr "No items to remove"

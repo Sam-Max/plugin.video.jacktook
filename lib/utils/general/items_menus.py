@@ -336,8 +336,22 @@ history_menu_items = [
 ]
 
 library_menu_items = [
-    {"name": 90202, "icon": "tv.png", "action": "library_shows"},  # My Shows
-    {"name": 90203, "icon": "movies.png", "action": "library_movies"},  # My Movies
+    {
+        "name": 90202,
+        "icon": "tv.png",
+        "action": "library_shows",
+        "context_menu": [
+            {"label": 90690, "action": "library_shows", "params": {"clear": 1}}
+        ],
+    },  # My Shows
+    {
+        "name": 90203,
+        "icon": "movies.png",
+        "action": "library_movies",
+        "context_menu": [
+            {"label": 90690, "action": "library_movies", "params": {"clear": 1}}
+        ],
+    },  # My Movies
     {
         "name": 90021,
         "icon": "history.png",

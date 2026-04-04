@@ -5,6 +5,7 @@ from xbmcgui import Dialog, ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 from lib.db.cached import cache
+from lib.jacktook.utils import kodilog
 from lib.utils.general.items_menus import history_menu_items, library_menu_items
 from lib.utils.general.utils import build_list_item, clear_history_by_type, set_pluging_category
 from lib.utils.kodi.settings import get_cache_expiration
@@ -24,6 +25,20 @@ from lib.utils.views.last_titles import show_last_titles
 from lib.utils.views.weekly_calendar import show_weekly_calendar
 
 
+def _maybe_clear_library(mode, params):
+    from lib.utils.views.library import clear_library_items
+
+    should_clear = str(params.get("clear", "0")).lower() in ("1", "true", "yes")
+    if not should_clear:
+        return
+
+    confirmed = Dialog().yesno(translation(90201), translation(90691))
+    if not confirmed:
+        return
+
+    clear_library_items({"mode": mode})
+
+
 def _render_menu(items, cache_listing=True):
     for item in items:
         if "condition" in item and not item["condition"]():
@@ -36,6 +51,28 @@ def _render_menu(items, cache_listing=True):
         list_item = build_list_item(name, item["icon"])
         params = item.get("params", {})
         url = build_url(item["action"], **params)
+
+        context_menu = []
+        for context_item in item.get("context_menu", []):
+            label = context_item["label"]
+            if isinstance(label, int):
+                label = translation(label)
+            context_menu.append(
+                (
+                    label,
+                    container_update(
+                        context_item["action"], **context_item.get("params", {})
+                    ),
+                )
+            )
+        if context_menu:
+            kodilog(
+                "Library menu context items: label={!r} items={} ".format(
+                    name, [item[0] for item in context_menu]
+                )
+            )
+            list_item.addContextMenuItems(context_menu)
+
         addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=True)
 
     end_of_directory(cache=cache_listing)
@@ -48,7 +85,7 @@ def history_menu(params):
 
 def library_menu(params):
     set_pluging_category(translation(90201))
-    _render_menu(library_menu_items)
+    _render_menu(library_menu_items, cache_listing=False)
 
 
 def continue_watching_menu(params):
@@ -66,12 +103,14 @@ def remove_from_continue_watching(params):
 def library_shows(params):
     from lib.utils.views.library import show_library_items
 
+    _maybe_clear_library("tv", params)
     show_library_items(mode="tv")
 
 
 def library_movies(params):
     from lib.utils.views.library import show_library_items
 
+    _maybe_clear_library("movies", params)
     show_library_items(mode="movies")
 
 
@@ -83,6 +122,21 @@ def remove_from_library(params):
     from lib.utils.views.library import remove_library_item
 
     remove_library_item(params)
+
+
+def clear_library(params):
+    from lib.utils.views.library import clear_library_items
+    from lib.utils.views.library import show_library_items
+
+    kodilog(f"clear_library action invoked with params={params}")
+
+    confirmed = Dialog().yesno(translation(90201), translation(90691))
+    kodilog(f"clear_library confirmation result={confirmed}")
+    if not confirmed:
+        return
+
+    clear_library_items(params)
+    show_library_items(mode=params.get("mode", "tv"))
 
 
 def add_to_library(params):
