@@ -100,6 +100,7 @@ _MDBLIST_ACTIONS = frozenset(
 
 def _is_stremio_action(action):
     return action.startswith(("stremio_", "list_stremio")) or action in {
+        "clear_stremio_search_history",
         "list_catalog",
         "search_catalog",
         "add_custom_stremio_addon",
@@ -251,6 +252,7 @@ def _route_stremio(action, params):
         torrentio_toggle_providers(params)
     else:
         from lib.clients.stremio.catalog_menus import (
+            clear_stremio_search_history,
             list_catalog,
             list_stremio_episodes,
             list_stremio_movie,
@@ -261,6 +263,7 @@ def _route_stremio(action, params):
         )
 
         actions = {
+            "clear_stremio_search_history": clear_stremio_search_history,
             "list_catalog": list_catalog,
             "list_stremio_seasons": list_stremio_seasons,
             "list_stremio_episodes": list_stremio_episodes,

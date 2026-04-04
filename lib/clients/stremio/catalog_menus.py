@@ -1,5 +1,6 @@
 import json
-from datetime import datetime
+import os
+from datetime import datetime, timedelta
 from dataclasses import asdict
 from time import perf_counter
 from lib.clients.stremio.helpers import (
@@ -31,10 +32,78 @@ from lib.utils.general.utils import info_hash_to_magnet, IndexerType
 
 from xbmcplugin import addDirectoryItem, setContent
 from xbmcgui import ListItem
-from lib.utils.kodi.utils import ADDON_HANDLE
+from lib.utils.kodi.settings import get_cache_expiration
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH
 
 
 CATALOG_PAGE_SIZE = 25
+
+
+def _stremio_search_history_key(params):
+    return "stremio_search_catalog|{}|{}|{}".format(
+        params.get("addon_url", ""),
+        params.get("catalog_type", ""),
+        params.get("catalog_id", ""),
+    )
+
+
+def _show_search_catalog_history(params):
+    history_key = _stremio_search_history_key(params)
+    list_item = ListItem(label=translation(90006))
+    list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "search_catalog",
+            page=1,
+            addon_url=params.get("addon_url", ""),
+            catalog_type=params.get("catalog_type", ""),
+            catalog_id=params.get("catalog_id", ""),
+        ),
+        list_item,
+        isFolder=True,
+    )
+
+    for (text,) in cache.get_list(key=history_key):
+        list_item = ListItem(label=f"[I]{text}[/I]")
+        list_item.setArt(
+            {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
+        )
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "search_catalog",
+                page=1,
+                addon_url=params.get("addon_url", ""),
+                catalog_type=params.get("catalog_type", ""),
+                catalog_id=params.get("catalog_id", ""),
+                query=text,
+                is_keyboard=False,
+            ),
+            list_item,
+            isFolder=True,
+        )
+
+    list_item = ListItem(label=translation(90210))
+    list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "clear_stremio_search_history",
+            addon_url=params.get("addon_url", ""),
+            catalog_type=params.get("catalog_type", ""),
+            catalog_id=params.get("catalog_id", ""),
+        ),
+        list_item,
+        isFolder=True,
+    )
+
+    end_of_directory()
+
+
+def clear_stremio_search_history(params):
+    cache.clear_list(_stremio_search_history_key(params))
+    _show_search_catalog_history(params)
 
 
 def _build_stremio_ids(meta_id, tmdb_id="", imdb_id=""):
@@ -337,11 +406,21 @@ def list_catalog(params):
 def search_catalog(params):
     page = int(params["page"])
     pickle_db = PickleDatabase()
+    history_key = _stremio_search_history_key(params)
 
     if page == 1:
-        query = show_keyboard(id=30241)
-        if not query:
-            return
+        if str(params.get("is_keyboard", "True")).lower() in ("false", "0", "no"):
+            query = params.get("query", "")
+        else:
+            query = show_keyboard(id=30241, default=params.get("query", ""))
+            if not query:
+                _show_search_catalog_history(params)
+                return
+            cache.add_to_list(
+                key=history_key,
+                item=(query,),
+                expires=timedelta(hours=get_cache_expiration()),
+            )
         pickle_db.set_key("search_catalog_query", query)
     else:
         query = pickle_db.get_key("search_catalog_query")

@@ -209,6 +209,68 @@ def test_list_catalog_uses_server_skip_when_manifest_supports_it(monkeypatch):
     assert captured_kwargs == {"skip": 50}
 
 
+def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
+    added_items = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus.cache, "get_list", lambda key: [("Naruto",), ("Bleach",)])
+    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90006: "Search", 90210: "Clear All Search History"}.get(value, str(value)))
+    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder=True: added_items.append((listitem.label, url, isFolder)),
+    )
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: "{}:{}:{}".format(action, kwargs.get("query", ""), kwargs.get("is_keyboard", True)),
+    )
+
+    catalog_menus.search_catalog(
+        {
+            "page": 1,
+            "addon_url": "https://anime-kitsu.strem.fun",
+            "catalog_type": "anime",
+            "catalog_id": "kitsu-search",
+        }
+    )
+
+    assert added_items == [
+        ("Search", "search_catalog::True", True),
+        ("[I]Naruto[/I]", "search_catalog:Naruto:False", True),
+        ("[I]Bleach[/I]", "search_catalog:Bleach:False", True),
+        ("Clear All Search History", "clear_stremio_search_history::True", True),
+    ]
+
+
+def test_clear_stremio_search_history_clears_only_current_catalog(monkeypatch):
+    cleared = []
+    shown = []
+
+    monkeypatch.setattr(catalog_menus.cache, "clear_list", lambda key: cleared.append(key))
+    monkeypatch.setattr(catalog_menus, "_show_search_catalog_history", lambda params: shown.append(params))
+
+    params = {
+        "addon_url": "https://anime-kitsu.strem.fun",
+        "catalog_type": "anime",
+        "catalog_id": "kitsu-search",
+    }
+
+    catalog_menus.clear_stremio_search_history(params)
+
+    assert cleared == ["stremio_search_catalog|https://anime-kitsu.strem.fun|anime|kitsu-search"]
+    assert shown == [params]
+
+
 def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     meta_data = Meta.from_dict(
         {
