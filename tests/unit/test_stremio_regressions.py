@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 from lib.api.stremio.addon_manager import AddonManager
@@ -284,6 +285,7 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
         "catalogs_get_cache",
         lambda *args, **kwargs: {"meta": meta_data},
     )
+    monkeypatch.setattr(catalog_menus.cache, "get", lambda key: None)
     monkeypatch.setattr(catalog_menus, "tmdb_get", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
@@ -303,3 +305,205 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     )
 
     assert added == ["1x2. Fallback Show"]
+
+
+def test_add_meta_items_uses_tmdb_context_menu_only_for_reliable_tmdb_ids(monkeypatch):
+    added_items = []
+
+    class _InfoTag:
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+            self.context_menu = []
+
+        def getVideoInfoTag(self):
+            return _InfoTag()
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+        def setProperty(self, *args, **kwargs):
+            pass
+
+        def addContextMenuItems(self, items, replaceItems=False):
+            self.context_menu.extend(items)
+
+    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
+    monkeypatch.setattr(catalog_menus, "kodi_play_media", lambda **kwargs: f"PlayMedia({kwargs['name']})")
+    monkeypatch.setattr(catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)")
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_tmdb_movie_context_menu",
+        lambda **kwargs: [("Extras", "extras"), ("Play Trailer", "trailer"), ("Add to Library", "tmdb-lib")],
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder=False: added_items.append(listitem),
+    )
+
+    metas = [
+        MetaPreview(id="tmdb:100", type="movie", name="Reliable Movie", poster="", description="desc"),
+        MetaPreview(id="custom:200", type="movie", name="Custom Movie", poster="", description="desc"),
+    ]
+
+    catalog_menus.add_meta_items(
+        metas,
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "movie",
+            "catalog_type": "movie",
+        },
+    )
+
+    reliable_menu = [label for label, _ in added_items[0].context_menu]
+    custom_menu = [label for label, _ in added_items[1].context_menu]
+
+    assert "Extras" in reliable_menu
+    assert "Play Trailer" in reliable_menu
+    assert reliable_menu.count("Add to Library") == 1
+    assert "Open Settings" in reliable_menu
+    assert "Extras" not in custom_menu
+    assert "Play Trailer" not in custom_menu
+    assert custom_menu == ["Add to Library", "Open Settings"]
+
+
+def test_add_meta_items_resolves_tmdb_id_from_imdb_for_context_menu(monkeypatch):
+    added_items = []
+    captured_ids = {}
+
+    class _InfoTag:
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+            self.context_menu = []
+
+        def getVideoInfoTag(self):
+            return _InfoTag()
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+        def setProperty(self, *args, **kwargs):
+            pass
+
+        def addContextMenuItems(self, items, replaceItems=False):
+            self.context_menu.extend(items)
+
+    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
+    monkeypatch.setattr(catalog_menus, "kodi_play_media", lambda **kwargs: f"PlayMedia({kwargs['name']})")
+    monkeypatch.setattr(catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)")
+    monkeypatch.setattr(
+        catalog_menus.cache,
+        "get",
+        lambda key: type("FindResult", (), {"movie_results": [{"id": 550}], "tv_results": []})()
+        if key == "find_by_imdb_id|tt0133093"
+        else None,
+    )
+
+    def _movie_context_menu(**kwargs):
+        captured_ids.update(kwargs["ids"])
+        return [("Extras", "extras"), ("Play Trailer", "trailer")]
+
+    monkeypatch.setattr(catalog_menus, "add_tmdb_movie_context_menu", _movie_context_menu)
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder=False: added_items.append(listitem),
+    )
+
+    metas = [
+        MetaPreview(id="tt0133093", type="movie", name="The Matrix", poster="", description="desc", imdb_id="tt0133093"),
+    ]
+
+    catalog_menus.add_meta_items(
+        metas,
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "movie",
+            "catalog_type": "movie",
+        },
+    )
+
+    menu_labels = [label for label, _ in added_items[0].context_menu]
+    assert captured_ids["tmdb_id"] == "550"
+    assert "Extras" in menu_labels
+    assert "Play Trailer" in menu_labels
+    assert menu_labels.count("Open Settings") == 1
+
+
+def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
+    captured = {}
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {
+            "streams": [
+                type(
+                    "Stream",
+                    (),
+                    {"title": "Movie Stream", "description": "Stream plot", "url": "https://video", "infoHash": ""},
+                )()
+            ]
+        },
+    )
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
+
+    def _build_url(action, **kwargs):
+        captured["action"] = action
+        captured["data"] = json.loads(kwargs["data"])
+        return "plugin://test"
+
+    monkeypatch.setattr(catalog_menus, "build_url", _build_url)
+
+    catalog_menus.list_stremio_movie(
+        {
+            "addon_url": "https://example.com/addon",
+            "catalog_type": "movie",
+            "meta_id": "custom:movie",
+            "ids": json.dumps({"tmdb_id": "100", "imdb_id": "tt100", "original_id": "custom:movie"}),
+            "poster": "poster.jpg",
+            "fanart": "fanart.jpg",
+            "genres": json.dumps(["Drama"]),
+            "overview": "Catalog overview",
+        }
+    )
+
+    assert captured["action"] == "play_media"
+    assert captured["data"] == {
+        "mode": "movie",
+        "source": "stremio_catalog",
+        "title": "Movie Stream",
+        "overview": "Stream plot",
+        "poster": "poster.jpg",
+        "fanart": "fanart.jpg",
+        "genres": ["Drama"],
+        "ids": {"tmdb_id": "100", "imdb_id": "tt100", "original_id": "custom:movie"},
+        "addon_url": "https://example.com/addon",
+        "catalog_type": "movie",
+        "meta_id": "custom:movie",
+        "url": "https://video",
+        "type": catalog_menus.IndexerType.DIRECT,
+    }
