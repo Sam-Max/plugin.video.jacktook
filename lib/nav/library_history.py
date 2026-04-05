@@ -5,7 +5,6 @@ from xbmcgui import Dialog, ListItem
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 from lib.db.cached import cache
-from lib.jacktook.utils import kodilog
 from lib.utils.general.items_menus import history_menu_items, library_menu_items
 from lib.utils.general.utils import build_list_item, clear_history_by_type, set_pluging_category
 from lib.utils.kodi.settings import get_cache_expiration
@@ -66,11 +65,6 @@ def _render_menu(items, cache_listing=True):
                 )
             )
         if context_menu:
-            kodilog(
-                "Library menu context items: label={!r} items={} ".format(
-                    name, [item[0] for item in context_menu]
-                )
-            )
             list_item.addContextMenuItems(context_menu)
 
         addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=True)

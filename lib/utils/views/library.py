@@ -186,23 +186,12 @@ def clear_library_items(params):
     mode = params.get("mode", "tv")
     pickle_db = PickleDatabase()
     library_items = dict(pickle_db.get_key("jt:lib") or {})
-    kodilog(
-        "clear_library_items start: mode={!r} total_items={} keys={}".format(
-            mode, len(library_items), list(library_items.keys())
-        )
-    )
-
     titles_to_remove = []
     removed_count = 0
     for title, data in library_items.items():
         if _library_mode_matches(data.get("mode"), mode):
             titles_to_remove.append(title)
             removed_count += 1
-    kodilog(
-        "clear_library_items matched: mode={!r} removed_titles={}".format(
-            mode, titles_to_remove
-        )
-    )
     for title in titles_to_remove:
         pickle_db.delete_item("jt:lib", title, commit=False)
     if titles_to_remove:
@@ -210,14 +199,6 @@ def clear_library_items(params):
 
     cache.delete(_library_cache_key("tv"))
     cache.delete(_library_cache_key("movies"))
-
-    kodilog(
-        "Cleared library items: mode={!r} removed_count={} remaining_count={}".format(
-            mode,
-            removed_count,
-            len(pickle_db.get_key("jt:lib") or {}),
-        )
-    )
 
     if removed_count:
         notification("", translation(90692))

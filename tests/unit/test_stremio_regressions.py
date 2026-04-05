@@ -252,6 +252,95 @@ def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
     ]
 
 
+def test_search_catalog_uses_stremio_routes_when_catalog_has_meta(monkeypatch):
+    added_urls = []
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {
+            "metas": [
+                MetaPreview(
+                    id="kitsu:hell-paradise-2",
+                    type="series",
+                    name="Jigokuraku 2nd Season",
+                    poster="",
+                    description="desc",
+                    imdb_id="tt123",
+                )
+            ]
+        },
+    )
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "add_next_button", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
+    monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
+    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: f"plugin://{action}",
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder=True: added_urls.append(url),
+    )
+    monkeypatch.setattr(catalog_menus.cache, "get", lambda key: None)
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "add_tmdb_show_context_menu", lambda *args, **kwargs: [])
+
+    catalog_menus.search_catalog(
+        {
+            "page": 1,
+            "addon_url": "https://anime-kitsu.strem.fun",
+            "catalog_type": "anime",
+            "catalog_id": "kitsu-anime-list",
+            "menu_type": "anime",
+            "sub_menu_type": "series",
+            "has_meta_resource": True,
+        }
+    )
+
+    assert added_urls == ["plugin://list_stremio_seasons"]
+
+
+def test_search_catalog_backfills_missing_menu_type(monkeypatch):
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {"metas": []},
+    )
+    monkeypatch.setattr(catalog_menus, "add_meta_items", lambda metas, params: (_ for _ in ()).throw(AssertionError(params)))
+    monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
+    monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
+    monkeypatch.setattr(catalog_menus, "add_next_button", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+
+    captured = {}
+
+    def _add_meta_items(metas, params):
+        captured.update(params)
+
+    monkeypatch.setattr(catalog_menus, "add_meta_items", _add_meta_items)
+
+    catalog_menus.search_catalog(
+        {
+            "page": 1,
+            "addon_url": "https://anime-kitsu.strem.fun",
+            "catalog_type": "anime",
+            "catalog_id": "kitsu-anime-list",
+        }
+    )
+
+    assert captured["menu_type"] == "anime"
+    assert captured["sub_menu_type"] == ""
+
+
 def test_clear_stremio_search_history_clears_only_current_catalog(monkeypatch):
     cleared = []
     shown = []

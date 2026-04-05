@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime, timedelta
 from dataclasses import asdict
-from time import perf_counter
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
     get_selected_catalogs_addons,
@@ -207,6 +206,10 @@ def _append_context_menu_items(list_item, context_menu):
     list_item.addContextMenuItems(context_menu, False)
 
 
+def _param_truthy(value):
+    return str(value).lower() in ("1", "true", "yes")
+
+
 def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     if menu_type == "tv":
         selected_addons = get_selected_tv_addons()
@@ -258,6 +261,10 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                         addon_url=addon.url(),
                         catalog_type=catalog.type,
                         catalog_id=catalog_id,
+                        menu_type=menu_type,
+                        sub_menu_type=sub_menu_type,
+                        has_meta_resource=_addon_has_resource(addon, "meta", catalog_type),
+                        has_stream_resource=_addon_has_resource(addon, "stream", catalog_type),
                     ),
                     listitem,
                     isFolder=True,
@@ -309,7 +316,6 @@ def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name):
 
 
 def list_catalog(params):
-    total_start = perf_counter()
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
@@ -329,25 +335,8 @@ def list_catalog(params):
     if supports_skip and skip:
         request_kwargs["skip"] = skip
 
-    kodilog(
-        "Stremio list_catalog start: addon={!r} catalog={!r}/{!r} menu_type={!r} skip={} supports_skip={} extras={}".format(
-            params.get("addon_url", ""),
-            params.get("catalog_type", ""),
-            params.get("catalog_id", ""),
-            params.get("menu_type", ""),
-            skip,
-            supports_skip,
-            request_kwargs,
-        )
-    )
-
-    fetch_start = perf_counter()
     response = catalogs_get_cache("list_catalog", params, **request_kwargs)
-    fetch_elapsed_ms = (perf_counter() - fetch_start) * 1000
     if not response:
-        kodilog(
-            f"Stremio list_catalog empty response: fetch_ms={fetch_elapsed_ms:.1f}"
-        )
         end_of_directory()
         return
 
@@ -362,9 +351,7 @@ def list_catalog(params):
         end_of_directory()
         return
 
-    render_start = perf_counter()
     add_meta_items(metas, params)
-    render_elapsed_ms = (perf_counter() - render_start) * 1000
 
     has_next_page = False
     if supports_skip:
@@ -387,19 +374,6 @@ def list_catalog(params):
             handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
         )
 
-    total_elapsed_ms = (perf_counter() - total_start) * 1000
-    kodilog(
-        "Stremio list_catalog complete: addon={!r} catalog={!r}/{!r} fetched={} rendered={} fetch_ms={:.1f} render_ms={:.1f} total_ms={:.1f}".format(
-            params.get("addon_url", ""),
-            params.get("catalog_type", ""),
-            params.get("catalog_id", ""),
-            total_metas,
-            len(metas),
-            fetch_elapsed_ms,
-            render_elapsed_ms,
-            total_elapsed_ms,
-        )
-    )
     end_of_directory()
 
 
@@ -407,6 +381,12 @@ def search_catalog(params):
     page = int(params["page"])
     pickle_db = PickleDatabase()
     history_key = _stremio_search_history_key(params)
+
+    if "menu_type" not in params:
+        params = dict(params)
+        params["menu_type"] = params.get("catalog_type", "movie")
+    if "sub_menu_type" not in params:
+        params["sub_menu_type"] = ""
 
     if page == 1:
         if str(params.get("is_keyboard", "True")).lower() in ("false", "0", "no"):
@@ -429,66 +409,7 @@ def search_catalog(params):
     if not response:
         return
 
-    meta_data = response.get("metas", {})
-    for meta in meta_data:
-        if meta.type == "series":
-            tmdb_id = meta.moviedb_id
-            imdb_id = meta.imdb_id
-
-            if tmdb_id or imdb_id:
-                ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": imdb_id}
-                url = build_url(
-                    "show_seasons_details",
-                    ids=ids,
-                    mode="tv",
-                    media_type="tv",
-                )
-            else:
-                url = build_url(
-                    "list_stremio_seasons",
-                    addon_url=params["addon_url"],
-                    catalog_type=params["catalog_type"],
-                    meta_id=meta.id,
-                )
-        elif meta.type == "movie":
-            tmdb_id = ""
-            id = meta.id
-            if "tmdb" in id:
-                tmdb_id = id.split(":")[1]
-
-            ids = {"tmdb_id": tmdb_id, "tvdb_id": "", "imdb_id": meta.imdb_id}
-            url = build_url("search", mode="movies", query=meta.name, ids=ids)
-        else:
-            continue
-
-        list_item = ListItem(label=f"{meta.name}")
-        info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(meta.id, type="imdb" if meta.id.startswith("tt") else "mf")
-        info_tag.setTitle(meta.name)
-        info_tag.setPlot(meta.description or "")
-        info_tag.setGenres(meta.genres)
-        info_tag.setMediaType("video")
-
-        if meta.type == "movie":
-            list_item.setProperty("IsPlayable", "true")
-            isFolder = False
-        else:
-            isFolder = True
-
-        list_item.setArt(
-            {
-                "thumb": meta.poster or "",
-                "poster": meta.poster or "",
-                "fanart": meta.poster or "",
-                "icon": meta.poster or "",
-                "banner": meta.background or "",
-                "landscape": meta.background or "",
-            }
-        )
-
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=isFolder
-        )
+    add_meta_items(response.get("metas", []), params)
 
     add_next_button("search_catalog", page=page, mode=params["catalog_type"])
     end_of_directory()
@@ -516,9 +437,8 @@ def addon_has_stream(addon_url, content_type, addon=None):
 
 
 def add_meta_items(metas, params):
-    start = perf_counter()
     catalog_type = params["catalog_type"]
-    menu_type = params["menu_type"]
+    menu_type = params.get("menu_type", catalog_type)
     sub_menu_type = params.get("sub_menu_type", "")
     addon_url = params["addon_url"]
 
@@ -541,13 +461,13 @@ def add_meta_items(metas, params):
         end_of_directory()
         return
 
-    addon = get_addon_by_base_url(addon_url)
-    has_meta_resource = addon_has_meta(addon_url, catalog_type, addon=addon)
-    has_stream_resource = addon_has_stream(addon_url, catalog_type, addon=addon)
-
-    tmdb_id_count = 0
-    imdb_only_count = 0
-    no_external_id_count = 0
+    addon = None
+    has_meta_resource = _param_truthy(params.get("has_meta_resource"))
+    has_stream_resource = _param_truthy(params.get("has_stream_resource"))
+    if not has_meta_resource and not has_stream_resource:
+        addon = get_addon_by_base_url(addon_url)
+        has_meta_resource = addon_has_meta(addon_url, catalog_type, addon=addon)
+        has_stream_resource = addon_has_stream(addon_url, catalog_type, addon=addon)
 
     for meta in metas:
         name = meta.name
@@ -561,13 +481,6 @@ def add_meta_items(metas, params):
         elif meta_id.startswith("tt"):
             imdb_id = meta_id
             tmdb_id = ""
-
-        if tmdb_id:
-            tmdb_id_count += 1
-        elif imdb_id:
-            imdb_only_count += 1
-        else:
-            no_external_id_count += 1
 
         ids = _build_stremio_ids(meta_id, tmdb_id, imdb_id)
         poster = meta.poster or ""
@@ -726,18 +639,6 @@ def add_meta_items(metas, params):
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder
         )
 
-    elapsed_ms = (perf_counter() - start) * 1000
-    kodilog(
-        "Stremio add_meta_items complete: addon={!r} catalog={!r} count={} tmdb_ids={} imdb_only={} no_external_ids={} elapsed_ms={:.1f}".format(
-            addon_url,
-            catalog_type,
-            len(metas),
-            tmdb_id_count,
-            imdb_only_count,
-            no_external_id_count,
-            elapsed_ms,
-        )
-    )
 
 
 def list_stremio_seasons(params):
@@ -799,7 +700,6 @@ def list_stremio_seasons(params):
 
 def list_stremio_episodes(params):
     kodilog("list_stremio_episodes")
-    total_start = perf_counter()
     response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
         return
@@ -849,8 +749,6 @@ def list_stremio_episodes(params):
     has_stream_resource = addon_has_stream(
         params["addon_url"], params["catalog_type"], addon=addon
     )
-    rendered_count = 0
-
     for video in videos:
         try:
             season = int(video.imdbSeason) if video.imdbSeason else int(video.season)
@@ -968,21 +866,7 @@ def list_stremio_episodes(params):
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
         )
-        rendered_count += 1
 
-    total_elapsed_ms = (perf_counter() - total_start) * 1000
-    kodilog(
-        "Stremio list_stremio_episodes complete: addon={!r} catalog={!r} season={} rendered={} has_stream_resource={} tmdb_id={!r} imdb_id={!r} total_ms={:.1f}".format(
-            params.get("addon_url", ""),
-            params.get("catalog_type", ""),
-            params.get("season", ""),
-            rendered_count,
-            has_stream_resource,
-            tmdb_id,
-            imdb_id,
-            total_elapsed_ms,
-        )
-    )
     end_of_directory()
 
 
