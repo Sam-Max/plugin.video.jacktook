@@ -864,26 +864,28 @@ def set_watched_file(data):
     pickle_db.set_item(key="jt:lfh", subkey=title, value=data)
 
 
-def set_watched_title(title, ids, mode, tg_data="", media_type=""):
-    pickle_db.set_item(
-        key="jt:lth",
-        subkey=title,
-        value={
-            "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
-            "ids": ids,
-            "mode": media_type if mode == "multi" else mode,
-            "tg_data": tg_data,
-        },
-    )
-    add_to_library(
-        {
-            "title": title,
-            "ids": ids,
-            "mode": media_type if mode == "multi" else mode,
-            "tg_data": tg_data,
-            "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
-        }
-    )
+def set_watched_title(title, ids, mode, tg_data="", media_type="", library_data=None):
+    payload = {
+        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
+        "ids": ids,
+        "mode": media_type if mode == "multi" else mode,
+        "tg_data": tg_data,
+    }
+    if library_data:
+        payload.update(library_data)
+
+    pickle_db.set_item(key="jt:lth", subkey=title, value=payload)
+
+    library_payload = {
+        "title": title,
+        "ids": ids,
+        "mode": media_type if mode == "multi" else mode,
+        "tg_data": tg_data,
+        "timestamp": payload["timestamp"],
+    }
+    if library_data:
+        library_payload.update(library_data)
+    add_to_library(library_payload)
 
 
 def add_to_library(data):

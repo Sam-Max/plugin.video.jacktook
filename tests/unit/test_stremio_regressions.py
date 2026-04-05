@@ -308,6 +308,47 @@ def test_search_catalog_uses_stremio_routes_when_catalog_has_meta(monkeypatch):
     assert added_urls == ["plugin://list_stremio_seasons"]
 
 
+def test_run_search_entry_preserves_stremio_route_in_library_payload(monkeypatch):
+    captured = {}
+
+    monkeypatch.setattr(search, "_handle_super_quick_play", lambda params: False)
+    monkeypatch.setattr(search, "set_content_type", lambda *args, **kwargs: None)
+    monkeypatch.setattr(search, "search_client", lambda *args, **kwargs: [object()])
+    monkeypatch.setattr(search, "_process_search_results", lambda *args, **kwargs: [object()])
+    monkeypatch.setattr(search, "auto_play_enabled", lambda: False)
+    monkeypatch.setattr(search, "show_source_select", lambda *args, **kwargs: True)
+
+    def _set_watched_title(title, ids, mode, tg_data="", media_type="", library_data=None):
+        captured["title"] = title
+        captured["ids"] = ids
+        captured["mode"] = mode
+        captured["media_type"] = media_type
+        captured["library_data"] = library_data
+
+    monkeypatch.setattr(search, "set_watched_title", _set_watched_title)
+
+    search.run_search_entry(
+        {
+            "query": "Jigokuraku",
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": json.dumps({"imdb_id": "tt123", "original_id": "kitsu:jigokuraku-2"}),
+            "tv_data": json.dumps({"name": "Jigokuraku", "season": 1, "episode": 1}),
+            "scoped_addon_url": "https://anime-kitsu.strem.fun",
+            "stremio_addon_url": "https://anime-kitsu.strem.fun",
+            "stremio_catalog_type": "anime",
+            "stremio_meta_id": "kitsu:jigokuraku-2",
+        }
+    )
+
+    assert captured["library_data"] == {
+        "source": "stremio_catalog",
+        "addon_url": "https://anime-kitsu.strem.fun",
+        "catalog_type": "anime",
+        "meta_id": "kitsu:jigokuraku-2",
+    }
+
+
 def test_search_catalog_backfills_missing_menu_type(monkeypatch):
     monkeypatch.setattr(
         catalog_menus,
@@ -456,6 +497,65 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     )
 
     assert added == ["1x2. Fallback Show"]
+
+
+def test_list_stremio_episodes_main_search_url_preserves_stremio_route(monkeypatch):
+    captured_urls = []
+
+    meta_data = Meta.from_dict(
+        {
+            "id": "kitsu:jigokuraku-2",
+            "type": "series",
+            "name": "Jigokuraku 2nd Season",
+            "poster": "poster.jpg",
+            "background": "fanart.jpg",
+            "genres": ["Anime"],
+            "videos": [
+                {
+                    "id": "ep1",
+                    "title": "Episode 1",
+                    "season": 1,
+                    "episode": 1,
+                    "overview": "Episode plot",
+                }
+            ],
+        }
+    )
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {"meta": meta_data},
+    )
+    monkeypatch.setattr(catalog_menus, "tmdb_get", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: captured_urls.append((action, kwargs)) or f"plugin://{action}",
+    )
+    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "add_tmdb_episode_context_menu", lambda *args, **kwargs: [])
+
+    catalog_menus.list_stremio_episodes(
+        {
+            "addon_url": "https://anime-kitsu.strem.fun",
+            "catalog_type": "anime",
+            "meta_id": "kitsu:jigokuraku-2",
+            "season": "1",
+        }
+    )
+
+    search_calls = [kwargs for action, kwargs in captured_urls if action == "search"]
+    assert len(search_calls) == 1
+    assert search_calls[0]["stremio_addon_url"] == "https://anime-kitsu.strem.fun"
+    assert search_calls[0]["stremio_catalog_type"] == "anime"
+    assert search_calls[0]["stremio_meta_id"] == "kitsu:jigokuraku-2"
 
 
 def test_add_meta_items_uses_tmdb_context_menu_only_for_reliable_tmdb_ids(monkeypatch):

@@ -786,6 +786,9 @@ def list_stremio_episodes(params):
             ids=ids,
             tv_data=tv_data,
             scoped_addon_url=scoped_addon_url,
+            stremio_addon_url=params["addon_url"],
+            stremio_catalog_type=params["catalog_type"],
+            stremio_meta_id=params["meta_id"],
         )
 
         list_item = ListItem(label=f"{season}x{episode}. {title}")
@@ -846,6 +849,9 @@ def list_stremio_episodes(params):
                         ids=ids,
                         tv_data=tv_data,
                         scoped_addon_url=scoped_addon_url,
+                        stremio_addon_url=params["addon_url"],
+                        stremio_catalog_type=params["catalog_type"],
+                        stremio_meta_id=params["meta_id"],
                         rescrape=True,
                     ),
                 ),

@@ -250,8 +250,17 @@ def run_search_entry(params: dict):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
+    library_data = None
+    if params.get("stremio_addon_url") and params.get("stremio_catalog_type"):
+        library_data = {
+            "source": "stremio_catalog",
+            "addon_url": params.get("stremio_addon_url"),
+            "catalog_type": params.get("stremio_catalog_type"),
+            "meta_id": params.get("stremio_meta_id") or ids.get("original_id", ""),
+        }
+
     set_content_type(mode)
-    set_watched_title(query, ids, mode, media_type)
+    set_watched_title(query, ids, mode, media_type=media_type, library_data=library_data)
 
     ep_name = tv_data.get("name", "")
     episode = tv_data.get("episode", 1)

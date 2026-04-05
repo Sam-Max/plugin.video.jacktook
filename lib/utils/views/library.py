@@ -18,7 +18,11 @@ def _library_cache_key(mode):
 
 
 def _is_stremio_library_item(data):
-    return data.get("source") == "stremio_catalog"
+    return data.get("source") == "stremio_catalog" or (
+        data.get("addon_url")
+        and data.get("catalog_type")
+        and (data.get("meta_id") or data.get("ids", {}).get("original_id"))
+    )
 
 
 def _normalize_library_mode(mode):
@@ -99,22 +103,23 @@ def _library_mode_matches(item_mode, mode):
 
 def _get_stremio_library_url(data, mode):
     ids = data.get("ids", {})
+    meta_id = data.get("meta_id") or ids.get("original_id", "")
     if mode == "tv":
-        if data.get("addon_url") and data.get("catalog_type") and data.get("meta_id"):
+        if data.get("addon_url") and data.get("catalog_type") and meta_id:
             return build_url(
                 "list_stremio_seasons",
                 addon_url=data.get("addon_url"),
                 catalog_type=data.get("catalog_type"),
-                meta_id=data.get("meta_id"),
+                meta_id=meta_id,
             )
         return build_url("show_seasons_details", ids=ids, mode=mode)
 
-    if data.get("addon_url") and data.get("catalog_type") and data.get("meta_id"):
+    if data.get("addon_url") and data.get("catalog_type") and meta_id:
         return build_url(
             "list_stremio_movie",
             addon_url=data.get("addon_url"),
             catalog_type=data.get("catalog_type"),
-            meta_id=data.get("meta_id"),
+            meta_id=meta_id,
             ids=data.get("ids", {}),
             title=data.get("title", ""),
             overview=data.get("overview", ""),

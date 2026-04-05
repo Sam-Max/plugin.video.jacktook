@@ -139,3 +139,54 @@ def test_show_library_items_renders_stremio_entry_without_tmdb(monkeypatch):
 
     assert added == [(added[0][0], "Kitsu Show", True)]
     assert "action=list_stremio_seasons" in added[0][0]
+
+
+def test_library_treats_entries_with_stremio_route_fields_as_stremio(monkeypatch):
+    monkeypatch.setattr(library.cache, "get", lambda key: None)
+    monkeypatch.setattr(library.cache, "set", lambda *args, **kwargs: None)
+
+    tmdb_calls = []
+    monkeypatch.setattr(library, "tmdb_get", lambda *args, **kwargs: tmdb_calls.append((args, kwargs)))
+
+    entries = library._get_library_entries(
+        [
+            (
+                "Jigokuraku 2nd Season",
+                {
+                    "title": "Jigokuraku 2nd Season",
+                    "overview": "Catalog plot",
+                    "poster": "poster.jpg",
+                    "fanart": "fanart.jpg",
+                    "mode": "tv",
+                    "addon_url": "https://anime-kitsu.strem.fun",
+                    "catalog_type": "anime",
+                    "meta_id": "kitsu:jigokuraku-2",
+                    "ids": {"imdb_id": "tt123"},
+                },
+            )
+        ],
+        "tv",
+    )
+
+    assert tmdb_calls == []
+    assert entries[0]["is_stremio"] is True
+    assert entries[0]["data"]["meta_id"] == "kitsu:jigokuraku-2"
+
+
+def test_get_library_item_url_uses_original_id_when_meta_id_missing():
+    entry = {
+        "title": "Jigokuraku 2nd Season",
+        "is_stremio": True,
+        "data": {
+            "title": "Jigokuraku 2nd Season",
+            "addon_url": "https://anime-kitsu.strem.fun",
+            "catalog_type": "anime",
+            "ids": {"original_id": "kitsu:jigokuraku-2"},
+        },
+    }
+
+    url = library._get_library_item_url(entry, "tv")
+
+    assert url.startswith("plugin://")
+    assert "action=list_stremio_seasons" in url
+    assert "meta_id=kitsu%3Ajigokuraku-2" in url
