@@ -163,6 +163,17 @@ def _handle_super_quick_play(params: dict) -> bool:
         return False
 
     kodilog(f"Found cached media: {cached_torrent['title']}")
+
+    if get_setting("silent_resume", False):
+        playback_info = resolve_playback_url(cached_torrent)
+        if not playback_info:
+            notification(translation(90144))
+            return True
+
+        player = JacktookPLayer()
+        player.run(data=playback_info)
+        return True
+
     dialog = Dialog()
     if dialog.yesno(
         translation(90142),

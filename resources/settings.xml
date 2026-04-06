@@ -857,6 +857,15 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
+                <setting id="silent_resume" type="boolean" label="30938" help="30939">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="super_quick_play">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
                 <setting id="precaching_enabled" type="boolean" label="90145" help="90146">
                     <default>false</default>
                     <control type="toggle" />

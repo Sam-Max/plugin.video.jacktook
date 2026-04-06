@@ -423,6 +423,14 @@ msgctxt "#30727"
 msgid "Quality"
 msgstr "Qualidade"
 
+msgctxt "#30938"
+msgid "Silent Resume"
+msgstr "Retomar Silenciosamente"
+
+msgctxt "#30939"
+msgid "Auto-resume from last position without asking"
+msgstr "Retomar automaticamente da última posição sem perguntar"
+
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Sementes"
@@ -1968,7 +1976,7 @@ msgid "Super quick play"
 msgstr ""
 
 msgctxt "#90141"
-msgid "Re-ask to play last played torrent"
+msgid "Re-ask to play last played video"
 msgstr ""
 
 msgctxt "#90142"
