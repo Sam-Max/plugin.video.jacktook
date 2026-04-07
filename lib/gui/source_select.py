@@ -5,7 +5,11 @@ from lib.gui.filter_items_window import FilterWindow
 from lib.gui.base_window import BaseWindow
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.debrid.debrid_utils import add_source_to_debrid, get_source_status
+from lib.utils.debrid.debrid_utils import (
+    add_source_to_debrid,
+    get_torrent_data_from_uri,
+    get_source_status,
+)
 from lib.utils.kodi.utils import (
     action_url_run,
     bytes_to_human_readable,
@@ -203,8 +207,14 @@ class SourceSelect(BaseWindow):
             response = xbmcgui.Dialog().contextmenu(
                 [translation(90365), translation(90359), translation(90083)]
             )
+            kodilog(f"SourceSelect context menu response for torrent source: {response}")
             if response == 0:
-                self._download_to_debrid(selected_source)
+                kodilog("SourceSelect context menu: invoking _download_to_debrid")
+                try:
+                    self._download_to_debrid(selected_source)
+                except Exception as e:
+                    kodilog(f"SourceSelect _download_to_debrid raised: {e}")
+                    notification(str(e))
             elif response == 1:
                 self._add_to_torrserver(selected_source)
             elif response == 2:
@@ -268,7 +278,15 @@ class SourceSelect(BaseWindow):
             menu_item.setProperty("audio", info["audio"])
             menu_item.setProperty("hdr_info", info["badges"])
             menu_item.setProperty("release_group", info["release_group"])
-            if source.type in (IndexerType.TORRENT, IndexerType.STREMIO_DEBRID):
+            kodilog(f"SourceSelect populate_sources_list: source.type={source.type}")
+            if source.type in IndexerType.TORRENT:
+                if source.addedToDebrid and source.debridType:
+                    provider_name = source.debridType
+                else:
+                    provider_name = source.type or source.subindexer 
+            elif source.type == IndexerType.DEBRID:
+                provider_name = source.debridType or source.type 
+            elif IndexerType.STREMIO_DEBRID:
                 provider_name = source.subindexer or source.type
             elif source.type == IndexerType.DIRECT:
                 provider_name = source.indexer or source.type
@@ -297,9 +315,21 @@ class SourceSelect(BaseWindow):
 
             self.display_list.addItem(menu_item)
 
+    def _refresh_sources_list(self) -> None:
+        if not hasattr(self, "display_list"):
+            return
+
+        current_position = max(getattr(self, "position", 0), 0)
+        self.populate_sources_list()
+        if self.list_sources:
+            self.set_default_focus(self.display_list, 1000, control_list_reset=True)
+            self.display_list.selectItem(min(current_position, len(self.list_sources) - 1))
+
     def _download_to_debrid(self, selected_source) -> None:
+        kodilog("SourceSelect _download_to_debrid entered")
         url, magnet, _ = self._extract_source_details(selected_source)
         info_hash = selected_source.infoHash or ""
+        torrent_data = b""
 
         if not info_hash and magnet:
             info_hash = get_info_hash_from_magnet(magnet).lower()
@@ -307,11 +337,35 @@ class SourceSelect(BaseWindow):
         if not info_hash and url.startswith("magnet:?"):
             info_hash = get_info_hash_from_magnet(url).lower()
 
-        if not info_hash:
+        if url:
+            kodilog(f"Fetching torrent URL to extract info_hash: {url}")
+            torrent_data, magnet_candidate, extracted_hash, torrent_url = (
+                get_torrent_data_from_uri(url)
+            )
+            if magnet_candidate and not magnet:
+                magnet = magnet_candidate
+            if extracted_hash and not info_hash:
+                info_hash = extracted_hash
+            if torrent_url:
+                selected_source.url = torrent_url
+
+        if not info_hash and not torrent_data:
             notification(translation(90361))
             return
 
-        add_source_to_debrid(info_hash, selected_source.debridType)
+        debrid_type = add_source_to_debrid(
+            info_hash,
+            selected_source.debridType,
+            torrent_data=torrent_data,
+            torrent_name=selected_source.title or self.item_information.get("title", ""),
+        )
+        if debrid_type:
+            kodilog(f"SourceSelect download_to_debrid succeeded via {debrid_type}")
+            if info_hash:
+                selected_source.infoHash = info_hash
+            selected_source.debridType = debrid_type
+            selected_source.addedToDebrid = True
+            self._refresh_sources_list()
 
     def _add_to_torrserver(self, selected_source) -> None:
         url, magnet, _ = self._extract_source_details(selected_source)

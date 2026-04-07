@@ -73,6 +73,24 @@ class Torbox(DebridClient):
             is_expected_to_fail=False,
         )
 
+    def add_torrent_file(self, torrent_data, torrent_name="torrent.torrent"):
+        response = self.session.request(
+            method="POST",
+            url=f"{self.BASE_URL}/torrents/createtorrent",
+            data={"seed": 3, "allow_zip": "false", "name": torrent_name or "torrent.torrent"},
+            files={
+                "file": (
+                    torrent_name or "torrent.torrent",
+                    torrent_data,
+                    "application/x-bittorrent",
+                )
+            },
+            headers=self.headers,
+            timeout=self.timeout,
+        )
+        self._handle_errors(response, is_expected_to_fail=False)
+        return self._parse_response(response, is_return_none=False)
+
     def get_user_torrent_list(self):
         return self._make_request(
             "GET",

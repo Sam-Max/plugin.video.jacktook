@@ -3,11 +3,11 @@ from copy import deepcopy
 import json
 from typing import Any, Dict, Tuple
 from lib.domain.torrent import TorrentStream
-from lib.utils.debrid.debrid_utils import get_magnet_from_uri
+from lib.utils.debrid.debrid_utils import get_magnet_from_uri, _is_torrent_ready_in_debrid
 from lib.utils.player.utils import resolve_playback_url
 from lib.utils.general.utils import Indexer, IndexerType
 from lib.utils.kodi.logging import summarize_locator_for_log
-from lib.utils.kodi.utils import ADDON, kodilog
+from lib.utils.kodi.utils import ADDON, kodilog, translation
 import xbmcgui
 
 
@@ -121,6 +121,26 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
     def _ensure_playback_info(self, source: TorrentStream):
         url, magnet, is_torrent = self._extract_source_details(source)
+        
+        if source.addedToDebrid and source.debridType and source.infoHash:
+            is_ready = _is_torrent_ready_in_debrid(source.debridType, source.infoHash)
+            if not is_ready:
+                dialog = xbmcgui.Dialog()
+                message = (
+                    f"{translation(90696) % source.debridType}\n\n"
+                    f"{translation(90697)}"
+                )
+                choice = dialog.yesno(
+                    translation(90695),
+                    message,
+                    yeslabel=translation(90698),
+                    nolabel=translation(90699)
+                )
+                if not choice:
+                    return {}
+                source.addedToDebrid = False
+                source.debridType = ""
+        
         source_data = self.prepare_source_data(
             source=source,
             url=url,

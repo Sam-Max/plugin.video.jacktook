@@ -93,6 +93,25 @@ class AllDebrid(DebridClient):
         self._validate_error_response(response)
         return response
 
+    def add_torrent_file(self, torrent_data, torrent_name="torrent.torrent"):
+        response = self.session.request(
+            method="POST",
+            url=f"{self.BASE_URL}/magnet/upload/file",
+            files={
+                "files[]": (
+                    torrent_name or "torrent.torrent",
+                    torrent_data,
+                    "application/x-bittorrent",
+                )
+            },
+            headers=self.headers,
+            timeout=self.timeout,
+        )
+        self._handle_errors(response, is_expected_to_fail=False)
+        payload = self._parse_response(response, is_return_none=False)
+        self._validate_error_response(payload)
+        return payload
+
     def get_user_torrent_list(self):
         return self._make_request("GET", "/magnet/status")
 

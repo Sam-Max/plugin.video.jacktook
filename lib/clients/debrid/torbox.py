@@ -37,17 +37,31 @@ class TorboxHelper:
         dialog: Any,
         lock: Any,
     ) -> None:
-        hashes = [res.infoHash for res in results]
-        response = self.client.get_torrent_instant_availability(hashes)
-        
-        raw_data = response.get("data", [])
+        hashes = [res.infoHash for res in results if res.infoHash]
         cached_response = set()
-        for item in raw_data:
-            if isinstance(item, dict):
-                if item.get('hash'):
-                    cached_response.add(item.get('hash'))
-            else:
-                cached_response.add(item)
+
+        if hashes:
+            kodilog(
+                "TorboxHelper.check_cached: checking {} hashes against TorBox cache".format(
+                    len(hashes)
+                )
+            )
+            response = self.client.get_torrent_instant_availability(hashes)
+            raw_data = response.get("data", [])
+            for item in raw_data:
+                if isinstance(item, dict):
+                    if item.get("hash"):
+                        cached_response.add(item.get("hash"))
+                else:
+                    cached_response.add(item)
+
+        missing_hashes = len(results) - len(hashes)
+        if missing_hashes:
+            kodilog(
+                "TorboxHelper.check_cached: skipping {} results without info_hash".format(
+                    missing_hashes
+                )
+            )
 
         for res in copy.deepcopy(results):
             debrid_dialog_update("TB", total, dialog, lock)
@@ -63,6 +77,11 @@ class TorboxHelper:
                     uncached_results.append(res)
 
     def add_torbox_torrent(self, info_hash):
+        kodilog(
+            "TorboxHelper.add_torbox_torrent: checking existing torrent for hash={!r}".format(
+                str(info_hash).lower()[:12]
+            )
+        )
         torrent_info = self.client.get_available_torrent(info_hash)
         if (
             torrent_info
@@ -72,6 +91,7 @@ class TorboxHelper:
             return torrent_info
 
         magnet = info_hash_to_magnet(info_hash)
+        kodilog("TorboxHelper.add_torbox_torrent: calling TorBox magnet upload API")
         response = self.client.add_magnet_link(magnet)
 
         if not response.get("success"):
@@ -79,6 +99,29 @@ class TorboxHelper:
 
         if "Found Cached" in response.get("detail", ""):
             return self.client.get_available_torrent(info_hash)
+        
+        kodilog(f"TorboxHelper: Magnet added successfully, waiting for download. Detail: {response.get('detail', 'N/A')}")
+        return response
+
+    def add_torrent_file(self, torrent_data: bytes, torrent_name: str = "torrent.torrent"):
+        kodilog(
+            "TorboxHelper.add_torrent_file: calling TorBox torrent file upload API with torrent_name={!r}, size={} bytes".format(
+                torrent_name,
+                len(torrent_data or b""),
+            )
+        )
+        response = self.client.add_torrent_file(torrent_data, torrent_name=torrent_name)
+
+        if not response.get("success"):
+            raise TorboxException(f"Failed to add torrent file to Torbox: {response}")
+
+        data = response.get("data", {}) or {}
+        torrent_hash = data.get("hash", "")
+        if torrent_hash:
+            torrent_info = self.client.get_available_torrent(torrent_hash)
+            if torrent_info:
+                return torrent_info
+        return data
 
     def get_cloud_downloads(self) -> List[Dict[str, Any]]:
         response = self.client.get_user_torrent_list()

@@ -10,6 +10,7 @@ from lib.clients.debrid.common import (
     ensure_direct_playable_file_for_provider,
     get_file_name,
 )
+from lib.utils.kodi.logging import kodilog
 from lib.utils.kodi.utils import (
     get_setting,
     dialog_text,
@@ -73,9 +74,15 @@ class RealDebridHelper:
     def add_magnet(self, info_hash: str, is_pack: bool = False):
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
+            kodilog(
+                "RealDebridHelper.add_magnet: checking existing torrent for hash={!r}".format(
+                    str(info_hash).lower()[:12]
+                )
+            )
             torrent_info = self.client.get_available_torrent(info_hash)
             if not torrent_info:
                 self.check_max_active_count()
+                kodilog("RealDebridHelper.add_magnet: calling Real-Debrid magnet upload API")
                 response = self.client.add_magnet_link(info_hash_to_magnet(info_hash))
                 torrent_id = response.get("id")
                 if not torrent_id:
@@ -86,16 +93,43 @@ class RealDebridHelper:
         except Exception as e:
             raise ProviderException(str(e))
 
+    def add_torrent_file(
+        self,
+        torrent_data: bytes,
+        torrent_name: str = "torrent.torrent",
+        is_pack: bool = False,
+    ) -> Optional[str]:
+        """Uploads a torrent file to Real-Debrid and returns the torrent ID."""
+        try:
+            self.check_max_active_count()
+            kodilog(
+                "RealDebridHelper.add_torrent_file: calling Real-Debrid torrent file upload API with torrent_name={!r}, size={} bytes".format(
+                    torrent_name,
+                    len(torrent_data or b""),
+                )
+            )
+            response = self.client.add_torrent_file(torrent_data, torrent_name=torrent_name)
+            torrent_id = response.get("id")
+            if not torrent_id:
+                raise ProviderException("Failed to upload torrent file to Real-Debrid")
+            torrent_info = self.client.get_torrent_info(torrent_id)
+            self._handle_torrent_status(torrent_info, is_pack)
+            return torrent_info.get("id")
+        except Exception as e:
+            raise ProviderException(str(e))
+
     def _handle_torrent_status(
         self, torrent_info: Dict, is_pack: bool = False
     ) -> Optional[str]:
         """Processes torrent_info status and handles errors or file selection."""
         status = torrent_info["status"]
+        torrent_id = torrent_info.get("id", "unknown")
         if status in ["magnet_error", "error", "virus", "dead"]:
             self.client.delete_torrent(torrent_info["id"])
             raise ProviderException(f"Torrent cannot be downloaded: {status}")
         elif status in ["queued", "downloading", "magnet_conversion"]:
-            raise ProviderException("Torrent is still being processed.")
+            kodilog(f"RealDebridHelper: Torrent {torrent_id} is still being processed (status: {status}). It has been added to your cloud but is not ready yet.")
+            return torrent_id
         elif status == "waiting_files_selection":
             if "files" in torrent_info and torrent_info["files"]:
                 self.handle_file_selection(torrent_info, is_pack)

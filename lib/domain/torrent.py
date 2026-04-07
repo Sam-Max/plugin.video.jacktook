@@ -36,3 +36,4 @@ class TorrentStream:
     # Flags
     isPack: bool = False
     isCached: bool = False
+    addedToDebrid: bool = False

@@ -750,7 +750,7 @@ class TraktClient:
         if not trakt_id:
             return
         try:
-            TraktAPI().lists.like_list(trakt_id, user_slug)
+            TraktAPI().lists.like_list(user_slug, trakt_id)
             notification(translation(90453), time=3000)
             TraktClient._refresh_after_list_action(params)
         except Exception as e:
@@ -764,7 +764,7 @@ class TraktClient:
         if not trakt_id:
             return
         try:
-            TraktAPI().lists.unlike_list(trakt_id, user_slug)
+            TraktAPI().lists.unlike_list(user_slug, trakt_id)
             notification(translation(90455), time=3000)
             TraktClient._refresh_after_list_action(params)
         except Exception as e:

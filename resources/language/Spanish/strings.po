@@ -3591,3 +3591,27 @@ msgstr "Biblioteca vaciada"
 msgctxt "#90693"
 msgid "No items to remove"
 msgstr "No hay elementos para eliminar"
+
+msgctxt "#90694"
+msgid "Added to %s cloud but still downloading. Please wait before playing."
+msgstr "Agregado a la nube de %s pero aún descargando. Por favor espere antes de reproducir."
+
+msgctxt "#90695"
+msgid "Torrent Not Ready"
+msgstr "Torrent No Listo"
+
+msgctxt "#90696"
+msgid "This torrent is still downloading in %s and is not ready yet."
+msgstr "Este torrent aún se está descargando en %s y no está listo todavía."
+
+msgctxt "#90697"
+msgid "Would you like to play using torrent client (may be slower) or cancel and wait for debrid to finish?"
+msgstr "¿Desea reproducir usando el cliente torrent (puede ser más lento) o cancelar y esperar a que el debrid termine?"
+
+msgctxt "#90698"
+msgid "Play with Torrent"
+msgstr "Reproducir con Torrent"
+
+msgctxt "#90699"
+msgid "Cancel & Wait"
+msgstr "Cancelar y Esperar"

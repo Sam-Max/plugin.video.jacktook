@@ -56,7 +56,6 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if addon_url:
         data["url"] = addon_url
         return data
-
     return None
 
 
@@ -68,7 +67,7 @@ def get_easynews_url(data: Dict[str, Any]) -> Optional[str]:
         password = str(get_setting("easynews_password"))
         timeout = int(get_setting("easynews_timeout", "10") or "10")
         client = Easynews(user, password, timeout, notification)
-        return client.resolve_url(data.get("url"))
+        return client.resolve_url(data.get("url", ""))
     except Exception as e:
         kodilog(f"Error resolving Easynews link: {e}")
         return None
@@ -188,9 +187,7 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
     elif url:
         _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
     else:
-        kodilog(
-            "Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG
-        )
+        kodilog("Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG)
         raise TorrentException("No magnet or url found for Jacktorr playback")
     return _url
 

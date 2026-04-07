@@ -109,6 +109,26 @@ class AllDebridHelper:
         data["url"] = direct_link
         return data
 
+    def add_torrent_file(
+        self, torrent_data: bytes, torrent_name: str = "torrent.torrent"
+    ) -> Optional[Dict[str, Any]]:
+        kodilog(
+            "AllDebridHelper.add_torrent_file: calling AllDebrid torrent file upload API with torrent_name={!r}, size={} bytes".format(
+                torrent_name,
+                len(torrent_data or b""),
+            )
+        )
+        response = self.client.add_torrent_file(torrent_data, torrent_name=torrent_name)
+        files = response.get("data", {}).get("files", []) or []
+        if not files:
+            raise ProviderException("Failed to upload torrent file to AllDebrid")
+
+        file_info = files[0]
+        if file_info.get("error"):
+            error = file_info.get("error", {})
+            raise ProviderException(error.get("message") or "Invalid torrent file")
+        return file_info
+
     def flatten_files(self, files: list) -> list:
         flat_list = []
         for f in files:

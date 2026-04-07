@@ -1413,9 +1413,10 @@ class TraktLists(TraktBase):
         clear_trakt_list_contents_data("my_lists")
         return response
 
-    def like_list(self, trakt_id, user_slug=""):
+    def like_list(self, user_slug, trakt_id):
+        path = f"users/{user_slug}/lists/{trakt_id}/like" if user_slug else "lists/%s/like" % trakt_id
         response = self.call_trakt(
-            "lists/%s/like" % trakt_id,
+            path,
             data={},
             with_auth=True,
             pagination=False,
@@ -1423,9 +1424,10 @@ class TraktLists(TraktBase):
         clear_trakt_list_data("liked_lists")
         return response
 
-    def unlike_list(self, trakt_id, user_slug=""):
+    def unlike_list(self, user_slug, trakt_id):
+        path = f"users/{user_slug}/lists/{trakt_id}/like" if user_slug else "lists/%s/like" % trakt_id
         response = self.call_trakt(
-            "lists/%s/like" % trakt_id,
+            path,
             method="delete",
             with_auth=True,
             pagination=False,

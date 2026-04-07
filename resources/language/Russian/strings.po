@@ -3590,3 +3590,27 @@ msgstr "Library cleared"
 msgctxt "#90693"
 msgid "No items to remove"
 msgstr "No items to remove"
+
+msgctxt "#90694"
+msgid "Added to %s cloud but still downloading. Please wait before playing."
+msgstr "Добавлено в облако %s, но все еще загружается. Пожалуйста, подождите перед воспроизведением."
+
+msgctxt "#90695"
+msgid "Torrent Not Ready"
+msgstr "Торрент Не Готов"
+
+msgctxt "#90696"
+msgid "This torrent is still downloading in %s and is not ready yet."
+msgstr "Этот торрент все еще загружается в %s и еще не готов."
+
+msgctxt "#90697"
+msgid "Would you like to play using torrent client (may be slower) or cancel and wait for debrid to finish?"
+msgstr "Хотите ли вы воспроизвести с помощью торрент-клиента (может быть медленнее) или отменить и дождаться завершения debrid?"
+
+msgctxt "#90698"
+msgid "Play with Torrent"
+msgstr "Воспроизвести через Торрент"
+
+msgctxt "#90699"
+msgid "Cancel & Wait"
+msgstr "Отменить и Подождать"

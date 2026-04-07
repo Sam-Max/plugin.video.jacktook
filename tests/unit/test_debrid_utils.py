@@ -64,7 +64,7 @@ def test_get_magnet_from_uri_preserves_torrent_url_for_playback():
             "https://jackett.local/dl/test"
         )
 
-    assert magnet == ""
+    assert magnet.startswith("magnet:?xt=urn:btih:AAAABBBBCCCCDDDDEEEEFFFF")
     assert info_hash == "aaaabbbbccccddddeeeeffff0000111122223333"
     assert torrent_url == "https://jackett.local/dl/test"
     mock_get.assert_called_once()

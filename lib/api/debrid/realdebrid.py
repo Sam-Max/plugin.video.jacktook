@@ -191,6 +191,58 @@ class RealDebrid(DebridClient):
             "POST", f"{self.BASE_URL}/torrents/addMagnet", data={"magnet": magnet_link}
         )
 
+    def get_available_torrent_hosts(self):
+        return self._make_request("GET", f"{self.BASE_URL}/torrents/availableHosts")
+
+    def add_torrent_file(self, torrent_data, torrent_name="torrent.torrent", host=""):
+        selected_host = host or self._get_default_torrent_host()
+        if not selected_host:
+            raise ProviderException("No available Real-Debrid torrent host found")
+
+        response = self.session.request(
+            method="PUT",
+            url=f"{self.BASE_URL}/torrents/addTorrent",
+            params={"host": selected_host},
+            files={
+                "file": (
+                    torrent_name or "torrent.torrent",
+                    torrent_data,
+                    "application/x-bittorrent",
+                )
+            },
+            headers=self.headers,
+            timeout=self.timeout,
+        )
+        self._handle_errors(response, is_expected_to_fail=False)
+        return self._parse_response(response, is_return_none=False)
+
+    def _get_default_torrent_host(self):
+        hosts = self.get_available_torrent_hosts()
+        for host in self._iter_host_candidates(hosts):
+            if host:
+                return host
+        return ""
+
+    def _iter_host_candidates(self, payload):
+        if isinstance(payload, str):
+            yield payload
+            return
+
+        if isinstance(payload, dict):
+            preferred_host = payload.get("host") or payload.get("domain")
+            if isinstance(preferred_host, str) and preferred_host:
+                yield preferred_host
+
+            for key, value in payload.items():
+                if isinstance(key, str) and "." in key:
+                    yield key
+                yield from self._iter_host_candidates(value)
+            return
+
+        if isinstance(payload, list):
+            for item in payload:
+                yield from self._iter_host_candidates(item)
+
     def get_user_torrent_list(self):
         return self._make_request("GET", f"{self.BASE_URL}/torrents")
 
