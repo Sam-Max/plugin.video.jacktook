@@ -14,6 +14,7 @@ from lib.utils.kodi.utils import (
 from lib.clients.tmdb.utils.utils import tmdb_get, LANGUAGES
 from lib.api.fanart.fanart import get_fanart
 from lib.api.imdb.imdb_scraper import get_imdb_trivia, get_imdb_goofs
+from lib.utils.general.utils import truncate_text
 import xbmcgui
 import xbmc
 
@@ -206,7 +207,7 @@ class ExtrasWindow(BaseWindow):
             overview = getattr(data, "overview", "")
             if overview:
                 self.setProperty("plot_enabled", "true")
-                self.setProperty("plot", str(overview))
+                self.setProperty("plot", truncate_text(str(overview)))
 
             # Rating (TMDB)
             vote_average = getattr(data, "vote_average", None)

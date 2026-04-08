@@ -15,7 +15,7 @@ from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.views.last_files import add_last_files_context_menu, parse_time
 from lib.utils.kodi.utils import end_of_directory
-from lib.utils.general.utils import format_season_episode
+from lib.utils.general.utils import format_season_episode, truncate_text
 
 
 def has_continue_watching_items():
@@ -82,7 +82,7 @@ def show_continue_watching():
         # Set Info
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(label)
-        info_tag.setPlot(data.get("overview", ""))
+        info_tag.setPlot(truncate_text(data.get("overview", "")))
 
         if "current_time" in data and "total_time" in data:
             try:

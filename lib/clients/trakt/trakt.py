@@ -18,6 +18,7 @@ from lib.utils.general.utils import (
     execute_thread_pool,
     set_content_type,
     set_media_infoTag,
+    truncate_text,
 )
 from lib.utils.kodi.utils import (
     action_url_run,
@@ -1276,7 +1277,7 @@ class TraktPresentation:
         list_item = ListItem(list_title)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
-        info_tag.setPlot(description)
+        info_tag.setPlot(truncate_text(description))
         if user_slug:
             list_item.addContextMenuItems(
                 [
@@ -1315,7 +1316,7 @@ class TraktPresentation:
         list_item = ListItem(label)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
-        info_tag.setPlot(description)
+        info_tag.setPlot(truncate_text(description))
 
         context_menu = []
         if res.get("can_delete"):
@@ -1528,7 +1529,7 @@ class TraktPresentation:
         list_item.setLabel(display_title)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)
-        info_tag.setPlot(details.get("overview", ""))
+        info_tag.setPlot(truncate_text(details.get("overview", "")))
 
         url = build_url(
             "search",
@@ -1578,7 +1579,7 @@ class TraktPresentation:
         set_media_infoTag(list_item, data=details, mode="tv")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)
-        info_tag.setPlot(details.get("overview", ""))
+        info_tag.setPlot(truncate_text(details.get("overview", "")))
         if progress:
             list_item.setProperty("PercentPlayed", str(progress))
 
@@ -1618,7 +1619,7 @@ class TraktPresentation:
         set_media_infoTag(list_item, data=details, mode="movies")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)
-        info_tag.setPlot(details.get("overview", ""))
+        info_tag.setPlot(truncate_text(details.get("overview", "")))
         if progress:
             list_item.setProperty("PercentPlayed", str(progress))
 

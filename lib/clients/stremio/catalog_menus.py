@@ -13,7 +13,7 @@ from lib.clients.tmdb.utils.utils import (
     add_tmdb_show_context_menu,
 )
 from lib.clients.tmdb.utils.utils import tmdb_get
-from lib.utils.general.utils import add_next_button
+from lib.utils.general.utils import add_next_button, truncate_text
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.stremio.catalogs_utils import catalogs_get_cache
@@ -587,7 +587,7 @@ def add_meta_items(metas, params):
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(meta_id, type="imdb" if meta_id.startswith("tt") else "mf")
         info_tag.setTitle(name)
-        info_tag.setPlot(meta.description or "")
+        info_tag.setPlot(truncate_text(meta.description or ""))
         info_tag.setGenres(meta.genres)
         info_tag.setMediaType("video")
 
@@ -675,7 +675,7 @@ def list_stremio_seasons(params):
             meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
         )
         info_tag.setTitle(meta_data.name)
-        info_tag.setPlot(meta_data.description or "")
+        info_tag.setPlot(truncate_text(meta_data.description or ""))
         info_tag.setRating(float(meta_data.imdbRating or 0))
         info_tag.setGenres(meta_data.genres)
         info_tag.setTvShowTitle(meta_data.name)
@@ -797,7 +797,7 @@ def list_stremio_episodes(params):
             meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
         )
         info_tag.setTitle(title)
-        info_tag.setPlot(video.overview or "")
+        info_tag.setPlot(truncate_text(video.overview or ""))
         info_tag.setRating(float(meta_data.imdbRating or 0))
         info_tag.setGenres(meta_data.genres)
         info_tag.setTvShowTitle(title)
@@ -923,7 +923,7 @@ def list_stremio_movie(params):
         list_item = ListItem(label=stream.title)
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(stream.description or "")
+        info_tag.setPlot(truncate_text(stream.description or ""))
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
@@ -965,7 +965,7 @@ def list_stremio_tv(params):
         list_item = ListItem(label=stream.title)
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(stream.description or "")
+        info_tag.setPlot(truncate_text(stream.description or ""))
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
@@ -999,7 +999,7 @@ def list_stremio_tv_streams(params):
         list_item = ListItem(label=stream["name"])
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(stream.get("description", ""))
+        info_tag.setPlot(truncate_text(stream.get("description", "")))
 
         addDirectoryItem(
             handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False

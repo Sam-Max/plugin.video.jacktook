@@ -5,7 +5,7 @@ from typing import Any, Dict, Tuple
 from lib.domain.torrent import TorrentStream
 from lib.utils.debrid.debrid_utils import get_magnet_from_uri, _is_torrent_ready_in_debrid
 from lib.utils.player.utils import resolve_playback_url
-from lib.utils.general.utils import Indexer, IndexerType
+from lib.utils.general.utils import Indexer, IndexerType, truncate_text
 from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import ADDON, kodilog, translation
 import xbmcgui
@@ -92,6 +92,8 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         self.item_information = deepcopy(item_information)
         for i in self.item_information:
             value = self.item_information[i]
+            if i == "overview":
+                value = truncate_text(str(value))
             try:
                 self.setProperty(f"info.{i}", str(value))
             except UnicodeEncodeError:

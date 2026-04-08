@@ -394,7 +394,7 @@ def _set_basic_info(info_tag, data):
     info_tag.setOriginalTitle(
         data.get("original_title", data.get("original_name", data.get("title", "")))
     )
-    info_tag.setPlot(data.get("overview") or data.get("biography", "No overview"))
+    info_tag.setPlot(truncate_text(data.get("overview") or data.get("biography", "No overview")))
 
 
 def _set_media_type(info_tag, mode):
@@ -1196,7 +1196,19 @@ def limit_results(results):
 
 
 def get_description_length():
-    return int(get_setting("indexers_desc_length", 10))
+    return int(get_setting("indexers_desc_length", 0))
+
+
+def truncate_text(text, max_length=None):
+    if max_length is None:
+        max_length = get_description_length()
+    if not max_length or max_length <= 0:
+        return text
+    if not text:
+        return text
+    if len(text) <= max_length:
+        return text
+    return text[:max_length].rstrip() + "..."
 
 
 def remove_duplicate(results):

@@ -1045,10 +1045,10 @@
                     </control>
                 </setting>
                 <setting id="indexers_desc_length" type="integer" label="30026" help="30825">
-                    <default>100</default>
+                    <default>0</default>
                     <constraints>
-                        <minimum>50</minimum>
-                        <maximum>200</maximum>
+                        <minimum>0</minimum>
+                        <maximum>500</maximum>
                         <step>10</step>
                     </constraints>
                     <control type="slider" format="integer">
