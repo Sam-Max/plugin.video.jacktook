@@ -293,6 +293,11 @@ def pm_auth(params):
     run_premiumize_auth(pm_client)
 
 
+def pm_remove_auth(params):
+    pm_client = Premiumize(token=str(get_setting("premiumize_token", "")))
+    pm_client.remove_auth()
+
+
 def tb_auth(params):
     torbox_client = Torbox(token=str(get_setting("torbox_token")))
     run_torbox_auth(torbox_client)

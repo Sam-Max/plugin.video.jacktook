@@ -162,6 +162,17 @@ def run_premiumize_auth(client):
             progressDialog.close()
             client.token = str(auth_response["access_token"])
             set_setting("premiumize_token", client.token)
+            set_setting("premiumize_authorized", "true")
+
+            client.initialize_headers()
+            try:
+                account_info = client.get_account_info()
+                if account_info and "customer_id" in account_info:
+                    customer_id = str(account_info.get("customer_id", ""))
+                    set_setting("premiumize_user", customer_id)
+            except Exception:
+                pass
+
             dialog_ok(translation(90544), translation(90545))
             return
         except Exception as error:

@@ -982,6 +982,10 @@ def pm_auth(params):
     return debrid_navigation.pm_auth(params)
 
 
+def pm_remove_auth(params):
+    return debrid_navigation.pm_remove_auth(params)
+
+
 def trakt_auth(params):
     TraktAPI().auth.trakt_authenticate()
 

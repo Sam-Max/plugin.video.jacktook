@@ -1,12 +1,13 @@
 from lib.api.debrid.base import DebridClient, ProviderException
 from lib.services.debrid.auth import run_premiumize_auth
+from lib.utils.kodi.utils import dialog_ok, translation
 
 
 class Premiumize(DebridClient):
     BASE_URL = "https://www.premiumize.me/api"
     OAUTH_TOKEN_URL = "https://www.premiumize.me/token"
     OAUTH_URL = "https://www.premiumize.me/authorize"
-    CLIENT_ID = "855400527"
+    CLIENT_ID = "215940813"
 
     def initialize_headers(self):
         self.headers = {
@@ -17,6 +18,14 @@ class Premiumize(DebridClient):
 
     def disable_access_token(self):
         pass
+
+    def remove_auth(self):
+        from lib.utils.kodi.utils import set_setting
+        self.token = ""
+        set_setting("premiumize_token", "")
+        set_setting("premiumize_authorized", "false")
+        set_setting("premiumize_user", "")
+        dialog_ok(translation(90544), translation(90561))
 
     def _handle_service_specific_errors(self, error_data, status_code: int):
         pass

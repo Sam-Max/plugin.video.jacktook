@@ -56,9 +56,14 @@ class PremiumizeHelper:
         response_data = self.client.create_download_link(magnet)
 
         if response_data.get("status") == "error":
-            kodilog(
-                f"Failed to get link from Premiumize: {response_data.get('message')}"
-            )
+            error_msg = response_data.get("message", "Unknown error")
+            kodilog(f"Failed to get link from Premiumize: {error_msg}")
+            if "not premium" in error_msg.lower():
+                notification("Premiumize: Account does not have an active premium subscription", "Premiumize Error")
+            elif "not logged in" in error_msg.lower():
+                notification("Premiumize: Not logged in. Please authorize the addon.", "Premiumize Error")
+            else:
+                notification(f"Premiumize: {error_msg}", "Premiumize Error")
             return None
 
         content = response_data.get("content", [])
@@ -94,9 +99,14 @@ class PremiumizeHelper:
         response_data = self.client.create_download_link(magnet)
 
         if response_data.get("status") == "error":
-            notification(
-                f"Failed to get link from Premiumize: {response_data.get('message')}"
-            )
+            error_msg = response_data.get("message", "Unknown error")
+            kodilog(f"Failed to get pack info from Premiumize: {error_msg}")
+            if "not premium" in error_msg.lower():
+                notification("Premiumize: Account does not have an active premium subscription", "Premiumize Error")
+            elif "not logged in" in error_msg.lower():
+                notification("Premiumize: Not logged in. Please authorize the addon.", "Premiumize Error")
+            else:
+                notification(f"Premiumize: {error_msg}", "Premiumize Error")
             return None
 
         torrent_content = response_data.get("content", [])
