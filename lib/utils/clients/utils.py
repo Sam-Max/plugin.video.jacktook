@@ -104,7 +104,6 @@ CLIENT_BUILDERS: Dict[str, Callable[[], Optional[object]]] = {
     Indexer.JACKETT: build_jackett_client,
     Indexer.PROWLARR: build_prowlarr_client,
     Indexer.JACKGRAM: build_jackgram_client,
-    Indexer.ZILEAN: build_zilean_client,
     Indexer.BURST: build_burst_client,
     Indexer.EASYNEWS: build_easynews_client,
 }

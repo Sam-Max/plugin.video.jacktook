@@ -422,21 +422,6 @@ def _submit_search_tasks(
         add_task_if_enabled(
             executor,
             tasks,
-            "zilean_enabled",
-            Indexer.ZILEAN,
-            _perform_search,
-            dialog,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
-        )
-        add_task_if_enabled(
-            executor,
-            tasks,
             "easynews_enabled",
             Indexer.EASYNEWS,
             _perform_search,
@@ -595,20 +580,6 @@ def _submit_search_tasks_managed(
                 scoped_addon_url=scoped_addon_url,
             )
     else:
-        add_task_if_enabled_managed(
-            manager,
-            "zilean_enabled",
-            Indexer.ZILEAN,
-            _perform_search,
-            dialog,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=False,
-            scoped_addon_url=scoped_addon_url,
-        )
         add_task_if_enabled_managed(
             manager,
             "easynews_enabled",
