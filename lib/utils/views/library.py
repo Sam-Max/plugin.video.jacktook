@@ -9,7 +9,7 @@ from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import remove_from_library, set_media_infoTag, set_pluging_category
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, notification, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, apply_section_view, build_url, end_of_directory, notification, translation
 from lib.utils.views.last_titles import parse_time
 
 
@@ -176,6 +176,10 @@ def show_library_items(mode="tv"):
         addDirectoryItem(ADDON_HANDLE, item_url, list_item, isFolder=is_folder)
 
     end_of_directory(cache=False)
+    if mode == "tv":
+        apply_section_view("view.library", content_type="tvshows", fallback="poster")
+    else:
+        apply_section_view("view.library", content_type="movies", fallback="poster")
 
 
 def remove_library_item(params):

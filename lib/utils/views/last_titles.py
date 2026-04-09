@@ -8,6 +8,7 @@ from lib.utils.general.utils import parse_time, set_media_infoTag, set_pluging_c
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    apply_section_view,
     build_url,
     container_refresh,
     end_of_directory,
@@ -118,3 +119,4 @@ def show_last_titles(params):
         )
 
     end_of_directory()
+    apply_section_view("view.history", fallback="poster")

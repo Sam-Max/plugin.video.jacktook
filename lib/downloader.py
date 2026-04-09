@@ -8,6 +8,7 @@ from urllib.parse import parse_qsl
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    apply_section_view,
     action_url_run,
     bytes_to_human_readable,
     get_setting,
@@ -24,6 +25,7 @@ from lib.gui.custom_progress import CustomProgressDialog
 from xbmcplugin import (
     addDirectoryItems,
     endOfDirectory,
+    setContent,
 )
 import xbmcgui
 import xbmcvfs
@@ -239,6 +241,7 @@ def downloads_viewer(params):
     item_list = []
 
     try:
+        setContent(ADDON_HANDLE, "files")
         directories, files = xbmcvfs.listdir(translated_path)
         active_downloads = [
             f for f in files if is_active_download(os.path.join(translated_path, f))
@@ -293,6 +296,7 @@ def downloads_viewer(params):
 
         addDirectoryItems(ADDON_HANDLE, item_list)
         endOfDirectory(ADDON_HANDLE)
+        apply_section_view("view.downloads", content_type="files", fallback="list")
     except Exception as e:
         notification(f"Error: {str(e)}", translation(90662))
         endOfDirectory(ADDON_HANDLE, succeeded=False)

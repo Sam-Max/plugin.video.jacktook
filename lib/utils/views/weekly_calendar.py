@@ -9,6 +9,7 @@ from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    apply_section_view,
     build_url,
     end_of_directory,
     translation,
@@ -183,6 +184,10 @@ def show_weekly_calendar(library=False):
         )
 
     end_of_directory(cache=False)
+    if library:
+        apply_section_view("view.library", fallback="list")
+    else:
+        apply_section_view("view.history", fallback="list")
 
 
 def get_episodes_for_show(ids):

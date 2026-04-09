@@ -3898,3 +3898,63 @@ msgstr "Play with Torrent"
 msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Cancel & Wait"
+
+msgctxt "#90712"
+msgid "Views"
+msgstr "Views"
+
+msgctxt "#90713"
+msgid "Set Main View"
+msgstr "Set Main View"
+
+msgctxt "#90714"
+msgid "Set Movies View"
+msgstr "Set Movies View"
+
+msgctxt "#90715"
+msgid "Set TV Shows View"
+msgstr "Set TV Shows View"
+
+msgctxt "#90716"
+msgid "Set Seasons View"
+msgstr "Set Seasons View"
+
+msgctxt "#90717"
+msgid "Set Episodes View"
+msgstr "Set Episodes View"
+
+msgctxt "#90718"
+msgid "Set Library View"
+msgstr "Set Library View"
+
+msgctxt "#90719"
+msgid "Set History View"
+msgstr "Set History View"
+
+msgctxt "#90720"
+msgid "Set Downloads View"
+msgstr "Set Downloads View"
+
+msgctxt "#90721"
+msgid "Save Current View"
+msgstr "Save Current View"
+
+msgctxt "#90722"
+msgid "View saved"
+msgstr "View saved"
+
+msgctxt "#90723"
+msgid "Could not detect the current view"
+msgstr "Could not detect the current view"
+
+msgctxt "#90724"
+msgid "Saved views reset"
+msgstr "Saved views reset"
+
+msgctxt "#90725"
+msgid "Reset Saved Views"
+msgstr "Reset Saved Views"
+
+msgctxt "#90726"
+msgid "Open this screen, change the Kodi view manually, then select Save Current View."
+msgstr "Open this screen, change the Kodi view manually, then select Save Current View."

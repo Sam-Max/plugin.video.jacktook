@@ -8,6 +8,7 @@ from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    apply_section_view,
     build_url,
     translation,
 )
@@ -114,3 +115,4 @@ def show_continue_watching():
         pass
 
     end_of_directory(cache=False)
+    apply_section_view("view.history", content_type="videos", fallback="poster")

@@ -7,7 +7,7 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.last_files_actions import add_last_files_context_menu
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, build_url, end_of_directory, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, apply_section_view, build_url, end_of_directory, translation
 
 from xbmcgui import ListItem
 from xbmcplugin import addDirectoryItem
@@ -64,3 +64,4 @@ def show_last_files():
             False,
         )
     end_of_directory()
+    apply_section_view("view.history", fallback="list")

@@ -7,10 +7,10 @@ from lib.clients.tmdb.utils.utils import (
 )
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    apply_section_view,
     build_url,
     end_of_directory,
     get_setting,
-    set_view,
 )
 from lib.utils.general.utils import (
     execute_thread_pool_collection,
@@ -31,8 +31,8 @@ def show_seasons_details(params):
     media_type = params.get("media_type", "")
 
     show_season_info(ids, mode, media_type)
-    set_view("current")
     end_of_directory()
+    apply_section_view("view.seasons", content_type="seasons", fallback="list")
 
 
 def show_season_info(ids, mode, media_type):
@@ -116,8 +116,8 @@ def show_episodes_details(params):
     media_type = params.get("media_type", "")
 
     show_episode_info(tv_name, season, ids, mode, media_type)
-    set_view("current")
     end_of_directory()
+    apply_section_view("view.episodes", content_type="episodes", fallback="list")
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):

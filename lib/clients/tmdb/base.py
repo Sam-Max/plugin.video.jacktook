@@ -3,10 +3,10 @@ from datetime import datetime
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
+    apply_section_view,
     build_url,
     end_of_directory,
     notification,
-    set_view,
     translation,
 )
 from lib.clients.tmdb.utils.utils import (
@@ -92,7 +92,10 @@ class BaseTmdbClient:
                 icon_path="status.png",
             )
         end_of_directory()
-        set_view("widelist")
+        if mode == "tv" or (mode == "anime" and submode == "tv"):
+            apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")
+        else:
+            apply_section_view("view.movies", content_type="movies", fallback="poster")
 
     @staticmethod
     def show_genres_items(mode, page, submode=None):
@@ -126,4 +129,7 @@ class BaseTmdbClient:
                     icon_path=None,
                 )
         end_of_directory()
-        set_view("widelist")
+        if mode == "tv" or (mode == "anime" and submode == "tv"):
+            apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")
+        else:
+            apply_section_view("view.movies", content_type="movies", fallback="poster")

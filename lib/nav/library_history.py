@@ -11,6 +11,7 @@ from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     ADDON_HANDLE,
+    apply_section_view,
     build_url,
     container_update,
     end_of_directory,
@@ -75,11 +76,13 @@ def _render_menu(items, cache_listing=True):
 def history_menu(params):
     set_pluging_category(translation(90017))
     _render_menu(history_menu_items)
+    apply_section_view("view.history", fallback="list")
 
 
 def library_menu(params):
     set_pluging_category(translation(90201))
     _render_menu(library_menu_items, cache_listing=False)
+    apply_section_view("view.library", fallback="list")
 
 
 def continue_watching_menu(params):
@@ -223,6 +226,7 @@ def search_direct(params):
         isFolder=True,
     )
     endOfDirectory(ADDON_HANDLE, updateListing=update_listing)
+    apply_section_view("view.main", fallback="list")
 
 
 def clear_history(params):

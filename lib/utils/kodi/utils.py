@@ -456,7 +456,27 @@ def get_current_view_id():
     return xbmcgui.Window(xbmcgui.getCurrentWindowId()).getFocusId()
 
 
-def set_view(name, default="current"):
+SECTION_VIEW_KEYS = (
+    "view.main",
+    "view.movies",
+    "view.tvshows",
+    "view.seasons",
+    "view.episodes",
+    "view.library",
+    "view.history",
+    "view.downloads",
+)
+
+
+def get_view_setting_key(view_key):
+    return "saved_%s" % view_key.replace(".", "_")
+
+
+def get_view_property_key(view_key):
+    return "jacktook.%s" % view_key
+
+
+def _get_named_view_id(name, default="current"):
     views_dict = {
         "list": 50,
         "poster": 51,
@@ -469,7 +489,109 @@ def set_view(name, default="current"):
         "fanart": 502,
         "current": get_current_view_id(),
     }
-    view_id = views_dict.get(name, views_dict.get(default))
+    return views_dict.get(name, views_dict.get(default))
+
+
+def _normalize_container_content(content_type):
+    content_map = {
+        "": "",
+        "files": "files",
+        "tv": SHOWS_TYPE,
+        "tvshow": SHOWS_TYPE,
+        "shows": SHOWS_TYPE,
+        "movie": MOVIES_TYPE,
+        "season": SEASONS_TYPE,
+        "episode": EPISODES_TYPE,
+        "title": TITLES_TYPE,
+        "video": "videos",
+    }
+    return content_map.get(content_type, content_type)
+
+
+def _resolve_view_name(name, content_type=""):
+    normalized_content = _normalize_container_content(content_type or container_content())
+    if name in {"banner", "fanart"} and normalized_content in {
+        MOVIES_TYPE,
+        SHOWS_TYPE,
+        SEASONS_TYPE,
+        EPISODES_TYPE,
+        TITLES_TYPE,
+        "videos",
+    }:
+        return "poster"
+    return name
+
+
+def set_saved_view_property(view_key, view_id):
+    set_property_no_fallback(get_view_property_key(view_key), str(view_id))
+
+
+def save_view_id(view_key, view_id):
+    if view_id in (None, "", 0, "0"):
+        return False
+    value = str(view_id)
+    set_setting(get_view_setting_key(view_key), value)
+    set_saved_view_property(view_key, value)
+    return True
+
+
+def get_saved_view_id(view_key):
+    view_id = get_property_no_fallback(get_view_property_key(view_key))
+    if not view_id:
+        view_id = ADDON.getSetting(get_view_setting_key(view_key))
+    return str(view_id) if view_id else None
+
+
+def load_saved_view_properties():
+    for view_key in SECTION_VIEW_KEYS:
+        view_id = ADDON.getSetting(get_view_setting_key(view_key))
+        if view_id:
+            set_saved_view_property(view_key, view_id)
+
+
+def capture_current_view_id():
+    view_id = get_current_view_id()
+    if view_id in (None, 0):
+        return None
+    return str(view_id)
+
+
+def _wait_for_container_content(content_type, timeout_ms=2000):
+    expected = _normalize_container_content(content_type)
+    if not expected:
+        return True
+    elapsed = 0
+    while elapsed <= timeout_ms:
+        if _normalize_container_content(container_content()) == expected:
+            return True
+        sleep(50)
+        elapsed += 50
+    return False
+
+
+def apply_section_view(view_key, content_type="", fallback=None, default="current"):
+    _wait_for_container_content(content_type)
+    saved_view_id = get_saved_view_id(view_key)
+    if saved_view_id:
+        execute_builtin(f"Container.SetViewMode({saved_view_id})")
+        return saved_view_id
+    fallback_name = _resolve_view_name(fallback or default, content_type=content_type)
+    view_id = _get_named_view_id(fallback_name, default)
+    if view_id:
+        execute_builtin(f"Container.SetViewMode({view_id})")
+    return view_id
+
+
+def reset_saved_views():
+    for view_key in SECTION_VIEW_KEYS:
+        setting_key = get_view_setting_key(view_key)
+        property_key = get_view_property_key(view_key)
+        ADDON.setSetting(setting_key, "")
+        clear_property(property_key)
+
+
+def set_view(name, default="current"):
+    view_id = _get_named_view_id(_resolve_view_name(name), default)
     execute_builtin(f"Container.SetViewMode({view_id})")
 
 

@@ -12,12 +12,12 @@ from lib.utils.general.utils import (
 
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    apply_section_view,
     build_url,
     end_of_directory,
     get_setting,
     kodilog,
     notification,
-    set_view,
     translation,
 )
 
@@ -183,4 +183,4 @@ def process_results(results, callback, next_button_action, page):
     execute_thread_pool(results, callback)
     add_next_button(next_button_action, page=page)
     end_of_directory()
-    set_view("widelist")
+    apply_section_view("view.downloads", content_type="files", fallback="list")

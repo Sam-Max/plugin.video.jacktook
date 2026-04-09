@@ -12,9 +12,9 @@ from lib.utils.general.utils import (
 )
 
 from lib.utils.kodi.utils import (
+    apply_section_view,
     build_url,
     end_of_directory,
-    set_view,
     show_keyboard,
     notification,
     translation,
@@ -63,7 +63,7 @@ class TmdbCollections(BaseTmdbClient):
             )
 
         end_of_directory()
-        set_view("widelist")
+        apply_section_view("view.movies", content_type="movies", fallback="poster")
 
     @staticmethod
     def _add_collection_item(collection):
@@ -115,7 +115,7 @@ class TmdbCollections(BaseTmdbClient):
             )
 
         end_of_directory()
-        set_view("widelist")
+        apply_section_view("view.movies", content_type="movies", fallback="poster")
 
     @staticmethod
     def get_top_rated_collections(mode, page):
@@ -142,7 +142,7 @@ class TmdbCollections(BaseTmdbClient):
             )
 
         end_of_directory()
-        set_view("widelist")
+        apply_section_view("view.movies", content_type="movies", fallback="poster")
 
     @staticmethod
     def search_collections(mode, page):
@@ -175,7 +175,7 @@ class TmdbCollections(BaseTmdbClient):
             mode=mode,
         )
         end_of_directory()
-        set_view("widelist")
+        apply_section_view("view.movies", content_type="movies", fallback="poster")
 
     @staticmethod
     def _extract_collection_id(movie, collection_ids_set):

@@ -22,11 +22,11 @@ from lib.utils.general.utils import (
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_PATH,
+    apply_section_view,
     build_url,
     close_busy_dialog,
     end_of_directory,
     kodilog,
-    set_view,
     show_busy_dialog,
     show_keyboard,
     notification,
@@ -38,6 +38,18 @@ from lib.utils.views.weekly_calendar import is_this_week, parse_date_str
 from lib.utils.views.weekly_calendar import get_episodes_for_show
 
 from lib.utils.general.utils import Anime
+
+
+def _apply_tmdb_view(mode, content_type=""):
+    if mode == "movies":
+        return apply_section_view("view.movies", content_type or "movies", fallback="poster")
+    if mode == "tv":
+        return apply_section_view("view.tvshows", content_type or "tvshows", fallback="poster")
+    if mode == "season":
+        return apply_section_view("view.seasons", content_type or "seasons", fallback="list")
+    if mode == "episode":
+        return apply_section_view("view.episodes", content_type or "episodes", fallback="list")
+    return apply_section_view("view.main", content_type=content_type, fallback="list")
 
 from xbmcgui import ListItem
 import xbmc
@@ -232,6 +244,7 @@ class TmdbClient(BaseTmdbClient):
                 )
             add_next_button("handle_tmdb_search", page=page + 1, mode=mode)
             end_of_directory()
+            _apply_tmdb_view("main")
         
         close_busy_dialog()
 
@@ -295,6 +308,7 @@ class TmdbClient(BaseTmdbClient):
                 page=page,
             )
             end_of_directory()
+            _apply_tmdb_view(display_mode)
 
     @staticmethod
     def tmdb_search_year(mode, submode, year, page):
@@ -348,6 +362,7 @@ class TmdbClient(BaseTmdbClient):
                 "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
             )
             end_of_directory()
+            _apply_tmdb_view(display_mode)
 
     @staticmethod
     def _get_tmdb_metadata(mode, media_type, tmdb_id):
@@ -398,6 +413,7 @@ class TmdbClient(BaseTmdbClient):
             )
         add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
         end_of_directory()
+        _apply_tmdb_view("tv")
 
     @staticmethod
     def _enrich_results_with_images(results, mode):
@@ -456,6 +472,7 @@ class TmdbClient(BaseTmdbClient):
             "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
         )
         end_of_directory()
+        _apply_tmdb_view("movies")
 
     @staticmethod
     def show_tmdb_item(params):
@@ -513,15 +530,15 @@ class TmdbClient(BaseTmdbClient):
     def show_seasons_details(ids, mode, media_type):
         set_content_type("season")
         show_season_info(ids, mode, media_type)
-        set_view("current")
         end_of_directory()
+        _apply_tmdb_view("season")
 
     @staticmethod
     def show_episodes_details(tv_name, ids, mode, media_type, season):
         set_content_type("episode")
         show_episode_info(tv_name, season, ids, mode, media_type)
-        set_view("current")
         end_of_directory()
+        _apply_tmdb_view("episode")
 
     @staticmethod
     def show_popular_items(mode, page):
@@ -550,6 +567,7 @@ class TmdbClient(BaseTmdbClient):
             )
         add_next_button("handle_tmdb_query", query="tmdb_popular", page=page, mode=mode)
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def show_airing_today_items(mode, page):
@@ -589,6 +607,7 @@ class TmdbClient(BaseTmdbClient):
             "handle_tmdb_query", query="tmdb_airing_today", page=page, mode=mode
         )
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def show_languages(mode, page):
@@ -612,6 +631,7 @@ class TmdbClient(BaseTmdbClient):
                 ),
             )
         end_of_directory()
+        _apply_tmdb_view("main")
 
     @staticmethod
     def show_lang_items(params):
@@ -663,6 +683,7 @@ class TmdbClient(BaseTmdbClient):
         )
 
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def show_networks(mode, page):
@@ -688,6 +709,7 @@ class TmdbClient(BaseTmdbClient):
                 ),
             )
         end_of_directory()
+        _apply_tmdb_view("main")
 
     @staticmethod
     def show_network_items(params):
@@ -748,6 +770,7 @@ class TmdbClient(BaseTmdbClient):
             page=page,
         )
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def show_calendar_items(query, page, mode):
@@ -851,6 +874,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
             )
         end_of_directory()
+        _apply_tmdb_view("tv")
 
     @staticmethod
     def show_collections_menu(mode):
@@ -875,7 +899,7 @@ class TmdbClient(BaseTmdbClient):
                 icon_path=icon_path,
             )
         end_of_directory()
-        set_view("widelist")
+        _apply_tmdb_view("movies")
 
     @staticmethod
     def handle_collection_query(params):
@@ -925,7 +949,7 @@ class TmdbClient(BaseTmdbClient):
                 )
         add_next_button("handle_keyword_search", query=query, page=page + 1, mode=mode)
         end_of_directory()
-        set_view("widelist")
+        _apply_tmdb_view("main")
 
     @staticmethod
     def handle_keyword_search(params):
@@ -1044,8 +1068,8 @@ class TmdbClient(BaseTmdbClient):
                 keyword_name=keyword_name,
                 page=page + 1,
             )
-        set_view("movies")
         end_of_directory()
+        _apply_tmdb_view("main", content_type="movies")
 
     @staticmethod
     def search_tmdb_recommendations(params):
@@ -1100,6 +1124,7 @@ class TmdbClient(BaseTmdbClient):
                 page=page + 1,
             )
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def search_tmdb_similar(params):
@@ -1154,6 +1179,7 @@ class TmdbClient(BaseTmdbClient):
                 page=page + 1,
             )
         end_of_directory()
+        _apply_tmdb_view(mode)
 
     @staticmethod
     def rescrape_tmdb_media(params):

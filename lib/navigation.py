@@ -25,9 +25,11 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     CHANGELOG_PATH,
     JACKTORR_ADDON,
+    apply_section_view,
     action_url_run,
     build_url,
     burst_addon_settings,
+    capture_current_view_id,
     dialog_text,
     end_of_directory,
     execute_builtin,
@@ -36,6 +38,8 @@ from lib.utils.kodi.utils import (
     kodilog,
     notification,
     play_info_hash,
+    reset_saved_views,
+    save_view_id,
     translation,
 )
 from lib.utils.player.utils import resolve_playback_url
@@ -119,9 +123,65 @@ def render_menu(items, cache=True):
     end_of_directory(cache=cache)
 
 
+def _translate_view_label(label):
+    if isinstance(label, str) and label.isdigit():
+        return translation(int(label))
+    return label or translation(90712)
+
+
+def _set_chooser_content(content_type):
+    chooser_modes = {
+        "movies": "movies",
+        "tvshows": "tv",
+        "seasons": "season",
+        "episodes": "episode",
+        "files": "files",
+    }
+    chooser_mode = chooser_modes.get(content_type)
+    if chooser_mode:
+        set_content_type(chooser_mode)
+
+
+def choose_view(params):
+    view_key = params.get("view_key", "view.main")
+    content_type = params.get("content_type", "")
+    label = _translate_view_label(params.get("label", "90712"))
+    set_pluging_category(label)
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url(
+            "save_view",
+            view_key=view_key,
+            content_type=content_type,
+            label=params.get("label", "90712"),
+        ),
+        build_list_item(translation(90721), "settings.png"),
+        isFolder=False,
+    )
+    _set_chooser_content(content_type)
+    end_of_directory(cache=False)
+    apply_section_view(view_key, content_type=content_type, fallback="list")
+
+
+def save_view(params):
+    view_key = params.get("view_key", "view.main")
+    label = _translate_view_label(params.get("label", "90712"))
+    view_id = capture_current_view_id()
+    if not view_id or not save_view_id(view_key, view_id):
+        notification(label, translation(90723))
+        return
+    notification(label, translation(90722))
+
+
+def reset_views(params):
+    reset_saved_views()
+    notification(translation(90712), translation(90724))
+
+
 def root_menu():
     set_pluging_category(translation(90069))
     render_menu(root_menu_items, cache=False)
+    apply_section_view("view.main", fallback="list")
 
 
 def animation_menu(params):
@@ -138,6 +198,7 @@ def animation_menu(params):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def animation_item(params):
@@ -172,6 +233,10 @@ def animation_item(params):
                     isFolder=True,
                 )
     end_of_directory()
+    if mode == "tv":
+        apply_section_view("view.tvshows", fallback="poster")
+    else:
+        apply_section_view("view.movies", fallback="poster")
 
 
 def telegram_menu(params):
@@ -201,6 +266,7 @@ def telegram_menu(params):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def search_tmdb_year(params):
@@ -249,6 +315,7 @@ def tv_shows_items(params):
             )
     list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def movies_items(params):
@@ -275,6 +342,7 @@ def movies_items(params):
             )
     list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def direct_menu(params):
@@ -304,21 +372,25 @@ def trakt_group_menu(params):
     if mode == "tv" and group == "library":
         set_pluging_category(translation(90292))
         render_menu(_group_items(trakt_tv_library_items), cache=False)
+        apply_section_view("view.tvshows", fallback="poster")
         return
 
     if mode == "tv" and group == "discovery":
         set_pluging_category(translation(90293))
         render_menu(_group_items(trakt_tv_discovery_items), cache=False)
+        apply_section_view("view.tvshows", fallback="poster")
         return
 
     if mode == "movies" and group == "library":
         set_pluging_category(translation(90292))
         render_menu(_group_items(trakt_movie_library_items), cache=False)
+        apply_section_view("view.movies", fallback="poster")
         return
 
     if mode == "movies" and group == "discovery":
         set_pluging_category(translation(90293))
         render_menu(_group_items(trakt_movie_discovery_items), cache=False)
+        apply_section_view("view.movies", fallback="poster")
         return
 
     end_of_directory(cache=False)
@@ -405,6 +477,7 @@ def search_menu(params):
         )
 
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def anime_menu(params):
@@ -422,6 +495,7 @@ def anime_menu(params):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def history_menu(params):
@@ -502,12 +576,14 @@ def anime_item(params):
                 )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def tv_menu(params):
     set_pluging_category(translation(90010))
     list_stremio_catalogs(menu_type="tv")
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def search_direct(params):
@@ -602,6 +678,7 @@ def torrents(params):
             isFolder=True,
         )
     end_of_directory()
+    apply_section_view("view.downloads", content_type="files", fallback="list")
 
 
 def play_media(params):
@@ -726,6 +803,7 @@ def people_menu(mode):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def mdblist_menu(mode):
@@ -761,6 +839,7 @@ def mdblist_menu(mode):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.main", fallback="list")
 
 
 def search_item(params):

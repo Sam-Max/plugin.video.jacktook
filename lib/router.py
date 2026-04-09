@@ -703,6 +703,9 @@ def _route_core(action, params):
             open_burst_config,
             kodi_logs,
             easynews_info,
+            choose_view,
+            save_view,
+            reset_views,
         )
 
         actions = {
@@ -750,6 +753,9 @@ def _route_core(action, params):
             "open_burst_config": open_burst_config,
             "kodi_logs": kodi_logs,
             "easynews_info": easynews_info,
+            "choose_view": choose_view,
+            "save_view": save_view,
+            "reset_views": reset_views,
         }
         action_func = actions.get(action)
         if action_func:

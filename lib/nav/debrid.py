@@ -30,11 +30,11 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    apply_section_view,
     build_url,
     end_of_directory,
     get_setting,
     notification,
-    play_info_hash,
     translation,
 )
 
@@ -102,6 +102,7 @@ def cloud_details(params):
         isFolder=True,
     )
     end_of_directory()
+    apply_section_view("view.downloads", content_type="files", fallback="list")
 
 
 def cloud(params):
@@ -126,6 +127,7 @@ def cloud(params):
     )
 
     end_of_directory()
+    apply_section_view("view.downloads", content_type="files", fallback="list")
 
 
 def real_debrid_info(params):
@@ -195,6 +197,7 @@ def get_rd_downloads(params):
         )
 
     end_of_directory()
+    apply_section_view("view.downloads", content_type="files", fallback="list")
 
 
 def get_tb_downloads(params):
@@ -248,6 +251,7 @@ def get_tb_downloads(params):
         )
 
     end_of_directory()
+    apply_section_view("view.downloads", content_type="files", fallback="list")
 
 
 def download(magnet, debrid_type):

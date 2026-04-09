@@ -2389,7 +2389,7 @@ msgstr "Subtitulos cargados"
 
 msgctxt "#90258"
 msgid "Backup"
-msgstr "Copia de seguridad de configuracion"
+msgstr "Copia de seguridad"
 
 msgctxt "#90259"
 msgid "Export Backup"

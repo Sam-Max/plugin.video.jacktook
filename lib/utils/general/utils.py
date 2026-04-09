@@ -1001,6 +1001,8 @@ def set_content_type(mode, media_type="movies"):
         setContent(ADDON_HANDLE, SEASONS_TYPE)
     elif mode == "episode":
         setContent(ADDON_HANDLE, EPISODES_TYPE)
+    elif mode == "files":
+        setContent(ADDON_HANDLE, "files")
     elif mode in ("tv", "anime") or media_type == "tv":
         setContent(ADDON_HANDLE, SHOWS_TYPE)
     elif mode == "movies" or media_type == "movies":
