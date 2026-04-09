@@ -1,3 +1,23 @@
+## 1.7.2
+- Trailers: Add YouTube trailer playback flow.
+- Playback: Add setting to skip the replay/resume dialog.
+- Settings: Add per-section view settings and improve description length handling by allowing `0` and applying truncation correctly.
+- Stremio: Preserve catalog metadata, exact addon routes, exact season routes, and improve catalog search history flows.
+- Stremio: Speed up catalog menus and keep search results bound to the correct addon route.
+- Library: Keep Stremio entries linked to Stremio metadata, add `clear all` actions, and improve timestamp parsing robustness.
+- Debrid: Harden source handling across providers and fix Premiumize authorization issues.
+- Search: Remove Zilean search task handling.
+
+Spanish:
+- Trailers: Añadida la reproduccion de trailers de YouTube.
+- Reproduccion: Añadido ajuste para omitir el dialogo de reanudacion/repeticion.
+- Ajustes: Añadidos ajustes de vista por seccion y mejorado el manejo de la longitud de descripcion permitiendo `0` y aplicando truncado correctamente.
+- Stremio: Conserva metadatos del catalogo, rutas exactas de addons, rutas exactas de temporadas y mejora los flujos del historial de busqueda del catalogo.
+- Stremio: Aceleracion de los menus del catalogo y mantiene los resultados de busqueda vinculados a la ruta correcta del addon.
+- Biblioteca: Mantiene las entradas de Stremio enlazadas a sus metadatos, añade acciones de `clear all` y mejora la robustez del parseo de timestamps.
+- Debrid: Refuerza el manejo de fuentes entre proveedores y corrige problemas de autorizacion con Premiumize.
+- Busqueda: Eliminado el manejo de tareas de busqueda de Zilean.
+
 ## 1.7.1
 - Localization: Add Russian language support and expand/update translations for Spanish, Russian, and Portuguese.
 - UI: Replace remaining hardcoded dialog text with translated strings.
