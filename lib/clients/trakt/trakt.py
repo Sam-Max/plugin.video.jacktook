@@ -22,6 +22,7 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import (
     action_url_run,
+    add_directory_items_batch,
     build_url,
     container_update,
     dialog_select,
@@ -32,6 +33,7 @@ from lib.utils.kodi.utils import (
     get_datetime,
     get_setting,
     kodilog,
+    make_list_item,
     notification,
     kodi_play_media,
     refresh,
@@ -39,8 +41,6 @@ from lib.utils.kodi.utils import (
     translation,
 )
 from .paginator import paginator_db
-
-from xbmcgui import ListItem
 
 
 def _normalize_user_slug(value):
@@ -1070,7 +1070,7 @@ class TraktPresentation:
 
     @staticmethod
     def show_create_list_entry(mode):
-        list_item = ListItem(f"[B]+ {translation(30926)}[/B]")
+        list_item = make_list_item(label=f"[B]+ {translation(30926)}[/B]")
         add_kodi_dir_item(
             list_item=list_item,
             url=build_url("trakt_create_list", mode=mode),
@@ -1137,7 +1137,7 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1161,7 +1161,7 @@ class TraktPresentation:
             tmdb_id = ids["tmdb_id"]
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1185,7 +1185,7 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1210,7 +1210,7 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1239,7 +1239,7 @@ class TraktPresentation:
                 return
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1274,7 +1274,7 @@ class TraktPresentation:
             slug=res["list"]["ids"]["slug"],
         )
 
-        list_item = ListItem(list_title)
+        list_item = make_list_item(label=list_title)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
         info_tag.setPlot(truncate_text(description))
@@ -1313,7 +1313,7 @@ class TraktPresentation:
         if username:
             label = f"{label} - [I]{username}[/I]"
 
-        list_item = ListItem(label)
+        list_item = make_list_item(label=label)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(list_title)
         info_tag.setPlot(truncate_text(description))
@@ -1394,7 +1394,7 @@ class TraktPresentation:
         else:
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1445,7 +1445,7 @@ class TraktPresentation:
             is_folder = False
             is_playable = True
 
-        list_item = ListItem(title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
         list_item.addContextMenuItems(
             BaseTraktClient._trakt_context_menu(
@@ -1481,7 +1481,7 @@ class TraktPresentation:
                 return
             details = tmdb_get("movie_details", tmdb_id)
 
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=details, mode=mode)
 
         BaseTraktClient._add_media_directory_item(
@@ -1522,7 +1522,7 @@ class TraktPresentation:
 
         details = tmdb_get("tv_details", tmdb_id) or {}
 
-        list_item = ListItem(label=display_title)
+        list_item = make_list_item(label=display_title)
         set_media_infoTag(list_item, data=details, mode="tv")
 
         # Override title
@@ -1575,7 +1575,7 @@ class TraktPresentation:
         ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id, "tvdb_id": tvdb_id}
         details = tmdb_get("tv_details", tmdb_id) or {}
 
-        list_item = ListItem(label=display_title)
+        list_item = make_list_item(label=display_title)
         set_media_infoTag(list_item, data=details, mode="tv")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)
@@ -1615,7 +1615,7 @@ class TraktPresentation:
         ids = {"tmdb_id": tmdb_id, "imdb_id": imdb_id}
         details = tmdb_get("movie_details", tmdb_id) or {}
 
-        list_item = ListItem(label=display_title)
+        list_item = make_list_item(label=display_title)
         set_media_infoTag(list_item, data=details, mode="movies")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(display_title)

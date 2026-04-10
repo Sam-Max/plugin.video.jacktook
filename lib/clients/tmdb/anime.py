@@ -18,13 +18,11 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.utils import (
     end_of_directory,
     kodilog,
+    make_list_item,
     show_keyboard,
     notification,
     translation,
 )
-
-
-from xbmcgui import ListItem
 
 
 class TmdbAnimeClient(BaseTmdbClient):
@@ -103,6 +101,6 @@ class TmdbAnimeClient(BaseTmdbClient):
             return None
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
-        list_item = ListItem(label=title)
+        list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=res, mode=mode)
         TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids)

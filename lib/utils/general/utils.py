@@ -45,6 +45,7 @@ from lib.utils.kodi.utils import (
     get_jacktorr_setting,
     get_setting,
     kodilog,
+    make_list_item,
     notification,
     sleep,
     translatePath,
@@ -56,7 +57,7 @@ from lib.vendor.torf._magnet import Magnet
 
 from collections import deque
 
-from xbmcgui import ListItem, Dialog
+from xbmcgui import Dialog
 from xbmcgui import DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
 from xbmc import getSupportedMedia
@@ -344,7 +345,7 @@ def is_ed_enabled():
 
 
 def build_list_item(label, icon="", poster_path=""):
-    item = ListItem(label=label)
+    item = make_list_item(label=label)
     item.setArt(
         {
             "poster": poster_path,
@@ -363,8 +364,7 @@ def make_listing(data):
     mode = data.get("mode", "")
     mode = "episode" if mode == "tv" else "movies"
 
-    list_item = ListItem(label=title)
-    list_item.setLabel(title)
+    list_item = make_list_item(label=title)
     list_item.setContentLookup(False)
     list_item.setProperty("IsPlayable", "true")
 
@@ -1369,7 +1369,7 @@ def supported_video_extensions():
 
 
 def add_next_button(func_name, page=1, **kwargs):
-    list_item = ListItem(label="Next")
+    list_item = make_list_item(label="Next")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
     )

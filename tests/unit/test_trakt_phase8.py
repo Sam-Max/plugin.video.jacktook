@@ -62,7 +62,7 @@ def test_favorites_context_menu_can_hide_remove_action():
 def test_show_favorites_uses_state_aware_context_flags():
     fake_item = MagicMock()
 
-    with patch("lib.clients.trakt.trakt.ListItem", return_value=fake_item), patch(
+    with patch("lib.clients.trakt.trakt.make_list_item", return_value=fake_item), patch(
         "lib.clients.trakt.trakt.tmdb_get", return_value={}
     ), patch("lib.clients.trakt.trakt.set_media_infoTag"), patch(
         "lib.clients.trakt.trakt.BaseTraktClient._add_media_directory_item"

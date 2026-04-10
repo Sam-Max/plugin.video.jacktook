@@ -17,12 +17,12 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     get_setting,
     kodilog,
+    make_list_item,
     notification,
     translation,
 )
 
 from xbmcplugin import addDirectoryItem
-from xbmcgui import ListItem
 import json
 
 
@@ -110,7 +110,7 @@ def add_jackgram_title_item(entry):
     tvdb_id = getattr(details, "external_ids").get("tvdb_id")
     entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-    list_item = ListItem(label=title)
+    list_item = make_list_item(label=title)
     set_media_infoTag(list_item, data=details, mode=mode)
 
     addDirectoryItem(
@@ -138,7 +138,7 @@ def add_jackgram_source_item(file_entry, parent_data):
     mode = file_entry["mode"]
     title = file_entry["title"]
 
-    list_item = ListItem(label=title)
+    list_item = make_list_item(label=title)
     if mode == "tv":
         details = tmdb_get(
             "episode_details",

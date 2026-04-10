@@ -7,16 +7,13 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     get_setting,
     kodilog,
+    make_list_item,
     notification,
     show_picture,
     translation,
 )
-from xbmcgui import ListItem
-from xbmcplugin import (
-    addDirectoryItem,
-)
-from xbmcplugin import addSortMethod, SORT_METHOD_LABEL_IGNORE_THE, SORT_METHOD_FILE
 from xbmcgui import Dialog
+from xbmcplugin import addDirectoryItem, addSortMethod, SORT_METHOD_LABEL_IGNORE_THE, SORT_METHOD_FILE
 
 
 def list_webdav(params):
@@ -33,7 +30,7 @@ def list_webdav(params):
     items = client.list_dir(relative_path)
 
     for item in items:
-        list_item = ListItem(label=item["name"])
+        list_item = make_list_item(label=item["name"])
         url = ""
         is_folder = False
 

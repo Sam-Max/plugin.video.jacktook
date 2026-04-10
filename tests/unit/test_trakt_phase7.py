@@ -51,7 +51,7 @@ def test_show_user_lists_adds_delete_context_for_my_lists():
     fake_info_tag = MagicMock()
     fake_item.getVideoInfoTag.return_value = fake_info_tag
 
-    with patch("lib.clients.trakt.trakt.ListItem", return_value=fake_item), patch(
+    with patch("lib.clients.trakt.trakt.make_list_item", return_value=fake_item), patch(
         "lib.clients.trakt.trakt.add_kodi_dir_item"
     ):
         TraktPresentation.show_user_lists(
@@ -75,7 +75,7 @@ def test_show_user_lists_adds_delete_context_for_my_lists():
 def test_show_create_list_entry_builds_plugin_action():
     fake_item = MagicMock()
 
-    with patch("lib.clients.trakt.trakt.ListItem", return_value=fake_item), patch(
+    with patch("lib.clients.trakt.trakt.make_list_item", return_value=fake_item), patch(
         "lib.clients.trakt.trakt.add_kodi_dir_item"
     ) as add_dir_item:
         TraktPresentation.show_create_list_entry("movies")

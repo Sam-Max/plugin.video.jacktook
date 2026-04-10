@@ -18,10 +18,12 @@ from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 from lib.utils.kodi.utils import (
+    add_directory_items_batch,
     build_url,
     container_update,
     end_of_directory,
     kodi_play_media,
+    make_list_item,
     notification,
     show_keyboard,
     kodilog,
@@ -30,7 +32,6 @@ from lib.utils.kodi.utils import (
 from lib.utils.general.utils import info_hash_to_magnet, IndexerType
 
 from xbmcplugin import addDirectoryItem, setContent
-from xbmcgui import ListItem
 from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH
 
@@ -48,7 +49,7 @@ def _stremio_search_history_key(params):
 
 def _show_search_catalog_history(params):
     history_key = _stremio_search_history_key(params)
-    list_item = ListItem(label=translation(90006))
+    list_item = make_list_item(label=translation(90006))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(
         ADDON_HANDLE,
@@ -64,7 +65,7 @@ def _show_search_catalog_history(params):
     )
 
     for (text,) in cache.get_list(key=history_key):
-        list_item = ListItem(label=f"[I]{text}[/I]")
+        list_item = make_list_item(label=f"[I]{text}[/I]")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
         )
@@ -83,7 +84,7 @@ def _show_search_catalog_history(params):
             isFolder=True,
         )
 
-    list_item = ListItem(label=translation(90210))
+    list_item = make_list_item(label=translation(90210))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     addDirectoryItem(
         ADDON_HANDLE,
@@ -250,7 +251,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             )
 
             if search_capabilities:
-                listitem = ListItem(label=f"{translation(90006)} {catalog_name}")
+                listitem = make_list_item(label=f"{translation(90006)} {catalog_name}")
                 listitem.setArt({"icon": addon.manifest.logo})
 
                 addDirectoryItem(
@@ -277,7 +278,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 else:
                     label = catalog_name or catalog_id
 
-                listitem = ListItem(label=label)
+                listitem = make_list_item(label=label)
                 listitem.setArt({"icon": addon.manifest.logo})
 
                 addDirectoryItem(
@@ -369,7 +370,7 @@ def list_catalog(params):
             catalog_id=params["catalog_id"],
             skip=skip + len(metas),
         )
-        list_item = ListItem(label=translation(90515))
+        list_item = make_list_item(label=translation(90515))
         addDirectoryItem(
             handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
         )
@@ -583,7 +584,7 @@ def add_meta_items(metas, params):
         else:
             continue
 
-        list_item = ListItem(label=name)
+        list_item = make_list_item(label=name)
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(meta_id, type="imdb" if meta_id.startswith("tt") else "mf")
         info_tag.setTitle(name)
@@ -661,6 +662,7 @@ def list_stremio_seasons(params):
         int(video.imdbSeason) if video.imdbSeason else int(video.season)
         for video in videos
     )
+    items = []
     for season in available_seasons:
         url = build_url(
             "list_stremio_episodes",
@@ -669,7 +671,7 @@ def list_stremio_seasons(params):
             meta_id=params["meta_id"],
             season=season,
         )
-        list_item = ListItem(label=f"{translation(90512)} {season}")
+        list_item = make_list_item(label=f"{translation(90512)} {season}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
             meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
@@ -692,9 +694,8 @@ def list_stremio_seasons(params):
             }
         )
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=True
-        )
+        items.append((url, list_item, True))
+    add_directory_items_batch(items)
     end_of_directory()
 
 
@@ -749,6 +750,7 @@ def list_stremio_episodes(params):
     has_stream_resource = addon_has_stream(
         params["addon_url"], params["catalog_type"], addon=addon
     )
+    items = []
     for video in videos:
         try:
             season = int(video.imdbSeason) if video.imdbSeason else int(video.season)
@@ -791,7 +793,7 @@ def list_stremio_episodes(params):
             stremio_meta_id=params["meta_id"],
         )
 
-        list_item = ListItem(label=f"{season}x{episode}. {title}")
+        list_item = make_list_item(label=f"{season}x{episode}. {title}")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setUniqueID(
             meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
@@ -869,10 +871,9 @@ def list_stremio_episodes(params):
             }
         )
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
-        )
+        items.append((url, list_item, False))
 
+    add_directory_items_batch(items)
     end_of_directory()
 
 
@@ -886,6 +887,7 @@ def list_stremio_movie(params):
         notification(translation(90514))
         return
 
+    items = []
     for stream in streams:
         playback_data = {
             "mode": "movie",
@@ -920,14 +922,13 @@ def list_stremio_movie(params):
             data=json.dumps(playback_data),
         )
 
-        list_item = ListItem(label=stream.title)
+        list_item = make_list_item(label=stream.title)
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setPlot(truncate_text(stream.description or ""))
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
-        )
+        items.append((url, list_item, False))
+    add_directory_items_batch(items)
     end_of_directory()
 
 
@@ -941,6 +942,7 @@ def list_stremio_tv(params):
         notification(translation(90514))
         return
 
+    items = []
     for stream in streams:
         playback_data = {
             "mode": "movie",
@@ -962,19 +964,19 @@ def list_stremio_tv(params):
             data=json.dumps(playback_data),
         )
 
-        list_item = ListItem(label=stream.title)
+        list_item = make_list_item(label=stream.title)
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setPlot(truncate_text(stream.description or ""))
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
-        )
+        items.append((url, list_item, False))
+    add_directory_items_batch(items)
     end_of_directory()
 
 
 def list_stremio_tv_streams(params):
     streams = json.loads(params.get("streams", {}))
+    items = []
     for stream in streams:
         playback_data = {
             "mode": "movie",
@@ -996,13 +998,12 @@ def list_stremio_tv_streams(params):
             data=json.dumps(playback_data),
         )
 
-        list_item = ListItem(label=stream["name"])
+        list_item = make_list_item(label=stream["name"])
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
         info_tag.setPlot(truncate_text(stream.get("description", "")))
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=False
-        )
+        items.append((url, list_item, False))
 
+    add_directory_items_batch(items)
     end_of_directory()

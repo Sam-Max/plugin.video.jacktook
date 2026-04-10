@@ -1,7 +1,7 @@
 from datetime import timedelta
 import os
 
-from xbmcgui import Dialog, ListItem
+from xbmcgui import Dialog
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 from lib.db.cached import cache
@@ -17,6 +17,7 @@ from lib.utils.kodi.utils import (
     container_update,
     end_of_directory,
     kodi_play_media,
+    make_list_item,
     notification,
     show_keyboard,
     translation,
@@ -175,7 +176,7 @@ def search_direct(params):
                 expires=timedelta(hours=get_cache_expiration()),
             )
 
-    list_item = ListItem(label=translation(90006))
+    list_item = make_list_item(label=translation(90006))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(
         ADDON_HANDLE,
@@ -185,7 +186,7 @@ def search_direct(params):
     )
 
     for item_mode, text in cache.get_list(key=mode):
-        list_item = ListItem(label=f"[I]{text}[/I]")
+        list_item = make_list_item(label=f"[I]{text}[/I]")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
         )
@@ -220,7 +221,7 @@ def search_direct(params):
             isFolder=False,
         )
 
-    list_item = ListItem(label="Clear Searches")
+    list_item = make_list_item(label="Clear Searches")
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     addDirectoryItem(
         ADDON_HANDLE,
