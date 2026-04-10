@@ -12,12 +12,11 @@ from lib.utils.kodi.utils import (
     build_url,
     end_of_directory,
     kodilog,
+    make_list_item,
     show_keyboard,
     notification,
     translation,
 )
-
-from xbmcgui import ListItem
 
 
 class PeopleClient(BaseTmdbClient):
@@ -153,7 +152,7 @@ class PeopleClient(BaseTmdbClient):
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-        list_item = ListItem(label=label)
+        list_item = make_list_item(label=label)
         set_media_infoTag(list_item, data=credit, mode=mode)
 
         if media_type == "movie":
@@ -183,7 +182,7 @@ class PeopleClient(BaseTmdbClient):
     @staticmethod
     def show_people_details(person, mode):
         details = tmdb_get("person_details", params=person.get("id"))
-        list_item = ListItem(label=person.get("name", "Unknown"))
+        list_item = make_list_item(label=person.get("name", "Unknown"))
         set_media_infoTag(list_item, data=details, mode=mode)
         add_kodi_dir_item(
             list_item=list_item,

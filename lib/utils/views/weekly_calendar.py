@@ -9,11 +9,13 @@ from lib.jacktook.utils import kodilog
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
     translation,
     kodi_play_media,
+    make_list_item,
 )
 from lib.utils.general.utils import (
     execute_thread_pool,
@@ -23,8 +25,7 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import get_setting
 
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
+
 
 
 def show_weekly_calendar(library=False):
@@ -92,13 +93,15 @@ def show_weekly_calendar(library=False):
 
     # Add fixed item showing current date at the top
     current_date = datetime.now().strftime("%A, %d %B %Y")
-    date_item = ListItem(
+    directory_items = []
+
+    date_item = make_list_item(
         label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
     )
     date_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
     )
-    addDirectoryItem(ADDON_HANDLE, "", date_item, isFolder=False)
+    directory_items.append(("", date_item, False))
 
     today_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -147,7 +150,7 @@ def show_weekly_calendar(library=False):
 
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']} {ep.get('air_time', '00:00')}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
-        list_item = ListItem(label=ep_title)
+        list_item = make_list_item(label=ep_title)
         list_item.setProperty("IsPlayable", "true")
 
         set_media_infoTag(list_item, data=details, mode=data.get("mode"))
@@ -169,19 +172,22 @@ def show_weekly_calendar(library=False):
             ]
         )
 
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "search",
-                mode=data.get("mode"),
-                media_type=data.get("mode"),
-                query=title,
-                ids=ids,
-                tv_data=tv_data,
-            ),
-            list_item,
-            isFolder=False,
+        directory_items.append(
+            (
+                build_url(
+                    "search",
+                    mode=data.get("mode"),
+                    media_type=data.get("mode"),
+                    query=title,
+                    ids=ids,
+                    tv_data=tv_data,
+                ),
+                list_item,
+                False,
+            )
         )
+
+    add_directory_items_batch(directory_items)
 
     end_of_directory(cache=False)
     if library:

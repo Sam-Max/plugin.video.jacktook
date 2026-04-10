@@ -8,15 +8,16 @@ from lib.utils.general.utils import parse_time, set_media_infoTag, set_pluging_c
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     container_refresh,
     end_of_directory,
+    make_list_item,
     translation,
 )
 
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
+
 
 
 pickle_db = PickleDatabase()
@@ -46,11 +47,13 @@ def show_last_titles(params):
     items = sorted(items, key=parse_time, reverse=True)
 
     # Add "Clear Titles" button
-    list_item = ListItem(label="Clear Titles")
+    directory_items = []
+
+    list_item = make_list_item(label="Clear Titles")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
     )
-    addDirectoryItem(ADDON_HANDLE, build_url("clear_history", type="lth"), list_item)
+    directory_items.append((build_url("clear_history", type="lth"), list_item, True))
 
     for title, data in items:
         formatted_time = data["timestamp"]
@@ -66,7 +69,7 @@ def show_last_titles(params):
             kodilog(f"Failed to get details for {mode} with ID {ids.get('tmdb_id')}")
             continue
 
-        list_item = ListItem(label=f"{title} — {formatted_time}")
+        list_item = make_list_item(label=f"{title} — {formatted_time}")
         set_media_infoTag(list_item, data=details, mode=mode)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
@@ -81,42 +84,34 @@ def show_last_titles(params):
         )
 
         if mode == "tv":
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url("show_seasons_details", ids=ids, mode=mode),
-                list_item,
-                isFolder=True,
+            directory_items.append(
+                (build_url("show_seasons_details", ids=ids, mode=mode), list_item, True)
             )
         elif mode == "movies":
             list_item.setProperty("IsPlayable", "true")
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url("search", mode=mode, query=title, ids=ids),
-                list_item,
-                isFolder=False,
+            directory_items.append(
+                (build_url("search", mode=mode, query=title, ids=ids), list_item, False)
             )
         elif mode == "tg_latest":
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url(
-                    "list_jackgram_title_sources", data=json.dumps(data.get("tg_data"))
-                ),
-                list_item,
-                isFolder=True,
+            directory_items.append(
+                (
+                    build_url(
+                        "list_jackgram_title_sources", data=json.dumps(data.get("tg_data"))
+                    ),
+                    list_item,
+                    True,
+                )
             )
 
     # "Next Page"
     if end < total:
-        list_item = ListItem(label=f"Next Page")
+        list_item = make_list_item(label=f"Next Page")
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
         )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("titles_history", page=page + 1),
-            list_item,
-            isFolder=True,
-        )
+        directory_items.append((build_url("titles_history", page=page + 1), list_item, True))
+
+    add_directory_items_batch(directory_items)
 
     end_of_directory()
     apply_section_view("view.history", fallback="poster")

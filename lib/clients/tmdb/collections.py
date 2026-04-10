@@ -12,9 +12,11 @@ from lib.utils.general.utils import (
 )
 
 from lib.utils.kodi.utils import (
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    make_list_item,
     show_keyboard,
     notification,
     translation,
@@ -25,7 +27,7 @@ from lib.clients.tmdb.utils.utils import (
     get_tmdb_movie_details,
 )
 
-from xbmcgui import ListItem
+
 
 
 class TmdbCollections(BaseTmdbClient):
@@ -39,8 +41,9 @@ class TmdbCollections(BaseTmdbClient):
             end_of_directory()
             return
 
+        directory_items = []
         for movie in collection.get("parts", []) or []:
-            movie_item = ListItem(label=movie.get("title", "Untitled"))
+            movie_item = make_list_item(label=movie.get("title", "Untitled"))
             movie_item.setProperty("IsPlayable", "true")
             set_media_infoTag(movie_item, data=movie, mode="movie")
 
@@ -60,8 +63,11 @@ class TmdbCollections(BaseTmdbClient):
                     ids={"tmdb_id": tmdb_id, "imdb_id": imdb_id},
                 ),
                 is_folder=False,
+                batch=True,
+                directory_items=directory_items,
             )
 
+        add_directory_items_batch(directory_items)
         end_of_directory()
         apply_section_view("view.movies", content_type="movies", fallback="poster")
 
@@ -75,7 +81,7 @@ class TmdbCollections(BaseTmdbClient):
                 file_path = posters[0].get("file_path")
                 collection["poster_path"] = file_path
 
-        list_item = ListItem(label=collection.get("name"))
+        list_item = make_list_item(label=collection.get("name"))
         set_media_infoTag(list_item, data=collection, mode="movies")
         add_kodi_dir_item(
             list_item=list_item,

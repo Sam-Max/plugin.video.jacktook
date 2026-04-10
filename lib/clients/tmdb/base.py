@@ -3,9 +3,11 @@ from datetime import datetime
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    make_list_item,
     notification,
     translation,
 )
@@ -24,12 +26,10 @@ from lib.api.trakt.trakt_utils import (
     is_trakt_auth,
 )
 
-from xbmcgui import ListItem
-
 
 class BaseTmdbClient:
     @staticmethod
-    def add_media_directory_item(list_item, mode, title, ids, media_type=""):
+    def add_media_directory_item(list_item, mode, title, ids, media_type="", batch=False):
         if mode == "movies" or (mode == "multi" and media_type == "movie"):
             context_menu = add_tmdb_movie_context_menu(
                 mode, media_type, title=title, ids=ids
@@ -60,26 +60,30 @@ class BaseTmdbClient:
         else:
             is_folder = True
 
+        url = build_url(
+            "show_tmdb_item",
+            mode=mode,
+            submode="",
+            id=ids.get("tmdb_id"),
+            title=title,
+            media_type=media_type,
+        )
+        if batch:
+            return (url, list_item, is_folder)
         add_kodi_dir_item(
             list_item=list_item,
-            url=build_url(
-                "show_tmdb_item",
-                mode=mode,
-                submode="",
-                id=ids.get("tmdb_id"),
-                title=title,
-                media_type=media_type,
-            ),
+            url=url,
             is_folder=is_folder,
         )
 
     @staticmethod
     def show_years_items(mode, page, submode=None):
         set_pluging_category(translation(90027))
+        directory_items = []
         current_year = datetime.now().year
         for year in range(current_year, 1899, -1):
-            list_item = ListItem(label=str(year))
-            add_kodi_dir_item(
+            list_item = make_list_item(label=str(year))
+            item = add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
                     "search_tmdb_year",
@@ -90,7 +94,10 @@ class BaseTmdbClient:
                 ),
                 is_folder=True,
                 icon_path="status.png",
+                batch=True,
             )
+            directory_items.append(item)
+        add_directory_items_batch(directory_items)
         end_of_directory()
         if mode == "tv" or (mode == "anime" and submode == "tv"):
             apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")
@@ -111,12 +118,13 @@ class BaseTmdbClient:
             end_of_directory()
             return
 
+        directory_items = []
         for genre in genres:
             if isinstance(genre, AsObj):
                 if genre.get("name") == "TV Movie":
                     continue
-                list_item = ListItem(label=genre["name"])
-                add_kodi_dir_item(
+                list_item = make_list_item(label=genre["name"])
+                item = add_kodi_dir_item(
                     list_item=list_item,
                     url=build_url(
                         "search_tmdb_genres",
@@ -127,7 +135,10 @@ class BaseTmdbClient:
                     ),
                     is_folder=True,
                     icon_path=None,
+                    batch=True,
                 )
+                directory_items.append(item)
+        add_directory_items_batch(directory_items)
         end_of_directory()
         if mode == "tv" or (mode == "anime" and submode == "tv"):
             apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")

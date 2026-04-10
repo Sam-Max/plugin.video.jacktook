@@ -7,10 +7,12 @@ from lib.clients.tmdb.utils.utils import (
 )
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
     get_setting,
+    make_list_item,
 )
 from lib.utils.general.utils import (
     execute_thread_pool_collection,
@@ -19,8 +21,7 @@ from lib.utils.general.utils import (
     set_media_infoTag,
 )
 
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
+
 
 
 def show_seasons_details(params):
@@ -66,8 +67,9 @@ def show_season_info(ids, mode, media_type):
     # Sort by season number
     results.sort(key=lambda x: x[0])
 
-    for _, url, list_item in results:
-        addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=True)
+    add_directory_items_batch(
+        [(url, list_item, True) for _, url, list_item in results if list_item is not None]
+    )
 
 
 def _process_season(season, details, name, ids, mode, media_type, fanart_details):
@@ -83,7 +85,7 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
     if season_number == 0 and not get_setting("include_tvshow_specials"):
         return  # skip specials if disabled
 
-    list_item = ListItem(label=season_name)
+    list_item = make_list_item(label=season_name)
     set_media_infoTag(list_item, data=season, fanart_data=fanart_details, mode="season")
     list_item.setProperty("IsPlayable", "false")
 
@@ -140,8 +142,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     # Sort by episode number
     results.sort(key=lambda x: x[0])
 
-    for _, url, list_item in results:
-        addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=False)
+    add_directory_items_batch(
+        [(url, list_item, False) for _, url, list_item in results if list_item is not None]
+    )
 
 
 def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details):
@@ -150,7 +153,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
 
     tv_data = {"name": ep_name, "episode": episode_number, "season": season}
 
-    list_item = ListItem(label=f"{season}x{episode_number}. {ep_name}")
+    list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")
     set_media_infoTag(
         list_item, data=episode, fanart_data=fanart_details, mode="episode"

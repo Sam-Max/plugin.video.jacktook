@@ -101,7 +101,7 @@ def test_show_library_items_renders_stremio_entry_without_tmdb(monkeypatch):
         def setProperty(self, key, value):
             self.properties[key] = value
 
-    monkeypatch.setattr(library, "ListItem", _ListItem)
+    monkeypatch.setattr(library, "make_list_item", lambda label="", path="", offscreen=True: _ListItem(label=label))
     monkeypatch.setattr(library, "set_pluging_category", lambda *args, **kwargs: None)
     monkeypatch.setattr(library, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(library, "end_of_directory", lambda *args, **kwargs: None)
@@ -109,8 +109,8 @@ def test_show_library_items_renders_stremio_entry_without_tmdb(monkeypatch):
     monkeypatch.setattr(library, "set_media_infoTag", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         library,
-        "addDirectoryItem",
-        lambda handle, url, listitem, isFolder=True: added.append((url, listitem.label, isFolder)),
+        "add_directory_items_batch",
+        lambda items: added.extend((url, listitem.label, is_folder) for url, listitem, is_folder in items),
     )
     monkeypatch.setattr(
         library.PickleDatabase,

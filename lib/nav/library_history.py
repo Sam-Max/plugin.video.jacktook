@@ -11,6 +11,7 @@ from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     ADDON_HANDLE,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     container_update,
@@ -40,6 +41,7 @@ def _maybe_clear_library(mode, params):
 
 
 def _render_menu(items, cache_listing=True):
+    directory_items = []
     for item in items:
         if "condition" in item and not item["condition"]():
             continue
@@ -68,8 +70,9 @@ def _render_menu(items, cache_listing=True):
         if context_menu:
             list_item.addContextMenuItems(context_menu)
 
-        addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=True)
+        directory_items.append((url, list_item, True))
 
+    add_directory_items_batch(directory_items)
     end_of_directory(cache=cache_listing)
 
 

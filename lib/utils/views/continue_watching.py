@@ -3,13 +3,14 @@ from lib.jacktook.utils import kodilog
 import json
 import os
 from xbmc import executebuiltin
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, endOfDirectory, setContent
+from xbmcplugin import endOfDirectory, setContent
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
+    make_list_item,
     translation,
 )
 from lib.db.pickle_db import PickleDatabase
@@ -42,7 +43,7 @@ def show_continue_watching():
     all_items = list(reversed(PickleDatabase().get_key("jt:lfh").items()))
     items = sorted(all_items, key=parse_time, reverse=True)
 
-    count = 0
+    directory_items = []
     for title, data in items:
         # Check progress
         progress = float(data.get("progress", 0))
@@ -65,7 +66,7 @@ def show_continue_watching():
         else:
             label = label_title
 
-        list_item = ListItem(label=label)
+        list_item = make_list_item(label=label)
 
         # Set Art
         icon = os.path.join(ADDON_PATH, "resources", "img", "magnet.png")
@@ -108,11 +109,9 @@ def show_continue_watching():
         # url to play
         url = build_url("play_media", data=json.dumps(data))
 
-        addDirectoryItem(ADDON_HANDLE, url, list_item, False)
-        count += 1
+        directory_items.append((url, list_item, False))
 
-    if count == 0:
-        pass
+    add_directory_items_batch(directory_items)
 
     end_of_directory(cache=False)
     apply_section_view("view.history", content_type="videos", fallback="poster")

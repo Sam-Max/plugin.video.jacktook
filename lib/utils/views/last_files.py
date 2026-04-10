@@ -7,10 +7,9 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.last_files_actions import add_last_files_context_menu
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, apply_section_view, build_url, end_of_directory, translation
+from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, add_directory_items_batch, apply_section_view, build_url, end_of_directory, make_list_item, translation
 
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem
+
 
 
 pickle_db = PickleDatabase()
@@ -19,15 +18,13 @@ pickle_db = PickleDatabase()
 def show_last_files():
     set_pluging_category(translation(90071))
 
-    list_item = ListItem(label="Clear Files")
+    directory_items = []
+
+    list_item = make_list_item(label="Clear Files")
     list_item.setArt(
         {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
     )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("clear_history", type="lfh"),
-        list_item,
-    )
+    directory_items.append((build_url("clear_history", type="lfh"), list_item, True))
 
     all_items = list(reversed(pickle_db.get_key("jt:lfh").items()))
 
@@ -48,20 +45,22 @@ def show_last_files():
         else:
             label = f"{title}—{formatted_time}"
 
-        list_item = ListItem(label=label)
+        list_item = make_list_item(label=label)
         list_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
         )
         list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(add_last_files_context_menu(data))
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(
-                "play_media",
-                data=json.dumps(data),
-            ),
-            list_item,
-            False,
+        directory_items.append(
+            (
+                build_url(
+                    "play_media",
+                    data=json.dumps(data),
+                ),
+                list_item,
+                False,
+            )
         )
+    add_directory_items_batch(directory_items)
     end_of_directory()
     apply_section_view("view.history", fallback="list")

@@ -232,12 +232,14 @@ NETWORKS = [
 
 
 def add_kodi_dir_item(
-    list_item, url, is_folder=True, icon_path=None, set_playable=False
+    list_item, url, is_folder=True, icon_path=None, set_playable=False, batch=False
 ):
     if icon_path:
         add_icon_tmdb(list_item, icon_path=icon_path)
     if set_playable:
         list_item.setProperty("IsPlayable", "true")
+    if batch:
+        return (url, list_item, is_folder)
     addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=is_folder)
 
 

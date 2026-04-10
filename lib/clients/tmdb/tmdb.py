@@ -22,11 +22,13 @@ from lib.utils.general.utils import (
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_PATH,
+    add_directory_items_batch,
     apply_section_view,
     build_url,
     close_busy_dialog,
     end_of_directory,
     kodilog,
+    make_list_item,
     show_busy_dialog,
     show_keyboard,
     notification,
@@ -51,7 +53,6 @@ def _apply_tmdb_view(mode, content_type=""):
         return apply_section_view("view.episodes", content_type or "episodes", fallback="list")
     return apply_section_view("view.main", content_type=content_type, fallback="list")
 
-from xbmcgui import ListItem
 import xbmcgui
 import xbmc
 
@@ -221,6 +222,7 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         if results:
             TmdbClient._enrich_results_with_images(results, mode)
+            directory_items = []
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
@@ -233,16 +235,19 @@ class TmdbClient(BaseTmdbClient):
                 else:
                     continue
 
-                list_item = ListItem(label=label_title)
+                list_item = make_list_item(label=label_title)
                 # Use item directly as tmdb_obj for basic info
                 set_media_infoTag(list_item, data=item, mode=media_type)
-                BaseTmdbClient.add_media_directory_item(
+                item_tuple = BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=mode,
                     title=title,
                     ids={"tmdb_id": tmdb_id},
                     media_type=media_type,
+                    batch=True,
                 )
+                directory_items.append(item_tuple)
+            add_directory_items_batch(directory_items)
             add_next_button("handle_tmdb_search", page=page + 1, mode=mode)
             end_of_directory()
             _apply_tmdb_view("main")
@@ -286,21 +291,24 @@ class TmdbClient(BaseTmdbClient):
         if results:
             display_mode = submode if mode == "anime" and submode else mode
             TmdbClient._enrich_results_with_images(results, display_mode)
+            directory_items = []
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
-                list_item = ListItem(label=title)
-                # Use submode for anime, otherwise use mode
+                list_item = make_list_item(label=title)
                 display_mode = submode if mode == "anime" and submode else mode
                 set_media_infoTag(list_item, data=item, mode=display_mode)
-                BaseTmdbClient.add_media_directory_item(
+                item_tuple = BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=display_mode,
                     title=title,
                     ids={"tmdb_id": tmdb_id},
                     media_type=media_type,
+                    batch=True,
                 )
+                directory_items.append(item_tuple)
+            add_directory_items_batch(directory_items)
             add_next_button(
                 "search_tmdb_genres",
                 mode=mode,
@@ -344,21 +352,24 @@ class TmdbClient(BaseTmdbClient):
         if results:
             display_mode = submode if mode == "anime" and submode else mode
             TmdbClient._enrich_results_with_images(results, display_mode)
+            directory_items = []
             for item in results:
                 tmdb_id = item.get("id", "")
                 title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
-                list_item = ListItem(label=title)
-                # Use submode for anime, otherwise use mode
+                list_item = make_list_item(label=title)
                 display_mode = submode if mode == "anime" and submode else mode
                 set_media_infoTag(list_item, data=item, mode=display_mode)
-                BaseTmdbClient.add_media_directory_item(
+                item_tuple = BaseTmdbClient.add_media_directory_item(
                     list_item=list_item,
                     mode=display_mode,
                     title=title,
                     ids={"tmdb_id": tmdb_id},
                     media_type=media_type,
+                    batch=True,
                 )
+                directory_items.append(item_tuple)
+            add_directory_items_batch(directory_items)
             add_next_button(
                 "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
             )
@@ -399,19 +410,23 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
 
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
         add_next_button("handle_tmdb_query", query=query, page=page, mode=mode)
         end_of_directory()
         _apply_tmdb_view("tv")
@@ -456,19 +471,23 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
 
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
         add_next_button(
             "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
         )
@@ -553,19 +572,23 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
         add_next_button("handle_tmdb_query", query="tmdb_popular", page=page, mode=mode)
         end_of_directory()
         _apply_tmdb_view(mode)
@@ -591,19 +614,23 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
         add_next_button(
             "handle_tmdb_query", query="tmdb_airing_today", page=page, mode=mode
         )
@@ -615,14 +642,15 @@ class TmdbClient(BaseTmdbClient):
         from lib.clients.tmdb.utils.utils import FULL_NAME_LANGUAGES
 
         set_pluging_category(translation(90065))
+        directory_items = []
         for lang in FULL_NAME_LANGUAGES:
-            list_item = ListItem(label=lang["name"])
+            list_item = make_list_item(label=lang["name"])
             list_item.setArt(
                 {
                     "icon": os.path.join(ADDON_PATH, "resources", "img", "lang.png"),
                 }
             )
-            add_kodi_dir_item(
+            item = add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
                     "search_tmdb_lang",
@@ -630,7 +658,10 @@ class TmdbClient(BaseTmdbClient):
                     lang=lang["id"],
                     page=page,
                 ),
+                batch=True,
             )
+            directory_items.append(item)
+        add_directory_items_batch(directory_items)
         end_of_directory()
         _apply_tmdb_view("main")
 
@@ -662,19 +693,23 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
 
         add_next_button(
             "search_tmdb_lang",
@@ -691,8 +726,9 @@ class TmdbClient(BaseTmdbClient):
         from lib.clients.tmdb.utils.utils import NETWORKS
 
         set_pluging_category(translation(90066))
+        directory_items = []
         for network in NETWORKS:
-            list_item = ListItem(label=network["name"])
+            list_item = make_list_item(label=network["name"])
             list_item.setArt(
                 {
                     "icon": network["icon"],
@@ -700,7 +736,7 @@ class TmdbClient(BaseTmdbClient):
                     "poster": network["icon"],
                 }
             )
-            add_kodi_dir_item(
+            item = add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
                     "search_tmbd_network",
@@ -708,7 +744,10 @@ class TmdbClient(BaseTmdbClient):
                     id=network["id"],
                     page=page,
                 ),
+                batch=True,
             )
+            directory_items.append(item)
+        add_directory_items_batch(directory_items)
         end_of_directory()
         _apply_tmdb_view("main")
 
@@ -750,19 +789,23 @@ class TmdbClient(BaseTmdbClient):
 
         results = getattr(data, "results", [])
         TmdbClient._enrich_results_with_images(results, mode)
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
 
         add_next_button(
             "search_tmbd_network",
@@ -801,15 +844,18 @@ class TmdbClient(BaseTmdbClient):
             getattr(trending_data, "results"), fetch_episodes_for_trending_show
         )
 
+        directory_items = []
+
         # Add fixed item showing current date at the top
         current_date = datetime.now().strftime("%A, %d %B %Y")
-        date_item = ListItem(
+        date_item = make_list_item(
             label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
         )
         date_item.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
         )
-        add_kodi_dir_item(date_item, "", is_folder=False)
+        item = add_kodi_dir_item(date_item, "", is_folder=False, batch=True)
+        directory_items.append(item)
 
         today_str = datetime.now().strftime("%Y-%m-%d")
 
@@ -849,12 +895,12 @@ class TmdbClient(BaseTmdbClient):
 
             ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-            list_item = ListItem(label=ep_title)
+            list_item = make_list_item(label=ep_title)
             list_item.setProperty("IsPlayable", "true")
 
             set_media_infoTag(list_item, data=details, mode="tv")
 
-            add_kodi_dir_item(
+            item = add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
                     "search",
@@ -865,7 +911,11 @@ class TmdbClient(BaseTmdbClient):
                     tv_data=tv_data,
                 ),
                 is_folder=False,
+                batch=True,
             )
+            directory_items.append(item)
+
+        add_directory_items_batch(directory_items)
 
         if getattr(trending_data, "total_pages", 0) > page:
             add_next_button(
@@ -886,9 +936,10 @@ class TmdbClient(BaseTmdbClient):
             (translation(90378), "top_rated", "tmdb.png"),
         ]
 
+        directory_items = []
         for label, submode, icon_path in collections_menu:
-            list_item = ListItem(label=label)
-            add_kodi_dir_item(
+            list_item = make_list_item(label=label)
+            item = add_kodi_dir_item(
                 list_item=list_item,
                 url=build_url(
                     "handle_collection_query",
@@ -898,7 +949,10 @@ class TmdbClient(BaseTmdbClient):
                 ),
                 is_folder=True,
                 icon_path=icon_path,
+                batch=True,
             )
+            directory_items.append(item)
+        add_directory_items_batch(directory_items)
         end_of_directory()
         _apply_tmdb_view("movies")
 
@@ -928,6 +982,7 @@ class TmdbClient(BaseTmdbClient):
             end_of_directory()
             return
 
+        directory_items = []
         for keyword in keywords_data:
             if isinstance(keyword, AsObj):
                 keyword_id = keyword.get("id")
@@ -935,8 +990,8 @@ class TmdbClient(BaseTmdbClient):
                 if not keyword_id or not keyword_name:
                     continue
 
-                list_item = ListItem(label=keyword_name)
-                add_kodi_dir_item(
+                list_item = make_list_item(label=keyword_name)
+                item = add_kodi_dir_item(
                     list_item=list_item,
                     url=build_url(
                         "show_keyword_results",
@@ -947,7 +1002,10 @@ class TmdbClient(BaseTmdbClient):
                     ),
                     is_folder=True,
                     icon_path="tmdb.png",
+                    batch=True,
                 )
+                directory_items.append(item)
+        add_directory_items_batch(directory_items)
         add_next_button("handle_keyword_search", query=query, page=page + 1, mode=mode)
         end_of_directory()
         _apply_tmdb_view("main")
@@ -1035,6 +1093,7 @@ class TmdbClient(BaseTmdbClient):
 
         TmdbClient._enrich_results_with_images(results, "multi")
 
+        directory_items = []
         for res in results:
             tmdb_id = (
                 getattr(res, "id", "")
@@ -1052,15 +1111,18 @@ class TmdbClient(BaseTmdbClient):
                 else res.get("media_type", "")
             )
 
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=res, mode="multi")
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode="multi",
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
 
         if total_pages > page:
             add_next_button(
@@ -1102,20 +1164,24 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
 
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
             set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
 
         if getattr(data, "total_pages", 0) > page:
             add_next_button(
@@ -1157,20 +1223,24 @@ class TmdbClient(BaseTmdbClient):
         results = getattr(data, "results", [])
         tmdb_meta_by_id = TmdbClient.fetch_tmdb_metadata_concurrently(results, mode)
 
+        directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
             media_type = getattr(res, "media_type", "") or ""
-            list_item = ListItem(label=title)
+            list_item = make_list_item(label=title)
             tmdb_obj = tmdb_meta_by_id.get(tmdb_id)
             set_media_infoTag(list_item, data=tmdb_obj, mode=mode)
-            BaseTmdbClient.add_media_directory_item(
+            item_tuple = BaseTmdbClient.add_media_directory_item(
                 list_item=list_item,
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
                 media_type=media_type,
+                batch=True,
             )
+            directory_items.append(item_tuple)
+        add_directory_items_batch(directory_items)
 
         if getattr(data, "total_pages", 0) > page:
             add_next_button(

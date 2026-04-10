@@ -15,7 +15,7 @@ import xbmcaddon
 import xbmcgui
 
 from xbmcgui import Window, ListItem
-from xbmcplugin import setResolvedUrl, endOfDirectory
+from xbmcplugin import addDirectoryItems, setResolvedUrl, endOfDirectory
 from xbmcvfs import (
     translatePath as translate_path,
     delete as xbmc_delete,
@@ -654,6 +654,20 @@ def cancel_playback():
     except Exception:
         pass
     setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+
+
+def make_list_item(label="", path="", offscreen=True):
+    kwargs = {"offscreen": offscreen}
+    if label:
+        kwargs["label"] = label
+    if path:
+        kwargs["path"] = path
+    return ListItem(**kwargs)
+
+
+def add_directory_items_batch(items):
+    if items:
+        addDirectoryItems(ADDON_HANDLE, items)
 
 
 def is_widget():

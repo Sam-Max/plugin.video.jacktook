@@ -5,8 +5,8 @@ from lib.nav import library_history
 
 def test_history_menu_renders_history_items():
     with patch("lib.nav.library_history.set_pluging_category") as set_category, patch(
-        "lib.nav.library_history.addDirectoryItem"
-    ) as add_directory_item, patch(
+        "lib.nav.library_history.add_directory_items_batch"
+    ) as add_directory_items_batch, patch(
         "lib.nav.library_history.end_of_directory"
     ), patch(
         "lib.nav.library_history.build_url", side_effect=lambda action, **kwargs: action
@@ -16,7 +16,7 @@ def test_history_menu_renders_history_items():
         library_history.history_menu({})
 
     set_category.assert_called_once()
-    assert add_directory_item.called
+    assert add_directory_items_batch.called
 
 
 def test_clear_history_delegates_and_notifies():

@@ -33,8 +33,8 @@ def test_library_menu_adds_clear_context_menu(monkeypatch):
     monkeypatch.setattr(library_history, "build_url", lambda action, **params: "plugin://plugin.video.jacktook?action={}{}".format(action, "".join("&{}={}".format(key, value) for key, value in params.items())))
     monkeypatch.setattr(
         library_history,
-        "addDirectoryItem",
-        lambda handle, url, list_item, isFolder=True: added.append(list_item),
+        "add_directory_items_batch",
+        lambda items: added.extend(list_item for _url, list_item, _is_folder in items),
     )
 
     library_history.library_menu({})

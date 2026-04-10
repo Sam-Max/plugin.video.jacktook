@@ -25,6 +25,7 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     CHANGELOG_PATH,
     JACKTORR_ADDON,
+    add_directory_items_batch,
     apply_section_view,
     action_url_run,
     build_url,
@@ -41,6 +42,7 @@ from lib.utils.kodi.utils import (
     reset_saved_views,
     save_view_id,
     translation,
+    make_list_item,
 )
 from lib.utils.player.utils import resolve_playback_url
 from lib.utils.torrent.torrserver_init import get_torrserver_api
@@ -100,6 +102,7 @@ from lib.utils.general.items_menus import (
 
 
 def render_menu(items, cache=True):
+    directory_items = []
     for item in items:
         if "condition" in item and not item["condition"]():
             continue
@@ -114,12 +117,8 @@ def render_menu(items, cache=True):
 
         url = build_url(item["action"], **params)
 
-        addDirectoryItem(
-            ADDON_HANDLE,
-            url,
-            list_item,
-            isFolder=True,
-        )
+        directory_items.append((url, list_item, True))
+    add_directory_items_batch(directory_items)
     end_of_directory(cache=cache)
 
 
@@ -185,17 +184,11 @@ def root_menu():
 
 
 def animation_menu(params):
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("animation_item", mode="tv"),
-        build_list_item(translation(90007), "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("animation_item", mode="movies"),
-        build_list_item(translation(90008), "movies.png"),
-        isFolder=True,
+    add_directory_items_batch(
+        [
+            (build_url("animation_item", mode="tv"), build_list_item(translation(90007), "tv.png"), True),
+            (build_url("animation_item", mode="movies"), build_list_item(translation(90008), "movies.png"), True),
+        ]
     )
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -203,25 +196,11 @@ def animation_menu(params):
 
 def animation_item(params):
     mode = params.get("mode")
+    directory_items = []
     if mode == "tv":
         for item in animation_items:
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url(
-                    "search_item",
-                    category=item["category"],
-                    mode=item["mode"],
-                    submode=mode,
-                    api=item["api"],
-                ),
-                build_list_item(item["name"], item["icon"]),
-                isFolder=True,
-            )
-    if mode == "movies":
-        for item in animation_items:
-            if item["api"] == "tmdb":
-                addDirectoryItem(
-                    ADDON_HANDLE,
+            directory_items.append(
+                (
                     build_url(
                         "search_item",
                         category=item["category"],
@@ -230,8 +209,26 @@ def animation_item(params):
                         api=item["api"],
                     ),
                     build_list_item(item["name"], item["icon"]),
-                    isFolder=True,
+                    True,
                 )
+            )
+    if mode == "movies":
+        for item in animation_items:
+            if item["api"] == "tmdb":
+                directory_items.append(
+                    (
+                        build_url(
+                            "search_item",
+                            category=item["category"],
+                            mode=item["mode"],
+                            submode=mode,
+                            api=item["api"],
+                        ),
+                        build_list_item(item["name"], item["icon"]),
+                        True,
+                    )
+                )
+    add_directory_items_batch(directory_items)
     end_of_directory()
     if mode == "tv":
         apply_section_view("view.tvshows", fallback="poster")
@@ -241,29 +238,13 @@ def animation_item(params):
 
 def telegram_menu(params):
     set_pluging_category(translation(90013))
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        build_list_item(translation(90006), "search.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("list_jackgram_latest_movies", page=1),
-        build_list_item(translation(90369), "movies.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("list_jackgram_latest_series", page=1),
-        build_list_item(translation(90370), "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("list_jackgram_raw_files", page=1),
-        build_list_item(translation(90371), "cloud.png"),
-        isFolder=True,
+    add_directory_items_batch(
+        [
+            (build_url("search_direct", mode="direct"), build_list_item(translation(90006), "search.png"), True),
+            (build_url("list_jackgram_latest_movies", page=1), build_list_item(translation(90369), "movies.png"), True),
+            (build_url("list_jackgram_latest_series", page=1), build_list_item(translation(90370), "tv.png"), True),
+            (build_url("list_jackgram_raw_files", page=1), build_list_item(translation(90371), "cloud.png"), True),
+        ]
     )
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -294,6 +275,7 @@ def search_tmdb_genres(params):
 def tv_shows_items(params):
     set_pluging_category(translation(90007))
     stremio_only = get_setting("stremio_only_catalogs", False)
+    directory_items = []
 
     if not stremio_only:
         for item in tv_items:
@@ -307,12 +289,8 @@ def tv_shows_items(params):
                     query=item["query"],
                     api=item["api"],
                 )
-            addDirectoryItem(
-                ADDON_HANDLE,
-                url,
-                build_list_item(item["name"], item["icon"]),
-                isFolder=True,
-            )
+            directory_items.append((url, build_list_item(item["name"], item["icon"]), True))
+    add_directory_items_batch(directory_items)
     list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -321,6 +299,7 @@ def tv_shows_items(params):
 def movies_items(params):
     set_pluging_category(translation(90008))
     stremio_only = get_setting("stremio_only_catalogs", False)
+    directory_items = []
 
     if not stremio_only:
         for item in movie_items:
@@ -334,12 +313,8 @@ def movies_items(params):
                     query=item["query"],
                     api=item["api"],
                 )
-            addDirectoryItem(
-                ADDON_HANDLE,
-                url,
-                build_list_item(item["name"], item["icon"]),
-                isFolder=True,
-            )
+            directory_items.append((url, build_list_item(item["name"], item["icon"]), True))
+    add_directory_items_batch(directory_items)
     list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -398,101 +373,72 @@ def trakt_group_menu(params):
 
 def search_menu(params):
     set_pluging_category(translation(90006))
+    directory_items = []
 
-    # -- Search Movies & TV --
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("handle_tmdb_search", mode="multi", page=1),
-        build_list_item(translation(90207), "search.png"),
-        isFolder=True,
+    directory_items.append(
+        (build_url("handle_tmdb_search", mode="multi", page=1), build_list_item(translation(90207), "search.png"), True)
     )
 
     # -- Direct Search --
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("search_direct", mode="direct"),
-        build_list_item(translation(90011), "search.png"),
-        isFolder=True,
+    directory_items.append(
+        (build_url("search_direct", mode="direct"), build_list_item(translation(90011), "search.png"), True)
     )
 
     # -- Keyword Search --
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("handle_keyword_search", mode="multi"),
-        build_list_item(translation(90368), "tmdb.png"),
-        isFolder=True,
+    directory_items.append(
+        (build_url("handle_keyword_search", mode="multi"), build_list_item(translation(90368), "tmdb.png"), True)
     )
 
     # -- Recent TMDb Searches --
     tmdb_history = cache.get_list(key="multi")
     if tmdb_history:
-        header = ListItem(label=f"[B][COLOR gray]— {translation(90208)} —[/COLOR][/B]")
+        header = make_list_item(label=f"[B][COLOR gray]— {translation(90208)} —[/COLOR][/B]")
         header.setProperty("IsPlayable", "false")
-        addDirectoryItem(ADDON_HANDLE, "", header, isFolder=False)
+        directory_items.append(("", header, False))
 
         for _, text in tmdb_history[:5]:
-            list_item = ListItem(label=f"[I]{text}[/I]")
+            list_item = make_list_item(label=f"[I]{text}[/I]")
             list_item.setArt(
                 {"icon": os.path.join(ADDON_PATH, "resources", "img", "tmdb.png")}
             )
             list_item.setProperty("IsPlayable", "false")
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url("handle_tmdb_search", mode="multi", page=1, query=text),
-                list_item,
-                isFolder=True,
-            )
+            directory_items.append((build_url("handle_tmdb_search", mode="multi", page=1, query=text), list_item, True))
 
     # -- Recent Direct Searches --
     direct_history = cache.get_list(key="direct")
     if direct_history:
-        header = ListItem(label=f"[B][COLOR gray]— {translation(90209)} —[/COLOR][/B]")
+        header = make_list_item(label=f"[B][COLOR gray]— {translation(90209)} —[/COLOR][/B]")
         header.setProperty("IsPlayable", "false")
-        addDirectoryItem(ADDON_HANDLE, "", header, isFolder=False)
+        directory_items.append(("", header, False))
 
         for mode, text in direct_history[:5]:
-            list_item = ListItem(label=f"[I]{text}[/I]")
+            list_item = make_list_item(label=f"[I]{text}[/I]")
             list_item.setArt(
                 {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
             )
             list_item.setProperty("IsPlayable", "true")
-            addDirectoryItem(
-                ADDON_HANDLE,
-                build_url("search", mode=mode, query=text, direct=True),
-                list_item,
-                isFolder=False,
-            )
+            directory_items.append((build_url("search", mode=mode, query=text, direct=True), list_item, False))
 
     # -- Clear All Search History --
     if tmdb_history or direct_history:
-        clear_li = ListItem(label=translation(90210))
+        clear_li = make_list_item(label=translation(90210))
         clear_li.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
         )
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url("clear_search_history"),
-            clear_li,
-            isFolder=True,
-        )
+        directory_items.append((build_url("clear_search_history"), clear_li, True))
 
+    add_directory_items_batch(directory_items)
     end_of_directory()
     apply_section_view("view.main", fallback="list")
 
 
 def anime_menu(params):
     set_pluging_category(translation(90009))
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("anime_item", mode="tv"),
-        build_list_item(translation(90007), "tv.png"),
-        isFolder=True,
-    )
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url("anime_item", mode="movies"),
-        build_list_item(translation(90008), "movies.png"),
-        isFolder=True,
+    add_directory_items_batch(
+        [
+            (build_url("anime_item", mode="tv"), build_list_item(translation(90007), "tv.png"), True),
+            (build_url("anime_item", mode="movies"), build_list_item(translation(90008), "movies.png"), True),
+        ]
     )
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -542,38 +488,44 @@ def anime_item(params):
     set_pluging_category(translation(90009))
     mode = params.get("mode")
     stremio_only = get_setting("stremio_only_catalogs", False)
+    directory_items = []
 
     if mode == "tv":
         if not stremio_only:
             for item in anime_items:
-                addDirectoryItem(
-                    ADDON_HANDLE,
-                    build_url(
-                        "search_item",
-                        category=item["category"],
-                        mode=item["mode"],
-                        submode=mode,
-                        api=item["api"],
-                    ),
-                    build_list_item(item["name"], item["icon"]),
-                    isFolder=True,
+                directory_items.append(
+                    (
+                        build_url(
+                            "search_item",
+                            category=item["category"],
+                            mode=item["mode"],
+                            submode=mode,
+                            api=item["api"],
+                        ),
+                        build_list_item(item["name"], item["icon"]),
+                        True,
+                    )
                 )
+        add_directory_items_batch(directory_items)
         list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
     if mode == "movies":
+        directory_items = []
         if not stremio_only:
             for item in anime_items:
-                addDirectoryItem(
-                    ADDON_HANDLE,
-                    build_url(
-                        "search_item",
-                        category=item["category"],
-                        mode=item["mode"],
-                        submode=mode,
-                        api=item["api"],
-                    ),
-                    build_list_item(item["name"], item["icon"]),
-                    isFolder=True,
+                directory_items.append(
+                    (
+                        build_url(
+                            "search_item",
+                            category=item["category"],
+                            mode=item["mode"],
+                            submode=mode,
+                            api=item["api"],
+                        ),
+                        build_list_item(item["name"], item["icon"]),
+                        True,
+                    )
                 )
+        add_directory_items_batch(directory_items)
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
