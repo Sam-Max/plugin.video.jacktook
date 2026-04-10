@@ -23,6 +23,8 @@ class Prowlarr(BaseClient):
         season: Optional[int] = None,
         episode: Optional[int] = None,
         indexers: Optional[str] = None,
+        variant=None,
+        year: Optional[int] = None,
     ) -> Optional[List[TorrentStream]]:
         headers = {
             "Accept": "application/json",
@@ -34,6 +36,12 @@ class Prowlarr(BaseClient):
             episode = self._coerce_int(episode)
             results = []
             futures = []
+
+            if mode == "movies" and year:
+                query_with_year = f"{query} {year}"
+            else:
+                query_with_year = query
+
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 if mode == "tv" and season:
                     if episode:
@@ -84,7 +92,10 @@ class Prowlarr(BaseClient):
                             )
                         )
                 else:
-                    params: Dict[str, Any] = {"query": query, "type": "search"}
+                    params: Dict[str, Any] = {
+                        "query": query_with_year,
+                        "type": "search",
+                    }
                     if mode == "movies":
                         params["categories"] = [2000, 8000]
                     elif mode == "anime":

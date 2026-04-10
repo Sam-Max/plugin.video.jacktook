@@ -203,40 +203,41 @@ class SourceSelect(BaseWindow):
         self.position = self.display_list.getSelectedPosition()
         selected_source = self.list_sources[self.position]
 
+        menu_items = []
+        menu_actions = []
+
         if selected_source.type == IndexerType.TORRENT:
-            response = xbmcgui.Dialog().contextmenu(
-                [translation(90365), translation(90359), translation(90083)]
-            )
-            kodilog(f"SourceSelect context menu response for torrent source: {response}")
-            if response == 0:
-                kodilog("SourceSelect context menu: invoking _download_to_debrid")
-                try:
-                    self._download_to_debrid(selected_source)
-                except Exception as e:
-                    kodilog(f"SourceSelect _download_to_debrid raised: {e}")
-                    notification(str(e))
-            elif response == 1:
-                self._add_to_torrserver(selected_source)
-            elif response == 2:
-                self._download_file(selected_source)
+            menu_items.extend([translation(90365), translation(90359), translation(90083)])
+            menu_actions.extend(["download_to_debrid", "add_to_torrserver", "download_file"])
         elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
-            response = xbmcgui.Dialog().contextmenu(
-                [translation(90083), translation(90082)]
-            )
-            if response == 0:
-                self._download_file(selected_source)
-            elif response == 1:
-                self._resolve_item(selected_source, is_subtitle_download=True)
+            menu_items.extend([translation(90083), translation(90082)])
+            menu_actions.extend(["download_file", "subtitle_download"])
         else:
-            response = xbmcgui.Dialog().contextmenu(
-                [translation(90084), translation(90083), translation(90082)]
-            )
-            if response == 0:
-                self._resolve_item(selected_source, pack_select=True)
-            elif response == 1:
-                self._download_file(selected_source)
-            elif response == 2:
-                self._resolve_item(selected_source, is_subtitle_download=True)
+            menu_items.extend([translation(90084), translation(90083), translation(90082)])
+            menu_actions.extend(["pack_select", "download_file", "subtitle_download"])
+
+        response = xbmcgui.Dialog().contextmenu(menu_items)
+        if response < 0 or response >= len(menu_actions):
+            return
+
+        action = menu_actions[response]
+        kodilog(
+            f"SourceSelect context action selected: action={action}, mode={self.item_information.get('mode')}, query={self.item_information.get('query')}, year={self.item_information.get('year')}"
+        )
+        if action == "download_to_debrid":
+            try:
+                self._download_to_debrid(selected_source)
+            except Exception as e:
+                kodilog(f"SourceSelect _download_to_debrid raised: {e}")
+                notification(str(e))
+        elif action == "add_to_torrserver":
+            self._add_to_torrserver(selected_source)
+        elif action == "download_file":
+            self._download_file(selected_source)
+        elif action == "subtitle_download":
+            self._resolve_item(selected_source, is_subtitle_download=True)
+        elif action == "pack_select":
+            self._resolve_item(selected_source, pack_select=True)
 
     def _handle_quality_select_action(self):
         quality_list = self.getControl(1300)

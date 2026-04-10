@@ -3958,3 +3958,55 @@ msgstr "Reset Saved Views"
 msgctxt "#90726"
 msgid "Open this screen, change the Kodi view manually, then select Save Current View."
 msgstr "Open this screen, change the Kodi view manually, then select Save Current View."
+
+msgctxt "#90730"
+msgid "Search with title + year"
+msgstr "Search with title + year"
+
+msgctxt "#90731"
+msgid "Search with original title"
+msgstr "Search with original title"
+
+msgctxt "#90732"
+msgid "Search with original title + year"
+msgstr "Search with original title + year"
+
+msgctxt "#90733"
+msgid "Search modes"
+msgstr "Search modes"
+
+msgctxt "#90734"
+msgid "Enter year"
+msgstr "Enter year"
+
+msgctxt "#90735"
+msgid "Invalid year"
+msgstr "Invalid year"
+
+msgctxt "#90736"
+msgid "Edit title"
+msgstr "Edit title"
+
+msgctxt "#90512"
+msgid "Season"
+msgstr "Season"
+
+msgctxt "#90737"
+msgid "Invalid season"
+msgstr "Invalid season"
+
+msgctxt "#90738"
+msgid "Episode"
+msgstr "Episode"
+
+msgctxt "#90739"
+msgid "Invalid episode"
+msgstr "Invalid episode"
+
+msgctxt "#90740"
+msgid "Edit current title"
+msgstr "Edit current title"
+
+msgctxt "#90741"
+msgid "Use original title"
+msgstr "Use original title"

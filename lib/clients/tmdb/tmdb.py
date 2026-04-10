@@ -52,6 +52,7 @@ def _apply_tmdb_view(mode, content_type=""):
     return apply_section_view("view.main", content_type=content_type, fallback="list")
 
 from xbmcgui import ListItem
+import xbmcgui
 import xbmc
 
 
@@ -1217,6 +1218,185 @@ class TmdbClient(BaseTmdbClient):
                 "ids": json.dumps(ids),
                 "rescrape": True,
                 "force_select": params.get("force_select", False),
+            }
+        )
+
+    @staticmethod
+    def tmdb_search_modes(params):
+        mode = params.get("mode", "")
+        media_type = params.get("media_type", "")
+        tmdb_id = params.get("tmdb_id", "")
+        query = params.get("query", "")
+
+        if mode == "anime":
+            mode = params.get("submode", mode)
+        if mode == "multi":
+            if media_type == "movie":
+                mode = "movies"
+            elif media_type == "tv":
+                mode = "tv"
+
+        if mode != "movies":
+            return
+
+        tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, tmdb_id)
+        if not tmdb_obj:
+            notification(translation(90393))
+            return
+
+        selected = xbmcgui.Dialog().select(
+            translation(90733),
+            [translation(90730), translation(90731), translation(90732)],
+        )
+        if selected < 0:
+            return
+
+        variant_map = {
+            0: "title_year",
+            1: "original_title",
+            2: "original_title_year",
+        }
+        variant = variant_map.get(selected)
+        if not variant:
+            return
+
+        edited_query = show_keyboard(id=90736, default=query)
+        if not edited_query:
+            return
+        query = str(edited_query).strip()
+        if not query:
+            return
+
+        year = ""
+        if variant in ("title_year", "original_title_year"):
+            year_input = xbmcgui.Dialog().numeric(0, translation(90734), "")
+            if not year_input:
+                return
+
+            year_input = str(year_input).strip()
+            if not (year_input.isdigit() and len(year_input) == 4):
+                notification(translation(90735))
+                return
+
+            year = year_input
+
+        external_ids = tmdb_obj.get("external_ids") or {}
+        ids = {
+            "tmdb_id": tmdb_id,
+            "imdb_id": external_ids.get("imdb_id", ""),
+            "tvdb_id": external_ids.get("tvdb_id", ""),
+        }
+
+        kodilog(
+            f"TMDB search mode selected: query={query}, tmdb_id={tmdb_id}, variant={variant}, year={year}"
+        )
+
+        from lib.search import run_search_entry
+
+        run_search_entry(
+            {
+                "query": query,
+                "mode": mode,
+                "ids": json.dumps(ids),
+                "rescrape": True,
+                "force_select": True,
+                "search_variant": variant,
+                "year": year,
+            }
+        )
+
+    @staticmethod
+    def tmdb_episode_search_modes(params):
+        mode = params.get("mode", "")
+        media_type = params.get("media_type", "")
+        query = params.get("query", "")
+        ids = json.loads(params.get("ids", "{}"))
+        tv_data = json.loads(params.get("tv_data", "{}"))
+        tmdb_id = ids.get("tmdb_id", "")
+
+        if mode == "anime":
+            mode = params.get("submode", mode)
+        if mode == "multi":
+            if media_type == "movie":
+                mode = "movies"
+            elif media_type == "tv":
+                mode = "tv"
+
+        if mode != "tv":
+            return
+
+        tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, tmdb_id)
+        if not tmdb_obj:
+            notification(translation(90393))
+            return
+
+        original_name = getattr(tmdb_obj, "original_name", "") or ""
+
+        selected = xbmcgui.Dialog().select(
+            translation(90733),
+            [translation(90740), translation(90741)],
+        )
+        if selected < 0:
+            return
+
+        if selected == 0:
+            edited_query = show_keyboard(id=90736, default=query)
+            if not edited_query:
+                return
+            query = str(edited_query).strip()
+        elif selected == 1:
+            if original_name:
+                query = original_name
+            edited_query = show_keyboard(id=90736, default=query)
+            if not edited_query:
+                return
+            query = str(edited_query).strip()
+        else:
+            return
+
+        if not query:
+            return
+
+        season_default = str(tv_data.get("season", ""))
+        season_input = xbmcgui.Dialog().numeric(0, translation(90512), season_default)
+        if not season_input:
+            return
+        season_input = str(season_input).strip()
+        if not season_input.isdigit():
+            notification(translation(90737))
+            return
+
+        episode_default = str(tv_data.get("episode", ""))
+        episode_input = xbmcgui.Dialog().numeric(
+            0, translation(90738), episode_default
+        )
+        if not episode_input:
+            return
+        episode_input = str(episode_input).strip()
+        if not episode_input.isdigit():
+            notification(translation(90739))
+            return
+
+        updated_tv_data = {
+            "name": tv_data.get("name", ""),
+            "season": int(season_input),
+            "episode": int(episode_input),
+        }
+
+        kodilog(
+            f"TMDB episode search mode selected: query={query}, season={season_input}, episode={episode_input}, ids={ids}"
+        )
+
+        from lib.search import run_search_entry
+
+        run_search_entry(
+            {
+                "query": query,
+                "mode": mode,
+                "ids": json.dumps(ids),
+                "tv_data": json.dumps(updated_tv_data),
+                "rescrape": True,
+                "force_select": True,
             }
         )
 

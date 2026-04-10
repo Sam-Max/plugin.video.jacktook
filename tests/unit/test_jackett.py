@@ -121,3 +121,52 @@ def test_extract_result(jackett_client):
     assert res.title == "Test Title"
     assert res.seeders == 10
     assert res.peers == 5
+
+
+def test_jackett_url_with_year_parameter(jackett_client):
+    url = jackett_client._build_url(
+        "http://localhost:9117/api/v2.0/indexers/all/results/torznab/api?apikey=test",
+        "Inception",
+        "movies",
+        year=2010,
+    )
+
+    assert "&year=2010" in url
+    assert "&t=movie" in url
+    assert "&q=Inception" in url
+
+
+def test_jackett_url_without_year_parameter(jackett_client):
+    url = jackett_client._build_url(
+        "http://localhost:9117/api/v2.0/indexers/all/results/torznab/api?apikey=test",
+        "Inception",
+        "movies",
+    )
+
+    assert "&year=" not in url
+    assert "&t=movie" in url
+    assert "&q=Inception" in url
+
+
+def test_jackett_search_with_year_passes_to_indexer(jackett_client):
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed">
+        <channel>
+            <item>
+                <title>Test</title>
+                <size>100</size>
+                <pubDate>2023-01-01</pubDate>
+            </item>
+        </channel>
+    </rss>"""
+
+    jackett_client.session.get.return_value = mock_response
+
+    with patch("lib.clients.jackett.get_jackett_timeout", return_value=10):
+        jackett_client.search("Inception", "movies", year=2010)
+
+    call_args = jackett_client.session.get.call_args
+    url = call_args[0][0]
+    assert "&year=2010" in url

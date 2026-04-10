@@ -4,6 +4,7 @@ import hashlib
 import unicodedata
 import json
 from email.utils import parsedate_to_datetime
+from enum import Enum
 from urllib.parse import unquote
 import requests
 from typing import Dict, List
@@ -211,6 +212,13 @@ class Indexer(Enum):
     BURST = "Burst"
     ZILEAN = "Zilean"
     EASYNEWS = "Easynews"
+
+
+class SearchVariant(Enum):
+    DEFAULT = "default"
+    TITLE_YEAR = "title_year"
+    ORIGINAL_TITLE = "original_title"
+    ORIGINAL_TITLE_YEAR = "original_title_year"
 
 
 class Players(Enum):

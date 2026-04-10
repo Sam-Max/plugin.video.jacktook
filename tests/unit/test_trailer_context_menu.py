@@ -32,6 +32,19 @@ def _parse_playmedia_command(command):
     }
 
 
+def _get_menu_item(menu, label):
+    for item_label, command in menu:
+        if item_label == label:
+            return item_label, command
+    return None
+
+
+def _parse_runplugin_command(command):
+    url = command[len("RunPlugin(") : -1]
+    query = parse_qs(urlparse(url).query)
+    return {key: values[0] for key, values in query.items()}
+
+
 def test_movie_context_menu_contains_play_trailer_when_tmdb_id_exists():
     with patch("lib.clients.tmdb.utils.utils.translation", side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}"):
         menu = add_tmdb_movie_context_menu(
@@ -64,6 +77,32 @@ def test_movie_context_menu_hides_play_trailer_without_tmdb_or_youtube_metadata(
         )
 
     assert _get_trailer_menu_item(menu) is None
+
+
+def test_movie_context_menu_contains_search_modes_entry():
+    search_modes_label = "Search modes"
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: search_modes_label if value == 90733 else f"t-{value}",
+    ):
+        menu = add_tmdb_movie_context_menu(
+            mode="movies",
+            media_type="movie",
+            title="Demo Movie",
+            ids={"tmdb_id": 550},
+        )
+
+    item = _get_menu_item(menu, search_modes_label)
+
+    assert item is not None
+    assert _parse_runplugin_command(item[1]) == {
+        "action": "tmdb_search_modes",
+        "mode": "movies",
+        "media_type": "movie",
+        "query": "Demo Movie",
+        "tmdb_id": "550",
+    }
 
 
 def test_tv_context_menu_contains_play_trailer_when_tmdb_id_exists():

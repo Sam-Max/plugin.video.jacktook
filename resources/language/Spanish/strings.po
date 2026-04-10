@@ -3615,3 +3615,55 @@ msgstr "Reproducir con Torrent"
 msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Cancelar y Esperar"
+
+msgctxt "#90730"
+msgid "Search with title + year"
+msgstr "Buscar con título + año"
+
+msgctxt "#90731"
+msgid "Search with original title"
+msgstr "Buscar con título original"
+
+msgctxt "#90732"
+msgid "Search with original title + year"
+msgstr "Buscar con título original + año"
+
+msgctxt "#90733"
+msgid "Search modes"
+msgstr "Modos de búsqueda"
+
+msgctxt "#90734"
+msgid "Enter year"
+msgstr "Introduce el año"
+
+msgctxt "#90735"
+msgid "Invalid year"
+msgstr "Año no válido"
+
+msgctxt "#90736"
+msgid "Edit title"
+msgstr "Editar título"
+
+msgctxt "#90512"
+msgid "Season"
+msgstr "Temporada"
+
+msgctxt "#90737"
+msgid "Invalid season"
+msgstr "Temporada no válida"
+
+msgctxt "#90738"
+msgid "Episode"
+msgstr "Episodio"
+
+msgctxt "#90739"
+msgid "Invalid episode"
+msgstr "Episodio no válido"
+
+msgctxt "#90740"
+msgid "Edit current title"
+msgstr "Editar título actual"
+
+msgctxt "#90741"
+msgid "Use original title"
+msgstr "Usar título original"

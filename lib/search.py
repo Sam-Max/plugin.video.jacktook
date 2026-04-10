@@ -1,5 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List
+from typing import List, Optional
 
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
@@ -14,6 +14,7 @@ from lib.utils.clients.utils import get_client, update_dialog
 from lib.utils.general.utils import (
     DialogListener,
     Indexer,
+    SearchVariant,
     cache_results,
     get_cached_results,
     pre_process,
@@ -66,6 +67,16 @@ def _unique_title_candidates(candidates: List[str]) -> List[str]:
     return unique
 
 
+def _normalize_search_variant(variant) -> str:
+    allowed = {
+        SearchVariant.DEFAULT,
+        SearchVariant.TITLE_YEAR,
+        SearchVariant.ORIGINAL_TITLE,
+        SearchVariant.ORIGINAL_TITLE_YEAR,
+    }
+    return variant if variant in allowed else SearchVariant.DEFAULT
+
+
 def _extract_english_tmdb_title(details, mode: str) -> str:
     translations = getattr(details, "translations", None)
     entries = getattr(translations, "translations", translations)
@@ -87,8 +98,25 @@ def _extract_english_tmdb_title(details, mode: str) -> str:
     return ""
 
 
-def _build_title_fallback_queries(query: str, ids: dict, mode: str) -> List[str]:
-    candidates = [query]
+def _build_title_fallback_queries(
+    query: str,
+    ids: dict,
+    mode: str,
+    variant: str = SearchVariant.DEFAULT,
+    year: Optional[int] = None,
+) -> List[str]:
+    variant = _normalize_search_variant(variant)
+    candidates = []
+
+    cleaned_query = _clean_title_candidate(query)
+    cleaned_year = _clean_title_candidate(year)
+
+    if cleaned_query:
+        if cleaned_year and variant == SearchVariant.TITLE_YEAR:
+            candidates.append(f"{cleaned_query} {cleaned_year}")
+        elif variant == SearchVariant.DEFAULT:
+            candidates.append(cleaned_query)
+
     if not ids:
         return _unique_title_candidates(candidates)
 
@@ -107,10 +135,30 @@ def _build_title_fallback_queries(query: str, ids: dict, mode: str) -> List[str]
     if not details:
         return _unique_title_candidates(candidates)
 
-    candidates.append(_extract_english_tmdb_title(details, mode))
-    candidates.append(
-        getattr(details, "original_title", "") or getattr(details, "original_name", "")
+    english_title = _extract_english_tmdb_title(details, mode)
+    original_title = getattr(details, "original_title", "") or getattr(
+        details, "original_name", ""
     )
+
+    if variant == SearchVariant.DEFAULT:
+        fallback_titles = [english_title, original_title]
+        for title in fallback_titles:
+            if title:
+                candidates.append(title)
+    elif variant == SearchVariant.ORIGINAL_TITLE:
+        if original_title:
+            candidates.append(original_title)
+        elif cleaned_query:
+            candidates.append(cleaned_query)
+    elif variant == SearchVariant.ORIGINAL_TITLE_YEAR:
+        if original_title and cleaned_year:
+            candidates.append(f"{original_title} {cleaned_year}")
+        elif original_title:
+            candidates.append(original_title)
+        elif cleaned_query and cleaned_year:
+            candidates.append(f"{cleaned_query} {cleaned_year}")
+        elif cleaned_query:
+            candidates.append(cleaned_query)
 
     return _unique_title_candidates(candidates)
 
@@ -122,9 +170,12 @@ def _perform_search_with_title_fallback(
     ids: dict,
     mode: str,
     *args,
+    variant: str = SearchVariant.DEFAULT,
+    year: Optional[int] = None,
     **kwargs,
 ):
-    queries = _build_title_fallback_queries(query, ids, mode)
+    variant = _normalize_search_variant(variant)
+    queries = _build_title_fallback_queries(query, ids, mode, variant, year)
 
     for attempt, candidate in enumerate(queries, start=1):
         if attempt > 1:
@@ -133,7 +184,9 @@ def _perform_search_with_title_fallback(
                 level=xbmc.LOGINFO,
             )
 
-        results = _perform_search(indexer_key, dialog, candidate, mode, *args, **kwargs)
+        results = _perform_search(
+            indexer_key, dialog, candidate, mode, *args, variant=variant, year=year, **kwargs
+        )
         if results:
             return results
 
@@ -261,6 +314,18 @@ def run_search_entry(params: dict):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
 
+    variant = _normalize_search_variant(params.get("search_variant", SearchVariant.DEFAULT))
+    year = params.get("year")
+    if year is not None:
+        try:
+            year = int(year)
+        except (ValueError, TypeError):
+            year = None
+
+    kodilog(
+        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, variant={variant}, year={year}, rescrape={rescrape}, force_select={params.get('force_select', False)}"
+    )
+
     library_data = None
     if params.get("stremio_addon_url") and params.get("stremio_catalog_type"):
         library_data = {
@@ -288,6 +353,8 @@ def run_search_entry(params: dict):
         season,
         episode,
         scoped_addon_url=scoped_addon_url,
+        variant=variant,
+        year=year,
     )
     if not results:
         notification("No results found")
@@ -319,7 +386,16 @@ def run_search_entry(params: dict):
             cancel_playback()
         return
 
-    if not show_source_select(final_results, mode, ids, tv_data, direct):
+    if not show_source_select(
+        final_results,
+        mode,
+        ids,
+        tv_data,
+        query,
+        media_type,
+        rescrape,
+        direct,
+    ):
         cancel_playback()
 
 
@@ -399,12 +475,18 @@ def _submit_search_tasks(
     tmdb_id,
     imdb_id,
     show_dialog,
+    variant: str = SearchVariant.DEFAULT,
+    year: Optional[int] = None,
 ):
     def submit_performer(*args, **kwargs):
         if "show_dialog" not in kwargs:
             kwargs["show_dialog"] = show_dialog
         if "scoped_addon_url" not in kwargs:
             kwargs["scoped_addon_url"] = scoped_addon_url
+        if "variant" not in kwargs:
+            kwargs["variant"] = variant
+        if "year" not in kwargs:
+            kwargs["year"] = year
         return executor.submit(
             _perform_search,
             *args,
@@ -465,6 +547,8 @@ def _submit_search_tasks(
                     indexers_ids,
                     show_dialog=show_dialog,
                     scoped_addon_url=scoped_addon_url,
+                    variant=variant,
+                    year=year,
                 )
             )
         add_task_if_enabled(
@@ -481,6 +565,8 @@ def _submit_search_tasks(
             episode,
             show_dialog=show_dialog,
             scoped_addon_url=scoped_addon_url,
+            variant=variant,
+            year=year,
         )
         add_task_if_enabled(
             executor,
@@ -549,11 +635,17 @@ def _submit_search_tasks_managed(
     scoped_addon_url,
     tmdb_id,
     imdb_id,
+    variant: str = SearchVariant.DEFAULT,
+    year: Optional[int] = None,
 ):
     def submit_performer_managed(name, indexer_key, *args, **kwargs):
         kwargs["show_dialog"] = False
         if "scoped_addon_url" not in kwargs:
             kwargs["scoped_addon_url"] = scoped_addon_url
+        if "variant" not in kwargs:
+            kwargs["variant"] = variant
+        if "year" not in kwargs:
+            kwargs["year"] = year
         return manager.submit_task(
             name,
             indexer_key,
@@ -625,6 +717,8 @@ def _submit_search_tasks_managed(
                 indexers_ids,
                 show_dialog=False,
                 scoped_addon_url=scoped_addon_url,
+                variant=variant,
+                year=year,
             )
         add_task_if_enabled_managed(
             manager,
@@ -639,6 +733,8 @@ def _submit_search_tasks_managed(
             episode,
             show_dialog=False,
             scoped_addon_url=scoped_addon_url,
+            variant=variant,
+            year=year,
         )
         add_task_if_enabled_managed(
             manager,
@@ -683,6 +779,8 @@ def search_client(
     episode: int,
     show_dialog: bool = True,
     scoped_addon_url: str = "",
+    variant: str = SearchVariant.DEFAULT,
+    year: Optional[int] = None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
 
@@ -712,6 +810,8 @@ def search_client(
             scoped_addon_url,
             tmdb_id,
             imdb_id,
+            variant=variant,
+            year=year,
         )
 
         item_info = {"ids": ids, "mode": mode}
@@ -755,6 +855,8 @@ def search_client(
                     tmdb_id,
                     imdb_id,
                     show_dialog,
+                    variant=variant,
+                    year=year,
                 )
 
                 total_results = _collect_search_results(tasks, listener, show_dialog)
@@ -798,12 +900,26 @@ def show_source_select(
     mode: str,
     ids: dict,
     tv_data: dict,
+    query: str,
+    media_type: str,
+    rescrape: bool,
     direct: bool = False,
 ) -> bool:
-    item_info = {"tv_data": tv_data, "ids": ids, "mode": mode}
+    item_info = {
+        "tv_data": tv_data,
+        "ids": ids,
+        "mode": mode,
+        "query": query,
+        "media_type": media_type,
+        "rescrape": rescrape,
+    }
 
     if not direct and ids:
         item_info.update(build_media_metadata(ids, mode))
+
+    kodilog(
+        f"show_source_select context: query={query}, mode={mode}, media_type={media_type}, year={item_info.get('year')}, ids={ids}"
+    )
 
     xml_file_string = (
         "source_select_direct.xml" if mode == "direct" else "source_select.xml"

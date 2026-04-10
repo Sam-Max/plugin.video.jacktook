@@ -2,7 +2,146 @@ from unittest.mock import patch
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.domain.torrent import TorrentStream
-from lib.search import _build_title_fallback_queries, _perform_search_with_title_fallback
+from lib.search import (
+    _build_title_fallback_queries,
+    _perform_search_with_title_fallback,
+    SearchVariant,
+)
+
+
+def test_search_variant_enum_values():
+    if not hasattr(SearchVariant, '__members__'):
+        return
+    assert SearchVariant.DEFAULT.value == "default"
+    assert SearchVariant.TITLE_YEAR.value == "title_year"
+    assert SearchVariant.ORIGINAL_TITLE.value == "original_title"
+    assert SearchVariant.ORIGINAL_TITLE_YEAR.value == "original_title_year"
+
+
+def test_build_title_fallback_queries_default_variant_uses_fallback_behavior():
+    details = AsObj(
+        {
+            "original_title": "The Intouchables",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "en", "data": {"title": "The Intouchables"}},
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Intocable",
+            {"tmdb_id": "77338"},
+            "movies",
+            variant=SearchVariant.DEFAULT,
+        )
+
+    assert "Intocable" in queries
+    assert "The Intouchables" in queries
+
+
+def test_build_title_fallback_queries_title_year_appends_year():
+    queries = _build_title_fallback_queries(
+        "Inception",
+        {"tmdb_id": "27205"},
+        "movies",
+        variant=SearchVariant.TITLE_YEAR,
+        year=2010,
+    )
+
+    assert queries == ["Inception 2010"]
+
+
+def test_build_title_fallback_queries_original_title_uses_tmdb_original():
+    details = AsObj(
+        {
+            "original_title": "千と千尋の神隠し",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "en", "data": {"title": "Spirited Away"}},
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Spirited Away",
+            {"tmdb_id": "129"},
+            "movies",
+            variant=SearchVariant.ORIGINAL_TITLE,
+        )
+
+    assert queries == ["千と千尋の神隠し"]
+
+
+def test_build_title_fallback_queries_original_title_year_appends_year():
+    details = AsObj(
+        {
+            "original_title": "千と千尋の神隠し",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "en", "data": {"title": "Spirited Away"}},
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Spirited Away",
+            {"tmdb_id": "129"},
+            "movies",
+            variant=SearchVariant.ORIGINAL_TITLE_YEAR,
+            year=2001,
+        )
+
+    assert queries == ["千と千尋の神隠し 2001"]
+
+
+def test_build_title_fallback_queries_title_year_without_ids():
+    queries = _build_title_fallback_queries(
+        "Inception",
+        {},
+        "movies",
+        variant=SearchVariant.TITLE_YEAR,
+        year=2010,
+    )
+
+    assert queries == ["Inception 2010"]
+
+
+def test_build_title_fallback_queries_original_title_fallbacks_to_query():
+    details = AsObj(
+        {
+            "original_title": "",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "en", "data": {"title": "Some Movie"}},
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Some Movie",
+            {"tmdb_id": "123"},
+            "movies",
+            variant=SearchVariant.ORIGINAL_TITLE,
+        )
+
+    assert queries == ["Some Movie"]
 
 
 def test_build_title_fallback_queries_prefers_english_translation_for_movies():

@@ -43,6 +43,7 @@ class Jackett(BaseClient):
         categories: Optional[List[int]] = None,
         additional_params: Optional[dict] = None,
         season_pack=False,
+        year: Optional[int] = None,
     ) -> str:
         url = f"{base_url}&q={quote(query)}"
         if mode == "tv":
@@ -59,6 +60,9 @@ class Jackett(BaseClient):
         if categories:
             url += f"&cat={','.join(map(str, categories))}"
 
+        if year and mode == "movies":
+            url += f"&year={year}"
+
         if additional_params:
             for key, value in additional_params.items():
                 url += f"&{key}={value}"
@@ -74,6 +78,7 @@ class Jackett(BaseClient):
         episode: Optional[int] = None,
         categories: Optional[List[int]] = None,
         additional_params: Optional[dict] = None,
+        year: Optional[int] = None,
     ) -> Optional[List[TorrentStream]]:
         try:
             results = []
@@ -89,6 +94,7 @@ class Jackett(BaseClient):
                             episode,
                             categories,
                             additional_params,
+                            year=year,
                         )
                         futures.append(
                             executor.submit(
@@ -105,6 +111,7 @@ class Jackett(BaseClient):
                             categories,
                             additional_params,
                             season_pack=True,
+                            year=year,
                         )
                         futures.append(
                             executor.submit(
@@ -122,6 +129,7 @@ class Jackett(BaseClient):
                         episode,
                         categories,
                         additional_params,
+                        year=year,
                     )
                     futures.append(
                         executor.submit(
@@ -150,6 +158,8 @@ class Jackett(BaseClient):
         episode: Optional[int] = None,
         categories: Optional[List[int]] = None,
         additional_params: Optional[dict] = None,
+        variant=None,
+        year: Optional[int] = None,
     ) -> Optional[List[TorrentStream]]:
         try:
             return self.search_indexer(
@@ -160,6 +170,7 @@ class Jackett(BaseClient):
                 episode,
                 categories,
                 additional_params,
+                year=year,
             )
         except Exception as e:
             self.handle_exception(f"{translation(30229)}: {str(e)}")

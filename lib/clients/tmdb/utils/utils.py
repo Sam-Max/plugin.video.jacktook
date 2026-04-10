@@ -22,6 +22,7 @@ from lib.api.tmdbv3api.objs.tv import TV
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    action_url_run,
     container_update,
     execute_builtin,
     kodilog,
@@ -494,6 +495,16 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
             "Extras",
             f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type={media_type}&title={parse.quote(title or '')})",
         ),
+        (
+            translation(90733),
+            action_url_run(
+                "tmdb_search_modes",
+                mode=mode,
+                media_type=media_type,
+                query=title,
+                tmdb_id=ids.get("tmdb_id"),
+            ),
+        ),
     ]
     trailer_item = build_play_trailer_context_menu_item(
         ids=ids,
@@ -633,6 +644,17 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
                 ids=ids,
                 tv_data=tv_data,
                 force_select=True,
+            ),
+        ),
+        (
+            translation(90733),
+            action_url_run(
+                "tmdb_episode_search_modes",
+                mode=mode,
+                media_type="tv",
+                query=tv_name,
+                ids=ids,
+                tv_data=tv_data,
             ),
         ),
         (

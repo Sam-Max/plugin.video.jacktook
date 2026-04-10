@@ -112,7 +112,7 @@ def _is_stremio_action(action):
 
 
 def _is_tmdb_action(action):
-    return action.startswith(
+    return action in ("tmdb_search_modes", "tmdb_episode_search_modes") or action.startswith(
         (
             "handle_tmdb",
             "search_tmdb",
@@ -326,6 +326,8 @@ def _route_tmdb(action, params):
             "search_tmbd_network": TmdbClient.show_network_items,
             "search_tmdb_recommendations": TmdbClient.search_tmdb_recommendations,
             "search_tmdb_similar": TmdbClient.search_tmdb_similar,
+            "tmdb_search_modes": TmdbClient.tmdb_search_modes,
+            "tmdb_episode_search_modes": TmdbClient.tmdb_episode_search_modes,
             "rescrape_tmdb_media": TmdbClient.rescrape_tmdb_media,
             "show_tmdb_item": TmdbClient.show_tmdb_item,
             "handle_collection_query": TmdbClient.handle_collection_query,
