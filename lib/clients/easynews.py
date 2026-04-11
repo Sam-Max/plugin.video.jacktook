@@ -182,7 +182,7 @@ class Easynews(BaseClient):
 
     def get_info(self) -> None:
         from datetime import datetime
-        from lib.utils.kodi.utils import dialog_text, kodilog
+        from lib.utils.kodi.utils import dialog_text, kodilog, translation
 
         try:
             acc_info, usage_info = self.account()
