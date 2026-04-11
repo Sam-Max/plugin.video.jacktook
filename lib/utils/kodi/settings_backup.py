@@ -32,10 +32,10 @@ from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     ADDON_VERSION,
     dialog_ok,
-    get_property,
+    get_cached_setting_property,
     get_setting,
     notification,
-    set_property,
+    set_cached_setting_property,
     set_setting,
     translation,
     translatePath,
@@ -185,7 +185,9 @@ def build_backup_payload(strip_sensitive=False, settings_xml_path=SETTINGS_XML_P
     for setting_id, default_value in EXTRA_DYNAMIC_SETTINGS.items():
         if strip_sensitive and setting_id in SENSITIVE_DYNAMIC_SETTING_IDS:
             continue
-        dynamic_settings_payload[setting_id] = get_property(setting_id) or default_value
+        dynamic_settings_payload[setting_id] = (
+            get_cached_setting_property(setting_id) or default_value
+        )
 
     return {
         "backup_version": BACKUP_VERSION,
@@ -267,9 +269,9 @@ def apply_backup_payload(payload, settings_xml_path=SETTINGS_XML_PATH):
 
     for setting_id, default_value in EXTRA_DYNAMIC_SETTINGS.items():
         if strip_sensitive:
-            set_property(setting_id, default_value)
+            set_cached_setting_property(setting_id, default_value)
             continue
-        set_property(
+        set_cached_setting_property(
             setting_id,
             _stringify_setting_value(dynamic_settings_payload.get(setting_id, default_value)),
         )
@@ -323,7 +325,7 @@ def reset_all_settings(settings_xml_path=SETTINGS_XML_PATH):
         set_setting(setting_id, _setting_clear_value(setting_id, schema_entry))
 
     for setting_id, default_value in EXTRA_DYNAMIC_SETTINGS.items():
-        set_property(setting_id, default_value)
+        set_cached_setting_property(setting_id, default_value)
 
     current_user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
     current_custom_addons = _get_custom_stremio_addons(current_user_addons)

@@ -50,6 +50,7 @@ def _get_jacktorr_addon():
 
 JACKTORR_ADDON = _get_jacktorr_addon()
 
+
 ADDON = xbmcaddon.Addon()
 try:
     ADDON_HANDLE = int(sys.argv[1])
@@ -88,12 +89,21 @@ def get_jacktorr_setting(value, default=None):
     return value
 
 
-def get_setting(id, default=None):
-    val = ADDON.getSetting(id)
+def _setting_cache_prop(setting_id: str) -> str:
+    return f"jacktook.setting.{setting_id}"
+
+
+def get_cached_setting_property(setting_id: str):
+    return Window(10000).getProperty(_setting_cache_prop(setting_id))
+
+
+def set_cached_setting_property(setting_id: str, value: Any):
+    Window(10000).setProperty(_setting_cache_prop(setting_id), str(value))
+
+
+def _normalize_setting_value(val, default=None):
     if not val:
-        val = Window(10000).getProperty(id)
-        if not val:
-            return default
+        return default
     if isinstance(val, str):
         if val.lower() == "true":
             return True
@@ -102,9 +112,22 @@ def get_setting(id, default=None):
     return val
 
 
+def get_setting(id, default=None):
+    val = get_cached_setting_property(id)
+    if val:
+        return _normalize_setting_value(val, default)
+
+    val = ADDON.getSetting(id)
+    if val:
+        set_cached_setting_property(id, val)
+        return _normalize_setting_value(val, default)
+
+    return default
+
+
 def set_setting(id, value):
     ADDON.setSetting(id, value)
-    Window(10000).setProperty(id, value)
+    set_cached_setting_property(id, value)
 
 
 def get_property_no_fallback(prop: str):
