@@ -32,9 +32,11 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    action_url_run,
     apply_section_view,
     build_url,
     end_of_directory,
+    execute_builtin,
     finish_action,
     get_setting,
     notification,
@@ -100,18 +102,16 @@ def cloud_details(params):
         return
 
     downloads_action = actions.get("downloads")
-    if downloads_action:
-        addDirectoryItem(
-            ADDON_HANDLE,
-            build_url(downloads_action),
-            build_list_item("Downloads", "download.png"),
-            isFolder=True,
-        )
+    if not downloads_action:
+        end_of_directory(cache=False)
+        DEBRID_INFO_HANDLERS[debrid_name]()
+        return
+
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url(actions["info"]),
-        build_list_item("Account Info", "download.png"),
-        isFolder=False,
+        build_url(downloads_action),
+        build_list_item("Downloads", "download.png"),
+        isFolder=True,
     )
     end_of_directory()
     apply_section_view("view.downloads", content_type="files", fallback="list")
@@ -124,6 +124,12 @@ def cloud(params):
     ]
     for debrid in activated_debrids:
         torrent_li = build_list_item(debrid, "download.png")
+        actions = DEBRID_CLOUD_ACTIONS.get(debrid, {})
+        info_action = actions.get("info")
+        if info_action:
+            torrent_li.addContextMenuItems(
+                [("Account Info", action_url_run(info_action))]
+            )
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("cloud_details", debrid_name=debrid),
@@ -143,22 +149,24 @@ def cloud(params):
 
 
 def real_debrid_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.RD]()
     finish_action()
+    DEBRID_INFO_HANDLERS[DebridType.RD]()
 
 
 def alldebrid_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.AD]()
     finish_action()
+    DEBRID_INFO_HANDLERS[DebridType.AD]()
 
 
 def debrider_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.DB]()
     finish_action()
+    DEBRID_INFO_HANDLERS[DebridType.DB]()
 
 
 def easynews_info(params):
     from lib.clients.easynews import Easynews
+
+    finish_action()
 
     user = str(get_setting("easynews_user") or "")
     password = str(get_setting("easynews_password") or "")
@@ -166,11 +174,9 @@ def easynews_info(params):
 
     if not user or not password:
         notification(translation(90425))
-        finish_action()
         return
 
     Easynews(user, password, timeout, notification).get_info()
-    finish_action()
 
 
 def get_rd_downloads(params):
@@ -338,5 +344,5 @@ def tb_remove_auth(params):
 
 
 def torbox_info(params):
-    DEBRID_INFO_HANDLERS[DebridType.TB]()
     finish_action()
+    DEBRID_INFO_HANDLERS[DebridType.TB]()
