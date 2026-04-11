@@ -857,8 +857,6 @@ class TmdbClient(BaseTmdbClient):
 
     @staticmethod
     def show_calendar_items(query, page, mode):
-        from lib.clients.tmdb.utils.utils import get_tmdb_show_details
-
         set_pluging_category(translation(90021))
         trending_data = tmdb_get("tv_week", page)
         if not trending_data or getattr(trending_data, "total_results") == 0:
@@ -923,12 +921,11 @@ class TmdbClient(BaseTmdbClient):
             ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
             tmdb_id = getattr(show, "id")
-            show_details = get_tmdb_show_details(tmdb_id)
-            if show_details is None:
+            if details is None:
                 kodilog(f"Show details not found for TMDB ID: {tmdb_id}")
                 continue
 
-            external_ids = getattr(show_details, "external_ids")
+            external_ids = getattr(details, "external_ids")
             imdb_id = external_ids.get("imdb_id", "")
             tvdb_id = external_ids.get("tvdb_id", "")
 
