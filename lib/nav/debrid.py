@@ -1,5 +1,6 @@
 from threading import Thread
 from typing import Any, Dict, List
+from datetime import timedelta
 
 from xbmcplugin import addDirectoryItem
 
@@ -20,6 +21,7 @@ from lib.services.debrid.auth import (
     run_torbox_auth,
 )
 from lib.services.debrid.download import run_realdebrid_download
+from lib.db.cached import cache
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -33,6 +35,7 @@ from lib.utils.kodi.utils import (
     apply_section_view,
     build_url,
     end_of_directory,
+    finish_action,
     get_setting,
     notification,
     translation,
@@ -59,8 +62,8 @@ def _start_premiumize_download(magnet):
 
 DEBRID_CLOUD_ACTIONS = {
     DebridType.RD: {"downloads": "get_rd_downloads", "info": "real_debrid_info"},
-    DebridType.DB: {"downloads": "get_db_downloads", "info": "debrider_info"},
-    DebridType.AD: {"downloads": "get_ad_downloads", "info": "alldebrid_info"},
+    DebridType.DB: {"info": "debrider_info"},
+    DebridType.AD: {"info": "alldebrid_info"},
     DebridType.TB: {"downloads": "get_tb_downloads", "info": "torbox_info"},
 }
 
@@ -78,6 +81,13 @@ DEBRID_INFO_HANDLERS = {
 }
 
 
+DEBRID_CLOUD_CACHE_EXPIRY = timedelta(hours=1)
+
+
+def _cloud_downloads_cache_key(provider: str, page: int = 1) -> str:
+    return f"cloud_downloads|{provider}|{page}"
+
+
 def cloud_details(params):
     debrid_name = params.get("debrid_name")
     if debrid_name == DebridType.PM:
@@ -89,17 +99,19 @@ def cloud_details(params):
         notification(translation(90424))
         return
 
-    addDirectoryItem(
-        ADDON_HANDLE,
-        build_url(actions["downloads"]),
-        build_list_item("Downloads", "download.png"),
-        isFolder=True,
-    )
+    downloads_action = actions.get("downloads")
+    if downloads_action:
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(downloads_action),
+            build_list_item("Downloads", "download.png"),
+            isFolder=True,
+        )
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(actions["info"]),
         build_list_item("Account Info", "download.png"),
-        isFolder=True,
+        isFolder=False,
     )
     end_of_directory()
     apply_section_view("view.downloads", content_type="files", fallback="list")
@@ -132,14 +144,17 @@ def cloud(params):
 
 def real_debrid_info(params):
     DEBRID_INFO_HANDLERS[DebridType.RD]()
+    finish_action()
 
 
 def alldebrid_info(params):
     DEBRID_INFO_HANDLERS[DebridType.AD]()
+    finish_action()
 
 
 def debrider_info(params):
     DEBRID_INFO_HANDLERS[DebridType.DB]()
+    finish_action()
 
 
 def easynews_info(params):
@@ -151,9 +166,11 @@ def easynews_info(params):
 
     if not user or not password:
         notification(translation(90425))
+        finish_action()
         return
 
     Easynews(user, password, timeout, notification).get_info()
+    finish_action()
 
 
 def get_rd_downloads(params):
@@ -162,8 +179,12 @@ def get_rd_downloads(params):
     debrid_color = get_random_color(debrid_type, formatted=False)
     formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
 
-    rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
-    raw_downloads = rd_client.get_user_downloads_list(page=page)
+    cache_key = _cloud_downloads_cache_key(DebridType.RD, page)
+    raw_downloads = cache.get(cache_key)
+    if raw_downloads is None:
+        rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
+        raw_downloads = rd_client.get_user_downloads_list(page=page)
+        cache.set(cache_key, raw_downloads, DEBRID_CLOUD_CACHE_EXPIRY)
     downloads: List[Dict[str, Any]] = [
         item for item in raw_downloads if isinstance(item, dict)
     ]
@@ -205,7 +226,11 @@ def get_tb_downloads(params):
     debrid_color = get_random_color(debrid_type, formatted=False)
     formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
 
-    raw_downloads = TorboxHelper().get_cloud_downloads()
+    cache_key = _cloud_downloads_cache_key(DebridType.TB)
+    raw_downloads = cache.get(cache_key)
+    if raw_downloads is None:
+        raw_downloads = TorboxHelper().get_cloud_downloads()
+        cache.set(cache_key, raw_downloads, DEBRID_CLOUD_CACHE_EXPIRY)
     downloads: List[Dict[str, Any]] = [
         item for item in raw_downloads if isinstance(item, dict)
     ]
@@ -314,3 +339,4 @@ def tb_remove_auth(params):
 
 def torbox_info(params):
     DEBRID_INFO_HANDLERS[DebridType.TB]()
+    finish_action()
