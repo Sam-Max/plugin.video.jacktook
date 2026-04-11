@@ -221,6 +221,8 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         kodilog(f"No addons found for menu_type={menu_type}")
         return
 
+    directory_items = []
+
     for addon in selected_addons:
         addon_name = addon.manifest.name
         addon_types = addon.manifest.types
@@ -254,21 +256,22 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 listitem = make_list_item(label=f"{translation(90006)} {catalog_name}")
                 listitem.setArt({"icon": addon.manifest.logo})
 
-                addDirectoryItem(
-                    ADDON_HANDLE,
-                    build_url(
-                        "search_catalog",
-                        page=1,
-                        addon_url=addon.url(),
-                        catalog_type=catalog.type,
-                        catalog_id=catalog_id,
-                        menu_type=menu_type,
-                        sub_menu_type=sub_menu_type,
-                        has_meta_resource=_addon_has_resource(addon, "meta", catalog_type),
-                        has_stream_resource=_addon_has_resource(addon, "stream", catalog_type),
-                    ),
-                    listitem,
-                    isFolder=True,
+                directory_items.append(
+                    (
+                        build_url(
+                            "search_catalog",
+                            page=1,
+                            addon_url=addon.url(),
+                            catalog_type=catalog.type,
+                            catalog_id=catalog_id,
+                            menu_type=menu_type,
+                            sub_menu_type=sub_menu_type,
+                            has_meta_resource=_addon_has_resource(addon, "meta", catalog_type),
+                            has_stream_resource=_addon_has_resource(addon, "stream", catalog_type),
+                        ),
+                        listitem,
+                        True,
+                    )
                 )
 
             if catalog_name or catalog_id:
@@ -281,19 +284,22 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 listitem = make_list_item(label=label)
                 listitem.setArt({"icon": addon.manifest.logo})
 
-                addDirectoryItem(
-                    ADDON_HANDLE,
-                    build_url(
-                        action="list_catalog",
-                        addon_url=addon.url(),
-                        menu_type=menu_type,
-                        sub_menu_type=sub_menu_type,
-                        catalog_type=catalog.type,
-                        catalog_id=catalog.id,
-                    ),
-                    listitem,
-                    isFolder=True,
+                directory_items.append(
+                    (
+                        build_url(
+                            action="list_catalog",
+                            addon_url=addon.url(),
+                            menu_type=menu_type,
+                            sub_menu_type=sub_menu_type,
+                            catalog_type=catalog.type,
+                            catalog_id=catalog.id,
+                        ),
+                        listitem,
+                        True,
+                    )
                 )
+
+    add_directory_items_batch(directory_items)
 
 
 def _get_manifest_catalog(addon_url, catalog_type, catalog_id):

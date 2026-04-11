@@ -11,6 +11,7 @@
   <extension point="xbmc.service" library="service.py" />
   <extension point="xbmc.python.module" library="lib"/>
   <extension point="xbmc.addon.metadata">
+    <reuselanguageinvoker>true</reuselanguageinvoker>
     <summary lang="en">jacktook</summary>
     <description lang="en">Kodi addon for torrent streaming</description>
     <license>GPL-2.0-only</license>

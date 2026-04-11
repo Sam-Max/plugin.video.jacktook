@@ -155,7 +155,7 @@ def test_list_catalog_locally_paginates_when_catalog_has_no_skip(monkeypatch):
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
     monkeypatch.setattr(
         catalog_menus,
         "addDirectoryItem",
@@ -222,7 +222,7 @@ def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.cache, "get_list", lambda key: [("Naruto",), ("Bleach",)])
     monkeypatch.setattr(catalog_menus, "translation", lambda value: {90006: "Search", 90210: "Clear All Search History"}.get(value, str(value)))
-    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(
         catalog_menus,
         "addDirectoryItem",
@@ -278,7 +278,7 @@ def test_search_catalog_uses_stremio_routes_when_catalog_has_meta(monkeypatch):
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
     monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
-    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
     monkeypatch.setattr(
         catalog_menus,
         "build_url",
@@ -306,6 +306,66 @@ def test_search_catalog_uses_stremio_routes_when_catalog_has_meta(monkeypatch):
     )
 
     assert added_urls == ["plugin://list_stremio_seasons"]
+
+
+def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
+    added_batches = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    class _Catalog:
+        def __init__(self, name, catalog_id, catalog_type, extra=None):
+            self.name = name
+            self.id = catalog_id
+            self.type = catalog_type
+            self.extra = extra or []
+
+    class _Manifest:
+        name = "Addon One"
+        logo = "logo.png"
+        types = ["series"]
+        catalogs = [
+            _Catalog("Trending", "trending", "series", extra=[{"name": "search"}]),
+            _Catalog("Popular", "popular", "series"),
+        ]
+
+    class _Addon:
+        manifest = _Manifest()
+
+        def url(self):
+            return "https://example.com/addon"
+
+    monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
+    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90006: "Search"}.get(value, str(value)))
+    monkeypatch.setattr(catalog_menus, "_addon_has_resource", lambda *args, **kwargs: True)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label=label))
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action=None, **kwargs: f"{action}:{kwargs.get('catalog_id', '')}:{kwargs.get('page', '')}",
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_directory_items_batch",
+        lambda items: added_batches.append(items),
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not use addDirectoryItem")),
+    )
+
+    catalog_menus.list_stremio_catalogs(menu_type="series", sub_menu_type="series")
+
+    assert len(added_batches) == 1
+    assert len(added_batches[0]) == 3
+    labels = [item[1].label for item in added_batches[0]]
+    assert labels == ["Search Trending", "Trending", "Popular"]
 
 
 def test_run_search_entry_preserves_stremio_route_in_library_payload(monkeypatch):
@@ -460,6 +520,9 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
         def __init__(self, label=""):
             self.label = label
 
+        def setLabel(self, label):
+            self.label = label
+
         def getVideoInfoTag(self):
             return _InfoTag()
 
@@ -481,8 +544,12 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     monkeypatch.setattr(catalog_menus, "tmdb_get", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
-    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
-    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda handle, url, listitem, isFolder=False: added.append(listitem.label))
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_directory_items_batch",
+        lambda items: added.extend(listitem.label for _, listitem, _ in items),
+    )
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
@@ -533,7 +600,7 @@ def test_list_stremio_episodes_main_search_url_preserves_stremio_route(monkeypat
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
     monkeypatch.setattr(
         catalog_menus,
         "build_url",
@@ -582,7 +649,7 @@ def test_add_meta_items_uses_tmdb_context_menu_only_for_reliable_tmdb_ids(monkey
         def addContextMenuItems(self, items, replaceItems=False):
             self.context_menu.extend(items)
 
-    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
     monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
@@ -653,7 +720,7 @@ def test_add_meta_items_resolves_tmdb_id_from_imdb_for_context_menu(monkeypatch)
         def addContextMenuItems(self, items, replaceItems=False):
             self.context_menu.extend(items)
 
-    monkeypatch.setattr(catalog_menus, "ListItem", _ListItem)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
     monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
@@ -719,7 +786,7 @@ def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
     )
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "ListItem", lambda *args, **kwargs: MagicMock())
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
     monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
 
     def _build_url(action, **kwargs):
