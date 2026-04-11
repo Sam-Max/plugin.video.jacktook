@@ -27,10 +27,12 @@ def search_mdbd_lists(params):
     # Show keyboard for search query
     query = show_keyboard(id=90006, default=query)
     if not query:
+        end_of_directory(cache=False)
         return
     results = mdblist_get(path="search_lists", params={"query": query, "page": page})
     if not results:
         notification(translation(90519))
+        end_of_directory(cache=False)
         return
     for item in results:
         label = item.get("name", "Unnamed List")

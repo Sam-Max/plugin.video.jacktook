@@ -32,11 +32,13 @@ class PeopleClient(BaseTmdbClient):
 
         query = show_keyboard(id=30241) if page == 1 else None
         if not query:
+            end_of_directory(cache=False)
             return
 
         data = tmdb_get("search_people", params={"query": query, "page": page})
         if not data or getattr(data, "total_results", 0) == 0:
             notification(translation(90389))
+            end_of_directory(cache=False)
             return
 
         execute_thread_pool(

@@ -158,6 +158,7 @@ class TmdbCollections(BaseTmdbClient):
             else PickleDatabase().get_key("collection_search_query")
         )
         if not query:
+            end_of_directory(cache=False)
             return
 
         if page == 1:

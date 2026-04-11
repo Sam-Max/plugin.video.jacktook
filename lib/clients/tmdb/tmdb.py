@@ -265,6 +265,7 @@ class TmdbClient(BaseTmdbClient):
                 else PickleDatabase().get_key("search_query")
             )
         if not query:
+            end_of_directory(cache=False)
             return
 
         show_busy_dialog()
@@ -284,6 +285,8 @@ class TmdbClient(BaseTmdbClient):
         data = tmdb_get("search_multi", {"query": query, "page": page})
         if not data or getattr(data, "total_results", 0) == 0:
             notification(translation(90389))
+            close_busy_dialog()
+            end_of_directory(cache=False)
             return
 
         results = getattr(data, "results", [])
@@ -1056,6 +1059,7 @@ class TmdbClient(BaseTmdbClient):
             query = show_keyboard(id=30243, default="")
 
         if not query:
+            end_of_directory(cache=False)
             return
 
         TmdbClient.show_keywords_items(query, page, mode)

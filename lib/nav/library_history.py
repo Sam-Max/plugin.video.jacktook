@@ -16,6 +16,7 @@ from lib.utils.kodi.utils import (
     build_url,
     container_update,
     end_of_directory,
+    finish_action,
     kodi_play_media,
     make_list_item,
     notification,
@@ -241,6 +242,7 @@ def clear_history(params):
 def clear_search_history(params):
     import xbmc
 
+    finish_action()
     cache.clear_list(key="multi")
     cache.clear_list(key="direct")
     notification(translation(90114))

@@ -46,6 +46,7 @@ def list_jackgram_latest_movies(query):
     page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
+        end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_movies(page=page)
     process_results(
@@ -57,6 +58,7 @@ def list_jackgram_latest_series(query):
     page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
+        end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_series(page=page)
     process_results(
@@ -68,6 +70,7 @@ def list_jackgram_raw_files(query):
     page = int(query.get("page"))
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
+        end_of_directory(cache=False)
         return
     results = jackgram_client.get_files(page=page)
     process_results(
