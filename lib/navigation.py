@@ -8,7 +8,7 @@ from lib.clients.tmdb.tmdb import (
     TmdbClient,
 )
 
-from lib.db.cached import cache
+from lib.db.cached import RuntimeCache, cache
 
 from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
@@ -34,6 +34,7 @@ from lib.utils.kodi.utils import (
     dialog_text,
     end_of_directory,
     execute_builtin,
+    finish_action,
     get_setting,
     is_youtube_addon_enabled,
     kodilog,
@@ -71,7 +72,6 @@ from lib.utils.general.utils import (
 from lib.clients.youtube_resolver import (
     extract_video_id,
     resolve_item_trailer,
-    resolve_item_trailer_playback,
 )
 import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
@@ -91,7 +91,6 @@ from lib.updater import updates_check_addon, downgrade_addon_menu
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
-    endOfDirectory,
     setResolvedUrl,
 )
 
@@ -101,24 +100,162 @@ from lib.utils.general.items_menus import (
 )
 
 
-def render_menu(items, cache=True):
-    directory_items = []
+def _menu_condition_signature(items):
+    signature = []
     for item in items:
-        if "condition" in item and not item["condition"]():
+        condition = item.get("condition")
+        signature.append(True if condition is None else bool(condition()))
+    return tuple(signature)
+
+
+def _get_cached_menu_entries(cache_key, builder, *builder_args, **builder_kwargs):
+    cached_menu_entries = RuntimeCache.get(cache_key)
+    if cached_menu_entries is not None:
+        return cached_menu_entries
+
+    menu_entries = builder(*builder_args, **builder_kwargs)
+    RuntimeCache.set(cache_key, menu_entries)
+    return menu_entries
+
+
+def _build_search_item_menu_entries(items, mode=None, filter_api=None):
+    menu_entries = []
+    for item in items:
+        if filter_api and item.get("api") != filter_api:
             continue
+        menu_entries.append(
+            {
+                "url": build_url(
+                    "search_item",
+                    category=item["category"],
+                    mode=item["mode"],
+                    submode=mode,
+                    api=item["api"],
+                ),
+                "name": item["name"],
+                "icon": item["icon"],
+                "is_folder": True,
+            }
+        )
+    return menu_entries
 
-        name = item["name"]
-        if isinstance(name, int):
-            name = translation(name)
 
-        list_item = build_list_item(name, item["icon"])
+def _build_media_menu_entries(items):
+    menu_entries = []
+    for item in items:
+        if item.get("action"):
+            url = build_url(item["action"], **item.get("params", {}))
+        else:
+            url = build_url(
+                "search_item",
+                mode=item["mode"],
+                submode=item.get("submode", ""),
+                query=item["query"],
+                api=item["api"],
+            )
+        menu_entries.append(
+            {
+                "url": url,
+                "name": item["name"],
+                "icon": item["icon"],
+                "is_folder": True,
+            }
+        )
+    return menu_entries
 
-        params = item.get("params", {})
 
-        url = build_url(item["action"], **params)
+def _tv_menu_entries():
+    return _build_media_menu_entries(tv_items)
 
-        directory_items.append((url, list_item, True))
+
+def _movie_menu_entries():
+    return _build_media_menu_entries(movie_items)
+
+
+def _animation_item_menu_entries(mode):
+    return _build_search_item_menu_entries(
+        animation_items,
+        mode=mode,
+        filter_api=None if mode == "tv" else "tmdb",
+    )
+
+
+def _animation_menu_entries():
+    return [
+        {
+            "url": build_url("animation_item", mode="tv"),
+            "name": translation(90007),
+            "icon": "tv.png",
+            "is_folder": True,
+        },
+        {
+            "url": build_url("animation_item", mode="movies"),
+            "name": translation(90008),
+            "icon": "movies.png",
+            "is_folder": True,
+        },
+    ]
+
+
+def _anime_menu_entries():
+    return [
+        {
+            "url": build_url("anime_item", mode="tv"),
+            "name": translation(90007),
+            "icon": "tv.png",
+            "is_folder": True,
+        },
+        {
+            "url": build_url("anime_item", mode="movies"),
+            "name": translation(90008),
+            "icon": "movies.png",
+            "is_folder": True,
+        },
+    ]
+
+
+def _anime_item_menu_entries(mode):
+    return _build_search_item_menu_entries(anime_items, mode=mode)
+
+
+def _render_cached_menu_entries(menu_entries, cache=True):
+    directory_items = []
+    for menu_entry in menu_entries:
+        directory_items.append(
+            (
+                menu_entry["url"],
+                build_list_item(menu_entry["name"], menu_entry["icon"]),
+                menu_entry.get("is_folder", True),
+            )
+        )
     add_directory_items_batch(directory_items)
+
+
+def render_menu(items, cache=True, cache_key=None):
+    def _build_menu_entries():
+        menu_entries = []
+        for item in items:
+            if "condition" in item and not item["condition"]():
+                continue
+            name = item["name"]
+            if isinstance(name, int):
+                name = translation(name)
+            menu_entries.append(
+                {
+                    "name": name,
+                    "icon": item["icon"],
+                    "url": build_url(item["action"], **item.get("params", {})),
+                    "is_folder": item.get("is_folder", True),
+                }
+            )
+        return menu_entries
+
+    menu_entries = (
+        _build_menu_entries()
+        if not cache_key
+        else _get_cached_menu_entries(cache_key, _build_menu_entries)
+    )
+    _render_cached_menu_entries(menu_entries)
     end_of_directory(cache=cache)
 
 
@@ -179,16 +316,20 @@ def reset_views(params):
 
 def root_menu():
     set_pluging_category(translation(90069))
-    render_menu(root_menu_items, cache=False)
+    render_menu(
+        root_menu_items,
+        cache=False,
+        cache_key=f"nav.root:{_menu_condition_signature(root_menu_items)}",
+    )
     apply_section_view("view.main", fallback="list")
 
 
 def animation_menu(params):
-    add_directory_items_batch(
-        [
-            (build_url("animation_item", mode="tv"), build_list_item(translation(90007), "tv.png"), True),
-            (build_url("animation_item", mode="movies"), build_list_item(translation(90008), "movies.png"), True),
-        ]
+    _render_cached_menu_entries(
+        _get_cached_menu_entries(
+            "nav.animation_menu",
+            _animation_menu_entries,
+        )
     )
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -196,39 +337,13 @@ def animation_menu(params):
 
 def animation_item(params):
     mode = params.get("mode")
-    directory_items = []
-    if mode == "tv":
-        for item in animation_items:
-            directory_items.append(
-                (
-                    build_url(
-                        "search_item",
-                        category=item["category"],
-                        mode=item["mode"],
-                        submode=mode,
-                        api=item["api"],
-                    ),
-                    build_list_item(item["name"], item["icon"]),
-                    True,
-                )
-            )
-    if mode == "movies":
-        for item in animation_items:
-            if item["api"] == "tmdb":
-                directory_items.append(
-                    (
-                        build_url(
-                            "search_item",
-                            category=item["category"],
-                            mode=item["mode"],
-                            submode=mode,
-                            api=item["api"],
-                        ),
-                        build_list_item(item["name"], item["icon"]),
-                        True,
-                    )
-                )
-    add_directory_items_batch(directory_items)
+    _render_cached_menu_entries(
+        _get_cached_menu_entries(
+            f"nav.animation_item:{mode}",
+            _animation_item_menu_entries,
+            mode,
+        )
+    )
     end_of_directory()
     if mode == "tv":
         apply_section_view("view.tvshows", fallback="poster")
@@ -275,22 +390,14 @@ def search_tmdb_genres(params):
 def tv_shows_items(params):
     set_pluging_category(translation(90007))
     stremio_only = get_setting("stremio_only_catalogs", False)
-    directory_items = []
 
     if not stremio_only:
-        for item in tv_items:
-            if item.get("action"):
-                url = build_url(item["action"], **item.get("params", {}))
-            else:
-                url = build_url(
-                    "search_item",
-                    mode=item["mode"],
-                    submode=item.get("submode", ""),
-                    query=item["query"],
-                    api=item["api"],
-                )
-            directory_items.append((url, build_list_item(item["name"], item["icon"]), True))
-    add_directory_items_batch(directory_items)
+        _render_cached_menu_entries(
+            _get_cached_menu_entries(
+                "nav.tv_items:default",
+                _tv_menu_entries,
+            )
+        )
     list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -299,22 +406,14 @@ def tv_shows_items(params):
 def movies_items(params):
     set_pluging_category(translation(90008))
     stremio_only = get_setting("stremio_only_catalogs", False)
-    directory_items = []
 
     if not stremio_only:
-        for item in movie_items:
-            if item.get("action"):
-                url = build_url(item["action"], **item.get("params", {}))
-            else:
-                url = build_url(
-                    "search_item",
-                    mode=item["mode"],
-                    submode=item.get("submode", ""),
-                    query=item["query"],
-                    api=item["api"],
-                )
-            directory_items.append((url, build_list_item(item["name"], item["icon"]), True))
-    add_directory_items_batch(directory_items)
+        _render_cached_menu_entries(
+            _get_cached_menu_entries(
+                "nav.movie_items:default",
+                _movie_menu_entries,
+            )
+        )
     list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -425,7 +524,7 @@ def search_menu(params):
         clear_li.setArt(
             {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
         )
-        directory_items.append((build_url("clear_search_history"), clear_li, True))
+        directory_items.append((build_url("clear_search_history"), clear_li, False))
 
     add_directory_items_batch(directory_items)
     end_of_directory()
@@ -434,11 +533,11 @@ def search_menu(params):
 
 def anime_menu(params):
     set_pluging_category(translation(90009))
-    add_directory_items_batch(
-        [
-            (build_url("anime_item", mode="tv"), build_list_item(translation(90007), "tv.png"), True),
-            (build_url("anime_item", mode="movies"), build_list_item(translation(90008), "movies.png"), True),
-        ]
+    _render_cached_menu_entries(
+        _get_cached_menu_entries(
+            "nav.anime_menu",
+            _anime_menu_entries,
+        )
     )
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -488,44 +587,26 @@ def anime_item(params):
     set_pluging_category(translation(90009))
     mode = params.get("mode")
     stremio_only = get_setting("stremio_only_catalogs", False)
-    directory_items = []
 
     if mode == "tv":
         if not stremio_only:
-            for item in anime_items:
-                directory_items.append(
-                    (
-                        build_url(
-                            "search_item",
-                            category=item["category"],
-                            mode=item["mode"],
-                            submode=mode,
-                            api=item["api"],
-                        ),
-                        build_list_item(item["name"], item["icon"]),
-                        True,
-                    )
+            _render_cached_menu_entries(
+                _get_cached_menu_entries(
+                    "nav.anime_item:tv",
+                    _anime_item_menu_entries,
+                    mode,
                 )
-        add_directory_items_batch(directory_items)
+            )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
     if mode == "movies":
-        directory_items = []
         if not stremio_only:
-            for item in anime_items:
-                directory_items.append(
-                    (
-                        build_url(
-                            "search_item",
-                            category=item["category"],
-                            mode=item["mode"],
-                            submode=mode,
-                            api=item["api"],
-                        ),
-                        build_list_item(item["name"], item["icon"]),
-                        True,
-                    )
+            _render_cached_menu_entries(
+                _get_cached_menu_entries(
+                    "nav.anime_item:movies",
+                    _anime_item_menu_entries,
+                    mode,
                 )
-        add_directory_items_batch(directory_items)
+            )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main", fallback="list")
@@ -583,6 +664,7 @@ def get_tb_downloads(params):
 def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
+        end_of_directory(cache=False)
         return
 
     for torrent in get_torrserver_api().torrents():
@@ -913,6 +995,7 @@ def donate(params):
 
 
 def settings(params):
+    finish_action()
     addon_settings()
 
 

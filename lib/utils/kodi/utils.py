@@ -679,6 +679,10 @@ def cancel_playback():
     setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
 
+def finish_action():
+    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+
+
 def make_list_item(label="", path="", offscreen=True):
     kwargs = {"offscreen": offscreen}
     if label:

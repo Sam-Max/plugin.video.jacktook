@@ -326,7 +326,12 @@ root_menu_items = [
     },
     {"name": 90014, "icon": "cloud2.png", "action": "cloud"},
     {"name": 90015, "icon": "download2.png", "action": "downloads_menu"},
-    {"name": 90016, "icon": "settings.png", "action": "settings"},
+    {
+        "name": 90016,
+        "icon": "settings.png",
+        "action": "settings",
+        "is_folder": False,
+    },
 ]
 
 history_menu_items = [
