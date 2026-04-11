@@ -35,6 +35,7 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     execute_builtin,
     finish_action,
+    clear_cached_settings,
     get_setting,
     is_youtube_addon_enabled,
     kodilog,
@@ -997,6 +998,7 @@ def donate(params):
 def settings(params):
     finish_action()
     addon_settings()
+    clear_cached_settings()
 
 
 def export_settings_backup(params):

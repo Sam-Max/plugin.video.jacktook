@@ -44,6 +44,7 @@ from lib.utils.kodi.utils import (
     dialog_text,
     get_jacktorr_setting,
     get_setting,
+    get_setting_fresh,
     kodilog,
     make_list_item,
     notification,
@@ -298,10 +299,11 @@ class DialogListener:
 
 def is_debrid_activated():
     return (
-        get_setting("real_debrid_enabled")
-        or get_setting("premiumize_enabled")
-        or get_setting("torbox_enabled")
-        or get_setting("debrider_enabled")
+        get_setting_fresh("real_debrid_enabled")
+        or get_setting_fresh("premiumize_enabled")
+        or get_setting_fresh("torbox_enabled")
+        or get_setting_fresh("debrider_enabled")
+        or get_setting_fresh("alldebrid_enabled")
     )
 
 
@@ -321,23 +323,23 @@ def check_debrid_enabled(debrid_type):
 
 
 def is_rd_enabled():
-    return get_setting("real_debrid_enabled")
+    return get_setting_fresh("real_debrid_enabled")
 
 
 def is_ad_enabled():
-    return get_setting("alldebrid_enabled")
+    return get_setting_fresh("alldebrid_enabled")
 
 
 def is_pm_enabled():
-    return get_setting("premiumize_enabled")
+    return get_setting_fresh("premiumize_enabled")
 
 
 def is_debrider_enabled():
-    return get_setting("debrider_enabled")
+    return get_setting_fresh("debrider_enabled")
 
 
 def is_tb_enabled():
-    return get_setting("torbox_enabled")
+    return get_setting_fresh("torbox_enabled")
 
 
 def is_ed_enabled():

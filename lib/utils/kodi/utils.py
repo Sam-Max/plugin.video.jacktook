@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from datetime import date, datetime, timedelta
 import json
+import os
 import re
+import xml.etree.ElementTree as ET
 import sys
 import time
 from typing import Any, Union
@@ -93,12 +95,67 @@ def _setting_cache_prop(setting_id: str) -> str:
     return f"jacktook.setting.{setting_id}"
 
 
+def _settings_snapshot_prop() -> str:
+    return "jacktook.settings"
+
+
+def _load_settings_snapshot():
+    raw = Window(10000).getProperty(_settings_snapshot_prop())
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
+def _profile_settings_xml_path() -> str:
+    return os.path.join(ADDON_PROFILE_PATH, "settings.xml")
+
+
+def rebuild_settings_snapshot():
+    settings_dict = None
+    try:
+        profile_xml = _profile_settings_xml_path()
+        if os.path.exists(profile_xml):
+            root = ET.parse(profile_xml).getroot()
+            settings_dict = {
+                item.get("id"): (item.text or "")
+                for item in root.iter("setting")
+                if item.get("id")
+            }
+        else:
+            settings_dict = {}
+        Window(10000).setProperty(_settings_snapshot_prop(), json.dumps(settings_dict))
+    except Exception:
+        return None
+    return settings_dict
+
+
 def get_cached_setting_property(setting_id: str):
-    return Window(10000).getProperty(_setting_cache_prop(setting_id))
+    settings_dict = _load_settings_snapshot()
+    if settings_dict is None:
+        settings_dict = rebuild_settings_snapshot()
+    if settings_dict is None:
+        return None
+    return settings_dict.get(setting_id, "")
 
 
 def set_cached_setting_property(setting_id: str, value: Any):
-    Window(10000).setProperty(_setting_cache_prop(setting_id), str(value))
+    settings_dict = _load_settings_snapshot() or {}
+    settings_dict[setting_id] = str(value)
+    Window(10000).setProperty(_settings_snapshot_prop(), json.dumps(settings_dict))
+
+
+def clear_cached_setting_property(setting_id: str):
+    settings_dict = _load_settings_snapshot() or {}
+    if setting_id in settings_dict:
+        del settings_dict[setting_id]
+        Window(10000).setProperty(_settings_snapshot_prop(), json.dumps(settings_dict))
+
+
+def clear_cached_settings():
+    Window(10000).clearProperty(_settings_snapshot_prop())
 
 
 def _normalize_setting_value(val, default=None):
@@ -122,6 +179,21 @@ def get_setting(id, default=None):
         set_cached_setting_property(id, val)
         return _normalize_setting_value(val, default)
 
+    return default
+
+
+def get_setting_fresh(id, default=None):
+    settings_dict = rebuild_settings_snapshot()
+    if settings_dict is not None:
+        val = settings_dict.get(id, "")
+        if val != "":
+            return _normalize_setting_value(val, default)
+
+    val = ADDON.getSetting(id)
+    if val:
+        set_cached_setting_property(id, val)
+        return _normalize_setting_value(val, default)
+    clear_cached_setting_property(id)
     return default
 
 
