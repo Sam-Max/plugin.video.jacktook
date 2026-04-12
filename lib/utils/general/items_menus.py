@@ -329,8 +329,7 @@ root_menu_items = [
     {
         "name": 90016,
         "icon": "settings.png",
-        "action": "settings",
-        "is_folder": False,
+        "action": "settings_menu",
     },
 ]
 

@@ -300,6 +300,58 @@ def choose_view(params):
     apply_section_view(view_key, content_type=content_type, fallback="list")
 
 
+def settings_menu(params):
+    set_pluging_category(translation(90016))
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("settings"),
+        build_list_item(translation(90742), "settings.png"),
+        isFolder=False,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("views_menu"),
+        build_list_item(translation(90743), "settings.png"),
+        isFolder=True,
+    )
+    end_of_directory(cache=False)
+    apply_section_view("view.main", fallback="list")
+
+
+def views_menu(params):
+    set_pluging_category(translation(90712))
+    view_items = (
+        ("view.main", "", "90713"),
+        ("view.movies", "movies", "90714"),
+        ("view.tvshows", "tvshows", "90715"),
+        ("view.seasons", "seasons", "90716"),
+        ("view.episodes", "episodes", "90717"),
+        ("view.library", "tvshows", "90718"),
+        ("view.history", "", "90719"),
+        ("view.downloads", "files", "90720"),
+    )
+    for view_key, content_type, label in view_items:
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url(
+                "choose_view",
+                view_key=view_key,
+                content_type=content_type,
+                label=label,
+            ),
+            build_list_item(_translate_view_label(label), "settings.png"),
+            isFolder=True,
+        )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("reset_views"),
+        build_list_item(translation(90725), "settings.png"),
+        isFolder=False,
+    )
+    end_of_directory(cache=False)
+    apply_section_view("view.main", fallback="list")
+
+
 def save_view(params):
     view_key = params.get("view_key", "view.main")
     label = _translate_view_label(params.get("label", "90712"))

@@ -3959,6 +3959,14 @@ msgctxt "#90726"
 msgid "Open this screen, change the Kodi view manually, then select Save Current View."
 msgstr "Open this screen, change the Kodi view manually, then select Save Current View."
 
+msgctxt "#90742"
+msgid "Addon Settings"
+msgstr "Addon Settings"
+
+msgctxt "#90743"
+msgid "Set Views"
+msgstr "Set Views"
+
 msgctxt "#90730"
 msgid "Search with title + year"
 msgstr "Search with title + year"

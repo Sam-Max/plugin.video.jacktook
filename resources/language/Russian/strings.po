@@ -3614,3 +3614,11 @@ msgstr "Воспроизвести через Торрент"
 msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Отменить и Подождать"
+
+msgctxt "#90742"
+msgid "Addon Settings"
+msgstr "Настройки аддона"
+
+msgctxt "#90743"
+msgid "Set Views"
+msgstr "Настроить виды"

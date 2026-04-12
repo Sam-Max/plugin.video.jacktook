@@ -3667,3 +3667,11 @@ msgstr "Editar título actual"
 msgctxt "#90741"
 msgid "Use original title"
 msgstr "Usar título original"
+
+msgctxt "#90742"
+msgid "Addon Settings"
+msgstr "Ajustes del addon"
+
+msgctxt "#90743"
+msgid "Set Views"
+msgstr "Configurar vistas"

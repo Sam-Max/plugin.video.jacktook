@@ -1578,128 +1578,6 @@
                 </setting>
             </group>
         </category>
-        <category id="views_category" label="90712">
-            <group id="views" label="90712">
-                <setting id="choose_main_view" type="action" label="90713" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.main&amp;label=90713&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_movies_view" type="action" label="90714" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.movies&amp;content_type=movies&amp;label=90714&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_tvshows_view" type="action" label="90715" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.tvshows&amp;content_type=tvshows&amp;label=90715&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_seasons_view" type="action" label="90716" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.seasons&amp;content_type=seasons&amp;label=90716&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_episodes_view" type="action" label="90717" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.episodes&amp;content_type=episodes&amp;label=90717&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_library_view" type="action" label="90718" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.library&amp;content_type=tvshows&amp;label=90718&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_history_view" type="action" label="90719" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.history&amp;label=90719&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="choose_downloads_view" type="action" label="90720" help="90726">
-                    <data>ActivateWindow(Videos,&quot;plugin://plugin.video.jacktook/?action=choose_view&amp;view_key=view.downloads&amp;content_type=files&amp;label=90720&quot;,return)</data>
-                    <control type="button" format="action">
-                        <close>true</close>
-                    </control>
-                </setting>
-                <setting id="reset_saved_views_action" type="action" label="90725" help="">
-                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=reset_views)</data>
-                    <control type="button" format="action">
-                        <close>false</close>
-                    </control>
-                </setting>
-                <setting id="saved_view_main" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_movies" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_tvshows" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_seasons" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_episodes" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_library" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_history" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-                <setting id="saved_view_downloads" type="string" label="" help="">
-                    <visible>false</visible>
-                    <default />
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
-                    <control type="edit" format="string" />
-                </setting>
-            </group>
-        </category>
         <category id="webdav" label="90131">
             <group id="webdav_provider" label="90124">
                 <setting id="webdav_hostname" type="string" label="90126" help="90133">
@@ -1832,6 +1710,72 @@
                     <control type="button" format="action">
                         <close>true</close>
                     </control>
+                </setting>
+            </group>
+            <group id="views_storage" label="">
+                <setting id="saved_view_main" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_movies" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_tvshows" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_seasons" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_episodes" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_library" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_history" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="saved_view_downloads" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
                 </setting>
             </group>
         </category>

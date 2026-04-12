@@ -680,6 +680,7 @@ def _route_core(action, params):
             play_from_pack,
             play_trailer,
             play_url,
+            settings_menu,
             settings,
             export_settings_backup,
             restore_settings_backup,
@@ -708,6 +709,7 @@ def _route_core(action, params):
             choose_view,
             save_view,
             reset_views,
+            views_menu,
         )
 
         actions = {
@@ -730,6 +732,7 @@ def _route_core(action, params):
             "play_from_pack": play_from_pack,
             "play_trailer": play_trailer,
             "play_url": play_url,
+            "settings_menu": settings_menu,
             "settings": settings,
             "export_settings_backup": export_settings_backup,
             "restore_settings_backup": restore_settings_backup,
@@ -758,6 +761,7 @@ def _route_core(action, params):
             "choose_view": choose_view,
             "save_view": save_view,
             "reset_views": reset_views,
+            "views_menu": views_menu,
         }
         action_func = actions.get(action)
         if action_func:

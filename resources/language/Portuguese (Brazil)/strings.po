@@ -3614,3 +3614,11 @@ msgstr "Reproduzir com Torrent"
 msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Cancelar e Esperar"
+
+msgctxt "#90742"
+msgid "Addon Settings"
+msgstr "Configurações do addon"
+
+msgctxt "#90743"
+msgid "Set Views"
+msgstr "Definir visualizações"
