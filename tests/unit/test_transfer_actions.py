@@ -142,6 +142,8 @@ def test_get_tb_downloads_builds_playable_cloud_entries():
                 "updated_at": "2026-03-23T10:00:00Z",
             },
         ],
+    ), patch.object(debrid_navigation.cache, "get", return_value=None), patch.object(
+        debrid_navigation.cache, "set"
     ), patch.object(debrid_navigation, "addDirectoryItem") as add_directory_item, patch.object(
         debrid_navigation, "end_of_directory"
     ) as end_of_directory:

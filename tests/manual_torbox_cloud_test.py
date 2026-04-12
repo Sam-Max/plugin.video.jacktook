@@ -1,6 +1,12 @@
 import json
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import sys
+
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("manual script not intended for pytest collection", allow_module_level=True)
 
 import requests
 

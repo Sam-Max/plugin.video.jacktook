@@ -1,14 +1,4 @@
-import sqlite3
-import sys
 from unittest.mock import MagicMock
-
-
-sqlite3.connect = MagicMock(return_value=MagicMock())
-sys.modules["xbmc"] = MagicMock()
-sys.modules["xbmcgui"] = MagicMock()
-sys.modules["xbmcaddon"] = MagicMock()
-sys.modules["xbmcplugin"] = MagicMock()
-sys.modules["xbmcvfs"] = MagicMock()
 
 
 from lib.services.webserver import _addon_capabilities

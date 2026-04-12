@@ -61,7 +61,7 @@ def test_build_backup_payload_skips_action_settings_and_scrubs_sensitive_data(
     monkeypatch.setattr(settings_backup, "cache", FakeCache())
     monkeypatch.setattr(
         settings_backup,
-        "get_property",
+        "get_cached_setting_property",
         lambda setting_id: {
             "trakt_token": "tok",
             "trakt_refresh": "ref",
@@ -122,7 +122,7 @@ def test_build_backup_payload_includes_custom_stremio_addons(monkeypatch, tmp_pa
     monkeypatch.setattr(settings_backup.ADDON, "getSetting", lambda setting_id: "value")
     monkeypatch.setattr(
         settings_backup,
-        "get_property",
+        "get_cached_setting_property",
         lambda setting_id: {
             "trakt_token": "tok",
             "trakt_refresh": "ref",
@@ -201,7 +201,7 @@ def test_apply_backup_payload_replaces_custom_stremio_addons(monkeypatch, tmp_pa
     )
     monkeypatch.setattr(
         settings_backup,
-        "set_property",
+        "set_cached_setting_property",
         lambda setting_id, value: property_calls.append((setting_id, value)),
     )
 
@@ -293,7 +293,7 @@ def test_apply_backup_payload_clears_scrubbed_fields_and_custom_addons(
     )
     monkeypatch.setattr(
         settings_backup,
-        "set_property",
+        "set_cached_setting_property",
         lambda setting_id, value: property_calls.append((setting_id, value)),
     )
 
@@ -374,7 +374,7 @@ def test_reset_all_settings_restores_defaults_and_clears_custom_addons(
     )
     monkeypatch.setattr(
         settings_backup,
-        "set_property",
+        "set_cached_setting_property",
         lambda setting_id, value: property_calls.append((setting_id, value)),
     )
 
@@ -431,7 +431,7 @@ def test_factory_reset_clears_settings_caches_and_local_database(monkeypatch, tm
     )
     monkeypatch.setattr(
         settings_backup,
-        "set_property",
+        "set_cached_setting_property",
         lambda setting_id, value: property_calls.append((setting_id, value)),
     )
     monkeypatch.setattr(settings_backup, "clear_all_cache", lambda: helper_calls.append("all"))

@@ -13,12 +13,14 @@ def test_cloud_details_uses_registry_actions_for_realdebrid():
     ):
         debrid_navigation.cloud_details({"debrid_name": debrid_navigation.DebridType.RD})
 
+    assert len(add_directory_item.call_args_list) == 1
     assert add_directory_item.call_args_list[0].args[1] == "get_rd_downloads"
-    assert add_directory_item.call_args_list[1].args[1] == "real_debrid_info"
 
 
 def test_download_notifies_on_unknown_debrid_type():
-    with patch("lib.nav.debrid.notification") as notify:
+    with patch("lib.nav.debrid.notification") as notify, patch(
+        "lib.nav.debrid.translation", return_value="Unsupported debrid type"
+    ):
         debrid_navigation.download("magnet:?xt=urn:btih:123", "UNKNOWN")
 
     notify.assert_called_once_with("Unsupported debrid type")

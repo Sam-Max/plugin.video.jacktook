@@ -2,6 +2,11 @@ import sys
 import os
 from unittest.mock import MagicMock
 
+if "pytest" in sys.modules:
+    import pytest
+
+    pytest.skip("manual script not intended for pytest collection", allow_module_level=True)
+
 # --- Mock Kodi modules before importing lib ---
 mock_xbmc = MagicMock()
 mock_xbmc.LOGINFO = 1

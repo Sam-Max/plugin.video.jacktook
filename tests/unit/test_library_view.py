@@ -32,7 +32,14 @@ def test_get_library_entries_materializes_and_caches_missing_entries():
     ) as mock_tmdb_get:
         entries = library._get_library_entries(items, "movies")
 
-    assert entries == [("Movie", {"ids": {"tmdb_id": 1}}, {"id": 1, "title": "Movie"})]
+    assert entries == [
+        {
+            "title": "Movie",
+            "data": {"ids": {"tmdb_id": 1}},
+            "details": {"id": 1, "title": "Movie"},
+            "is_stremio": False,
+        }
+    ]
     assert mock_tmdb_get.call_count == 2
     mock_set.assert_called_once_with("library_view|movies", entries)
 

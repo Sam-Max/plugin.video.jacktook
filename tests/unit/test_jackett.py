@@ -1,13 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import os
-import sys
-
-# Ensure mocks are loaded before importing the module under test
-# This is crucial because 'lib.clients.jackett' imports 'xbmc' at the top level
-sys.modules["xbmc"] = MagicMock()
-sys.modules["xbmcgui"] = MagicMock()
-sys.modules["xbmcaddon"] = MagicMock()
 
 from lib.clients.jackett import Jackett
 from lib.domain.torrent import TorrentStream

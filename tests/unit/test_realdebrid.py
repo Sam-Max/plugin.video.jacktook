@@ -1,13 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 import os
-import sys
 import json
-
-# Ensure mocks are loaded
-sys.modules["xbmc"] = MagicMock()
-sys.modules["xbmcgui"] = MagicMock()
-sys.modules["xbmcaddon"] = MagicMock()
 
 from lib.api.debrid.realdebrid import RealDebrid
 

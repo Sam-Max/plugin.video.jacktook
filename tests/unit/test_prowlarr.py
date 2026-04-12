@@ -1,11 +1,5 @@
 import pytest
 from unittest.mock import MagicMock, patch
-import sys
-
-# Ensure mocks are loaded before importing the module under test
-sys.modules["xbmc"] = MagicMock()
-sys.modules["xbmcgui"] = MagicMock()
-sys.modules["xbmcaddon"] = MagicMock()
 
 from lib.clients.prowlarr import Prowlarr
 
