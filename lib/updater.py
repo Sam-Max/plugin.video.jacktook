@@ -2,6 +2,8 @@
 import shutil
 import requests
 import os
+from zipfile import ZipFile, BadZipFile
+import xml.etree.ElementTree as ET
 import xbmc
 from xbmcvfs import translatePath as translate_path
 
@@ -86,6 +88,61 @@ def version_less_than(v1, v2):
         return normalize(v1) < normalize(v2)
     except Exception:
         return v1 < v2
+
+
+def _safe_remove_path(path):
+    if not os.path.lexists(path):
+        return
+
+    if os.path.islink(path):
+        os.unlink(path)
+    elif os.path.isdir(path):
+        shutil.rmtree(path)
+    else:
+        os.remove(path)
+
+
+def _read_addon_version_from_xml(xml_path):
+    tree = ET.parse(xml_path)
+    return tree.getroot().attrib.get("version")
+
+
+def _validate_downloaded_zip(zip_path, expected_version):
+    addon_xml = f"{ADDON_ID}/addon.xml"
+
+    try:
+        with ZipFile(zip_path) as zip_file:
+            names = zip_file.namelist()
+            if addon_xml not in names:
+                raise ValueError("addon.xml missing from update package")
+
+            xml_data = zip_file.read(addon_xml)
+    except (BadZipFile, KeyError, ValueError) as exc:
+        raise ValueError(str(exc))
+
+    try:
+        version = ET.fromstring(xml_data).attrib.get("version")
+    except ET.ParseError as exc:
+        raise ValueError(f"Invalid addon.xml: {exc}")
+
+    if version != expected_version:
+        raise ValueError(
+            "Package version mismatch: expected %s, found %s"
+            % (expected_version, version)
+        )
+
+
+def _validate_installed_version(destination_dir, expected_version):
+    addon_xml_path = os.path.join(destination_dir, "addon.xml")
+    if not os.path.exists(addon_xml_path):
+        raise ValueError("Installed addon.xml not found after update")
+
+    version = _read_addon_version_from_xml(addon_xml_path)
+    if version != expected_version:
+        raise ValueError(
+            "Installed version mismatch: expected %s, found %s"
+            % (expected_version, version)
+        )
 
 
 def get_changes(online_version=None):
@@ -176,8 +233,8 @@ def downgrade_addon_menu():
 
     kodilog(f"Available versions found: {versions}")
 
-    # Filter out current version
-    versions = [v for v in versions if v != ADDON_VERSION]
+    # Downgrade should only offer versions older than the installed one.
+    versions = [v for v in versions if version_less_than(v, ADDON_VERSION)]
 
     if not versions:
         dialog_ok(heading=HEADING, line1=translation(90584))
@@ -223,6 +280,9 @@ def update_addon(new_version):
     zip_name = f"{ADDON_ID}-{new_version}.zip"
     zip_url = f"{BASE_ZIP_URL}/{ADDON_ID}/{zip_name}"
     zip_path = os.path.join(PACKAGES_DIR, zip_name)
+    staging_dir = os.path.join(PACKAGES_DIR, f"{ADDON_ID}-staging")
+    staging_addon_dir = os.path.join(staging_dir, ADDON_ID)
+    backup_dir = os.path.join(PACKAGES_DIR, f"{ADDON_ID}-backup")
     kodilog(f"Zip URL: {zip_url}")
     kodilog(f"Zip Path: {zip_path}")
 
@@ -245,35 +305,77 @@ def update_addon(new_version):
         dialog_ok(heading=HEADING, line1=translation(90589) % e)
         return
 
-    # Remove old addon
-    kodilog(f"Removing old version at: {DESTINATION_DIR}")
     try:
-        if os.path.lexists(DESTINATION_DIR):
-            if os.path.islink(DESTINATION_DIR):
-                os.unlink(DESTINATION_DIR)
-                kodilog("Old version symlink removed.")
-            elif os.path.isdir(DESTINATION_DIR):
-                shutil.rmtree(DESTINATION_DIR)
-                kodilog("Old version directory removed.")
-            else:
-                os.remove(DESTINATION_DIR)
-                kodilog("Old version file removed.")
-        else:
-            kodilog("Old version directory not found, skipping removal.")
-    except Exception as e:
-        kodilog(f"Error removing old version: {e}")
-
-    # Extract
-    kodilog(f"Extracting {zip_path} to {HOME_ADDONS_DIR}")
-    if not unzip(zip_path, HOME_ADDONS_DIR, DESTINATION_DIR):
-        kodilog("Error extracting update.")
+        _validate_downloaded_zip(zip_path, new_version)
+    except ValueError as e:
+        kodilog(f"Error validating update package: {e}")
         delete_file(zip_path)
+        dialog_ok(heading=HEADING, line1=translation(90590))
+        return
+
+    try:
+        _safe_remove_path(staging_dir)
+        os.makedirs(staging_dir)
+    except Exception as e:
+        kodilog(f"Error preparing staging directory: {e}")
+        delete_file(zip_path)
+        dialog_ok(heading=HEADING, line1=translation(90590))
+        return
+
+    try:
+        if not unzip(zip_path, staging_dir, staging_addon_dir):
+            raise ValueError("Staging extraction failed")
+
+        _validate_installed_version(staging_addon_dir, new_version)
+    except Exception as e:
+        kodilog(f"Error extracting update to staging: {e}")
+        delete_file(zip_path)
+        try:
+            _safe_remove_path(staging_dir)
+        except Exception:
+            pass
         dialog_ok(
             heading=HEADING, line1=translation(90590)
         )
         return
 
+    replaced_existing_install = False
+    try:
+        _safe_remove_path(backup_dir)
+
+        if os.path.lexists(DESTINATION_DIR):
+            kodilog(f"Backing up current installation from: {DESTINATION_DIR}")
+            shutil.move(DESTINATION_DIR, backup_dir)
+            replaced_existing_install = True
+
+        kodilog(f"Installing staged version to: {DESTINATION_DIR}")
+        shutil.move(staging_addon_dir, DESTINATION_DIR)
+        _validate_installed_version(DESTINATION_DIR, new_version)
+    except Exception as e:
+        kodilog(f"Error replacing addon version: {e}")
+
+        try:
+            if os.path.lexists(DESTINATION_DIR):
+                _safe_remove_path(DESTINATION_DIR)
+            if replaced_existing_install and os.path.lexists(backup_dir):
+                shutil.move(backup_dir, DESTINATION_DIR)
+        except Exception as restore_error:
+            kodilog(f"Error restoring previous addon version: {restore_error}")
+
+        delete_file(zip_path)
+        try:
+            _safe_remove_path(staging_dir)
+        except Exception:
+            pass
+        dialog_ok(heading=HEADING, line1=translation(90590))
+        return
+
     delete_file(zip_path)
+    try:
+        _safe_remove_path(staging_dir)
+        _safe_remove_path(backup_dir)
+    except Exception as e:
+        kodilog(f"Error cleaning temporary update paths: {e}")
 
     if dialogyesno(
         header=HEADING,

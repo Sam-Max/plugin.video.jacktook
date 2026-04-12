@@ -47,7 +47,7 @@
                         </constraints>
                         <control type="spinner" format="string" />
                     </setting>
-                    <setting id="downgrade_addon" type="action" label="90215" help="">
+                    <setting id="downgrade_addon" type="action" label="90215" help="90671">
                         <data>RunPlugin(plugin://plugin.video.jacktook/?action=downgrade_addon)</data>
                         <control type="button" format="action">
                             <close>false</close>

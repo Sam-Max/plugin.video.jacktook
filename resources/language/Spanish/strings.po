@@ -2203,6 +2203,10 @@ msgctxt "#90215"
 msgid "Downgrade"
 msgstr "Revertir"
 
+msgctxt "#90671"
+msgid "Install an older published version of Jacktook. The current version is backed up and restored automatically if the downgrade fails."
+msgstr "Instala una version publicada anterior de Jacktook. La version actual se respalda y se restaura automaticamente si la reversion falla."
+
 msgctxt "#30932"
 msgid "Update Action"
 msgstr "Acción de Actualización"
