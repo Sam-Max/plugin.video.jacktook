@@ -1,3 +1,25 @@
+## 1.8.0
+- Search: Add TMDB Search Modes for movies and episodes, including title editing, original title variants, and manual year/season/episode entry from TMDB context menus.
+- Performance: Rework menu and listing rendering with batch `addDirectoryItems`, `ListItem(offscreen=True)`, `reuselanguageinvoker`, cached navigator entries, and cached TMDB item metadata to improve navigation speed
+- TMDB: Remove repeated per-item image/detail rebuilding in major list views and avoid duplicate show-detail fetches in Calendar.
+- Settings: Cache addon settings from a profile `settings.xml` snapshot so changes made in Kodi settings are reflected more reliably across the addon.
+- Debrid/Cloud: Cache cloud download listings, move Cloud account info out of problematic list navigation, and improve cloud/provider modal flows.
+- UX: Fix multiple stuck spinner cases across Settings, Torrents, Jackgram, TMDB/MDblist search cancel flows, search history actions, and debrid account dialogs.
+- Easynews: Fix the account info dialog heading import so the modal opens without errors.
+- Improve and harden addon downgrade and added reload profile after addon update
+- Moved view selection controls into the addon settings menu.
+
+Spanish:
+- Busqueda: Añadidos Modos de busqueda de TMDB para peliculas y episodios, incluyendo edicion de titulo, variantes con titulo original y entrada manual de ano/temporada/episodio desde los menus contextuales de TMDB.
+- Rendimiento: Rehecha la representacion de menus y listados con `addDirectoryItems` por lotes, `ListItem(offscreen=True)`, `reuselanguageinvoker`, cache de entradas del navigator y cache de metadatos TMDB por item para mejorar la velocidad de navegacion.
+- TMDB: Eliminada la reconstruccion repetida de imagenes/detalles por item en los principales listados y evitadas las consultas duplicadas de detalles de series en Calendar.
+- Ajustes: Añadida cache de ajustes del addon a partir de un snapshot del `settings.xml` del perfil para reflejar con mas fiabilidad los cambios hechos desde los ajustes de Kodi.
+- Debrid/Cloud: Añadida cache a los listados de descargas cloud, movida la informacion de cuenta de Cloud fuera de la navegacion problematica del listado y mejorados los flujos modales de cloud/proveedores.
+- UX: Corregidos multiples casos de spinner bloqueado en Ajustes, Torrents, Jackgram, cancelaciones de busqueda TMDB/MDblist, acciones del historial de busqueda y dialogos de informacion de cuenta de debrid.
+- Easynews: Corregida la importacion del titulo del dialogo de informacion de cuenta para que el modal se abra sin errores.
+- Mejorada y reforzada la seguridad de la funcion de downgrade y añadida la recarga del perfil despues de la actualizacion del addon.
+- Movidos los controles de seleccion de vista al menu de ajustes del addon.
+
 ## 1.7.2
 - Trailers: Add YouTube trailer playback flow.
 - Playback: Add setting to skip the replay/resume dialog.
