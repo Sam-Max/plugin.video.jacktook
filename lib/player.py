@@ -202,7 +202,7 @@ class JacktookPLayer(xbmc.Player):
         except Exception as e:
             self.kill_dialog()
         finally:
-            self.cancel_playback()
+            self._cleanup_playback_session()
             self.clear_playback_properties()
 
     def handle_subtitles(self, list_item):
@@ -572,15 +572,18 @@ class JacktookPLayer(xbmc.Player):
         set_watched_file(data)
 
     def cancel_playback(self):
-        self.PLAYLIST.clear()
-        close_busy_dialog()
-        close_all_dialog()
+        self._cleanup_playback_session()
         try:
             setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
         except Exception as e:
             kodilog(
                 f"setResolvedUrl failed in cancel_playback (expected when using direct play): {e}"
             )
+
+    def _cleanup_playback_session(self):
+        self.PLAYLIST.clear()
+        close_busy_dialog()
+        close_all_dialog()
 
     def run_error(self, e: Exception):
         notification("Playback Failed", time=3500)
