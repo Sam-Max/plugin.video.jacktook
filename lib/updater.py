@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from lib.utils.kodi.utils import kodi_refresh
 import shutil
 import requests
 import os
+import xbmc
 from xbmcvfs import translatePath as translate_path
 
 from lib.utils.kodi.utils import (
@@ -285,7 +285,8 @@ def update_addon(new_version):
     update_local_addons()
     disable_enable_addon()
     update_kodi_addons_db()
-    kodi_refresh()
+    notification(heading=HEADING, message="Reloading Kodi profile to apply addon changes")
+    execute_builtin('LoadProfile(%s)' % xbmc.getInfoLabel("System.ProfileName"), True)
 
     notification(heading=HEADING, message=translation(90593))
     kodilog("Update process finished successfully.")

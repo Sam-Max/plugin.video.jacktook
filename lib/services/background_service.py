@@ -13,6 +13,7 @@ from lib.services.trakt_sync import TraktSyncService
 from lib.updater import updates_check_addon
 from lib.utils.kodi.settings import update_delay
 from lib.utils.kodi.utils import (
+    clear_cached_settings,
     clear_property,
     dialog_ok,
     get_kodi_version,
@@ -238,6 +239,10 @@ class JacktookMOnitor(xbmc.Monitor):
         kodilog(
             "UNPAUSING Jacktook Services Due to Device Awake", level=xbmc.LOGINFO
         )
+
+    def onSettingsChanged(self):
+        clear_cached_settings()
+        kodilog("Cleared cached settings after Kodi settings change", level=xbmc.LOGINFO)
 
     def onNotification(self, sender, method, data):
         if method == "System.OnSleep":
