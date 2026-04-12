@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 .agent
+.agents
 *.log
 tmp/
 *.py[cod]
@@ -16,3 +17,4 @@ settings.json
 scripts/
 .opencode/
 docs/
+skills-lock.json
