@@ -114,7 +114,7 @@ def cloud_details(params):
         isFolder=True,
     )
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")
 
 
 def cloud(params):
@@ -145,7 +145,7 @@ def cloud(params):
     )
 
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")
 
 
 def real_debrid_info(params):
@@ -224,7 +224,7 @@ def get_rd_downloads(params):
         )
 
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")
 
 
 def get_tb_downloads(params):
@@ -282,7 +282,7 @@ def get_tb_downloads(params):
         )
 
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")
 
 
 def download(magnet, debrid_type):

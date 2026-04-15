@@ -45,14 +45,14 @@ from lib.utils.general.utils import Anime
 
 def _apply_tmdb_view(mode, content_type=""):
     if mode == "movies":
-        return apply_section_view("view.movies", content_type or "movies", fallback="poster")
+        return apply_section_view("view.movies", content_type or "movies")
     if mode == "tv":
-        return apply_section_view("view.tvshows", content_type or "tvshows", fallback="poster")
+        return apply_section_view("view.tvshows", content_type or "tvshows")
     if mode == "season":
-        return apply_section_view("view.seasons", content_type or "seasons", fallback="list")
+        return apply_section_view("view.seasons", content_type or "seasons")
     if mode == "episode":
-        return apply_section_view("view.episodes", content_type or "episodes", fallback="list")
-    return apply_section_view("view.main", content_type=content_type, fallback="list")
+        return apply_section_view("view.episodes", content_type or "episodes")
+    return apply_section_view("view.main", content_type=content_type)
 
 import xbmcgui
 import xbmc

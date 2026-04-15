@@ -180,9 +180,9 @@ def show_library_items(mode="tv"):
 
     end_of_directory(cache=False)
     if mode == "tv":
-        apply_section_view("view.library", content_type="tvshows", fallback="poster")
+        apply_section_view("view.library", content_type="tvshows")
     else:
-        apply_section_view("view.library", content_type="movies", fallback="poster")
+        apply_section_view("view.library", content_type="movies")
 
 
 def remove_library_item(params):

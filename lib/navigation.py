@@ -297,7 +297,7 @@ def choose_view(params):
     )
     _set_chooser_content(content_type)
     end_of_directory(cache=False)
-    apply_section_view(view_key, content_type=content_type, fallback="list")
+    apply_section_view(view_key, content_type=content_type)
 
 
 def settings_menu(params):
@@ -315,7 +315,7 @@ def settings_menu(params):
         isFolder=True,
     )
     end_of_directory(cache=False)
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def views_menu(params):
@@ -349,7 +349,7 @@ def views_menu(params):
         isFolder=False,
     )
     end_of_directory(cache=False)
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def save_view(params):
@@ -374,7 +374,7 @@ def root_menu():
         cache=False,
         cache_key=f"nav.root:{_menu_condition_signature(root_menu_items)}",
     )
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def animation_menu(params):
@@ -385,7 +385,7 @@ def animation_menu(params):
         )
     )
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def animation_item(params):
@@ -399,9 +399,9 @@ def animation_item(params):
     )
     end_of_directory()
     if mode == "tv":
-        apply_section_view("view.tvshows", fallback="poster")
+        apply_section_view("view.tvshows")
     else:
-        apply_section_view("view.movies", fallback="poster")
+        apply_section_view("view.movies")
 
 
 def telegram_menu(params):
@@ -415,7 +415,7 @@ def telegram_menu(params):
         ]
     )
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def search_tmdb_year(params):
@@ -453,7 +453,7 @@ def tv_shows_items(params):
         )
     list_stremio_catalogs(menu_type="series", sub_menu_type="series")
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def movies_items(params):
@@ -469,7 +469,7 @@ def movies_items(params):
         )
     list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def direct_menu(params):
@@ -499,25 +499,25 @@ def trakt_group_menu(params):
     if mode == "tv" and group == "library":
         set_pluging_category(translation(90292))
         render_menu(_group_items(trakt_tv_library_items), cache=False)
-        apply_section_view("view.tvshows", fallback="poster")
+        apply_section_view("view.tvshows")
         return
 
     if mode == "tv" and group == "discovery":
         set_pluging_category(translation(90293))
         render_menu(_group_items(trakt_tv_discovery_items), cache=False)
-        apply_section_view("view.tvshows", fallback="poster")
+        apply_section_view("view.tvshows")
         return
 
     if mode == "movies" and group == "library":
         set_pluging_category(translation(90292))
         render_menu(_group_items(trakt_movie_library_items), cache=False)
-        apply_section_view("view.movies", fallback="poster")
+        apply_section_view("view.movies")
         return
 
     if mode == "movies" and group == "discovery":
         set_pluging_category(translation(90293))
         render_menu(_group_items(trakt_movie_discovery_items), cache=False)
-        apply_section_view("view.movies", fallback="poster")
+        apply_section_view("view.movies")
         return
 
     end_of_directory(cache=False)
@@ -581,7 +581,7 @@ def search_menu(params):
 
     add_directory_items_batch(directory_items)
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def anime_menu(params):
@@ -593,7 +593,7 @@ def anime_menu(params):
         )
     )
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def history_menu(params):
@@ -662,14 +662,14 @@ def anime_item(params):
             )
         list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def tv_menu(params):
     set_pluging_category(translation(90010))
     list_stremio_catalogs(menu_type="tv")
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def search_direct(params):
@@ -765,7 +765,7 @@ def torrents(params):
             isFolder=True,
         )
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")
 
 
 def play_media(params):
@@ -890,7 +890,7 @@ def people_menu(mode):
         isFolder=True,
     )
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def mdblist_menu(mode):
@@ -926,7 +926,7 @@ def mdblist_menu(mode):
         isFolder=True,
     )
     end_of_directory()
-    apply_section_view("view.main", fallback="list")
+    apply_section_view("view.main")
 
 
 def search_item(params):

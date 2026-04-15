@@ -114,4 +114,4 @@ def show_last_titles(params):
     add_directory_items_batch(directory_items)
 
     end_of_directory()
-    apply_section_view("view.history", fallback="poster")
+    apply_section_view("view.history")

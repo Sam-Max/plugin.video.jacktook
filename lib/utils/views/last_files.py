@@ -63,4 +63,4 @@ def show_last_files():
         )
     add_directory_items_batch(directory_items)
     end_of_directory()
-    apply_section_view("view.history", fallback="list")
+    apply_section_view("view.history")

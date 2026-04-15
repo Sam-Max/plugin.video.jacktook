@@ -664,17 +664,13 @@ def _wait_for_container_content(content_type, timeout_ms=2000):
     return False
 
 
-def apply_section_view(view_key, content_type="", fallback=None, default="current"):
+def apply_section_view(view_key, content_type=""):
     _wait_for_container_content(content_type)
     saved_view_id = get_saved_view_id(view_key)
     if saved_view_id:
         execute_builtin(f"Container.SetViewMode({saved_view_id})")
         return saved_view_id
-    fallback_name = _resolve_view_name(fallback or default, content_type=content_type)
-    view_id = _get_named_view_id(fallback_name, default)
-    if view_id:
-        execute_builtin(f"Container.SetViewMode({view_id})")
-    return view_id
+    return None
 
 
 def reset_saved_views():

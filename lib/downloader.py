@@ -296,7 +296,7 @@ def downloads_viewer(params):
 
         addDirectoryItems(ADDON_HANDLE, item_list)
         endOfDirectory(ADDON_HANDLE)
-        apply_section_view("view.downloads", content_type="files", fallback="list")
+        apply_section_view("view.downloads", content_type="files")
     except Exception as e:
         notification(f"Error: {str(e)}", translation(90662))
         endOfDirectory(ADDON_HANDLE, succeeded=False)

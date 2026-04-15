@@ -69,7 +69,7 @@ class TmdbCollections(BaseTmdbClient):
 
         add_directory_items_batch(directory_items)
         end_of_directory()
-        apply_section_view("view.movies", content_type="movies", fallback="poster")
+        apply_section_view("view.movies", content_type="movies")
 
     @staticmethod
     def _add_collection_item(collection):
@@ -121,7 +121,7 @@ class TmdbCollections(BaseTmdbClient):
             )
 
         end_of_directory()
-        apply_section_view("view.movies", content_type="movies", fallback="poster")
+        apply_section_view("view.movies", content_type="movies")
 
     @staticmethod
     def get_top_rated_collections(mode, page):
@@ -148,7 +148,7 @@ class TmdbCollections(BaseTmdbClient):
             )
 
         end_of_directory()
-        apply_section_view("view.movies", content_type="movies", fallback="poster")
+        apply_section_view("view.movies", content_type="movies")
 
     @staticmethod
     def search_collections(mode, page):
@@ -182,7 +182,7 @@ class TmdbCollections(BaseTmdbClient):
             mode=mode,
         )
         end_of_directory()
-        apply_section_view("view.movies", content_type="movies", fallback="poster")
+        apply_section_view("view.movies", content_type="movies")
 
     @staticmethod
     def _extract_collection_id(movie, collection_ids_set):

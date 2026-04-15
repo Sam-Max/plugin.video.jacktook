@@ -114,4 +114,4 @@ def show_continue_watching():
     add_directory_items_batch(directory_items)
 
     end_of_directory(cache=False)
-    apply_section_view("view.history", content_type="videos", fallback="poster")
+    apply_section_view("view.history", content_type="videos")

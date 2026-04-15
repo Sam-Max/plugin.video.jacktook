@@ -100,9 +100,9 @@ class BaseTmdbClient:
         add_directory_items_batch(directory_items)
         end_of_directory()
         if mode == "tv" or (mode == "anime" and submode == "tv"):
-            apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")
+            apply_section_view("view.tvshows", content_type="tvshows")
         else:
-            apply_section_view("view.movies", content_type="movies", fallback="poster")
+            apply_section_view("view.movies", content_type="movies")
 
     @staticmethod
     def show_genres_items(mode, page, submode=None):
@@ -141,6 +141,6 @@ class BaseTmdbClient:
         add_directory_items_batch(directory_items)
         end_of_directory()
         if mode == "tv" or (mode == "anime" and submode == "tv"):
-            apply_section_view("view.tvshows", content_type="tvshows", fallback="poster")
+            apply_section_view("view.tvshows", content_type="tvshows")
         else:
-            apply_section_view("view.movies", content_type="movies", fallback="poster")
+            apply_section_view("view.movies", content_type="movies")

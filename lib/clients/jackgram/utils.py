@@ -186,4 +186,4 @@ def process_results(results, callback, next_button_action, page):
     execute_thread_pool(results, callback)
     add_next_button(next_button_action, page=page)
     end_of_directory()
-    apply_section_view("view.downloads", content_type="files", fallback="list")
+    apply_section_view("view.downloads", content_type="files")

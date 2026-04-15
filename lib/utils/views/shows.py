@@ -33,7 +33,7 @@ def show_seasons_details(params):
 
     show_season_info(ids, mode, media_type)
     end_of_directory()
-    apply_section_view("view.seasons", content_type="seasons", fallback="list")
+    apply_section_view("view.seasons", content_type="seasons")
 
 
 def show_season_info(ids, mode, media_type):
@@ -119,7 +119,7 @@ def show_episodes_details(params):
 
     show_episode_info(tv_name, season, ids, mode, media_type)
     end_of_directory()
-    apply_section_view("view.episodes", content_type="episodes", fallback="list")
+    apply_section_view("view.episodes", content_type="episodes")
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):

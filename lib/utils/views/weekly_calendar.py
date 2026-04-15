@@ -191,9 +191,9 @@ def show_weekly_calendar(library=False):
 
     end_of_directory(cache=False)
     if library:
-        apply_section_view("view.library", fallback="list")
+        apply_section_view("view.library")
     else:
-        apply_section_view("view.history", fallback="list")
+        apply_section_view("view.history")
 
 
 def get_episodes_for_show(ids):
