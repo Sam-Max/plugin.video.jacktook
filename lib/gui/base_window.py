@@ -185,7 +185,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             pass
 
         # Try to extract magnet from url 
-        if url.startswith("http"):
+        if url.startswith("http") and not url.endswith(".torrent"):
             magnet_candidate, _, torrent_url = get_magnet_from_uri(url)
             if magnet_candidate:
                 magnet = magnet_candidate
