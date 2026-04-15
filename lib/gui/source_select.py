@@ -33,7 +33,12 @@ from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
 
 import xbmcgui
 import xbmc
+import threading
 
+# For web subtitle upload
+from lib.services.subtitle_server import SubtitleUploadServer, get_local_ip
+from lib.utils.debrid.qrcode_utils import make_qrcode
+from lib.gui.qr_progress_dialog import QRProgressDialog
 
 THEMES = {
     "0": {"card_bg": "FF362e33", "card_focus": "992A3E5C", "card_accent": "FF00559D"},
@@ -207,14 +212,46 @@ class SourceSelect(BaseWindow):
         menu_actions = []
 
         if selected_source.type == IndexerType.TORRENT:
-            menu_items.extend([translation(90365), translation(90359), translation(90083)])
-            menu_actions.extend(["download_to_debrid", "add_to_torrserver", "download_file"])
+            menu_items.extend(
+                [
+                    translation(90365),
+                    translation(90359),
+                    translation(90083),
+                    translation(90744),
+                ]
+            )
+            menu_actions.extend(
+                [
+                    "download_to_debrid",
+                    "add_to_torrserver",
+                    "download_file",
+                    "upload_subtitle",
+                ]
+            )
         elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
-            menu_items.extend([translation(90083), translation(90082)])
-            menu_actions.extend(["download_file", "subtitle_download"])
+            menu_items.extend(
+                [translation(90083), translation(90082), translation(90744)]
+            )
+            menu_actions.extend(
+                ["download_file", "subtitle_download", "upload_subtitle"]
+            )
         else:
-            menu_items.extend([translation(90084), translation(90083), translation(90082)])
-            menu_actions.extend(["pack_select", "download_file", "subtitle_download"])
+            menu_items.extend(
+                [
+                    translation(90084),
+                    translation(90083),
+                    translation(90082),
+                    translation(90744),
+                ]
+            )
+            menu_actions.extend(
+                [
+                    "pack_select",
+                    "download_file",
+                    "subtitle_download",
+                    "upload_subtitle",
+                ]
+            )
 
         response = xbmcgui.Dialog().contextmenu(menu_items)
         if response < 0 or response >= len(menu_actions):
@@ -238,6 +275,8 @@ class SourceSelect(BaseWindow):
             self._resolve_item(selected_source, is_subtitle_download=True)
         elif action == "pack_select":
             self._resolve_item(selected_source, pack_select=True)
+        elif action == "upload_subtitle":
+            self._upload_subtitle(selected_source)
 
     def _handle_quality_select_action(self):
         quality_list = self.getControl(1300)
@@ -284,9 +323,9 @@ class SourceSelect(BaseWindow):
                 if source.addedToDebrid and source.debridType:
                     provider_name = source.debridType
                 else:
-                    provider_name = source.type or source.subindexer 
+                    provider_name = source.type or source.subindexer
             elif source.type == IndexerType.DEBRID:
-                provider_name = source.debridType or source.type 
+                provider_name = source.debridType or source.type
             elif IndexerType.STREMIO_DEBRID:
                 provider_name = source.subindexer or source.type
             elif source.type == IndexerType.DIRECT:
@@ -324,7 +363,9 @@ class SourceSelect(BaseWindow):
         self.populate_sources_list()
         if self.list_sources:
             self.set_default_focus(self.display_list, 1000, control_list_reset=True)
-            self.display_list.selectItem(min(current_position, len(self.list_sources) - 1))
+            self.display_list.selectItem(
+                min(current_position, len(self.list_sources) - 1)
+            )
 
     def _download_to_debrid(self, selected_source) -> None:
         kodilog("SourceSelect _download_to_debrid entered")
@@ -358,7 +399,8 @@ class SourceSelect(BaseWindow):
             info_hash,
             selected_source.debridType,
             torrent_data=torrent_data,
-            torrent_name=selected_source.title or self.item_information.get("title", ""),
+            torrent_name=selected_source.title
+            or self.item_information.get("title", ""),
         )
         if debrid_type:
             kodilog(f"SourceSelect download_to_debrid succeeded via {debrid_type}")
@@ -405,8 +447,142 @@ class SourceSelect(BaseWindow):
                 translation(90653), translation(90654) % str(e)
             )
 
+    def _upload_subtitle(self, selected_source) -> None:
+        """Show upload subtitle dialog with local/web options."""
+        kodilog("[UPLOAD_SUBTITLE] Starting subtitle upload process")
+        dialog = xbmcgui.Dialog()
+        options = [
+            translation(90746),  # Local File
+            translation(90747),  # Upload from Browser
+        ]
+        choice = dialog.select(translation(90744), options)  # Upload Subtitle
+
+        if choice == 0:  # Local file
+            self._upload_subtitle_local(selected_source)
+        elif choice == 1:  # Web upload
+            self._upload_subtitle_from_web(selected_source)
+
+    def _upload_subtitle_local(self, selected_source) -> None:
+        """Open file browser to select a local subtitle file and resolve the source with it."""
+        dialog = xbmcgui.Dialog()
+        subtitle_file = dialog.browse(
+            1, translation(90745), "files", ".srt|.ass|.ssa|.sub|.vtt|.txt"
+        )
+        if not subtitle_file:
+            kodilog(
+                "[UPLOAD_SUBTITLE] User cancelled subtitle upload (no file selected)"
+            )
+            return
+        self._resolve_item(selected_source, local_subtitle_path=subtitle_file)
+
+    def _upload_subtitle_from_web(self, selected_source) -> None:
+        """Start web server and show QR dialog for browser-based subtitle upload."""
+        kodilog("[UPLOAD_SUBTITLE] Starting web upload server")
+
+        local_ip = get_local_ip()
+        server = SubtitleUploadServer(port=8082)
+        server.start()
+
+        if not server.is_running:
+            kodilog("[UPLOAD_SUBTITLE] Failed to start upload server")
+            notification(translation(90744))
+            return
+
+        url = f"http://{local_ip}:{server.port}/"
+
+        subtitle_result = [None]  # Use list for mutability in nested function
+        dialog = None
+        upload_complete = threading.Event()
+
+        try:
+            kodilog(f"[UPLOAD_SUBTITLE] Server started at {url}")
+
+            # Generate QR code
+            qr_path = make_qrcode(url)
+
+            # Show QR dialog
+            dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+            dialog.setup(
+                title=translation(90748),  # Upload subtitle from your browser
+                qr_code=qr_path or "",
+                url=url,
+                user_code="",
+                is_debrid=False,
+                custom_message=translation(90749) % url,
+            )
+
+            # Start polling thread to detect upload completion
+            def poll_for_upload():
+                kodilog("[UPLOAD_SUBTITLE] Polling thread started")
+                import time
+
+                poll_count = 0
+                while not upload_complete.is_set():
+                    time.sleep(0.5)
+                    poll_count += 1
+
+                    # Check if file was uploaded
+                    file_path = server.get_uploaded_file()
+                    if file_path:
+                        kodilog(
+                            f"[UPLOAD_SUBTITLE] File detected via polling: {file_path}"
+                        )
+                        subtitle_result[0] = file_path
+                        upload_complete.set()
+                        # Close dialog from thread
+                        try:
+                            dialog.close()
+                        except Exception as e:
+                            kodilog(
+                                f"[UPLOAD_SUBTITLE] Error closing dialog from thread: {e}"
+                            )
+                        break
+
+                    # Timeout after 10 minutes
+                    if poll_count > 1200:
+                        kodilog("[UPLOAD_SUBTITLE] Polling timeout")
+                        upload_complete.set()
+                        try:
+                            dialog.close()
+                        except:
+                            pass
+                        break
+                kodilog("[UPLOAD_SUBTITLE] Polling thread ended")
+
+            # Start polling thread
+            poll_thread = threading.Thread(target=poll_for_upload, daemon=True)
+            poll_thread.start()
+
+            # Show modal dialog (blocks until closed)
+            kodilog("[UPLOAD_SUBTITLE] Showing modal dialog...")
+            dialog.doModal()
+
+            # Signal polling thread to stop
+            upload_complete.set()
+
+            # Check result
+            if subtitle_result[0]:
+                kodilog(f"[UPLOAD_SUBTITLE] Upload successful: {subtitle_result[0]}")
+            elif dialog.iscanceled:
+                kodilog("[UPLOAD_SUBTITLE] User cancelled")
+            else:
+                kodilog("[UPLOAD_SUBTITLE] Dialog closed without upload")
+
+        finally:
+            upload_complete.set()
+            server.stop()
+            kodilog("[UPLOAD_SUBTITLE] Web upload server stopped")
+
+        # If we got a file, resolve the source with it
+        if subtitle_result[0]:
+            self._resolve_item(selected_source, local_subtitle_path=subtitle_result[0])
+
     def _resolve_item(
-        self, selected_source, pack_select: bool = False, is_subtitle_download=False
+        self,
+        selected_source,
+        pack_select: bool = False,
+        is_subtitle_download=False,
+        local_subtitle_path: str = None,
     ) -> None:
         self.setProperty("resolving", "true")
         resolver_window = ResolverWindow(
@@ -416,6 +592,7 @@ class SourceSelect(BaseWindow):
             previous_window=self,
             item_information=self.item_information,
             is_subtitle_download=is_subtitle_download,
+            local_subtitle_path=local_subtitle_path,
         )
         self.resolved = resolver_window.doModal(pack_select)
         del resolver_window

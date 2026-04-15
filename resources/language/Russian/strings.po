@@ -3626,3 +3626,27 @@ msgstr "Настройки аддона"
 msgctxt "#90743"
 msgid "Set Views"
 msgstr "Настроить виды"
+
+msgctxt "#90744"
+msgid "Upload Subtitle"
+msgstr "Загрузить субтитры"
+
+msgctxt "#90745"
+msgid "Select Subtitle File"
+msgstr "Выбрать файл субтитров"
+
+msgctxt "#90746"
+msgid "Local File"
+msgstr "Локальный файл"
+
+msgctxt "#90747"
+msgid "Upload from Browser"
+msgstr "Загрузить из браузера"
+
+msgctxt "#90748"
+msgid "Upload subtitle from your browser"
+msgstr "Загрузите субтитры из браузера"
+
+msgctxt "#90749"
+msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+msgstr "Отсканируйте QR-код или откройте URL (%s) в браузере, чтобы загрузить файл субтитров"

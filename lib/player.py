@@ -207,8 +207,9 @@ class JacktookPLayer(xbmc.Player):
 
     def handle_subtitles(self, list_item):
         self.subtitles_found = False
-        if get_setting("search_subtitles"):
-            list_item.setSubtitles(self.data.get("subtitles_path", []))
+        subtitles_path = self.data.get("subtitles_path", [])
+        if subtitles_path or get_setting("search_subtitles"):
+            list_item.setSubtitles(subtitles_path)
             self.setSubtitleStream(0)
             self.subtitles_found = True
         elif get_setting("stremio_subtitle_enabled"):
@@ -241,8 +242,8 @@ class JacktookPLayer(xbmc.Player):
         auto_select_enabled = get_setting("auto_subtitle_selection")
         stremio_subtitle_enabled = get_setting("stremio_subtitle_enabled")
         search_subtitles = get_setting("search_subtitles")
-
-        if stremio_subtitle_enabled or search_subtitles:
+        
+        if self.subtitles_found or stremio_subtitle_enabled or search_subtitles:
             self.showSubtitles(True)
             if self.subtitles_found:
                 self.notification(translation(90257), time=2000)

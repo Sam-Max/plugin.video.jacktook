@@ -22,6 +22,7 @@ class ResolverWindow(BaseWindow):
         previous_window: Optional[BaseWindow] = None,
         close_callback: Optional[Any] = None,
         is_subtitle_download: bool = False,
+        local_subtitle_path: Optional[str] = None,
     ) -> None:
         super().__init__(
             xml_file,
@@ -35,6 +36,7 @@ class ResolverWindow(BaseWindow):
         self.source: TorrentStream = source
         self.pack_select: bool = False
         self.is_subtitle_download = is_subtitle_download
+        self.local_subtitle_path = local_subtitle_path
         self.item_information: Dict = item_information or {}
         self.close_callback: Optional[Any] = close_callback
         self.playback_info: Optional[Dict[str, Any]] = None
@@ -84,6 +86,13 @@ class ResolverWindow(BaseWindow):
 
             if self.is_subtitle_download:
                 self._download_subtitle()
+
+            if self.local_subtitle_path and self.playback_info:
+                existing_subtitles = self.playback_info.get("subtitles_path", [])
+                if self.local_subtitle_path not in existing_subtitles:
+                    existing_subtitles.append(self.local_subtitle_path)
+                    self.playback_info["subtitles_path"] = existing_subtitles
+                set_property("search_subtitles", "true")
 
             if not self.playback_info:
                 raise Exception("Failed to resolve source")

@@ -3626,3 +3626,27 @@ msgstr "Configurações do addon"
 msgctxt "#90743"
 msgid "Set Views"
 msgstr "Definir visualizações"
+
+msgctxt "#90744"
+msgid "Upload Subtitle"
+msgstr "Enviar legendas"
+
+msgctxt "#90745"
+msgid "Select Subtitle File"
+msgstr "Selecionar arquivo de legendas"
+
+msgctxt "#90746"
+msgid "Local File"
+msgstr "Arquivo local"
+
+msgctxt "#90747"
+msgid "Upload from Browser"
+msgstr "Enviar do navegador"
+
+msgctxt "#90748"
+msgid "Upload subtitle from your browser"
+msgstr "Enviar legenda do seu navegador"
+
+msgctxt "#90749"
+msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+msgstr "Escaneie o código QR ou abra a URL (%s) no seu navegador para enviar um arquivo de legendas"

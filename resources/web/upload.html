@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jacktook - Upload Subtitle</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0d1117;
+        --surface: #161b22;
+        --surface-hover: #1c2333;
+        --border: #30363d;
+        --text: #e6edf3;
+        --text-muted: #8b949e;
+        --accent: #58a6ff;
+        --accent-hover: #79c0ff;
+        --success: #3fb950;
+        --danger: #f85149;
+        --warning: #d29922;
+        --radius: 12px;
+        --radius-sm: 8px;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        line-height: 1.5;
+      }
+
+      /* Header */
+      .header {
+        background: linear-gradient(135deg, #1a1e2e 0%, #0d1117 100%);
+        border-bottom: 1px solid var(--border);
+        padding: 20px 16px;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(10px);
+      }
+      .header h1 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .header .subtitle {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      /* Container */
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      /* Upload Area */
+      .upload-section {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-top: 20px;
+      }
+      .upload-section h2 {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .drop-zone {
+        border: 2px dashed var(--border);
+        border-radius: var(--radius);
+        padding: 40px 20px;
+        text-align: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        position: relative;
+      }
+      .drop-zone:hover {
+        border-color: var(--accent);
+        background: var(--surface-hover);
+      }
+      .drop-zone.dragover {
+        border-color: var(--accent);
+        background: rgba(88, 166, 255, 0.1);
+      }
+      .drop-zone.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .drop-icon {
+        font-size: 3rem;
+        margin-bottom: 12px;
+      }
+      .drop-text {
+        font-size: 1rem;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+      .drop-hint {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+      .drop-formats {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-top: 8px;
+        padding: 4px 10px;
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        display: inline-block;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      /* Selected File */
+      .selected-file {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 12px 16px;
+        margin-top: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .file-icon {
+        font-size: 1.5rem;
+      }
+      .file-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .file-name {
+        font-size: 0.9rem;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-size {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+      }
+      .file-remove {
+        background: transparent;
+        border: none;
+        color: var(--danger);
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 4px;
+      }
+      .file-remove:hover {
+        opacity: 0.8;
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        width: 100%;
+        margin-top: 16px;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover:not(:disabled) {
+        background: var(--accent-hover);
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      /* Progress */
+      .progress-container {
+        margin-top: 16px;
+        display: none;
+      }
+      .progress-container.visible {
+        display: block;
+      }
+      .progress-bar {
+        height: 8px;
+        background: var(--bg);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.3s;
+      }
+      .progress-text {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 8px;
+        text-align: center;
+      }
+
+      /* Feedback */
+      .feedback {
+        margin-top: 16px;
+        padding: 12px 16px;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        display: none;
+      }
+      .feedback.error {
+        display: block;
+        background: rgba(248, 81, 73, 0.1);
+        border: 1px solid var(--danger);
+        color: var(--danger);
+      }
+      .feedback.success {
+        display: block;
+        background: rgba(63, 185, 80, 0.1);
+        border: 1px solid var(--success);
+        color: var(--success);
+      }
+
+      /* Instructions */
+      .instructions {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 16px;
+        margin-top: 20px;
+      }
+      .instructions h3 {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+      }
+      .instructions p {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        line-height: 1.6;
+      }
+
+      /* Spinner */
+      .spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.6s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 400px) {
+        .drop-zone {
+          padding: 30px 15px;
+        }
+        .drop-icon {
+          font-size: 2.5rem;
+        }
+        .drop-text {
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🔐 Jacktook</h1>
+      <div class="subtitle">Upload Subtitle</div>
+    </div>
+
+    <div class="container">
+      <!-- Upload Section -->
+      <div class="upload-section">
+        <h2>Drop your subtitle file here</h2>
+
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-icon">📁</div>
+          <div class="drop-text">Click to select or drag & drop</div>
+          <div class="drop-hint">Supports SRT, ASS, SSA, SUB, VTT formats</div>
+          <div class="drop-formats">.srt .ass .ssa .sub .vtt .txt</div>
+          <input
+            type="file"
+            class="file-input"
+            id="fileInput"
+            accept=".srt,.ass,.ssa,.sub,.vtt,.txt"
+          />
+        </div>
+
+        <div class="selected-file" id="selectedFile" style="display: none">
+          <div class="file-icon">📄</div>
+          <div class="file-info">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+          </div>
+          <button class="file-remove" id="removeFile" title="Remove">
+            &times;
+          </button>
+        </div>
+
+        <button class="btn btn-primary" id="uploadBtn" disabled>
+          <span id="btnText">Upload Subtitle</span>
+        </button>
+
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">Uploading...</div>
+        </div>
+
+        <div class="feedback" id="feedback"></div>
+      </div>
+
+      <!-- Instructions -->
+      <div class="instructions">
+        <h3>How it works</h3>
+        <p>
+          Select a subtitle file from your device or drag and drop it here. The
+          file will be uploaded to your Kodi device and automatically attached
+          to the video you're about to watch. You can close this page once the
+          upload is complete.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const selectedFile = document.getElementById("selectedFile");
+      const fileName = document.getElementById("fileName");
+      const fileSize = document.getElementById("fileSize");
+      const removeFile = document.getElementById("removeFile");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const btnText = document.getElementById("btnText");
+      const progressContainer = document.getElementById("progressContainer");
+      const progressFill = document.getElementById("progressFill");
+      const progressText = document.getElementById("progressText");
+      const feedback = document.getElementById("feedback");
+
+      let currentFile = null;
+
+      // Click to select
+
+      dropZone.addEventListener("click", () => {
+        if (!currentFile) fileInput.click();
+      });
+
+      // File selected via input
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+
+      // Drag & drop
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!currentFile) dropZone.classList.add("dragover");
+      });
+
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+      });
+
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+        if (!currentFile && e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      function handleFile(file) {
+        // Validate extension
+        const validExtensions = [
+          ".srt",
+          ".ass",
+          ".ssa",
+          ".sub",
+          ".vtt",
+          ".txt",
+        ];
+        const ext = "." + file.name.split(".").pop().toLowerCase();
+
+        if (!validExtensions.includes(ext)) {
+          showFeedback(
+            "Invalid file type. Please select a subtitle file.",
+            "error",
+          );
+          return;
+        }
+
+        currentFile = file;
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        selectedFile.style.display = "flex";
+        dropZone.style.display = "none";
+        uploadBtn.disabled = false;
+        hideFeedback();
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 Bytes";
+        const k = 1024;
+        const sizes = ["Bytes", "KB", "MB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+
+      removeFile.addEventListener("click", () => {
+        currentFile = null;
+        selectedFile.style.display = "none";
+        dropZone.style.display = "block";
+        uploadBtn.disabled = true;
+        fileInput.value = "";
+        hideFeedback();
+      });
+
+      uploadBtn.addEventListener("click", async () => {
+        if (!currentFile) return;
+
+        uploadBtn.disabled = true;
+        progressContainer.classList.add("visible");
+        btnText.innerHTML = '<span class="spinner"></span> Uploading...';
+        hideFeedback();
+
+        const formData = new FormData();
+        formData.append("file", currentFile);
+
+        // Simulate progress (since fetch doesn't support progress natively)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress = Math.min(progress + 5, 90);
+          progressFill.style.width = progress + "%";
+        }, 100);
+
+        try {
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          clearInterval(progressInterval);
+          progressFill.style.width = "100%";
+
+          const contentType = response.headers.get("content-type");
+
+          if (response.ok) {
+            clearInterval(progressInterval);
+            progressFill.style.width = "100%";
+
+            if (contentType && contentType.includes("application/json")) {
+              const data = await response.json();
+              showFeedback(
+                `Uploaded successfully: ${data.filename}`,
+                "success",
+              );
+            } else {
+              // HTML response - show success message
+              showFeedback(
+                "Upload complete! You can close this tab.",
+                "success",
+              );
+            }
+            btnText.textContent = "Upload Complete";
+            progressText.textContent =
+              "Done! Kodi will detect the file automatically.";
+          } else {
+            if (contentType && contentType.includes("application/json")) {
+              const data = await response.json();
+              showFeedback(data.error || "Upload failed", "error");
+            } else {
+              showFeedback("Upload failed. Please try again.", "error");
+            }
+            uploadBtn.disabled = false;
+            btnText.textContent = "Upload Subtitle";
+          }
+        } catch (error) {
+          clearInterval(progressInterval);
+          showFeedback("Network error: " + error.message, "error");
+          uploadBtn.disabled = false;
+          btnText.textContent = "Upload Subtitle";
+        }
+      });
+
+      function showFeedback(message, type) {
+        feedback.textContent = message;
+        feedback.className = "feedback " + type;
+      }
+
+      function hideFeedback() {
+        feedback.className = "feedback";
+      }
+    </script>
+  </body>
+</html>

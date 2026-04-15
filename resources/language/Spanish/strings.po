@@ -3679,3 +3679,27 @@ msgstr "Ajustes del addon"
 msgctxt "#90743"
 msgid "Set Views"
 msgstr "Configurar vistas"
+
+msgctxt "#90744"
+msgid "Upload Subtitle"
+msgstr "Subir subtítulo"
+
+msgctxt "#90745"
+msgid "Select Subtitle File"
+msgstr "Seleccionar archivo de subtítulo"
+
+msgctxt "#90746"
+msgid "Local File"
+msgstr "Archivo local"
+
+msgctxt "#90747"
+msgid "Upload from Browser"
+msgstr "Subir desde el navegador"
+
+msgctxt "#90748"
+msgid "Upload subtitle from your browser"
+msgstr "Subir subtítulo desde tu navegador"
+
+msgctxt "#90749"
+msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+msgstr "Escanea el código QR o abre la URL (%s) en tu navegador para subir un archivo de subtítulo"

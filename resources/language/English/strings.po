@@ -4022,3 +4022,27 @@ msgstr "Edit current title"
 msgctxt "#90741"
 msgid "Use original title"
 msgstr "Use original title"
+
+msgctxt "#90744"
+msgid "Upload Subtitle"
+msgstr "Upload Subtitle"
+
+msgctxt "#90745"
+msgid "Select Subtitle File"
+msgstr "Select Subtitle File"
+
+msgctxt "#90746"
+msgid "Local File"
+msgstr "Local File"
+
+msgctxt "#90747"
+msgid "Upload from Browser"
+msgstr "Upload from Browser"
+
+msgctxt "#90748"
+msgid "Upload subtitle from your browser"
+msgstr "Upload subtitle from your browser"
+
+msgctxt "#90749"
+msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+msgstr "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
