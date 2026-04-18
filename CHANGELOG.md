@@ -1,3 +1,15 @@
+## 1.9.0
+- Subtitle: Add subtitle upload from device or from a local webserver.
+- Downloads: Preserve the file extension and episode info in downloaded filenames.
+- Torrents: Fix torrent file handoff to TorrServer for Jackett trackers like Filelist.
+- UI: Stop the fallback poster viewtype from overriding the user's preference.
+
+Spanish:
+- Subtitulos: Añade la subida de subtitulos desde el dispositivo o desde un servidor web local.
+- Descargas: Conserva la extension y la informacion del episodio en los nombres descargados.
+- Torrents: Corrige el envio de archivos torrent a TorrServer para trackers de Jackett como Filelist.
+- UI: Evita que la vista de poster de respaldo sobrescriba la preferencia del usuario.
+
 ## 1.8.0
 - Search: Add TMDB Search Modes for movies and episodes, including title editing, original title variants, and manual year/season/episode entry from TMDB context menus.
 - Performance: Rework menu and listing rendering with batch `addDirectoryItems`, `ListItem(offscreen=True)`, `reuselanguageinvoker`, cached navigator entries, and cached TMDB item metadata to improve navigation speed
