@@ -4,8 +4,8 @@ import ssl
 import threading
 import re
 from urllib.request import Request, urlopen
-from urllib.parse import parse_qsl
-from lib.utils.general.utils import set_pluging_category
+from urllib.parse import parse_qsl, unquote, urlparse
+from lib.utils.general.utils import set_pluging_category, supported_video_extensions
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     apply_section_view,
@@ -41,7 +41,7 @@ def handle_download_file(params):
         notification("Invalid download destination.")
         return
 
-    file_name = normalize_file_name(params.get("file_name", ""))
+    file_name = normalize_file_name(params.get("file_name", ""), params.get("url", ""))
     cancel_key = os.path.join(destination, file_name)
     kodilog(f"Setting cancel event cache key: {cancel_key}")
 
@@ -307,10 +307,26 @@ def is_active_download(path):
     return cancel_flag is not True
 
 
-def normalize_file_name(file_name):
-    file_name = file_name.strip()
-    base, _ = os.path.splitext(file_name)
+def normalize_file_name(file_name, url=""):
+    file_name = (file_name or "").strip()
+    valid_extensions = {ext.lower() for ext in supported_video_extensions()}
+
+    base, ext = os.path.splitext(file_name)
+    if ext.lower() not in valid_extensions:
+        base = file_name
+        ext = ""
+
+    if not base and url:
+        url_path = unquote(urlparse(url.split("|", 1)[0]).path)
+        base = os.path.splitext(os.path.basename(url_path))[0]
+
+    if not ext and url:
+        url_path = unquote(urlparse(url.split("|", 1)[0]).path)
+        _, url_ext = os.path.splitext(url_path)
+        if url_ext.lower() in valid_extensions:
+            ext = url_ext
+
     # Remove invalid characters and dots from base name
     base = re.sub(r'[\\/*?:"<>|.]', "_", base)
     base = re.sub(r"_+", "_", base)
-    return base
+    return f"{base}{ext}"

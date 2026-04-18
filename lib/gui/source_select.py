@@ -27,6 +27,9 @@ from lib.utils.general.utils import (
     get_colored_languages,
     get_provider_color,
     get_random_color,
+    format_season_episode,
+    safe_json_loads,
+    normalize_tv_data,
 )
 from lib.utils.parsers.title_parser import parse_title_info
 from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
@@ -433,10 +436,23 @@ class SourceSelect(BaseWindow):
 
         download_dir = get_setting("download_dir")
         try:
+            title = (self.playback_info.get("title") or self.item_information.get("title") or "").strip()
+            tv_data = self.playback_info.get("tv_data")
+            if isinstance(tv_data, str):
+                tv_data = safe_json_loads(tv_data, {})
+            tv_data = normalize_tv_data(tv_data)
+            episode_label = ""
+            if tv_data.get("season") is not None and tv_data.get("episode") is not None:
+                episode_label = format_season_episode(tv_data["season"], tv_data["episode"])
+
+            file_name = title
+            if episode_label:
+                file_name = f"{title} - {episode_label}" if title else episode_label
+
             xbmc.executebuiltin(
                 action_url_run(
                     "handle_download_file",
-                    file_name=self.playback_info["title"],
+                    file_name=file_name,
                     url=self.playback_info["url"],
                     destination=translatePath(download_dir),
                 )
