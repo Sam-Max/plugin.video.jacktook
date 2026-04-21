@@ -1,5 +1,6 @@
 import abc
 from copy import deepcopy
+import hashlib
 import json
 from typing import Any, Dict, Tuple
 from lib.domain.torrent import TorrentStream
@@ -36,7 +37,16 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         pass
 
     def get_cached_focus(self):
-        cached_data = ADDON.getSetting(self.CACHE_KEY)
+        if not self.CACHE_KEY:
+            return None, None
+
+        cache_prop = self._focus_cache_prop()
+        cached_data = xbmcgui.Window(10000).getProperty(cache_prop)
+        if not cached_data:
+            cached_data = ADDON.getSetting(self.CACHE_KEY)
+            if cached_data:
+                xbmcgui.Window(10000).setProperty(cache_prop, cached_data)
+                ADDON.setSetting(self.CACHE_KEY, "")
         if cached_data:
             try:
                 return json.loads(cached_data)
@@ -45,8 +55,15 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         return None, None
 
     def set_cached_focus(self, control_id, item_id):
+        if not self.CACHE_KEY:
+            return
         cache_data = json.dumps((control_id, item_id))
-        ADDON.setSetting(self.CACHE_KEY, cache_data)
+        xbmcgui.Window(10000).setProperty(self._focus_cache_prop(), cache_data)
+
+    def _focus_cache_prop(self):
+        cache_key = str(self.CACHE_KEY or "")
+        cache_hash = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()
+        return f"jacktook.focus.{cache_hash}"
 
     def set_default_focus(
         self, control_list=None, control_id=None, control_list_reset=False
