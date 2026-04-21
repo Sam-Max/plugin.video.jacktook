@@ -42,6 +42,46 @@ def test_add_source_to_torrserver_uploads_torrent_file_from_url():
     api.add_torrent_obj.assert_called_once()
 
 
+def test_add_source_to_torrserver_prefers_torrent_url_over_magnet():
+    api = MagicMock()
+    api.add_torrent_obj.return_value = "urlhash"
+    response = MagicMock()
+    response.content = b"torrent-bytes"
+    response.raise_for_status.return_value = None
+
+    with patch.object(torrserver_utils, "JACKTORR_ADDON", True), patch.object(
+        torrserver_utils, "get_torrserver_api", return_value=api
+    ), patch.object(torrserver_utils.requests, "get", return_value=response):
+        result = torrserver_utils.add_source_to_torrserver(
+            url="https://filelist.io/download.php?id=1",
+            magnet="magnet:?xt=urn:btih:abc123",
+        )
+
+    assert result == "urlhash"
+    api.add_torrent_obj.assert_called_once()
+    api.add_magnet.assert_not_called()
+
+
+def test_add_source_to_torrserver_falls_back_to_magnet_when_url_fails():
+    api = MagicMock()
+    api.add_magnet.return_value = "abc123"
+
+    with patch.object(torrserver_utils, "JACKTORR_ADDON", True), patch.object(
+        torrserver_utils, "get_torrserver_api", return_value=api
+    ), patch.object(
+        torrserver_utils.requests, "get", side_effect=Exception("network")
+    ):
+        result = torrserver_utils.add_source_to_torrserver(
+            url="https://example.com/details/1",
+            magnet="magnet:?xt=urn:btih:abc123",
+        )
+
+    assert result == "abc123"
+    api.add_magnet.assert_called_once_with(
+        "magnet:?xt=urn:btih:abc123", title="", poster=""
+    )
+
+
 def test_add_source_to_debrid_uses_preferred_enabled_service():
     helper = MagicMock()
 

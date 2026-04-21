@@ -187,10 +187,10 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         # Try to extract magnet from url 
         if url.startswith("http") and not url.endswith(".torrent"):
             magnet_candidate, _, torrent_url = get_magnet_from_uri(url)
-            if magnet_candidate:
-                magnet = magnet_candidate
-            elif torrent_url:
+            if torrent_url:
                 url = torrent_url
+            elif magnet_candidate:
+                magnet = magnet_candidate
                 
         # Try to extract magnet from guid if it's a details page
         elif not magnet and guid.startswith("http"):
@@ -206,7 +206,8 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
         # --- Fallback: magnet from infoHash ---
         used_infohash_fallback = False
-        if not magnet and source.infoHash:
+        has_http_url = bool(url and url.startswith("http"))
+        if not magnet and source.infoHash and not has_http_url:
             from lib.utils.general.utils import info_hash_to_magnet
 
             magnet = info_hash_to_magnet(source.infoHash)

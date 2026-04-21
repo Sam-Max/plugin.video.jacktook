@@ -144,21 +144,30 @@ def add_source_to_torrserver(
         notification(translation(30253))
         return None
 
-    if not magnet and info_hash:
-        magnet = convert_info_hash_to_magnet(info_hash)
-
     try:
-        if magnet:
-            added_hash = api.add_magnet(magnet, title=title, poster=poster)
-        elif url and url.startswith("http"):
-            response = requests.get(url, timeout=15, headers=USER_AGENT_HEADER)
-            response.raise_for_status()
-            torrent_obj = BytesIO(response.content)
-            torrent_obj.name = "torrent.torrent"
-            added_hash = api.add_torrent_obj(torrent_obj, title=title, poster=poster)
-        else:
-            notification(translation(90361))
-            return None
+        added_hash = None
+
+        if url and url.startswith("http"):
+            try:
+                response = requests.get(url, timeout=15, headers=USER_AGENT_HEADER)
+                response.raise_for_status()
+                torrent_obj = BytesIO(response.content)
+                torrent_obj.name = "torrent.torrent"
+                added_hash = api.add_torrent_obj(
+                    torrent_obj, title=title, poster=poster
+                )
+            except Exception as exc:
+                kodilog(f"Failed to add torrent URL to TorrServer: {exc}")
+
+        if not added_hash:
+            if not magnet and info_hash:
+                magnet = convert_info_hash_to_magnet(info_hash)
+
+            if magnet:
+                added_hash = api.add_magnet(magnet, title=title, poster=poster)
+            else:
+                notification(translation(90361))
+                return None
 
         notification(translation(90360))
         return added_hash
