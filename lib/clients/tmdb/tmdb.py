@@ -483,7 +483,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -492,7 +492,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -516,7 +516,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -525,7 +525,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -617,7 +617,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -626,7 +626,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -738,7 +738,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -747,7 +747,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -834,7 +834,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -843,7 +843,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -1177,6 +1177,7 @@ class TmdbClient(BaseTmdbClient):
     def search_tmdb_recommendations(params):
         ids = json.loads(params.get("ids", "{}"))
         mode = params.get("mode", "tv")
+        media_type = params.get("media_type", "")
         tmdb_id = ids.get("tmdb_id")
         page = int(params.get("page", 1))
 
@@ -1184,12 +1185,19 @@ class TmdbClient(BaseTmdbClient):
             notification(translation(90400))
             return
 
-        set_pluging_category(translation(90379))
-        set_content_type(mode)
+        effective_mode = mode
+        if mode == "multi":
+            if media_type == "movie":
+                effective_mode = "movies"
+            elif media_type == "tv":
+                effective_mode = "tv"
 
-        if mode == "tv":
+        set_pluging_category(translation(90379))
+        set_content_type(effective_mode)
+
+        if effective_mode == "tv":
             data = tmdb_get("tv_recommendations", {"id": tmdb_id, "page": page})
-        elif mode == "movies":
+        elif effective_mode == "movies":
             data = tmdb_get("movie_recommendations", {"id": tmdb_id, "page": page})
         else:
             notification(translation(90390))
@@ -1206,7 +1214,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -1215,7 +1223,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -1226,15 +1234,17 @@ class TmdbClient(BaseTmdbClient):
                 "search_tmdb_recommendations",
                 ids=ids,
                 mode=mode,
+                media_type=media_type,
                 page=page + 1,
             )
         end_of_directory()
-        _apply_tmdb_view(mode)
+        _apply_tmdb_view(effective_mode)
 
     @staticmethod
     def search_tmdb_similar(params):
         ids = json.loads(params.get("ids", "{}"))
         mode = params.get("mode", "tv")
+        media_type = params.get("media_type", "")
         tmdb_id = ids.get("tmdb_id")
         page = int(params.get("page", 1))
 
@@ -1242,12 +1252,19 @@ class TmdbClient(BaseTmdbClient):
             notification(translation(90400))
             return
 
-        set_pluging_category(translation(90380))
-        set_content_type(mode)
+        effective_mode = mode
+        if mode == "multi":
+            if media_type == "movie":
+                effective_mode = "movies"
+            elif media_type == "tv":
+                effective_mode = "tv"
 
-        if mode == "tv":
+        set_pluging_category(translation(90380))
+        set_content_type(effective_mode)
+
+        if effective_mode == "tv":
             data = tmdb_get("tv_similar", {"id": tmdb_id, "page": page})
-        elif mode == "movies":
+        elif effective_mode == "movies":
             data = tmdb_get("movie_similar", {"id": tmdb_id, "page": page})
         else:
             notification(translation(90390))
@@ -1264,7 +1281,7 @@ class TmdbClient(BaseTmdbClient):
         for res in results:
             tmdb_id = getattr(res, "id", "")
             title = getattr(res, "title", "") or getattr(res, "name", "")
-            media_type = getattr(res, "media_type", "") or ""
+            result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
@@ -1273,7 +1290,7 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 title=title,
                 ids={"tmdb_id": tmdb_id},
-                media_type=media_type,
+                media_type=result_media_type,
                 batch=True,
             )
             directory_items.append(item_tuple)
@@ -1284,10 +1301,11 @@ class TmdbClient(BaseTmdbClient):
                 "search_tmdb_similar",
                 ids=ids,
                 mode=mode,
+                media_type=media_type,
                 page=page + 1,
             )
         end_of_directory()
-        _apply_tmdb_view(mode)
+        _apply_tmdb_view(effective_mode)
 
     @staticmethod
     def rescrape_tmdb_media(params):

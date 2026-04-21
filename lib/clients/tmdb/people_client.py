@@ -58,6 +58,7 @@ class PeopleClient(BaseTmdbClient):
     def search_people_by_id(params):
         set_pluging_category(translation(90078))
         mode = params.get("mode", "tv")
+        media_type = params.get("media_type", "")
         set_content_type(mode)
 
         ids = json.loads(params.get("ids", "{}"))
@@ -66,7 +67,7 @@ class PeopleClient(BaseTmdbClient):
             notification(translation(90400))
             return
 
-        if mode == "movies":
+        if mode == "movies" or media_type == "movie":
             credits = tmdb_get("movie_credits", params=tmdb_id)
         else:
             credits = tmdb_get("tv_credits", params=tmdb_id)

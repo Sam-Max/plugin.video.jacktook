@@ -522,6 +522,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                 name="search_tmdb_recommendations",
                 mode=mode,
                 ids=ids,
+                media_type=media_type,
             ),
         ),
         (
@@ -530,6 +531,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                 name="search_tmdb_similar",
                 mode=mode,
                 ids=ids,
+                media_type=media_type,
             ),
         ),
         (
@@ -538,6 +540,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                 name="search_people_by_id",
                 mode=mode,
                 ids=ids,
+                media_type=media_type,
             ),
         ),
         (
