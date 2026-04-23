@@ -189,24 +189,28 @@ class StremioAddonClient(BaseClient):
                 url = stream.url
                 is_cached = True if url else False
 
+            stream_type = IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT
+            stream_provider = stream.get_provider() or parsed["provider"]
+            stream_subindexer = stream.get_sub_indexer(self.addon)
+            stream_size = stream.get_parsed_size() or item.get("sizebytes") or parsed["size"]
+            stream_seeders = item.get("seed", 0) or parsed["seeders"]
+
             results.append(
                 TorrentStream(
                     title=stream.get_parsed_title(),
-                    type=(IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT),
+                    type=stream_type,
                     indexer=self.addon.manifest.name.split(" ")[0],
-                    subindexer=stream.get_sub_indexer(self.addon),
+                    subindexer=stream_subindexer,
                     addonKey=self.addon.key(),
                     addonName=self.addon.manifest.name,
                     addonInstanceLabel=self.instance_label,
                     guid=info_hash_to_magnet(info_hash) if info_hash else "",
                     infoHash=info_hash if info_hash else "",
-                    size=stream.get_parsed_size()
-                    or item.get("sizebytes")
-                    or parsed["size"],
-                    seeders=item.get("seed", 0) or parsed["seeders"],
+                    size=stream_size,
+                    seeders=stream_seeders,
                     languages=parsed["languages"],
                     fullLanguages=parsed["languages"],
-                    provider=stream.get_provider() or parsed["provider"],
+                    provider=stream_provider,
                     publishDate="",
                     peers=0,
                     url=url if url else "",

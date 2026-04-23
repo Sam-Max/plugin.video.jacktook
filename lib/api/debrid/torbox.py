@@ -92,11 +92,18 @@ class Torbox(DebridClient):
         return self._parse_response(response, is_return_none=False)
 
     def get_user_torrent_list(self):
-        return self._make_request(
-            "GET",
-            "/torrents/mylist",
-            params={"bypass_cache": "true"},
-        )
+        try:
+            return self._make_request(
+                "GET",
+                "/torrents/mylist",
+                params={"bypass_cache": "true"},
+            )
+        except ProviderException as exc:
+            if "Request timed out" in str(exc):
+                raise ProviderException(
+                    "Torbox timed out while checking your cloud torrents. Please try again."
+                )
+            raise
 
     def get_torrent_info(self, magnet_id):
         response = self.get_user_torrent_list()
@@ -106,7 +113,10 @@ class Torbox(DebridClient):
                 return torrent
 
     def get_available_torrent(self, info_hash):
-        response = self.get_user_torrent_list()
+        try:
+            response = self.get_user_torrent_list()
+        except ProviderException:
+            raise
         torrent_list = response.get("data", {})
         for torrent in torrent_list:
             if torrent.get("hash", "") == info_hash:

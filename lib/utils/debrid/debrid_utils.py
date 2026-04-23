@@ -8,12 +8,14 @@ from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
 from lib.api.debrid.base import ProviderException
+from lib.db.cached import cache
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.easydebrid import EasyDebridHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
+from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
 from lib.utils.kodi.utils import get_setting, kodilog, notification, translation
 from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
 from lib.utils.general.utils import (
@@ -65,6 +67,24 @@ SUPPORTED_CLOUD_TRANSFER_DEBRIDS = (
     DebridType.TB,
     DebridType.DB,
 )
+
+
+def _build_debrid_cache_scope() -> str:
+    flags = {
+        "torrent": bool(get_setting("torrent_enable")),
+        "stremio": bool(get_setting("stremio_enabled")),
+        "rd": bool(get_setting("real_debrid_enabled")),
+        "ad": bool(get_setting("alldebrid_enabled")),
+        "tb": bool(get_setting("torbox_enabled")),
+        "pm": bool(get_setting("premiumize_enabled")),
+        "db": bool(get_setting("debrider_enabled")),
+        "ed": bool(get_setting("easydebrid_enabled")),
+    }
+    selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
+    return "{}|{}".format(
+        "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
+        selected_stream_addons,
+    )
 
 
 def get_debrid_helper(debrid_type: str):
@@ -268,7 +288,12 @@ def get_cached_results(
     query: Optional[str], mode: str, media_type: str, episode: int
 ) -> Optional[List[TorrentStream]]:
     if query:
-        params = (episode, "deb") if mode == "tv" or media_type == "tv" else ("deb",)
+        cache_scope = _build_debrid_cache_scope()
+        params = (
+            (episode, "deb", cache_scope)
+            if mode == "tv" or media_type == "tv"
+            else ("deb", cache_scope)
+        )
         cached_results = get_cached(query, params=params)
         return cached_results if isinstance(cached_results, list) else None
     return None
@@ -326,7 +351,12 @@ def update_cache(
     episode: int,
 ):
     if query:
-        params = (episode, "deb") if mode == "tv" or media_type == "tv" else ("deb",)
+        cache_scope = _build_debrid_cache_scope()
+        params = (
+            (episode, "deb", cache_scope)
+            if mode == "tv" or media_type == "tv"
+            else ("deb", cache_scope)
+        )
         set_cached(cached_results, query, params=params)
 
 
@@ -491,9 +521,6 @@ def get_debrid_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:
         return get_debrid_helper(debrid_type).get_link(info_hash, data)
     except ValueError as e:
         kodilog(f"Unknown debrid type: {debrid_type}: {e}")
-        return None
-    except Exception as e:
-        kodilog(f"get_debrid_direct_url failed: {e}")
         return None
 
 

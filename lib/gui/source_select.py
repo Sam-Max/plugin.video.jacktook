@@ -330,7 +330,12 @@ class SourceSelect(BaseWindow):
             elif source.type == IndexerType.DEBRID:
                 provider_name = source.debridType or source.type
             elif source.type == IndexerType.STREMIO_DEBRID:
-                provider_name = source.debridType or source.subindexer or source.type
+                if source.debridType:
+                    provider_name = source.debridType
+                elif source.isCached and not source.infoHash:
+                    provider_name = source.type
+                else:
+                    provider_name = source.subindexer or source.type
             elif source.type == IndexerType.DIRECT:
                 provider_name = source.indexer or source.type
             else:

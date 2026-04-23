@@ -5,6 +5,7 @@ from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
     get_selected_stream_addons,
 )
+from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
 from lib.clients.stremio.addon_client import StremioAddonClient
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
@@ -47,6 +48,26 @@ from xbmcgui import Dialog
 TITLE_LANGUAGE_LOCALIZED_FIRST = "localized_first"
 TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
 TITLE_LANGUAGE_ENGLISH_ONLY = "english_only"
+
+
+def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
+    flags = {
+        "torrent": bool(get_setting("torrent_enable")),
+        "stremio": bool(get_setting("stremio_enabled")),
+        "rd": bool(get_setting("real_debrid_enabled")),
+        "ad": bool(get_setting("alldebrid_enabled")),
+        "tb": bool(get_setting("torbox_enabled")),
+        "pm": bool(get_setting("premiumize_enabled")),
+        "db": bool(get_setting("debrider_enabled")),
+        "ed": bool(get_setting("easydebrid_enabled")),
+    }
+    selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
+    normalized_scoped_url = str(scoped_addon_url or "")
+    return "{}|{}|{}".format(
+        "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
+        selected_stream_addons,
+        normalized_scoped_url,
+    )
 
 
 def _clean_title_candidate(value) -> str:
@@ -865,9 +886,12 @@ def search_client(
     year: Optional[int] = None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
+    cache_scope = _build_search_cache_scope(scoped_addon_url)
 
     if not rescrape:
-        cached_results = get_cached_results(query, mode, media_type, episode)
+        cached_results = get_cached_results(
+            query, mode, media_type, episode, cache_scope=cache_scope
+        )
         if cached_results:
             return cached_results
 
@@ -945,7 +969,14 @@ def search_client(
 
                 total_results = _collect_search_results(tasks, listener, show_dialog)
 
-    cache_results(total_results, query, mode, media_type, episode)
+    cache_results(
+        total_results,
+        query,
+        mode,
+        media_type,
+        episode,
+        cache_scope=cache_scope,
+    )
     return total_results
 
 
