@@ -44,6 +44,11 @@ import xbmc
 from xbmcgui import Dialog
 
 
+TITLE_LANGUAGE_LOCALIZED_FIRST = "localized_first"
+TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
+TITLE_LANGUAGE_ENGLISH_ONLY = "english_only"
+
+
 def _clean_title_candidate(value) -> str:
     if value is None:
         return ""
@@ -77,6 +82,15 @@ def _normalize_search_variant(variant) -> str:
     return variant if variant in allowed else SearchVariant.DEFAULT
 
 
+def _normalize_title_language_mode(mode) -> str:
+    allowed = {
+        TITLE_LANGUAGE_LOCALIZED_FIRST,
+        TITLE_LANGUAGE_ENGLISH_FIRST,
+        TITLE_LANGUAGE_ENGLISH_ONLY,
+    }
+    return mode if mode in allowed else TITLE_LANGUAGE_LOCALIZED_FIRST
+
+
 def _extract_english_tmdb_title(details, mode: str) -> str:
     translations = getattr(details, "translations", None)
     entries = getattr(translations, "translations", translations)
@@ -104,18 +118,27 @@ def _build_title_fallback_queries(
     mode: str,
     variant: str = SearchVariant.DEFAULT,
     year: Optional[int] = None,
+    title_language_mode: Optional[str] = None,
 ) -> List[str]:
     variant = _normalize_search_variant(variant)
+    title_language_mode = _normalize_title_language_mode(
+        title_language_mode
+        if title_language_mode is not None
+        else get_setting("search_title_language_mode", TITLE_LANGUAGE_LOCALIZED_FIRST)
+    )
     candidates = []
 
     cleaned_query = _clean_title_candidate(query)
     cleaned_year = _clean_title_candidate(year)
 
-    if cleaned_query:
-        if cleaned_year and variant == SearchVariant.TITLE_YEAR:
-            candidates.append(f"{cleaned_query} {cleaned_year}")
-        elif variant == SearchVariant.DEFAULT:
-            candidates.append(cleaned_query)
+    localized_candidate = ""
+    if cleaned_query and variant == SearchVariant.DEFAULT:
+        localized_candidate = cleaned_query
+    elif cleaned_query and cleaned_year and variant == SearchVariant.TITLE_YEAR:
+        localized_candidate = f"{cleaned_query} {cleaned_year}"
+
+    if localized_candidate:
+        candidates.append(localized_candidate)
 
     if not ids:
         return _unique_title_candidates(candidates)
@@ -140,11 +163,35 @@ def _build_title_fallback_queries(
         details, "original_name", ""
     )
 
+    english_candidate = ""
+    original_candidate = ""
     if variant == SearchVariant.DEFAULT:
-        fallback_titles = [english_title, original_title]
-        for title in fallback_titles:
-            if title:
-                candidates.append(title)
+        english_candidate = english_title
+        original_candidate = original_title
+    elif variant == SearchVariant.TITLE_YEAR and cleaned_year:
+        if english_title:
+            english_candidate = f"{english_title} {cleaned_year}"
+        if original_title:
+            original_candidate = f"{original_title} {cleaned_year}"
+
+    if variant == SearchVariant.DEFAULT:
+        if title_language_mode == TITLE_LANGUAGE_ENGLISH_ONLY:
+            candidates = [english_candidate, original_candidate]
+            if not any(candidates) and localized_candidate:
+                candidates.append(localized_candidate)
+        elif title_language_mode == TITLE_LANGUAGE_ENGLISH_FIRST:
+            candidates = [english_candidate, localized_candidate, original_candidate]
+        else:
+            candidates = [localized_candidate, english_candidate, original_candidate]
+    elif variant == SearchVariant.TITLE_YEAR:
+        if title_language_mode == TITLE_LANGUAGE_ENGLISH_ONLY:
+            candidates = [english_candidate, original_candidate]
+            if not any(candidates) and localized_candidate:
+                candidates.append(localized_candidate)
+        elif title_language_mode == TITLE_LANGUAGE_ENGLISH_FIRST:
+            candidates = [english_candidate, localized_candidate, original_candidate]
+        else:
+            candidates = [localized_candidate, english_candidate, original_candidate]
     elif variant == SearchVariant.ORIGINAL_TITLE:
         if original_title:
             candidates.append(original_title)
@@ -172,10 +219,19 @@ def _perform_search_with_title_fallback(
     *args,
     variant: str = SearchVariant.DEFAULT,
     year: Optional[int] = None,
+    title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     **kwargs,
 ):
     variant = _normalize_search_variant(variant)
-    queries = _build_title_fallback_queries(query, ids, mode, variant, year)
+    title_language_mode = _normalize_title_language_mode(title_language_mode)
+    queries = _build_title_fallback_queries(
+        query,
+        ids,
+        mode,
+        variant,
+        year,
+        title_language_mode=title_language_mode,
+    )
 
     for attempt, candidate in enumerate(queries, start=1):
         if attempt > 1:
@@ -315,6 +371,12 @@ def run_search_entry(params: dict):
     rescrape = params.get("rescrape", False)
 
     variant = _normalize_search_variant(params.get("search_variant", SearchVariant.DEFAULT))
+    title_language_mode = _normalize_title_language_mode(
+        params.get(
+            "search_title_language_mode",
+            get_setting("search_title_language_mode", TITLE_LANGUAGE_LOCALIZED_FIRST),
+        )
+    )
     year = params.get("year")
     if year is not None:
         try:
@@ -323,7 +385,7 @@ def run_search_entry(params: dict):
             year = None
 
     kodilog(
-        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, variant={variant}, year={year}, rescrape={rescrape}, force_select={params.get('force_select', False)}"
+        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, variant={variant}, title_language_mode={title_language_mode}, year={year}, rescrape={rescrape}, force_select={params.get('force_select', False)}"
     )
 
     library_data = None
@@ -354,6 +416,7 @@ def run_search_entry(params: dict):
         episode,
         scoped_addon_url=scoped_addon_url,
         variant=variant,
+        title_language_mode=title_language_mode,
         year=year,
     )
     if not results:
@@ -476,6 +539,7 @@ def _submit_search_tasks(
     imdb_id,
     show_dialog,
     variant: str = SearchVariant.DEFAULT,
+    title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
 ):
     def submit_performer(*args, **kwargs):
@@ -485,6 +549,8 @@ def _submit_search_tasks(
             kwargs["scoped_addon_url"] = scoped_addon_url
         if "variant" not in kwargs:
             kwargs["variant"] = variant
+        if "title_language_mode" not in kwargs:
+            kwargs["title_language_mode"] = title_language_mode
         if "year" not in kwargs:
             kwargs["year"] = year
         return executor.submit(
@@ -506,15 +572,19 @@ def _submit_search_tasks(
             tasks,
             "easynews_enabled",
             Indexer.EASYNEWS,
-            _perform_search,
+            _perform_search_with_title_fallback,
             dialog,
             query,
+            ids,
             mode,
             media_type,
             season,
             episode,
             show_dialog=show_dialog,
             scoped_addon_url=scoped_addon_url,
+            variant=variant,
+            title_language_mode=title_language_mode,
+            year=year,
         )
         add_task_if_enabled(
             executor,
@@ -548,6 +618,7 @@ def _submit_search_tasks(
                     show_dialog=show_dialog,
                     scoped_addon_url=scoped_addon_url,
                     variant=variant,
+                    title_language_mode=title_language_mode,
                     year=year,
                 )
             )
@@ -566,6 +637,7 @@ def _submit_search_tasks(
             show_dialog=show_dialog,
             scoped_addon_url=scoped_addon_url,
             variant=variant,
+            title_language_mode=title_language_mode,
             year=year,
         )
         add_task_if_enabled(
@@ -636,6 +708,7 @@ def _submit_search_tasks_managed(
     tmdb_id,
     imdb_id,
     variant: str = SearchVariant.DEFAULT,
+    title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
 ):
     def submit_performer_managed(name, indexer_key, *args, **kwargs):
@@ -644,6 +717,8 @@ def _submit_search_tasks_managed(
             kwargs["scoped_addon_url"] = scoped_addon_url
         if "variant" not in kwargs:
             kwargs["variant"] = variant
+        if "title_language_mode" not in kwargs:
+            kwargs["title_language_mode"] = title_language_mode
         if "year" not in kwargs:
             kwargs["year"] = year
         return manager.submit_task(
@@ -676,15 +751,19 @@ def _submit_search_tasks_managed(
             manager,
             "easynews_enabled",
             Indexer.EASYNEWS,
-            _perform_search,
+            _perform_search_with_title_fallback,
             dialog,
             query,
+            ids,
             mode,
             media_type,
             season,
             episode,
             show_dialog=False,
             scoped_addon_url=scoped_addon_url,
+            variant=variant,
+            title_language_mode=title_language_mode,
+            year=year,
         )
         add_task_if_enabled_managed(
             manager,
@@ -718,6 +797,7 @@ def _submit_search_tasks_managed(
                 show_dialog=False,
                 scoped_addon_url=scoped_addon_url,
                 variant=variant,
+                title_language_mode=title_language_mode,
                 year=year,
             )
         add_task_if_enabled_managed(
@@ -734,6 +814,7 @@ def _submit_search_tasks_managed(
             show_dialog=False,
             scoped_addon_url=scoped_addon_url,
             variant=variant,
+            title_language_mode=title_language_mode,
             year=year,
         )
         add_task_if_enabled_managed(
@@ -780,6 +861,7 @@ def search_client(
     show_dialog: bool = True,
     scoped_addon_url: str = "",
     variant: str = SearchVariant.DEFAULT,
+    title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
@@ -811,6 +893,7 @@ def search_client(
             tmdb_id,
             imdb_id,
             variant=variant,
+            title_language_mode=title_language_mode,
             year=year,
         )
 
@@ -856,6 +939,7 @@ def search_client(
                     imdb_id,
                     show_dialog,
                     variant=variant,
+                    title_language_mode=title_language_mode,
                     year=year,
                 )
 

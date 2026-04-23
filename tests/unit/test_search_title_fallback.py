@@ -6,6 +6,9 @@ from lib.search import (
     _build_title_fallback_queries,
     _perform_search_with_title_fallback,
     SearchVariant,
+    TITLE_LANGUAGE_ENGLISH_FIRST,
+    TITLE_LANGUAGE_ENGLISH_ONLY,
+    TITLE_LANGUAGE_LOCALIZED_FIRST,
 )
 
 
@@ -164,10 +167,71 @@ def test_build_title_fallback_queries_prefers_english_translation_for_movies():
         "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
     ):
         queries = _build_title_fallback_queries(
-            "Intocable", {"tmdb_id": "77338"}, "movies"
+            "Intocable",
+            {"tmdb_id": "77338"},
+            "movies",
+            title_language_mode=TITLE_LANGUAGE_LOCALIZED_FIRST,
         )
 
     assert queries == ["Intocable", "The Intouchables"]
+
+
+def test_build_title_fallback_queries_english_first_reorders_candidates():
+    details = AsObj(
+        {
+            "original_title": "The Intouchables",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "es", "data": {"title": "Intocable"}},
+                    {
+                        "iso_639_1": "en",
+                        "data": {"title": "The Intouchables"},
+                    },
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Intocable",
+            {"tmdb_id": "77338"},
+            "movies",
+            title_language_mode=TITLE_LANGUAGE_ENGLISH_FIRST,
+        )
+
+    assert queries == ["The Intouchables", "Intocable"]
+
+
+def test_build_title_fallback_queries_english_only_skips_localized_query():
+    details = AsObj(
+        {
+            "original_title": "The Intouchables",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "es", "data": {"title": "Intocable"}},
+                    {
+                        "iso_639_1": "en",
+                        "data": {"title": "The Intouchables"},
+                    },
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Intocable",
+            {"tmdb_id": "77338"},
+            "movies",
+            title_language_mode=TITLE_LANGUAGE_ENGLISH_ONLY,
+        )
+
+    assert queries == ["The Intouchables"]
 
 
 def test_build_title_fallback_queries_uses_original_name_when_needed_for_tv():

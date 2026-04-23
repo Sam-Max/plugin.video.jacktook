@@ -4046,3 +4046,23 @@ msgstr "Upload subtitle from your browser"
 msgctxt "#90749"
 msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
 msgstr "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+
+msgctxt "#90750"
+msgid "Search Title Language"
+msgstr "Search Title Language"
+
+msgctxt "#90751"
+msgid "Controls how Easynews/Jackett/Prowlarr title queries are prioritized for context searches."
+msgstr "Controls how Easynews/Jackett/Prowlarr title queries are prioritized for context searches."
+
+msgctxt "#90752"
+msgid "English first"
+msgstr "English first"
+
+msgctxt "#90753"
+msgid "English only"
+msgstr "English only"
+
+msgctxt "#90754"
+msgid "Localized first"
+msgstr "Localized first"

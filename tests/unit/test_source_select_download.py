@@ -2,6 +2,9 @@ import importlib
 import sys
 from unittest.mock import MagicMock, patch
 
+from lib.domain.torrent import TorrentStream
+from lib.utils.general.utils import DebridType, IndexerType
+
 
 def _load_source_select_module():
     if "lib.gui.source_select" in sys.modules:
@@ -78,3 +81,62 @@ def test_download_file_uses_year_for_movie_filename():
         destination="/downloads",
     )
     executebuiltin.assert_called_once_with("builtin")
+
+
+def test_populate_sources_list_shows_debrid_type_for_stremio_debrid_sources():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+
+    class _FakeListItem:
+        def __init__(self, label=""):
+            self.label = label
+            self.properties = {}
+
+        def setProperty(self, key, value):
+            self.properties[key] = value
+
+    class _FakeDisplayList:
+        def __init__(self):
+            self.items = []
+
+        def reset(self):
+            self.items = []
+
+        def addItem(self, item):
+            self.items.append(item)
+
+    source_select.display_list = _FakeDisplayList()
+    source_select.filter_applied = False
+    source_select.filtered_sources = None
+    source_select.sources = [
+        TorrentStream(
+            title="Example.Source.1080p",
+            type=IndexerType.STREMIO_DEBRID,
+            debridType=DebridType.TB,
+            subindexer="Torrentio",
+            size=1024,
+            provider="ProviderX",
+            quality="1080p",
+        )
+    ]
+
+    with patch.object(source_select_module.xbmcgui, "ListItem", _FakeListItem), patch.object(
+        source_select_module,
+        "parse_title_info",
+        return_value={
+            "clean_title": "Example Source",
+            "codec": "",
+            "audio": "",
+            "badges": "",
+            "release_group": "",
+        },
+    ), patch.object(source_select_module, "bytes_to_human_readable", return_value="1 KB"), patch.object(
+        source_select_module, "get_provider_color", side_effect=lambda value: value
+    ), patch.object(source_select_module, "get_random_color", side_effect=lambda value: value), patch.object(
+        source_select_module, "get_colored_languages", return_value=""
+    ), patch.object(source_select_module, "extract_publish_date", return_value=""), patch.object(
+        source_select_module, "get_source_status", return_value="[B]Cached[/B]"
+    ):
+        source_select.populate_sources_list()
+
+    assert source_select.display_list.items[0].properties["type"] == DebridType.TB

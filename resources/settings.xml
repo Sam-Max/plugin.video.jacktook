@@ -1069,6 +1069,17 @@
                     </constraints>
                     <control type="spinner" format="string" />
                 </setting>
+                <setting id="search_title_language_mode" type="string" label="90750" help="90751">
+                    <default>localized_first</default>
+                    <constraints>
+                        <options>
+                            <option label="90754">localized_first</option>
+                            <option label="90752">english_first</option>
+                            <option label="90753">english_only</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="string" />
+                </setting>
                 <setting id="include_season_packs" type="boolean" label="30710" help="">
                     <default>true</default>
                     <control type="toggle" />

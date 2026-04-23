@@ -3651,3 +3651,23 @@ msgstr "Carregar legenda do seu navegador"
 msgctxt "#90749"
 msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
 msgstr "Digitalize o código QR ou abra o URL (%s) no seu navegador para carregar um ficheiro de legendas"
+
+msgctxt "#90750"
+msgid "Search Title Language"
+msgstr "Idioma do título de pesquisa"
+
+msgctxt "#90751"
+msgid "Controls how Easynews/Jackett/Prowlarr title queries are prioritized for context searches."
+msgstr "Controla como as pesquisas por título de Easynews/Jackett/Prowlarr são priorizadas nas pesquisas de contexto."
+
+msgctxt "#90752"
+msgid "English first"
+msgstr "Inglês primeiro"
+
+msgctxt "#90753"
+msgid "English only"
+msgstr "Apenas inglês"
+
+msgctxt "#90754"
+msgid "Localized first"
+msgstr "Localizado primeiro"
