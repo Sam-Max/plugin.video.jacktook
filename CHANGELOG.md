@@ -1,3 +1,21 @@
+## 1.10.0
+- Search: Add Search Title Language mode with localized first, English first, and English only ordering for Easynews/Jackett/Prowlarr context searches.
+- Search: Improve English-first fallback behavior to prioritize TMDB original titles before localized titles when English translations are missing.
+- Search/Cache: Scope search and debrid cache entries by active provider/addon state to avoid stale cross-provider reuse.
+- Source Select: Improve source labeling clarity for search results.
+- Playback/TorrServer: Harden torrent URL handling for Jackett sources and preserve movie year in generated download filenames.
+- TMDB: Fix multi-search movie context actions.
+- UX: Keep source focus cache outside addon settings to avoid unintended persistence issues.
+
+Spanish:
+- Busqueda: Añadido modo de idioma del titulo de busqueda con orden Localizado primero, Ingles primero y Solo ingles para busquedas de contexto en Easynews/Jackett/Prowlarr.
+- Busqueda: Mejorado el comportamiento de fallback en Ingles primero para priorizar el titulo original de TMDB antes del titulo localizado cuando falta traduccion al ingles.
+- Busqueda/Cache: Segmentada la cache de busqueda y debrid por estado activo de proveedores/addons para evitar reutilizacion obsoleta entre proveedores.
+- Seleccion de fuentes: Mejorada la claridad del etiquetado de fuentes en los resultados.
+- Reproduccion/TorrServer: Reforzado el manejo de URLs torrent para fuentes de Jackett y conservado el año de pelicula en los nombres de descarga generados.
+- TMDB: Corregidas las acciones de contexto de multi-busqueda para peliculas.
+- UX: Movida la cache de foco de fuente fuera de los ajustes del addon para evitar persistencia no deseada.
+
 ## 1.9.0
 - Subtitle: Add subtitle upload from device or from a local webserver.
 - Downloads: Preserve the file extension and episode info in downloaded filenames.
