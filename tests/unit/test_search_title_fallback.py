@@ -205,6 +205,31 @@ def test_build_title_fallback_queries_english_first_reorders_candidates():
     assert queries == ["The Intouchables", "Intocable"]
 
 
+def test_build_title_fallback_queries_english_first_falls_back_to_original_before_localized():
+    details = AsObj(
+        {
+            "original_title": "Avatar: Fire and Ash",
+            "translations": {
+                "translations": [
+                    {"iso_639_1": "es", "data": {"title": "Avatar: Fuego y ceniza"}},
+                ]
+            },
+        }
+    )
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
+    ):
+        queries = _build_title_fallback_queries(
+            "Avatar: Fuego y ceniza",
+            {"tmdb_id": "123456"},
+            "movies",
+            title_language_mode=TITLE_LANGUAGE_ENGLISH_FIRST,
+        )
+
+    assert queries == ["Avatar: Fire and Ash", "Avatar: Fuego y ceniza"]
+
+
 def test_build_title_fallback_queries_english_only_skips_localized_query():
     details = AsObj(
         {

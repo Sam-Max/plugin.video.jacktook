@@ -201,7 +201,7 @@ def _build_title_fallback_queries(
             if not any(candidates) and localized_candidate:
                 candidates.append(localized_candidate)
         elif title_language_mode == TITLE_LANGUAGE_ENGLISH_FIRST:
-            candidates = [english_candidate, localized_candidate, original_candidate]
+            candidates = [english_candidate, original_candidate, localized_candidate]
         else:
             candidates = [localized_candidate, english_candidate, original_candidate]
     elif variant == SearchVariant.TITLE_YEAR:
@@ -210,7 +210,7 @@ def _build_title_fallback_queries(
             if not any(candidates) and localized_candidate:
                 candidates.append(localized_candidate)
         elif title_language_mode == TITLE_LANGUAGE_ENGLISH_FIRST:
-            candidates = [english_candidate, localized_candidate, original_candidate]
+            candidates = [english_candidate, original_candidate, localized_candidate]
         else:
             candidates = [localized_candidate, english_candidate, original_candidate]
     elif variant == SearchVariant.ORIGINAL_TITLE:
