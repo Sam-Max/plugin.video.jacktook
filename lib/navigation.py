@@ -779,6 +779,30 @@ def play_media(params):
     del player
 
 
+def play_autoscraped(params):
+    from lib.utils.player.utils import get_autoscrape_cache_key
+
+    ids = json.loads(params.get("ids", "{}"))
+    tv_data = json.loads(params.get("tv_data", "{}"))
+
+    id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
+    season = tv_data.get("season")
+    episode = tv_data.get("episode")
+
+    if id_value is not None and season is not None and episode is not None:
+        cache_key = get_autoscrape_cache_key(id_value, season, episode)
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            player = JacktookPLayer()
+            player.run(data=cached_data)
+            del player
+            return
+
+    from lib.search import run_search_entry
+
+    run_search_entry(params)
+
+
 def play_url(params):
     url = params.get("url")
     list_item = ListItem(label=params.get("name"), path=url)

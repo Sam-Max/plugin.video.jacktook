@@ -1995,17 +1995,37 @@ msgctxt "#90145"
 msgid "Precaching Enabled"
 msgstr "Precaching Habilitado"
 
-msgctxt "#90146"
-msgid "Enable or disable precaching of next episodes."
-msgstr "Habilitar o deshabilitar el precaching de los próximos episodios."
+msgctxt "#90171"
+msgid "Autoscrape Next Episode"
+msgstr "Autoscrape del Siguiente Episodio"
 
-msgctxt "#90147"
-msgid "Precaching Episode Count"
-msgstr "Cantidad de Episodios a Precargar"
+msgctxt "#90172"
+msgid "Pre-resolve the next episode's playback URL in the background while watching."
+msgstr "Pre-resolver la URL de reproducción del siguiente episodio en segundo plano."
 
-msgctxt "#90148"
-msgid "Number of next episodes to precache."
-msgstr "Número de próximos episodios a precargar."
+msgctxt "#90173"
+msgid "Autoscrape Threshold"
+msgstr "Umbral de Autoscrape"
+
+msgctxt "#90174"
+msgid "Percentage of playback to trigger background pre-resolution."
+msgstr "Porcentaje de reproducción para disparar la pre-resolución en segundo plano."
+
+msgctxt "#90175"
+msgid "Autoscrape Episode Count"
+msgstr "Cantidad de Episodios a Autoscrapear"
+
+msgctxt "#90176"
+msgid "Number of upcoming episodes to pre-resolve."
+msgstr "Número de próximos episodios a pre-resolver."
+
+msgctxt "#90177"
+msgid "Autoscrape Cache TTL"
+msgstr "TTL de Caché de Autoscrape"
+
+msgctxt "#90178"
+msgid "Hours to keep resolved playback data in cache."
+msgstr "Horas para mantener los datos de reproducción resueltos en caché."
 
 msgctxt "#30901"
 msgid "Show Only Stremio Catalogs"

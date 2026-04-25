@@ -23,7 +23,10 @@ from lib.utils.general.utils import (
     make_listing,
     set_watched_file,
 )
-from lib.utils.player.utils import precache_next_episodes
+from lib.utils.player.utils import (
+    autoscrape_next_episode,
+    get_autoscrape_cache_key,
+)
 
 import xbmc
 from xbmc import getCondVisibility as get_visibility
@@ -62,9 +65,6 @@ class JacktookPLayer(xbmc.Player):
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()
         self.mark_watched(data)
-
-        precaching_thread = Thread(target=precache_next_episodes, args=(self.data,))
-        precaching_thread.start()
 
         close_busy_dialog()
 
@@ -188,6 +188,7 @@ class JacktookPLayer(xbmc.Player):
             while self.isPlayingVideo():
                 self.update_playback_progress()
                 self.handle_trakt_pause_resume()
+                self.check_autoscrape_threshold()
 
                 if not ensure_dialog_closed:
                     ensure_dialog_closed = True
@@ -316,6 +317,39 @@ class JacktookPLayer(xbmc.Player):
         except Exception as e:
             kodilog(f"Error updating playback progress: {e}")
 
+    def check_autoscrape_threshold(self):
+        try:
+            if not getattr(self, "total_time", None) or self.total_time < 60:
+                return
+            if not getattr(self, "current_time", None):
+                return
+            if not getattr(self, "autoscrape_started", False) is False:
+                return
+            if not get_setting("autoscrape_next_episode", False):
+                return
+            if self.data.get("mode") != "tv":
+                return
+
+            threshold = int(get_setting("autoscrape_threshold", 70))
+            if self.current_time >= (self.total_time * threshold / 100):
+                self.autoscrape_started = True
+                tv_data = self.data.get("tv_data", {})
+                season = tv_data.get("season")
+                episode = tv_data.get("episode")
+                if season is None or episode is None:
+                    return
+
+                next_tv_data = {
+                    "season": season,
+                    "episode": episode + 1,
+                    "name": "",
+                }
+                thread = Thread(target=autoscrape_next_episode, args=(self.data, next_tv_data))
+                thread.daemon = True
+                thread.start()
+        except Exception as e:
+            kodilog(f"Error in check_autoscrape_threshold: {e}")
+
     def check_next_dialog(self):
         try:
             if not getattr(self, "total_time", None) or self.total_time < 60:
@@ -392,15 +426,25 @@ class JacktookPLayer(xbmc.Player):
                 "season": season,
             }
 
-            url = build_url(
-                "search",
-                mode=self.data["mode"],
-                query=getattr(details, "name", ""),
-                ids=ids,
-                tv_data=next_tv_data,
-                rescrape=True,
-                preferred_group=self.preferred_group,
-            )
+            if get_setting("autoscrape_next_episode", False):
+                url = build_url(
+                    "play_autoscraped",
+                    mode=self.data["mode"],
+                    query=getattr(details, "name", ""),
+                    ids=ids,
+                    tv_data=next_tv_data,
+                    preferred_group=self.preferred_group,
+                )
+            else:
+                url = build_url(
+                    "search",
+                    mode=self.data["mode"],
+                    query=getattr(details, "name", ""),
+                    ids=ids,
+                    tv_data=next_tv_data,
+                    rescrape=True,
+                    preferred_group=self.preferred_group,
+                )
 
             # Deduplication: Check if this URL is already in the playlist
             is_in_playlist = False
@@ -432,6 +476,7 @@ class JacktookPLayer(xbmc.Player):
         self.total_time = 0
         self.current_time = 0
         self.playback_started_properly = False
+        self.autoscrape_started = False
         self.next_dialog = get_setting("playnext_dialog_enabled")
         self._is_trakt_scrobble_active = False
         self._playback_was_paused = False

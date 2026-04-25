@@ -1,10 +1,25 @@
+from datetime import timedelta
+from typing import Any, Dict, Optional
 from urllib.parse import quote
+
+from xbmc import LOGDEBUG
+from xbmcgui import Dialog
+
+from lib.db.cached import cache
 from lib.jacktook.utils import kodilog
 from lib.utils.debrid.debrid_utils import (
     get_debrid_direct_url,
     get_debrid_pack_direct_url,
     is_supported_debrid_type,
 )
+from lib.utils.general.utils import (
+    DebridType,
+    Indexer,
+    IndexerType,
+    Players,
+    torrent_clients,
+)
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import (
     execute_builtin,
     get_setting,
@@ -14,17 +29,6 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
-from lib.utils.kodi.logging import summarize_locator_for_log
-from lib.utils.general.utils import (
-    DebridType,
-    IndexerType,
-    Indexer,
-    Players,
-    torrent_clients,
-)
-from xbmcgui import Dialog
-from xbmc import LOGDEBUG
-from typing import Any, Dict, Optional
 
 
 def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -213,71 +217,6 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
     return _url
 
 
-def precache_next_episodes(item_data):
-    kodilog("Precaching next episodes...")
-
-    from lib.search import search_client
-    from lib.clients.tmdb.utils.utils import tmdb_get
-
-    if not get_setting("precaching_enabled", False):
-        return
-
-    if item_data.get("mode") != "tv":
-        return
-
-    ids = item_data.get("ids")
-    if not ids:
-        return
-
-    tmdb_id = ids.get("tmdb_id")
-    if not tmdb_id:
-        return
-
-    details = tmdb_get("tv_details", tmdb_id)
-    tv_data = item_data.get("tv_data", {})
-    season = tv_data.get("season")
-    episode = tv_data.get("episode")
-
-    if season is None or episode is None:
-        kodilog("Invalid season or episode data")
-        return
-
-    season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season})
-    if not season_details or not hasattr(season_details, "episodes"):
-        kodilog("Invalid season details")
-        return
-
-    episodes_to_cache = []
-    for e in getattr(season_details, "episodes"):
-        episode_number = getattr(e, "episode_number", 0)
-        if episode_number > int(episode):
-            episodes_to_cache.append(e)
-
-    kodilog(f"Found {len(episodes_to_cache)} episodes to cache")
-
-    if not episodes_to_cache:
-        return
-
-    count = int(get_setting("precaching_episode_count", 1))
-    for i in range(min(count, len(episodes_to_cache))):
-        next_episode = episodes_to_cache[i]
-        episode_number = getattr(next_episode, "episode_number", 0)
-        query = getattr(details, "name", "")
-
-        search_client(
-            query=query,
-            ids=ids,
-            mode=item_data["mode"],
-            media_type=item_data.get("media_type", ""),
-            rescrape=True,
-            season=season,
-            episode=episode_number,
-            show_dialog=False,
-        )
-
-        kodilog(f"Precaching episode {season}x{episode_number}")
-
-
 class TorrentException(Exception):
     def __init__(
         self, message: str, status_code: Optional[int] = None, error_content: Any = None
@@ -292,3 +231,94 @@ class TorrentException(Exception):
             details += f"\nError content: {self.error_content}"
         super().__init__(details)
         notification(details)
+
+
+def get_autoscrape_cache_key(id_value: Any, season: Any, episode: Any) -> str:
+    """Build autoscrape cache key using as:{id}_{season}_{episode} format."""
+    return f"as:{id_value}_{season}_{episode}"
+
+
+def cache_autoscrape_result(key: str, data: Dict[str, Any], ttl_hours: Optional[int] = None) -> None:
+    """Cache resolved playback data with a TTL (default from autoscrape_ttl setting)."""
+    if ttl_hours is None:
+        ttl_hours = int(get_setting("autoscrape_ttl", 4) or 4)
+    cache.set(key, data, expires=timedelta(hours=ttl_hours))
+
+
+def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, Any]) -> None:
+    """Background thread: search, select, resolve, and cache next episode."""
+    if not get_setting("autoscrape_next_episode", False):
+        return
+
+    ids = item_data.get("ids")
+    if not ids:
+        return
+
+    id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
+    if not id_value:
+        return
+
+    season = next_tv_data.get("season")
+    episode = next_tv_data.get("episode")
+    if season is None or episode is None:
+        return
+
+    cache_key = get_autoscrape_cache_key(id_value, season, episode)
+
+    try:
+        from lib.search import search_client
+
+        results = search_client(
+            query=item_data.get("title", ""),
+            ids=ids,
+            mode=item_data.get("mode", ""),
+            media_type=item_data.get("media_type", ""),
+            rescrape=True,
+            season=season,
+            episode=episode,
+            show_dialog=False,
+        )
+
+        if not results:
+            kodilog("Autoscrape: no results found")
+            return
+
+        # Apply auto_play heuristics to select best source
+        preferred_quality = str(get_setting("auto_play_quality", "1080p"))
+        quality_matches = [
+            r for r in results if preferred_quality.lower() in r.quality.lower()
+        ]
+        if not quality_matches:
+            quality_matches = results
+
+        selected_result = quality_matches[0]
+
+        playback_info = resolve_playback_url(
+            data={
+                "title": selected_result.title,
+                "mode": item_data.get("mode", ""),
+                "indexer": selected_result.indexer,
+                "type": selected_result.type,
+                "debrid_type": selected_result.debridType,
+                "ids": ids,
+                "info_hash": selected_result.infoHash,
+                "url": selected_result.url,
+                "tv_data": next_tv_data,
+                "is_torrent": False,
+            },
+        )
+
+        if not playback_info:
+            kodilog("Autoscrape: failed to resolve playback URL")
+            return
+
+        # Enrich with metadata needed for direct playback
+        playback_info["ids"] = ids
+        playback_info["tv_data"] = next_tv_data
+        playback_info["mode"] = item_data.get("mode", "")
+        playback_info["title"] = selected_result.title
+
+        cache_autoscrape_result(cache_key, playback_info)
+        kodilog(f"Autoscrape: cached next episode {cache_key}")
+    except Exception as e:
+        kodilog(f"Autoscrape: error during background scrape: {e}")

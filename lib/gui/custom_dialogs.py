@@ -1,15 +1,16 @@
 import json
 from typing import Dict, List
 
+from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.play_next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, kodilog, translation
+from lib.player import JacktookPLayer
+from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, build_url, kodilog, translation
 from lib.gui.source_select import SourceSelect
 from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
-from lib.domain.torrent import TorrentStream
 from concurrent.futures import ThreadPoolExecutor
 
 from xbmcgui import WindowXMLDialog, WindowXML
@@ -174,8 +175,19 @@ def run_next_dialog(params):
 
                 next_episode = current_episode + 1
 
-                # Build URL for next episode
-                from lib.utils.kodi.utils import build_url
+                # Check autoscrape cache for fast path
+                ids = item_info.get("ids", {})
+                id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
+                if id_value is not None:
+                    from lib.utils.player.utils import get_autoscrape_cache_key
+                    cache_key = get_autoscrape_cache_key(id_value, season, next_episode)
+                    cached_data = cache.get(cache_key)
+                    if cached_data:
+                        PLAYLIST.clear()
+                        jack_player = JacktookPLayer()
+                        jack_player.run(data=cached_data)
+                        del jack_player
+                        return
 
                 next_tv_data = {
                     "episode": next_episode,
@@ -186,17 +198,7 @@ def run_next_dialog(params):
                     "search",
                     mode=item_info.get("mode"),
                     query=item_info.get("title"),
-                    ids=item_info.get("ids"),
-                    tv_data=next_tv_data,
-                    rescrape=True,
-                )
-
-                # Build URL for next episode
-                next_url = build_url(
-                    "search",
-                    mode=item_info.get("mode"),
-                    query=item_info.get("title"),
-                    ids=item_info.get("ids"),
+                    ids=ids,
                     tv_data=next_tv_data,
                     rescrape=True,
                 )

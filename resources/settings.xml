@@ -894,11 +894,27 @@
                         </dependency>
                     </dependencies>
                 </setting>
-                <setting id="precaching_enabled" type="boolean" label="90145" help="90146">
+                <setting id="autoscrape_next_episode" type="boolean" label="90171" help="90172">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="precaching_episode_count" type="integer" label="90147" help="90148">
+                <setting id="autoscrape_threshold" type="integer" label="90173" help="90174">
+                    <default>70</default>
+                    <constraints>
+                        <minimum>50</minimum>
+                        <maximum>90</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="autoscrape_next_episode">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="autoscrape_episode_count" type="integer" label="90175" help="90176">
                     <default>1</default>
                     <constraints>
                         <minimum>1</minimum>
@@ -910,10 +926,27 @@
                     </control>
                     <dependencies>
                         <dependency type="visible">
-                            <condition operator="is" setting="precaching_enabled">true</condition>
+                            <condition operator="is" setting="autoscrape_next_episode">true</condition>
                         </dependency>
                     </dependencies>
-                </setting>                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834"> 
+                </setting>
+                <setting id="autoscrape_ttl" type="integer" label="90177" help="90178">
+                    <default>4</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>12</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="autoscrape_next_episode">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="playnext_dialog_enabled" type="boolean" label="30719" help="30834">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
