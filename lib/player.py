@@ -1,7 +1,7 @@
 from threading import Thread
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
-from lib.clients.tmdb.utils.utils import tmdb_get
+from lib.clients.tmdb.utils.utils import get_movie_keywords, tmdb_get
 from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
@@ -184,6 +184,12 @@ class JacktookPLayer(xbmc.Player):
                 introdb_thread.daemon = True
                 introdb_thread.start()
 
+            # Fetch stinger info in background if enabled
+            if get_setting("stinger_notifications_enabled") and self.data.get("mode") == "movies":
+                stinger_thread = Thread(target=self.fetch_stinger_info)
+                stinger_thread.daemon = True
+                stinger_thread.start()
+
             # Monitor loop
             while self.isPlayingVideo():
                 self.update_playback_progress()
@@ -195,6 +201,7 @@ class JacktookPLayer(xbmc.Player):
                     self.playback_close_dialogs()
 
                 self.check_skip_intro()
+                self.check_stinger_notification()
                 self.check_next_dialog()
                 sleep(1000)
 
@@ -490,6 +497,11 @@ class JacktookPLayer(xbmc.Player):
         self.skip_intro_segments = None
         self.skip_intro_handled = {"intro": False, "recap": False}
 
+        # Stinger notification state
+        self.stinger_notified = False
+        self.stinger_keywords = []
+        self.has_stinger = False
+
     def fetch_introdb_segments(self):
         """Fetch segment data from IntroDB in a background thread."""
         try:
@@ -551,6 +563,49 @@ class JacktookPLayer(xbmc.Player):
                     self.skip_intro_handled[segment_type] = True
         except Exception as e:
             kodilog(f"Error in check_skip_intro: {e}")
+
+    def fetch_stinger_info(self):
+        """Fetch stinger keywords from TMDB in a background thread."""
+        try:
+            if not get_setting("stinger_notifications_enabled"):
+                return
+            if self.data.get("mode") != "movies":
+                return
+
+            ids = self.data.get("ids", {})
+            tmdb_id = ids.get("tmdb_id")
+            if not tmdb_id:
+                kodilog("Stinger: Missing TMDB ID")
+                return
+
+            self.stinger_keywords = get_movie_keywords(tmdb_id)
+            self.has_stinger = any(
+                k.lower() in ("aftercreditsstinger", "duringcreditsstinger")
+                for k in self.stinger_keywords
+            )
+            kodilog(f"Stinger keywords: {self.stinger_keywords}, has_stinger: {self.has_stinger}")
+        except Exception as e:
+            kodilog(f"Error fetching stinger info: {e}")
+
+    def check_stinger_notification(self):
+        try:
+            if not get_setting("stinger_notifications_enabled"):
+                return
+            if not self.has_stinger or self.stinger_notified:
+                return
+            if not getattr(self, "total_time", None) or self.total_time < 60:
+                return
+            if not getattr(self, "current_time", None):
+                return
+
+            time_left = int(self.total_time) - int(self.current_time)
+            stinger_notification_time = int(get_setting("stinger_notification_time", 180))
+
+            if time_left <= stinger_notification_time:
+                notification(translation(90183), time=5000)
+                self.stinger_notified = True
+        except Exception as e:
+            kodilog(f"Error in check_stinger_notification: {e}")
 
     def clear_playback_properties(self):
         clear_property("script.trakt.ids")

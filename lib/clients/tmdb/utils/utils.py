@@ -344,6 +344,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "tv_images": lambda p: TV().images(tv_id=p["id"]),
         "movie_reviews": lambda p: Movie().reviews(movie_id=p["id"], page=p["page"]),
         "tv_reviews": lambda p: TV().reviews(tv_id=p["id"], page=p["page"]),
+        "movie_keywords": lambda p: Movie().keywords(p["id"] if isinstance(p, dict) else p),
     }
 
     try:
@@ -414,6 +415,24 @@ def get_tmdb_movie_details(id: str) -> Optional[AsObj]:
 
 def get_tmdb_show_details(id: str) -> Optional[AsObj]:
     return tmdb_get("tv_details", id)
+
+
+def get_movie_keywords(tmdb_id):
+    """Fetch TMDB keywords for a movie. Returns list of keyword names."""
+    try:
+        res = tmdb_get("movie_keywords", tmdb_id)
+        keywords = []
+        for k in getattr(res, 'keywords', []):
+            # Support both AsObj (runtime) and dict (tests)
+            name = getattr(k, 'name', None)
+            if not name and isinstance(k, dict):
+                name = k.get('name')
+            if name:
+                keywords.append(name)
+        return keywords
+    except Exception as e:
+        kodilog(f"Error fetching movie keywords for {tmdb_id}: {e}")
+        return []
 
 
 def filter_anime_by_keyword(results, mode):

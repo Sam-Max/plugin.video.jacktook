@@ -1033,6 +1033,28 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="stinger" label="90179">
+                <setting id="stinger_notifications_enabled" type="boolean" label="90179" help="90180">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="stinger_notification_time" type="integer" label="90181" help="90182">
+                    <default>180</default>
+                    <constraints>
+                        <minimum>30</minimum>
+                        <maximum>600</maximum>
+                        <step>30</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stinger_notifications_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
         </category>
         <category id="filtering_category" label="30861">
             <group id="filtering_stremio" label="90155">

@@ -3699,3 +3699,23 @@ msgstr "Gerenciar Fontes"
 msgctxt "#90756"
 msgid "No sources available"
 msgstr "Nenhuma fonte disponível"
+
+msgctxt "#90179"
+msgid "Stinger Notifications"
+msgstr ""
+
+msgctxt "#90180"
+msgid "Show a notification when a movie has post-credit scenes."
+msgstr ""
+
+msgctxt "#90181"
+msgid "Stinger Notification Time"
+msgstr ""
+
+msgctxt "#90182"
+msgid "Seconds before the end to show the stinger notification."
+msgstr ""
+
+msgctxt "#90183"
+msgid "Stay tuned after the credits!"
+msgstr ""
