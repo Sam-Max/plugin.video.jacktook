@@ -163,6 +163,10 @@ def _is_gui_action(action):
     return action in _GUI_ACTIONS
 
 
+def _is_source_manager_action(action):
+    return action == "source_manager_toggle"
+
+
 def _get_route_handler(action):
     for matcher, handler in ROUTE_GROUPS:
         if matcher(action):
@@ -635,6 +639,12 @@ def _route_gui(action, params):
             action_func(params)
 
 
+def _route_source_manager(action, params):
+    from lib.gui.source_manager_dialog import open_source_manager_dialog
+
+    open_source_manager_dialog()
+
+
 def _route_core(action, params):
     if action in ("resolve_for_pack_selection", "resolve_for_subtitles"):
         from lib.actions import resolve_for_pack_selection, resolve_for_subtitles
@@ -780,4 +790,5 @@ ROUTE_GROUPS = (
     (_is_mdblist_action, _route_mdblist),
     (_is_cache_action, _route_cache),
     (_is_gui_action, _route_gui),
+    (_is_source_manager_action, _route_source_manager),
 )

@@ -88,3 +88,18 @@ def test_route_downloads_dispatches_handle_download_file():
         router._route_downloads("handle_download_file", params)
 
     handle_download_file.assert_called_once_with(params)
+
+
+def test_get_route_handler_returns_source_manager_dispatcher():
+    router = _load_router_module()
+
+    assert router._get_route_handler("source_manager_toggle") is router._route_source_manager
+
+
+def test_route_source_manager_opens_dialog():
+    router = _load_router_module()
+
+    with patch("lib.gui.source_manager_dialog.open_source_manager_dialog") as mock_dialog:
+        router._route_source_manager("source_manager_toggle", {})
+
+    mock_dialog.assert_called_once_with()

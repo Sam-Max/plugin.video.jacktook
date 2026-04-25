@@ -3670,3 +3670,11 @@ msgstr "Только английский"
 msgctxt "#90754"
 msgid "Localized first"
 msgstr "Сначала локализованный"
+
+msgctxt "#90755"
+msgid "Manage Sources"
+msgstr ""
+
+msgctxt "#90756"
+msgid "No sources available"
+msgstr ""

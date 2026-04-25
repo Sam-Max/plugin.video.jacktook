@@ -1,3 +1,4 @@
+import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
 
@@ -68,6 +69,21 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         selected_stream_addons,
         normalized_scoped_url,
     )
+
+
+def _is_source_enabled(indexer_key, stremio_addon_key=None):
+    selection = cache.get("source_manager_selection")
+    if not selection:
+        return True
+    try:
+        selected = json.loads(selection) if isinstance(selection, str) else list(selection)
+    except (ValueError, TypeError):
+        return True
+    if not selected:
+        return True
+    if stremio_addon_key:
+        return f"Stremio:{stremio_addon_key}" in selected
+    return str(indexer_key) in selected
 
 
 def _clean_title_candidate(value) -> str:
@@ -581,49 +597,54 @@ def _submit_search_tasks(
         )
 
     if scoped_addon_url:
-        if ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id"):
+        addon = get_addon_by_base_url(scoped_addon_url)
+        if addon and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ) and _is_source_enabled(Indexer.STREMIO, addon.key()):
             tasks.append(
                 submit_performer(
                     Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
                 )
             )
     else:
-        add_task_if_enabled(
-            executor,
-            tasks,
-            "easynews_enabled",
-            Indexer.EASYNEWS,
-            _perform_search_with_title_fallback,
-            dialog,
-            query,
-            ids,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
-            variant=variant,
-            title_language_mode=title_language_mode,
-            year=year,
-        )
-        add_task_if_enabled(
-            executor,
-            tasks,
-            "jacktookburst_enabled",
-            Indexer.BURST,
-            _perform_search,
-            dialog,
-            imdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
-        )
-        if get_setting("prowlarr_enabled"):
+        if _is_source_enabled(Indexer.EASYNEWS):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "easynews_enabled",
+                Indexer.EASYNEWS,
+                _perform_search_with_title_fallback,
+                dialog,
+                query,
+                ids,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+                variant=variant,
+                title_language_mode=title_language_mode,
+                year=year,
+            )
+        if _is_source_enabled(Indexer.BURST):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "jacktookburst_enabled",
+                Indexer.BURST,
+                _perform_search,
+                dialog,
+                imdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+            )
+        if get_setting("prowlarr_enabled") and _is_source_enabled(Indexer.PROWLARR):
             indexers_ids = get_setting("prowlarr_indexer_ids")
             tasks.append(
                 executor.submit(
@@ -643,43 +664,45 @@ def _submit_search_tasks(
                     year=year,
                 )
             )
-        add_task_if_enabled(
-            executor,
-            tasks,
-            "jackett_enabled",
-            Indexer.JACKETT,
-            _perform_search_with_title_fallback,
-            dialog,
-            query,
-            ids,
-            mode,
-            season,
-            episode,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
-            variant=variant,
-            title_language_mode=title_language_mode,
-            year=year,
-        )
-        add_task_if_enabled(
-            executor,
-            tasks,
-            "jackgram_enabled",
-            Indexer.JACKGRAM,
-            _perform_search,
-            dialog,
-            tmdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=show_dialog,
-            scoped_addon_url=scoped_addon_url,
-        )
+        if _is_source_enabled(Indexer.JACKETT):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "jackett_enabled",
+                Indexer.JACKETT,
+                _perform_search_with_title_fallback,
+                dialog,
+                query,
+                ids,
+                mode,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+                variant=variant,
+                title_language_mode=title_language_mode,
+                year=year,
+            )
+        if _is_source_enabled(Indexer.JACKGRAM):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "jackgram_enabled",
+                Indexer.JACKGRAM,
+                _perform_search,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+            )
         if get_setting("stremio_enabled") and (
             ids.get("imdb_id") or ids.get("original_id")
-        ):
+        ) and _is_source_enabled(Indexer.STREMIO):
             tasks.append(
                 submit_performer(
                     Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
@@ -755,7 +778,7 @@ def _submit_search_tasks_managed(
         addon = get_addon_by_base_url(scoped_addon_url)
         if addon and (
             ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
-        ):
+        ) and _is_source_enabled(Indexer.STREMIO, addon.key()):
             submit_performer_managed(
                 addon.manifest.name,
                 Indexer.STREMIO,
@@ -768,40 +791,42 @@ def _submit_search_tasks_managed(
                 scoped_addon_url=scoped_addon_url,
             )
     else:
-        add_task_if_enabled_managed(
-            manager,
-            "easynews_enabled",
-            Indexer.EASYNEWS,
-            _perform_search_with_title_fallback,
-            dialog,
-            query,
-            ids,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=False,
-            scoped_addon_url=scoped_addon_url,
-            variant=variant,
-            title_language_mode=title_language_mode,
-            year=year,
-        )
-        add_task_if_enabled_managed(
-            manager,
-            "jacktookburst_enabled",
-            Indexer.BURST,
-            _perform_search,
-            dialog,
-            imdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=False,
-            scoped_addon_url=scoped_addon_url,
-        )
-        if get_setting("prowlarr_enabled"):
+        if _is_source_enabled(Indexer.EASYNEWS):
+            add_task_if_enabled_managed(
+                manager,
+                "easynews_enabled",
+                Indexer.EASYNEWS,
+                _perform_search_with_title_fallback,
+                dialog,
+                query,
+                ids,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+                variant=variant,
+                title_language_mode=title_language_mode,
+                year=year,
+            )
+        if _is_source_enabled(Indexer.BURST):
+            add_task_if_enabled_managed(
+                manager,
+                "jacktookburst_enabled",
+                Indexer.BURST,
+                _perform_search,
+                dialog,
+                imdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+            )
+        if get_setting("prowlarr_enabled") and _is_source_enabled(Indexer.PROWLARR):
             indexers_ids = get_setting("prowlarr_indexer_ids")
             manager.submit_task(
                 "Prowlarr",
@@ -821,43 +846,50 @@ def _submit_search_tasks_managed(
                 title_language_mode=title_language_mode,
                 year=year,
             )
-        add_task_if_enabled_managed(
-            manager,
-            "jackett_enabled",
-            Indexer.JACKETT,
-            _perform_search_with_title_fallback,
-            dialog,
-            query,
-            ids,
-            mode,
-            season,
-            episode,
-            show_dialog=False,
-            scoped_addon_url=scoped_addon_url,
-            variant=variant,
-            title_language_mode=title_language_mode,
-            year=year,
-        )
-        add_task_if_enabled_managed(
-            manager,
-            "jackgram_enabled",
-            Indexer.JACKGRAM,
-            _perform_search,
-            dialog,
-            tmdb_id,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            show_dialog=False,
-            scoped_addon_url=scoped_addon_url,
-        )
+        if _is_source_enabled(Indexer.JACKETT):
+            add_task_if_enabled_managed(
+                manager,
+                "jackett_enabled",
+                Indexer.JACKETT,
+                _perform_search_with_title_fallback,
+                dialog,
+                query,
+                ids,
+                mode,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+                variant=variant,
+                title_language_mode=title_language_mode,
+                year=year,
+            )
+        if _is_source_enabled(Indexer.JACKGRAM):
+            add_task_if_enabled_managed(
+                manager,
+                "jackgram_enabled",
+                Indexer.JACKGRAM,
+                _perform_search,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+            )
         if get_setting("stremio_enabled") and (
             ids.get("imdb_id") or ids.get("original_id")
         ):
             stremio_addons = get_selected_stream_addons()
-            for addon in stremio_addons:
+            filtered_addons = [
+                addon
+                for addon in stremio_addons
+                if _is_source_enabled(Indexer.STREMIO, addon.key())
+            ]
+            for addon in filtered_addons:
                 submit_performer_managed(
                     addon.manifest.name,
                     Indexer.STREMIO,

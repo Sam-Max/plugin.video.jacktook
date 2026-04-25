@@ -4066,3 +4066,11 @@ msgstr "English only"
 msgctxt "#90754"
 msgid "Localized first"
 msgstr "Localized first"
+
+msgctxt "#90755"
+msgid "Manage Sources"
+msgstr "Manage Sources"
+
+msgctxt "#90756"
+msgid "No sources available"
+msgstr "No sources available"
