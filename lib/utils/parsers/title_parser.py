@@ -14,6 +14,7 @@ def clean_display_title(title):
         r"\b2160P\b", r"\b1080P\b", r"\b720P\b", r"\b480P\b", r"\b4K\b",
         r"\bHEVC\b", r"\bH265\b", r"\bH\.265\b", r"\bX265\b",
         r"\bH264\b", r"\bH\.264\b", r"\bX264\b", r"\bAVC\b",
+        r"\bAV1\b",
         r"\bDV\b", r"\bDOLBY VISION\b", r"\bDOLBYVISION\b",
         r"\bHDR10\+\b", r"\bHDR10\b", r"\bHDR\b", r"\bHYBRID\b",
         r"\bREMUX\b", r"\bWEB-DL\b", r"\bWEBDL\b", r"\bWEB\b", r"\bBRRIP\b", r"\bBDRIP\b", r"\bBLURAY\b",
@@ -38,6 +39,33 @@ def clean_display_title(title):
     
     return clean_title
 
+def extract_codec_hdr(title):
+    if not title:
+        return "", ""
+
+    title_upper = title.upper().replace(".", " ").replace("_", " ").replace("-", " ").replace("[", " ").replace("]", " ")
+
+    codec = ""
+    if any(x in title_upper for x in ["HEVC", "H265", "X265"]):
+        codec = "HEVC"
+    elif any(x in title_upper for x in ["H264", "X264", "AVC"]):
+        codec = "H.264"
+    elif "AV1" in title_upper:
+        codec = "AV1"
+
+    hdr = ""
+    if any(x in title_upper for x in [" DV ", "DOLBY VISION"]):
+        hdr = "DV"
+    elif "HDR10+" in title_upper:
+        hdr = "HDR10+"
+    elif "HDR10" in title_upper:
+        hdr = "HDR10"
+    elif "HDR" in title_upper:
+        hdr = "HDR"
+
+    return codec, hdr
+
+
 def parse_title_info(title):
     if not title:
         return {"codec": "", "audio": "", "hdr": "", "source": "", "format": "", "edition": "", "note": "", "lang_detail": "", "clean_title": "", "badges": "", "release_group": ""}
@@ -58,6 +86,9 @@ def parse_title_info(title):
         info["codec"] = get_color_tag("VIDEO:", val, "FF00FF00")
     elif any(x in title_upper for x in ["H264", "X264", "AVC"]):
         val = f"H.264 {bit_depth}".strip()
+        info["codec"] = get_color_tag("VIDEO:", val, "FF9ACD32")
+    elif "AV1" in title_upper:
+        val = f"AV1 {bit_depth}".strip()
         info["codec"] = get_color_tag("VIDEO:", val, "FF9ACD32")
     
     # 2. Audio & Channels

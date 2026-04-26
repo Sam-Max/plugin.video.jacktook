@@ -78,3 +78,74 @@ def test_pre_process_excludes_unknown_quality_when_disabled():
         filtered = pre_process(results, mode="movies", episode_name="", episode=0, season=0)
 
     assert [item.title for item in filtered] == ["Movie.2024.1080p.WEB-DL"]
+
+
+def test_pre_process_excludes_disabled_codec():
+    results = [
+        TorrentStream(title="Movie.2024.HEVC-GROUP", type="Torrent"),
+        TorrentStream(title="Movie.2024.H264-GROUP", type="Torrent"),
+        TorrentStream(title="Movie.2024.AV1-GROUP", type="Torrent"),
+    ]
+
+    with patch("lib.utils.general.utils.get_setting") as get_setting, patch(
+        "lib.utils.general.processors.get_setting"
+    ) as processor_get_setting:
+        get_setting.side_effect = lambda key, default=None: {
+            "unknown_enabled": True,
+            "unknown_quality_enabled": True,
+            "bluray_hd_enabled": True,
+            "web_hd_enabled": True,
+            "dvd_tv_enabled": True,
+            "cam_screener_enabled": True,
+            "filter_size_enabled": False,
+            "codec_hevc_enabled": False,
+            "codec_av1_enabled": True,
+            "codec_h264_enabled": True,
+            "dolby_vision_enabled": True,
+            "hdr10_enabled": True,
+            "hdr_enabled": True,
+        }.get(key, default)
+        processor_get_setting.side_effect = get_setting.side_effect
+
+        filtered = pre_process(results, mode="movies", episode_name="", episode=0, season=0)
+
+    assert [item.title for item in filtered] == [
+        "Movie.2024.H264-GROUP",
+        "Movie.2024.AV1-GROUP",
+    ]
+
+
+def test_pre_process_excludes_disabled_hdr():
+    results = [
+        TorrentStream(title="Movie.2024.DV.HEVC-GROUP", type="Torrent"),
+        TorrentStream(title="Movie.2024.HDR10.HEVC-GROUP", type="Torrent"),
+        TorrentStream(title="Movie.2024.HDR.H264-GROUP", type="Torrent"),
+        TorrentStream(title="Movie.2024.SDR.H264-GROUP", type="Torrent"),
+    ]
+
+    with patch("lib.utils.general.utils.get_setting") as get_setting, patch(
+        "lib.utils.general.processors.get_setting"
+    ) as processor_get_setting:
+        get_setting.side_effect = lambda key, default=None: {
+            "unknown_enabled": True,
+            "unknown_quality_enabled": True,
+            "bluray_hd_enabled": True,
+            "web_hd_enabled": True,
+            "dvd_tv_enabled": True,
+            "cam_screener_enabled": True,
+            "filter_size_enabled": False,
+            "codec_hevc_enabled": True,
+            "codec_av1_enabled": True,
+            "codec_h264_enabled": True,
+            "dolby_vision_enabled": False,
+            "hdr10_enabled": True,
+            "hdr_enabled": False,
+        }.get(key, default)
+        processor_get_setting.side_effect = get_setting.side_effect
+
+        filtered = pre_process(results, mode="movies", episode_name="", episode=0, season=0)
+
+    assert [item.title for item in filtered] == [
+        "Movie.2024.HDR10.HEVC-GROUP",
+        "Movie.2024.SDR.H264-GROUP",
+    ]

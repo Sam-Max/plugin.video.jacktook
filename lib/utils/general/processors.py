@@ -3,6 +3,7 @@ import re
 from typing import List, Dict, Optional
 
 from lib.utils.kodi.utils import get_setting, kodilog
+from lib.utils.parsers.title_parser import extract_codec_hdr
 from lib.clients.base import TorrentStream
 
 
@@ -288,6 +289,61 @@ class PreProcessBuilder(BaseProcessBuilder):
             size = parse_size(res)
             if size is None or min_size <= size <= max_size:
                 filtered.append(res)
+
+        self.results = filtered
+        return self
+
+    def extract_codec_hdr(self) -> "PreProcessBuilder":
+        for res in self.results:
+            codec, hdr = extract_codec_hdr(res.title)
+            res.codec = codec
+            res.hdr = hdr
+        return self
+
+    def filter_by_codec(self) -> "PreProcessBuilder":
+        hevc_enabled = get_setting("codec_hevc_enabled", True)
+        av1_enabled = get_setting("codec_av1_enabled", True)
+        h264_enabled = get_setting("codec_h264_enabled", True)
+
+        if hevc_enabled and av1_enabled and h264_enabled:
+            return self
+
+        filtered = []
+        for res in self.results:
+            if not res.codec:
+                filtered.append(res)
+                continue
+            if res.codec == "HEVC" and not hevc_enabled:
+                continue
+            if res.codec == "AV1" and not av1_enabled:
+                continue
+            if res.codec == "H.264" and not h264_enabled:
+                continue
+            filtered.append(res)
+
+        self.results = filtered
+        return self
+
+    def filter_by_hdr(self) -> "PreProcessBuilder":
+        dv_enabled = get_setting("dolby_vision_enabled", True)
+        hdr10_enabled = get_setting("hdr10_enabled", True)
+        hdr_enabled = get_setting("hdr_enabled", True)
+
+        if dv_enabled and hdr10_enabled and hdr_enabled:
+            return self
+
+        filtered = []
+        for res in self.results:
+            if not res.hdr:
+                filtered.append(res)
+                continue
+            if res.hdr == "DV" and not dv_enabled:
+                continue
+            if res.hdr in ("HDR10", "HDR10+") and not hdr10_enabled:
+                continue
+            if res.hdr == "HDR" and not hdr_enabled:
+                continue
+            filtered.append(res)
 
         self.results = filtered
         return self

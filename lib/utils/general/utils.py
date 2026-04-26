@@ -1298,6 +1298,9 @@ def pre_process(
     skip_episode_filter: bool = False,
 ) -> List[TorrentStream]:
     builder = PreProcessBuilder(results).remove_duplicates()
+    builder.extract_codec_hdr()
+    builder.filter_by_codec()
+    builder.filter_by_hdr()
     if mode == "tv" and not skip_episode_filter:
         builder.filter_sources(episode_name, episode, season)
     builder.filter_by_source()

@@ -37,3 +37,7 @@ class TorrentStream:
     isPack: bool = False
     isCached: bool = False
     addedToDebrid: bool = False
+
+    # Codec & HDR
+    codec: str = ""
+    hdr: str = ""

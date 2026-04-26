@@ -3803,3 +3803,35 @@ msgstr "RPDB Clave API"
 msgctxt "#90764"
 msgid "Get your API key at ratingposterdb.com"
 msgstr "Obten tu clave API en ratingposterdb.com"
+
+msgctxt "#90765"
+msgid "Codec Filters"
+msgstr "Filtros de Codec"
+
+msgctxt "#90766"
+msgid "HDR Filters"
+msgstr "Filtros HDR"
+
+msgctxt "#90767"
+msgid "HEVC / H.265"
+msgstr "HEVC / H.265"
+
+msgctxt "#90768"
+msgid "AV1"
+msgstr "AV1"
+
+msgctxt "#90769"
+msgid "H.264"
+msgstr "H.264"
+
+msgctxt "#90770"
+msgid "Dolby Vision"
+msgstr "Dolby Vision"
+
+msgctxt "#90771"
+msgid "HDR10 / HDR10+"
+msgstr "HDR10 / HDR10+"
+
+msgctxt "#90772"
+msgid "HDR (generic)"
+msgstr "HDR (generico)"
