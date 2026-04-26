@@ -14,6 +14,8 @@ from lib.utils.general.utils import (
     get_image_size,
     set_listitem_artwork,
     TMDB_IMAGE_SIZES,
+    get_rpdb_poster,
+    build_media_metadata,
 )
 
 
@@ -178,3 +180,198 @@ class TestSetListitemArtwork:
         art_call = item.setArt.call_args
         assert self._extract_url(art_call, "poster") == ""
         assert self._extract_url(art_call, "fanart") == ""
+
+
+class TestGetRpdbPoster:
+    def test_cache_hit_returns_cached_value(self):
+        cached_url = "https://cdn.ratingposterdb.com/poster.jpg"
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = cached_url
+            result = get_rpdb_poster("tt1234567", "test_key")
+            assert result == cached_url
+            mock_cache.get.assert_called_once_with("rpdb_poster|tt1234567")
+            mock_cache.set.assert_not_called()
+
+    def test_cache_miss_success_with_poster_field(self):
+        rpdb_url = "https://cdn.ratingposterdb.com/poster.jpg"
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {"poster": rpdb_url}
+
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = None
+            with patch("requests.get", return_value=response) as mock_get:
+                result = get_rpdb_poster("tt1234567", "test_key")
+                assert result == rpdb_url
+                mock_get.assert_called_once_with(
+                    "https://api.ratingposterdb.com/test_key/imdb/tt1234567?lang=en",
+                    timeout=10,
+                )
+                mock_cache.set.assert_called_once()
+                call_args = mock_cache.set.call_args
+                assert call_args[0][0] == "rpdb_poster|tt1234567"
+                assert call_args[0][1] == rpdb_url
+
+    def test_cache_miss_success_with_poster_large_field(self):
+        rpdb_url = "https://cdn.ratingposterdb.com/poster_large.jpg"
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {"poster_large": rpdb_url}
+
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = None
+            with patch("requests.get", return_value=response):
+                result = get_rpdb_poster("tt1234567", "test_key")
+                assert result == rpdb_url
+
+    def test_cache_miss_api_error_returns_none(self):
+        import requests as req_mod
+
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = None
+            with patch(
+                "requests.get", side_effect=req_mod.exceptions.RequestException("timeout")
+            ):
+                result = get_rpdb_poster("tt1234567", "test_key")
+                assert result is None
+                mock_cache.set.assert_not_called()
+
+    def test_cache_miss_non_200_status_returns_none(self):
+        response = MagicMock()
+        response.status_code = 403
+
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = None
+            with patch("requests.get", return_value=response):
+                result = get_rpdb_poster("tt1234567", "test_key")
+                assert result is None
+                mock_cache.set.assert_not_called()
+
+    def test_cache_miss_empty_response_returns_none(self):
+        response = MagicMock()
+        response.status_code = 200
+        response.json.return_value = {}
+
+        with patch("lib.utils.general.utils.cache") as mock_cache:
+            mock_cache.get.return_value = None
+            with patch("requests.get", return_value=response):
+                result = get_rpdb_poster("tt1234567", "test_key")
+                assert result is None
+
+
+class TestBuildMediaMetadataRpdb:
+    @staticmethod
+    def _make_tmdb_details(poster_path="/tmdb_poster.jpg"):
+        details = MagicMock()
+        details.poster_path = poster_path
+        details.overview = "Overview"
+        details.title = "Title"
+        details.name = ""
+        details.original_title = "Original Title"
+        details.original_name = ""
+        details.release_date = "2023-01-01"
+        details.runtime = 120
+        details.vote_average = 7.5
+        details.vote_count = 100
+        details.popularity = 50
+        details.backdrop_path = "/backdrop.jpg"
+        return details
+
+    def test_rpdb_enabled_overrides_poster(self):
+        ids = {"tmdb_id": "123", "imdb_id": "tt1234567"}
+        rpdb_url = "https://cdn.ratingposterdb.com/poster.jpg"
+
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh",
+            side_effect=lambda key, default=None: {
+                "rpdb_enabled": True,
+                "rpdb_api_key": "test_key",
+            }.get(key, default),
+        ):
+            with patch(
+                "lib.utils.general.utils.get_rpdb_poster", return_value=rpdb_url
+            ):
+                with patch(
+                    "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
+                    return_value=self._make_tmdb_details(),
+                ):
+                    with patch(
+                        "lib.utils.general.utils.get_fanart_details",
+                        return_value={},
+                    ):
+                        metadata = build_media_metadata(ids, "movies")
+                        assert metadata["poster"] == rpdb_url
+
+    def test_rpdb_enabled_fallback_to_tmdb_when_rpdb_none(self):
+        ids = {"tmdb_id": "123", "imdb_id": "tt1234567"}
+
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh",
+            side_effect=lambda key, default=None: {
+                "rpdb_enabled": True,
+                "rpdb_api_key": "test_key",
+            }.get(key, default),
+        ):
+            with patch(
+                "lib.utils.general.utils.get_rpdb_poster", return_value=None
+            ):
+                with patch(
+                    "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
+                    return_value=self._make_tmdb_details(),
+                ):
+                    with patch(
+                        "lib.utils.general.utils.get_fanart_details",
+                        return_value={},
+                    ):
+                        metadata = build_media_metadata(ids, "movies")
+                        assert "w780" in metadata["poster"]
+
+    def test_rpdb_disabled_uses_tmdb_poster(self):
+        ids = {"tmdb_id": "123", "imdb_id": "tt1234567"}
+
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh",
+            side_effect=lambda key, default=None: {
+                "rpdb_enabled": False,
+                "rpdb_api_key": "",
+            }.get(key, default),
+        ):
+            with patch(
+                "lib.utils.general.utils.get_rpdb_poster"
+            ) as mock_get_rpdb:
+                with patch(
+                    "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
+                    return_value=self._make_tmdb_details(),
+                ):
+                    with patch(
+                        "lib.utils.general.utils.get_fanart_details",
+                        return_value={},
+                    ):
+                        metadata = build_media_metadata(ids, "movies")
+                        mock_get_rpdb.assert_not_called()
+                        assert "w780" in metadata["poster"]
+
+    def test_rpdb_enabled_no_imdb_id_uses_tmdb_poster(self):
+        ids = {"tmdb_id": "123"}
+
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh",
+            side_effect=lambda key, default=None: {
+                "rpdb_enabled": True,
+                "rpdb_api_key": "test_key",
+            }.get(key, default),
+        ):
+            with patch(
+                "lib.utils.general.utils.get_rpdb_poster"
+            ) as mock_get_rpdb:
+                with patch(
+                    "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
+                    return_value=self._make_tmdb_details(),
+                ):
+                    with patch(
+                        "lib.utils.general.utils.get_fanart_details",
+                        return_value={},
+                    ):
+                        metadata = build_media_metadata(ids, "movies")
+                        mock_get_rpdb.assert_not_called()
+                        assert "w780" in metadata["poster"]

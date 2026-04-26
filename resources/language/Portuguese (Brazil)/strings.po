@@ -3738,3 +3738,15 @@ msgstr ""
 msgctxt "#90761"
 msgid "Original"
 msgstr ""
+
+msgctxt "#90762"
+msgid "Enable RPDB Posters"
+msgstr ""
+
+msgctxt "#90763"
+msgid "RPDB API Key"
+msgstr ""
+
+msgctxt "#90764"
+msgid "Get your API key at ratingposterdb.com"
+msgstr ""

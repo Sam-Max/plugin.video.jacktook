@@ -772,6 +772,29 @@ def tmdb_url(path, size):
     return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
 
 
+def get_rpdb_poster(imdb_id, api_key):
+    cache_key = f"rpdb_poster|{imdb_id}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    try:
+        response = requests.get(
+            f"https://api.ratingposterdb.com/{api_key}/imdb/{imdb_id}?lang=en",
+            timeout=10,
+        )
+        if response.status_code == 200:
+            data = response.json()
+            poster_url = data.get("poster") or data.get("poster_large")
+            if poster_url:
+                cache.set(cache_key, poster_url, timedelta(hours=24))
+                return poster_url
+    except requests.RequestException as e:
+        kodilog(f"RPDB request error: {e}")
+
+    return None
+
+
 def build_media_metadata(ids, mode: str) -> dict:
     metadata = {
         "poster": "",
@@ -825,6 +848,14 @@ def build_media_metadata(ids, mode: str) -> dict:
         details = get_tmdb_media_details(tmdb_id, mode)
         poster_path = getattr(details, "poster_path", "")
         metadata["poster"] = tmdb_url(poster_path, get_image_size("poster")) if poster_path else ""
+
+        if imdb_id and get_setting_fresh("rpdb_enabled"):
+            rpdb_api_key = get_setting_fresh("rpdb_api_key", "")
+            if rpdb_api_key:
+                rpdb_poster = get_rpdb_poster(imdb_id, rpdb_api_key)
+                if rpdb_poster:
+                    metadata["poster"] = rpdb_poster
+
         metadata["overview"] = getattr(details, "overview", "")
         metadata["title"] = getattr(details, "title", getattr(details, "name", ""))
         metadata["original_title"] = getattr(

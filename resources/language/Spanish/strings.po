@@ -3791,3 +3791,15 @@ msgstr "Alta"
 msgctxt "#90761"
 msgid "Original"
 msgstr "Original"
+
+msgctxt "#90762"
+msgid "Enable RPDB Posters"
+msgstr "Habilitar Posters RPDB"
+
+msgctxt "#90763"
+msgid "RPDB API Key"
+msgstr "RPDB Clave API"
+
+msgctxt "#90764"
+msgid "Get your API key at ratingposterdb.com"
+msgstr "Obten tu clave API en ratingposterdb.com"

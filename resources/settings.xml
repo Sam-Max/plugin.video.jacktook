@@ -1467,6 +1467,24 @@
                     <control type="spinner" format="string" />
                 </setting>
             </group>
+            <group id="rpdb" label="90762">
+                <setting id="rpdb_enabled" type="boolean" label="90762" help="90764">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="rpdb_api_key" type="string" label="90763" help="90764">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="rpdb_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="calendar" label="30896">
                 <setting id="use_broadcast_adjustment" type="boolean" label="30897" help="30898">
                     <default>false</default>
