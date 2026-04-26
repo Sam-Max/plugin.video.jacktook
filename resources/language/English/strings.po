@@ -312,8 +312,8 @@ msgid "Unknown"
 msgstr ""
 
 msgctxt "#30700"
-msgid "Buffer and play"
-msgstr ""
+msgid "Play Torrent"
+msgstr "Play Torrent"
 
 msgctxt "#30701"
 msgid "Stop downloading"
@@ -2578,6 +2578,10 @@ msgstr "My Lists"
 msgctxt "#90298"
 msgid "Liked Lists"
 msgstr "Liked Lists"
+
+msgctxt "#90299"
+msgid "No metadata found for this torrent"
+msgstr "No metadata found for this torrent"
 
 msgctxt "#90331"
 msgid "Stremio Addons"

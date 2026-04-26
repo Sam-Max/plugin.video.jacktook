@@ -1,3 +1,4 @@
+import os
 import requests
 from typing import Callable, List, Optional, Dict, Any
 from lib.clients.subtitle.utils import (
@@ -96,12 +97,13 @@ class OpenSubtitleStremioClient:
         title: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
+        folder_path: Optional[str] = None,
     ) -> List[str]:
         file_paths = []
         for idx, subtitle in enumerate(subtitles):
             try:
                 file_path = self.download_subtitle(
-                    subtitle, idx, imdb_id, title, season, episode
+                    subtitle, idx, imdb_id, title, season, episode, folder_path
                 )
                 if file_path:
                     file_paths.append(file_path)
@@ -118,6 +120,7 @@ class OpenSubtitleStremioClient:
         title: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
+        folder_path: Optional[str] = None,
     ) -> Optional[str]:
         url = subtitle.get("url", "")
         lang = subtitle.get("lang")
@@ -125,18 +128,26 @@ class OpenSubtitleStremioClient:
 
         title = slugify_title(title)
 
-        if season and episode:
-            file_path = (
-                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/{episode}/"
-                f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt"
-            )
-        elif season:
-            file_path = (
-                f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/"
-                f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt"
+        if folder_path:
+            file_path = os.path.join(
+                folder_path, f"Subtitle No.{index}.{title}.{lang_name}.srt"
             )
         else:
-            file_path = f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/Subtitle No.{index}.{title}.{lang_name}.srt"
+            base_path = os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
+            if season and episode:
+                file_path = os.path.join(
+                    base_path, str(season), str(episode),
+                    f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt"
+                )
+            elif season:
+                file_path = os.path.join(
+                    base_path, str(season),
+                    f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt"
+                )
+            else:
+                file_path = os.path.join(
+                    base_path, f"Subtitle No.{index}.{title}.{lang_name}.srt"
+                )
 
         try:
             response = requests.get(

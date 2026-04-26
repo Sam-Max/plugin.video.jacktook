@@ -219,7 +219,7 @@ class SourceSelect(BaseWindow):
                 [
                     translation(90365),
                     translation(90359),
-                    translation(90083),
+                    translation(90082),
                     translation(90744),
                 ]
             )
@@ -227,7 +227,7 @@ class SourceSelect(BaseWindow):
                 [
                     "download_to_debrid",
                     "add_to_torrserver",
-                    "download_file",
+                    "subtitle_download",
                     "upload_subtitle",
                 ]
             )
@@ -423,12 +423,22 @@ class SourceSelect(BaseWindow):
         title = selected_source.title or self.item_information.get("title", "")
         poster = self.item_information.get("poster", "")
 
+        import json as _json
+        metadata = {
+            "title": title,
+            "mode": self.item_information.get("mode", ""),
+            "ids": self.item_information.get("ids", {}),
+            "tv_data": self.item_information.get("tv_data", {}),
+        }
+        data = _json.dumps(metadata)
+
         add_source_to_torrserver(
             magnet=magnet,
             url=url,
             info_hash=selected_source.infoHash or "",
             title=title,
             poster=poster,
+            data=data,
         )
 
     def _download_file(self, selected_source) -> None:

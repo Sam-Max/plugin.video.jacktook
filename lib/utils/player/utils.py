@@ -101,19 +101,19 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
     )
 
     if get_setting("torrent_enable"):
-        return get_torrent_url_for_client(magnet, url, mode, ids)
+        return get_torrent_url_for_client(magnet, url, mode, ids, data=data)
 
     if data.get("is_torrent"):
         selected_client = get_torrent_client_selection(magnet, url, mode, ids)
         if selected_client:
-            return get_torrent_url_for_client(magnet, url, mode, ids, selected_client)
+            return get_torrent_url_for_client(magnet, url, mode, ids, selected_client, data=data)
         else:
             raise TorrentException("No torrent client selected")
     return None
 
 
 def get_torrent_url_for_client(
-    magnet: str, url: str, mode: str, ids: Any, client: str = ""
+    magnet: str, url: str, mode: str, ids: Any, client: str = "", data: Optional[Dict[str, Any]] = None
 ) -> Optional[str]:
     torrent_client = client or str(get_setting("torrent_client"))
     if torrent_client in [Players.TORREST]:
@@ -121,7 +121,7 @@ def get_torrent_url_for_client(
     elif torrent_client in [Players.ELEMENTUM]:
         return get_elementum_url(magnet, url, mode, ids)
     elif torrent_client in [Players.JACKTORR]:
-        return get_jacktorr_url(magnet, url)
+        return get_jacktorr_url(magnet, url, data=data)
     else:
         raise TorrentException(f"Unknown torrent client selected: {torrent_client}")
 
@@ -165,7 +165,7 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
         raise TorrentException("No magnet or url found for Elementum playback")
 
 
-def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
+def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = None) -> Optional[str]:
     kodilog(
         "Preparing Jacktorr URL with magnet={!r}, url={!r}, has_magnet={}, has_url={}".format(
             summarize_locator_for_log(magnet),
@@ -186,6 +186,9 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
         else:
             notification(translation(30253))
             return None
+
+    _save_jacktorr_playback_metadata(magnet, data or {})
+
     if magnet:
         _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
     elif url:
@@ -194,6 +197,47 @@ def get_jacktorr_url(magnet: str, url: str) -> Optional[str]:
         kodilog("Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG)
         raise TorrentException("No magnet or url found for Jacktorr playback")
     return _url
+
+
+def _save_jacktorr_playback_metadata(magnet: str, data: Dict[str, Any]) -> None:
+    ids = data.get("ids") if isinstance(data.get("ids"), dict) else {}
+    imdb_id = ids.get("imdb_id")
+    mode = data.get("mode", "")
+    tv_data = data.get("tv_data") or {}
+    title = data.get("title", "")
+    info_hash = data.get("info_hash", "")
+
+    meta = {
+        "title": title,
+        "mode": mode,
+        "ids": ids,
+        "tv_data": tv_data,
+    }
+
+    hash_candidates = []
+    if info_hash:
+        hash_candidates.append(info_hash)
+    if magnet:
+        try:
+            from lib.utils.general.utils import get_info_hash_from_magnet
+
+            magnet_hash = get_info_hash_from_magnet(magnet)
+            if magnet_hash and magnet_hash not in hash_candidates:
+                hash_candidates.append(magnet_hash)
+        except Exception as exc:
+            kodilog(f"Failed to extract Jacktorr playback metadata hash from magnet: {exc}")
+
+    if not hash_candidates:
+        kodilog("Jacktorr playback metadata not saved: no info_hash or magnet hash")
+        return
+
+    try:
+        from lib.utils.torrent.torrserver_utils import save_torrent_meta
+
+        for hash_candidate in hash_candidates:
+            save_torrent_meta(hash_candidate, meta)
+    except Exception as exc:
+        kodilog(f"Failed to save Jacktorr playback metadata: {exc}")
 
 
 def get_torrest_url(magnet: str, url: str) -> Optional[str]:

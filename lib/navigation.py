@@ -720,12 +720,43 @@ def torrents(params):
         end_of_directory(cache=False)
         return
 
+    set_pluging_category(translation(90012))
+
     for torrent in get_torrserver_api().torrents():
         info_hash = torrent.get("hash")
 
         context_menu_items = [(translation(30700), play_info_hash(info_hash))]
 
-        if torrent.get("stat") in [2, 3]:
+        # Build meta for subtitle download from local cache
+        parsed_data = {}
+        if info_hash:
+            from lib.utils.torrent.torrserver_utils import get_torrent_meta
+            parsed_data = get_torrent_meta(info_hash)
+
+        parsed_ids = parsed_data.get("ids", {}) if isinstance(parsed_data.get("ids", {}), dict) else {}
+        meta = {
+            "title": parsed_data.get("title") or torrent.get("title", ""),
+            "mode": parsed_data.get("mode", ""),
+            "ids": {
+                "tmdb_id": parsed_ids.get("tmdb_id", ""),
+                "tvdb_id": parsed_ids.get("tvdb_id", ""),
+                "imdb_id": parsed_ids.get("imdb_id"),
+                "original_id": parsed_ids.get("original_id", ""),
+            },
+            "tv_data": parsed_data.get("tv_data", {}),
+        }
+        context_menu_items.append(
+            (
+                translation(90082),
+                action_url_run(
+                    "download_torrent_subtitles",
+                    hash=info_hash,
+                    meta=json.dumps(meta),
+                ),
+            )
+        )
+
+        if torrent.get("stat") not in [0, 4, 8]:
             context_menu_items.append(
                 (
                     translation(30709),
@@ -756,7 +787,7 @@ def torrents(params):
             ]
         )
 
-        torrent_li = build_list_item(torrent.get("title", ""), "download.png")
+        torrent_li = build_list_item(torrent.get("title", ""), "magnet.png")
         torrent_li.addContextMenuItems(context_menu_items)
         addDirectoryItem(
             ADDON_HANDLE,

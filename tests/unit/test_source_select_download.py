@@ -140,3 +140,54 @@ def test_populate_sources_list_shows_debrid_type_for_stremio_debrid_sources():
         source_select.populate_sources_list()
 
     assert source_select.display_list.items[0].properties["type"] == DebridType.TB
+
+
+def test_torrent_context_menu_does_not_include_download_video():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.position = 0
+    source_select.list_sources = [TorrentStream(type=IndexerType.TORRENT)]
+
+    display_list = MagicMock()
+    display_list.getSelectedPosition.return_value = 0
+    source_select.display_list = display_list
+
+    labels = {
+        90365: "Download to debrid",
+        90359: "Add to TorrServer",
+        90083: "Download video",
+        90082: "Download subtitles",
+        90744: "Upload subtitle",
+    }
+    dialog = MagicMock()
+    dialog.contextmenu.return_value = -1
+
+    with patch.object(source_select_module, "translation", side_effect=lambda key: labels.get(key, str(key))), \
+         patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog):
+        source_select._handle_context_menu_action()
+
+    shown_items = dialog.contextmenu.call_args.args[0]
+    assert "Download video" not in shown_items
+    assert shown_items == ["Download to debrid", "Add to TorrServer", "Download subtitles", "Upload subtitle"]
+
+
+def test_torrent_context_menu_download_subtitles_resolves_for_subtitle_download():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.position = 0
+    source_select.item_information = {}
+    selected_source = TorrentStream(type=IndexerType.TORRENT)
+    source_select.list_sources = [selected_source]
+
+    display_list = MagicMock()
+    display_list.getSelectedPosition.return_value = 0
+    source_select.display_list = display_list
+
+    dialog = MagicMock()
+    dialog.contextmenu.return_value = 2
+
+    with patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog), \
+         patch.object(source_select, "_resolve_item") as resolve_item:
+        source_select._handle_context_menu_action()
+
+    resolve_item.assert_called_once_with(selected_source, is_subtitle_download=True)

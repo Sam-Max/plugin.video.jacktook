@@ -257,6 +257,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "url": url,
             "magnet": magnet,
             "info_hash": source.infoHash,
+            "title": self.item_information.get("title") or self.item_information.get("query") or source.title,
             "is_torrent": is_torrent,
             "is_pack": pack_select,
             "mode": self.item_information.get("mode"),

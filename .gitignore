@@ -18,3 +18,5 @@ scripts/
 .opencode/
 docs/
 skills-lock.json
+.engram/
+.atl/

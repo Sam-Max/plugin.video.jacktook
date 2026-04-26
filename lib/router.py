@@ -54,6 +54,8 @@ _TORRSERVER_ACTIONS = frozenset(
         "torrentio_selection",
         "display_picture",
         "display_text",
+        "download_torrent_subtitles",
+        "download_and_play_subtitles",
     }
 )
 
@@ -487,6 +489,17 @@ def _route_torrserver(action, params):
             "torrent_files": torrent_files,
             "display_picture": display_picture,
             "display_text": display_text,
+        }
+        actions[action](params)
+    elif action in ("download_torrent_subtitles", "download_and_play_subtitles"):
+        from lib.utils.torrent.torrserver_utils import (
+            download_torrent_subtitles,
+            download_and_play_subtitles,
+        )
+
+        actions = {
+            "download_torrent_subtitles": download_torrent_subtitles,
+            "download_and_play_subtitles": download_and_play_subtitles,
         }
         actions[action](params)
     elif action == "torrents":

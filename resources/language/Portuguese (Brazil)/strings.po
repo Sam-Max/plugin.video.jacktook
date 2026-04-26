@@ -312,8 +312,8 @@ msgid "Unknown"
 msgstr "Desconhecido"
 
 msgctxt "#30700"
-msgid "Buffer and play"
-msgstr "Carregar e reproduzir"
+msgid "Play Torrent"
+msgstr "Reproduzir torrent"
 
 msgctxt "#30701"
 msgid "Stop downloading"
@@ -2574,6 +2574,10 @@ msgstr "Minhas Listas"
 msgctxt "#90298"
 msgid "Liked Lists"
 msgstr "Listas Curtidas"
+
+msgctxt "#90299"
+msgid "No metadata found for this torrent"
+msgstr "Nenhum metadado encontrado para este torrent"
 
 msgctxt "#90331"
 msgid "Stremio Addons"

@@ -67,26 +67,34 @@ class SubtitleManager(KodiJsonRpcClient):
                     subtitle_files.append(os.path.join(root, f))
         return subtitle_files
 
-    def fetch_subtitles(self, auto_select: bool = False) -> Optional[List[str]]:
+    def fetch_subtitles(
+        self,
+        auto_select: bool = False,
+        folder_path: Optional[str] = None,
+        imdb_id: Optional[str] = None,
+        title: Optional[str] = None,
+    ) -> Optional[List[str]]:
         self.last_fetch_status = None
-        title = self.data.get("title")
+        title = title or self.data.get("title")
         mode = self.data.get("mode")
-        imdb_id = self.data.get("ids", {}).get("imdb_id")
+        imdb_id = imdb_id or self.data.get("ids", {}).get("imdb_id")
         tv_data = self.data.get("tv_data", {})
         episode = tv_data.get("episode")
         season = tv_data.get("season")
 
         if not imdb_id:
             kodilog("No IMDb ID found for the current video, skipping subtitles")
+            self.last_fetch_status = "no_imdb"
             return None
 
-        folder_path = (
-            os.path.join(
-                ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode)
+        if folder_path is None:
+            folder_path = (
+                os.path.join(
+                    ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode)
+                )
+                if mode == "tv"
+                else os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
             )
-            if mode == "tv"
-            else os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
-        )
 
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -118,7 +126,7 @@ class SubtitleManager(KodiJsonRpcClient):
             return None
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(
-            subtitles, imdb_id, title=title, season=season, episode=episode
+            subtitles, imdb_id, title=title, season=season, episode=episode, folder_path=folder_path
         )
 
         if get_setting("deepl_enabled"):

@@ -103,3 +103,27 @@ def test_route_source_manager_opens_dialog():
         router._route_source_manager("source_manager_toggle", {})
 
     mock_dialog.assert_called_once_with()
+
+
+def test_route_torrserver_download_torrent_subtitles():
+    router = _load_router_module()
+
+    params = {"hash": "abc123", "meta": "{}"}
+    with patch(
+        "lib.utils.torrent.torrserver_utils.download_torrent_subtitles"
+    ) as mock_dl:
+        router._route_torrserver("download_torrent_subtitles", params)
+
+    mock_dl.assert_called_once_with(params)
+
+
+def test_route_torrserver_download_and_play_subtitles():
+    router = _load_router_module()
+
+    params = {"hash": "abc123", "file_id": "1", "path": "movie.mkv", "meta": "{}"}
+    with patch(
+        "lib.utils.torrent.torrserver_utils.download_and_play_subtitles"
+    ) as mock_dl:
+        router._route_torrserver("download_and_play_subtitles", params)
+
+    mock_dl.assert_called_once_with(params)

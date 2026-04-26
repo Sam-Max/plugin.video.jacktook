@@ -25,6 +25,29 @@ def test_add_source_to_torrserver_uses_magnet_when_available():
     notification.assert_called_once()
 
 
+def test_add_source_to_torrserver_saves_metadata_under_returned_and_source_hashes():
+    api = MagicMock()
+    api.add_magnet.return_value = "RETURNEDHASH"
+    data = '{"title": "Test Movie", "ids": {"imdb_id": "tt123"}}'
+
+    with patch.object(torrserver_utils, "JACKTORR_ADDON", True), patch.object(
+        torrserver_utils, "get_torrserver_api", return_value=api
+    ), patch.object(torrserver_utils, "notification"), patch.object(
+        torrserver_utils, "get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch.object(torrserver_utils, "save_torrent_meta") as mock_save:
+        result = torrserver_utils.add_source_to_torrserver(
+            magnet="magnet:?xt=urn:btih:MAGNETHASH",
+            info_hash="SOURCEHASH",
+            title="Test",
+            data=data,
+        )
+
+    assert result == "RETURNEDHASH"
+    saved_hashes = [call.args[0] for call in mock_save.call_args_list]
+    assert saved_hashes == ["returnedhash", "sourcehash", "magnethash"]
+    assert all(call.args[1]["ids"]["imdb_id"] == "tt123" for call in mock_save.call_args_list)
+
+
 def test_add_source_to_torrserver_uploads_torrent_file_from_url():
     api = MagicMock()
     api.add_torrent_obj.return_value = "def456"
