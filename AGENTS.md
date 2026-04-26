@@ -193,3 +193,13 @@ Follow existing codebase conventions first; avoid style-only churn.
 - When changing routing/action names, update all call sites and query param builders.
 - Run relevant tests first (single-test command), then broader suite when feasible.
 - If tests fail due to known environment stubs, document clearly in your handoff.
+
+## 11) Git Workflow Rules
+
+### NO Automatic Commits
+- **NEVER** run `git commit` automatically on behalf of the user.
+- **NEVER** use `git commit --amend` without explicit user request.
+- The user decides when and how to commit changes.
+- If the user says "commit", confirm the message and scope before executing.
+- Present changes with `git diff --stat` or `git status` and wait for explicit approval.
+- Exception: if the user explicitly asks "commit this" or "make a commit", then proceed.
