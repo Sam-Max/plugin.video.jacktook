@@ -1,5 +1,8 @@
 import importlib
+import json
+import os
 import sys
+import tempfile
 from unittest.mock import MagicMock, patch
 
 
@@ -66,3 +69,228 @@ def test_handle_download_file_passes_url_to_normalizer():
     )
     cache_set.assert_called_once_with("/downloads/Movie.mkv", False)
     downloader_instance.run.assert_called_once_with()
+
+
+# --- Tests for get_destination_path ---
+
+def test_get_destination_path_flat_when_disabled():
+    downloader = _load_downloader_module()
+
+    with patch.object(downloader, "get_setting", side_effect=lambda key, default=False: False if key == "organize_downloads" else default), patch.object(
+        downloader, "translatePath", return_value="/downloads"
+    ), patch.object(downloader.xbmcvfs, "mkdirs") as mock_mkdirs:
+        result = downloader.get_destination_path({"title": "Movie", "mode": "movies"})
+
+    assert result == "/downloads"
+    mock_mkdirs.assert_not_called()
+
+
+def test_get_destination_path_movies_when_enabled():
+    downloader = _load_downloader_module()
+
+    with patch.object(
+        downloader,
+        "get_setting",
+        side_effect=lambda key, default="": {
+            "organize_downloads": True,
+            "download_dir": "/downloads",
+            "download_folder_movies": "Movies",
+            "download_folder_tvshows": "TV Shows",
+        }.get(key, default),
+    ), patch.object(downloader, "translatePath", return_value="/downloads"), patch.object(
+        downloader.xbmcvfs, "mkdirs"
+    ) as mock_mkdirs:
+        result = downloader.get_destination_path({"title": "Movie", "mode": "movies"})
+
+    assert result == "/downloads/Movies"
+    mock_mkdirs.assert_called_once_with("/downloads/Movies")
+
+
+def test_get_destination_path_tv_when_enabled():
+    downloader = _load_downloader_module()
+
+    with patch.object(
+        downloader,
+        "get_setting",
+        side_effect=lambda key, default="": {
+            "organize_downloads": True,
+            "download_dir": "/downloads",
+            "download_folder_movies": "Movies",
+            "download_folder_tvshows": "TV Shows",
+        }.get(key, default),
+    ), patch.object(downloader, "translatePath", return_value="/downloads"), patch.object(
+        downloader.xbmcvfs, "mkdirs"
+    ) as mock_mkdirs:
+        result = downloader.get_destination_path(
+            {
+                "title": "Episode",
+                "mode": "tv",
+                "tv_data": {"name": "Breaking Bad", "season": 2},
+            }
+        )
+
+    assert result == "/downloads/TV Shows/Breaking Bad/Season 02"
+    mock_mkdirs.assert_called_once_with("/downloads/TV Shows/Breaking Bad/Season 02")
+
+
+def test_get_destination_path_fallback_to_title_for_show_name():
+    downloader = _load_downloader_module()
+
+    with patch.object(
+        downloader,
+        "get_setting",
+        side_effect=lambda key, default="": {
+            "organize_downloads": True,
+            "download_dir": "/downloads",
+            "download_folder_movies": "Movies",
+            "download_folder_tvshows": "TV Shows",
+        }.get(key, default),
+    ), patch.object(downloader, "translatePath", return_value="/downloads"), patch.object(
+        downloader.xbmcvfs, "mkdirs"
+    ):
+        result = downloader.get_destination_path(
+            {
+                "title": "Some Show",
+                "mode": "tv",
+                "tv_data": {"season": 1},
+            }
+        )
+
+    assert result == "/downloads/TV Shows/Some Show/Season 01"
+
+
+# --- Tests for get_download_metadata ---
+
+def test_get_download_metadata_returns_defaults_when_missing():
+    downloader = _load_downloader_module()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "video.mkv")
+        result = downloader.get_download_metadata(path)
+
+    assert result == {"status": "unknown", "progress": 0, "title": ""}
+
+
+def test_get_download_metadata_reads_existing_json():
+    downloader = _load_downloader_module()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "video.mkv")
+        meta_path = os.path.join(tmpdir, "video.mkv.jacktook.json")
+        with open(meta_path, "w") as f:
+            json.dump({"status": "paused", "progress": 42, "title": "Video"}, f)
+
+        result = downloader.get_download_metadata(path)
+
+    assert result == {"status": "paused", "progress": 42, "title": "Video"}
+
+
+# --- Tests for handle_pause_download ---
+
+def test_handle_pause_download_sets_cancel_flag_and_metadata():
+    downloader = _load_downloader_module()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "video.mkv")
+        meta_path = os.path.join(tmpdir, "video.mkv.jacktook.json")
+        with open(meta_path, "w") as f:
+            json.dump({"status": "downloading", "progress": 50, "title": "Video"}, f)
+
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set:
+            downloader.handle_pause_download({"file_path": json.dumps(path)})
+
+        cache_set.assert_called_once_with(path, True)
+        with open(meta_path, "r") as f:
+            meta = json.load(f)
+        assert meta["status"] == "paused"
+
+
+# --- Tests for resume_download ---
+
+def test_resume_download_clears_flag_and_starts_downloader():
+    downloader = _load_downloader_module()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "video.mkv")
+        meta_path = os.path.join(tmpdir, "video.mkv.jacktook.json")
+        open(path, "a").close()
+        with open(meta_path, "w") as f:
+            json.dump(
+                {"status": "paused", "progress": 50, "title": "Video", "url": "https://example.com/video.mkv"},
+                f,
+            )
+
+        downloader_instance = MagicMock()
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, patch.object(
+            downloader, "Downloader", return_value=downloader_instance
+        ) as downloader_cls:
+            downloader.resume_download({"file_path": json.dumps(path)})
+
+        cache_set.assert_called_once_with(path, False)
+        downloader_cls.assert_called_once_with(
+            url="https://example.com/video.mkv",
+            destination=os.path.dirname(path),
+            name="video.mkv",
+        )
+        downloader_instance.run.assert_called_once_with()
+
+
+# --- Tests for download_video with organization ---
+
+def test_get_destination_path_tv_with_custom_folder_names():
+    downloader = _load_downloader_module()
+
+    with patch.object(
+        downloader,
+        "get_setting",
+        side_effect=lambda key, default="": {
+            "organize_downloads": True,
+            "download_dir": "/downloads",
+            "download_folder_movies": "Films",
+            "download_folder_tvshows": "Series",
+        }.get(key, default),
+    ), patch.object(downloader, "translatePath", return_value="/downloads"), patch.object(
+        downloader.xbmcvfs, "mkdirs"
+    ):
+        result = downloader.get_destination_path(
+            {
+                "title": "Episode",
+                "mode": "tv",
+                "tv_data": {"name": "Show", "season": 5},
+            }
+        )
+
+    assert result == "/downloads/Series/Show/Season 05"
+
+
+def test_get_download_metadata_handles_corrupt_json():
+    downloader = _load_downloader_module()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        path = os.path.join(tmpdir, "video.mkv")
+        meta_path = os.path.join(tmpdir, "video.mkv.jacktook.json")
+        with open(meta_path, "w") as f:
+            f.write("not json")
+
+        result = downloader.get_download_metadata(path)
+
+    assert result == {"status": "unknown", "progress": 0, "title": ""}
+
+
+def test_download_video_uses_organized_destination():
+    downloader = _load_downloader_module()
+
+    with patch.object(
+        downloader,
+        "get_destination_path",
+        return_value="/downloads/Movies",
+    ) as mock_get_dest, patch.object(
+        downloader, "handle_download_file"
+    ) as mock_handle, patch.object(downloader, "normalize_file_name", return_value="Movie.mkv"):
+        data = {"title": "Movie", "mode": "movies", "url": "https://example.com/Movie.mkv"}
+        downloader.download_video({"data": json.dumps(data)})
+
+    mock_get_dest.assert_called_once_with(data)
+    mock_handle.assert_called_once_with(
+        {"destination": "/downloads/Movies", "file_name": "Movie", "url": "https://example.com/Movie.mkv"}
+    )

@@ -71,8 +71,10 @@ _DOWNLOAD_ACTIONS = frozenset(
         "download_video",
         "handle_download_file",
         "handle_cancel_download",
+        "handle_pause_download",
         "handle_delete_file",
         "downloads_menu",
+        "resume_download",
     }
 )
 
@@ -519,20 +521,26 @@ def _route_downloads(action, params):
         "download_video",
         "handle_download_file",
         "handle_cancel_download",
+        "handle_pause_download",
         "handle_delete_file",
+        "resume_download",
     ):
         from lib.downloader import (
             download_video,
             handle_download_file,
             handle_cancel_download,
+            handle_pause_download,
             handle_delete_file,
+            resume_download,
         )
 
         actions = {
             "download_video": download_video,
             "handle_download_file": handle_download_file,
             "handle_cancel_download": handle_cancel_download,
+            "handle_pause_download": handle_pause_download,
             "handle_delete_file": handle_delete_file,
+            "resume_download": resume_download,
         }
         actions[action](params)
     elif action == "downloads_menu":

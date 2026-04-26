@@ -3835,3 +3835,39 @@ msgstr "HDR10 / HDR10+"
 msgctxt "#90772"
 msgid "HDR (generic)"
 msgstr "HDR (generico)"
+
+msgctxt "#90774"
+msgid "Organize downloads by type"
+msgstr "Organizar descargas por tipo"
+
+msgctxt "#90775"
+msgid "Movies folder name"
+msgstr "Nombre de carpeta de peliculas"
+
+msgctxt "#90776"
+msgid "TV Shows folder name"
+msgstr "Nombre de carpeta de series"
+
+msgctxt "#90777"
+msgid "Pause"
+msgstr "Pausar"
+
+msgctxt "#90778"
+msgid "Resume"
+msgstr "Reanudar"
+
+msgctxt "#90779"
+msgid "Downloading"
+msgstr "Descargando"
+
+msgctxt "#90780"
+msgid "Paused"
+msgstr "Pausado"
+
+msgctxt "#90781"
+msgid "Completed"
+msgstr "Completado"
+
+msgctxt "#90782"
+msgid "Delete"
+msgstr "Eliminar"

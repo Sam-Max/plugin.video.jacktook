@@ -31,7 +31,6 @@ import xbmcgui
 import xbmcvfs
 import xbmc
 
-
 cancel_flag_cache = MemoryCache()
 
 
@@ -54,10 +53,36 @@ def handle_download_file(params):
     downloader.run()
 
 
-def download_video(params):
-    data = json.loads(params["data"])
+def get_destination_path(data):
     download_dir = get_setting("download_dir")
     destination = translatePath(download_dir)
+
+    if not get_setting("organize_downloads", False):
+        return destination
+
+    mode = data.get("mode", "")
+    if mode == "movies":
+        movies_folder = get_setting("download_folder_movies", "Movies")
+        destination = os.path.join(destination, movies_folder)
+    elif mode == "tv":
+        tv_data = data.get("tv_data", {})
+        show_name = tv_data.get("name") or data.get("title", "")
+        season = tv_data.get("season", 1)
+        tvshows_folder = get_setting("download_folder_tvshows", "TV Shows")
+        destination = os.path.join(
+            destination,
+            tvshows_folder,
+            show_name,
+            f"Season {int(season):02d}",
+        )
+
+    xbmcvfs.mkdirs(destination)
+    return destination
+
+
+def download_video(params):
+    data = json.loads(params["data"])
+    destination = get_destination_path(data)
     handle_download_file(
         {"destination": destination, "file_name": data["title"], "url": data["url"]}
     )
@@ -105,6 +130,21 @@ class Downloader:
         self.progress_handler = None
         self.is_cancelled = False
         self.dest_path = os.path.join(destination, name)
+        self.temp_path = self.dest_path + ".part"
+        self.meta_path = self.dest_path + ".jacktook.json"
+
+    def _write_metadata(self, status: str, progress: int = 0):
+        try:
+            meta = {
+                "title": self.name,
+                "url": self.url,
+                "status": status,
+                "progress": progress,
+            }
+            with open(self.meta_path, "w") as f:
+                json.dump(meta, f)
+        except Exception as e:
+            kodilog(f"[Downloader] Failed to write metadata: {str(e)}")
 
     def run(self):
         if not self.url:
@@ -152,15 +192,28 @@ class Downloader:
         file_mode = "wb"
 
         self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+        self._write_metadata("downloading", 0)
 
         try:
-            # Resume support
-            if os.path.exists(self.dest_path):
-                downloaded = os.path.getsize(self.dest_path)
+            # Resume support — check temp file
+            if os.path.exists(self.temp_path):
+                downloaded = os.path.getsize(self.temp_path)
                 if downloaded < self.file_size:
                     self.headers["Range"] = f"bytes={downloaded}-"
                     file_mode = "ab"
                 elif downloaded >= self.file_size:
+                    # Temp file is complete but not renamed yet
+                    if xbmcvfs.exists(self.temp_path):
+                        xbmcvfs.rename(self.temp_path, self.dest_path)
+                    self._write_metadata("completed", 100)
+                    notification(f"File already downloaded: {self.name}")
+                    return
+
+            # Also check if final file already exists
+            if os.path.exists(self.dest_path):
+                downloaded = os.path.getsize(self.dest_path)
+                if downloaded >= self.file_size:
+                    self._write_metadata("completed", 100)
                     notification(f"File already downloaded: {self.name}")
                     return
 
@@ -170,7 +223,7 @@ class Downloader:
             context.verify_mode = ssl.CERT_NONE
             response = urlopen(request, context=context)
 
-            with open_file(self.dest_path, file_mode) as file:
+            with open_file(self.temp_path, file_mode) as file:
                 while not self.monitor.abortRequested():
                     chunk = response.read(1024 * 1024)  # 1MB chunks
                     if not chunk:
@@ -189,6 +242,7 @@ class Downloader:
                         percent,
                         f"{self.name} - {percent}% - {bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
                     )
+                    self._write_metadata("downloading", percent)
 
                     # Handle cancellation
                     if (
@@ -197,14 +251,23 @@ class Downloader:
                     ):
                         cancel_flag_cache.set(self.dest_path, True)
                         self.is_cancelled = True
+                        self._write_metadata("paused", percent)
                         file.close()
                         break
 
                     self.monitor.waitForAbort(0.1)
 
                 if self.is_cancelled:
-                    notification(f"Download cancelled: {self.name}")
+                    meta = get_download_metadata(self.dest_path)
+                    if meta.get("status") == "paused":
+                        notification(f"Download paused: {self.name}")
+                    else:
+                        notification(f"Download cancelled: {self.name}")
                 else:
+                    # Rename temp to final on success
+                    if xbmcvfs.exists(self.temp_path):
+                        xbmcvfs.rename(self.temp_path, self.dest_path)
+                    self._write_metadata("completed", 100)
                     notification(f"Download completed: {self.name}")
         except Exception as e:
             notification(f"Download error: {str(e)}")
@@ -221,6 +284,75 @@ def handle_cancel_download(params):
         notification("No active download found.")
 
 
+def handle_pause_download(params):
+    file_path = json.loads(params.get("file_path"))
+    if file_path:
+        # Derive final path (strip .part if present)
+        final_path = file_path[:-5] if file_path.endswith(".part") else file_path
+        cancel_flag_cache.set(final_path, True)
+        meta_path = final_path + ".jacktook.json"
+        try:
+            if os.path.exists(meta_path):
+                with open(meta_path, "r") as f:
+                    meta = json.load(f)
+                meta["status"] = "paused"
+                with open(meta_path, "w") as f:
+                    json.dump(meta, f)
+        except Exception as e:
+            kodilog(f"[Downloader] Failed to update pause metadata: {str(e)}")
+        xbmc.executebuiltin("Container.Refresh")
+    else:
+        notification("No active download found.")
+
+
+def resume_download(params):
+    file_path = json.loads(params.get("file_path"))
+    if not file_path:
+        notification("File not found.")
+        return
+
+    # Derive final path (strip .part if present)
+    final_path = file_path[:-5] if file_path.endswith(".part") else file_path
+    temp_path = final_path + ".part"
+
+    # Must have at least the temp file or the final file
+    if not os.path.exists(temp_path) and not os.path.exists(final_path):
+        notification("File not found.")
+        return
+
+    meta_path = final_path + ".jacktook.json"
+    try:
+        with open(meta_path, "r") as f:
+            meta = json.load(f)
+    except Exception as e:
+        kodilog(f"[Downloader] Failed to read metadata for resume: {str(e)}")
+        notification("No metadata found for resume.")
+        return
+
+    cancel_flag_cache.set(final_path, False)
+    downloader = Downloader(
+        url=meta.get("url", ""),
+        destination=os.path.dirname(final_path),
+        name=os.path.basename(final_path),
+    )
+    downloader.run()
+
+
+def get_download_metadata(path):
+    # Derive final path (strip .part if present)
+    final_path = path[:-5] if path.endswith(".part") else path
+    meta_path = final_path + ".jacktook.json"
+    defaults = {"status": "unknown", "progress": 0, "title": ""}
+    try:
+        if os.path.exists(meta_path):
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+            defaults.update(meta)
+    except Exception:
+        pass
+    return defaults
+
+
 def handle_delete_file(params):
     file_path = json.loads(params.get("file_path"))
     if not xbmcvfs.exists(file_path):
@@ -228,6 +360,14 @@ def handle_delete_file(params):
         return
     try:
         xbmcvfs.delete(file_path)
+        # Also delete the temp .part file if it exists
+        final_path = file_path[:-5] if file_path.endswith(".part") else file_path
+        temp_path = final_path + ".part"
+        if xbmcvfs.exists(temp_path):
+            xbmcvfs.delete(temp_path)
+        meta_path = final_path + ".jacktook.json"
+        if xbmcvfs.exists(meta_path):
+            xbmcvfs.delete(meta_path)
         notification(f"File Deleted")
         xbmc.executebuiltin("Container.Refresh")
     except Exception as e:
@@ -247,7 +387,9 @@ def downloads_viewer(params):
             f for f in files if is_active_download(os.path.join(translated_path, f))
         ]
 
-        active_label = f"[COLOR red]{translation(90373)}: {len(active_downloads)}[/COLOR]"
+        active_label = (
+            f"[COLOR red]{translation(90373)}: {len(active_downloads)}[/COLOR]"
+        )
         active_item = xbmcgui.ListItem(label=active_label)
         active_item.setProperty("IsPlayable", "false")
         active_item.setArt(
@@ -257,20 +399,61 @@ def downloads_viewer(params):
 
         for item in directories + files:
             item_path = os.path.join(translated_path, item)
-            list_item = xbmcgui.ListItem(label=item)
+
+            # Skip metadata files
+            if item.endswith(".jacktook.json"):
+                continue
+
             if item in directories:
+                list_item = xbmcgui.ListItem(label=item)
                 info_tag = list_item.getVideoInfoTag()
                 info_tag.setTitle(item)
                 info_tag.setMediaType("folder")
                 list_item.setProperty("IsPlayable", "false")
                 is_folder = True
             else:
+                # Strip .part for display but keep it for internal path
+                display_name = item[:-5] if item.endswith(".part") else item
+                meta = get_download_metadata(item_path)
+                status = meta.get("status", "unknown")
+                progress = meta.get("progress", 0)
+
+                if status == "completed":
+                    label = f"[COLOR green][OK][/COLOR] {display_name}"
+                elif status == "paused":
+                    label = f"[COLOR orange][PAUSED][/COLOR] {display_name} ({progress}%)"
+                elif status == "downloading":
+                    label = f"[COLOR red][DL][/COLOR] {display_name}"
+                else:
+                    label = display_name
+
+                list_item = xbmcgui.ListItem(label=label)
                 info_tag = list_item.getVideoInfoTag()
-                info_tag.setTitle(item)
+                info_tag.setTitle(display_name)
                 info_tag.setMediaType("file")
                 context_menu = []
 
-                if is_active_download(item_path):
+                if status == "downloading":
+                    context_menu.append(
+                        (
+                            translation(90777),
+                            action_url_run(
+                                "handle_pause_download",
+                                file_path=json.dumps(item_path),
+                            ),
+                        )
+                    )
+                elif status == "paused":
+                    context_menu.append(
+                        (
+                            translation(90778),
+                            action_url_run(
+                                "resume_download",
+                                file_path=json.dumps(item_path),
+                            ),
+                        )
+                    )
+                elif is_active_download(item_path):
                     context_menu.append(
                         (
                             translation(90374),
@@ -281,14 +464,15 @@ def downloads_viewer(params):
                         )
                     )
 
-                context_menu.append(
-                    (
-                        translation(90375),
-                        action_url_run(
-                            "handle_delete_file", file_path=json.dumps(item_path)
-                        ),
+                if status in ("completed", "paused"):
+                    context_menu.append(
+                        (
+                            translation(90782),
+                            action_url_run(
+                                "handle_delete_file", file_path=json.dumps(item_path)
+                            ),
+                        )
                     )
-                )
 
                 list_item.addContextMenuItems(context_menu)
                 is_folder = False
@@ -303,6 +487,11 @@ def downloads_viewer(params):
 
 
 def is_active_download(path):
+    meta = get_download_metadata(path)
+    if meta["status"] == "downloading":
+        return True
+    if meta["status"] in ("paused", "completed"):
+        return False
     cancel_flag = cancel_flag_cache.get(path)
     return cancel_flag is not True
 

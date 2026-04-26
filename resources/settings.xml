@@ -1808,6 +1808,34 @@
 					</constraints>
 					<control type="button" format="path"/>
                 </setting>
+                <setting id="organize_downloads" type="boolean" label="90774" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="download_folder_movies" type="string" label="90775" help="">
+                    <default>Movies</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="organize_downloads">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="download_folder_tvshows" type="string" label="90776" help="">
+                    <default>TV Shows</default>
+                    <constraints>
+                        <allowempty>false</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="organize_downloads">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
             <group id="cleanup" label="30106">
                 <setting id="clear_database_cache" type="action" label="90342"> 

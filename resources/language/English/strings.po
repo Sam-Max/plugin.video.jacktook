@@ -4174,3 +4174,39 @@ msgstr ""
 msgctxt "#90772"
 msgid "HDR (generic)"
 msgstr ""
+
+msgctxt "#90774"
+msgid "Organize downloads by type"
+msgstr ""
+
+msgctxt "#90775"
+msgid "Movies folder name"
+msgstr ""
+
+msgctxt "#90776"
+msgid "TV Shows folder name"
+msgstr ""
+
+msgctxt "#90777"
+msgid "Pause"
+msgstr ""
+
+msgctxt "#90778"
+msgid "Resume"
+msgstr ""
+
+msgctxt "#90779"
+msgid "Downloading"
+msgstr ""
+
+msgctxt "#90780"
+msgid "Paused"
+msgstr ""
+
+msgctxt "#90781"
+msgid "Completed"
+msgstr ""
+
+msgctxt "#90782"
+msgid "Delete"
+msgstr ""
