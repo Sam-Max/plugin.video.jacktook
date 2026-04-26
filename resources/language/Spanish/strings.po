@@ -3771,3 +3771,23 @@ msgstr "Segundos antes del final para mostrar la notificación."
 msgctxt "#90183"
 msgid "Stay tuned after the credits!"
 msgstr "¡No te vayas, hay escenas post-créditos!"
+
+msgctxt "#90757"
+msgid "Image Resolution"
+msgstr "Resolución de Imagen"
+
+msgctxt "#90758"
+msgid "Low"
+msgstr "Baja"
+
+msgctxt "#90759"
+msgid "Medium"
+msgstr "Media"
+
+msgctxt "#90760"
+msgid "High"
+msgstr "Alta"
+
+msgctxt "#90761"
+msgid "Original"
+msgstr "Original"

@@ -77,7 +77,19 @@ USER_AGENT_HEADER = {
 
 USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 
-TMDB_POSTER_URL = "http://image.tmdb.org/t/p/w780"
+TMDB_IMAGE_SIZES = {
+    "low": {"poster": "w185", "thumb": "w185", "profile": "w185", "fanart": "w300"},
+    "medium": {"poster": "w342", "thumb": "w342", "profile": "w342", "fanart": "w780"},
+    "high": {"poster": "w780", "thumb": "w780", "profile": "w780", "fanart": "w1280"},
+    "original": {"poster": "original", "thumb": "original", "profile": "original", "fanart": "original"},
+}
+
+
+def get_image_size(image_type):
+    tier_map = {"0": "low", "1": "medium", "2": "high", "3": "original"}
+    tier = tier_map.get(get_setting_fresh("image_resolution_tier", "2"), "high")
+    return TMDB_IMAGE_SIZES.get(tier, {}).get(image_type, "")
+
 
 MEDIA_FUSION_DEFAULT_KEY = "eJwBYACf_4hAkZJe85krAoD5hN50-2M0YuyGmgswr-cis3uap4FNnLMvSfOc4e1IcejWJmykujTnWAlQKRi9cct5k3IRqhu-wFBnDoe_QmwMjJI3FnQtFNp2u3jDo23THEEgKXHYqTMrLos="
 
@@ -706,17 +718,17 @@ def build_actor(member, is_cast=True):
 
 def set_listitem_artwork(list_item, data, fanart_data):
     thumb_sources = [
-        (data.get("poster_path"), "w780"),
-        (data.get("still_path"), "w780"),
+        (data.get("poster_path"), get_image_size("thumb")),
+        (data.get("still_path"), get_image_size("thumb")),
     ]
     poster_sources = [
-        (data.get("poster_path"), "w780"),
-        (data.get("still_path"), "w780"),
-        (data.get("profile_path"), "w780"),
+        (data.get("poster_path"), get_image_size("poster")),
+        (data.get("still_path"), get_image_size("poster")),
+        (data.get("profile_path"), get_image_size("profile")),
     ]
     fanart_sources = [
-        (data.get("backdrop_path"), "w1280"),
-        (data.get("still_path"), "w1280"),
+        (data.get("backdrop_path"), get_image_size("fanart")),
+        (data.get("still_path"), get_image_size("fanart")),
     ]
 
     clear_logo = [(extract_tmdb_logo_url(data), "original")]
@@ -812,7 +824,7 @@ def build_media_metadata(ids, mode: str) -> dict:
 
         details = get_tmdb_media_details(tmdb_id, mode)
         poster_path = getattr(details, "poster_path", "")
-        metadata["poster"] = f"{TMDB_POSTER_URL}{poster_path}" if poster_path else ""
+        metadata["poster"] = tmdb_url(poster_path, get_image_size("poster")) if poster_path else ""
         metadata["overview"] = getattr(details, "overview", "")
         metadata["title"] = getattr(details, "title", getattr(details, "name", ""))
         metadata["original_title"] = getattr(

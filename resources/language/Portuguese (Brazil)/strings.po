@@ -3718,3 +3718,23 @@ msgstr ""
 msgctxt "#90183"
 msgid "Stay tuned after the credits!"
 msgstr ""
+
+msgctxt "#90757"
+msgid "Image Resolution"
+msgstr ""
+
+msgctxt "#90758"
+msgid "Low"
+msgstr ""
+
+msgctxt "#90759"
+msgid "Medium"
+msgstr ""
+
+msgctxt "#90760"
+msgid "High"
+msgstr ""
+
+msgctxt "#90761"
+msgid "Original"
+msgstr ""

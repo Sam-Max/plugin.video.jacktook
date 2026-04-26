@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock, patch
 from lib.utils.general.utils import (
     is_url,
     is_magnet_link,
@@ -10,6 +11,9 @@ from lib.utils.general.utils import (
     is_video,
     get_random_color,
     format_season_episode,
+    get_image_size,
+    set_listitem_artwork,
+    TMDB_IMAGE_SIZES,
 )
 
 
@@ -93,3 +97,84 @@ def test_get_random_color():
 )
 def test_format_season_episode(season, episode, expected):
     assert format_season_episode(season, episode) == expected
+
+
+class TestGetImageSize:
+    @pytest.mark.parametrize(
+        "setting_value, expected_sizes",
+        [
+            ("0", TMDB_IMAGE_SIZES["low"]),
+            ("1", TMDB_IMAGE_SIZES["medium"]),
+            ("2", TMDB_IMAGE_SIZES["high"]),
+            ("3", TMDB_IMAGE_SIZES["original"]),
+        ],
+    )
+    def test_maps_setting_to_tier(self, setting_value, expected_sizes):
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value=setting_value
+        ):
+            for image_type in ("poster", "thumb", "profile", "fanart"):
+                assert get_image_size(image_type) == expected_sizes[image_type]
+
+    def test_invalid_setting_defaults_to_high(self):
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value="99"
+        ):
+            assert get_image_size("poster") == TMDB_IMAGE_SIZES["high"]["poster"]
+            assert get_image_size("fanart") == TMDB_IMAGE_SIZES["high"]["fanart"]
+
+    def test_unknown_image_type_returns_empty_string(self):
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value="2"
+        ):
+            assert get_image_size("unknown_type") == ""
+
+
+class TestSetListitemArtwork:
+    def _make_mock_item(self):
+        item = MagicMock()
+        item.setArt = MagicMock()
+        return item
+
+    def _extract_url(self, call_args, key):
+        art_dict = call_args[0][0]
+        return art_dict.get(key, "")
+
+    @pytest.mark.parametrize(
+        "setting_value, poster_size, fanart_size",
+        [
+            ("0", "w185", "w300"),
+            ("1", "w342", "w780"),
+            ("2", "w780", "w1280"),
+            ("3", "original", "original"),
+        ],
+    )
+    def test_uses_resolution_tier(self, setting_value, poster_size, fanart_size):
+        item = self._make_mock_item()
+        data = {
+            "poster_path": "/poster.jpg",
+            "backdrop_path": "/backdrop.jpg",
+        }
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value=setting_value
+        ):
+            set_listitem_artwork(item, data, {})
+
+        assert item.setArt.called
+        art_call = item.setArt.call_args
+        assert poster_size in self._extract_url(art_call, "poster")
+        assert fanart_size in self._extract_url(art_call, "fanart")
+        assert poster_size in self._extract_url(art_call, "thumb")
+
+    def test_falls_back_when_no_paths(self):
+        item = self._make_mock_item()
+        data = {}
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value="2"
+        ):
+            set_listitem_artwork(item, data, {})
+
+        assert item.setArt.called
+        art_call = item.setArt.call_args
+        assert self._extract_url(art_call, "poster") == ""
+        assert self._extract_url(art_call, "fanart") == ""

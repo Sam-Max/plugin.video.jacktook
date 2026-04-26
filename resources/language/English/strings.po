@@ -4110,3 +4110,23 @@ msgstr "Seconds before the end to show the stinger notification."
 msgctxt "#90183"
 msgid "Stay tuned after the credits!"
 msgstr "Stay tuned after the credits!"
+
+msgctxt "#90757"
+msgid "Image Resolution"
+msgstr "Image Resolution"
+
+msgctxt "#90758"
+msgid "Low"
+msgstr "Low"
+
+msgctxt "#90759"
+msgid "Medium"
+msgstr "Medium"
+
+msgctxt "#90760"
+msgid "High"
+msgstr "High"
+
+msgctxt "#90761"
+msgid "Original"
+msgstr "Original"
