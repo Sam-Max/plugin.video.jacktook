@@ -1,3 +1,29 @@
+## 1.11.0
+- Source Manager: Add a dialog to enable or disable individual stream sources/providers.
+- Playback: Add Autoscrape Next Episode with resolved playback caching for faster next-episode playback.
+- Playback: Add stinger/post-credit scene notifications for movies with during-credits or after-credits scenes.
+- TMDB/Artwork: Add image resolution tiers for TMDB artwork.
+- Posters: Add RPDB integration for rating posters.
+- Filters: Add Codec, HDR, and Dolby Vision filters for search results.
+- Downloads: Add resumable downloads with movie/TV folder organization.
+- Torrents: Add subtitle download and playback from TorrServer torrent and file context menus.
+- Playback: Route TorrServer file clicks and subtitle playback through Jacktorr `Play Torrent`/`buffer_and_play` so buffering, pause statistics, and resume work correctly.
+- Source Select: Remove Download Video from torrent source context menus and add Download subtitles.
+- Localization: Rename Buffer and play to Play Torrent and add localized missing-metadata messages.
+
+Spanish:
+- Source Manager: Añadido dialogo para activar o desactivar fuentes/proveedores de streams individualmente.
+- Reproduccion: Añadido Autoscrape Next Episode con cache de reproduccion resuelta para acelerar la reproduccion del siguiente episodio.
+- Reproduccion: Añadidas notificaciones de escenas post-creditos/stinger para peliculas con escenas durante o despues de los creditos.
+- TMDB/Arte: Añadidos niveles de resolucion para imagenes de TMDB.
+- Posters: Añadida integracion con RPDB para posters con ratings.
+- Filtros: Añadidos filtros de Codec, HDR y Dolby Vision para resultados de busqueda.
+- Descargas: Añadidas descargas reanudables con organizacion de carpetas para peliculas/series.
+- Torrents: Añadida descarga y reproduccion de subtitulos desde los menus contextuales de torrents y archivos de TorrServer.
+- Reproduccion: Enrutados los clicks de archivos TorrServer y la reproduccion con subtitulos por Jacktorr `Play Torrent`/`buffer_and_play` para mantener buffering, estadisticas al pausar y reanudacion.
+- Source Select: Eliminada la opcion Descargar Video de fuentes torrent y añadida Descargar subtitulos.
+- Localizacion: Renombrado Buffer and play a Play Torrent y añadidos mensajes localizados para metadata faltante.
+
 ## 1.10.0
 - Search: Add Search Title Language mode with localized first, English first, and English only ordering for Easynews/Jackett/Prowlarr context searches.
 - Search: Improve English-first fallback behavior to prioritize TMDB original titles before localized titles when English translations are missing.
