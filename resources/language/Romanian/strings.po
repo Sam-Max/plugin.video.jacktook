@@ -1,0 +1,4216 @@
+# Kodi Media Center language file
+# Addon Name: Jacktook
+# Addon id: plugin.video.jacktook
+# Addon Provider: Sam-Max
+#
+msgid ""
+msgstr ""
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-09-19 19:53+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: ro\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Settings
+msgctxt "#30000"
+msgid "Players"
+msgstr "Playere"
+
+msgctxt "#30001"
+msgid "Clients"
+msgstr "Clienți"
+
+msgctxt "#30002"
+msgid "Torrent Client"
+msgstr "Client torrent"
+
+msgctxt "#30020"
+msgid "Indexers"
+msgstr "Indexatori"
+
+msgctxt "#30021"
+msgid "Indexer"
+msgstr "Indexator"
+
+msgctxt "#30022"
+msgid "Jackett Configuration:"
+msgstr "Configurează Jackett:"
+
+msgctxt "#30023"
+msgid "Client Key"
+msgstr "Cheie client"
+
+msgctxt "#30025"
+msgid "Host"
+msgstr "Host"
+
+msgctxt "#30026"
+msgid "Description length"
+msgstr "Lungime descriere"
+
+msgctxt "#30027"
+msgid "Insecured connection"
+msgstr "Conexiune nesecurizată"
+
+msgctxt "#30028"
+msgid "Sort by"
+msgstr "Sortează după"
+
+msgctxt "#30029"
+msgid "Total Results"
+msgstr "Rezultate totale"
+
+msgctxt "#30030"
+msgid "Timeout"
+msgstr "Timp de expirare"
+
+msgctxt "#30031"
+msgid "Timeout"
+msgstr "Timp de expirare"
+
+msgctxt "#30050"
+msgid "Prowlarr Configuration:"
+msgstr "Configurează Prowlarr:"
+
+msgctxt "#30051"
+msgid "Client Key"
+msgstr "Cheie client"
+
+msgctxt "#30052"
+msgid "Host"
+msgstr "Host"
+
+msgctxt "#30053"
+msgid "Indexers-Ids"
+msgstr "ID-uri indexatori"
+
+msgctxt "#30054"
+msgid "Anime IndexersIds"
+msgstr "ID-uri indexatori anime"
+
+msgctxt "#30100"
+msgid "TMDB"
+msgstr "TMDB"
+
+msgctxt "#30102"
+msgid "TMDB Configuration"
+msgstr "Configurează TMDB"
+
+msgctxt "#30103"
+msgid "Client Key"
+msgstr "Cheie client"
+
+msgctxt "#30104"
+msgid "Clear tmdb cache"
+msgstr "Șterge cache TMDB"
+
+msgctxt "#30105"
+msgid "Cache expiration hours"
+msgstr "Expirare cache (ore)"
+
+msgctxt "#30106"
+msgid "Clear Cache"
+msgstr "Șterge cache"
+
+msgctxt "#30107"
+msgid "Enable Cache"
+msgstr "Activează cache"
+
+msgctxt "#30140"
+msgid "AniList"
+msgstr "AniList"
+
+msgctxt "#30142"
+msgid "AniList Configuration:"
+msgstr "Configurează AniList:"
+
+msgctxt "#30143"
+msgid "Client ID"
+msgstr "ID client"
+
+msgctxt "#30144"
+msgid "Client Secret"
+msgstr "Secret client"
+
+msgctxt "#30150"
+msgid "Services"
+msgstr "Servicii"
+
+msgctxt "#30152"
+msgid "Real Debrid Configuration"
+msgstr "Configurează Real Debrid"
+
+msgctxt "#30154"
+msgid "Token"
+msgstr "Token"
+
+msgctxt "#30200"
+msgid "Fanart.TV"
+msgstr "Fanart.TV"
+
+msgctxt "#30202"
+msgid "Fanart.TV Configuration:"
+msgstr "Configurează Fanart.TV:"
+
+msgctxt "#30203"
+msgid "Client ID"
+msgstr "ID client"
+
+msgctxt "#30221"
+msgid "No Client Key provided for"
+msgstr "Nu ai furnizat cheia client pentru"
+
+msgctxt "#30223"
+msgid "You need to configure"
+msgstr "Trebuie să configurezi"
+
+msgctxt "#30228"
+msgid "The request to Torrentio failed."
+msgstr "Cererea către Torrentio a eșuat."
+
+msgctxt "#30229"
+msgid "The request to Jackett failed."
+msgstr "Cererea către Jackett a eșuat."
+
+msgctxt "#30230"
+msgid "The request to Prowlarr failed."
+msgstr "Cererea către Prowlarr a eșuat."
+
+msgctxt "#30231"
+msgid "The request to Elhosted failed."
+msgstr "Cererea către Elhosted a eșuat."
+
+msgctxt "#30232"
+msgid "The request to Jackgram failed."
+msgstr "Cererea către Jackgram a eșuat."
+
+msgctxt "#30233"
+msgid "The request to Mediafusion failed."
+msgstr "Cererea către Mediafusion a eșuat."
+
+msgctxt "#30234"
+msgid "The request to Peerflix failed."
+msgstr "Cererea către Peerflix a eșuat."
+
+msgctxt "#30235"
+msgid "Stremio"
+msgstr "Stremio"
+
+msgctxt "#30236"
+msgid "Stremio add-ons"
+msgstr "Add-on-uri Stremio"
+
+msgctxt "#30237"
+msgid "Import your config"
+msgstr "Importă configurația"
+
+msgctxt "#30238"
+msgid "Manage add-ons"
+msgstr "Gestionează add-on-urile"
+
+msgctxt "#30240"
+msgid "TMDB cache cleared"
+msgstr "Cache TMDB șters"
+
+msgctxt "#30241"
+msgid "Search on TMDB:"
+msgstr "Caută pe TMDB:"
+
+msgctxt "#30242"
+msgid "Search on AniList:"
+msgstr "Caută pe AniList:"
+
+msgctxt "#30243"
+msgid "Search for a keyword:"
+msgstr "Caută după cuvânt cheie:"
+
+msgctxt "#30244"
+msgid "Cache cleared"
+msgstr "Cache șters"
+
+msgctxt "#30249"
+msgid "Addon Jacktook Burst not found - (script.jacktook.burst)"
+msgstr "Nu s-a găsit add-on-ul Jacktook Burst - (script.jacktook.burst)"
+
+msgctxt "#30250"
+msgid "Addon Torrest not found - (plugin.video.torrest)"
+msgstr "Nu s-a găsit add-on-ul Torrest - (plugin.video.torrest)"
+
+msgctxt "#30251"
+msgid "No sources found to play"
+msgstr "Nu s-au găsit surse pentru redare"
+
+msgctxt "#30252"
+msgid "Addon Elementum not found - (plugin.video.elementum)"
+msgstr "Nu s-a găsit add-on-ul Elementum - (plugin.video.elementum)"
+
+msgctxt "#30253"
+msgid "Addon Jacktorr not found - (plugin.video.jacktorr)"
+msgstr "Nu s-a găsit add-on-ul Jacktorr - (plugin.video.jacktorr)"
+
+msgctxt "#30254"
+msgid "Do you want to install Elementum?"
+msgstr "Vrei să instalezi Elementum?"
+
+msgctxt "#30255"
+msgid "Do you want to install Jacktorr?"
+msgstr "Vrei să instalezi Jacktorr?"
+
+msgctxt "#30256"
+msgid "Do you want to install Torrest?"
+msgstr "Vrei să instalezi Torrest?"
+
+msgctxt "#30257"
+msgid "Do you want to install Jacktook Burst?"
+msgstr "Vrei să instalezi Jacktook Burst?"
+
+msgctxt "#30650"
+msgid "Queued"
+msgstr "În așteptare"
+
+msgctxt "#30651"
+msgid "Checking"
+msgstr "Se verifică"
+
+msgctxt "#30652"
+msgid "Finding"
+msgstr "Se caută"
+
+msgctxt "#30653"
+msgid "Downloading"
+msgstr "Se descarcă"
+
+msgctxt "#30654"
+msgid "Finished"
+msgstr "Finalizat"
+
+msgctxt "#30655"
+msgid "Seeding"
+msgstr "Se distribuie"
+
+msgctxt "#30656"
+msgid "Allocating"
+msgstr "Se alocă"
+
+msgctxt "#30657"
+msgid "Checking resume data"
+msgstr "Se verifică datele de reluare"
+
+msgctxt "#30658"
+msgid "Paused"
+msgstr "În pauză"
+
+msgctxt "#30659"
+msgid "Buffering"
+msgstr "Se încarcă"
+
+msgctxt "#30660"
+msgid "Unknown"
+msgstr "Necunoscut"
+
+msgctxt "#30700"
+msgid "Play Torrent"
+msgstr "Redă torrent"
+
+msgctxt "#30701"
+msgid "Stop downloading"
+msgstr "Oprește descărcarea"
+
+msgctxt "#30702"
+msgid "Downloads"
+msgstr "Descărcări"
+
+msgctxt "#30703"
+msgid "Resume"
+msgstr "Reia"
+
+msgctxt "#30704"
+msgid "Pause"
+msgstr "Pauză"
+
+msgctxt "#30705"
+msgid "Remove torrent"
+msgstr "Șterge torrentul"
+
+msgctxt "#30706"
+msgid "Remove torrent and files"
+msgstr "Șterge torrentul și fișierele"
+
+msgctxt "#30707"
+msgid "Torrent status"
+msgstr "Stare torrent"
+
+msgctxt "#30708"
+msgid "Stop"
+msgstr "Oprește"
+
+msgctxt "#30709"
+msgid "Drop torrent"
+msgstr "Renunță la torrent"
+
+msgctxt "#30710"
+msgid "Include Season Packs"
+msgstr "Include seturi de sezoane"
+
+msgctxt "#30711"
+msgid "Torrent Settings"
+msgstr "Setări torrent"
+
+msgctxt "#30712"
+msgid "General"
+msgstr "General"
+
+msgctxt "#30713"
+msgid "Enable"
+msgstr "Activează"
+
+msgctxt "#30714"
+msgid "Jacktorr"
+msgstr "Jacktorr"
+
+msgctxt "#30715"
+msgid "Torrest"
+msgstr "Torrest"
+
+msgctxt "#30716"
+msgid "Elementum"
+msgstr "Elementum"
+
+msgctxt "#30717"
+msgid "General"
+msgstr "General"
+
+msgctxt "#30718"
+msgid "Auto-Play"
+msgstr "Redare automată"
+
+msgctxt "#30719"
+msgid "Enable Next Episode Dialog"
+msgstr "Activează dialogul pentru episodul următor"
+
+msgctxt "#30720"
+msgid "Seconds left before show Next Episode Dialog"
+msgstr "Secunde rămase înainte de afișarea dialogului episodului următor"
+
+msgctxt "#30721"
+msgid "Cache Enabled"
+msgstr "Cache activat"
+
+msgctxt "#30722"
+msgid "Cache Expiration (hours)"
+msgstr "Expirare cache (ore)"
+
+msgctxt "#30723"
+msgid "Cache"
+msgstr "Cache"
+
+msgctxt "#30724"
+msgid "Update"
+msgstr "Actualizează"
+
+msgctxt "#30725"
+msgid "Indexers Configuration"
+msgstr "Configurare indexatori"
+
+msgctxt "#30726"
+msgid "Sort"
+msgstr "Sortează"
+
+msgctxt "#30727"
+msgid "Quality"
+msgstr "Calitate"
+
+msgctxt "#30938"
+msgid "Silent Resume"
+msgstr "Reluare silențioasă"
+
+msgctxt "#30939"
+msgid "Auto-resume from last position without asking"
+msgstr "Reia automat de la ultima poziție fără confirmare"
+
+msgctxt "#30728"
+msgid "Seeds"
+msgstr "Seeds"
+
+msgctxt "#30729"
+msgid "Size"
+msgstr "Mărime"
+
+msgctxt "#30730"
+msgid "Cached"
+msgstr "În cache"
+
+msgctxt "#30731"
+msgid "Date"
+msgstr "Dată"
+
+msgctxt "#30732"
+msgid "None"
+msgstr "Niciunul"
+
+msgctxt "#30733"
+msgid "Torrentio Configuration"
+msgstr "Configurează Torrentio"
+
+msgctxt "#30734"
+msgid "Enable"
+msgstr "Activează"
+
+msgctxt "#30736"
+msgid "Subtitle Language"
+msgstr "Limbă subtitrări"
+
+msgctxt "#30737"
+msgid "GB"
+msgstr "GB"
+
+msgctxt "#30738"
+msgid "JP"
+msgstr "JP"
+
+msgctxt "#30739"
+msgid "RU"
+msgstr "RU"
+
+msgctxt "#30740"
+msgid "IT"
+msgstr "IT"
+
+msgctxt "#30741"
+msgid "PT"
+msgstr "PT"
+
+msgctxt "#30742"
+msgid "ES"
+msgstr "ES"
+
+msgctxt "#30743"
+msgid "MX"
+msgstr "MX"
+
+msgctxt "#30744"
+msgid "KR"
+msgstr "KR"
+
+msgctxt "#30745"
+msgid "CN"
+msgstr "CN"
+
+msgctxt "#30746"
+msgid "TW"
+msgstr "TW"
+
+msgctxt "#30747"
+msgid "FR"
+msgstr "FR"
+
+msgctxt "#30748"
+msgid "DE"
+msgstr "DE"
+
+msgctxt "#30749"
+msgid "NL"
+msgstr "NL"
+
+msgctxt "#30750"
+msgid "IN"
+msgstr "IN"
+
+msgctxt "#30751"
+msgid "PL"
+msgstr "PL"
+
+msgctxt "#30752"
+msgid "LT"
+msgstr "LT"
+
+msgctxt "#30753"
+msgid "CZ"
+msgstr "CZ"
+
+msgctxt "#30754"
+msgid "SK"
+msgstr "SK"
+
+msgctxt "#30755"
+msgid "SI"
+msgstr "SI"
+
+msgctxt "#30756"
+msgid "HU"
+msgstr "HU"
+
+msgctxt "#30757"
+msgid "RO"
+msgstr "RO"
+
+msgctxt "#30758"
+msgid "HR"
+msgstr "HR"
+
+msgctxt "#30759"
+msgid "UA"
+msgstr "UA"
+
+msgctxt "#30760"
+msgid "GR"
+msgstr "GR"
+
+msgctxt "#30761"
+msgid "DK"
+msgstr "DK"
+
+msgctxt "#30762"
+msgid "FI"
+msgstr "FI"
+
+msgctxt "#30763"
+msgid "SE"
+msgstr "SE"
+
+msgctxt "#30764"
+msgid "NO"
+msgstr "NO"
+
+msgctxt "#30765"
+msgid "TR"
+msgstr "TR"
+
+msgctxt "#30766"
+msgid "Torrentio Providers"
+msgstr "Provideri Torrentio"
+
+msgctxt "#30767"
+msgid "Jackgram Configuration"
+msgstr "Configurează Jackgram"
+
+msgctxt "#30768"
+msgid "Host"
+msgstr "Host"
+
+msgctxt "#30769"
+msgid "Elfhosted/KnightCrawler Configuration"
+msgstr "Configurează Elfhosted/KnightCrawler"
+
+msgctxt "#30770"
+msgid "Language"
+msgstr "Limbă"
+
+msgctxt "#30771"
+msgid "Zilean Configuration"
+msgstr "Configurează Zilean"
+
+msgctxt "#30772"
+msgid "Zilean Host"
+msgstr "Host Zilean"
+
+msgctxt "#30774"
+msgid "Zilean Timeout"
+msgstr "Timp de expirare Zilean"
+
+msgctxt "#30775"
+msgid "Jackett Configuration"
+msgstr "Configurează Jackett"
+
+msgctxt "#30776"
+msgid "Prowlarr Configuration"
+msgstr "Configurează Prowlarr"
+
+msgctxt "#30777"
+msgid "MediaFusion configuration"
+msgstr "Configurează MediaFusion"
+
+msgctxt "#30779"
+msgid "Manifest Url"
+msgstr "URL manifest"
+
+msgctxt "#30780"
+msgid "Jacktook Burst Configuration"
+msgstr "Configurează Jacktook Burst"
+
+msgctxt "#30781"
+msgid "Burst Configuration"
+msgstr "Configurează Burst"
+
+msgctxt "#30782"
+msgid "User"
+msgstr "Utilizator"
+
+msgctxt "#30783"
+msgid "Authorize"
+msgstr "Autorizează"
+
+msgctxt "#30784"
+msgid "Remove Authorization"
+msgstr "Elimină autorizarea"
+
+msgctxt "#30785"
+msgid "Premiumize Configuration"
+msgstr "Configurează Premiumize"
+
+msgctxt "#30786"
+msgid "Enabled"
+msgstr "Activat"
+
+msgctxt "#30787"
+msgid "Token"
+msgstr "Token"
+
+msgctxt "#30788"
+msgid "TorBox Configuration"
+msgstr "Configurează TorBox"
+
+msgctxt "#30789"
+msgid "Debrider Configuration"
+msgstr "Configurează Debrider"
+
+msgctxt "#30790"
+msgid "Uncached"
+msgstr "Fără cache"
+
+msgctxt "#30791"
+msgid "Show uncached torrents"
+msgstr "Afișează torrente fără cache"
+
+msgctxt "#30792"
+msgid "Use Kodi Language"
+msgstr "Folosește limba Kodi"
+
+msgctxt "#30793"
+msgid "Trakt"
+msgstr "Trakt"
+
+msgctxt "#30794"
+msgid "Trakt Configuration"
+msgstr "Configurează Trakt"
+
+msgctxt "#30795"
+msgid "Expires"
+msgstr "Expiră"
+
+msgctxt "#30796"
+msgid "Refresh"
+msgstr "Reîmprospătează"
+
+msgctxt "#30797"
+msgid "Token"
+msgstr "Token"
+
+msgctxt "#30798"
+msgid "Trakt Client"
+msgstr "Client Trakt"
+
+msgctxt "#30800"
+msgid "Trakt Secret"
+msgstr "Secret Trakt"
+
+msgctxt "#30802"
+msgid "Log out"
+msgstr "Deconectează-te"
+
+msgctxt "#30804"
+msgid "Menus"
+msgstr "Meniuri"
+
+msgctxt "#30805"
+msgid "Show Telegram Menu"
+msgstr "Afișează meniul Telegram"
+
+msgctxt "#30806"
+msgid "Clear cache when update"
+msgstr "Șterge cache la actualizare"
+
+msgctxt "#30807"
+msgid "Peerfix Configuration"
+msgstr "Configurează Peerfix"
+
+msgctxt "#30894"
+msgid "Show Changelog"
+msgstr "Afișează jurnalul modificărilor"
+
+msgctxt "#30895"
+msgid "View the latest changes and updates to the addon."
+msgstr "Vezi ultimele modificări și actualizări ale add-on-ului."
+
+msgctxt "#30896"
+msgid "Calendar"
+msgstr "Calendar"
+
+msgctxt "#30897"
+msgid "Use broadcast day adjustment"
+msgstr "Folosește ajustarea zilei de difuzare"
+
+msgctxt "#30898"
+msgid "Adjust broadcast day based on manual offset"
+msgstr "Ajustează ziua de difuzare pe baza unui offset manual"
+
+msgctxt "#30899"
+msgid "Broadcast Offset (Hours)"
+msgstr "Offset difuzare (ore)"
+
+msgctxt "#30900"
+msgid "Manual hour adjustment for broadcast day simulation"
+msgstr "Ajustare manuală a orei pentru simularea zilei de difuzare"
+
+msgctxt "#30905"
+msgid "Trakt Calendar Previous Days"
+msgstr "Zile anterioare în calendarul Trakt"
+
+msgctxt "#30906"
+msgid "Number of days in the past to show in the Trakt calendar."
+msgstr "Numărul de zile din trecut afișate în calendarul Trakt."
+
+msgctxt "#30907"
+msgid "Trakt Calendar Future Days"
+msgstr "Zile viitoare în calendarul Trakt"
+
+msgctxt "#30908"
+msgid "Number of days in the future to show in the Trakt calendar."
+msgstr "Numărul de zile din viitor afișate în calendarul Trakt."
+
+msgctxt "#30909"
+msgid "Show All Shows in Calendar"
+msgstr "Afișează toate serialele în calendar"
+
+msgctxt "#30918"
+msgid "{provider} cannot directly play packed releases (.rar/.zip). Choose a source with video files instead."
+msgstr "{provider} nu poate reda direct arhive (.rar/.zip). Alege o sursă cu fișiere video."
+
+msgctxt "#30910"
+msgid "Show all airing shows instead of just your watchlist/collection."
+msgstr "Afișează toate serialele difuzate, nu doar lista ta/colecția."
+
+msgctxt "#30911"
+msgid "Your Torbox account username/email."
+msgstr "Numele de utilizator/email cont Torbox."
+
+msgctxt "#30912"
+msgid "Authorize add-on to access Torbox account."
+msgstr "Autorizează add-on-ul să acceseze contul Torbox."
+
+msgctxt "#30913"
+msgid "Revoke Torbox account access."
+msgstr "Revocă accesul la contul Torbox."
+
+msgctxt "#30914"
+msgid "Trakt Sync Interval (minutes)"
+msgstr "Interval sincronizare Trakt (minute)"
+
+msgctxt "#30915"
+msgid "How often Jacktook checks Trakt for remote activity changes while Kodi is running."
+msgstr "Cât de des verifică Jacktook Trakt pentru modificări de activitate de la distanță în timp ce Kodi rulează."
+
+msgctxt "#30916"
+msgid "Account Info"
+msgstr "Informații cont"
+
+msgctxt "#30917"
+msgid "View your Trakt account profile and library stats."
+msgstr "Vezi profilul contului Trakt și statisticile bibliotecii."
+
+msgctxt "#30924"
+msgid "Trakt List Name"
+msgstr "Nume listă Trakt"
+
+msgctxt "#30925"
+msgid "Trakt List Description"
+msgstr "Descriere listă Trakt"
+
+msgctxt "#30926"
+msgid "Create Trakt List"
+msgstr "Creează listă Trakt"
+
+msgctxt "#30927"
+msgid "Choose Trakt List"
+msgstr "Alege lista Trakt"
+
+msgctxt "#30936"
+msgid "Enable or disable Trakt scrobbling and resume playback from the last tracked position."
+msgstr "Activează sau dezactivează scrobbling-ul Trakt și reluarea de la ultima poziție."
+
+msgctxt "#30937"
+msgid "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
+msgstr "Șterge datele Trakt din cache și forțează actualizarea la următoarea deschidere."
+
+msgctxt "#40000"
+msgid "Arabic (United Arab Emirates)"
+msgstr "Arabă (Emiratele Arabe Unite)"
+
+msgctxt "#40001"
+msgid "Arabic (Saudi Arabia)"
+msgstr "Arabă (Arabia Saudită)"
+
+msgctxt "#40002"
+msgid "Belarusian (Belarus)"
+msgstr "Belarusă (Belarus)"
+
+msgctxt "#40003"
+msgid "Bulgarian (Bulgaria)"
+msgstr "Bulgară (Bulgaria)"
+
+msgctxt "#40004"
+msgid "Bengali (Bangladesh)"
+msgstr "Bengaleză (Bangladesh)"
+
+msgctxt "#40005"
+msgid "Catalan (Spain)"
+msgstr "Catalană (Spania)"
+
+msgctxt "#40006"
+msgid "Chamorro (Guam)"
+msgstr "Chamorro (Guam)"
+
+msgctxt "#40007"
+msgid "Czech (Czech Republic)"
+msgstr "Cehă (Cehia)"
+
+msgctxt "#40008"
+msgid "Danish (Denmark)"
+msgstr "Daneză (Danemarca)"
+
+msgctxt "#40009"
+msgid "German (Austria)"
+msgstr "Germană (Austria)"
+
+msgctxt "#40010"
+msgid "German (Switzerland)"
+msgstr "Germană (Elveția)"
+
+msgctxt "#40011"
+msgid "German (Germany)"
+msgstr "Germană (Germania)"
+
+msgctxt "#40012"
+msgid "Greek (Greece)"
+msgstr "Greacă (Grecia)"
+
+msgctxt "#40013"
+msgid "English (Australia)"
+msgstr "Engleză (Australia)"
+
+msgctxt "#40014"
+msgid "English (Canada)"
+msgstr "Engleză (Canada)"
+
+msgctxt "#40015"
+msgid "English (United Kingdom)"
+msgstr "Engleză (Regatul Unit)"
+
+msgctxt "#40016"
+msgid "English (Ireland)"
+msgstr "Engleză (Irlanda)"
+
+msgctxt "#40017"
+msgid "English (New Zealand)"
+msgstr "Engleză (Noua Zeelandă)"
+
+msgctxt "#40018"
+msgid "English (United States of America)"
+msgstr "Engleză (Statele Unite ale Americii)"
+
+msgctxt "#40019"
+msgid "Esperanto (None)"
+msgstr "Esperanto"
+
+msgctxt "#40020"
+msgid "Spanish (Spain)"
+msgstr "Spaniolă (Spania)"
+
+msgctxt "#40021"
+msgid "Spanish (Mexico)"
+msgstr "Spaniolă (Mexic)"
+
+msgctxt "#40022"
+msgid "Estonian (Estonia)"
+msgstr "Estoniană (Estonia)"
+
+msgctxt "#40023"
+msgid "Basque (Spain)"
+msgstr "Bască (Spania)"
+
+msgctxt "#40024"
+msgid "Persian (Iran)"
+msgstr "Persană (Iran)"
+
+msgctxt "#40025"
+msgid "Finnish (Finland)"
+msgstr "Finlandeză (Finlanda)"
+
+msgctxt "#40026"
+msgid "French (Canada)"
+msgstr "Franceză (Canada)"
+
+msgctxt "#40027"
+msgid "French (France)"
+msgstr "Franceză (Franța)"
+
+msgctxt "#40028"
+msgid "Galician (Spain)"
+msgstr "Galiciană (Spania)"
+
+msgctxt "#40029"
+msgid "Hebrew (Israel)"
+msgstr "Ebraică (Israel)"
+
+msgctxt "#40030"
+msgid "Hindi (India)"
+msgstr "Hindi (India)"
+
+msgctxt "#40031"
+msgid "Hungarian (Hungary)"
+msgstr "Maghiară (Ungaria)"
+
+msgctxt "#40032"
+msgid "Indonesian (Indonesia)"
+msgstr "Indoneziană (Indonezia)"
+
+msgctxt "#40033"
+msgid "Italian (Italy)"
+msgstr "Italiană (Italia)"
+
+msgctxt "#40034"
+msgid "Japanese (Japan)"
+msgstr "Japoneză (Japonia)"
+
+msgctxt "#40035"
+msgid "Georgian (Georgia)"
+msgstr "Georgiană (Georgia)"
+
+msgctxt "#40036"
+msgid "Kazakh (Kazakhstan)"
+msgstr "Kazahă (Kazahstan)"
+
+msgctxt "#40037"
+msgid "Kannada (India)"
+msgstr "Kannada (India)"
+
+msgctxt "#40038"
+msgid "Korean (South Korea)"
+msgstr "Coreeană (Coreea de Sud)"
+
+msgctxt "#40039"
+msgid "Lithuanian (Lithuania)"
+msgstr "Lituaniană (Lituania)"
+
+msgctxt "#40040"
+msgid "Latvian (Latvia)"
+msgstr "Letonă (Letonia)"
+
+msgctxt "#40041"
+msgid "Malayalam (India)"
+msgstr "Malayalam (India)"
+
+msgctxt "#40042"
+msgid "Malay (Malaysia)"
+msgstr "Malaieză (Malaysia)"
+
+msgctxt "#40043"
+msgid "Malay (Singapore)"
+msgstr "Malaieză (Singapore)"
+
+msgctxt "#40044"
+msgid "Norwegian Bokmål (Norway)"
+msgstr "Norvegiană Bokmål (Norvegia)"
+
+msgctxt "#40045"
+msgid "Dutch (Netherlands)"
+msgstr "Olandeză (Țările de Jos)"
+
+msgctxt "#40046"
+msgid "Norwegian (Norway)"
+msgstr "Norvegiană (Norvegia)"
+
+msgctxt "#40047"
+msgid "Polish (Poland)"
+msgstr "Poloneză (Polonia)"
+
+msgctxt "#40048"
+msgid "Portuguese (Brazil)"
+msgstr "Portugheză (Brazilia)"
+
+msgctxt "#40049"
+msgid "Portuguese (Portugal)"
+msgstr "Portugheză (Portugalia)"
+
+msgctxt "#40050"
+msgid "Romanian (Romania)"
+msgstr "Română (România)"
+
+msgctxt "#40051"
+msgid "Russian (Russia)"
+msgstr "Rusă (Rusia)"
+
+msgctxt "#40052"
+msgid "Sinhalese (Sri Lanka)"
+msgstr "Sinhaleză (Sri Lanka)"
+
+msgctxt "#40053"
+msgid "Slovak (Slovakia)"
+msgstr "Slovacă (Slovacia)"
+
+msgctxt "#40054"
+msgid "Slovenian (Slovenia)"
+msgstr "Slovenă (Slovenia)"
+
+msgctxt "#40055"
+msgid "Serbian (Serbia)"
+msgstr "Sârbă (Serbia)"
+
+msgctxt "#40056"
+msgid "Swedish (Sweden)"
+msgstr "Suedeză (Suedia)"
+
+msgctxt "#40057"
+msgid "Tamil (India)"
+msgstr "Tamilă (India)"
+
+msgctxt "#40058"
+msgid "Telugu (India)"
+msgstr "Telugu (India)"
+
+msgctxt "#40059"
+msgid "Thai (Thailand)"
+msgstr "Thailandeză (Thailanda)"
+
+msgctxt "#40060"
+msgid "Tagalog (Philippines)"
+msgstr "Tagalog (Filipine)"
+
+msgctxt "#40061"
+msgid "Turkish (Turkey)"
+msgstr "Turcă (Turcia)"
+
+msgctxt "#40062"
+msgid "Ukrainian (Ukraine)"
+msgstr "Ucraineană (Ucraina)"
+
+msgctxt "#40063"
+msgid "Vietnamese (Vietnam)"
+msgstr "Vietnameză (Vietnam)"
+
+msgctxt "#40064"
+msgid "Mandarin (China)"
+msgstr "Mandarină (China)"
+
+msgctxt "#40065"
+msgid "Mandarin (Hong Kong)"
+msgstr "Mandarină (Hong Kong)"
+
+msgctxt "#40066"
+msgid "Mandarin (Taiwan)"
+msgstr "Mandarină (Taiwan)"
+
+msgctxt "#40067"
+msgid "Zulu (South Africa)"
+msgstr "Zulu (Africa de Sud)"
+
+msgctxt "#42418"
+msgid "Language and country"
+msgstr "Limbă și țară"
+
+msgctxt "#42419"
+msgid "The language and country settings used when looking up data from TMDb"
+msgstr "Setările de limbă și țară folosite pentru căutarea datelor din TMDb"
+
+msgctxt "#42420"
+msgid "EN"
+msgstr "EN"
+
+msgctxt "#30801"
+msgid "Zilean server address (include port if required)."
+msgstr "Adresa serverului Zilean (include portul dacă este necesar)."
+
+msgctxt "#30803"
+msgid "Display torrents not yet cached on your debrid service."
+msgstr "Afișează torrentele care nu sunt încă în cache în serviciul tău de debrid."
+
+msgctxt "#30808"
+msgid "Fanart.tv Client Key (for artwork)."
+msgstr "Cheie client Fanart.tv (pentru imagini)."
+
+msgctxt "#30809"
+msgid "Improve performance by caching metadata."
+msgstr "Îmbunătățește performanța prin cache pentru metadate."
+
+msgctxt "#30810"
+msgid "Seconds before Jackett requests time out (e.g., 30)."
+msgstr "Secunde până la expirarea cererilor Jackett (ex.: 30)."
+
+msgctxt "#30811"
+msgid "Trakt client secret from OAuth application settings."
+msgstr "Secret client Trakt din setările aplicației OAuth."
+
+msgctxt "#30812"
+msgid "Limit TV show results to specific seasons/episodes."
+msgstr "Limitează rezultatele serialelor la anumite sezoane/episoade."
+
+msgctxt "#30813"
+msgid "Hours before cached data is automatically refreshed (e.g., 24)."
+msgstr "Ore până la reîmprospătarea automată a cache-ului (ex.: 24)."
+
+msgctxt "#30814"
+msgid "Premiumize Client Token (get from account page)."
+msgstr "Token client Premiumize (ia-l din pagina contului)."
+
+msgctxt "#30815"
+msgid "Jackett server URL (e.g., http://localhost)."
+msgstr "URL server Jackett (ex.: http://localhost)."
+
+msgctxt "#30816"
+msgid "Display Telegram integration options in UI."
+msgstr "Afișează opțiunile de integrare Telegram în interfață."
+
+msgctxt "#30817"
+msgid "Your Real-Debrid account username/email."
+msgstr "Numele de utilizator/email cont Real-Debrid."
+
+msgctxt "#30818"
+msgid "Trakt client ID from https://trakt.tv/oauth/apps."
+msgstr "ID client Trakt din https://trakt.tv/oauth/apps."
+
+msgctxt "#30819"
+msgid "Connect Trakt.tv account to sync watch progress."
+msgstr "Conectează contul Trakt.tv pentru sincronizarea progresului."
+
+msgctxt "#30820"
+msgid "Seconds before Zilean requests time out (e.g., 30)."
+msgstr "Secunde până la expirarea cererilor Zilean (ex.: 30)."
+
+msgctxt "#30821"
+msgid "Your Jackett Client Key (found in dashboard)."
+msgstr "Cheie client Jackett (din dashboard)."
+
+msgctxt "#30822"
+msgid "Sort results by criteria (e.g., 'date', 'title', 'size')."
+msgstr "Sortează rezultatele după criterii (ex: „dată”, „titlu”, „mărime”)."
+
+msgctxt "#30823"
+msgid "Configure Burst mode settings and providers."
+msgstr "Configurează modul Burst și furnizorii."
+
+msgctxt "#30824"
+msgid "Enable Premiumize.me cloud service."
+msgstr "Activează serviciul cloud Premiumize.me."
+
+msgctxt "#30825"
+msgid "Truncate descriptions after [X] characters (0 for full text)."
+msgstr "Trunchiază descrierile după [X] caractere (0 pentru text complet)."
+
+msgctxt "#30826"
+msgid "Enable Prowlarr indexer management."
+msgstr "Activează gestionarea indexatorilor Prowlarr."
+
+msgctxt "#30827"
+msgid "Jackgram server URL (e.g., http://localhost:9117)."
+msgstr "URL server Jackgram (ex.: http://localhost:9117)."
+
+msgctxt "#30828"
+msgid "Debrider Client Key for authentication."
+msgstr "Cheie client Debrider pentru autentificare."
+
+msgctxt "#30829"
+msgid "Delay (in seconds) before next episode dialog appears (e.g., 10)."
+msgstr "Întârziere (în secunde) înainte ca dialogul pentru episodul următor să apară (ex: 10)"
+
+msgctxt "#30830"
+msgid "Specify the torrent client."
+msgstr "Specifică clientul torrent."
+
+msgctxt "#30831"
+msgid "Enable Debrider cached torrent support."
+msgstr "Activează suportul pentru torrente în cache Debrider."
+
+msgctxt "#30832"
+msgid "Torbox Client Token (found in account settings)."
+msgstr "Token client Torbox (din setările contului)."
+
+msgctxt "#30833"
+msgid "Trakt refresh token (auto-managed)."
+msgstr "Token refresh Trakt (gestionat automat)."
+
+msgctxt "#30834"
+msgid "Show confirmation dialog before playing next episode."
+msgstr "Afișează confirmare înainte de episodul următor."
+
+msgctxt "#30835"
+msgid "Authorize add-on to access Real-Debrid account."
+msgstr "Autorizează add-on-ul să acceseze contul Real-Debrid."
+
+msgctxt "#30836"
+msgid "Enable torrent-based media content"
+msgstr "Activează conținut media bazat pe torrent"
+
+msgctxt "#30837"
+msgid "Indicates if Real-Debrid account is linked."
+msgstr "Indică dacă contul Real-Debrid este conectat."
+
+msgctxt "#30838"
+msgid "Automatically play next media item when current playback ends."
+msgstr "Redă automat următorul element media când se termină redarea curentă."
+
+msgctxt "#30839"
+msgid "Check for and install the latest add-on updates."
+msgstr "Verifică și instalează ultimele actualizări."
+
+msgctxt "#30840"
+msgid "Comma-separated Prowlarr indexer IDs to use (e.g., 1,5,7)."
+msgstr "ID-uri indexatori Prowlarr separate prin virgulă (ex.: 1,5,7)."
+
+msgctxt "#30841"
+msgid "Timeout (seconds) for Prowlarr requests (e.g., 20)."
+msgstr "Timeout (secunde) pentru cereri Prowlarr (ex.: 20)."
+
+msgctxt "#30842"
+msgid "Trakt authorization expiration date (read-only)."
+msgstr "Data expirării autorizării Trakt (doar citire)."
+
+msgctxt "#30843"
+msgid "Enable Torbox.de cloud torrent integration."
+msgstr "Activează integrarea cloud pentru torrent Torbox.de."
+
+msgctxt "#30844"
+msgid "Trakt Access Token (auto-filled after auth)."
+msgstr "Token de acces Trakt (completat automat după autentificare)."
+
+msgctxt "#30845"
+msgid "Link Premiumize.me account to add-on."
+msgstr "Conectează contul Premiumize.me."
+
+msgctxt "#30846"
+msgid "Clear cached data automatically after updating the add-on."
+msgstr "Șterge automat datele din cache după actualizarea add-on-ului."
+
+msgctxt "#30847"
+msgid "Click to delete all cached data immediately."
+msgstr "Apasă pentru a șterge imediat tot cache-ul."
+
+msgctxt "#30848"
+msgid "Real-Debrid Client Token (auto-filled after auth)."
+msgstr "Token client Real-Debrid (completat automat după autentificare)."
+
+msgctxt "#30849"
+msgid "Enable Jackett torrent proxy support."
+msgstr "Activează proxy torrent Jackett."
+
+msgctxt "#30850"
+msgid "Enable Jackgram integration for enhanced search."
+msgstr "Activează integrarea Jackgram."
+
+msgctxt "#30851"
+msgid "Prowlarr instance URL (e.g., http://localhost)."
+msgstr "URL instanță Prowlarr (ex.: http://localhost)."
+
+msgctxt "#30852"
+msgid "Maximum number of search results to display (e.g., 50)."
+msgstr "Număr maxim de rezultate afișate (ex.: 50)."
+
+msgctxt "#30853"
+msgid "Revoke Real-Debrid account access."
+msgstr "Revocă accesul Real-Debrid."
+
+msgctxt "#30854"
+msgid "Prowlarr Client Key (found in Settings > General)."
+msgstr "Cheie client Prowlarr (din Settings > General)."
+
+msgctxt "#30855"
+msgid "Trakt.tv username (auto-populated after auth)."
+msgstr "Nume utilizator Trakt.tv (completat automat după autentificare)."
+
+msgctxt "#30856"
+msgid "Disconnect Trakt.tv account from add-on."
+msgstr "Deconectează contul Trakt.tv."
+
+msgctxt "#30857"
+msgid "Enable Zilean integration for metadata fetching."
+msgstr "Activează integrarea Zilean pentru metadate."
+
+msgctxt "#30858"
+msgid "Your Client Key (required for metadata)"
+msgstr "Cheia ta client (necesară pentru metadate)"
+
+msgctxt "#30859"
+msgid "Enable Burst mode for accelerated searches."
+msgstr "Activează modul Burst pentru căutări rapide."
+
+msgctxt "#30860"
+msgid "Others"
+msgstr "Altele"
+
+msgctxt "#30861"
+msgid "Filters"
+msgstr "Filtre"
+
+msgctxt "#30862"
+msgid "Torrent (P2P) Configuration"
+msgstr "Configurează torrent (P2P)"
+
+msgctxt "#30863"
+msgid "Specify the torrent client"
+msgstr "Specifică clientul torrent"
+
+msgctxt "#30864"
+msgid "Sources"
+msgstr "Surse"
+
+msgctxt "#30865"
+msgid "General Filters"
+msgstr "Filtre generale"
+
+msgctxt "#30866"
+msgid "Sign in to your Stremio account to access add-ons and personalized features."
+msgstr "Autentifică-te în contul Stremio pentru add-on-uri și funcții personalizate."
+
+msgctxt "#30867"
+msgid "Sign out of your Stremio account. This will disconnect your account but won't delete your data."
+msgstr "Deconectează-te din contul tău Stremio. Acest lucru va deconecta contul, dar nu îți va șterge datele."
+
+msgctxt "#30868"
+msgid "Log Out of Stremio"
+msgstr "Deconectare din Stremio"
+
+msgctxt "#30869"
+msgid "Enable Stremio add-ons integration."
+msgstr "Activează integrarea add-on-urilor Stremio."
+
+msgctxt "#30870"
+msgid "Select Stream Addons"
+msgstr "Selectează add-on-uri de streaming"
+
+msgctxt "#30871"
+msgid "Log In to Stremio"
+msgstr "Autentificare în Stremio"
+
+msgctxt "#30872"
+msgid "Enable or disable Stremio add-ons."
+msgstr "Activează sau dezactivează add-on-urile Stremio."
+
+msgctxt "#30873"
+msgid "Select language for player subtitle selection"
+msgstr "Alege limba subtitrărilor"
+
+msgctxt "#30874"
+msgid "Update Addons"
+msgstr "Actualizează add-on-urile"
+
+msgctxt "#30875"
+msgid "Select Catalogs Addons"
+msgstr "Selectează add-on-uri de cataloage"
+
+msgctxt "#30876"
+msgid "Download directory"
+msgstr "Director descărcări"
+
+msgctxt "#30877"
+msgid "Enable Trakt.tv Scrobbling"
+msgstr "Activează scrobbling Trakt.tv"
+
+msgctxt "#30878"
+msgid "Auto select subtitle when playing"
+msgstr "Selectează automat subtitrarea"
+
+msgctxt "#30879"
+msgid "Auto-play quality"
+msgstr "Calitate redare automată"
+
+msgctxt "#30880"
+msgid "1080p"
+msgstr "1080p"
+
+msgctxt "#30881"
+msgid "720p"
+msgstr "720p"
+
+msgctxt "#30882"
+msgid "4k"
+msgstr "4K"
+
+msgctxt "#30883"
+msgid "480p"
+msgstr "480p"
+
+msgctxt "#30884"
+msgid "Subtitles Configuration"
+msgstr "Configurează subtitrările"
+
+msgctxt "#30885"
+msgid "Addon Host"
+msgstr "Host add-on"
+
+msgctxt "#30886"
+msgid "Subtitles"
+msgstr "Subtitrări"
+
+msgctxt "#30887"
+msgid "Primary Language"
+msgstr "Limbă principală"
+
+msgctxt "#30888"
+msgid "Secondary Language"
+msgstr "Limbă secundară"
+
+msgctxt "#30889"
+msgid "Deepl Enabled"
+msgstr "Deepl activat"
+
+msgctxt "#30890"
+msgid "Deepl Client Key"
+msgstr "Cheie client Deepl"
+
+msgctxt "#30891"
+msgid "Translator Configuration"
+msgstr "Configurează traducătorul"
+
+msgctxt "#30892"
+msgid "Deepl Target Language"
+msgstr "Limbă țintă Deepl"
+
+msgctxt "#30893"
+msgid "Stremio Subtitle Configuration"
+msgstr "Configurează subtitrările Stremio"
+
+msgctxt "#90001"
+msgid "Add Custom Addon"
+msgstr "Adaugă add-on personalizat"
+
+msgctxt "#90002"
+msgid "Add a custom Stremio addon by entering its URL"
+msgstr "Adaugă un add-on Stremio introducând URL-ul"
+
+msgctxt "#90003"
+msgid "Auto-select audio when playing"
+msgstr "Selectează automat audio"
+
+msgctxt "#90004"
+msgid "Audio Language"
+msgstr "Limbă audio"
+
+msgctxt "#90005"
+msgid "Select audio language for playing the video"
+msgstr "Alege limba audio pentru redare"
+
+msgctxt "#90006"
+msgid "Search"
+msgstr "Caută"
+
+msgctxt "#90007"
+msgid "TV Shows"
+msgstr "Seriale"
+
+msgctxt "#90008"
+msgid "Movies"
+msgstr "Filme"
+
+msgctxt "#90009"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#90010"
+msgid "Live TV"
+msgstr "TV Live"
+
+msgctxt "#90011"
+msgid "Direct Search"
+msgstr "Căutare directă"
+
+msgctxt "#90012"
+msgid "Torrents"
+msgstr "Torrente"
+
+msgctxt "#90013"
+msgid "Telegram"
+msgstr "Telegram"
+
+msgctxt "#90014"
+msgid "Cloud"
+msgstr "Cloud"
+
+msgctxt "#90015"
+msgid "Downloads"
+msgstr "Descărcări"
+
+msgctxt "#90016"
+msgid "Settings"
+msgstr "Setări"
+
+msgctxt "#90017"
+msgid "History"
+msgstr "Istoric"
+
+msgctxt "#90018"
+msgid "Donate"
+msgstr "Donează"
+
+msgctxt "#90019"
+msgid "Recently Watched Files"
+msgstr "Fișiere vizionate recent"
+
+msgctxt "#90020"
+msgid "Recently Watched Titles"
+msgstr "Titluri vizionate recent"
+
+msgctxt "#90021"
+msgid "TV Calendar"
+msgstr "Calendar TV"
+
+
+msgctxt "#90022"
+msgid "If you enjoy using Jacktook and want to support its development, you can buy me a coffee! Your support helps keep the project active and enables future improvements:"
+msgstr "Dacă îți place să folosești Jacktook și vrei să susții dezvoltarea lui, îmi poți cumpăra o cafea! Sprijinul tău ajută la menținerea proiectului activ și permite îmbunătățiri viitoare:"
+
+msgctxt "#90023"
+msgid "Support Jacktook"
+msgstr "Susține Jacktook"
+
+msgctxt "#90024"
+msgid "Trending Recent"
+msgstr "Tendințe recente"
+
+msgctxt "#90025"
+msgid "Genres"
+msgstr "Genuri"
+
+msgctxt "#90026"
+msgid "Calendar"
+msgstr "Calendar"
+
+msgctxt "#90027"
+msgid "Years"
+msgstr "Ani"
+
+msgctxt "#90028"
+msgid "Trending"
+msgstr "Tendințe"
+
+msgctxt "#90029"
+msgid "Most Watched"
+msgstr "Cele mai vizionate"
+
+msgctxt "#90030"
+msgid "Most Favorited"
+msgstr "Cele mai apreciate"
+
+msgctxt "#90031"
+msgid "Popular Lists"
+msgstr "Liste populare"
+
+msgctxt "#90032"
+msgid "Trending Lists"
+msgstr "Liste în tendințe"
+
+msgctxt "#90033"
+msgid "Recomendations"
+msgstr "Recomandări"
+
+msgctxt "#90034"
+msgid "Watched History"
+msgstr "Istoric vizionări"
+
+msgctxt "#90035"
+msgid "Watchlist"
+msgstr "Watchlist"
+
+msgctxt "#90036"
+msgid "Top 10 BoxOffice"
+msgstr "Top 10 Box Office"
+
+msgctxt "#90037"
+msgid "Popular"
+msgstr "Populare"
+
+msgctxt "#90038"
+msgid "Popular Recent"
+msgstr "Populare recent"
+
+msgctxt "#90039"
+msgid "Airing"
+msgstr "În difuzare"
+
+msgctxt "#90040"
+msgid "Years"
+msgstr "Ani"
+
+msgctxt "#90041"
+msgid "Genres"
+msgstr "Genuri"
+
+msgctxt "#90042"
+msgid "Top Rated"
+msgstr "Cele mai bine evaluate"
+
+msgctxt "#90043"
+msgid "Most Watched"
+msgstr "Cele mai vizionate"
+
+msgctxt "#90044"
+msgid "Torrentio Configuration"
+msgstr "Configurare Torrentio"
+
+msgctxt "#90045"
+msgid "Enable Torrentio Settings"
+msgstr "Activează setările Torrentio"
+
+msgctxt "#90046"
+msgid "Enable or disable the Torrentio Configuration"
+msgstr "Activează sau dezactivează configurarea Torrentio"
+
+msgctxt "#90047"
+msgid "Select Torrentio Providers"
+msgstr "Selectează furnizorii Torrentio"
+
+msgctxt "#90048"
+msgid "Choose which providers to include in the stream request."
+msgstr "Alege ce furnizori să incluzi în cererea de stream"
+
+# Context menus
+
+msgctxt "#90049"
+msgid "Scrape again"
+msgstr "Caută din nou"
+
+msgctxt "#90050"
+msgid "Recommendations"
+msgstr "Recomandări"
+
+msgctxt "#90051"
+msgid "Similar"
+msgstr "Similare"
+
+msgctxt "#90052"
+msgid "Thread Number"
+msgstr "Număr thread"
+
+msgctxt "#90053"
+msgid "Select the number of threads (1-30)"
+msgstr "Selectează numărul de thread-uri (1-30)"
+
+msgctxt "#90054"
+msgid "Kodi logs"
+msgstr "Log-uri Kodi"
+
+msgctxt "#90055"
+msgid "Kodi old logs"
+msgstr "Log-uri vechi Kodi"
+
+msgctxt "#90056"
+msgid "Displays Kodi logs to help diagnose issues."
+msgstr "Afișează log-urile Kodi pentru a ajuta la diagnosticarea problemelor"
+
+msgctxt "#90057"
+msgid "Logs"
+msgstr "Log-uri"
+
+msgctxt "#90058"
+msgid "Filter by Size"
+msgstr "Filtrează după mărime"
+
+msgctxt "#90059"
+msgid "Enable Size Filter"
+msgstr "Activează filtrul de mărime"
+
+msgctxt "#90060"
+msgid "Minimum Size (MB)"
+msgstr "Dimensiune mărime (MB)"
+
+msgctxt "#90061"
+msgid "Maximum Size (MB)"
+msgstr "Mărime maximă (MB)"
+
+msgctxt "#90062"
+msgid "Enable Cached Search"
+msgstr "Activează căutarea în cache"
+
+msgctxt "#90063"
+msgid "Only show cached streams from external services"
+msgstr "Afișează doar stream-uri din cache de la servicii externe"
+
+msgctxt "#90064"
+msgid "Popular"
+msgstr "Populare"
+
+msgctxt "#90065"
+msgid "Languages"
+msgstr "Limbi"
+
+msgctxt "#90066"
+msgid "Networks"
+msgstr "Rețele"
+
+msgctxt "#90067"
+msgid "Collections"
+msgstr "Colecții"
+
+msgctxt "#90068"
+msgid "Search for collections:"
+msgstr "Caută colecții"
+
+msgctxt "#90069"
+msgid "Main Menu"
+msgstr "Meniu principal"
+
+msgctxt "#90070"
+msgid "Last Titles"
+msgstr "Ultimele titluri"
+
+msgctxt "#90071"
+msgid "Last Files"
+msgstr "Ultimele fișiere"
+
+msgctxt "#90072"
+msgid "Trakt Lists"
+msgstr "Liste Trakt"
+
+msgctxt "#90073"
+msgid "Metadata"
+msgstr "Metadate"
+
+msgctxt "#90074"
+msgid "Top Lists"
+msgstr "Top liste"
+
+msgctxt "#90075"
+msgid "User Lists"
+msgstr "Liste utilizator"
+
+msgctxt "#90076"
+msgid "Search Lists"
+msgstr "Caută liste"
+
+msgctxt "#90077"
+msgid "MDbList Configuration"
+msgstr "Configurare MDbList"
+
+msgctxt "#90078"
+msgid "People"
+msgstr "Persoane"
+
+msgctxt "#90079"
+msgid "Popular People"
+msgstr "Persoane populare"
+
+msgctxt "#90080"
+msgid "Latest People"
+msgstr "Persoane recente"
+
+msgctxt "#90081"
+msgid "Search People"
+msgstr "Caută persoane"
+
+msgctxt "#90082"
+msgid "Download subtitles"
+msgstr "Descarcă subtitrări"
+
+msgctxt "#90083"
+msgid "Download video"
+msgstr "Descarcă video"
+
+msgctxt "#90084"
+msgid "Browse into"
+msgstr "Răsfoiește în"
+
+msgctxt "#90085"
+msgid "Include TV show Specials"
+msgstr "Include episoade speciale"
+
+msgctxt "#90086"
+msgid "Airing Today"
+msgstr "Difuzate azi"
+
+msgctxt "#90099"
+msgid "Filter by Source Type"
+msgstr "Filtrează după tipul sursei"
+
+# BluRay/UHD
+msgctxt "#90100"
+msgid "Include BluRay/UHD sources"
+msgstr "Include surse BluRay/UHD"
+
+msgctxt "#90105"
+msgid "Includes releases such as: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
+msgstr "Include versiuni precum: BluRay, BluRay REMUX, BRRip, BDRip, UHDRip, REMUX"
+
+# WEB/HD
+msgctxt "#90101"
+msgid "Include WEB/HD sources"
+msgstr "Include surse WEB/HD"
+
+msgctxt "#90106"
+msgid "Includes releases such as: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
+msgstr "Include versiuni precum: WEB-DL, WEB-DLRip, WEBRip, HDRip, WEBMux"
+
+# DVD/TV/SAT
+msgctxt "#90102"
+msgid "Include DVD/TV/SAT sources"
+msgstr "Include surse DVD/TV/SAT"
+
+msgctxt "#90107"
+msgid "Includes releases such as: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
+msgstr "Include versiuni precum: DVD, DVDRip, HDTV, SATRip, TVRip, PPVRip, PDTV"
+
+# CAM/Screener
+msgctxt "#90103"
+msgid "Include CAM/Screener sources"
+msgstr "Include surse CAM/Screener"
+
+msgctxt "#90108"
+msgid "Includes releases such as: CAM, TeleSync, TeleCine, SCR"
+msgstr "Include versiuni precum: CAM, TeleSync, TeleCine, SCR"
+
+# Unknown
+msgctxt "#90104"
+msgid "Include Unknown sources"
+msgstr "Include surse necunoscute"
+
+msgctxt "#90109"
+msgid "Includes uncategorized or unidentified sources"
+msgstr "Include surse necategorizate sau neidentificate"
+
+msgctxt "#90110"
+msgid "Do you want to clear your watched history?."
+msgstr "Vrei să îți ștergi istoricul de vizionări?"
+
+msgctxt "#90111"
+msgid "Do you want to clear your history?."
+msgstr "Vrei să îți ștergi istoricul?"
+
+msgctxt "#90112"
+msgid "Clear History"
+msgstr "Șterge istoricul"
+
+msgctxt "#90113"
+msgid "Click to delete all watched history immediately."
+msgstr "Apasă pentru a șterge imediat tot istoricul de vizionări"
+
+msgctxt "#90114"
+msgid "History cleared"
+msgstr "Istoric șters"
+
+msgctxt "#90115"
+msgid "Source Select"
+msgstr "Selectare sursă"
+
+msgctxt "#90116"
+msgid "Open Settings"
+msgstr "Deschide setările"
+
+msgctxt "#90117"
+msgid "Select Torrentio Providers"
+msgstr "Selectează providerii Torrentio"
+
+msgctxt "#90118"
+msgid "Port"
+msgstr "Port"
+
+msgctxt "#90119"
+msgid "Jackett port (default:9117)"
+msgstr "Port Jackett (implicit: 9117)"
+
+msgctxt "#90120"
+msgid "Prowlarr port (default:9696)"
+msgstr "Port Prowlarr (implicit: 9696)"
+
+msgctxt "#90121"
+msgid "All Debrid Configuration"
+msgstr "Configurare All Debrid"
+
+msgctxt "#90122"
+msgid "Auto download subtitles"
+msgstr "Descarcă automat subtitrări"
+
+msgctxt "#90123"
+msgid "Stremio Timeout"
+msgstr "Timeout Stremio"
+
+msgctxt "#90124"
+msgid "Webdav Client Configuration"
+msgstr "Configurare client WebDAV"
+
+msgctxt "#90126"
+msgid "Host"
+msgstr "Host"
+
+msgctxt "#90127"
+msgid "Username"
+msgstr "Utilizator"
+
+msgctxt "#90128"
+msgid "Password"
+msgstr "Parolă"
+
+msgctxt "#90129"
+msgid "Test Connection"
+msgstr "Testează conexiunea"
+
+msgctxt "#90131"
+msgid "Webdav"
+msgstr "WebDAV"
+
+msgctxt "#90132"
+msgid "Remote Path"
+msgstr "Cale remote"
+
+msgctxt "#90133"
+msgid "The hostname or IP address of your WebDAV server (e.g., http://mywebdav.com or https://192.168.1.100)."
+msgstr "Numele hostului sau adresa IP a serverului WebDAV (ex: http://mywebdav.com sau https://192.168.1.100)"
+
+msgctxt "#90134"
+msgid "The username required for authenticating with your WebDAV server"
+msgstr "Numele de utilizator necesar pentru autentificarea pe serverul WebDAV."
+
+msgctxt "#90135"
+msgid "The password for the specified username to authenticate with your WebDAV server"
+msgstr "Parola pentru numele de utilizator specificat, pentru autentificarea pe serverul WebDAV"
+
+msgctxt "#90136"
+msgid "The base path or directory on the WebDAV server where your media files are located (e.g., /movies)."
+msgstr "Calea pe serverul WebDAV unde se află fișierele media (ex: /movies)"
+
+msgctxt "#90137"
+msgid "Click to verify if the WebDAV client can successfully connect to the configured server using the provided credentials."
+msgstr "Apasă pentru a verifica dacă clientul WebDAV se poate conecta cu succes la serverul configurat folosind datele de autentificare furnizate."
+
+msgctxt "#90138"
+msgid "Remove Custom Addon"
+msgstr "Elimină add-on-ul personalizat"
+
+msgctxt "#90139"
+msgid "Playback"
+msgstr "Redare"
+
+msgctxt "#90140"
+msgid "Super quick play"
+msgstr "Redare foarte rapidă"
+
+msgctxt "#90141"
+msgid "Re-ask to play last played video"
+msgstr "Întreabă din nou dacă vrei să redai ultimul video"
+
+msgctxt "#90142"
+msgid "Replay Dialog"
+msgstr "Dialog reluare"
+
+msgctxt "#90143"
+msgid "Do you want to play last watched?"
+msgstr "Vrei să redai ultimul videoclip vizionat?"
+
+msgctxt "#90144"
+msgid "Could not resolve playback URL"
+msgstr "Nu s-a putut obține adresa de redare"
+
+msgctxt "#90171"
+msgid "Autoscrape Next Episode"
+msgstr "Autoscrape următorul episod"
+
+msgctxt "#90172"
+msgid "Pre-resolve the next episode's playback URL in the background while watching."
+msgstr "Pre-rezolvă în fundal URL-ul de redare al următorului episod în timp ce te uiți."
+
+msgctxt "#90173"
+msgid "Autoscrape Threshold"
+msgstr "Prag Autoscrape"
+
+msgctxt "#90174"
+msgid "Percentage of playback to trigger background pre-resolution."
+msgstr "Procentul de redare la care se declanșează pre-rezoluția în fundal."
+
+msgctxt "#90175"
+msgid "Autoscrape Episode Count"
+msgstr "Număr episoade Autoscrape"
+
+msgctxt "#90176"
+msgid "Number of upcoming episodes to pre-resolve."
+msgstr "Numărul de episoade următoare care se pre-rezolvă."
+
+msgctxt "#90177"
+msgid "Autoscrape Cache TTL"
+msgstr "TTL cache Autoscrape"
+
+msgctxt "#90178"
+msgid "Hours to keep resolved playback data in cache."
+msgstr "Numărul de ore în care datele de redare rezolvate sunt păstrate în cache."
+
+msgctxt "#30901"
+msgid "Show Only Stremio Catalogs"
+msgstr "Afișează doar cataloage Stremio"
+
+msgctxt "#30902"
+msgid "Hides embedded items (TMDb, Trakt, etc.) and shows only Stremio catalogs in menus."
+msgstr "Ascunde elementele integrate (TMDb, Trakt etc.) și afișează doar cataloagele Stremio în meniuri."
+
+msgctxt "#30903"
+msgid "Select Live TV Addons"
+msgstr "Selectează add-on-uri TV Live"
+
+msgctxt "#30904"
+msgid "Choose specific Stremio addons for Live TV content"
+msgstr "Alege add-on-uri Stremio specifice pentru conținut TV Live"
+
+msgctxt "#30920"
+msgid "Clear Trakt Cache"
+msgstr "Șterge cache Trakt"
+
+msgctxt "#30921"
+msgid "Clear TMDB Cache"
+msgstr "Șterge cache TMDB"
+
+msgctxt "#30922"
+msgid "Clear Providers Cache"
+msgstr "Șterge cache provideri"
+
+msgctxt "#30923"
+msgid "Clear Settings Cache"
+msgstr "Șterge cache setări"
+
+msgctxt "#90149"
+msgid "Maintenance"
+msgstr "Mentenanță"
+
+msgctxt "#90150"
+msgid "Stremio: General"
+msgstr "Stremio: General"
+
+msgctxt "#90151"
+msgid "Stremio: Account"
+msgstr "Stremio: Cont"
+
+msgctxt "#90152"
+msgid "Stremio: Addons & Catalogs"
+msgstr "Stremio: Add-on-uri și cataloage"
+
+msgctxt "#90153"
+msgid "Stremio: Torrentio"
+msgstr "Stremio: Torrentio"
+
+msgctxt "#90154"
+msgid "Trending Recent"
+msgstr "Tendințe recente"
+
+msgctxt "#90155"
+msgid "Stremio: Filters"
+msgstr "Stremio: Filtre"
+
+msgctxt "#32300"
+msgid "Filter by Quality"
+msgstr "Filtrează după calitate"
+
+msgctxt "#32301"
+msgid "Filter by Provider"
+msgstr "Filtrează după provider"
+
+msgctxt "#32302"
+msgid "Filter by Source"
+msgstr "Filtrează după sursă"
+
+msgctxt "#32303"
+msgid "Filter by Language"
+msgstr "Filtrează după limbă"
+
+msgctxt "#32304"
+msgid "Filter by Torrents"
+msgstr "Filtrează după torrente"
+
+msgctxt "#32305"
+msgid "Filter by Debrid"
+msgstr "Filtrează după Debrid"
+
+msgctxt "#32306"
+msgid "Reset Filter"
+msgstr "Resetează filtrul"
+
+msgctxt "#30930"
+msgid "Ping Addons"
+msgstr "Testează add-on-uri"
+
+msgctxt "#30931"
+msgid "Check availability of addons and show only reachable ones"
+msgstr "Verifică disponibilitatea add-on-urilor și afișează doar cele accesibile"
+
+msgctxt "#90164"
+msgid "Skip Intro / Recap"
+msgstr "Omite intro / recapitulare"
+
+msgctxt "#90165"
+msgid "Enable Skip Intro"
+msgstr "Activează Omite Intro"
+
+msgctxt "#90166"
+msgid "Detect intros and recaps using IntroDB and offer to skip them during playback"
+msgstr "Detectează intro-urile și recapitulările folosind IntroDB și oferă opțiunea de omitere în timpul redării"
+
+msgctxt "#90167"
+msgid "Auto-skip"
+msgstr "Omite automat"
+
+msgctxt "#90168"
+msgid "Automatically skip intros and recaps without showing the button"
+msgstr "Omite automat intro-urile și rezumatele, fără afișarea butonului."
+
+msgctxt "#90160"
+msgid "Skip Intro"
+msgstr "Omite intro"
+
+msgctxt "#90161"
+msgid "Skip Recap"
+msgstr "Omite recapitulare"
+
+msgctxt "#90162"
+msgid "Manage from Phone"
+msgstr "Gestionează de pe telefon"
+
+msgctxt "#90163"
+msgid "Start a local web server and show a QR code to manage Stremio sources from your phone"
+msgstr "Pornește un server web local și afișează un cod QR pentru a gestiona sursele Stremio de pe telefon"
+
+msgctxt "#90200"
+msgid "Continue Watching"
+msgstr "Continuă vizionarea"
+
+msgctxt "#90201"
+msgid "Library"
+msgstr "Bibliotecă"
+
+msgctxt "#90202"
+msgid "My Shows"
+msgstr "Serialele mele"
+
+msgctxt "#90203"
+msgid "My Movies"
+msgstr "Filmele mele"
+
+msgctxt "#90204"
+msgid "Remove from Library"
+msgstr "Elimină din bibliotecă"
+
+msgctxt "#90205"
+msgid "Add to Library"
+msgstr "Adaugă în bibliotecă"
+
+msgctxt "#90206"
+msgid "Remove"
+msgstr "Elimină"
+
+msgctxt "#90207"
+msgid "Search Movies & TV"
+msgstr "Caută filme și TV"
+
+msgctxt "#90208"
+msgid "Recent Searches"
+msgstr "Căutări recente"
+
+msgctxt "#90209"
+msgid "Recent Direct Searches"
+msgstr "Căutări directe recente"
+
+msgctxt "#90210"
+msgid "Clear All Search History"
+msgstr "Șterge tot istoricul de căutări"
+
+msgctxt "#90211"
+msgid "Bypass Stremio Addons Native Sorting"
+msgstr "Ocolește sortarea nativă a add-on-urilor Stremio"
+
+msgctxt "#90212"
+msgid "If enabled, addons specified won't have their results re-ordered or filtered by Jacktook's native quality and size thresholds."
+msgstr "Dacă este activat, rezultatele din add-on-urile specificate nu vor fi reordonate sau filtrate de pragurile native de calitate și mărime ale Jacktook."
+
+msgctxt "#90213"
+msgid "Select Bypassed Addons"
+msgstr "Selectează add-on-uri excluse"
+
+msgctxt "#90214"
+msgid "Select which Stremio addons bypass Jacktook's native size and quality filtering."
+msgstr "Alege ce add-on-uri Stremio ocolesc filtrarea de mărime și calitate a Jacktook."
+
+msgctxt "#90215"
+msgid "Downgrade"
+msgstr "Retrogradează"
+
+msgctxt "#90671"
+msgid "Install an older published version of Jacktook. The current version is backed up and restored automatically if the downgrade fails."
+msgstr "Instalează o versiune mai veche Jacktook. Versiunea curentă este salvată și restaurată automat dacă retrogradarea eșuează."
+
+msgctxt "#30932"
+msgid "Update Action"
+msgstr "Acțiune actualizare"
+
+msgctxt "#30933"
+msgid "Choose how to handle background update checks."
+msgstr "Alege cum se gestionează verificările de actualizare în fundal."
+
+msgctxt "#30934"
+msgid "Ask"
+msgstr "Întreabă"
+
+msgctxt "#30935"
+msgid "Notify"
+msgstr "Notifică"
+
+msgctxt "#90216"
+msgid "Volume Check Enabled"
+msgstr "Verificare volum activată"
+
+msgctxt "#90217"
+msgid "Automatically limits volume if it is above the threshold before playback."
+msgstr "Limitează automat volumul dacă este peste prag înainte de redare."
+
+msgctxt "#90218"
+msgid "Volume Threshold"
+msgstr "Prag volum"
+
+msgctxt "#90219"
+msgid "The volume percentage above which the warning triggers."
+msgstr "Procentul de volum peste care se declanșează avertizarea."
+
+msgctxt "#90220"
+msgid "High Volume Warning"
+msgstr "Avertizare volum ridicat"
+
+msgctxt "#90221"
+msgid "High volume detected. Adjusting to %s%% for safety."
+msgstr "Volum ridicat detectat. Se ajustează la %s%% pentru siguranță."
+
+msgctxt "#90222"
+msgid "Fanart.tv Configuration"
+msgstr "Configurare Fanart.tv"
+
+msgctxt "#90223"
+msgid "Client Key"
+msgstr "Cheie client"
+
+msgctxt "#90224"
+msgid "Your personal Fanart.tv client key for higher quality assets."
+msgstr "Cheia ta personală Fanart.tv pentru resurse de calitate mai bună."
+
+msgctxt "#90225"
+msgid "Debrid Notifications"
+msgstr "Notificări Debrid"
+
+msgctxt "#90226"
+msgid "Debrid Expiration Notification"
+msgstr "Notificare expirare Debrid"
+
+msgctxt "#90227"
+msgid "Enable or disable notifications when your Debrid subscription is about to expire."
+msgstr "Activează sau dezactivează notificările când abonamentul tău Debrid este pe cale să expire."
+
+msgctxt "#90228"
+msgid "Expiration Threshold (Days)"
+msgstr "Prag expirare (zile)"
+
+msgctxt "#90229"
+msgid "How many days before expiration to start notifying."
+msgstr "Cu câte zile înainte de expirare să înceapă notificările."
+
+msgctxt "#90230"
+msgid "%s expires in %d days."
+msgstr "%s expiră în %d zile."
+
+msgctxt "#90231"
+msgid "%s expires today!"
+msgstr "%s expiră astăzi!"
+
+msgctxt "#90232"
+msgid "Easynews"
+msgstr "Easynews"
+
+msgctxt "#90233"
+msgid "Enable EasyNews as a direct stream provider."
+msgstr "Activează EasyNews ca provider direct de stream."
+
+msgctxt "#90234"
+msgid "Your EasyNews username."
+msgstr "Numele tău de utilizator EasyNews."
+
+msgctxt "#90235"
+msgid "Your EasyNews password."
+msgstr "Parola ta EasyNews."
+
+msgctxt "#90236"
+msgid "Request timeout in seconds."
+msgstr "Timp de așteptare cerere în secunde."
+
+msgctxt "#90237"
+msgid "Account Information"
+msgstr "Informații cont"
+
+msgctxt "#90238"
+msgid "Search Dialog Style"
+msgstr "Stil dialog căutare"
+
+msgctxt "#90239"
+msgid "Background"
+msgstr "Fundal"
+
+msgctxt "#90240"
+msgid "Detailed Status"
+msgstr "Stare detaliată"
+
+msgctxt "#90241"
+msgid "Search Status"
+msgstr "Stare căutare"
+
+msgctxt "#90242"
+msgid "Cancel"
+msgstr "Anulează"
+
+msgctxt "#90243"
+msgid "Results found: "
+msgstr "Rezultate găsite: "
+
+msgctxt "#90244"
+msgid "Pending"
+msgstr "În așteptare"
+
+msgctxt "#90245"
+msgid "In Progress"
+msgstr "În desfășurare"
+
+msgctxt "#90246"
+msgid "Completed"
+msgstr "Finalizat"
+
+msgctxt "#90247"
+msgid "Failed"
+msgstr "Eșuat"
+
+msgctxt "#90248"
+msgid "Cancelled"
+msgstr "Anulat"
+
+msgctxt "#90249"
+msgid "Your personal Jackgram API token for authentication."
+msgstr "Tokenul tău personal Jackgram pentru autentificare."
+
+msgctxt "#90250"
+msgid "Subtitles Found"
+msgstr "Subtitrări găsite"
+
+msgctxt "#90251"
+msgid "There are already downloaded subtitles for this video.\nDo you want to use the existing subtitles?"
+msgstr "Există deja subtitrări descărcate pentru acest video.\nVrei să folosești subtitrările existente?"
+
+msgctxt "#90252"
+msgid "No subtitles found"
+msgstr "Nu s-au găsit subtitrări"
+
+msgctxt "#90253"
+msgid "No subtitles selected"
+msgstr "Nu au fost selectate subtitrări"
+
+msgctxt "#90254"
+msgid "Translate Subtitles"
+msgstr "Tradu subtitrările"
+
+msgctxt "#90255"
+msgid "Do you want to also translate the selected subtitles?"
+msgstr "Vrei să traduci și subtitrările selectate?"
+
+msgctxt "#90256"
+msgid "Select Subtitle to Download"
+msgstr "Selectează subtitrarea de descărcat"
+
+msgctxt "#90257"
+msgid "Subtitles Loaded"
+msgstr "Subtitrări încărcate"
+
+msgctxt "#90258"
+msgid "Backup"
+msgstr "Backup"
+
+msgctxt "#90259"
+msgid "Export Backup"
+msgstr "Exportă backup"
+
+msgctxt "#90260"
+msgid "Export addon settings and custom Stremio addons to a JSON backup file."
+msgstr "Exportă setările add-on-ului și add-on-urile Stremio personalizate într-un fișier JSON de backup."
+
+msgctxt "#90261"
+msgid "Restore Backup"
+msgstr "Restaurează backup"
+
+msgctxt "#90262"
+msgid "Restore addon settings and replace custom Stremio addons from a JSON backup file."
+msgstr "Restaurează setările add-on-ului și înlocuiește add-on-urile Stremio personalizate dintr-un fișier backup JSON."
+
+msgctxt "#90263"
+msgid "Remove Sensitive Data"
+msgstr "Elimină date sensibile"
+
+msgctxt "#90264"
+msgid "Remove API keys, passwords, usernames, emails, auth state, and custom Stremio addon URLs from exported backups."
+msgstr "Elimină cheile API, parolele, numele de utilizator, email-urile, starea de autentificare și URL-urile add-on-urilor Stremio din backup-uri exportate."
+
+msgctxt "#90265"
+msgid "Settings backup exported"
+msgstr "Backup setări exportat"
+
+msgctxt "#90266"
+msgid "Settings backup restored"
+msgstr "Backup setări restaurat"
+
+msgctxt "#90267"
+msgid "Settings Backup Failed"
+msgstr "Backup setări eșuat"
+
+msgctxt "#90268"
+msgid "Select export folder"
+msgstr "Selectează folderul de export"
+
+msgctxt "#90269"
+msgid "Select backup file"
+msgstr "Selectează fișierul backup"
+
+msgctxt "#90270"
+msgid "Backup file is invalid."
+msgstr "Fișierul backup este invalid."
+
+msgctxt "#90271"
+msgid "No export folder selected."
+msgstr "Nu a fost selectat niciun folder de export."
+
+msgctxt "#90272"
+msgid "No backup file selected."
+msgstr "Nu a fost selectat niciun fișier backup."
+
+msgctxt "#90273"
+msgid "Unable to export settings backup."
+msgstr "Nu s-a putut exporta backup-ul setărilor."
+
+msgctxt "#90274"
+msgid "Unable to restore settings backup."
+msgstr "Nu s-a putut restaura backup-ul setărilor."
+
+msgctxt "#90275"
+msgid "Restore Backup"
+msgstr "Restaurează backup"
+
+msgctxt "#90276"
+msgid "This will overwrite your current addon settings and replace your custom Stremio addons with the backup. Continue?"
+msgstr "Aceasta va suprascrie setările curente ale add-on-ului și va înlocui add-on-urile tale Stremio cu cele din backup. Continui?"
+
+msgctxt "#90277"
+msgid "Restore cancelled"
+msgstr "Restaurare anulată"
+
+msgctxt "#90278"
+msgid "Reset All Settings"
+msgstr "Resetează toate setările"
+
+msgctxt "#90279"
+msgid "This will reset all addon settings to their defaults and remove your custom Stremio addons. Continue?"
+msgstr "Aceasta va reseta toate setările add-on-ului la valorile implicite și va elimina add-on-urile tale Stremio personalizate. Continui?"
+
+msgctxt "#90280"
+msgid "Reset cancelled"
+msgstr "Resetare anulată"
+
+msgctxt "#90281"
+msgid "All addon settings reset"
+msgstr "Toate setările add-on-ului au fost resetate"
+
+msgctxt "#90282"
+msgid "Reset Failed"
+msgstr "Resetarea a eșuat"
+
+msgctxt "#90283"
+msgid "Unable to reset addon settings."
+msgstr "Nu se pot reseta setările add-on-ului."
+
+msgctxt "#90284"
+msgid "Reset every addon setting back to its default value and clear custom Stremio addons."
+msgstr "Resetează fiecare setare a add-on-ului la valoarea implicită și șterge add-on-urile Stremio personalizate."
+
+msgctxt "#90285"
+msgid "Factory Reset"
+msgstr "Resetare la setările din fabrică"
+
+msgctxt "#90286"
+msgid "This will reset settings, clear caches, remove custom Stremio addons, and wipe local addon history/database data. Continue?"
+msgstr "Aceasta va reseta setările, va șterge cache-ul, va elimina add-on-urile Stremio personalizate și va șterge datele locale de istoric/bază de date ale add-on-ului. Continui?"
+
+msgctxt "#90287"
+msgid "Factory reset cancelled"
+msgstr "Resetarea la setările din fabrică a fost anulată"
+
+msgctxt "#90288"
+msgid "Factory reset completed"
+msgstr "Resetarea la setările din fabrică a fost finalizată"
+
+msgctxt "#90289"
+msgid "Factory Reset Failed"
+msgstr "Resetarea la setările din fabrică a eșuat"
+
+msgctxt "#90290"
+msgid "Unable to complete factory reset."
+msgstr "Nu se poate finaliza resetarea la setările din fabrică."
+
+msgctxt "#90291"
+msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
+msgstr "Resetează setările la valorile implicite, șterge cache-ul și șterge datele locale de istoric/bază de date ale add-on-ului."
+
+msgctxt "#90292"
+msgid "Trakt Library"
+msgstr "Biblioteca Trakt"
+
+msgctxt "#90293"
+msgid "Trakt Discovery"
+msgstr "Trakt Discovery"
+
+msgctxt "#90294"
+msgid "Collection"
+msgstr "Colecție"
+
+msgctxt "#90295"
+msgid "Favorites"
+msgstr "Favorite"
+
+msgctxt "#90296"
+msgid "Up Next"
+msgstr "Urmează"
+
+msgctxt "#90297"
+msgid "My Lists"
+msgstr "Listele mele"
+
+msgctxt "#90298"
+msgid "Liked Lists"
+msgstr "Liste apreciate"
+
+msgctxt "#90299"
+msgid "No metadata found for this torrent"
+msgstr "Nu au fost găsite metadate pentru acest torrent"
+
+msgctxt "#90331"
+msgid "Stremio Addons"
+msgstr "Add-on-uri Stremio"
+
+msgctxt "#90332"
+msgid "No addons available yet. Use Log In to Stremio or Add Custom Addon first."
+msgstr "Nu există încă add-on-uri disponibile. Autentifică-te în Stremio sau adaugă mai întâi un addon personalizat."
+
+msgctxt "#90333"
+msgid "Stremio Stream Addons"
+msgstr "Add-on-uri stream Stremio"
+
+msgctxt "#90334"
+msgid "Stremio Catalog Addons"
+msgstr "Add-on-uri catalog Stremio"
+
+msgctxt "#90335"
+msgid "Stremio Live TV Addons"
+msgstr "Add-on-uri TV Live Stremio"
+
+msgctxt "#90336"
+msgid "Refresh addons imported from your Stremio account. Custom addons remain unchanged."
+msgstr "Actualizează add-on-urile importate din contul tău Stremio. Add-on-urile personalizate rămân neschimbate."
+
+msgctxt "#90337"
+msgid "Choose which imported or custom Stremio stream addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Alege ce add-on-uri de stream Stremio importate sau personalizate să folosești. Dacă nu sunt disponibile, autentifică-te sau adaugă un addon personalizat."
+
+msgctxt "#90338"
+msgid "Choose which imported or custom Stremio catalog addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Alege ce add-on-uri catalog Stremio importate sau personalizate să folosești. Dacă nu sunt disponibile, autentifică-te sau adaugă un addon personalizat."
+
+msgctxt "#90339"
+msgid "Choose which imported or custom Stremio Live TV addons to use. If none are available yet, log in or add a custom addon first."
+msgstr "Alege ce add-on-uri TV Live Stremio importate sau personalizate să folosești. Dacă nu sunt disponibile, autentifică-te sau adaugă un addon personalizat."
+
+msgctxt "#90340"
+msgid "Remove custom Stremio addons you previously added manually."
+msgstr "Elimină add-on-urile Stremio personalizate pe care le-ai adăugat manual anterior."
+
+msgctxt "#90341"
+msgid "Choose Torrent Client"
+msgstr "Alege clientul torrent"
+
+msgctxt "#90342"
+msgid "Clear Database Cache"
+msgstr "Șterge cache-ul bazei de date"
+
+msgctxt "#90343"
+msgid "Clear Stremio Cache"
+msgstr "Șterge cache-ul Stremio"
+
+msgctxt "#90344"
+msgid "Clear Debrid Cache"
+msgstr "Șterge cache-ul Debrid"
+
+msgctxt "#90345"
+msgid "Clear MDBList Cache"
+msgstr "Șterge cache-ul MDBList"
+
+msgctxt "#90346"
+msgid "Restore backup from"
+msgstr "Restaurează backup din"
+
+msgctxt "#90347"
+msgid "File"
+msgstr "Fișier"
+
+msgctxt "#90348"
+msgid "URL"
+msgstr "URL"
+
+msgctxt "#90349"
+msgid "Enter backup URL"
+msgstr "Introdu URL-ul de backup"
+
+msgctxt "#90350"
+msgid "No backup URL provided."
+msgstr "Nu a fost furnizat niciun URL de backup."
+
+msgctxt "#90351"
+msgid "Unable to download settings backup."
+msgstr "Nu se poate descărca backup-ul setărilor."
+
+msgctxt "#90352"
+msgid "Source Select Style"
+msgstr "Stil selecție sursă"
+
+msgctxt "#90353"
+msgid "Modern"
+msgstr "Modern"
+
+msgctxt "#90354"
+msgid "OLED"
+msgstr "OLED"
+
+msgctxt "#90355"
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+msgctxt "#90356"
+msgid "Forest"
+msgstr "Pădure"
+
+msgctxt "#90357"
+msgid "Gold"
+msgstr "Aur"
+
+msgctxt "#90358"
+msgid "No playable results found"
+msgstr "Nu s-au găsit rezultate care pot fi redate"
+
+msgctxt "#90359"
+msgid "Add to TorrServer"
+msgstr "Adaugă în TorrServer"
+
+msgctxt "#90360"
+msgid "Added to TorrServer"
+msgstr "Adăugat în TorrServer"
+
+msgctxt "#90361"
+msgid "Could not resolve torrent details"
+msgstr "Nu s-au putut obține detaliile torrentului"
+
+msgctxt "#90362"
+msgid "Added to %s cloud"
+msgstr "Adăugat în cloud-ul %s"
+
+msgctxt "#90363"
+msgid "Choose Debrid Service"
+msgstr "Alege serviciul Debrid"
+
+msgctxt "#90364"
+msgid "No supported debrid service is enabled"
+msgstr "Niciun serviciu debrid compatibil nu este activat"
+
+msgctxt "#90365"
+msgid "Download to Debrid"
+msgstr "Descarcă în Debrid"
+
+msgctxt "#90366"
+msgid "Include Unknown quality"
+msgstr "Include calitate necunoscută"
+
+msgctxt "#90367"
+msgid "Includes releases where video quality could not be identified"
+msgstr "Include versiuni în care calitatea video nu a putut fi identificată"
+
+msgctxt "#90368"
+msgid "Search by Keyword"
+msgstr "Caută după cuvânt cheie"
+
+msgctxt "#90369"
+msgid "Latest Movies"
+msgstr "Cele mai recente filme"
+
+msgctxt "#90370"
+msgid "Latest Series"
+msgstr "Cele mai recente seriale"
+
+msgctxt "#90371"
+msgid "Raw Files"
+msgstr "Fișiere brute"
+
+msgctxt "#90372"
+msgid "MDblist"
+msgstr "MDblist"
+
+msgctxt "#90373"
+msgid "Active Downloads"
+msgstr "Descărcări active"
+
+msgctxt "#90374"
+msgid "Cancel Download"
+msgstr "Anulează descărcarea"
+
+msgctxt "#90375"
+msgid "Delete File"
+msgstr "Șterge fișierul"
+
+msgctxt "#90376"
+msgid "Search Collections"
+msgstr "Caută colecții"
+
+msgctxt "#90377"
+msgid "Popular Collections"
+msgstr "Colecții populare"
+
+msgctxt "#90378"
+msgid "Top Rated Collections"
+msgstr "Colecții cu rating mare"
+
+msgctxt "#90379"
+msgid "Recommendations"
+msgstr "Recomandări"
+
+msgctxt "#90380"
+msgid "Similar"
+msgstr "Similare"
+
+msgctxt "#90381"
+msgid "Keyword: %s"
+msgstr "Cuvânt cheie: %s"
+
+msgctxt "#90382"
+msgid "Please set a valid Trakt Client ID Key"
+msgstr "Setează un Client ID valid pentru Trakt"
+
+msgctxt "#90383"
+msgid "Please set a valid Trakt Client Secret Key"
+msgstr "Setează o cheie secretă validă pentru Trakt"
+
+msgctxt "#90384"
+msgid "Trakt Error Authorizing"
+msgstr "Eroare la autorizarea Trakt"
+
+msgctxt "#90385"
+msgid "Trakt Account Authorized"
+msgstr "Contul Trakt a fost autorizat"
+
+msgctxt "#90386"
+msgid "You are now logged out from Trakt.tv"
+msgstr "Ești deconectat de la Trakt.tv"
+
+msgctxt "#90387"
+msgid "Failed to mark as watched"
+msgstr "Marcarea ca vizionat a eșuat"
+
+msgctxt "#90388"
+msgid "Marked as watched"
+msgstr "Marcat ca vizionat"
+
+msgctxt "#90389"
+msgid "No results found"
+msgstr "Nu au fost găsite rezultate"
+
+msgctxt "#90390"
+msgid "Invalid mode"
+msgstr "Mod invalid"
+
+msgctxt "#90391"
+msgid "No recommendations found"
+msgstr "Nu au fost găsite recomandări"
+
+msgctxt "#90392"
+msgid "No similar items found"
+msgstr "Nu au fost găsite elemente similare"
+
+msgctxt "#90393"
+msgid "TMDB metadata not found"
+msgstr "Metadate TMDB negăsite"
+
+msgctxt "#90394"
+msgid "No TV shows found"
+msgstr "Nu au fost găsite seriale"
+
+msgctxt "#90395"
+msgid "No shows airing today"
+msgstr "Nu sunt seriale difuzate astăzi"
+
+msgctxt "#90396"
+msgid "Invalid collection query"
+msgstr "Interogare de colecție invalidă"
+
+msgctxt "#90397"
+msgid "No keywords found"
+msgstr "Nu au fost găsite cuvinte cheie"
+
+msgctxt "#90398"
+msgid "No keyword ID provided"
+msgstr "Nu a fost furnizat ID de cuvânt cheie"
+
+msgctxt "#90399"
+msgid "No results found for this keyword"
+msgstr "Nu au fost găsite rezultate pentru acest cuvânt cheie"
+
+msgctxt "#90400"
+msgid "No TMDB ID found"
+msgstr "Nu a fost găsit ID TMDB"
+
+msgctxt "#90401"
+msgid "Unsupported media type or missing external_ids"
+msgstr "Tip media nesuportat sau lipsesc external_ids"
+
+msgctxt "#90402"
+msgid "Refreshed Metadata"
+msgstr "Metadate actualizate"
+
+msgctxt "#90403"
+msgid "No Stremio addons selected"
+msgstr "Nu au fost selectate add-on-uri Stremio"
+
+msgctxt "#90404"
+msgid "No suitable source found for auto play."
+msgstr "Nu a fost găsită nicio sursă potrivită pentru redare automată."
+
+msgctxt "#90405"
+msgid "No sources found with the preferred quality."
+msgstr "Nu au fost găsite surse cu calitatea preferată."
+
+msgctxt "#90406"
+msgid "No languages found"
+msgstr "Nu au fost găsite limbi"
+
+msgctxt "#90407"
+msgid "Failed to resolve playback source"
+msgstr "Nu s-a putut găsi sursa de redare"
+
+msgctxt "#90408"
+msgid "Trakt not authorized. Please authenticate."
+msgstr "Trakt nu este autorizat. Te rog autentifică-te."
+
+msgctxt "#90409"
+msgid "Added to Trakt Watchlist"
+msgstr "Adăugat în Watchlist Trakt"
+
+msgctxt "#90410"
+msgid "Error modifying Trakt Watchlist"
+msgstr "Eroare la modificarea Watchlist-ului Trakt"
+
+msgctxt "#90411"
+msgid "Marked as Watched on Trakt"
+msgstr "Marcat ca vizionat pe Trakt"
+
+msgctxt "#90412"
+msgid "Error modifying Trakt Watched status"
+msgstr "Eroare la modificarea statusului „vizionat” pe Trakt"
+
+msgctxt "#90413"
+msgid "Play"
+msgstr "Redare"
+
+msgctxt "#90414"
+msgid "Trailer"
+msgstr "Trailer"
+
+msgctxt "#90415"
+msgid "Watched"
+msgstr "Vizionat"
+
+msgctxt "#90416"
+msgid "Refresh"
+msgstr "Reîmprospătează"
+
+msgctxt "#90418"
+msgid "No credits found for this ID"
+msgstr "Nu au fost găsite credite pentru acest ID"
+
+msgctxt "#90419"
+msgid "Credited People"
+msgstr "Persoane creditate"
+
+msgctxt "#90420"
+msgid "Person Details"
+msgstr "Detalii persoană"
+
+msgctxt "#90421"
+msgid "Person not found"
+msgstr "Persoană negăsită"
+
+msgctxt "#90422"
+msgid "Jackgram not activated"
+msgstr "Jackgram nu este activat"
+
+msgctxt "#90423"
+msgid "Not yet implemented"
+msgstr "Încă neimplementat"
+
+msgctxt "#90424"
+msgid "Unsupported debrid type"
+msgstr "Tip debrid nesuportat"
+
+msgctxt "#90425"
+msgid "Easynews credentials required"
+msgstr "Sunt necesare credențiale Easynews"
+
+msgctxt "#90426"
+msgid "No Corrupt or Missing Databases"
+msgstr "Nu există baze de date corupte sau lipsă"
+
+msgctxt "#90427"
+msgid "Otaku (script.otaku.mappings) not found"
+msgstr "Otaku (script.otaku.mappings) nu a fost găsit"
+
+msgctxt "#90428"
+msgid "Database read error. File may be corrupted."
+msgstr "Eroare la citirea bazei de date. Fișierul poate fi corupt."
+
+msgctxt "#90429"
+msgid "Failed to delete data. Database error."
+msgstr "Ștergerea datelor a eșuat. Eroare de bază de date."
+
+msgctxt "#90430"
+msgid "Failed to clear cache. Database in use."
+msgstr "Ștergerea cache-ului a eșuat. Baza de date este în uz."
+
+msgctxt "#90431"
+msgid "No items found in this list"
+msgstr "Nu au fost găsite elemente în această listă"
+
+msgctxt "#90432"
+msgid "Databases Rebuilt"
+msgstr "Bazele de date au fost reconstruite"
+
+msgctxt "#90433"
+msgid "[B]Following Databases Rebuilt:[/B][CR][CR]%s"
+msgstr "[B]Următoarele baze de date au fost reconstruite:[/B][CR][CR]%s"
+
+msgctxt "#90434"
+msgid "Added to Trakt watchlist"
+msgstr "Adăugat în watchlist Trakt"
+
+msgctxt "#90435"
+msgid "Failed to add to Trakt watchlist"
+msgstr "Adăugarea în watchlist Trakt a eșuat"
+
+msgctxt "#90436"
+msgid "Removed from Trakt watchlist"
+msgstr "Eliminat din lista de vizionare Trakt"
+
+msgctxt "#90437"
+msgid "Failed to remove from Trakt watchlist"
+msgstr "Nu s-a putut elimina din lista de vizionare Trakt"
+
+msgctxt "#90438"
+msgid "Failed to mark as watched on Trakt"
+msgstr "Nu s-a putut marca drept vizionat pe Trakt"
+
+msgctxt "#90439"
+msgid "Marked as unwatched on Trakt"
+msgstr "Marcat ca nevizionat pe Trakt"
+
+msgctxt "#90440"
+msgid "Failed to mark as unwatched on Trakt"
+msgstr "Nu s-a putut marca ca nevizionat pe Trakt"
+
+msgctxt "#90441"
+msgid "Added to Trakt collection"
+msgstr "Adăugat la colecția Trakt"
+
+msgctxt "#90442"
+msgid "Removed from Trakt collection"
+msgstr "Eliminat din colecția Trakt"
+
+msgctxt "#90443"
+msgid "Failed to add to Trakt collection"
+msgstr "Nu s-a putut adăuga la colecția Trakt"
+
+msgctxt "#90444"
+msgid "Failed to remove from Trakt collection"
+msgstr "Nu s-a putut elimina din colecția Trakt"
+
+msgctxt "#90445"
+msgid "Added to Trakt favorites"
+msgstr "Adăugat la favorite Trakt"
+
+msgctxt "#90446"
+msgid "Removed from Trakt favorites"
+msgstr "Eliminat din favorite Trakt"
+
+msgctxt "#90447"
+msgid "Failed to add to Trakt favorites"
+msgstr "Nu s-a putut adăuga la favorite Trakt"
+
+msgctxt "#90448"
+msgid "Failed to remove from Trakt favorites"
+msgstr "Nu s-a putut elimina din favorite Trakt"
+
+msgctxt "#90449"
+msgid "Created Trakt list"
+msgstr "Listă Trakt creată"
+
+msgctxt "#90450"
+msgid "Failed to create Trakt list"
+msgstr "Nu s-a putut crea lista Trakt"
+
+msgctxt "#90451"
+msgid "Deleted Trakt list"
+msgstr "Listă Trakt ștearsă"
+
+msgctxt "#90452"
+msgid "Failed to delete Trakt list"
+msgstr "Nu s-a putut șterge lista Trakt"
+
+msgctxt "#90453"
+msgid "Liked Trakt list"
+msgstr "Lista Trakt apreciată"
+
+msgctxt "#90454"
+msgid "Failed to like Trakt list"
+msgstr "Nu s-a putut aprecia lista Trakt"
+
+msgctxt "#90455"
+msgid "Unliked Trakt list"
+msgstr "Aprecierea pentru lista Trakt a fost eliminată"
+
+msgctxt "#90456"
+msgid "Failed to unlike Trakt list"
+msgstr "Nu s-a putut elimina aprecierea pentru lista Trakt"
+
+msgctxt "#90457"
+msgid "Added to Trakt list"
+msgstr "Adăugat la lista Trakt"
+
+msgctxt "#90458"
+msgid "OpenSubtitles Stremio: No results found."
+msgstr "OpenSubtitles Stremio: Nu s-au găsit rezultate."
+
+msgctxt "#90459"
+msgid "Failed to add to Trakt list"
+msgstr "Nu s-a putut adăuga la lista Trakt"
+
+msgctxt "#90460"
+msgid "Subtitle Manager: No subtitles available for this video."
+msgstr "Manager subtitrări: Nu sunt subtitrări disponibile pentru acest video."
+
+msgctxt "#90461"
+msgid "No Trakt lists found"
+msgstr "Nu s-au găsit liste Trakt"
+
+msgctxt "#90462"
+msgid "Item not found in Trakt collection"
+msgstr "Elementul nu a fost găsit în colecția Trakt"
+
+msgctxt "#90463"
+msgid "Trakt could not match this item for collection"
+msgstr "Trakt nu a putut asocia acest element pentru colecție"
+
+msgctxt "#90464"
+msgid "No Trakt collection changes were applied"
+msgstr "Nu au fost aplicate modificări în colecția Trakt"
+
+msgctxt "#90465"
+msgid "Could not build Trakt collection payload for show"
+msgstr "Nu s-a putut construi payload-ul colecției Trakt pentru serial"
+
+msgctxt "#90466"
+msgid "Delete this Trakt list?"
+msgstr "Ștergeți această listă Trakt?"
+
+msgctxt "#90468"
+msgid "Search menu"
+msgstr "Meniu de căutare"
+
+msgctxt "#90469"
+msgid "Continue watching menu"
+msgstr "Meniu „Continuă vizionarea”"
+
+msgctxt "#90470"
+msgid "TV Shows Items"
+msgstr "Elemente seriale TV"
+
+msgctxt "#90471"
+msgid "Movies Items"
+msgstr "Elemente filme"
+
+msgctxt "#90472"
+msgid "Anime menu"
+msgstr "Meniu anime"
+
+msgctxt "#90473"
+msgid "TV Menu"
+msgstr "Meniu TV"
+
+msgctxt "#90474"
+msgid "Library menu"
+msgstr "Meniu bibliotecă"
+
+msgctxt "#90475"
+msgid "Torrents Management"
+msgstr "Gestionare torrente"
+
+msgctxt "#90476"
+msgid "Telegram menu"
+msgstr "Meniu Telegram"
+
+msgctxt "#90477"
+msgid "Cloud Storage"
+msgstr "Stocare în cloud"
+
+msgctxt "#90478"
+msgid "Downloads Management"
+msgstr "Gestionare descărcări"
+
+msgctxt "#90479"
+msgid "Settings Management"
+msgstr "Gestionare setări"
+
+msgctxt "#90480"
+msgid "History Menu"
+msgstr "Meniu istoric"
+
+msgctxt "#90481"
+msgid "Files History"
+msgstr "Istoric fișiere"
+
+msgctxt "#90482"
+msgid "Titles History"
+msgstr "Istoric titluri"
+
+msgctxt "#90483"
+msgid "Titles Calendar"
+msgstr "Calendar titluri"
+
+msgctxt "#90484"
+msgid "My Shows"
+msgstr "Serialele mele"
+
+msgctxt "#90485"
+msgid "My Movies"
+msgstr "Filmele mele"
+
+msgctxt "#90486"
+msgid "Upcoming Episodes"
+msgstr "Episoade viitoare"
+
+msgctxt "#90487"
+msgid "Discovery List"
+msgstr "Listă discovery"
+
+msgctxt "#90488"
+msgid "Library List"
+msgstr "Listă bibliotecă"
+
+msgctxt "#90489"
+msgid "Trakt Recommendations"
+msgstr "Recomandări Trakt"
+
+msgctxt "#90490"
+msgid "Trending Lists"
+msgstr "Liste în tendințe"
+
+msgctxt "#90491"
+msgid "Popular Lists"
+msgstr "Liste populare"
+
+msgctxt "#90492"
+msgid "Search Lists"
+msgstr "Căutare liste"
+
+msgctxt "#90493"
+msgid "Recent Activity"
+msgstr "Activitate recentă"
+
+msgctxt "#90494"
+msgid "Downloads List"
+msgstr "Listă descărcări"
+
+msgctxt "#90495"
+msgid "Download New"
+msgstr "Descarcă nou"
+
+msgctxt "#90496"
+msgid "Cartoons Popular"
+msgstr "Desene animate populare"
+
+msgctxt "#90497"
+msgid "Animation Popular"
+msgstr "Animații populare"
+
+msgctxt "#90500"
+msgid "Translating subtitle..."
+msgstr "Se traduce subtitrarea..."
+
+msgctxt "#90501"
+msgid "Translation done."
+msgstr "Traducere finalizată."
+
+msgctxt "#90502"
+msgid "Searching subtitles..."
+msgstr "Se caută subtitrări..."
+
+msgctxt "#90503"
+msgid "No subtitles found"
+msgstr "Nu s-au găsit subtitrări"
+
+msgctxt "#90504"
+msgid "Failed to authenticate with DeepL. Please check your API key."
+msgstr "Nu s-a putut autentifica cu DeepL. Verificați cheia API."
+
+msgctxt "#90505"
+msgid "DeepL API key is missing or invalid."
+msgstr "Cheia API DeepL lipsește sau este invalidă."
+
+msgctxt "#90510"
+msgid "No meta available"
+msgstr "Nu sunt metadate disponibile"
+
+msgctxt "#90511"
+msgid "No content available for"
+msgstr "Nu există conținut disponibil pentru"
+
+msgctxt "#90512"
+msgid "Season"
+msgstr "Sezon"
+
+msgctxt "#90513"
+msgid "No episodes available"
+msgstr "Nu sunt episoade disponibile"
+
+msgctxt "#90514"
+msgid "No videos available"
+msgstr "Nu sunt videoclipuri disponibile"
+
+msgctxt "#90515"
+msgid "Next Page"
+msgstr "Pagina următoare"
+
+msgctxt "#90516"
+msgid "No metas available"
+msgstr "Nu sunt metadate disponibile"
+
+msgctxt "#90517"
+msgid "No seasons available"
+msgstr "Nu sunt sezoane disponibile"
+
+msgctxt "#90518"
+msgid "Invalid query"
+msgstr "Interogare invalidă"
+
+msgctxt "#90519"
+msgid "No lists found"
+msgstr "Nu s-au găsit liste"
+
+msgctxt "#90520"
+msgid "No user lists found"
+msgstr "Nu s-au găsit liste de la utilizatori"
+
+msgctxt "#90521"
+msgid "No top lists found"
+msgstr "Nu s-au găsit liste de top"
+
+msgctxt "#90522"
+msgid "Custom Addon"
+msgstr "Addon personalizat"
+
+msgctxt "#90523"
+msgid "Enter the custom Stremio addon URL"
+msgstr "Introduceți URL-ul add-on-ului Stremio personalizat"
+
+msgctxt "#90524"
+msgid "No URL provided."
+msgstr "Nu a fost furnizat niciun URL."
+
+msgctxt "#90525"
+msgid "Failed to fetch manifest: %s"
+msgstr "Nu s-a putut prelua manifestul: %s"
+
+msgctxt "#90526"
+msgid "Manifest missing 'id' or 'name'."
+msgstr "Manifestul nu conține 'id' sau 'nume'."
+
+msgctxt "#90527"
+msgid "Custom Stremio addon added successfully!"
+msgstr "Addon Stremio personalizat adăugat cu succes!"
+
+msgctxt "#90528"
+msgid "Addon does not provide 'stream' or 'catalog' resources."
+msgstr "Add-on-ul nu oferă resurse 'stream' sau 'catalog'."
+
+msgctxt "#90529"
+msgid "This addon is already added to your list."
+msgstr "Acest addon este deja adăugat în listă."
+
+msgctxt "#90530"
+msgid "Failed to add custom addon: %s"
+msgstr "Nu s-a putut adăuga add-on-ul personalizat: %s"
+
+msgctxt "#90531"
+msgid "Remove Addon"
+msgstr "Elimină addon"
+
+msgctxt "#90532"
+msgid "No custom Stremio addons to remove."
+msgstr "Nu există add-on-uri Stremio personalizate de eliminat."
+
+msgctxt "#90533"
+msgid "Remove Stremio Addons"
+msgstr "Elimină add-on-uri Stremio"
+
+msgctxt "#90534"
+msgid "Selected addon(s) removed."
+msgstr "Add-on-ul/urile selectat(e) au fost eliminate."
+
+msgctxt "#90535"
+msgid "Untitled List"
+msgstr "Listă fără titlu"
+
+msgctxt "#90536"
+msgid "Removed from Trakt list"
+msgstr "Eliminat din lista Trakt"
+
+msgctxt "#90537"
+msgid "Failed to remove from Trakt list"
+msgstr "Nu s-a putut elimina din lista Trakt"
+
+msgctxt "#90538"
+msgid "Resume from %.1f%%"
+msgstr "Reia de la %.1f%%"
+
+msgctxt "#90539"
+msgid "Start from Beginning"
+msgstr "Începe de la început"
+
+msgctxt "#90540"
+msgid "Authorize Debrid Services"
+msgstr "Autorizează serviciile Debrid"
+
+msgctxt "#90541"
+msgid "Navigate to: [B]%s[/B]"
+msgstr "Accesați: [B]%s[/B]"
+
+msgctxt "#90542"
+msgid "Enter the following code: [COLOR orangered][B]%s[/B][/COLOR]"
+msgstr "Introduceți codul: [COLOR orangered][B]%s[/B][/COLOR]"
+
+msgctxt "#90543"
+msgid "Premiumize Auth"
+msgstr "Autentificare Premiumize"
+
+msgctxt "#90544"
+msgid "Success"
+msgstr "Succes"
+
+msgctxt "#90545"
+msgid "Authentication completed."
+msgstr "Autentificare finalizată."
+
+msgctxt "#90546"
+msgid "Error:"
+msgstr "Eroare:"
+
+msgctxt "#90547"
+msgid "Error: %s"
+msgstr "Eroare: %s"
+
+msgctxt "#90548"
+msgid "Auth Error"
+msgstr "Eroare de autentificare"
+
+msgctxt "#90549"
+msgid "Torbox authentication successful."
+msgstr "Autentificare Torbox reușită."
+
+msgctxt "#90554"
+msgid "Please wait..."
+msgstr "Vă rugăm așteptați..."
+
+msgctxt "#90555"
+msgid "Go to:\n[COLOR cyan]%s[/COLOR]\nEnter code: [COLOR seagreen][B]%s[/B][/COLOR]"
+msgstr "Accesați:\n[COLOR cyan]%s[/COLOR]\nIntroduceți codul: [COLOR seagreen][B]%s[/B][/COLOR]"
+
+msgctxt "#90556"
+msgid "Go to:\n[COLOR cyan]%s[/COLOR]\n\nEnter code: [COLOR seagreen][B]%s[/B][/COLOR]"
+msgstr "Accesați:\n[COLOR cyan]%s[/COLOR]\n\nIntroduceți codul: [COLOR seagreen][B]%s[/B][/COLOR]"
+
+msgctxt "#90557"
+msgid "Pastebin Link:\n[COLOR cyan]%s[/COLOR]"
+msgstr "Link Pastebin:\n[COLOR cyan]%s[/COLOR]"
+
+msgctxt "#90670"
+msgid "Local URL:\n[COLOR cyan]%s[/COLOR]"
+msgstr "URL local:\n[COLOR cyan]%s[/COLOR]"
+
+msgctxt "#90558"
+msgid "QR Code Authentication"
+msgstr "Autentificare cod QR"
+
+msgctxt "#90559"
+msgid "Kodi 20 or above required. Please update Kodi to use this addon."
+msgstr "Este necesar Kodi 20 sau mai nou. Actualizați Kodi pentru a folosi acest addon."
+
+msgctxt "#90560"
+msgid "Failed to start web server. Port may be in use."
+msgstr "Nu s-a putut porni serverul web. Portul poate fi ocupat."
+
+msgctxt "#90561"
+msgid "Authentification Removed."
+msgstr "Autentificare eliminată."
+
+msgctxt "#90562"
+msgid "WebDAV Error"
+msgstr "Eroare WebDAV"
+
+msgctxt "#90563"
+msgid "Trakt Authorization"
+msgstr "Autorizare Trakt"
+
+msgctxt "#90564"
+msgid "Do you want to continue transfer in background?"
+msgstr "Doriți să continuați transferul în fundal?"
+
+msgctxt "#90565"
+msgid "Cloud Transfer"
+msgstr "Transfer în cloud"
+
+msgctxt "#90566"
+msgid "Kodi Logs"
+msgstr "Log-uri Kodi"
+
+msgctxt "#90567"
+msgid "Show Logs"
+msgstr "Afișează log-urile"
+
+msgctxt "#90568"
+msgid "Export to paste.kodi.tv"
+msgstr "Exportă pe paste.kodi.tv"
+
+msgctxt "#90569"
+msgid "Kodi Logs Exported"
+msgstr "Log-urile Kodi au fost exportate"
+
+msgctxt "#90570"
+msgid "Providers Selection Dialog"
+msgstr "Dialog selectare provideri"
+
+msgctxt "#90571"
+msgid "Your current Providers are: \n%s\n\nDo you want to change?"
+msgstr "Providerii actuali sunt: \n%s\n\nDoriți să îi schimbați?"
+
+msgctxt "#90572"
+msgid "Select Providers"
+msgstr "Selectează provideri"
+
+msgctxt "#90573"
+msgid "Selection Dialog"
+msgstr "Dialog de selecție"
+
+msgctxt "#90574"
+msgid "Successfully selected: %s"
+msgstr "Selectat cu succes: %s"
+
+msgctxt "#90575"
+msgid "Selection"
+msgstr "Selecție"
+
+msgctxt "#90576"
+msgid "No providers selected"
+msgstr "Niciun provider selectat"
+
+msgctxt "#90577"
+msgid "Changelog"
+msgstr "Listă modificări"
+
+msgctxt "#90578"
+msgid "[B]Unable to check for updates[/B]"
+msgstr "[B]Nu s-au putut verifica actualizările[/B]"
+
+msgctxt "#90579"
+msgid "[B]No update available[/B]"
+msgstr "[B]Nu există actualizări disponibile[/B]"
+
+msgctxt "#90580"
+msgid "Installed: [B]%s[/B][CR]Online: [B]%s[/B][CR][CR]"
+msgstr "Instalat: [B]%s[/B][CR]Online: [B]%s[/B][CR][CR]"
+
+msgctxt "#90581"
+msgid "[B]Update available. Do you want to update?[/B]"
+msgstr "[B]Actualizare disponibilă. Doriți să actualizați?[/B]"
+
+msgctxt "#90582"
+msgid "[B]Update Available (v%s).[/B] [I]Check settings to update.[/I]"
+msgstr "[B]Actualizare disponibilă (v%s).[/B] [I]Verificați setările pentru actualizare.[/I]"
+
+msgctxt "#90583"
+msgid "Error fetching versions: %s"
+msgstr "Eroare la obținerea versiunilor: %s"
+
+msgctxt "#90584"
+msgid "No older/different versions found."
+msgstr "Nu au fost găsite versiuni mai vechi/diferite."
+
+msgctxt "#90585"
+msgid "Select Version to Downgrade"
+msgstr "Selectează versiunea pentru downgrade"
+
+msgctxt "#90586"
+msgid "Are you sure you want to downgrade/reinstall to version [B]%s[/B]?"
+msgstr "Sigur doriți să faceți downgrade/reinstalare la versiunea [B]%s[/B]?"
+
+msgctxt "#90587"
+msgid "[B]Downloading update...[/B]"
+msgstr "[B]Se descarcă actualizarea...[/B]"
+
+msgctxt "#90588"
+msgid "Error: Unable to download update."
+msgstr "Eroare: Nu s-a putut descărca actualizarea."
+
+msgctxt "#90589"
+msgid "Error saving update file: %s"
+msgstr "Eroare la salvarea fișierului de actualizare: %s"
+
+msgctxt "#90590"
+msgid "Error extracting update. Please install manually."
+msgstr "Eroare la extragerea actualizării. Vă rugăm instalați manual."
+
+msgctxt "#90591"
+msgid "Do you want to view the changelog for the new version?"
+msgstr "Doriți să vedeți modificările pentru noua versiune?"
+
+msgctxt "#90592"
+msgid "New Release v%s - Changelog"
+msgstr "Versiune nouă v%s - listă de modificări"
+
+msgctxt "#90593"
+msgid "[B]Update complete.[/B]"
+msgstr "[B]Actualizare finalizată.[/B]"
+
+msgctxt "#90594"
+msgid "Real Debrid Auth"
+msgstr "Autentificare Real Debrid"
+
+msgctxt "#90595"
+msgid "Torbox Auth"
+msgstr "Autentificare Torbox"
+
+msgctxt "#90596"
+msgid "Debrider Auth"
+msgstr "Autentificare Debrider"
+
+msgctxt "#90597"
+msgid "Download Error"
+msgstr "Eroare de descărcare"
+
+msgctxt "#90598"
+msgid "Failed to download text: %s"
+msgstr "Nu s-a putut descărca textul: %s"
+
+msgctxt "#90599"
+msgid "General Error"
+msgstr "Eroare generală"
+
+msgctxt "#90600"
+msgid "Could not display text file."
+msgstr "Nu s-a putut afișa fișierul text."
+
+msgctxt "#90601"
+msgid "Failed to export logs."
+msgstr "Nu s-au putut exporta log-urile."
+
+msgctxt "#90602"
+msgid "Error reading log: %s"
+msgstr "Eroare la citirea log-ului: %s"
+
+msgctxt "#90603"
+msgid "Kodi log file not found."
+msgstr "Fișierul log Kodi nu a fost găsit."
+
+msgctxt "#90604"
+msgid "%s Auth"
+msgstr "Autentificare %s"
+
+msgctxt "#90605"
+msgid "Ok"
+msgstr "Ok"
+
+msgctxt "#90606"
+msgid "No"
+msgstr "Nu"
+
+msgctxt "#90607"
+msgid "Pinging addons for availability..."
+msgstr "Se verifică disponibilitatea add-on-urilor..."
+
+msgctxt "#90608"
+msgid "Pinging addons... %d/%d"
+msgstr "Se verifică add-on-urile... %d/%d"
+
+msgctxt "#90609"
+msgid "Ping Results"
+msgstr "Rezultate ping"
+
+msgctxt "#90610"
+msgid "Reachable: %d\nUnreachable: %d"
+msgstr "Disponibile: %d\nIndisponibile: %d"
+
+msgctxt "#90611"
+msgid "Select Category to Filter"
+msgstr "Selectează categoria pentru filtrare"
+
+msgctxt "#90612"
+msgid "Stremio Add-ons Import"
+msgstr "Import add-on-uri Stremio"
+
+msgctxt "#90613"
+msgid "To import your add-ons, please log in with your Stremio email and password."
+msgstr "Pentru a importa add-on-urile, autentificați-vă cu email-ul și parola Stremio."
+
+msgctxt "#90614"
+msgid "Enter your Email"
+msgstr "Introduceți email-ul"
+
+msgctxt "#90615"
+msgid "Enter your Password"
+msgstr "Introduceți parola"
+
+msgctxt "#90616"
+msgid "Login Failed"
+msgstr "Autentificare eșuată"
+
+msgctxt "#90617"
+msgid "Failed to login: %s"
+msgstr "Autentificare eșuată: %s"
+
+msgctxt "#90618"
+msgid "Add-ons Import Failed"
+msgstr "Importul add-on-urilor a eșuat"
+
+msgctxt "#90619"
+msgid "Please try again later and report the issue if the problem persists. For more details, check the log file."
+msgstr "Încercați din nou mai târziu și raportați problema dacă persistă. Pentru detalii, consultați fișierul log."
+
+msgctxt "#90620"
+msgid "Addons Imported"
+msgstr "Add-on-uri importate"
+
+msgctxt "#90621"
+msgid "Successfully imported addons from your account."
+msgstr "Add-on-urile au fost importate cu succes din contul dvs."
+
+msgctxt "#90622"
+msgid "Update Stremio Addons"
+msgstr "Actualizează add-on-urile Stremio"
+
+msgctxt "#90623"
+msgid "Do you want to update the Addons from your account?"
+msgstr "Doriți să actualizați add-on-urile din contul dvs?"
+
+msgctxt "#90624"
+msgid "Log Out from Stremio"
+msgstr "Deconectare din Stremio"
+
+msgctxt "#90625"
+msgid "Are you sure you want to log out? You can continue using Stremio without logging in, but your settings will be reset to the default configuration."
+msgstr "Sigur doriți să vă deconectați? Puteți continua să folosiți Stremio fără autentificare, dar setările vor fi resetate la configurația implicită."
+
+msgctxt "#90626"
+msgid "Log Out"
+msgstr "Deconectare"
+
+msgctxt "#90627"
+msgid "Use Existing"
+msgstr "Folosește cel existent"
+
+msgctxt "#90628"
+msgid "Download New"
+msgstr "Descarcă nou"
+
+msgctxt "#90629"
+msgid "Playback Failed"
+msgstr "Redarea a eșuat"
+
+msgctxt "#90630"
+msgid "The video could not be played.\nDo you want to retry?"
+msgstr "Videoclipul nu a putut fi redat.\nDoriți să reîncercați?"
+
+msgctxt "#90631"
+msgid "Retry"
+msgstr "Reîncearcă"
+
+msgctxt "#90632"
+msgid "Information"
+msgstr "Informații"
+
+msgctxt "#90633"
+msgid "Review"
+msgstr "Recenzie"
+
+msgctxt "#90634"
+msgid "Comment"
+msgstr "Comentariu"
+
+msgctxt "#90635"
+msgid "Trivia"
+msgstr "Curiozități"
+
+msgctxt "#90636"
+msgid "Goof"
+msgstr "Gafă"
+
+msgctxt "#90637"
+msgid "Parental Guide"
+msgstr "Ghid parental"
+
+msgctxt "#90638"
+msgid "Converting Magnet...\n\n%s"
+msgstr "Se convertește magnetul...\n\n%s"
+
+msgctxt "#90639"
+msgid "Real Debrid Error."
+msgstr "Eroare Real Debrid."
+
+msgctxt "#90640"
+msgid "File already cached"
+msgstr "Fișier deja în cache"
+
+msgctxt "#90641"
+msgid "Saving file to the Real Debrid Cloud"
+msgstr "Se salvează fișierul în cloud-ul Real Debrid"
+
+msgctxt "#90642"
+msgid "File cached"
+msgstr "Fișier în cache"
+
+msgctxt "#90643"
+msgid "Saving File to the Real Debrid Cloud...\n%s\n\n"
+msgstr "Se salvează fișierul în cloud-ul Real Debrid...\n%s\n\n"
+
+msgctxt "#90644"
+msgid "Downloading %s GB @ %s mbps from %s peers, %s %% completed"
+msgstr "Se descarcă %s GB @ %s mbps de la %s peers, %s %% finalizat"
+
+msgctxt "#90645"
+msgid "Trakt"
+msgstr "Trakt"
+
+msgctxt "#90651"
+msgid "Easynews Account Info"
+msgstr "Informații cont Easynews"
+
+msgctxt "#90652"
+msgid "DeepL API Error"
+msgstr "Eroare API DeepL"
+
+msgctxt "#90653"
+msgid "Download"
+msgstr "Descărcare"
+
+msgctxt "#90654"
+msgid "Failed to start download: %s"
+msgstr "Nu s-a putut porni descărcarea: %s"
+
+msgctxt "#90655"
+msgid "Modify Search"
+msgstr "Modifică căutarea"
+
+msgctxt "#90656"
+msgid "Torbox"
+msgstr "Torbox"
+
+msgctxt "#90657"
+msgid "Easy-Debrid"
+msgstr "Easy-Debrid"
+
+msgctxt "#90658"
+msgid "All-Debrid"
+msgstr "All-Debrid"
+
+msgctxt "#90659"
+msgid "Real-Debrid"
+msgstr "Real-Debrid"
+
+msgctxt "#90660"
+msgid "Getting results from providers..."
+msgstr "Se obțin rezultate de la provideri..."
+
+msgctxt "#90661"
+msgid "Jacktook [COLOR FFFF6B00]%s[/COLOR]"
+msgstr "Jacktook [COLOR FFFF6B00]%s[/COLOR]"
+
+msgctxt "#90662"
+msgid "Downloads Viewer"
+msgstr "Vizualizator descărcări"
+
+msgctxt "#90663"
+msgid "WebDAV Text Viewer"
+msgstr "Vizualizator text WebDAV"
+
+msgctxt "#90664"
+msgid "Selected Item"
+msgstr "Element selectat"
+
+msgctxt "#90665"
+msgid "Subtitle No. %d"
+msgstr "Subtitrare nr. %d"
+
+msgctxt "#90666"
+msgid "Free DeepL usage available!\nCharacters left in free quota: %s\nCharacters to translate: %s\n\nDo you want to proceed with the translation?"
+msgstr "Utilizare gratuită DeepL disponibilă!\nCaractere rămase în cota gratuită: %s\nCaractere de tradus: %s\n\nDoriți să continuați traducerea?"
+
+msgctxt "#90667"
+msgid "Free DeepL Usage"
+msgstr "Utilizare gratuită DeepL"
+
+msgctxt "#90668"
+msgid "Total characters to translate: %s\nEstimated cost: $%.2f USD\n\nDo you want to proceed with the translation?"
+msgstr "Total caractere de tradus: %s\nCost estimat: $%.2f USD\n\nDoriți să continuați traducerea?"
+
+msgctxt "#90669"
+msgid "Translation Cost"
+msgstr "Cost traducere"
+
+msgctxt "#90672"
+msgid "Play Trailer"
+msgstr "Redă trailer"
+
+msgctxt "#90673"
+msgid "Trailer unavailable"
+msgstr "Trailer indisponibil"
+
+msgctxt "#90690"
+msgid "Clear All Items"
+msgstr "Șterge toate elementele"
+
+msgctxt "#90691"
+msgid "Remove all items from this library?"
+msgstr "Ștergeți toate elementele din această bibliotecă?"
+
+msgctxt "#90692"
+msgid "Library cleared"
+msgstr "Bibliotecă ștearsă"
+
+msgctxt "#90693"
+msgid "No items to remove"
+msgstr "Nu există elemente de șters"
+
+msgctxt "#90694"
+msgid "Added to %s cloud but still downloading. Please wait before playing."
+msgstr "Adăugat în cloud %s, dar încă se descarcă. Așteptați înainte de redare."
+
+msgctxt "#90695"
+msgid "Torrent Not Ready"
+msgstr "Torrentul nu este gata"
+
+msgctxt "#90696"
+msgid "This torrent is still downloading in %s and is not ready yet."
+msgstr "Acest torrent încă se descarcă în %s și nu este încă gata."
+
+msgctxt "#90697"
+msgid "Would you like to play using torrent client (may be slower) or cancel and wait for debrid to finish?"
+msgstr "Doriți să redați folosind clientul torrent (poate fi mai lent) sau să anulați și să așteptați ca debridul să finalizeze?"
+
+msgctxt "#90698"
+msgid "Play with Torrent"
+msgstr "Redă cu torrent"
+
+msgctxt "#90699"
+msgid "Cancel & Wait"
+msgstr "Anulează și așteaptă"
+
+msgctxt "#90712"
+msgid "Views"
+msgstr "Vizualizări"
+
+msgctxt "#90713"
+msgid "Set Main View"
+msgstr "Setează vizualizarea principală"
+
+msgctxt "#90714"
+msgid "Set Movies View"
+msgstr "Setează vizualizarea filmelor"
+
+msgctxt "#90715"
+msgid "Set TV Shows View"
+msgstr "Setează vizualizarea serialelor"
+
+msgctxt "#90716"
+msgid "Set Seasons View"
+msgstr "Setează vizualizarea sezonelor"
+
+msgctxt "#90717"
+msgid "Set Episodes View"
+msgstr "Setează vizualizarea episoadelor"
+
+msgctxt "#90718"
+msgid "Set Library View"
+msgstr "Setează vizualizarea bibliotecii"
+
+msgctxt "#90719"
+msgid "Set History View"
+msgstr "Setează vizualizarea istoricului"
+
+msgctxt "#90720"
+msgid "Set Downloads View"
+msgstr "Setează vizualizarea descărcărilor"
+
+msgctxt "#90721"
+msgid "Save Current View"
+msgstr "Salvează vizualizarea curentă"
+
+msgctxt "#90722"
+msgid "View saved"
+msgstr "Vizualizare salvată"
+
+msgctxt "#90723"
+msgid "Could not detect the current view"
+msgstr "Nu s-a putut detecta vizualizarea curentă"
+
+msgctxt "#90724"
+msgid "Saved views reset"
+msgstr "Vizualizările salvate au fost resetate"
+
+msgctxt "#90725"
+msgid "Reset Saved Views"
+msgstr "Resetează vizualizările salvate"
+
+msgctxt "#90726"
+msgid "Open this screen, change the Kodi view manually, then select Save Current View."
+msgstr "Deschideți acest ecran, schimbați manual vizualizarea Kodi, apoi selectați „Salvează vizualizarea curentă”."
+
+msgctxt "#90742"
+msgid "Addon Settings"
+msgstr "Setări add-on"
+
+msgctxt "#90743"
+msgid "Set Views"
+msgstr "Setează vizualizări"
+
+msgctxt "#90730"
+msgid "Search with title + year"
+msgstr "Căutare cu titlu + an"
+
+msgctxt "#90731"
+msgid "Search with original title"
+msgstr "Căutare cu titlu original"
+
+msgctxt "#90732"
+msgid "Search with original title + year"
+msgstr "Căutare cu titlul original + an"
+
+msgctxt "#90733"
+msgid "Search modes"
+msgstr "Moduri de căutare"
+
+msgctxt "#90734"
+msgid "Enter year"
+msgstr "Introduceți anul"
+
+msgctxt "#90735"
+msgid "Invalid year"
+msgstr "An invalid"
+
+msgctxt "#90736"
+msgid "Edit title"
+msgstr "Editează titlul"
+
+msgctxt "#90512"
+msgid "Season"
+msgstr "Sezon"
+
+msgctxt "#90737"
+msgid "Invalid season"
+msgstr "Sezon invalid"
+
+msgctxt "#90738"
+msgid "Episode"
+msgstr "Episod"
+
+msgctxt "#90739"
+msgid "Invalid episode"
+msgstr "Episod invalid"
+
+msgctxt "#90740"
+msgid "Edit current title"
+msgstr "Editează titlul curent"
+
+msgctxt "#90741"
+msgid "Use original title"
+msgstr "Folosește titlul original"
+
+msgctxt "#90744"
+msgid "Upload Subtitle"
+msgstr "Încarcă subtitrare"
+
+msgctxt "#90745"
+msgid "Select Subtitle File"
+msgstr "Selectează fișierul de subtitrare"
+
+msgctxt "#90746"
+msgid "Local File"
+msgstr "Fișier local"
+
+msgctxt "#90747"
+msgid "Upload from Browser"
+msgstr "Încarcă din browser"
+
+msgctxt "#90748"
+msgid "Upload subtitle from your browser"
+msgstr "Încarcă subtitrarea din browserul tău"
+
+msgctxt "#90749"
+msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
+msgstr "Scanează codul QR sau deschide URL-ul (%s) în browser pentru a încărca un fișier de subtitrare"
+
+msgctxt "#90750"
+msgid "Search Title Language"
+msgstr "Limba titlului de căutare"
+
+msgctxt "#90751"
+msgid "Controls how Easynews/Jackett/Prowlarr title queries are prioritized for context searches."
+msgstr "Controlează modul în care interogările de titlu Easynews/Jackett/Prowlarr sunt prioritizate pentru căutările contextuale."
+
+msgctxt "#90752"
+msgid "English first"
+msgstr "Mai întâi în engleză"
+
+msgctxt "#90753"
+msgid "English only"
+msgstr "Numai engleză"
+
+msgctxt "#90754"
+msgid "Localized first"
+msgstr "Mai întâi versiunea locală"
+
+msgctxt "#90755"
+msgid "Manage Sources"
+msgstr "Gestionează sursele"
+
+msgctxt "#90756"
+msgid "No sources available"
+msgstr "Nu există surse disponibile"
+
+msgctxt "#90179"
+msgid "Stinger Notifications"
+msgstr "Notificări stinger"
+
+msgctxt "#90180"
+msgid "Show a notification when a movie has post-credit scenes."
+msgstr "Afișează o notificare când un film are scene post-credit."
+
+msgctxt "#90181"
+msgid "Stinger Notification Time"
+msgstr "Timp notificare stinger"
+
+msgctxt "#90182"
+msgid "Seconds before the end to show the stinger notification."
+msgstr "Secunde înainte de final pentru afișarea notificării stinger."
+
+msgctxt "#90183"
+msgid "Stay tuned after the credits!"
+msgstr "Rămâi după genericul de final!"
+
+msgctxt "#90757"
+msgid "Image Resolution"
+msgstr "Rezoluție imagine"
+
+msgctxt "#90758"
+msgid "Low"
+msgstr "Mică"
+
+msgctxt "#90759"
+msgid "Medium"
+msgstr "Medie"
+
+msgctxt "#90760"
+msgid "High"
+msgstr "Înaltă"
+
+msgctxt "#90761"
+msgid "Original"
+msgstr "Originală"
+
+msgctxt "#90762"
+msgid "Enable RPDB Posters"
+msgstr "Activează postere RPDB"
+
+msgctxt "#90763"
+msgid "RPDB API Key"
+msgstr "Cheie API RPDB"
+
+msgctxt "#90764"
+msgid "Get your API key at ratingposterdb.com"
+msgstr "Obține cheia API de la ratingposterdb.com"
+
+msgctxt "#90765"
+msgid "Codec Filters"
+msgstr "Filtre codec"
+
+msgctxt "#90766"
+msgid "HDR Filters"
+msgstr "Filtre HDR"
+
+msgctxt "#90767"
+msgid "HEVC / H.265"
+msgstr "HEVC / H.265"
+
+msgctxt "#90768"
+msgid "AV1"
+msgstr "AV1"
+
+msgctxt "#90769"
+msgid "H.264"
+msgstr "H.264"
+
+msgctxt "#90770"
+msgid "Dolby Vision"
+msgstr "Dolby Vision"
+
+msgctxt "#90771"
+msgid "HDR10 / HDR10+"
+msgstr "HDR10 / HDR10+"
+
+msgctxt "#90772"
+msgid "HDR (generic)"
+msgstr "HDR (generic)"
+
+msgctxt "#90774"
+msgid "Organize downloads by type"
+msgstr "Organizează descărcările pe tip"
+
+msgctxt "#90775"
+msgid "Movies folder name"
+msgstr "Numele folderului pentru filme"
+
+msgctxt "#90776"
+msgid "TV Shows folder name"
+msgstr "Numele folderului pentru seriale"
+
+msgctxt "#90777"
+msgid "Pause"
+msgstr "Pauză"
+
+msgctxt "#90778"
+msgid "Resume"
+msgstr "Continuă"
+
+msgctxt "#90779"
+msgid "Downloading"
+msgstr "Se descarcă"
+
+msgctxt "#90780"
+msgid "Paused"
+msgstr "În pauză"
+
+msgctxt "#90781"
+msgid "Completed"
+msgstr "Finalizat"
+
+msgctxt "#90782"
+msgid "Delete"
+msgstr "Șterge"
