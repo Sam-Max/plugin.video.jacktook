@@ -5,6 +5,7 @@ import os
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
+from lib.api.tmdbv3api.tmdb import TMDb
 from lib.clients.tmdb.anime import TmdbAnimeClient
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.people_client import PeopleClient
@@ -108,7 +109,8 @@ class TmdbClient(BaseTmdbClient):
 
         media_type = TmdbClient._get_result_value(item, "media_type", "") or mode
         normalized_mode = "movies" if media_type in ("movie", "movies") else "tv"
-        cache_key = f"tmdb_ui_meta|{normalized_mode}|{tmdb_id}"
+        current_lang = TMDb().language
+        cache_key = f"tmdb_ui_meta|{normalized_mode}|{tmdb_id}|{current_lang}"
 
         cached_metadata = cache.get(cache_key)
         if cached_metadata:
@@ -117,6 +119,26 @@ class TmdbClient(BaseTmdbClient):
             return merged
 
         metadata = TmdbClient._result_to_metadata(item)
+
+        # Fallback to English if localized title/name or overview is missing
+        has_title = bool(metadata.get("title") or metadata.get("name"))
+        has_overview = bool(metadata.get("overview"))
+        if not has_title or not has_overview:
+            try:
+                TMDb().language = "en-US"
+                path = "movie_details" if normalized_mode == "movies" else "tv_details"
+                en_data = tmdb_get(path, {"id": tmdb_id})
+                if en_data:
+                    en_metadata = TmdbClient._result_to_metadata(en_data)
+                    if not has_title:
+                        for key in ("title", "name"):
+                            if not metadata.get(key) and en_metadata.get(key):
+                                metadata[key] = en_metadata[key]
+                    if not has_overview and en_metadata.get("overview"):
+                        metadata["overview"] = en_metadata["overview"]
+            finally:
+                TMDb().language = current_lang
+
         path = "movie_images" if normalized_mode == "movies" else "tv_images"
         images = tmdb_get(path, {"id": tmdb_id})
         if images:
@@ -294,17 +316,19 @@ class TmdbClient(BaseTmdbClient):
             directory_items = []
             for item in results:
                 tmdb_id = item.get("id", "")
-                title = item.get("title", "") or item.get("name", "")
                 media_type = item.get("media_type", "")
+
+                if media_type not in ("movie", "tv"):
+                    continue
+
+                metadata = TmdbClient._get_cached_tmdb_item_metadata(item, media_type)
+                title = metadata.get("title") or metadata.get("name") or item.get("title", "") or item.get("name", "")
 
                 if media_type == "movie":
                     label_title = f"[B]{translation(90008)} -[/B] {title}"
                 elif media_type == "tv":
                     label_title = f"[B]{translation(90007)} -[/B] {title}"
-                else:
-                    continue
 
-                metadata = TmdbClient._get_cached_tmdb_item_metadata(item, media_type)
                 list_item = make_list_item(label=label_title)
                 # Use item directly as tmdb_obj for basic info
                 set_media_infoTag(list_item, data=metadata, mode=media_type)
@@ -482,9 +506,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -515,9 +539,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -616,9 +640,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -737,9 +761,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -833,9 +857,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -1213,9 +1237,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -1280,9 +1304,9 @@ class TmdbClient(BaseTmdbClient):
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
-            title = getattr(res, "title", "") or getattr(res, "name", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
+            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(

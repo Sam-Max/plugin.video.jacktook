@@ -13,6 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 
 from lib.api.fanart.fanart import get_fanart
+from lib.api.tmdbv3api.tmdb import TMDb
 from lib.clients.subtitle.utils import get_language_code
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.api.trakt.trakt_cache import trakt_watched_cache, trakt_cache
@@ -1178,12 +1179,14 @@ def clear_tmdb_cache():
         "collection_%",
         "get_imdb_id%",
         "latest_%",
+        "tmdb_ui_meta",
     ]
     cache.delete("movie_genres|None")
     cache.delete("show_genres|None")
 
     for prefix in prefixes:
         cache.delete_like(f"{prefix}|%")
+    TMDb().cache_clear()
     notification(translation(30240))
 
 

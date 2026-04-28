@@ -242,7 +242,9 @@ class JacktookMOnitor(xbmc.Monitor):
 
     def onSettingsChanged(self):
         clear_cached_settings()
-        kodilog("Cleared cached settings after Kodi settings change", level=xbmc.LOGINFO)
+        from lib.utils.tmdb_init import ensure_tmdb_init
+        ensure_tmdb_init()
+        kodilog("Cleared cached settings and refreshed TMDB language after Kodi settings change", level=xbmc.LOGINFO)
 
     def onNotification(self, sender, method, data):
         if method == "System.OnSleep":

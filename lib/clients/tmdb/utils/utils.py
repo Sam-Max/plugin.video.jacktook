@@ -6,6 +6,7 @@ from typing import List, Optional
 
 from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.tmdbv3api.as_obj import AsObj
+from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.api.tmdbv3api.objs.collection import Collection
 from lib.api.tmdbv3api.objs.episode import Episode
@@ -262,7 +263,7 @@ def add_icon_tmdb(item, icon_path="tmdb.png"):
 
 
 def tmdb_get(path, params=None) -> Optional[AsObj]:
-    identifier = f"{path}|{params}"
+    identifier = f"{path}|{params}|{TMDb().language}"
     data = cache.get(key=identifier)
     if data:
         return data
