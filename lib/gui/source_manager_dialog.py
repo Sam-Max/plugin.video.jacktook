@@ -72,18 +72,27 @@ def open_source_manager_dialog():
         xbmcgui.Dialog().notification("Jacktook", translation(90756))
         return
 
-    current_selection = cache.get(CACHE_KEY)
-    if current_selection is None:
+    raw_selection = cache.get(CACHE_KEY)
+    if raw_selection is None:
         current_selection = []
     else:
         try:
             current_selection = (
-                json.loads(current_selection)
-                if isinstance(current_selection, str)
-                else list(current_selection)
+                json.loads(raw_selection)
+                if isinstance(raw_selection, str)
+                else list(raw_selection)
             )
         except (ValueError, TypeError):
             current_selection = []
+
+    if not current_selection:
+        current_selection = list(cache_keys)
+        cache.set(CACHE_KEY, json.dumps(current_selection), expires=timedelta(days=365))
+    else:
+        newly_enabled = [key for key in cache_keys if key not in current_selection]
+        if newly_enabled:
+            current_selection.extend(newly_enabled)
+            cache.set(CACHE_KEY, json.dumps(current_selection), expires=timedelta(days=365))
 
     preselect = [i for i, key in enumerate(cache_keys) if key in current_selection]
 
