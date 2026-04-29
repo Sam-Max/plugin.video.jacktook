@@ -514,6 +514,10 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
             ),
         ),
         (
+            translation(90755),
+            "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
+        ),
+        (
             "Extras",
             f"RunPlugin(plugin://plugin.video.jacktook/?action=extras&id={ids.get('tmdb_id')}&imdb_id={ids.get('imdb_id', '')}&media_type={media_type}&title={parse.quote(title or '')})",
         ),
@@ -576,10 +580,6 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
                     }
                 ),
             ),
-        ),
-        (
-            translation(90755),
-            "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
         ),
         (
             translation(90205),
@@ -694,6 +694,10 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
             ),
         ),
         (
+            translation(90755),
+            "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
+        ),
+        (
             translation(90733),
             action_url_run(
                 "tmdb_episode_search_modes",
@@ -727,10 +731,6 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
                 mode=mode,
                 ids=ids,
             ),
-        ),
-        (
-            translation(90755),
-            "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
         ),
         (
             translation(90116),
