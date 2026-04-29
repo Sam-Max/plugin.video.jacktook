@@ -2,7 +2,9 @@ import json
 import xbmc
 import xbmcaddon
 
-from lib.utils.kodi.logging import kodilog
+
+def kodilog(message, level=xbmc.LOGINFO):
+    xbmc.log("[###JACKTOOKLOG###] " + str(message), level)
 
 
 ADDON = xbmcaddon.Addon()

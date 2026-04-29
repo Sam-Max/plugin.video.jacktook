@@ -1,11 +1,11 @@
-from lib.jacktook.provider_base import (
+from .provider_base import (
     ProviderResult,
     get_providers,
     send_to_providers,
 )
-from lib.jacktook.listener import ProviderListenerDialog
-from lib.jacktook.utils import NoProvidersError
-from lib.utils.kodi.utils import kodilog
+from .listener import ProviderListenerDialog
+from .utils import NoProvidersError
+from ..utils.kodi.utils import kodilog
 
 
 def burst_search(query, silent=False):

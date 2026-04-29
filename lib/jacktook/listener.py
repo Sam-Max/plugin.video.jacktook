@@ -1,6 +1,5 @@
-from .utils import NoProvidersError
 from .provider_base import ProviderListener
-from lib.utils.kodi.utils import ADDON_NAME, translation
+from ..utils.kodi.utils import ADDON_NAME, translation
 from xbmcgui import DialogProgressBG
 
 

@@ -89,10 +89,6 @@ class Provider(object):
     def resolve(self, provider_data):
         raise NotImplementedError("'resolve' method must be implemented")
 
-    def ping(self):
-        kodilog("Ping method called")
-        return ADDON_ID
-
     def register(self):
         if len(sys.argv) != 4:
             kodilog("Expecting 4 arguments")

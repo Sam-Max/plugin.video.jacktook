@@ -555,7 +555,7 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
     if not client:
         return []
 
-    if indexer_key == Indexer.BURST and not show_dialog:
+    if indexer_key == Indexer.BURST:
         kwargs["silent"] = True
 
     return client.search(*args, **kwargs)
@@ -635,7 +635,7 @@ def _submit_search_tasks(
                 Indexer.BURST,
                 _perform_search,
                 dialog,
-                imdb_id,
+                imdb_id or "",
                 query,
                 mode,
                 media_type,
@@ -817,7 +817,7 @@ def _submit_search_tasks_managed(
                 Indexer.BURST,
                 _perform_search,
                 dialog,
-                imdb_id,
+                imdb_id or "",
                 query,
                 mode,
                 media_type,
