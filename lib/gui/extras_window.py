@@ -13,7 +13,7 @@ from lib.utils.kodi.utils import (
 )
 from lib.clients.tmdb.utils.utils import tmdb_get, LANGUAGES
 from lib.api.fanart.fanart import get_fanart
-from lib.api.imdb.imdb_scraper import get_imdb_trivia, get_imdb_goofs
+from lib.api.imdb.imdb_scraper import get_imdb_extras
 from lib.utils.general.utils import truncate_text
 import xbmcgui
 import xbmc
@@ -682,37 +682,62 @@ class ExtrasWindow(BaseWindow):
             self._fetch_trakt_comments()
             return
 
-        # 1. IMDb Trivia
+        # Fetch all IMDb extras in a single GraphQL call
         try:
-            trivia = get_imdb_trivia(self.imdb_id)
-            self._populate_text_panel(self.trivia_list_id, trivia, "imdb_trivia.number")
+            extras = get_imdb_extras(self.imdb_id)
+
+            # 1. IMDb Reviews
+            try:
+                imdb_reviews = extras.get("reviews", [])
+                if imdb_reviews:
+                    self._populate_text_panel(
+                        self.reviews_list_id, imdb_reviews, "imdb_reviews.number"
+                    )
+            except Exception as e:
+                kodilog(f"Error populating IMDb reviews: {e}")
+
+            # 2. IMDb Trivia
+            try:
+                trivia = extras.get("trivia", [])
+                self._populate_text_panel(
+                    self.trivia_list_id, trivia, "imdb_trivia.number"
+                )
+            except Exception as e:
+                kodilog(f"Error populating trivia: {e}")
+
+            # 3. IMDb Goofs / Blunders
+            try:
+                blunders = extras.get("blunders", [])
+                self._populate_text_panel(
+                    self.blunders_list_id, blunders, "imdb_blunders.number"
+                )
+            except Exception as e:
+                kodilog(f"Error populating blunders: {e}")
+
+            # 4. IMDb Parental Guide
+            try:
+                guide_items = extras.get("parentsguide", [])
+                guide_texts = []
+                for item in guide_items:
+                    header = f"[B]{item['title']}[/B]"
+                    if item.get("ranking"):
+                        header += f" — {item['ranking']}"
+                    if item.get("content"):
+                        guide_texts.append(f"{header}[CR][CR]{item['content']}")
+                    else:
+                        guide_texts.append(header)
+                self._populate_text_panel(
+                    self.parental_guide_list_id,
+                    guide_texts,
+                    "imdb_parentsguide.number",
+                )
+            except Exception as e:
+                kodilog(f"Error populating parental guide: {e}")
+
         except Exception as e:
-            kodilog(f"Error fetching trivia: {e}")
+            kodilog(f"Error fetching IMDb GraphQL extras: {e}")
 
-        # 2. IMDb Goofs
-        try:
-            goofs = get_imdb_goofs(self.imdb_id)
-            self._populate_text_panel(
-                self.blunders_list_id, goofs, "imdb_blunders.number"
-            )
-        except Exception as e:
-            kodilog(f"Error fetching goofs: {e}")
-
-        # 3. IMDb Parental Guide
-        try:
-            from lib.api.imdb.imdb_scraper import get_imdb_parentsguide
-
-            guide = get_imdb_parentsguide(self.imdb_id)
-            self._populate_text_panel(
-                self.parental_guide_list_id, guide, "imdb_parentsguide.number"
-            )
-        except Exception as e:
-            kodilog(f"Error fetching parental guide: {e}")
-
-        # 4. TMDB Reviews
-        self._fetch_tmdb_reviews()
-
-        # 5. Trakt Comments
+        # 5. Trakt Comments (keep as separate source)
         self._fetch_trakt_comments()
 
     def _fetch_tmdb_reviews(self):

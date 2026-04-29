@@ -1,196 +1,326 @@
-import requests
 import re
+import json
+import requests
 import html
+from datetime import timedelta
 from lib.utils.kodi.utils import kodilog
 from lib.db.cached import cache
-from datetime import timedelta
 
 
-def clean_html(text):
+GQL_URL = "https://graphql.imdb.com/"
+GQL_HEADERS = {
+    "Content-Type": "application/json",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "application/json",
+    "Origin": "https://www.imdb.com",
+    "Referer": "https://www.imdb.com/",
+    "x-imdb-client-name": "imdb-web-next-localized",
+    "x-imdb-user-language": "en-US",
+    "x-imdb-user-country": "US",
+}
+
+
+def _clean(text):
     if not text:
         return ""
-    # Remove all HTML tags
-    text = re.sub(r"<[^>]+>", " ", text)
-    # Unescape HTML entities
+    text = text.replace("<br/><br/>", "\n").replace("<br/>", "\n").replace("<br>", "\n")
+    text = re.sub(r"<a[^>]*>", "", text).replace("</a>", "")
+    text = re.sub(r"<[^>]+>", "", text)
     text = html.unescape(text)
-    # Cleanup whitespace
-    text = " ".join(text.split())
     return text.strip()
 
 
-def get_imdb_trivia(imdb_id):
+def get_imdb_extras(imdb_id):
     """
-    Scrapes the IMDb trivia page for a given IMDb ID.
-    Returns a list of trivia strings.
+    Fetch IMDb extras (reviews, trivia, goofs, parental guide) via GraphQL.
+    Returns a dict with keys: reviews, trivia, blunders, parentsguide.
+    """
+    if not imdb_id:
+        return {"reviews": [], "trivia": [], "blunders": [], "parentsguide": []}
+
+    cache_key = f"imdb_extras_gql_{imdb_id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+
+    try:
+        payload = {"query": IMDB_EXTRAS_QUERY % imdb_id}
+        response = requests.post(GQL_URL, json=payload, headers=GQL_HEADERS, timeout=10)
+        data = response.json().get("data", {}).get("title", {})
+
+        reviews, trivia, blunders, parentsguide = [], [], [], []
+
+        # Reviews
+        try:
+            count = 1
+            for edge in sorted(
+                data["reviews"]["edges"],
+                key=lambda k: k["node"]["submissionDate"],
+                reverse=True,
+            ):
+                try:
+                    content = html.unescape(
+                        _clean(edge["node"]["text"]["originalText"]["plaidHtml"])
+                    )
+                    if not content:
+                        continue
+                    spoiler = edge["node"].get("spoiler", False)
+                    rating = edge["node"].get("authorRating")
+                    rating_str = str(rating) if rating is not None else "-"
+                    title = (
+                        edge["node"].get("summary", {}).get("originalText", "-----")
+                    )
+                    date = edge["node"].get("submissionDate", "-----")
+                    review_text = f"[B]%02d. [I]%s/10 - %s - %s[/I][/B][CR][CR]%s" % (
+                        count,
+                        rating_str,
+                        date,
+                        title,
+                        content,
+                    )
+                    if spoiler:
+                        review_text = (
+                            "[B][COLOR red][CONTAINS SPOILERS][/COLOR][CR][/B]"
+                            + review_text
+                        )
+                    count += 1
+                    reviews.append(review_text)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Trivia
+        try:
+            count = 1
+            for edge in sorted(
+                data["trivia"]["edges"],
+                key=lambda k: k["node"]["interestScore"]["usersVoted"],
+                reverse=True,
+            ):
+                try:
+                    content = html.unescape(
+                        _clean(
+                            edge["node"]["displayableArticle"]["body"]["plaidHtml"]
+                        )
+                    )
+                    trivia.append(f"[B]TRIVIA %02d.[/B][CR][CR]%s" % (count, content))
+                    count += 1
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Goofs / Blunders
+        try:
+            count = 1
+            for edge in sorted(
+                data["goofs"]["edges"],
+                key=lambda k: k["node"]["interestScore"]["usersVoted"],
+                reverse=True,
+            ):
+                try:
+                    content = html.unescape(
+                        _clean(
+                            edge["node"]["displayableArticle"]["body"]["plaidHtml"]
+                        )
+                    )
+                    blunders.append(
+                        f"[B]BLUNDERS %02d.[/B][CR][CR]%s" % (count, content)
+                    )
+                    count += 1
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Parents Guide
+        try:
+            title_converter = {
+                "nudity": "Sex & Nudity",
+                "violence": "Violence & Gore",
+                "profanity": "Profanity",
+                "alcohol": "Alcohol, Drugs & Smoking",
+                "frightening": "Frightening & Intense Scenes",
+            }
+            for category in data["parentsGuide"]["categories"]:
+                try:
+                    cat_id = category["category"]["id"].lower()
+                    title = title_converter.get(cat_id, cat_id.capitalize())
+                    ranking = category["severity"]["id"].replace("Votes", "")
+                    try:
+                        listings = [
+                            html.unescape(_clean(x["node"]["text"]["plaidHtml"]))
+                            for x in category["guideItems"]["edges"]
+                        ]
+                        content = "\n\n".join(
+                            ["%02d. %s" % (c, i) for c, i in enumerate(listings, 1)]
+                        )
+                    except Exception:
+                        listings = []
+                        content = ""
+                    total_count = len(listings)
+                    parentsguide.append(
+                        {
+                            "title": title,
+                            "ranking": ranking,
+                            "content": content,
+                            "total_count": total_count,
+                        }
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        result = {
+            "reviews": reviews,
+            "trivia": trivia,
+            "blunders": blunders,
+            "parentsguide": parentsguide,
+        }
+        cache.set(cache_key, result, timedelta(hours=168))
+        return result
+
+    except Exception as e:
+        kodilog(f"Error fetching IMDb GraphQL extras for {imdb_id}: {e}")
+        return {"reviews": [], "trivia": [], "blunders": [], "parentsguide": []}
+
+
+def get_imdb_more_like_this(imdb_id):
+    """
+    Fetch "More Like This" titles from IMDb via GraphQL.
+    Returns a list of IMDb IDs (tt...).
     """
     if not imdb_id:
         return []
 
-    cache_key = f"imdb_trivia_regex_v1_{imdb_id}"
-    cached_data = cache.get(cache_key)
-    if cached_data is not None:
-        return cached_data
-
-    url = f"https://www.imdb.com/title/{imdb_id}/trivia/"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.5",
-    }
+    cache_key = f"imdb_more_like_this_{imdb_id}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
 
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return []
-
-        # Find all trivia content divs using regex
-        # Pattern: class="ipc-html-content-inner-div" ... > Content </div>
-        matches = re.findall(
-            r"class=\"ipc-html-content-inner-div\"[^>]*>(.*?)</div>",
-            response.text,
-            re.DOTALL,
-        )
-
-        trivia_list = []
-        for m in matches:
-            text = clean_html(m)
-            if text:
-                trivia_list.append(text)
-
-        kodilog(f"Scraped {len(trivia_list)} IMDb trivia items (regex) for {imdb_id}")
-        cache.set(cache_key, trivia_list, timedelta(hours=24))
-        return trivia_list
-
+        payload = {
+            "query": 'query($id:ID!){title(id:$id){moreLikeThisTitles(first:12){edges{node{id}}}}}',
+            "variables": {"id": imdb_id},
+        }
+        response = requests.post(GQL_URL, json=payload, headers=GQL_HEADERS, timeout=10)
+        edges = response.json()["data"]["title"]["moreLikeThisTitles"]["edges"]
+        result = [edge["node"]["id"] for edge in edges if edge["node"]["id"].startswith("tt")]
+        # Deduplicate
+        seen = set()
+        result = [x for x in result if not (x in seen or seen.add(x))]
+        cache.set(cache_key, result, timedelta(hours=168))
+        return result
     except Exception as e:
-        kodilog(f"Error scraping IMDb trivia for {imdb_id}: {str(e)}")
+        kodilog(f"Error fetching IMDb More Like This for {imdb_id}: {e}")
         return []
+
+
+# Keep legacy functions for backward compatibility until fully migrated
+def get_imdb_trivia(imdb_id):
+    """Legacy wrapper. Use get_imdb_extras() for new code."""
+    return get_imdb_extras(imdb_id).get("trivia", [])
 
 
 def get_imdb_goofs(imdb_id):
-    """
-    Scrapes the IMDb goofs page for a given IMDb ID.
-    Returns a list of goof strings.
-    """
-    if not imdb_id:
-        return []
-
-    cache_key = f"imdb_goofs_regex_v1_{imdb_id}"
-    cached_data = cache.get(cache_key)
-    if cached_data is not None:
-        return cached_data
-
-    url = f"https://www.imdb.com/title/{imdb_id}/goofs/"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.5",
-    }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return []
-
-        matches = re.findall(
-            r"class=\"ipc-html-content-inner-div\"[^>]*>(.*?)</div>",
-            response.text,
-            re.DOTALL,
-        )
-
-        goofs_list = []
-        for m in matches:
-            text = clean_html(m)
-            if text:
-                goofs_list.append(text)
-
-        kodilog(f"Scraped {len(goofs_list)} IMDb goofs (regex) for {imdb_id}")
-        cache.set(cache_key, goofs_list, timedelta(hours=24))
-        return goofs_list
-
-    except Exception as e:
-        kodilog(f"Error scraping IMDb goofs for {imdb_id}: {str(e)}")
-        return []
+    """Legacy wrapper. Use get_imdb_extras() for new code."""
+    return get_imdb_extras(imdb_id).get("blunders", [])
 
 
 def get_imdb_parentsguide(imdb_id):
-    """
-    Scrapes the IMDb parents guide page for a given IMDb ID.
-    Returns a list of parental guide strings grouped by category.
-    """
-    if not imdb_id:
-        return []
+    """Legacy wrapper. Use get_imdb_extras() for new code."""
+    extras = get_imdb_extras(imdb_id)
+    guide = extras.get("parentsguide", [])
+    # Convert to legacy text format for compatibility
+    result = []
+    for item in guide:
+        header = f"[B]{item['title']}[/B]"
+        if item.get("ranking"):
+            header += f" — {item['ranking']}"
+        if item.get("content"):
+            result.append(f"{header}\n{item['content']}")
+        else:
+            result.append(header)
+    return result
 
-    cache_key = f"imdb_parentsguide_regex_v1_{imdb_id}"
-    cached_data = cache.get(cache_key)
-    if cached_data is not None:
-        return cached_data
 
-    url = f"https://www.imdb.com/title/{imdb_id}/parentalguide/"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept-Language": "en-US,en;q=0.5",
+IMDB_EXTRAS_QUERY = """\
+query {
+  title(id: "%s") {
+    id
+    titleText {
+      text
     }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code != 200:
-            return []
-
-        # Map internal IDs to user-friendly titles
-        categories = {
-            "nudity": "Sex & Nudity",
-            "violence": "Violence & Gore",
-            "profanity": "Profanity",
-            "alcohol": "Alcohol, Drugs & Smoking",
-            "frightening": "Frightening & Intense Scenes",
+    trivia(first: 20) {
+      edges {
+        node {
+          displayableArticle {
+            body {
+              plaidHtml
+            }
+          }
+          interestScore {
+            usersVoted
+          }
         }
-
-        guide_list = []
-        text = response.text
-
-        # Split page by category IDs
-        segments = re.split(
-            r"id=\"(nudity|violence|profanity|alcohol|frightening)\"", text
-        )
-
-        # segments[0] is header
-        # segments[1] is id, segments[2] is content, etc
-        for i in range(1, len(segments), 2):
-            cat_id = segments[i]
-            content = segments[i + 1]
-            cat_name = categories.get(cat_id, cat_id.capitalize())
-
-            # Extract severity
-            severity = ""
-            sev_match = re.search(
-                r"class=\"ipc-signpost__text\"[^>]*>(.*?)</div>", content, re.DOTALL
-            )
-            if sev_match:
-                severity = clean_html(sev_match.group(1))
-
-            header = f"[B]{cat_name}[/B]"
-            if severity:
-                header += f" — {severity}"
-
-            # Extract individual items in this section
-            items = re.findall(
-                r"class=\"ipc-html-content-inner-div\"[^>]*>(.*?)</div>",
-                content,
-                re.DOTALL,
-            )
-
-            if items:
-                for item in items:
-                    item_text = clean_html(item)
-                    if item_text:
-                        guide_list.append(f"{header}\n{item_text}")
-            else:
-                guide_list.append(header)
-
-        kodilog(
-            f"Scraped {len(guide_list)} IMDb parental guide items (regex) for {imdb_id}"
-        )
-        cache.set(cache_key, guide_list, timedelta(hours=24))
-        return guide_list
-
-    except Exception as e:
-        kodilog(f"Error scraping IMDb parental guide for {imdb_id}: {str(e)}")
-        return []
+      }
+    }
+    goofs(first: 20) {
+      edges {
+        node {
+          displayableArticle {
+            body {
+              plaidHtml
+            }
+          }
+          interestScore {
+            usersVoted
+          }
+        }
+      }
+    }
+    reviews(first: 50) {
+      edges {
+        node {
+          spoiler
+          author {
+            nickName
+          }
+          authorRating
+          summary {
+            originalText
+          }
+          text {
+            originalText {
+              plaidHtml
+            }
+          }
+          submissionDate
+        }
+      }
+    }
+    parentsGuide {
+      categories {
+        category {
+          id
+        }
+        guideItems(first: 10) {
+          edges {
+            node {
+              isSpoiler
+              text {
+                plaidHtml
+              }
+            }
+          }
+        }
+        severity {
+          id
+          votedFor
+        }
+      }
+    }
+  }
+}"""
