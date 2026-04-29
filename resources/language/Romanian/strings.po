@@ -4043,6 +4043,10 @@ msgctxt "#90741"
 msgid "Use original title"
 msgstr "Folosește titlul original"
 
+msgctxt "#90773"
+msgid "Search full show with title + year"
+msgstr "Caută serial complet cu titlu + an"
+
 msgctxt "#90744"
 msgid "Upload Subtitle"
 msgstr "Încarcă subtitrare"
