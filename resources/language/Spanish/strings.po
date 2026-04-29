@@ -3689,12 +3689,16 @@ msgid "Invalid episode"
 msgstr "Episodio no válido"
 
 msgctxt "#90740"
-msgid "Edit current title"
-msgstr "Editar título actual"
+msgid "Search with current title"
+msgstr "Buscar con título actual"
 
 msgctxt "#90741"
-msgid "Use original title"
-msgstr "Usar título original"
+msgid "Search with original title"
+msgstr "Buscar con título original"
+
+msgctxt "#90773"
+msgid "Search full show with title + year"
+msgstr "Buscar serie completa con título + año"
 
 msgctxt "#90742"
 msgid "Addon Settings"

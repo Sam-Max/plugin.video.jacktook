@@ -4036,12 +4036,16 @@ msgid "Invalid episode"
 msgstr "Invalid episode"
 
 msgctxt "#90740"
-msgid "Edit current title"
-msgstr "Edit current title"
+msgid "Search with current title"
+msgstr "Search with current title"
 
 msgctxt "#90741"
-msgid "Use original title"
-msgstr "Use original title"
+msgid "Search with original title"
+msgstr "Search with original title"
+
+msgctxt "#90773"
+msgid "Search full show with title + year"
+msgstr "Search full show with title + year"
 
 msgctxt "#90744"
 msgid "Upload Subtitle"

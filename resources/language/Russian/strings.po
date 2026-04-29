@@ -3675,6 +3675,18 @@ msgctxt "#90749"
 msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
 msgstr "Отсканируйте QR-код или откройте URL (%s) в браузере, чтобы загрузить файл субтитров"
 
+msgctxt "#90740"
+msgid "Search with current title"
+msgstr "Искать с текущим названием"
+
+msgctxt "#90741"
+msgid "Search with original title"
+msgstr "Искать с оригинальным названием"
+
+msgctxt "#90773"
+msgid "Search full show with title + year"
+msgstr "Искать весь сериал по названию + году"
+
 msgctxt "#90750"
 msgid "Search Title Language"
 msgstr "Язык заголовка поиска"

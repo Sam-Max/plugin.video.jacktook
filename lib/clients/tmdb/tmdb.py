@@ -1483,12 +1483,21 @@ class TmdbClient(BaseTmdbClient):
 
         selected = xbmcgui.Dialog().select(
             translation(90733),
-            [translation(90740), translation(90741)],
+            [
+                translation(90740),
+                translation(90741),
+                translation(90773),
+            ],
         )
         if selected < 0:
             return
 
-        if selected == 0:
+        full_show_variant_map = {
+            2: "title_year",
+        }
+        full_show_variant = full_show_variant_map.get(selected)
+
+        if selected == 0 or full_show_variant == "title_year":
             edited_query = show_keyboard(id=90736, default=query)
             if not edited_query:
                 return
@@ -1504,6 +1513,37 @@ class TmdbClient(BaseTmdbClient):
             return
 
         if not query:
+            return
+
+        if full_show_variant:
+            payload = {
+                "query": query,
+                "mode": mode,
+                "ids": json.dumps(ids),
+                "rescrape": True,
+                "force_select": True,
+                "search_variant": full_show_variant,
+            }
+
+            if full_show_variant == "title_year":
+                year_input = xbmcgui.Dialog().numeric(0, translation(90734), "")
+                if not year_input:
+                    return
+
+                year_input = str(year_input).strip()
+                if not (year_input.isdigit() and len(year_input) == 4):
+                    notification(translation(90735))
+                    return
+
+                payload["year"] = year_input
+
+            kodilog(
+                f"TMDB full show search mode selected: query={query}, ids={ids}, variant={full_show_variant}, year={payload.get('year', '')}"
+            )
+
+            from lib.search import run_search_entry
+
+            run_search_entry(payload)
             return
 
         season_default = str(tv_data.get("season", ""))

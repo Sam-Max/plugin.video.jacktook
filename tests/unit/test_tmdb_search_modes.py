@@ -226,6 +226,44 @@ def test_tmdb_episode_search_modes_runs_search_with_original_title():
     assert tv_data["episode"] == 8
 
 
+def test_tmdb_episode_search_modes_runs_full_show_title_year_without_tv_data():
+    tmdb_obj = MagicMock()
+    tmdb_obj.original_name = "Breaking Bad"
+
+    with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
+        "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
+    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Alt"), patch(
+        "lib.search.run_search_entry"
+    ) as run_search_entry:
+        dialog_cls.return_value.select.return_value = 2
+        dialog_cls.return_value.numeric.return_value = "2008"
+
+        TmdbClient.tmdb_episode_search_modes(
+            {
+                "mode": "tv",
+                "media_type": "tv",
+                "query": "Breaking Bad",
+                "ids": json.dumps({"tmdb_id": "1396", "imdb_id": "tt0903747", "tvdb_id": "81189"}),
+                "tv_data": json.dumps({"name": "Episode 5", "season": 1, "episode": 5}),
+            }
+        )
+
+    payload = run_search_entry.call_args[0][0]
+    assert payload["query"] == "Breaking Bad Alt"
+    assert payload["mode"] == "tv"
+    assert payload["search_variant"] == "title_year"
+    assert payload["year"] == "2008"
+    assert payload["rescrape"] is True
+    assert payload["force_select"] is True
+    assert "tv_data" not in payload
+    assert json.loads(payload["ids"]) == {
+        "tmdb_id": "1396",
+        "imdb_id": "tt0903747",
+        "tvdb_id": "81189",
+    }
+    assert dialog_cls.return_value.numeric.call_count == 1
+
+
 def test_tmdb_episode_search_modes_returns_early_when_selector_cancelled():
     tmdb_obj = MagicMock()
     tmdb_obj.original_name = "Breaking Bad"

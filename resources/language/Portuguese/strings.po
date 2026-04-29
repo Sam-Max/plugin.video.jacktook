@@ -3676,6 +3676,18 @@ msgctxt "#90749"
 msgid "Scan the QR code or open the URL (%s) in your browser to upload a subtitle file"
 msgstr "Digitalize o código QR ou abra o URL (%s) no seu navegador para carregar um ficheiro de legendas"
 
+msgctxt "#90740"
+msgid "Search with current title"
+msgstr "Pesquisar com o título atual"
+
+msgctxt "#90741"
+msgid "Search with original title"
+msgstr "Pesquisar com o título original"
+
+msgctxt "#90773"
+msgid "Search full show with title + year"
+msgstr "Pesquisar série completa com título + ano"
+
 msgctxt "#90750"
 msgid "Search Title Language"
 msgstr "Idioma do título de pesquisa"
