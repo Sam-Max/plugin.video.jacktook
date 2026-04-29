@@ -3834,3 +3834,15 @@ msgstr "Concluído"
 msgctxt "#90782"
 msgid "Delete"
 msgstr "Excluir"
+
+msgctxt "#90783"
+msgid "Startup"
+msgstr "Inicialização"
+
+msgctxt "#90784"
+msgid "Auto-start Jacktook on Kodi boot"
+msgstr "Iniciar Jacktook automaticamente na inicialização do Kodi"
+
+msgctxt "#90785"
+msgid "Automatically open Jacktook when Kodi starts"
+msgstr "Abrir Jacktook automaticamente quando o Kodi iniciar"

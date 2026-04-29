@@ -4218,3 +4218,15 @@ msgstr "Finalizat"
 msgctxt "#90782"
 msgid "Delete"
 msgstr "Șterge"
+
+msgctxt "#90783"
+msgid "Startup"
+msgstr "Pornire"
+
+msgctxt "#90784"
+msgid "Auto-start Jacktook on Kodi boot"
+msgstr "Pornire automată Jacktook la boot-ul Kodi"
+
+msgctxt "#90785"
+msgid "Automatically open Jacktook when Kodi starts"
+msgstr "Deschide automat Jacktook când Kodi pornește"

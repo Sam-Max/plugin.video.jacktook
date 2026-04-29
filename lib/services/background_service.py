@@ -227,6 +227,11 @@ class JacktookMOnitor(xbmc.Monitor):
         StartupPreloader().run()
         DownloaderSetup().run()
         TMDBHelperAutoInstall()
+        try:
+            from lib.services.autostart import AutoStartService
+            AutoStartService().run()
+        except Exception as e:
+            kodilog(f"AutoStart failed: {e}", level=xbmc.LOGERROR)
 
     def onScreensaverActivated(self):
         set_property_no_fallback(pause_services_prop, "true")

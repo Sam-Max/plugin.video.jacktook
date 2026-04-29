@@ -3834,3 +3834,15 @@ msgstr "Zaversheno"
 msgctxt "#90782"
 msgid "Delete"
 msgstr "Udalit"
+
+msgctxt "#90783"
+msgid "Startup"
+msgstr "Zapusk"
+
+msgctxt "#90784"
+msgid "Auto-start Jacktook on Kodi boot"
+msgstr "Avtozapusk Jacktook pri starte Kodi"
+
+msgctxt "#90785"
+msgid "Automatically open Jacktook when Kodi starts"
+msgstr "Avtomaticheski otkryvat Jacktook pri zapuske Kodi"
