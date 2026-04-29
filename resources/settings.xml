@@ -23,6 +23,23 @@
                     <control type="toggle" />
                 </setting>
             </group>
+            <group id="widgets" label="90786">
+                <setting id="widget_refresh_timer" type="integer" label="90787" help="90788">
+                    <default>60</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <step>15</step>
+                        <maximum>180</maximum>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
+                <setting id="widget_refresh_notification" type="boolean" label="90789" help="90790">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
             <group id="search" label="90006">
                     <setting id="search_dialog_style" type="string" label="90238" help="">
                         <default>0</default>

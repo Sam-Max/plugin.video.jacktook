@@ -4230,3 +4230,23 @@ msgstr "Pornire automată Jacktook la boot-ul Kodi"
 msgctxt "#90785"
 msgid "Automatically open Jacktook when Kodi starts"
 msgstr "Deschide automat Jacktook când Kodi pornește"
+
+msgctxt "#90786"
+msgid "Widgets"
+msgstr "Widget-uri"
+
+msgctxt "#90787"
+msgid "Widget refresh interval (minutes)"
+msgstr "Interval de reîmprospătare widget (minute)"
+
+msgctxt "#90788"
+msgid "Set to 0 to disable automatic widget refresh"
+msgstr "Setați la 0 pentru a dezactiva reîmprospătarea automată"
+
+msgctxt "#90789"
+msgid "Show refresh notification"
+msgstr "Afișați notificarea de reîmprospătare"
+
+msgctxt "#90790"
+msgid "Display a notification when widgets are refreshed"
+msgstr "Afișați o notificare când widget-urile sunt reîmprospătate"

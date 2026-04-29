@@ -232,6 +232,11 @@ class JacktookMOnitor(xbmc.Monitor):
             AutoStartService().run()
         except Exception as e:
             kodilog(f"AutoStart failed: {e}", level=xbmc.LOGERROR)
+        try:
+            from lib.services.widget_refresh import WidgetRefreshService
+            Thread(target=WidgetRefreshService().run).start()
+        except Exception as e:
+            kodilog(f"WidgetRefresh failed: {e}", level=xbmc.LOGERROR)
 
     def onScreensaverActivated(self):
         set_property_no_fallback(pause_services_prop, "true")

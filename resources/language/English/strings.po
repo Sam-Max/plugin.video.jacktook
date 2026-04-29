@@ -4230,3 +4230,23 @@ msgstr ""
 msgctxt "#90785"
 msgid "Automatically open Jacktook when Kodi starts"
 msgstr ""
+
+msgctxt "#90786"
+msgid "Widgets"
+msgstr ""
+
+msgctxt "#90787"
+msgid "Widget refresh interval (minutes)"
+msgstr ""
+
+msgctxt "#90788"
+msgid "Set to 0 to disable automatic widget refresh"
+msgstr ""
+
+msgctxt "#90789"
+msgid "Show refresh notification"
+msgstr ""
+
+msgctxt "#90790"
+msgid "Display a notification when widgets are refreshed"
+msgstr ""
