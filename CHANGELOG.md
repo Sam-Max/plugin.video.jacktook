@@ -1,3 +1,24 @@
+## 1.12.0
+- Services: Add AutoStart service to automatically open Jacktook when Kodi boots (optional toggle in Settings > General > Startup).
+- Services: Add WidgetRefresh background service to periodically refresh Kodi widgets on a configurable timer (0-180 minutes) with optional notifications.
+- IMDb/Extras: Replace regex-based IMDb scraping with stable GraphQL API. Now fetches user reviews (with ratings, dates, and spoiler warnings), trivia, goofs/blunders, and structured parental guide (Sex & Nudity, Violence & Gore, Profanity, Alcohol/Drugs/Smoking, Frightening & Intense Scenes) in a single request.
+- IMDb/Extras: Add IMDb user reviews to the Extras window alongside existing TMDB reviews and Trakt comments.
+- TMDB/Search: Add TV show title-year search mode for finding shows by title and year.
+- TMDB/Cache: Resolve language change and cache issues. Improve cache invalidation, English fallback behavior, and TMDB initialization after settings changes.
+- TMDB/UI: Reorder manage sources context item for better menu organization.
+- Localization: Add Romanian language support
+
+Spanish:
+- Servicios: Añadido servicio AutoStart para abrir Jacktook automaticamente al arrancar Kodi (interruptor opcional en Ajustes > General > Inicio).
+- Servicios: Añadido servicio WidgetRefresh en segundo plano para actualizar widgets de Kodi periodicamente con un temporizador configurable (0-180 minutos) y notificaciones opcionales.
+- IMDb/Extras: Reemplazado el scraper regex de IMDb por la API GraphQL estable. Ahora obtiene reviews de usuarios (con ratings, fechas y advertencias de spoilers), trivia, errores/blunders, y guia parental estructurada (Sexo y Desnudez, Violencia y Sangre, Lenguaje, Alcohol/Drogas/Tabaco, Escenas Aterradoras e Intensas) en una sola peticion.
+- IMDb/Extras: Añadidas reviews de usuarios de IMDb en la ventana Extras junto a las reviews de TMDB y comentarios de Trakt.
+- TMDB/Busqueda: Añadido modo de busqueda por titulo-ano para series de TV.
+- TMDB/Cache: Resueltos problemas de cambio de idioma y cache. Mejorada invalidacion de cache, fallback en ingles e inicializacion de TMDB tras cambios de ajustes.
+- TMDB/UI: Reordenado el item de contexto "manage sources" para mejor organizacion del menu.
+- Localizacion: Añadido soporte para rumano.
+
+
 ## 1.11.0
 - Source Manager: Add a dialog to enable or disable individual stream sources/providers.
 - Playback: Add Autoscrape Next Episode with resolved playback caching for faster next-episode playback.
