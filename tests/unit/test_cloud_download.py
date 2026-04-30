@@ -152,6 +152,7 @@ class TestDownloadCloudFile:
         downloader = _load_downloader_module()
 
         with tempfile.TemporaryDirectory() as tmpdir:
+            movies_dir = os.path.join(tmpdir, "Movies")
             with patch.object(downloader, "get_setting", side_effect=lambda key, default="": {
                 "download_dir": tmpdir,
                 "organize_downloads": True,
@@ -165,9 +166,7 @@ class TestDownloadCloudFile:
                 downloader, "Downloader"
             ) as mock_downloader_cls, patch.object(
                 downloader.xbmcvfs, "mkdirs"
-            ) as mock_mkdirs, patch.object(
-                downloader.os.path, "exists", return_value=True
-            ):
+            ) as mock_mkdirs:
                 mock_downloader = MagicMock()
                 mock_downloader_cls.return_value = mock_downloader
 
@@ -178,11 +177,10 @@ class TestDownloadCloudFile:
                     "debrid_type": "RD",
                 })
 
-                expected_dest = os.path.join(tmpdir, "Movies")
-                mock_mkdirs.assert_called_once_with(expected_dest)
+                mock_mkdirs.assert_called_once_with(movies_dir)
                 call_kwargs = mock_downloader_cls.call_args.kwargs
-                assert call_kwargs["destination"] == expected_dest
-                assert call_kwargs["registry_id"] == os.path.join(expected_dest, "Movie.mkv")
+                assert call_kwargs["destination"] == movies_dir
+                assert call_kwargs["registry_id"] == os.path.join(movies_dir, "Movie.mkv")
 
     def test_get_rd_downloads_adds_menu_even_without_url(self):
         debrid = __import__("lib.nav.debrid", fromlist=["get_rd_downloads"])

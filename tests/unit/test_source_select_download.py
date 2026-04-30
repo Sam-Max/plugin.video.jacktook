@@ -26,19 +26,22 @@ def test_download_file_uses_episode_filename_when_tv_data_is_present():
         "title": "Game of Thrones",
         "url": "https://example.com/files/game.of.thrones.mkv",
         "tv_data": {"season": "1", "episode": "1"},
+        "mode": "movie",
     }
 
     with patch.object(
         source_select_module.SourceSelect,
         "_ensure_playback_info",
         return_value=playback_info,
-    ), patch.object(source_select_module, "get_setting", return_value="/downloads"), patch.object(
-        source_select_module, "translatePath", return_value="/downloads"
-    ), patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
+    ), patch("lib.downloader.get_destination_path", return_value="/downloads") as mock_get_dest, patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
         source_select_module.xbmc, "executebuiltin"
     ) as executebuiltin:
         source_select._download_file(selected_source)
 
+    mock_get_dest.assert_called_once()
+    dest_call_data = mock_get_dest.call_args[0][0]
+    assert dest_call_data["title"] == "Game of Thrones"
+    assert dest_call_data["mode"] == "movies"
     action_url_run.assert_called_once_with(
         "handle_download_file",
         file_name="Game of Thrones - S01E01",
@@ -61,19 +64,22 @@ def test_download_file_uses_year_for_movie_filename():
     playback_info = {
         "title": "Project Hail Mary",
         "url": "https://example.com/files/project.hail.mary.mkv",
+        "mode": "movie",
     }
 
     with patch.object(
         source_select_module.SourceSelect,
         "_ensure_playback_info",
         return_value=playback_info,
-    ), patch.object(source_select_module, "get_setting", return_value="/downloads"), patch.object(
-        source_select_module, "translatePath", return_value="/downloads"
-    ), patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
+    ), patch("lib.downloader.get_destination_path", return_value="/downloads") as mock_get_dest, patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
         source_select_module.xbmc, "executebuiltin"
     ) as executebuiltin:
         source_select._download_file(selected_source)
 
+    mock_get_dest.assert_called_once()
+    dest_call_data = mock_get_dest.call_args[0][0]
+    assert dest_call_data["title"] == "Project Hail Mary"
+    assert dest_call_data["mode"] == "movies"
     action_url_run.assert_called_once_with(
         "handle_download_file",
         file_name="Project Hail Mary (2025)",

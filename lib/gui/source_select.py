@@ -449,7 +449,6 @@ class SourceSelect(BaseWindow):
             notification(translation(90407))
             return
 
-        download_dir = get_setting("download_dir")
         try:
             title = (self.playback_info.get("title") or self.item_information.get("title") or "").strip()
             year = self.item_information.get("year", "")
@@ -466,12 +465,23 @@ class SourceSelect(BaseWindow):
             else:
                 file_name = title
 
+            mode = self.playback_info.get("mode", "movie")
+            dest_data = {"title": title, "mode": "movies" if mode in ("movie", "movies") else mode}
+            if tv_data:
+                dest_data["tv_data"] = tv_data
+
+            from lib.downloader import get_destination_path
+            destination = get_destination_path(dest_data)
+            if not destination:
+                notification(translation(90407))
+                return
+
             xbmc.executebuiltin(
                 action_url_run(
                     "handle_download_file",
                     file_name=file_name,
                     url=self.playback_info["url"],
-                    destination=translatePath(download_dir),
+                    destination=destination,
                 )
             )
         except Exception as e:

@@ -1,5 +1,6 @@
 import os
 import threading
+import time
 
 import xbmc
 import xbmcgui
@@ -9,7 +10,7 @@ from lib.download_manager import DownloadManager
 from lib.downloader import Downloader, cancel_flag_cache, get_download_metadata, handle_pause_download, resume_download
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.settings import get_setting as _get_setting
-from lib.utils.kodi.utils import ADDON_PATH, bytes_to_human_readable, execute_builtin, kodilog, translatePath as _translatePath
+from lib.utils.kodi.utils import ADDON_PATH, bytes_to_human_readable, execute_builtin, kodilog, translatePath as _translatePath, translation
 
 
 class DownloadManagerWindow(BaseWindow):
@@ -30,57 +31,74 @@ class DownloadManagerWindow(BaseWindow):
         self._poll_thread.start()
 
     def _sync_from_disk(self):
-        """Scan the download directory for .jacktook.json files and register
-        any downloads that are not already in the registry. This ensures
-        that downloads started before the window was opened (or before
-        Kodi was restarted) appear in the manager."""
+        """Scan the download directory (recursively) for .jacktook.json files
+        and register or update any downloads in the registry. This ensures
+        that downloads started before the window was opened, or organized
+        into subfolders, appear in the manager."""
         download_dir = _translatePath(_get_setting("download_dir"))
         if not download_dir or not os.path.isdir(download_dir):
             return
 
         manager = DownloadManager()
         try:
-            for filename in os.listdir(download_dir):
-                if not filename.endswith(".jacktook.json"):
-                    continue
-                dest_path = os.path.join(download_dir, filename.replace(".jacktook.json", ""))
-                # Skip .part files — use the final path
-                if dest_path.endswith(".part"):
-                    dest_path = dest_path[:-5]
-                if manager.get_entry(dest_path):
-                    continue
-                meta = get_download_metadata(dest_path)
-                if not meta:
-                    continue
-                status = meta.get("status", "unknown")
-                progress = meta.get("progress", 0)
-                url = meta.get("url", "")
-                name = meta.get("title", os.path.basename(dest_path))
-                # Only register non-cancelled entries
-                if status == "cancelled":
-                    continue
-                entry = manager.register(
-                    name=name,
-                    dest_path=dest_path,
-                    url=url,
-                )
-                if entry:
-                    manager.set_status(dest_path, status)
-                    manager.update_progress(
-                        dest_path,
-                        downloaded=0,
-                        speed=0,
-                        eta=0,
-                        progress=progress,
-                        size=0,
-                    )
+            for root, dirs, files in os.walk(download_dir):
+                for filename in files:
+                    if not filename.endswith(".jacktook.json"):
+                        continue
+                    dest_path = os.path.join(root, filename.replace(".jacktook.json", ""))
+                    # Skip .part files — use the final path
+                    if dest_path.endswith(".part"):
+                        dest_path = dest_path[:-5]
+                    meta = get_download_metadata(dest_path)
+                    if not meta:
+                        continue
+                    status = meta.get("status", "unknown")
+                    progress = meta.get("progress", 0)
+                    url = meta.get("url", "")
+                    name = meta.get("title", os.path.basename(dest_path))
+                    # Only register non-cancelled entries
+                    if status == "cancelled":
+                        continue
+                    entry = manager.get_entry(dest_path)
+                    if entry:
+                        # Update existing entry from disk
+                        manager.set_status(dest_path, status)
+                        manager.update_progress(
+                            dest_path,
+                            downloaded=meta.get("downloaded", 0),
+                            speed=meta.get("speed", 0),
+                            eta=meta.get("eta", 0),
+                            progress=progress,
+                            size=meta.get("size", 0),
+                        )
+                    else:
+                        entry = manager.register(
+                            name=name,
+                            dest_path=dest_path,
+                            url=url,
+                        )
+                        if entry:
+                            manager.set_status(dest_path, status)
+                            manager.update_progress(
+                                dest_path,
+                                downloaded=meta.get("downloaded", 0),
+                                speed=meta.get("speed", 0),
+                                eta=meta.get("eta", 0),
+                                progress=progress,
+                                size=meta.get("size", 0),
+                            )
         except Exception as e:
             kodilog(f"[DownloadManagerWindow] Sync from disk error: {e}")
 
     def _poll_loop(self):
+        last_sync = 0
         while not self._monitor.abortRequested() and not self._closed:
             xbmc.sleep(500)
             try:
+                now = time.time()
+                if now - last_sync >= 2:
+                    self._sync_from_disk()
+                    last_sync = now
                 self._update_selected_properties()
                 self._check_registry_changes()
             except Exception as e:
@@ -266,6 +284,10 @@ class DownloadManagerWindow(BaseWindow):
         manager = DownloadManager()
         entry = manager.get_entry(entry_id)
         if not entry:
+            return
+
+        dialog = xbmcgui.Dialog()
+        if not dialog.yesno(translation(90809), translation(90810)):
             return
 
         # Delete files

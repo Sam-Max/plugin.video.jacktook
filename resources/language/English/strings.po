@@ -4322,3 +4322,11 @@ msgstr ""
 msgctxt "#90808"
 msgid "Close"
 msgstr ""
+
+msgctxt "#90809"
+msgid "Delete download?"
+msgstr ""
+
+msgctxt "#90810"
+msgid "This will permanently delete the downloaded file. Are you sure?"
+msgstr ""

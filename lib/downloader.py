@@ -79,7 +79,7 @@ def download_cloud_file(params):
     mode = params.get("mode", "movie")
     debrid_type = params.get("debrid_type", "")
 
-    if not url and debrid_type == "TB":
+    if not url and debrid_type in ("TB", "Torbox"):
         url = resolve_cloud_download_url({
             "debrid_type": debrid_type,
             "torrent_id": params.get("torrent_id", ""),
@@ -92,7 +92,7 @@ def download_cloud_file(params):
 
     dest_data = {"title": filename, "mode": "movies" if mode in ("movie", "movies") else mode}
     destination = get_destination_path(dest_data)
-    if not destination or not os.path.exists(destination):
+    if not destination:
         notification("Invalid download destination.")
         return
 
@@ -536,7 +536,11 @@ def handle_delete_file(params):
 
 def downloads_viewer(params):
     set_pluging_category(translation(90015))
-    translated_path = translatePath(get_setting("download_dir"))
+    download_dir = translatePath(get_setting("download_dir"))
+    path = params.get("path", download_dir)
+    if not path:
+        path = download_dir
+    translated_path = translatePath(path)
     item_list = []
 
     try:
@@ -570,6 +574,8 @@ def downloads_viewer(params):
                 info_tag.setMediaType("folder")
                 list_item.setProperty("IsPlayable", "false")
                 is_folder = True
+                # Navigate through the plugin so subdirectories work correctly
+                listing_url = build_url("downloads_viewer", path=item_path)
             else:
                 # Strip .part for display but keep it for internal path
                 display_name = item[:-5] if item.endswith(".part") else item

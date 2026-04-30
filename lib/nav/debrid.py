@@ -326,10 +326,10 @@ def download(magnet, debrid_type):
 
 def resolve_cloud_download_url(data):
     debrid_type = data.get("debrid_type", "")
-    if debrid_type == "RD":
+    if debrid_type in ("RD", "RealDebrid"):
         url = data.get("url", "")
         return url if url else None
-    elif debrid_type == "TB":
+    elif debrid_type in ("TB", "Torbox"):
         torrent_id = data.get("torrent_id", "")
         file_id = data.get("file_id", "")
         if not torrent_id or not file_id:

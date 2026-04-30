@@ -111,52 +111,56 @@
                 <onright>14003</onright>
                 <ondown>14003</ondown>
                 <visible>!String.IsEqual(Window.Property(downloads_empty),true)</visible>
-                <itemlayout height="50">
+<itemlayout height="65">
                     <control type="image">
-                        <left>0</left>
-                        <width>1200</width>
-                        <height>50</height>
-                        <texture>white.png</texture>
-                        <colordiffuse>33000000</colordiffuse>
+                        <left>5</left>
+                        <top>4</top>
+                        <width>1190</width>
+                        <height>53</height>
+                        <texture border="20">circle.png</texture>
+                        <colordiffuse>2AFFFFFF</colordiffuse>
                     </control>
                     <control type="label">
                         <left>20</left>
                         <width>800</width>
-                        <height>50</height>
+                        <height>65</height>
                         <font>font13</font>
-                        <textcolor>EEEEEE</textcolor>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <shadowcolor>AA000000</shadowcolor>
                         <label>$INFO[ListItem.Label]</label>
                     </control>
                     <control type="label">
                         <left>840</left>
                         <width>340</width>
-                        <height>50</height>
+                        <height>65</height>
                         <font>font13</font>
                         <align>right</align>
-                        <textcolor>EEEEEE</textcolor>
+                        <textcolor>FFAAAAAA</textcolor>
                         <label>$INFO[ListItem.Property(entry_status)]</label>
                     </control>
                 </itemlayout>
-                <focusedlayout height="50">
+                <focusedlayout height="65">
                     <control type="image">
-                        <left>0</left>
-                        <width>1200</width>
-                        <height>50</height>
+                        <left>5</left>
+                        <top>4</top>
+                        <width>1190</width>
+                        <height>53</height>
                         <texture border="20">circle.png</texture>
                         <colordiffuse>992A3E5C</colordiffuse>
                     </control>
                     <control type="label">
                         <left>20</left>
                         <width>800</width>
-                        <height>50</height>
+                        <height>65</height>
                         <font>font13</font>
-                        <textcolor>white</textcolor>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <shadowcolor>AA000000</shadowcolor>
                         <label>$INFO[ListItem.Label]</label>
                     </control>
                     <control type="label">
                         <left>840</left>
                         <width>340</width>
-                        <height>50</height>
+                        <height>65</height>
                         <font>font13</font>
                         <align>right</align>
                         <textcolor>FFFFD700</textcolor>
