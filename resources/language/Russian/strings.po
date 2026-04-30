@@ -3866,3 +3866,87 @@ msgstr "Pokazyvat uvedomleniye ob obnovlenii"
 msgctxt "#90790"
 msgid "Display a notification when widgets are refreshed"
 msgstr "Otobrazhat uvedomleniye pri obnovlenii vidzhetov"
+
+msgctxt "#90791"
+msgid "Download to Device"
+msgstr "Zagruzit na ustroystvo"
+
+msgctxt "#90792"
+msgid "Download Manager"
+msgstr "Menedzher zagruzok"
+
+msgctxt "#90793"
+msgid "No active downloads"
+msgstr "Net aktivnykh zagruzok"
+
+msgctxt "#90794"
+msgid "Progress"
+msgstr "Khod vypolneniya"
+
+msgctxt "#90795"
+msgid "Speed"
+msgstr "Skorost"
+
+msgctxt "#90796"
+msgid "ETA"
+msgstr "Ostalos"
+
+msgctxt "#90797"
+msgid "Size"
+msgstr "Razmer"
+
+msgctxt "#90798"
+msgid "Pause"
+msgstr "Pauza"
+
+msgctxt "#90799"
+msgid "Resume"
+msgstr "Vozobnovit"
+
+msgctxt "#90800"
+msgid "Cancel"
+msgstr "Otmena"
+
+msgctxt "#90801"
+msgid "Delete"
+msgstr "Udalit"
+
+msgctxt "#90802"
+msgid "Clear Completed"
+msgstr "Ochistit zavershennye"
+
+msgctxt "#90803"
+msgid "Download not yet completed"
+msgstr "Zagruzka yeshchyo ne zavershena"
+
+msgctxt "#90804"
+msgid "File not found"
+msgstr "Fayl ne nayden"
+
+msgctxt "#90805"
+msgid "Download Manager"
+msgstr "Menedzher zagruzok"
+
+msgctxt "#90806"
+msgid "My Downloads"
+msgstr "Moi zagruzki"
+
+msgctxt "#90807"
+msgid "Connecting..."
+msgstr "Podklyucheniye..."
+
+msgctxt "#90808"
+msgid "Close"
+msgstr "Zakryt"
+
+msgctxt "#90809"
+msgid "Delete download?"
+msgstr "Udalit zagruzku?"
+
+msgctxt "#90810"
+msgid "This will permanently delete the downloaded file. Are you sure?"
+msgstr "Zagruzhennyy fayl budet udalyon navsegda. Vy uvereny?"
+
+msgctxt "#90811"
+msgid "Completed"
+msgstr "Zaversheno"

@@ -106,65 +106,93 @@
                 <top>70</top>
                 <left>0</left>
                 <width>1200</width>
-                <height>500</height>
+                <height>560</height>
                 <onleft>14003</onleft>
                 <onright>14003</onright>
                 <ondown>14003</ondown>
                 <visible>!String.IsEqual(Window.Property(downloads_empty),true)</visible>
-<itemlayout height="65">
+                <itemlayout height="80">
                     <control type="image">
                         <left>5</left>
                         <top>4</top>
                         <width>1190</width>
-                        <height>53</height>
+                        <height>72</height>
                         <texture border="20">circle.png</texture>
                         <colordiffuse>2AFFFFFF</colordiffuse>
                     </control>
+                    <!-- Line 1: Filename -->
                     <control type="label">
                         <left>20</left>
-                        <width>800</width>
-                        <height>65</height>
+                        <top>6</top>
+                        <width>900</width>
+                        <height>32</height>
                         <font>font13</font>
                         <textcolor>FFFFFFFF</textcolor>
                         <shadowcolor>AA000000</shadowcolor>
-                        <label>$INFO[ListItem.Label]</label>
+                        <label>$INFO[ListItem.Property(entry_name)]</label>
                     </control>
+                    <!-- Line 1 right: Progress % -->
                     <control type="label">
-                        <left>840</left>
-                        <width>340</width>
-                        <height>65</height>
+                        <left>940</left>
+                        <top>6</top>
+                        <width>240</width>
+                        <height>32</height>
                         <font>font13</font>
                         <align>right</align>
                         <textcolor>FFAAAAAA</textcolor>
-                        <label>$INFO[ListItem.Property(entry_status)]</label>
+                        <label>$INFO[ListItem.Property(entry_progress)]%</label>
+                    </control>
+                    <!-- Line 2: Speed • ETA • Downloaded/Size -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>38</top>
+                        <width>1160</width>
+                        <height>28</height>
+                        <font>font10</font>
+                        <textcolor>FF999999</textcolor>
+                        <label>$INFO[ListItem.Property(entry_info)]</label>
                     </control>
                 </itemlayout>
-                <focusedlayout height="65">
+                <focusedlayout height="80">
                     <control type="image">
                         <left>5</left>
                         <top>4</top>
                         <width>1190</width>
-                        <height>53</height>
+                        <height>72</height>
                         <texture border="20">circle.png</texture>
                         <colordiffuse>992A3E5C</colordiffuse>
                     </control>
+                    <!-- Line 1: Filename -->
                     <control type="label">
                         <left>20</left>
-                        <width>800</width>
-                        <height>65</height>
+                        <top>6</top>
+                        <width>900</width>
+                        <height>32</height>
                         <font>font13</font>
                         <textcolor>FFFFFFFF</textcolor>
                         <shadowcolor>AA000000</shadowcolor>
-                        <label>$INFO[ListItem.Label]</label>
+                        <label>$INFO[ListItem.Property(entry_name)]</label>
                     </control>
+                    <!-- Line 1 right: Status badge + progress -->
                     <control type="label">
-                        <left>840</left>
-                        <width>340</width>
-                        <height>65</height>
+                        <left>940</left>
+                        <top>6</top>
+                        <width>240</width>
+                        <height>32</height>
                         <font>font13</font>
                         <align>right</align>
                         <textcolor>FFFFD700</textcolor>
-                        <label>$INFO[ListItem.Property(entry_status)]</label>
+                        <label>$INFO[ListItem.Property(entry_progress)]%</label>
+                    </control>
+                    <!-- Line 2: Speed • ETA • Downloaded/Size -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>38</top>
+                        <width>1160</width>
+                        <height>28</height>
+                        <font>font10</font>
+                        <textcolor>FFCCCCCC</textcolor>
+                        <label>$INFO[ListItem.Property(entry_info)]</label>
                     </control>
                 </focusedlayout>
             </control>

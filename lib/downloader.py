@@ -534,6 +534,27 @@ def handle_delete_file(params):
         notification(f"Failed to delete file: {str(e)}")
 
 
+def _count_active_downloads(directory):
+    """Count downloads that are in-progress (downloading or paused) recursively
+    across all subdirectories."""
+    count = 0
+    try:
+        for root, dirs, files in os.walk(directory):
+            for f in files:
+                if f.endswith(".jacktook.json"):
+                    # Derive the actual download path from the metadata file
+                    download_path = os.path.join(root, f.replace(".jacktook.json", ""))
+                    if download_path.endswith(".part"):
+                        download_path = download_path[:-5]
+                    meta = get_download_metadata(download_path)
+                    status = meta.get("status", "")
+                    if status in ("downloading", "paused"):
+                        count += 1
+    except Exception:
+        pass
+    return count
+
+
 def downloads_viewer(params):
     set_pluging_category(translation(90015))
     download_dir = translatePath(get_setting("download_dir"))
@@ -546,12 +567,18 @@ def downloads_viewer(params):
     try:
         setContent(ADDON_HANDLE, "files")
         directories, files = xbmcvfs.listdir(translated_path)
-        active_downloads = [
-            f for f in files if is_active_download(os.path.join(translated_path, f))
-        ]
+        # At root level, count active downloads recursively across all subfolders
+        is_root = translated_path.rstrip(os.sep) == download_dir.rstrip(os.sep)
+        if is_root:
+            active_count = _count_active_downloads(translated_path)
+        else:
+            active_downloads = [
+                f for f in files if is_active_download(os.path.join(translated_path, f))
+            ]
+            active_count = len(active_downloads)
 
         active_label = (
-            f"[COLOR red]{translation(90373)}: {len(active_downloads)}[/COLOR]"
+            f"[COLOR red]{translation(90373)}: {active_count}[/COLOR]"
         )
         active_item = xbmcgui.ListItem(label=active_label)
         active_item.setProperty("IsPlayable", "false")

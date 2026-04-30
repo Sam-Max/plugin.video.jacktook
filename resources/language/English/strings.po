@@ -4330,3 +4330,7 @@ msgstr ""
 msgctxt "#90810"
 msgid "This will permanently delete the downloaded file. Are you sure?"
 msgstr ""
+
+msgctxt "#90811"
+msgid "Completed"
+msgstr ""

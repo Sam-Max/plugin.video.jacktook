@@ -3911,3 +3911,87 @@ msgstr "Mostrar notificación de actualización"
 msgctxt "#90790"
 msgid "Display a notification when widgets are refreshed"
 msgstr "Mostrar una notificación cuando se actualicen los widgets"
+
+msgctxt "#90791"
+msgid "Download to Device"
+msgstr "Descargar al dispositivo"
+
+msgctxt "#90792"
+msgid "Download Manager"
+msgstr "Gestor de descargas"
+
+msgctxt "#90793"
+msgid "No active downloads"
+msgstr "Sin descargas activas"
+
+msgctxt "#90794"
+msgid "Progress"
+msgstr "Progreso"
+
+msgctxt "#90795"
+msgid "Speed"
+msgstr "Velocidad"
+
+msgctxt "#90796"
+msgid "ETA"
+msgstr "Tiempo restante"
+
+msgctxt "#90797"
+msgid "Size"
+msgstr "Tamaño"
+
+msgctxt "#90798"
+msgid "Pause"
+msgstr "Pausar"
+
+msgctxt "#90799"
+msgid "Resume"
+msgstr "Reanudar"
+
+msgctxt "#90800"
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgctxt "#90801"
+msgid "Delete"
+msgstr "Eliminar"
+
+msgctxt "#90802"
+msgid "Clear Completed"
+msgstr "Limpiar completados"
+
+msgctxt "#90803"
+msgid "Download not yet completed"
+msgstr "Descarga aún no completada"
+
+msgctxt "#90804"
+msgid "File not found"
+msgstr "Archivo no encontrado"
+
+msgctxt "#90805"
+msgid "Download Manager"
+msgstr "Gestor de descargas"
+
+msgctxt "#90806"
+msgid "My Downloads"
+msgstr "Mis descargas"
+
+msgctxt "#90807"
+msgid "Connecting..."
+msgstr "Conectando..."
+
+msgctxt "#90808"
+msgid "Close"
+msgstr "Cerrar"
+
+msgctxt "#90809"
+msgid "Delete download?"
+msgstr "¿Eliminar descarga?"
+
+msgctxt "#90810"
+msgid "This will permanently delete the downloaded file. Are you sure?"
+msgstr "Esto eliminará permanentemente el archivo descargado. ¿Estás seguro?"
+
+msgctxt "#90811"
+msgid "Completed"
+msgstr "Completada"

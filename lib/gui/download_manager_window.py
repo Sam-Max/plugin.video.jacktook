@@ -1,3 +1,4 @@
+import json
 import os
 import threading
 import time
@@ -167,12 +168,47 @@ class DownloadManagerWindow(BaseWindow):
 
             self.setProperty("downloads_empty", "false")
             for entry in entries:
-                label = f"{entry.name} [{entry.progress}%]"
+                label = entry.name
+                speed_str = bytes_to_human_readable(entry.speed) + "/s" if entry.speed else ""
+                if entry.eta and entry.eta > 0:
+                    eta_mins, eta_secs = divmod(entry.eta, 60)
+                    eta_hrs, eta_mins = divmod(eta_mins, 60)
+                    if eta_hrs:
+                        eta_str = f"{eta_hrs}h {eta_mins}m"
+                    elif eta_mins:
+                        eta_str = f"{eta_mins}m {eta_secs}s"
+                    else:
+                        eta_str = f"{eta_secs}s"
+                else:
+                    eta_str = ""
+                size_str = bytes_to_human_readable(entry.size) if entry.size else ""
+                downloaded_str = bytes_to_human_readable(entry.downloaded) if entry.downloaded else ""
+
+                # Build secondary info line
+                parts = []
+                if entry.status == "completed":
+                    status_str = translation(90811)  # "Completed"
+                elif speed_str:
+                    parts.append(speed_str)
+                if eta_str and entry.status != "completed":
+                    parts.append(eta_str)
+                if downloaded_str and size_str:
+                    parts.append(f"{downloaded_str} / {size_str}")
+                elif size_str:
+                    parts.append(size_str)
+
+                info_line = " • ".join(parts)
+
                 item = xbmcgui.ListItem(label=label)
                 item.setProperty("entry_id", entry.id)
                 item.setProperty("entry_name", entry.name)
                 item.setProperty("entry_status", entry.status)
                 item.setProperty("entry_progress", str(entry.progress))
+                item.setProperty("entry_speed", speed_str)
+                item.setProperty("entry_eta", eta_str)
+                item.setProperty("entry_size", size_str)
+                item.setProperty("entry_downloaded", downloaded_str)
+                item.setProperty("entry_info", info_line)
                 control_list.addItem(item)
 
             if 0 <= selected_position < control_list.size():
@@ -276,9 +312,30 @@ class DownloadManagerWindow(BaseWindow):
     def _cancel_download(self, entry_id):
         manager = DownloadManager()
         entry = manager.get_entry(entry_id)
-        if entry and entry.status == "downloading":
-            entry.cancel_flag = True
-            manager.set_status(entry_id, "cancelled")
+        if not entry:
+            return
+
+        # Cancel works for both downloading and paused states
+        entry.cancel_flag = True
+        cancel_flag_cache.set(entry_id, True)
+        manager.set_status(entry_id, "cancelled")
+
+        # Update metadata on disk so a cancelled download doesn't resume on restart
+        meta_path = entry_id + ".jacktook.json"
+        if os.path.exists(meta_path):
+            try:
+                with open(meta_path, "r") as f:
+                    meta = json.load(f)
+                meta["status"] = "cancelled"
+                with open(meta_path, "w") as f:
+                    json.dump(meta, f)
+            except Exception:
+                pass
+
+        # Delete the .part file (partial download) to free disk space
+        temp_path = entry_id + ".part"
+        if xbmcvfs.exists(temp_path):
+            xbmcvfs.delete(temp_path)
 
     def _delete_download(self, entry_id):
         manager = DownloadManager()
