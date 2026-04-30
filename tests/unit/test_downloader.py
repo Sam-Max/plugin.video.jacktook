@@ -294,3 +294,277 @@ def test_download_video_uses_organized_destination():
     mock_handle.assert_called_once_with(
         {"destination": "/downloads/Movies", "file_name": "Movie", "url": "https://example.com/Movie.mkv"}
     )
+
+
+# --- Tests for Downloader registry integration ---
+
+def test_downloader_accepts_registry_id():
+    downloader = _load_downloader_module()
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    assert dl.registry_id == "/downloads/Movie.mkv"
+
+
+def test_downloader_registry_id_defaults_to_none():
+    downloader = _load_downloader_module()
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+    )
+    assert dl.registry_id is None
+
+
+def test_start_download_updates_registry_per_chunk():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 3 * 1024 * 1024  # 3 MB
+
+    mock_response = MagicMock()
+    mock_response.read.side_effect = [b"x" * (1024 * 1024), b"x" * (1024 * 1024), b"x" * (1024 * 1024), b""]
+    mock_response.headers = {"Content-Length": str(3 * 1024 * 1024)}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dl.destination = tmpdir
+        dl.dest_path = os.path.join(tmpdir, "Movie.mkv")
+        dl.temp_path = dl.dest_path + ".part"
+        dl.meta_path = dl.dest_path + ".jacktook.json"
+
+        with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
+            downloader, "urlopen", return_value=mock_response
+        ), patch.object(downloader.xbmcvfs, "exists", return_value=False), patch.object(
+            downloader.xbmcvfs, "rename"
+        ):
+            mock_handler = MagicMock()
+            mock_handler_cls.return_value = mock_handler
+            mock_handler.cancelled.return_value = False
+            dl.monitor = MagicMock()
+            dl.monitor.abortRequested.return_value = False
+            dl._start_download()
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry is not None
+    assert entry.progress == 100
+    assert entry.downloaded == 3 * 1024 * 1024
+    assert entry.status == "completed"
+
+
+def test_start_download_sets_registry_status_paused_on_cancel():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10 * 1024 * 1024  # 10 MB
+
+    mock_response = MagicMock()
+    mock_response.read.side_effect = [b"x" * (1024 * 1024), b"x" * (1024 * 1024), b""]
+    mock_response.headers = {"Content-Length": str(10 * 1024 * 1024)}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dl.destination = tmpdir
+        dl.dest_path = os.path.join(tmpdir, "Movie.mkv")
+        dl.temp_path = dl.dest_path + ".part"
+        dl.meta_path = dl.dest_path + ".jacktook.json"
+
+        with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
+            downloader, "urlopen", return_value=mock_response
+        ), patch.object(downloader.xbmcvfs, "exists", return_value=False), patch.object(
+            downloader.xbmcvfs, "rename"
+        ):
+            mock_handler = MagicMock()
+            mock_handler_cls.return_value = mock_handler
+            # Cancel after first chunk
+            call_count = [0]
+
+            def cancelled_side_effect():
+                call_count[0] += 1
+                return call_count[0] > 1
+
+            mock_handler.cancelled.side_effect = cancelled_side_effect
+            dl.monitor = MagicMock()
+            dl.monitor.abortRequested.return_value = False
+            dl._start_download()
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry is not None
+    assert entry.status == "paused"
+
+
+def test_start_download_respects_registry_cancel_flag():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    entry = manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    entry.cancel_flag = True
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10 * 1024 * 1024
+
+    mock_response = MagicMock()
+    mock_response.read.side_effect = [b"x" * (1024 * 1024), b""]
+    mock_response.headers = {"Content-Length": str(10 * 1024 * 1024)}
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dl.destination = tmpdir
+        dl.dest_path = os.path.join(tmpdir, "Movie.mkv")
+        dl.temp_path = dl.dest_path + ".part"
+        dl.meta_path = dl.dest_path + ".jacktook.json"
+
+        with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
+            downloader, "urlopen", return_value=mock_response
+        ), patch.object(downloader.xbmcvfs, "exists", return_value=False), patch.object(
+            downloader.xbmcvfs, "rename"
+        ):
+            mock_handler = MagicMock()
+            mock_handler_cls.return_value = mock_handler
+            mock_handler.cancelled.return_value = False
+            dl.monitor = MagicMock()
+            dl.monitor.abortRequested.return_value = False
+            dl._start_download()
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry is not None
+    assert entry.status == "paused"
+
+
+def test_start_download_sets_registry_status_error_on_exception():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10 * 1024 * 1024
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dl.destination = tmpdir
+        dl.dest_path = os.path.join(tmpdir, "Movie.mkv")
+        dl.temp_path = dl.dest_path + ".part"
+        dl.meta_path = dl.dest_path + ".jacktook.json"
+
+        with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
+            downloader, "urlopen", side_effect=Exception("network error")
+        ), patch.object(downloader.xbmcvfs, "exists", return_value=False):
+            mock_handler = MagicMock()
+            mock_handler_cls.return_value = mock_handler
+            dl._start_download()
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry is not None
+    assert entry.status == "error"
+
+
+def test_update_registry_calculates_speed_and_eta():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10_000_000
+    dl._start_time = 0
+
+    with patch.object(downloader, "time") as mock_time:
+        mock_time.time.return_value = 5
+        dl._update_registry(downloaded=5_000_000, percent=50)
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry.speed == 1_000_000
+    assert entry.eta == 5
+
+
+def test_update_registry_speed_zero_when_no_start_time():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10_000_000
+    dl._start_time = None
+
+    dl._update_registry(downloaded=5_000_000, percent=50)
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry.speed == 0
+    assert entry.eta == 0
+
+
+def test_update_registry_eta_zero_when_download_complete():
+    downloader = _load_downloader_module()
+
+    from lib.download_manager import DownloadManager
+    manager = DownloadManager()
+    manager.clear()
+    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 10_000_000
+    dl._start_time = 0
+
+    with patch.object(downloader, "time") as mock_time:
+        mock_time.time.return_value = 5
+        dl._update_registry(downloaded=10_000_000, percent=100)
+
+    entry = manager.get_entry("/downloads/Movie.mkv")
+    assert entry.speed == 2_000_000
+    assert entry.eta == 0

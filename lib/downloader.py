@@ -3,6 +3,7 @@ import os
 import ssl
 import threading
 import re
+import time
 from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl, unquote, urlparse
 from lib.utils.general.utils import set_pluging_category, supported_video_extensions
@@ -10,6 +11,7 @@ from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     apply_section_view,
     action_url_run,
+    build_url,
     bytes_to_human_readable,
     get_setting,
     kodilog,
@@ -20,7 +22,9 @@ from lib.utils.kodi.utils import (
     translation,
 )
 from lib.db.cached import MemoryCache
+from lib.download_manager import DownloadManager
 from lib.gui.custom_progress import CustomProgressDialog
+from lib.nav.debrid import resolve_cloud_download_url
 
 from xbmcplugin import (
     addDirectoryItems,
@@ -51,6 +55,49 @@ def handle_download_file(params):
     )
     cancel_flag_cache.set(cancel_key, downloader.is_cancelled)
     downloader.run()
+
+
+def download_cloud_file(params):
+    url = params.get("url", "")
+    filename = params.get("filename", "")
+    mode = params.get("mode", "movie")
+    debrid_type = params.get("debrid_type", "")
+
+    if not url and debrid_type == "TB":
+        url = resolve_cloud_download_url({
+            "debrid_type": debrid_type,
+            "torrent_id": params.get("torrent_id", ""),
+            "file_id": params.get("file_id", ""),
+        })
+
+    if not url:
+        notification("Download link unavailable.")
+        return
+
+    dest_data = {"title": filename, "mode": "movies" if mode in ("movie", "movies") else mode}
+    destination = get_destination_path(dest_data)
+    if not destination or not os.path.exists(destination):
+        notification("Invalid download destination.")
+        return
+
+    file_name = normalize_file_name(filename, url)
+    dest_path = os.path.join(destination, file_name)
+
+    manager = DownloadManager()
+    entry = manager.register(name=file_name, dest_path=dest_path, url=url)
+    if entry is None:
+        notification("Download already in progress.")
+        return
+
+    downloader = Downloader(
+        url=url,
+        destination=destination,
+        name=file_name,
+        registry_id=dest_path,
+    )
+    thread = downloader.run()
+    if thread:
+        manager.set_thread(dest_path, thread)
 
 
 def get_destination_path(data):
@@ -120,10 +167,14 @@ class Downloader:
         url: str,
         destination: str,
         name: str,
+        registry_id: str = None,
+        show_progress: bool = True,
     ):
         self.url = url
         self.destination = destination
         self.name = name
+        self.registry_id = registry_id
+        self.show_progress = show_progress
         self.headers = {}
         self.file_size = 0
         self.monitor = xbmc.Monitor()
@@ -132,26 +183,71 @@ class Downloader:
         self.dest_path = os.path.join(destination, name)
         self.temp_path = self.dest_path + ".part"
         self.meta_path = self.dest_path + ".jacktook.json"
+        self._start_time = None
 
-    def _write_metadata(self, status: str, progress: int = 0):
+    def _write_metadata(self, status: str, progress: int = 0, size: int = 0, downloaded: int = 0, speed: int = 0, eta: int = 0):
         try:
             meta = {
                 "title": self.name,
                 "url": self.url,
                 "status": status,
                 "progress": progress,
+                "size": size,
+                "downloaded": downloaded,
+                "speed": speed,
+                "eta": eta,
             }
             with open(self.meta_path, "w") as f:
                 json.dump(meta, f)
         except Exception as e:
             kodilog(f"[Downloader] Failed to write metadata: {str(e)}")
 
+    def _update_registry(self, downloaded: int, percent: int):
+        if not self.registry_id:
+            return
+        speed = 0
+        eta = 0
+        if self._start_time is not None:
+            elapsed = time.time() - self._start_time
+            if elapsed > 0:
+                speed = int(downloaded / elapsed)
+            remaining = self.file_size - downloaded
+            if speed > 0 and remaining > 0:
+                eta = int(remaining / speed)
+            else:
+                eta = 0
+        DownloadManager().update_progress(
+            self.registry_id,
+            downloaded=downloaded,
+            speed=speed,
+            eta=eta,
+            progress=percent,
+            size=self.file_size,
+        )
+
+    def _set_registry_status(self, status: str):
+        if not self.registry_id:
+            return
+        DownloadManager().set_status(self.registry_id, status)
+
+    def _is_cancelled(self):
+        if self.progress_handler and self.progress_handler.cancelled():
+            return True
+        if cancel_flag_cache.get(self.dest_path) is True:
+            return True
+        if self.registry_id:
+            entry = DownloadManager().get_entry(self.registry_id)
+            if entry and entry.cancel_flag:
+                return True
+        return False
+
     def run(self):
         if not self.url:
             notification("No URL provided for download.")
-            return
+            return None
         thread = threading.Thread(target=self._run, daemon=True)
         thread.start()
+        return thread
 
     def _run(self):
         self._prepare_url()
@@ -191,8 +287,13 @@ class Downloader:
         downloaded = 0
         file_mode = "wb"
 
-        self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+        if self.show_progress:
+            self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+        else:
+            self.progress_handler = ProgressHandler()
         self._write_metadata("downloading", 0)
+        self._set_registry_status("downloading")
+        self._start_time = time.time()
 
         try:
             # Resume support — check temp file
@@ -206,6 +307,7 @@ class Downloader:
                     if xbmcvfs.exists(self.temp_path):
                         xbmcvfs.rename(self.temp_path, self.dest_path)
                     self._write_metadata("completed", 100)
+                    self._set_registry_status("completed")
                     notification(f"File already downloaded: {self.name}")
                     return
 
@@ -214,6 +316,7 @@ class Downloader:
                 downloaded = os.path.getsize(self.dest_path)
                 if downloaded >= self.file_size:
                     self._write_metadata("completed", 100)
+                    self._set_registry_status("completed")
                     notification(f"File already downloaded: {self.name}")
                     return
 
@@ -243,15 +346,14 @@ class Downloader:
                         f"{self.name} - {percent}% - {bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
                     )
                     self._write_metadata("downloading", percent)
+                    self._update_registry(downloaded, percent)
 
                     # Handle cancellation
-                    if (
-                        self.progress_handler.cancelled()
-                        or cancel_flag_cache.get(self.dest_path) is True
-                    ):
+                    if self._is_cancelled():
                         cancel_flag_cache.set(self.dest_path, True)
                         self.is_cancelled = True
                         self._write_metadata("paused", percent)
+                        self._set_registry_status("paused")
                         file.close()
                         break
 
@@ -268,8 +370,10 @@ class Downloader:
                     if xbmcvfs.exists(self.temp_path):
                         xbmcvfs.rename(self.temp_path, self.dest_path)
                     self._write_metadata("completed", 100)
+                    self._set_registry_status("completed")
                     notification(f"Download completed: {self.name}")
         except Exception as e:
+            self._set_registry_status("error")
             notification(f"Download error: {str(e)}")
         finally:
             self.progress_handler.close()
@@ -284,7 +388,7 @@ def handle_cancel_download(params):
         notification("No active download found.")
 
 
-def handle_pause_download(params):
+def handle_pause_download(params, refresh=True):
     file_path = json.loads(params.get("file_path"))
     if file_path:
         # Derive final path (strip .part if present)
@@ -300,7 +404,8 @@ def handle_pause_download(params):
                     json.dump(meta, f)
         except Exception as e:
             kodilog(f"[Downloader] Failed to update pause metadata: {str(e)}")
-        xbmc.executebuiltin("Container.Refresh")
+        if refresh:
+            xbmc.executebuiltin("Container.Refresh")
     else:
         notification("No active download found.")
 
@@ -431,6 +536,15 @@ def downloads_viewer(params):
                 info_tag = list_item.getVideoInfoTag()
                 info_tag.setTitle(display_name)
                 info_tag.setMediaType("file")
+
+                # Make completed files playable directly via plugin URL
+                if status == "completed" and not item.endswith(".part"):
+                    play_url = build_url("play_url", url=item_path, name=display_name)
+                    list_item.setProperty("IsPlayable", "true")
+                    list_item.setPath(play_url)
+                else:
+                    list_item.setProperty("IsPlayable", "false")
+
                 context_menu = []
 
                 if status == "downloading":
@@ -476,7 +590,14 @@ def downloads_viewer(params):
 
                 list_item.addContextMenuItems(context_menu)
                 is_folder = False
-            item_list.append((item_path, list_item, is_folder))
+
+                # Use plugin URL for playable completed files so Kodi routes
+                # them through play_url for proper resolution
+                if status == "completed" and not item.endswith(".part"):
+                    listing_url = build_url("play_url", url=item_path, name=display_name)
+                else:
+                    listing_url = item_path
+            item_list.append((listing_url, list_item, is_folder))
 
         addDirectoryItems(ADDON_HANDLE, item_list)
         endOfDirectory(ADDON_HANDLE)

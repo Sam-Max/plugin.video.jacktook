@@ -4250,3 +4250,67 @@ msgstr ""
 msgctxt "#90790"
 msgid "Display a notification when widgets are refreshed"
 msgstr ""
+
+msgctxt "#90791"
+msgid "Download to Device"
+msgstr ""
+
+msgctxt "#90792"
+msgid "Download Manager"
+msgstr ""
+
+msgctxt "#90793"
+msgid "No active downloads"
+msgstr ""
+
+msgctxt "#90794"
+msgid "Progress"
+msgstr ""
+
+msgctxt "#90795"
+msgid "Speed"
+msgstr ""
+
+msgctxt "#90796"
+msgid "ETA"
+msgstr ""
+
+msgctxt "#90797"
+msgid "Size"
+msgstr ""
+
+msgctxt "#90798"
+msgid "Pause"
+msgstr ""
+
+msgctxt "#90799"
+msgid "Resume"
+msgstr ""
+
+msgctxt "#90800"
+msgid "Cancel"
+msgstr ""
+
+msgctxt "#90801"
+msgid "Delete"
+msgstr ""
+
+msgctxt "#90802"
+msgid "Clear Completed"
+msgstr ""
+
+msgctxt "#90803"
+msgid "Download not yet completed"
+msgstr ""
+
+msgctxt "#90804"
+msgid "File not found"
+msgstr ""
+
+msgctxt "#90805"
+msgid "Download Manager"
+msgstr ""
+
+msgctxt "#90806"
+msgid "My Downloads"
+msgstr ""
