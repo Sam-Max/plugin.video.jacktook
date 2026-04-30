@@ -52,7 +52,12 @@ def test_handle_download_file_passes_url_to_normalizer():
         downloader, "normalize_file_name", return_value="Movie.mkv"
     ) as normalize_file_name, patch.object(
         downloader, "Downloader", return_value=downloader_instance
-    ) as downloader_cls, patch.object(downloader.cancel_flag_cache, "set") as cache_set:
+    ) as downloader_cls, patch.object(
+        downloader, "DownloadManager"
+    ) as mock_manager_cls, patch.object(downloader.cancel_flag_cache, "set") as cache_set:
+        mock_manager = MagicMock()
+        mock_manager.register.return_value = MagicMock()
+        mock_manager_cls.return_value = mock_manager
         downloader.handle_download_file(
             {
                 "destination": "/downloads",
@@ -66,6 +71,7 @@ def test_handle_download_file_passes_url_to_normalizer():
         url="https://example.com/Movie.mkv",
         destination="/downloads",
         name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
     )
     cache_set.assert_called_once_with("/downloads/Movie.mkv", False)
     downloader_instance.run.assert_called_once_with()

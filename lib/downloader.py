@@ -45,16 +45,26 @@ def handle_download_file(params):
         return
 
     file_name = normalize_file_name(params.get("file_name", ""), params.get("url", ""))
-    cancel_key = os.path.join(destination, file_name)
+    dest_path = os.path.join(destination, file_name)
+    cancel_key = dest_path
     kodilog(f"Setting cancel event cache key: {cancel_key}")
+
+    manager = DownloadManager()
+    entry = manager.register(name=file_name, dest_path=dest_path, url=params.get("url", ""))
+    if entry is None:
+        notification("Download already in progress.")
+        return
 
     downloader = Downloader(
         url=params.get("url"),
         destination=destination,
         name=file_name,
+        registry_id=dest_path,
     )
     cancel_flag_cache.set(cancel_key, downloader.is_cancelled)
-    downloader.run()
+    thread = downloader.run()
+    if thread:
+        manager.set_thread(dest_path, thread)
 
 
 def download_cloud_file(params):
