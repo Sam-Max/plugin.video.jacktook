@@ -1,90 +1,143 @@
 <window type="dialog" id="12000">
     <coordinates>
-        <left>600</left>
-        <top>400</top>
-        <width>800</width>
-        <height>300</height>
+        <left>460</left>
+        <top>320</top>
+        <width>1000</width>
+        <height>440</height>
     </coordinates>
-    <defaultcontrol always="true">12005</defaultcontrol>
+    <defaultcontrol always="true">12003</defaultcontrol>
     <animation type="WindowOpen" reversible="false">
-        <effect type="zoom" start="80" end="100" center="50%,50%" delay="160" tween="back" time="240"/>
-        <effect type="fade" delay="160" end="100" time="240"/>
+        <effect type="fade" start="0" end="100" time="200" />
     </animation>
     <animation type="WindowClose" reversible="false">
-        <effect type="zoom" start="100" end="80" center="50%,50%" easing="in" tween="back" time="240"/>
-        <effect type="fade" start="100" end="0" time="240"/>
+        <effect type="fade" start="100" end="0" time="200" />
     </animation>
-    <depth>0.40</depth>
     <controls>
+        <!-- Card background -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1000</width>
+            <height>440</height>
+            <texture border="20">circle.png</texture>
+            <colordiffuse>FF1A1A1A</colordiffuse>
+        </control>
+
+        <!-- Accent bar -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1000</width>
+            <height>4</height>
+            <texture>white.png</texture>
+            <colordiffuse>FF00559D</colordiffuse>
+        </control>
+
         <control type="group">
-            <width>800</width>
-            <height>300</height>
-            <control type="image">
-                <width>800</width>
-                <height>300</height>
-                <texture border="30">circle.png</texture>
-                <colordiffuse>CC000000</colordiffuse>
-            </control>
+            <left>40</left>
+            <top>25</top>
+            <width>920</width>
+            <height>390</height>
+
+            <!-- Title -->
             <control type="label" id="12001">
-                <top>30</top>
-                <width>780</width>
-                <height>40</height>
+                <top>0</top>
+                <width>920</width>
+                <height>35</height>
                 <align>center</align>
-                <font>font14</font>
+                <font>font30_title</font>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
             </control>
+
+            <!-- File name -->
             <control type="label" id="12002">
-                <top>80</top>
-                <width>780</width>
-                <height>60</height>
+                <top>40</top>
+                <width>920</width>
+                <height>50</height>
                 <align>center</align>
-                <font>font12</font>
-                <textcolor>white</textcolor>
+                <font>font14</font>
+                <textcolor>EEEEEE</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
                 <wrapmultiline>true</wrapmultiline>
             </control>
+
+            <!-- Big percentage -->
+            <control type="label" id="12006">
+                <top>100</top>
+                <width>920</width>
+                <height>70</height>
+                <align>center</align>
+                <font>font48</font>
+                <textcolor>FFFFD700</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+                <label>0%</label>
+            </control>
+
+            <!-- Details row -->
+            <control type="label" id="12007">
+                <top>175</top>
+                <left>0</left>
+                <width>455</width>
+                <height>25</height>
+                <align>left</align>
+                <font>font12</font>
+                <textcolor>CCCCCC</textcolor>
+                <label> </label>
+            </control>
+            <control type="label" id="12008">
+                <top>175</top>
+                <left>465</left>
+                <width>455</width>
+                <height>25</height>
+                <align>right</align>
+                <font>font12</font>
+                <textcolor>CCCCCC</textcolor>
+                <label> </label>
+            </control>
+
+            <!-- Progress bar -->
             <control type="progress" id="12004">
-                <top>180</top>
-                <left>40</left>
-                <width>720</width>
-                <height>20</height>
+                <top>210</top>
+                <left>0</left>
+                <width>920</width>
+                <height>24</height>
                 <info>percentage</info>
             </control>
-            <control type="grouplist" orientation="horizontal">
-                <orientation>horizontal</orientation>
-                <top>220</top>
-                <left>200</left>
-                <itemgap>100</itemgap> <!-- Adjust spacing between buttons -->
-                <!-- Cancel Button -->
+
+            <!-- Buttons -->
+            <control type="group">
+                <top>250</top>
+                <left>0</left>
+                <width>920</width>
+                <height>50</height>
+                <!-- Cancel -->
                 <control type="button" id="12003">
-                    <width>auto</width>
-                    <height>56</height>
-                    <label>Cancel</label>
+                    <left>140</left>
+                    <width>260</width>
+                    <height>50</height>
+                    <label>$ADDON[plugin.video.jacktook 90800]</label>
                     <align>center</align>
-                    <textoffsetx>20</textoffsetx>
-                    <font>font14</font>
+                    <font>font13</font>
                     <textcolor>DDFFFFFF</textcolor>
                     <focusedcolor>EEFFFFFF</focusedcolor>
-                    <selectedcolor>DDFFFFFF</selectedcolor>
-                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
-                    <pulseonselect>no</pulseonselect>
+                    <texturefocus border="20" colordiffuse="FFB22222">circle.png</texturefocus>
+                    <texturenofocus border="20" colordiffuse="66000000">circle.png</texturenofocus>
+                    <onright>12005</onright>
                 </control>
-                <!-- Close Button -->
+                <!-- Close -->
                 <control type="button" id="12005">
-                    <width>auto</width>
-                    <height>56</height>
-                    <label>Close</label>
+                    <left>520</left>
+                    <width>260</width>
+                    <height>50</height>
+                    <label>$ADDON[plugin.video.jacktook 90808]</label>
                     <align>center</align>
-                    <textoffsetx>20</textoffsetx>
-                    <font>font14</font>
+                    <font>font13</font>
                     <textcolor>DDFFFFFF</textcolor>
                     <focusedcolor>EEFFFFFF</focusedcolor>
-                    <selectedcolor>DDFFFFFF</selectedcolor>
-                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
-                    <pulseonselect>no</pulseonselect>
+                    <texturefocus border="20" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="20" colordiffuse="66000000">circle.png</texturenofocus>
+                    <onleft>12003</onleft>
                 </control>
             </control>
         </control>

@@ -77,6 +77,9 @@ _DOWNLOAD_ACTIONS = frozenset(
         "handle_delete_file",
         "downloads_menu",
         "resume_download",
+        "download_cloud_file",
+        "open_download_manager",
+        "downloads_viewer",
     }
 )
 
@@ -537,6 +540,8 @@ def _route_downloads(action, params):
         "handle_pause_download",
         "handle_delete_file",
         "resume_download",
+        "download_cloud_file",
+        "downloads_viewer",
     ):
         from lib.downloader import (
             download_video,
@@ -545,6 +550,8 @@ def _route_downloads(action, params):
             handle_pause_download,
             handle_delete_file,
             resume_download,
+            download_cloud_file,
+            downloads_viewer,
         )
 
         actions = {
@@ -554,12 +561,18 @@ def _route_downloads(action, params):
             "handle_pause_download": handle_pause_download,
             "handle_delete_file": handle_delete_file,
             "resume_download": resume_download,
+            "download_cloud_file": download_cloud_file,
+            "downloads_viewer": downloads_viewer,
         }
         actions[action](params)
     elif action == "downloads_menu":
         from lib.navigation import downloads_menu
 
         downloads_menu(params)
+    elif action == "open_download_manager":
+        from lib.navigation import open_download_manager
+
+        open_download_manager(params)
 
 
 def _route_mdblist(action, params):
