@@ -4314,3 +4314,11 @@ msgstr ""
 msgctxt "#90806"
 msgid "My Downloads"
 msgstr ""
+
+msgctxt "#90807"
+msgid "Connecting..."
+msgstr ""
+
+msgctxt "#90808"
+msgid "Close"
+msgstr ""

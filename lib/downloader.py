@@ -152,7 +152,7 @@ def download_video(params):
 
 
 class ProgressHandler:
-    def update(self, percent: int, message: str):
+    def update(self, percent: int, message: str, downloaded_str: str = "", size_str: str = "", speed_str: str = "", eta_str: str = ""):
         pass
 
     def cancelled(self) -> bool:
@@ -167,8 +167,8 @@ class KodiProgressHandler(ProgressHandler):
         self.dialog = CustomProgressDialog("custom_progress_dialog.xml", addon_path)
         self.dialog.show_dialog()
 
-    def update(self, percent: int, message: str):
-        self.dialog.update_progress(percent, message)
+    def update(self, percent: int, message: str, downloaded_str: str = "", size_str: str = "", speed_str: str = "", eta_str: str = ""):
+        self.dialog.update_progress(percent, message, downloaded_str, size_str, speed_str, eta_str)
 
     def cancelled(self) -> bool:
         return self.dialog.cancelled
@@ -266,9 +266,17 @@ class Downloader:
         return thread
 
     def _run(self):
+        # Show progress dialog immediately, before network calls
+        if self.show_progress:
+            self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+            self.progress_handler.update(0, translation(90807))
+        else:
+            self.progress_handler = ProgressHandler()
+
         self._prepare_url()
         if not self._validate_url():
             notification("Invalid URL for download.")
+            self.progress_handler.close()
             return
         self._start_download()
 
@@ -303,10 +311,13 @@ class Downloader:
         downloaded = 0
         file_mode = "wb"
 
-        if self.show_progress:
-            self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
-        else:
-            self.progress_handler = ProgressHandler()
+        # Ensure progress handler exists (may already be set by _run)
+        if self.progress_handler is None:
+            if self.show_progress:
+                self.progress_handler = KodiProgressHandler("Downloading", ADDON_PATH)
+            else:
+                self.progress_handler = ProgressHandler()
+
         self._write_metadata("downloading", 0)
         self._set_registry_status("downloading")
         self._start_time = time.time()
@@ -357,9 +368,35 @@ class Downloader:
                     else:
                         percent = 0
 
+                    # Calculate speed and ETA for progress display
+                    speed_str = ""
+                    eta_str = ""
+                    if self._start_time is not None:
+                        elapsed = time.time() - self._start_time
+                        if elapsed > 0:
+                            speed = int(downloaded / elapsed)
+                            speed_str = f"{bytes_to_human_readable(speed)}/s"
+                            remaining = self.file_size - downloaded
+                            if speed > 0 and remaining > 0:
+                                eta_secs = int(remaining / speed)
+                                eta_mins, eta_secs = divmod(eta_secs, 60)
+                                eta_hrs, eta_mins = divmod(eta_mins, 60)
+                                if eta_hrs:
+                                    eta_str = f"{eta_hrs}h {eta_mins}m"
+                                elif eta_mins:
+                                    eta_str = f"{eta_mins}m {eta_secs}s"
+                                else:
+                                    eta_str = f"{eta_secs}s"
+                            else:
+                                eta_str = ""
+
                     self.progress_handler.update(
                         percent,
-                        f"{self.name} - {percent}% - {bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
+                        self.name,
+                        f"{bytes_to_human_readable(downloaded)} / {bytes_to_human_readable(self.file_size)}",
+                        f"{percent}%",
+                        speed_str,
+                        eta_str,
                     )
                     self._write_metadata("downloading", percent)
                     self._update_registry(downloaded, percent)
@@ -392,7 +429,8 @@ class Downloader:
             self._set_registry_status("error")
             notification(f"Download error: {str(e)}")
         finally:
-            self.progress_handler.close()
+            if self.progress_handler:
+                self.progress_handler.close()
 
 
 def handle_cancel_download(params):
