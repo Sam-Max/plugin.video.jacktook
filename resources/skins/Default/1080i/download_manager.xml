@@ -61,13 +61,32 @@
             <!-- Title -->
             <control type="label">
                 <top>0</top>
-                <width>1200</width>
+                <width>1100</width>
                 <height>50</height>
                 <align>center</align>
                 <font>font30_title</font>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
                 <label>$ADDON[plugin.video.jacktook 90792]</label>
+            </control>
+
+            <!-- Close Button -->
+            <control type="button" id="14008">
+                <left>1120</left>
+                <top>0</top>
+                <width>80</width>
+                <height>50</height>
+                <label>X</label>
+                <align>center</align>
+                <font>font13</font>
+                <textcolor>99FFFFFF</textcolor>
+                <focusedcolor>EEFFFFFF</focusedcolor>
+                <texturefocus border="15" colordiffuse="FFB22222">circle.png</texturefocus>
+                <texturenofocus border="15" colordiffuse="66000000">circle.png</texturenofocus>
+                <onleft>14001</onleft>
+                <onright>14001</onright>
+                <ondown>14001</ondown>
+                <onup>14001</onup>
             </control>
 
             <!-- Empty message -->

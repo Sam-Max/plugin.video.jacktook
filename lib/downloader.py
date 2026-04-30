@@ -41,22 +41,25 @@ cancel_flag_cache = MemoryCache()
 def handle_download_file(params):
     destination = params.get("destination")
     if not destination or not os.path.exists(destination):
+        kodilog(f"[Downloader] Invalid download destination: {destination}")
         notification("Invalid download destination.")
         return
 
-    file_name = normalize_file_name(params.get("file_name", ""), params.get("url", ""))
+    url = params.get("url", "")
+    file_name = normalize_file_name(params.get("file_name", ""), url)
     dest_path = os.path.join(destination, file_name)
     cancel_key = dest_path
-    kodilog(f"Setting cancel event cache key: {cancel_key}")
+    kodilog(f"[Downloader] handle_download_file: file_name={file_name}, dest_path={dest_path}, url_length={len(url)}")
 
     manager = DownloadManager()
-    entry = manager.register(name=file_name, dest_path=dest_path, url=params.get("url", ""))
+    entry = manager.register(name=file_name, dest_path=dest_path, url=url)
     if entry is None:
+        kodilog(f"[Downloader] Download already in progress: {dest_path}")
         notification("Download already in progress.")
         return
 
     downloader = Downloader(
-        url=params.get("url"),
+        url=url,
         destination=destination,
         name=file_name,
         registry_id=dest_path,
@@ -65,6 +68,9 @@ def handle_download_file(params):
     thread = downloader.run()
     if thread:
         manager.set_thread(dest_path, thread)
+        kodilog(f"[Downloader] Download thread started for: {dest_path}")
+    else:
+        kodilog(f"[Downloader] Failed to start download thread for: {dest_path}")
 
 
 def download_cloud_file(params):

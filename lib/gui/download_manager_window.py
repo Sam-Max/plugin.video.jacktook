@@ -180,6 +180,11 @@ class DownloadManagerWindow(BaseWindow):
             self._rebuild_list()
             return
 
+        if control_id == 14008:
+            self._closed = True
+            self.close()
+            return
+
         if control_id == 14007:
             self._clear_completed()
             execute_builtin("SendClick(14000,14002)")
