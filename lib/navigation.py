@@ -1070,7 +1070,29 @@ def download(magnet, type):
 
 
 def downloads_menu(params):
-    downloads_viewer(params)
+    set_pluging_category(translation(90015))
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("downloads_viewer"),
+        build_list_item(translation(90806), "download2.png"),
+        isFolder=True,
+    )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("open_download_manager"),
+        build_list_item(translation(90805), "download2.png"),
+        isFolder=False,
+    )
+    end_of_directory(cache=False)
+    apply_section_view("view.main")
+
+
+def open_download_manager(params):
+    from lib.gui.download_manager_window import DownloadManagerWindow
+
+    window = DownloadManagerWindow("download_manager.xml", ADDON_PATH)
+    window.doModal()
+    del window
 
 
 def addon_update(params):

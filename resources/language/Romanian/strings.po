@@ -4250,3 +4250,87 @@ msgstr "Afișați notificarea de reîmprospătare"
 msgctxt "#90790"
 msgid "Display a notification when widgets are refreshed"
 msgstr "Afișați o notificare când widget-urile sunt reîmprospătate"
+
+msgctxt "#90791"
+msgid "Download to Device"
+msgstr "Descarcă pe dispozitiv"
+
+msgctxt "#90792"
+msgid "Download Manager"
+msgstr "Manager de descărcări"
+
+msgctxt "#90793"
+msgid "No active downloads"
+msgstr "Nicio descărcare activă"
+
+msgctxt "#90794"
+msgid "Progress"
+msgstr "Progres"
+
+msgctxt "#90795"
+msgid "Speed"
+msgstr "Viteză"
+
+msgctxt "#90796"
+msgid "ETA"
+msgstr "Timp rămas"
+
+msgctxt "#90797"
+msgid "Size"
+msgstr "Dimensiune"
+
+msgctxt "#90798"
+msgid "Pause"
+msgstr "Pauză"
+
+msgctxt "#90799"
+msgid "Resume"
+msgstr "Relua"
+
+msgctxt "#90800"
+msgid "Cancel"
+msgstr "Anulare"
+
+msgctxt "#90801"
+msgid "Delete"
+msgstr "Șterge"
+
+msgctxt "#90802"
+msgid "Clear Completed"
+msgstr "Șterge completate"
+
+msgctxt "#90803"
+msgid "Download not yet completed"
+msgstr "Descărcarea nu este încă finalizată"
+
+msgctxt "#90804"
+msgid "File not found"
+msgstr "Fișier negăsit"
+
+msgctxt "#90805"
+msgid "Download Manager"
+msgstr "Manager de descărcări"
+
+msgctxt "#90806"
+msgid "My Downloads"
+msgstr "Descărcările mele"
+
+msgctxt "#90807"
+msgid "Connecting..."
+msgstr "Se conectează..."
+
+msgctxt "#90808"
+msgid "Close"
+msgstr "Închide"
+
+msgctxt "#90809"
+msgid "Delete download?"
+msgstr "Ștergeți descărcarea?"
+
+msgctxt "#90810"
+msgid "This will permanently delete the downloaded file. Are you sure?"
+msgstr "Acest lucru va șterge permanent fișierul descărcat. Sunteți sigur?"
+
+msgctxt "#90811"
+msgid "Completed"
+msgstr "Finalizat"

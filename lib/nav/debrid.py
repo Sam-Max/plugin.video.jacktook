@@ -27,6 +27,7 @@ from lib.utils.general.utils import (
     IndexerType,
     build_list_item,
     check_debrid_enabled,
+    get_public_ip,
     get_random_color,
     set_pluging_category,
 )
@@ -199,16 +200,31 @@ def get_rd_downloads(params):
         downloads, key=lambda item: str(item.get("filename", "")), reverse=False
     )
     for download in sorted_downloads:
+        filename = download.get("filename", "")
         torrent_li = build_list_item(
-            f"{formatted_type} - {download.get('filename')}", "download.png"
+            f"{formatted_type} - {filename}", "download.png"
         )
         torrent_li.setProperty("IsPlayable", "true")
+        direct_url = download.get("download", "")
+        context_menu = [
+            (
+                translation(90791),
+                action_url_run(
+                    "download_cloud_file",
+                    url=direct_url,
+                    filename=filename,
+                    mode="movie",
+                    debrid_type=debrid_type,
+                ),
+            )
+        ]
+        torrent_li.addContextMenuItems(context_menu)
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "play_info_hash",
-                url=download.get("download"),
-                title=download.get("filename"),
+                url=direct_url,
+                title=filename,
                 debrid_type=debrid_type,
             ),
             torrent_li,
@@ -258,16 +274,31 @@ def get_tb_downloads(params):
     ) if params.get("debug") else None
 
     for download in sorted_downloads:
+        name = download.get("name", "")
         torrent_li = build_list_item(
-            f"{formatted_type} - {download.get('name')}", "download.png"
+            f"{formatted_type} - {name}", "download.png"
         )
         torrent_li.setProperty("IsPlayable", "true")
+        context_menu = [
+            (
+                translation(90791),
+                action_url_run(
+                    "download_cloud_file",
+                    torrent_id=download.get("torrent_id", ""),
+                    file_id=download.get("file_id", ""),
+                    filename=name,
+                    mode="movie",
+                    debrid_type=debrid_type,
+                ),
+            )
+        ]
+        torrent_li.addContextMenuItems(context_menu)
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
                 "play_media",
                 data={
-                    "title": download.get("name"),
+                    "title": name,
                     "url": "",
                     "mode": "movie",
                     "type": IndexerType.DEBRID,
@@ -291,6 +322,35 @@ def download(magnet, debrid_type):
         notification(translation(90424))
         return
     handler(magnet)
+
+
+def resolve_cloud_download_url(data):
+    debrid_type = data.get("debrid_type", "")
+    if debrid_type in ("RD", "RealDebrid"):
+        url = data.get("url", "")
+        return url if url else None
+    elif debrid_type in ("TB", "Torbox"):
+        torrent_id = data.get("torrent_id", "")
+        file_id = data.get("file_id", "")
+        if not torrent_id or not file_id:
+            return None
+        cache_key = f"tb_download_link|{torrent_id}|{file_id}"
+        cached_url = cache.get(cache_key)
+        if cached_url:
+            return cached_url
+        try:
+            response = TorboxHelper().client.create_download_link(
+                torrent_id, file_id, get_public_ip()
+            )
+            if response:
+                url = response.get("data", "")
+                if url:
+                    cache.set(cache_key, url, timedelta(minutes=5))
+                    return url
+        except Exception as e:
+            kodilog(f"[resolve_cloud_download_url] TB link resolution failed: {e}")
+        return None
+    return None
 
 
 def rd_auth(params):

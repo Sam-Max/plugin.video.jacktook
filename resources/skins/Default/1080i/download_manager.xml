@@ -1,0 +1,358 @@
+<window type="dialog" id="14000">
+    <coordinates>
+        <left>0</left>
+        <top>0</top>
+        <width>1920</width>
+        <height>1080</height>
+    </coordinates>
+    <defaultcontrol always="true">14002</defaultcontrol>
+    <animation type="WindowOpen" reversible="false">
+        <effect type="fade" start="0" end="100" time="300" />
+    </animation>
+    <animation type="WindowClose" reversible="false">
+        <effect type="fade" start="100" end="0" time="300" />
+    </animation>
+    <controls>
+        <!-- Background Fanart -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture background="true">$INFO[Window.Property(info.fanart)]</texture>
+            <aspectratio align="center" aligny="center">scale</aspectratio>
+        </control>
+        <!-- Solid dark overlay -->
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture>white.png</texture>
+            <colordiffuse>CC000000</colordiffuse>
+        </control>
+
+        <!-- Main Card Background -->
+        <control type="image">
+            <left>340</left>
+            <top>100</top>
+            <width>1240</width>
+            <height>880</height>
+            <texture border="20">circle.png</texture>
+            <colordiffuse>FF1A1A1A</colordiffuse>
+        </control>
+
+        <!-- Accent Bar (top) -->
+        <control type="image">
+            <left>340</left>
+            <top>100</top>
+            <width>1240</width>
+            <height>4</height>
+            <texture>white.png</texture>
+            <colordiffuse>FF00559D</colordiffuse>
+        </control>
+
+        <control type="group">
+            <left>360</left>
+            <top>120</top>
+            <width>1200</width>
+            <height>840</height>
+
+            <!-- Title -->
+            <control type="label">
+                <top>0</top>
+                <width>1100</width>
+                <height>50</height>
+                <align>center</align>
+                <font>font30_title</font>
+                <textcolor>white</textcolor>
+                <shadowcolor>AA000000</shadowcolor>
+                <label>$ADDON[plugin.video.jacktook 90792]</label>
+            </control>
+
+            <!-- Close Button -->
+            <control type="button" id="14008">
+                <left>1120</left>
+                <top>0</top>
+                <width>80</width>
+                <height>50</height>
+                <label>X</label>
+                <align>center</align>
+                <font>font13</font>
+                <textcolor>99FFFFFF</textcolor>
+                <focusedcolor>EEFFFFFF</focusedcolor>
+                <texturefocus border="15" colordiffuse="FFB22222">circle.png</texturefocus>
+                <texturenofocus border="15" colordiffuse="66000000">circle.png</texturenofocus>
+                <onleft>14001</onleft>
+                <onright>14001</onright>
+                <ondown>14001</ondown>
+                <onup>14001</onup>
+            </control>
+
+            <!-- Empty message -->
+            <control type="label">
+                <top>250</top>
+                <width>1200</width>
+                <height>50</height>
+                <align>center</align>
+                <font>font13</font>
+                <textcolor>EEEEEE</textcolor>
+                <label>$ADDON[plugin.video.jacktook 90793]</label>
+                <visible>String.IsEqual(Window.Property(downloads_empty),true)</visible>
+            </control>
+
+            <!-- Download List -->
+            <control type="list" id="14001">
+                <top>70</top>
+                <left>0</left>
+                <width>1200</width>
+                <height>560</height>
+                <onleft>14003</onleft>
+                <onright>14003</onright>
+                <ondown>14003</ondown>
+                <visible>!String.IsEqual(Window.Property(downloads_empty),true)</visible>
+                <itemlayout height="80">
+                    <control type="image">
+                        <left>5</left>
+                        <top>4</top>
+                        <width>1190</width>
+                        <height>72</height>
+                        <texture border="20">circle.png</texture>
+                        <colordiffuse>2AFFFFFF</colordiffuse>
+                    </control>
+                    <!-- Line 1: Filename -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>6</top>
+                        <width>900</width>
+                        <height>32</height>
+                        <font>font13</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <shadowcolor>AA000000</shadowcolor>
+                        <label>$INFO[ListItem.Property(entry_name)]</label>
+                    </control>
+                    <!-- Line 1 right: Progress % -->
+                    <control type="label">
+                        <left>940</left>
+                        <top>6</top>
+                        <width>240</width>
+                        <height>32</height>
+                        <font>font13</font>
+                        <align>right</align>
+                        <textcolor>FFAAAAAA</textcolor>
+                        <label>$INFO[ListItem.Property(entry_progress)]%</label>
+                    </control>
+                    <!-- Line 2: Speed • ETA • Downloaded/Size -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>38</top>
+                        <width>1160</width>
+                        <height>28</height>
+                        <font>font10</font>
+                        <textcolor>FF999999</textcolor>
+                        <label>$INFO[ListItem.Property(entry_info)]</label>
+                    </control>
+                </itemlayout>
+                <focusedlayout height="80">
+                    <control type="image">
+                        <left>5</left>
+                        <top>4</top>
+                        <width>1190</width>
+                        <height>72</height>
+                        <texture border="20">circle.png</texture>
+                        <colordiffuse>992A3E5C</colordiffuse>
+                    </control>
+                    <!-- Line 1: Filename -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>6</top>
+                        <width>900</width>
+                        <height>32</height>
+                        <font>font13</font>
+                        <textcolor>FFFFFFFF</textcolor>
+                        <shadowcolor>AA000000</shadowcolor>
+                        <label>$INFO[ListItem.Property(entry_name)]</label>
+                    </control>
+                    <!-- Line 1 right: Status badge + progress -->
+                    <control type="label">
+                        <left>940</left>
+                        <top>6</top>
+                        <width>240</width>
+                        <height>32</height>
+                        <font>font13</font>
+                        <align>right</align>
+                        <textcolor>FFFFD700</textcolor>
+                        <label>$INFO[ListItem.Property(entry_progress)]%</label>
+                    </control>
+                    <!-- Line 2: Speed • ETA • Downloaded/Size -->
+                    <control type="label">
+                        <left>20</left>
+                        <top>38</top>
+                        <width>1160</width>
+                        <height>28</height>
+                        <font>font10</font>
+                        <textcolor>FFCCCCCC</textcolor>
+                        <label>$INFO[ListItem.Property(entry_info)]</label>
+                    </control>
+                </focusedlayout>
+            </control>
+
+            <!-- Details Panel -->
+            <control type="group">
+                <top>580</top>
+                <left>0</left>
+                <width>1200</width>
+                <height>120</height>
+                <visible>!String.IsEqual(Window.Property(downloads_empty),true)</visible>
+                <control type="image">
+                    <left>0</left>
+                    <width>1200</width>
+                    <height>120</height>
+                    <texture border="20">circle.png</texture>
+                    <colordiffuse>66000000</colordiffuse>
+                </control>
+                <control type="label">
+                    <left>20</left>
+                    <top>10</top>
+                    <width>580</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$ADDON[plugin.video.jacktook 90794]: $INFO[Window.Property(selected_progress)]%</label>
+                </control>
+                <control type="label">
+                    <left>620</left>
+                    <top>10</top>
+                    <width>580</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$ADDON[plugin.video.jacktook 90795]: $INFO[Window.Property(selected_speed)]</label>
+                </control>
+                <control type="label">
+                    <left>20</left>
+                    <top>50</top>
+                    <width>580</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$ADDON[plugin.video.jacktook 90796]: $INFO[Window.Property(selected_eta)]</label>
+                </control>
+                <control type="label">
+                    <left>620</left>
+                    <top>50</top>
+                    <width>580</width>
+                    <height>30</height>
+                    <font>font13</font>
+                    <textcolor>white</textcolor>
+                    <label>$ADDON[plugin.video.jacktook 90797]: $INFO[Window.Property(selected_size)]</label>
+                </control>
+            </control>
+
+            <!-- Action Buttons -->
+            <control type="group">
+                <top>720</top>
+                <left>0</left>
+                <width>1200</width>
+                <height>60</height>
+                <visible>!String.IsEqual(Window.Property(downloads_empty),true)</visible>
+                <!-- Pause -->
+                <control type="button" id="14003">
+                    <left>0</left>
+                    <width>230</width>
+                    <height>60</height>
+                    <label>$ADDON[plugin.video.jacktook 90798]</label>
+                    <align>center</align>
+                    <font>font13</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <onleft>14007</onleft>
+                    <onright>14004</onright>
+                    <onup>14001</onup>
+                    <ondown>14001</ondown>
+                </control>
+                <!-- Resume -->
+                <control type="button" id="14004">
+                    <left>240</left>
+                    <width>230</width>
+                    <height>60</height>
+                    <label>$ADDON[plugin.video.jacktook 90799]</label>
+                    <align>center</align>
+                    <font>font13</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <onleft>14003</onleft>
+                    <onright>14005</onright>
+                    <onup>14001</onup>
+                    <ondown>14001</ondown>
+                </control>
+                <!-- Cancel -->
+                <control type="button" id="14005">
+                    <left>480</left>
+                    <width>230</width>
+                    <height>60</height>
+                    <label>$ADDON[plugin.video.jacktook 90800]</label>
+                    <align>center</align>
+                    <font>font13</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <onleft>14004</onleft>
+                    <onright>14006</onright>
+                    <onup>14001</onup>
+                    <ondown>14001</ondown>
+                </control>
+                <!-- Delete -->
+                <control type="button" id="14006">
+                    <left>720</left>
+                    <width>230</width>
+                    <height>60</height>
+                    <label>$ADDON[plugin.video.jacktook 90801]</label>
+                    <align>center</align>
+                    <font>font13</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <onleft>14005</onleft>
+                    <onright>14007</onright>
+                    <onup>14001</onup>
+                    <ondown>14001</ondown>
+                </control>
+                <!-- Clear Completed -->
+                <control type="button" id="14007">
+                    <left>960</left>
+                    <width>240</width>
+                    <height>60</height>
+                    <label>$ADDON[plugin.video.jacktook 90802]</label>
+                    <align>center</align>
+                    <font>font13</font>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>EEFFFFFF</focusedcolor>
+                    <texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
+                    <texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
+                    <onleft>14006</onleft>
+                    <onright>14003</onright>
+                    <onup>14001</onup>
+                    <ondown>14001</ondown>
+                </control>
+            </control>
+
+            <!-- Hidden Refresh Button — must be visible for focus, but 1x1px with no texture -->
+            <control type="button" id="14002">
+                <left>0</left>
+                <top>0</top>
+                <width>1</width>
+                <height>1</height>
+                <texturefocus>-</texturefocus>
+                <texturenofocus>-</texturenofocus>
+                <label></label>
+            </control>
+        </control>
+    </controls>
+</window>

@@ -21,13 +21,22 @@ class CustomProgressDialog(xbmcgui.WindowXMLDialog):
         self.getControl(12001).setLabel(self.title)
         self.getControl(12002).setLabel(self.message)
         self.getControl(12004).setPercent(self.progress)
+        self.getControl(12006).setLabel(f"{self.progress}%")
         self.setFocusId(12003)
 
-    def update_progress(self, percent, message=None):
+    def update_progress(self, percent, message=None, downloaded_str="", size_str="", speed_str="", eta_str=""):
         self.progress = percent
-        self.getControl(12004).setPercent(percent)
-        if message:
-            self.getControl(12002).setLabel(message)
+        try:
+            self.getControl(12004).setPercent(percent)
+            self.getControl(12006).setLabel(f"{percent}%")
+            if message:
+                self.getControl(12002).setLabel(message)
+            if downloaded_str:
+                self.getControl(12007).setLabel(downloaded_str)
+            if speed_str:
+                self.getControl(12008).setLabel(f"{speed_str}  |  {eta_str}")
+        except Exception as e:
+            kodilog(f"[CustomProgressDialog] Update error: {e}")
 
     def onClick(self, controlId):
         if controlId == 12003:  # Cancel button
