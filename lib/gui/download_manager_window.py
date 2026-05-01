@@ -11,7 +11,7 @@ from lib.download_manager import DownloadManager
 from lib.downloader import Downloader, cancel_flag_cache, get_download_metadata, handle_pause_download, resume_download
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.settings import get_setting as _get_setting
-from lib.utils.kodi.utils import ADDON_PATH, bytes_to_human_readable, execute_builtin, kodilog, translatePath as _translatePath, translation
+from lib.utils.kodi.utils import ADDON_PATH, bytes_to_human_readable, execute_builtin, kodilog, open_file as _open_file, translatePath as _translatePath, translation
 
 
 class DownloadManagerWindow(BaseWindow):
@@ -37,59 +37,69 @@ class DownloadManagerWindow(BaseWindow):
         that downloads started before the window was opened, or organized
         into subfolders, appear in the manager."""
         download_dir = _translatePath(_get_setting("download_dir"))
-        if not download_dir or not os.path.isdir(download_dir):
+        if not download_dir or not xbmcvfs.exists(download_dir):
+            kodilog(f"[DownloadManagerWindow] Download directory not found: {download_dir}")
             return
 
         manager = DownloadManager()
         try:
-            for root, dirs, files in os.walk(download_dir):
-                for filename in files:
-                    if not filename.endswith(".jacktook.json"):
-                        continue
-                    dest_path = os.path.join(root, filename.replace(".jacktook.json", ""))
-                    # Skip .part files — use the final path
-                    if dest_path.endswith(".part"):
-                        dest_path = dest_path[:-5]
-                    meta = get_download_metadata(dest_path)
-                    if not meta:
-                        continue
-                    status = meta.get("status", "unknown")
-                    progress = meta.get("progress", 0)
-                    url = meta.get("url", "")
-                    name = meta.get("title", os.path.basename(dest_path))
-                    # Only register non-cancelled entries
-                    if status == "cancelled":
-                        continue
-                    entry = manager.get_entry(dest_path)
-                    if entry:
-                        # Update existing entry from disk
-                        manager.set_status(dest_path, status)
-                        manager.update_progress(
-                            dest_path,
-                            downloaded=meta.get("downloaded", 0),
-                            speed=meta.get("speed", 0),
-                            eta=meta.get("eta", 0),
-                            progress=progress,
-                            size=meta.get("size", 0),
-                        )
-                    else:
-                        entry = manager.register(
-                            name=name,
-                            dest_path=dest_path,
-                            url=url,
-                        )
-                        if entry:
-                            manager.set_status(dest_path, status)
-                            manager.update_progress(
-                                dest_path,
-                                downloaded=meta.get("downloaded", 0),
-                                speed=meta.get("speed", 0),
-                                eta=meta.get("eta", 0),
-                                progress=progress,
-                                size=meta.get("size", 0),
-                            )
+            self._walk_and_sync(download_dir, manager)
         except Exception as e:
             kodilog(f"[DownloadManagerWindow] Sync from disk error: {e}")
+
+    def _walk_and_sync(self, directory, manager):
+        """Recursively walk a directory using xbmcvfs and sync .jacktook.json files."""
+        dirs, files = xbmcvfs.listdir(directory)
+        for filename in files:
+            filename = filename.decode("utf-8") if isinstance(filename, bytes) else filename
+            if not filename.endswith(".jacktook.json"):
+                continue
+            dest_path = os.path.join(directory, filename.replace(".jacktook.json", ""))
+            # Skip .part files — use the final path
+            if dest_path.endswith(".part"):
+                dest_path = dest_path[:-5]
+            meta = get_download_metadata(dest_path)
+            if not meta:
+                continue
+            status = meta.get("status", "unknown")
+            progress = meta.get("progress", 0)
+            url = meta.get("url", "")
+            name = meta.get("title", os.path.basename(dest_path))
+            # Only register non-cancelled entries
+            if status == "cancelled":
+                continue
+            entry = manager.get_entry(dest_path)
+            if entry:
+                # Update existing entry from disk
+                manager.set_status(dest_path, status)
+                manager.update_progress(
+                    dest_path,
+                    downloaded=meta.get("downloaded", 0),
+                    speed=meta.get("speed", 0),
+                    eta=meta.get("eta", 0),
+                    progress=progress,
+                    size=meta.get("size", 0),
+                )
+            else:
+                entry = manager.register(
+                    name=name,
+                    dest_path=dest_path,
+                    url=url,
+                )
+                if entry:
+                    manager.set_status(dest_path, status)
+                    manager.update_progress(
+                        dest_path,
+                        downloaded=meta.get("downloaded", 0),
+                        speed=meta.get("speed", 0),
+                        eta=meta.get("eta", 0),
+                        progress=progress,
+                        size=meta.get("size", 0),
+                    )
+        for dirname in dirs:
+            dirname = dirname.decode("utf-8") if isinstance(dirname, bytes) else dirname
+            subdir = os.path.join(directory, dirname)
+            self._walk_and_sync(subdir, manager)
 
     def _poll_loop(self):
         last_sync = 0
@@ -322,12 +332,12 @@ class DownloadManagerWindow(BaseWindow):
 
         # Update metadata on disk so a cancelled download doesn't resume on restart
         meta_path = entry_id + ".jacktook.json"
-        if os.path.exists(meta_path):
+        if xbmcvfs.exists(meta_path):
             try:
-                with open(meta_path, "r") as f:
+                with _open_file(meta_path, "r") as f:
                     meta = json.load(f)
                 meta["status"] = "cancelled"
-                with open(meta_path, "w") as f:
+                with _open_file(meta_path, "w") as f:
                     json.dump(meta, f)
             except Exception:
                 pass

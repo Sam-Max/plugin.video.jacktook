@@ -40,10 +40,12 @@ cancel_flag_cache = MemoryCache()
 
 def handle_download_file(params):
     destination = params.get("destination")
-    if not destination or not os.path.exists(destination):
+    if not destination:
         kodilog(f"[Downloader] Invalid download destination: {destination}")
         notification("Invalid download destination.")
         return
+
+    xbmcvfs.mkdirs(destination)
 
     url = params.get("url", "")
     file_name = normalize_file_name(params.get("file_name", ""), url)
@@ -213,7 +215,7 @@ class Downloader:
                 "speed": speed,
                 "eta": eta,
             }
-            with open(self.meta_path, "w") as f:
+            with open_file(self.meta_path, "w") as f:
                 json.dump(meta, f)
         except Exception as e:
             kodilog(f"[Downloader] Failed to write metadata: {str(e)}")
@@ -324,23 +326,24 @@ class Downloader:
 
         try:
             # Resume support — check temp file
-            if os.path.exists(self.temp_path):
-                downloaded = os.path.getsize(self.temp_path)
+            if xbmcvfs.exists(self.temp_path):
+                stat = xbmcvfs.Stat(self.temp_path)
+                downloaded = stat.st_size()
                 if downloaded < self.file_size:
                     self.headers["Range"] = f"bytes={downloaded}-"
                     file_mode = "ab"
                 elif downloaded >= self.file_size:
                     # Temp file is complete but not renamed yet
-                    if xbmcvfs.exists(self.temp_path):
-                        xbmcvfs.rename(self.temp_path, self.dest_path)
+                    xbmcvfs.rename(self.temp_path, self.dest_path)
                     self._write_metadata("completed", 100)
                     self._set_registry_status("completed")
                     notification(f"File already downloaded: {self.name}")
                     return
 
             # Also check if final file already exists
-            if os.path.exists(self.dest_path):
-                downloaded = os.path.getsize(self.dest_path)
+            if xbmcvfs.exists(self.dest_path):
+                stat = xbmcvfs.Stat(self.dest_path)
+                downloaded = stat.st_size()
                 if downloaded >= self.file_size:
                     self._write_metadata("completed", 100)
                     self._set_registry_status("completed")
@@ -450,11 +453,11 @@ def handle_pause_download(params, refresh=True):
         cancel_flag_cache.set(final_path, True)
         meta_path = final_path + ".jacktook.json"
         try:
-            if os.path.exists(meta_path):
-                with open(meta_path, "r") as f:
+            if xbmcvfs.exists(meta_path):
+                with open_file(meta_path, "r") as f:
                     meta = json.load(f)
                 meta["status"] = "paused"
-                with open(meta_path, "w") as f:
+                with open_file(meta_path, "w") as f:
                     json.dump(meta, f)
         except Exception as e:
             kodilog(f"[Downloader] Failed to update pause metadata: {str(e)}")
@@ -475,13 +478,13 @@ def resume_download(params):
     temp_path = final_path + ".part"
 
     # Must have at least the temp file or the final file
-    if not os.path.exists(temp_path) and not os.path.exists(final_path):
+    if not xbmcvfs.exists(temp_path) and not xbmcvfs.exists(final_path):
         notification("File not found.")
         return
 
     meta_path = final_path + ".jacktook.json"
     try:
-        with open(meta_path, "r") as f:
+        with open_file(meta_path, "r") as f:
             meta = json.load(f)
     except Exception as e:
         kodilog(f"[Downloader] Failed to read metadata for resume: {str(e)}")
@@ -503,8 +506,8 @@ def get_download_metadata(path):
     meta_path = final_path + ".jacktook.json"
     defaults = {"status": "unknown", "progress": 0, "title": ""}
     try:
-        if os.path.exists(meta_path):
-            with open(meta_path, "r") as f:
+        if xbmcvfs.exists(meta_path):
+            with open_file(meta_path, "r") as f:
                 meta = json.load(f)
             defaults.update(meta)
     except Exception:
@@ -539,19 +542,29 @@ def _count_active_downloads(directory):
     across all subdirectories."""
     count = 0
     try:
-        for root, dirs, files in os.walk(directory):
-            for f in files:
-                if f.endswith(".jacktook.json"):
-                    # Derive the actual download path from the metadata file
-                    download_path = os.path.join(root, f.replace(".jacktook.json", ""))
-                    if download_path.endswith(".part"):
-                        download_path = download_path[:-5]
-                    meta = get_download_metadata(download_path)
-                    status = meta.get("status", "")
-                    if status in ("downloading", "paused"):
-                        count += 1
+        count = _walk_count_active(directory)
     except Exception:
         pass
+    return count
+
+
+def _walk_count_active(directory):
+    """Recursively walk a directory using xbmcvfs and count active downloads."""
+    count = 0
+    dirs, files = xbmcvfs.listdir(directory)
+    for f in files:
+        f = f.decode("utf-8") if isinstance(f, bytes) else f
+        if f.endswith(".jacktook.json"):
+            download_path = os.path.join(directory, f.replace(".jacktook.json", ""))
+            if download_path.endswith(".part"):
+                download_path = download_path[:-5]
+            meta = get_download_metadata(download_path)
+            status = meta.get("status", "")
+            if status in ("downloading", "paused"):
+                count += 1
+    for d in dirs:
+        d = d.decode("utf-8") if isinstance(d, bytes) else d
+        count += _walk_count_active(os.path.join(directory, d))
     return count
 
 

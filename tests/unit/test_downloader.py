@@ -186,7 +186,9 @@ def test_get_download_metadata_reads_existing_json():
         with open(meta_path, "w") as f:
             json.dump({"status": "paused", "progress": 42, "title": "Video"}, f)
 
-        result = downloader.get_download_metadata(path)
+        with patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
+             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
+            result = downloader.get_download_metadata(path)
 
     assert result == {"status": "paused", "progress": 42, "title": "Video"}
 
@@ -202,7 +204,9 @@ def test_handle_pause_download_sets_cancel_flag_and_metadata():
         with open(meta_path, "w") as f:
             json.dump({"status": "downloading", "progress": 50, "title": "Video"}, f)
 
-        with patch.object(downloader.cancel_flag_cache, "set") as cache_set:
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, \
+             patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
+             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
             downloader.handle_pause_download({"file_path": json.dumps(path)})
 
         cache_set.assert_called_once_with(path, True)
@@ -227,9 +231,10 @@ def test_resume_download_clears_flag_and_starts_downloader():
             )
 
         downloader_instance = MagicMock()
-        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, patch.object(
-            downloader, "Downloader", return_value=downloader_instance
-        ) as downloader_cls:
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, \
+             patch.object(downloader, "Downloader", return_value=downloader_instance) as downloader_cls, \
+             patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
+             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
             downloader.resume_download({"file_path": json.dumps(path)})
 
         cache_set.assert_called_once_with(path, False)
