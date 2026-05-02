@@ -4334,3 +4334,15 @@ msgstr "Acest lucru va șterge permanent fișierul descărcat. Sunteți sigur?"
 msgctxt "#90811"
 msgid "Completed"
 msgstr "Finalizat"
+
+msgctxt "#90812"
+msgid "Excluded TMDB Languages"
+msgstr "Limbi excluse TMDB"
+
+msgctxt "#90813"
+msgid "Select languages to exclude"
+msgstr "Selectează limbile de exclus"
+
+msgctxt "#90814"
+msgid "Choose original languages to hide from TMDB listings"
+msgstr "Alege limbile originale de ascuns din listele TMDB"

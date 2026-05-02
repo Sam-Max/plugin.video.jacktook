@@ -3950,3 +3950,15 @@ msgstr "Zagruzhennyy fayl budet udalyon navsegda. Vy uvereny?"
 msgctxt "#90811"
 msgid "Completed"
 msgstr "Zaversheno"
+
+msgctxt "#90812"
+msgid "Excluded TMDB Languages"
+msgstr "Isklyuchennye yazyki TMDB"
+
+msgctxt "#90813"
+msgid "Select languages to exclude"
+msgstr "Vyberite yazyki dlya isklyucheniya"
+
+msgctxt "#90814"
+msgid "Choose original languages to hide from TMDB listings"
+msgstr "Vyberite original'nye yazyki dlya skrytiya iz spiskov TMDB"

@@ -3950,3 +3950,15 @@ msgstr "Isso excluirá permanentemente o arquivo baixado. Tem certeza?"
 msgctxt "#90811"
 msgid "Completed"
 msgstr "Concluído"
+
+msgctxt "#90812"
+msgid "Excluded TMDB Languages"
+msgstr "Idiomas excluídos do TMDB"
+
+msgctxt "#90813"
+msgid "Select languages to exclude"
+msgstr "Selecione os idiomas para excluir"
+
+msgctxt "#90814"
+msgid "Choose original languages to hide from TMDB listings"
+msgstr "Escolha os idiomas originais para ocultar das listagens do TMDB"

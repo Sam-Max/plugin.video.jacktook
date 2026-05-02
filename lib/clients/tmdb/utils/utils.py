@@ -26,6 +26,7 @@ from lib.utils.kodi.utils import (
     action_url_run,
     container_update,
     execute_builtin,
+    get_setting,
     kodilog,
     kodi_play_media,
     translation,
@@ -35,6 +36,7 @@ from lib.utils.general.utils import execute_thread_pool
 from urllib import parse
 
 from lib.db.cached import cache
+import xbmc
 from xbmcplugin import addDirectoryItem
 
 
@@ -737,3 +739,43 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
             container_update(name="settings"),
         ),
     ]
+
+
+def get_excluded_languages():
+    raw = get_setting("excluded_languages", "[]")
+    try:
+        return json.loads(raw) if raw else []
+    except (ValueError, TypeError):
+        return []
+
+
+def filter_excluded_languages(results, force_allow_lang=None):
+    excluded = get_excluded_languages()
+    if not excluded:
+        return results
+
+    input_count = len(results)
+    filtered = []
+    excluded_counts = {}
+
+    for r in results:
+        if isinstance(r, dict):
+            lang = r.get("original_language")
+        else:
+            lang = getattr(r, "original_language", None)
+
+        if lang == force_allow_lang or lang not in excluded:
+            filtered.append(r)
+        else:
+            excluded_counts[lang] = excluded_counts.get(lang, 0) + 1
+
+    output_count = len(filtered)
+    if input_count != output_count:
+        kodilog(
+            f"Excluded language filter: {input_count} -> {output_count} "
+            f"(excluded={excluded}, force_allow={force_allow_lang!r}, "
+            f"removed_by_lang={excluded_counts})",
+            level=xbmc.LOGINFO,
+        )
+
+    return filtered

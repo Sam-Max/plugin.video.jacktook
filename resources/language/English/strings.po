@@ -4334,3 +4334,15 @@ msgstr ""
 msgctxt "#90811"
 msgid "Completed"
 msgstr ""
+
+msgctxt "#90812"
+msgid "Excluded TMDB Languages"
+msgstr ""
+
+msgctxt "#90813"
+msgid "Select languages to exclude"
+msgstr ""
+
+msgctxt "#90814"
+msgid "Choose original languages to hide from TMDB listings"
+msgstr ""

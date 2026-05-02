@@ -3951,3 +3951,15 @@ msgstr "Isto eliminará permanentemente o ficheiro transferido. Tem a certeza?"
 msgctxt "#90811"
 msgid "Completed"
 msgstr "Concluída"
+
+msgctxt "#90812"
+msgid "Excluded TMDB Languages"
+msgstr "Idiomas excluídos do TMDB"
+
+msgctxt "#90813"
+msgid "Select languages to exclude"
+msgstr "Seleciona os idiomas a excluir"
+
+msgctxt "#90814"
+msgid "Choose original languages to hide from TMDB listings"
+msgstr "Escolhe os idiomas originais a ocultar das listagens do TMDB"

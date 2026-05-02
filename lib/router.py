@@ -680,6 +680,11 @@ def _route_source_manager(action, params):
 
 
 def _route_core(action, params):
+    if action == "open_excluded_languages_dialog":
+        from lib.gui.excluded_languages_dialog import open_excluded_languages_dialog
+
+        open_excluded_languages_dialog()
+        return
     if action in ("resolve_for_pack_selection", "resolve_for_subtitles"):
         from lib.actions import resolve_for_pack_selection, resolve_for_subtitles
 

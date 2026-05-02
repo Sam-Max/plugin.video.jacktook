@@ -10,7 +10,7 @@ from lib.clients.tmdb.anime import TmdbAnimeClient
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.api.tmdbv3api.objs.search import Search
-from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
+from lib.clients.tmdb.utils.utils import add_kodi_dir_item, filter_excluded_languages, tmdb_get
 from lib.db.cached import cache
 from lib.utils.general.utils import (
     add_next_button,
@@ -312,6 +312,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
         if results:
             directory_items = []
             for item in results:
@@ -382,6 +383,8 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        if mode != "anime":
+            results = filter_excluded_languages(results)
         if results:
             display_mode = submode if mode == "anime" and submode else mode
             directory_items = []
@@ -443,6 +446,8 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        if mode != "anime":
+            results = filter_excluded_languages(results)
         if results:
             display_mode = submode if mode == "anime" and submode else mode
             directory_items = []
@@ -502,6 +507,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
 
         directory_items = []
         for res in results:
@@ -535,6 +541,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
 
         directory_items = []
         for res in results:
@@ -637,6 +644,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
@@ -679,6 +687,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
@@ -758,6 +767,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results, force_allow_lang=lang)
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
@@ -854,6 +864,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
         directory_items = []
         for res in results:
             tmdb_id = getattr(res, "id", "")
@@ -904,8 +915,10 @@ class TmdbClient(BaseTmdbClient):
                 if air_date and is_this_week(air_date):
                     results.append((getattr(show, "name", ""), show, ep, details))
 
+        trending_results = getattr(trending_data, "results", [])
+        trending_results = filter_excluded_languages(trending_results)
         execute_thread_pool(
-            getattr(trending_data, "results"), fetch_episodes_for_trending_show
+            trending_results, fetch_episodes_for_trending_show
         )
 
         directory_items = []
@@ -1155,6 +1168,7 @@ class TmdbClient(BaseTmdbClient):
             reverse=True,
         )
 
+        results = filter_excluded_languages(results)
         directory_items = []
         for res in results:
             tmdb_id = (
@@ -1233,6 +1247,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
 
         directory_items = []
         for res in results:
@@ -1276,6 +1291,10 @@ class TmdbClient(BaseTmdbClient):
             notification(translation(90400))
             return
 
+        if not tmdb_id:
+            notification(translation(90400))
+            return
+
         effective_mode = mode
         if mode == "multi":
             if media_type == "movie":
@@ -1300,6 +1319,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         results = getattr(data, "results", [])
+        results = filter_excluded_languages(results)
 
         directory_items = []
         for res in results:
