@@ -227,6 +227,7 @@ class Indexer(Enum):
     BURST = "Burst"
     ZILEAN = "Zilean"
     EASYNEWS = "Easynews"
+    EXTERNAL_SCRAPER = "External Scraper"
 
 
 class SearchVariant(Enum):
@@ -281,6 +282,7 @@ torrent_indexers = [
     Indexer.PEERFLIX,
     Indexer.ELHOSTED,
     Indexer.BURST,
+    Indexer.EXTERNAL_SCRAPER,
 ]
 
 

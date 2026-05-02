@@ -100,12 +100,35 @@ def build_easynews_client() -> Optional[object]:
     return Easynews(user, password, timeout, notification)
 
 
+def build_external_scraper_client() -> Optional[object]:
+    from lib.clients.external_scraper import ExternalScraperClient
+    from lib.utils.kodi.utils import kodilog
+    from lib.utils.kodi.utils import set_setting
+
+    kodilog("[ExternalScraper] build_external_scraper_client() called")
+
+    module_id = get_setting("external_scraper_module")
+    if not module_id:
+        return None
+
+    module_display_name = get_setting("external_scraper_module_name") or module_id.split(".")[-1].title()
+    client = ExternalScraperClient(module_id, module_display_name, notification)
+    kodilog(
+        f"[ExternalScraper] initialized={client.initialized}, "
+        f"providers={len(client._providers) if client._providers else 0}"
+    )
+    if not client.initialized:
+        return None
+    return client
+
+
 CLIENT_BUILDERS: Dict[str, Callable[[], Optional[object]]] = {
     Indexer.JACKETT: build_jackett_client,
     Indexer.PROWLARR: build_prowlarr_client,
     Indexer.JACKGRAM: build_jackgram_client,
     Indexer.BURST: build_burst_client,
     Indexer.EASYNEWS: build_easynews_client,
+    Indexer.EXTERNAL_SCRAPER: build_external_scraper_client,
 }
 
 

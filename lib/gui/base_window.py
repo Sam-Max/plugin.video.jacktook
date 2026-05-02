@@ -218,7 +218,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
                 url = torrent_url
 
         # --- Fallback: magnet from url ---
-        if not magnet and url.startswith("magnet:?"):
+        if not magnet and url.startswith("magnet:"):
             magnet, url = url, ""
 
         # --- Fallback: magnet from infoHash ---

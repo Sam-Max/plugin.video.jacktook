@@ -384,7 +384,7 @@ class SourceSelect(BaseWindow):
         if not info_hash and magnet:
             info_hash = get_info_hash_from_magnet(magnet).lower()
 
-        if not info_hash and url.startswith("magnet:?"):
+        if not info_hash and url.startswith("magnet:"):
             info_hash = get_info_hash_from_magnet(url).lower()
 
         if url:

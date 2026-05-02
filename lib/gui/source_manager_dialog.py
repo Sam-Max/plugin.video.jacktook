@@ -16,6 +16,7 @@ BUILTIN_SOURCE_SETTINGS = [
     ("jackgram_enabled", "Jackgram"),
     ("easynews_enabled", "Easynews"),
     ("stremio_enabled", "Stremio"),
+    ("external_scraper_enabled", "External Scraper"),
 ]
 
 CACHE_KEY = "source_manager_selection"
@@ -46,6 +47,11 @@ def open_source_manager_dialog():
         if not get_setting(setting_key):
             continue
 
+        if setting_key == "external_scraper_enabled":
+            module_name = get_setting("external_scraper_module_name")
+            if module_name:
+                display_name = str(module_name)
+
         if setting_key == "stremio_enabled":
             if get_selected_stream_addons is not None:
                 try:
@@ -66,7 +72,8 @@ def open_source_manager_dialog():
         li = xbmcgui.ListItem(label=display_name)
         li.setArt({"icon": icon_path})
         items.append(li)
-        cache_keys.append(display_name)
+        cache_key = display_name
+        cache_keys.append(cache_key)
 
     if not items:
         xbmcgui.Dialog().notification("Jacktook", translation(90756))

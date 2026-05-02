@@ -4346,3 +4346,35 @@ msgstr "Selectează limbile de exclus"
 msgctxt "#90814"
 msgid "Choose original languages to hide from TMDB listings"
 msgstr "Alege limbile originale de ascuns din listele TMDB"
+
+msgctxt "#90300"
+msgid "External Scraper"
+msgstr "Magneto"
+
+msgctxt "#90301"
+msgid "Enable external scraper module integration."
+msgstr "Enable external scraper module integration."
+
+msgctxt "#90302"
+msgid "Choose External Scraper Module"
+msgstr ""
+
+msgctxt "#90303"
+msgid "Select an external scraper addon module to use for torrent search."
+msgstr ""
+
+msgctxt "#90304"
+msgid "Choose External Scraper"
+msgstr ""
+
+msgctxt "#90305"
+msgid "Selected Module"
+msgstr ""
+
+msgctxt "#90306"
+msgid "Open External Scraper Settings"
+msgstr ""
+
+msgctxt "#90307"
+msgid "Open the settings for the selected external scraper module."
+msgstr ""

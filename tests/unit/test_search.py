@@ -149,7 +149,12 @@ def test_submit_search_tasks_skips_disabled_sources(
     mock_cache,
     mock_get_setting,
 ):
-    mock_get_setting.return_value = True
+    def setting_side_effect(key):
+        if key in ("external_scraper_enabled", "external_scraper_module"):
+            return False
+        return True
+
+    mock_get_setting.side_effect = setting_side_effect
     mock_cache.get.return_value = json.dumps(["Jackett"])
     executor = MagicMock()
     tasks = []

@@ -54,6 +54,7 @@ TITLE_LANGUAGE_ENGLISH_ONLY = "english_only"
 def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     flags = {
         "torrent": bool(get_setting("torrent_enable")),
+        "external_scraper": bool(get_setting("external_scraper_enabled")),
         "stremio": bool(get_setting("stremio_enabled")),
         "rd": bool(get_setting("real_debrid_enabled")),
         "ad": bool(get_setting("alldebrid_enabled")),
@@ -63,10 +64,14 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "ed": bool(get_setting("easydebrid_enabled")),
     }
     selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
+    source_manager_selection = str(cache.get("source_manager_selection") or "")
+    external_scraper_module = str(get_setting("external_scraper_module") or "")
     normalized_scoped_url = str(scoped_addon_url or "")
-    return "{}|{}|{}".format(
+    return "{}|{}|{}|{}|{}".format(
         "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
         selected_stream_addons,
+        source_manager_selection,
+        external_scraper_module,
         normalized_scoped_url,
     )
 
@@ -83,6 +88,14 @@ def _is_source_enabled(indexer_key, stremio_addon_key=None):
         return True
     if stremio_addon_key:
         return f"Stremio:{stremio_addon_key}" in selected
+    if indexer_key == Indexer.EXTERNAL_SCRAPER:
+        # Avoid stale Source Manager caches blocking the selected external
+        # scraper entirely. If the external scraper is enabled and a module is
+        # selected, submit the task even if an older source-manager selection
+        # list has not yet learned the dynamic source name.
+        if get_setting("external_scraper_enabled") and get_setting("external_scraper_module"):
+            return True
+        return "External Scraper" in selected
     return str(indexer_key) in selected
 
 
@@ -147,6 +160,27 @@ def _extract_english_tmdb_title(details, mode: str) -> str:
         return _clean_title_candidate(getattr(data, title_key, ""))
 
     return ""
+
+
+def _infer_tmdb_year(ids: dict, mode: str) -> Optional[int]:
+    if not ids or mode not in ("movies", "tv"):
+        return None
+    tmdb_id = ids.get("tmdb_id")
+    if not tmdb_id:
+        return None
+    try:
+        from lib.clients.tmdb.utils.utils import get_tmdb_media_details
+
+        details = get_tmdb_media_details(tmdb_id, mode)
+        date_value = (
+            getattr(details, "release_date", None)
+            if mode == "movies"
+            else getattr(details, "first_air_date", None)
+        )
+        return int(str(date_value)[:4]) if date_value else None
+    except Exception as e:
+        kodilog(f"Failed to infer TMDB year: {e}")
+        return None
 
 
 def _build_title_fallback_queries(
@@ -551,7 +585,9 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
 
         return results
 
+    kodilog(f"[ExternalScraper] _perform_search for {indexer_key}, getting client...")
     client = get_client(indexer_key)
+    kodilog(f"[ExternalScraper] client={client}")
     if not client:
         return []
 
@@ -578,6 +614,7 @@ def _submit_search_tasks(
     variant: str = SearchVariant.DEFAULT,
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
+    title_aliases: Optional[List[str]] = None,
 ):
     def submit_performer(*args, **kwargs):
         if "show_dialog" not in kwargs:
@@ -700,6 +737,27 @@ def _submit_search_tasks(
                 show_dialog=show_dialog,
                 scoped_addon_url=scoped_addon_url,
             )
+        if _is_source_enabled(Indexer.EXTERNAL_SCRAPER):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "external_scraper_enabled",
+                Indexer.EXTERNAL_SCRAPER,
+                _perform_search,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+                imdb_id=imdb_id or "",
+                tvdb_id=(ids or {}).get("tvdb_id", ""),
+                year=str(year) if year else "",
+                aliases=title_aliases,
+            )
         if get_setting("stremio_enabled") and (
             ids.get("imdb_id") or ids.get("original_id")
         ) and _is_source_enabled(Indexer.STREMIO):
@@ -754,6 +812,7 @@ def _submit_search_tasks_managed(
     variant: str = SearchVariant.DEFAULT,
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
+    title_aliases: Optional[List[str]] = None,
 ):
     def submit_performer_managed(name, indexer_key, *args, **kwargs):
         kwargs["show_dialog"] = False
@@ -880,6 +939,27 @@ def _submit_search_tasks_managed(
                 show_dialog=False,
                 scoped_addon_url=scoped_addon_url,
             )
+        if _is_source_enabled(Indexer.EXTERNAL_SCRAPER):
+            module_display_name = get_setting("external_scraper_module_name") or "External Scraper"
+            manager.submit_task(
+                module_display_name,
+                Indexer.EXTERNAL_SCRAPER,
+                _perform_search,
+                Indexer.EXTERNAL_SCRAPER,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+                imdb_id=imdb_id or "",
+                tvdb_id=(ids or {}).get("tvdb_id", ""),
+                year=str(year) if year else "",
+                aliases=title_aliases,
+            )
         if get_setting("stremio_enabled") and (
             ids.get("imdb_id") or ids.get("original_id")
         ):
@@ -918,6 +998,17 @@ def search_client(
     year: Optional[int] = None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
+    if year is None:
+        year = _infer_tmdb_year(ids, mode)
+
+    title_aliases = _build_title_fallback_queries(
+        query,
+        ids,
+        mode,
+        SearchVariant.DEFAULT,
+        year,
+        title_language_mode=title_language_mode,
+    )
     cache_scope = _build_search_cache_scope(scoped_addon_url)
 
     if not rescrape:
@@ -951,6 +1042,7 @@ def search_client(
             variant=variant,
             title_language_mode=title_language_mode,
             year=year,
+            title_aliases=title_aliases,
         )
 
         item_info = {"ids": ids, "mode": mode}
@@ -997,6 +1089,7 @@ def search_client(
                     variant=variant,
                     title_language_mode=title_language_mode,
                     year=year,
+                    title_aliases=title_aliases,
                 )
 
                 total_results = _collect_search_results(tasks, listener, show_dialog)

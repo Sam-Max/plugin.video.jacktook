@@ -685,6 +685,16 @@ def _route_core(action, params):
 
         open_excluded_languages_dialog()
         return
+    if action == "choose_external_scraper":
+        from lib.gui.external_scraper_dialog import choose_external_scraper
+
+        choose_external_scraper()
+        return
+    if action == "open_external_scraper_settings":
+        from lib.gui.external_scraper_dialog import open_external_scraper_settings
+
+        open_external_scraper_settings()
+        return
     if action in ("resolve_for_pack_selection", "resolve_for_subtitles"):
         from lib.actions import resolve_for_pack_selection, resolve_for_subtitles
 

@@ -4007,3 +4007,35 @@ msgstr "Selecciona los idiomas a excluir"
 msgctxt "#90814"
 msgid "Choose original languages to hide from TMDB listings"
 msgstr "Elige los idiomas originales que quieres ocultar de los listados de TMDB"
+
+msgctxt "#90300"
+msgid "External Scraper"
+msgstr "Scraper Externo"
+
+msgctxt "#90301"
+msgid "Enable external scraper module integration."
+msgstr "Habilitar la integración del módulo scraper externo."
+
+msgctxt "#90302"
+msgid "Choose External Scraper Module"
+msgstr "Elegir Módulo Scraper Externo"
+
+msgctxt "#90303"
+msgid "Select an external scraper addon module to use for torrent search."
+msgstr "Selecciona un módulo addon scraper externo para buscar torrents."
+
+msgctxt "#90304"
+msgid "Choose External Scraper"
+msgstr "Elegir Scraper Externo"
+
+msgctxt "#90305"
+msgid "Selected Module"
+msgstr "Módulo Seleccionado"
+
+msgctxt "#90306"
+msgid "Open External Scraper Settings"
+msgstr "Abrir Ajustes del Scraper Externo"
+
+msgctxt "#90307"
+msgid "Open the settings for the selected external scraper module."
+msgstr "Abrir los ajustes del módulo scraper externo seleccionado."

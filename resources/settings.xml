@@ -880,6 +880,44 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="external_scraper" label="90300">
+                <setting id="external_scraper_enabled" type="boolean" label="30734" help="90301">
+                    <default>false</default>
+                    <control type="toggle"/>
+                </setting>
+                <setting id="external_scraper_module" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="external_scraper_module_name" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="external_scraper_choose" type="action" label="90302" help="90303">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=choose_external_scraper)</data>
+                    <control type="button" format="action"/>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="external_scraper_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="external_scraper_open_settings" type="action" label="90306" help="90307">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=open_external_scraper_settings)</data>
+                    <control type="button" format="action"/>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="!is" setting="external_scraper_module"/>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
         </category>
         <category id="playback_category" label="90139">
             <group id="playback_group" label="90139">
