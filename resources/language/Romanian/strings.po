@@ -433,7 +433,7 @@ msgstr "Reia automat de la ultima poziție fără confirmare"
 
 msgctxt "#30728"
 msgid "Seeds"
-msgstr "Seeds"
+msgstr "Seederi"
 
 msgctxt "#30729"
 msgid "Size"
@@ -1610,7 +1610,7 @@ msgstr "Istoric vizionări"
 
 msgctxt "#90035"
 msgid "Watchlist"
-msgstr "Watchlist"
+msgstr "Listă de urmărire"
 
 msgctxt "#90036"
 msgid "Top 10 BoxOffice"
@@ -2557,7 +2557,7 @@ msgstr "Biblioteca Trakt"
 
 msgctxt "#90293"
 msgid "Trakt Discovery"
-msgstr "Trakt Discovery"
+msgstr "Descoperire Trakt"
 
 msgctxt "#90294"
 msgid "Collection"
@@ -4036,12 +4036,12 @@ msgid "Invalid episode"
 msgstr "Episod invalid"
 
 msgctxt "#90740"
-msgid "Edit current title"
-msgstr "Editează titlul curent"
+msgid "Search with current title"
+msgstr "Căutare cu titlul curent"
 
 msgctxt "#90741"
-msgid "Use original title"
-msgstr "Folosește titlul original"
+msgid "Search with original title"
+msgstr "Căutare cu titlul original"
 
 msgctxt "#90773"
 msgid "Search full show with title + year"
