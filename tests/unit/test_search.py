@@ -124,7 +124,12 @@ def test_is_source_enabled_returns_true_when_cache_invalid():
         assert _is_source_enabled(Indexer.JACKETT) is True
 
 
-def test_is_source_enabled_checks_builtin_by_indexer_name():
+@patch("lib.search.get_setting")
+def test_is_source_enabled_checks_builtin_by_indexer_name(mock_get_setting):
+    def setting_side_effect(key):
+        return key in ("jackett_enabled", "prowlarr_enabled")
+
+    mock_get_setting.side_effect = setting_side_effect
     with patch("lib.search.cache") as mock_cache:
         mock_cache.get.return_value = json.dumps(["Jackett", "Prowlarr"])
         assert _is_source_enabled(Indexer.JACKETT) is True
@@ -150,9 +155,9 @@ def test_submit_search_tasks_skips_disabled_sources(
     mock_get_setting,
 ):
     def setting_side_effect(key):
-        if key in ("external_scraper_enabled", "external_scraper_module"):
-            return False
-        return True
+        if key == "jackett_enabled":
+            return True
+        return False
 
     mock_get_setting.side_effect = setting_side_effect
     mock_cache.get.return_value = json.dumps(["Jackett"])
@@ -179,8 +184,7 @@ def test_submit_search_tasks_skips_disabled_sources(
     )
 
     # Only Jackett task should be added.
-    # Burst/Prowlarr/Jackgram/Easynews are disabled by source manager cache.
-    # Stremio is also disabled because "Stremio" is not in ["Jackett"].
+    # Burst/Prowlarr/Jackgram/Easynews/Stremio/ExternalScraper are disabled.
     assert executor.submit.call_count == 1
 
 

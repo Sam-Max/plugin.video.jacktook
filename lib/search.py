@@ -76,27 +76,62 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     )
 
 
-def _is_source_enabled(indexer_key, stremio_addon_key=None):
-    selection = cache.get("source_manager_selection")
-    if not selection:
-        return True
+BUILTIN_INDEXER_SETTINGS = {
+    Indexer.JACKETT: "jackett_enabled",
+    Indexer.PROWLARR: "prowlarr_enabled",
+    Indexer.BURST: "jacktookburst_enabled",
+    Indexer.JACKGRAM: "jackgram_enabled",
+    Indexer.EASYNEWS: "easynews_enabled",
+    Indexer.STREMIO: "stremio_enabled",
+    Indexer.EXTERNAL_SCRAPER: "external_scraper_enabled",
+}
+
+
+def _get_source_manager_selection() -> set:
+    """Return the cached source-manager selection as a set of strings.
+
+    If the cache is empty, missing, or corrupt, returns an empty set so
+    that callers treat every source as enabled (open fallback).
+    """
+    raw = cache.get("source_manager_selection")
+    if not raw:
+        return set()
     try:
-        selected = json.loads(selection) if isinstance(selection, str) else list(selection)
+        parsed = json.loads(raw) if isinstance(raw, str) else list(raw)
     except (ValueError, TypeError):
-        return True
+        return set()
+    return set(parsed) if parsed else set()
+
+
+def _is_source_enabled(indexer_key, stremio_addon_key=None):
+    selected = _get_source_manager_selection()
+
+    # Empty cache → everything is enabled (no whitelist restriction)
     if not selected:
         return True
+
+    # Stremio addons are keyed with a "Stremio:" prefix
     if stremio_addon_key:
         return f"Stremio:{stremio_addon_key}" in selected
+
+    # External scraper has its own stale-cache guard via settings
     if indexer_key == Indexer.EXTERNAL_SCRAPER:
-        # Avoid stale Source Manager caches blocking the selected external
-        # scraper entirely. If the external scraper is enabled and a module is
-        # selected, submit the task even if an older source-manager selection
-        # list has not yet learned the dynamic source name.
         if get_setting("external_scraper_enabled") and get_setting("external_scraper_module"):
             return True
         return "External Scraper" in selected
-    return str(indexer_key) in selected
+
+    cache_key = str(indexer_key)
+
+    # Explicitly listed in the source manager → enabled
+    if cache_key in selected:
+        return True
+
+    # Not listed but enabled in settings → enabled (handles stale caches)
+    setting_key = BUILTIN_INDEXER_SETTINGS.get(indexer_key)
+    if setting_key and get_setting(setting_key):
+        return True
+
+    return False
 
 
 def _clean_title_candidate(value) -> str:
