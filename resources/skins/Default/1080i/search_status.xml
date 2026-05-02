@@ -112,6 +112,16 @@
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_0_results)]</label>
                 </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_0_show_spinner),true)</visible>
+                </control>
             </control>
 
             <!-- Task 1 -->
@@ -144,6 +154,16 @@
                     <align>right</align>
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_1_results)]</label>
+                </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_1_show_spinner),true)</visible>
                 </control>
             </control>
 
@@ -178,6 +198,16 @@
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_2_results)]</label>
                 </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_2_show_spinner),true)</visible>
+                </control>
             </control>
 
             <!-- Task 3 -->
@@ -210,6 +240,16 @@
                     <align>right</align>
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_3_results)]</label>
+                </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_3_show_spinner),true)</visible>
                 </control>
             </control>
 
@@ -244,6 +284,16 @@
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_4_results)]</label>
                 </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_4_show_spinner),true)</visible>
+                </control>
             </control>
 
             <!-- Task 5 -->
@@ -276,6 +326,16 @@
                     <align>right</align>
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_5_results)]</label>
+                </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_5_show_spinner),true)</visible>
                 </control>
             </control>
 
@@ -310,6 +370,16 @@
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_6_results)]</label>
                 </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_6_show_spinner),true)</visible>
+                </control>
             </control>
 
             <!-- Task 7 -->
@@ -342,6 +412,16 @@
                     <align>right</align>
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_7_results)]</label>
+                </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_7_show_spinner),true)</visible>
                 </control>
             </control>
 
@@ -376,6 +456,16 @@
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_8_results)]</label>
                 </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_8_show_spinner),true)</visible>
+                </control>
             </control>
 
             <!-- Task 9 -->
@@ -408,6 +498,16 @@
                     <align>right</align>
                     <textcolor>white</textcolor>
                     <label>$INFO[Window.Property(task_9_results)]</label>
+                </control>
+                <control type="image">
+                    <left>880</left>
+                    <top>8</top>
+                    <width>24</width>
+                    <height>24</height>
+                    <texture>spinner.png</texture>
+                    <aspectratio>keep</aspectratio>
+                    <animation effect="rotate" start="0" end="360" center="auto" time="2000" loop="true" condition="true">Conditional</animation>
+                    <visible>String.IsEqual(Window.Property(task_9_show_spinner),true)</visible>
                 </control>
             </control>
 

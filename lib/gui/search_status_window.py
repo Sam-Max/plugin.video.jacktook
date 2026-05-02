@@ -129,6 +129,8 @@ class SearchStatusWindow(BaseWindow):
             )
             self.setProperty(f"task_{i}_color", self._get_status_color(task.status))
             self.setProperty(f"task_{i}_results", "")
+            show_spinner = "true" if task.status == "In Progress" and task.result_count == 0 else ""
+            self.setProperty(f"task_{i}_show_spinner", show_spinner)
 
         # Start background update thread
         self._update_thread = threading.Thread(target=self._update_loop)
@@ -185,16 +187,21 @@ class SearchStatusWindow(BaseWindow):
             if task.status == "Completed":
                 completed_tasks += 1
                 self.setProperty(f"task_{i}_results", str(task.result_count))
+                self.setProperty(f"task_{i}_show_spinner", "")
             elif task.status in ["Failed", "Cancelled"]:
                 completed_tasks += 1
                 self.setProperty(f"task_{i}_results", "")
+                self.setProperty(f"task_{i}_show_spinner", "")
             elif task.status == "In Progress":
                 self.setProperty(
                     f"task_{i}_results",
                     str(task.result_count) if task.result_count > 0 else "",
                 )
+                show_spinner = "true" if task.result_count == 0 else ""
+                self.setProperty(f"task_{i}_show_spinner", show_spinner)
             else:
                 self.setProperty(f"task_{i}_results", "")
+                self.setProperty(f"task_{i}_show_spinner", "")
 
         # Update progress
         if total_tasks > 0:
