@@ -23,6 +23,7 @@ from lib.player import JacktookPLayer
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
+    ADDON_VERSION,
     CHANGELOG_PATH,
     JACKTORR_ADDON,
     add_directory_items_batch,
@@ -43,6 +44,7 @@ from lib.utils.kodi.utils import (
     play_info_hash,
     reset_saved_views,
     save_view_id,
+    set_setting,
     translation,
     make_list_item,
 )
@@ -90,6 +92,7 @@ from lib.utils.general.items_menus import (
 from lib.updater import updates_check_addon, downgrade_addon_menu
 
 from xbmcgui import ListItem
+import xbmcgui
 from xbmcplugin import (
     addDirectoryItem,
     setResolvedUrl,
@@ -314,6 +317,12 @@ def settings_menu(params):
         build_list_item(translation(90743), "settings.png"),
         isFolder=True,
     )
+    addDirectoryItem(
+        ADDON_HANDLE,
+        build_url("donate"),
+        build_list_item(translation(90815), "donate.png"),
+        isFolder=False,
+    )
     end_of_directory(cache=False)
     apply_section_view("view.main")
 
@@ -368,6 +377,7 @@ def reset_views(params):
 
 
 def root_menu():
+    maybe_show_donation_prompt()
     set_pluging_category(translation(90069))
     render_menu(
         root_menu_items,
@@ -375,6 +385,18 @@ def root_menu():
         cache_key=f"nav.root:{_menu_condition_signature(root_menu_items)}",
     )
     apply_section_view("view.main")
+
+
+def maybe_show_donation_prompt():
+    if not ADDON_VERSION:
+        return
+
+    if get_setting("donation_prompt_last_version") == ADDON_VERSION:
+        return
+
+    set_setting("donation_prompt_last_version", ADDON_VERSION)
+    if xbmcgui.Dialog().yesno(translation(90023), translation(90818)):
+        donate({})
 
 
 def animation_menu(params):
@@ -1118,6 +1140,7 @@ def donate(params):
         ADDON_PATH,
         heading=translation(90023),
         text=translation(90022),
+        call_to_action=translation(90817),
         url=f"[COLOR snow]{donation_url}[/COLOR]",
         qrcode=qr_code,
     )

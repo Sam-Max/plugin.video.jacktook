@@ -82,7 +82,7 @@
                             <close>false</close>
                         </control>
                     </setting>
-                    <setting id="donate" type="action" label="90018" help="">
+                    <setting id="donate" type="action" label="90018" help="90816">
                         <data>RunPlugin(plugin://plugin.video.jacktook/?action=donate)</data>
                         <control type="button" format="action">
                             <close>false</close>
@@ -1997,6 +1997,14 @@
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="saved_view_downloads" type="string" label="" help="">
+                    <visible>false</visible>
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="donation_prompt_last_version" type="string" label="" help="">
                     <visible>false</visible>
                     <default />
                     <constraints>

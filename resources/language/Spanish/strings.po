@@ -1556,8 +1556,8 @@ msgid "TV Calendar"
 msgstr "Calendario de TV"
 
 msgctxt "#90022"
-msgid "If you enjoy using Jacktook and want to support its development, you can buy me a coffee! Your support helps keep the project active and enables future improvements:"
-msgstr "Si disfrutas usando Jacktook y quieres apoyar su desarrollo, puedes comprarme un café! Tu apoyo ayuda a mantener el proyecto activo y habilita mejoras futuras:"
+msgid "Jacktook is free and built with care in spare time. If you enjoy the addon, consider supporting its development. Donations are optional and help keep updates coming."
+msgstr "Jacktook es gratis y está hecho con cariño en tiempo libre. Si disfrutas el addon, considera apoyar su desarrollo. Las donaciones son opcionales y ayudan a mantener las actualizaciones."
 
 msgctxt "#90023"
 msgid "Support Jacktook"
@@ -4007,6 +4007,22 @@ msgstr "Selecciona los idiomas a excluir"
 msgctxt "#90814"
 msgid "Choose original languages to hide from TMDB listings"
 msgstr "Elige los idiomas originales que quieres ocultar de los listados de TMDB"
+
+msgctxt "#90815"
+msgid "Support Jacktook"
+msgstr "Apoya a Jacktook"
+
+msgctxt "#90816"
+msgid "Support Jacktook development with an optional Ko-fi donation."
+msgstr "Apoya el desarrollo de Jacktook con una donación opcional en Ko-fi."
+
+msgctxt "#90817"
+msgid "Scan the QR code or open this link:"
+msgstr "Escanea el código QR o abre este enlace:"
+
+msgctxt "#90818"
+msgid "Jacktook was updated with new improvements. Donations are optional, but they help keep development active. Would you like to see the support link?"
+msgstr "Jacktook se actualizó con nuevas mejoras. Las donaciones son opcionales, pero ayudan a mantener el desarrollo activo. ¿Quieres ver el enlace de apoyo?"
 
 msgctxt "#90300"
 msgid "External Scraper"

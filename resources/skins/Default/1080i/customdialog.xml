@@ -34,7 +34,7 @@
             <control type="label" id="32500">
                 <top>20</top>
                 <width>1000</width>
-                <height>40</height>
+                <height>50</height>
                 <font>font25</font>
                 <align>center</align>
                 <textcolor>white</textcolor>
@@ -43,10 +43,10 @@
 
             <!-- QR Code -->
             <control type="image" id="32504">
-                <top>110</top>
-                <left>60</left>
-                <width>280</width>
-                <height>280</height>
+                <top>95</top>
+                <left>55</left>
+                <width>330</width>
+                <height>330</height>
                 <texture>qr_placeholder.png</texture>
                 <aspectratio>keep</aspectratio>
             </control>
@@ -54,10 +54,10 @@
             <!-- Text Body -->
             <control type="label" id="32501">
                 <font>font14</font>
-                <top>110</top>
-                <left>400</left>
-                <width>550</width>
-                <height>180</height>
+                <top>100</top>
+                <left>430</left>
+                <width>510</width>
+                <height>185</height>
                 <align>left</align>
                 <textcolor>white</textcolor>
                 <shadowcolor>AA000000</shadowcolor>
@@ -76,17 +76,27 @@
         </control>
 
         <control type="group">
-            <width>550</width>
-            <height>100</height>
-            <top>320</top>
-            <left>400</left>
+            <width>510</width>
+            <height>110</height>
+            <top>355</top>
+            <left>430</left>
 
             <!-- Card with Rounded Corners -->
             <control type="image">
                 <right>-6</right>
                 <bottom>-2</bottom>
                 <texture border="30">circle.png</texture>
-                <colordiffuse>CCFF0000</colordiffuse>
+                <colordiffuse>DD12A0C7</colordiffuse>
+            </control>
+
+             <!-- Call to action -->
+            <control type="label" id="32505">
+                <font>font13</font>
+                <top>10</top>
+                <align>center</align>
+                <height>25</height>
+                <textcolor>white</textcolor>
+                <shadowcolor>FF000000</shadowcolor>
             </control>
 
              <!-- Text URL -->
@@ -94,7 +104,8 @@
                 <font>font14</font>
                 <align>center</align>
                 <aligny>center</aligny>
-                <height>100</height>
+                <top>48</top>
+                <height>55</height>
                 <textcolor>white</textcolor>
                 <shadowcolor>FF000000</shadowcolor>
                 <wrap>true</wrap> 
@@ -102,4 +113,3 @@
         </control>
     </controls>
 </window>
-

@@ -1557,7 +1557,7 @@ msgstr ""
 
 
 msgctxt "#90022"
-msgid "If you enjoy using Jacktook and want to support its development, you can buy me a coffee! Your support helps keep the project active and enables future improvements:"
+msgid "Jacktook is free and built with care in spare time. If you enjoy the addon, consider supporting its development. Donations are optional and help keep updates coming."
 msgstr ""
 
 msgctxt "#90023"
@@ -4345,6 +4345,22 @@ msgstr ""
 
 msgctxt "#90814"
 msgid "Choose original languages to hide from TMDB listings"
+msgstr ""
+
+msgctxt "#90815"
+msgid "Support Jacktook"
+msgstr ""
+
+msgctxt "#90816"
+msgid "Support Jacktook development with an optional Ko-fi donation."
+msgstr ""
+
+msgctxt "#90817"
+msgid "Scan the QR code or open this link:"
+msgstr ""
+
+msgctxt "#90818"
+msgid "Jacktook was updated with new improvements. Donations are optional, but they help keep development active. Would you like to see the support link?"
 msgstr ""
 
 msgctxt "#90300"
