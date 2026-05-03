@@ -377,6 +377,51 @@ def test_start_download_updates_registry_per_chunk():
     assert entry.status == "completed"
 
 
+def test_start_download_persists_live_metrics_to_metadata_when_paused():
+    downloader = _load_downloader_module()
+
+    dl = downloader.Downloader(
+        url="https://example.com/Movie.mkv",
+        destination="/downloads",
+        name="Movie.mkv",
+        registry_id="/downloads/Movie.mkv",
+    )
+    dl.file_size = 3 * 1024 * 1024
+
+    mock_response = MagicMock()
+    mock_response.read.side_effect = [b"x" * (1024 * 1024), b""]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        dl.destination = tmpdir
+        dl.dest_path = os.path.join(tmpdir, "Movie.mkv")
+        dl.temp_path = dl.dest_path + ".part"
+        dl.meta_path = dl.dest_path + ".jacktook.json"
+
+        with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
+            downloader, "urlopen", return_value=mock_response
+        ), patch.object(
+            downloader.xbmcvfs, "exists", return_value=False
+        ), patch.object(downloader.xbmcvfs, "rename"), patch.object(
+            downloader, "open_file", side_effect=lambda p, m="r": open(p, m)
+        ), patch.object(downloader.time, "time", side_effect=[0, 1, 1]):
+            mock_handler = MagicMock()
+            mock_handler_cls.return_value = mock_handler
+            mock_handler.cancelled.return_value = True
+            dl.monitor = MagicMock()
+            dl.monitor.abortRequested.return_value = False
+            dl._start_download()
+
+        with open(dl.meta_path, "r") as f:
+            meta = json.load(f)
+
+    assert meta["status"] == "paused"
+    assert meta["progress"] == 33
+    assert meta["size"] == 3 * 1024 * 1024
+    assert meta["downloaded"] == 1024 * 1024
+    assert meta["speed"] == 1024 * 1024
+    assert meta["eta"] == 2
+
+
 def test_start_download_sets_registry_status_paused_on_cancel():
     downloader = _load_downloader_module()
 

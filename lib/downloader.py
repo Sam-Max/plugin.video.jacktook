@@ -312,6 +312,8 @@ class Downloader:
     def _start_download(self):
         downloaded = 0
         file_mode = "wb"
+        speed = 0
+        eta = 0
 
         # Ensure progress handler exists (may already be set by _run)
         if self.progress_handler is None:
@@ -381,8 +383,8 @@ class Downloader:
                             speed_str = f"{bytes_to_human_readable(speed)}/s"
                             remaining = self.file_size - downloaded
                             if speed > 0 and remaining > 0:
-                                eta_secs = int(remaining / speed)
-                                eta_mins, eta_secs = divmod(eta_secs, 60)
+                                eta = int(remaining / speed)
+                                eta_mins, eta_secs = divmod(eta, 60)
                                 eta_hrs, eta_mins = divmod(eta_mins, 60)
                                 if eta_hrs:
                                     eta_str = f"{eta_hrs}h {eta_mins}m"
@@ -401,14 +403,28 @@ class Downloader:
                         speed_str,
                         eta_str,
                     )
-                    self._write_metadata("downloading", percent)
+                    self._write_metadata(
+                        "downloading",
+                        percent,
+                        size=self.file_size,
+                        downloaded=downloaded,
+                        speed=speed,
+                        eta=eta,
+                    )
                     self._update_registry(downloaded, percent)
 
                     # Handle cancellation
                     if self._is_cancelled():
                         cancel_flag_cache.set(self.dest_path, True)
                         self.is_cancelled = True
-                        self._write_metadata("paused", percent)
+                        self._write_metadata(
+                            "paused",
+                            percent,
+                            size=self.file_size,
+                            downloaded=downloaded,
+                            speed=speed,
+                            eta=eta,
+                        )
                         self._set_registry_status("paused")
                         file.close()
                         break
@@ -425,7 +441,14 @@ class Downloader:
                     # Rename temp to final on success
                     if xbmcvfs.exists(self.temp_path):
                         xbmcvfs.rename(self.temp_path, self.dest_path)
-                    self._write_metadata("completed", 100)
+                    self._write_metadata(
+                        "completed",
+                        100,
+                        size=self.file_size,
+                        downloaded=downloaded,
+                        speed=0,
+                        eta=0,
+                    )
                     self._set_registry_status("completed")
                     notification(f"Download completed: {self.name}")
         except Exception as e:
