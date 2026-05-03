@@ -1,3 +1,32 @@
+## 1.13.0
+- Downloads: Add a downloads manager for managing downloaded files inside Jacktook.
+- External Scraper: Add generic external scraper module support for addons like Magneto, CocoScrapers, etc, with settings and configuration dialog.
+- TMDB: Add configurable excluded languages filter for hiding content in selected original languages.
+- Search: Add a loading spinner while sources resolve and improve stale-cache fallback behavior.
+- Source Manager: Auto-select newly enabled sources so provider changes take effect immediately.
+- Burst: Harden result parsing and internal imports for safer provider integration.
+- Localization: Fix missing and misaligned Romanian strings and improve Romanian translations.
+
+Spanish:
+- Descargas: Añadido gestor de descargas para administrar archivos descargados dentro de Jacktook.
+- Scraper Externo: Añadido soporte genérico de módulo de scraper externo para addons como Magneto, CocoScrapers, etc, con ajustes y diálogo de configuración.
+- TMDB: Añadido filtro configurable de idiomas excluidos para ocultar contenido en idiomas originales seleccionados.
+- Busqueda: Añadido spinner de carga mientras se resuelven las fuentes y mejorado el fallback de cache obsoleta.
+- Source Manager: Seleccion automatica de fuentes recien activadas para que los cambios de proveedores apliquen inmediatamente.
+- Burst: Reforzado el parseo de resultados y las importaciones internas para una integracion de proveedores mas segura.
+- Localizacion: Corregidas cadenas rumanas faltantes y desalineadas y mejoradas las traducciones al rumano.
+
+Note:
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions help keep improving and maintaining it. Thank you!
+
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+Dacă îți place acest add-on, te rog să iei în considerare susținerea proiectului printr-o donație. Contribuțiile tale ajută la îmbunătățirea și menținerea acestuia. Mulțumesc!
+
+Если вам нравится этот аддон, пожалуйста, подумайте о поддержке проекта пожертвованием. Ваш вклад помогает улучшать и поддерживать его. Спасибо!
+
+Se você gosta deste addon, considere apoiar o projeto com uma doação. As suas contribuições ajudam a continuar melhorando e mantendo-o. Obrigado!
+
 ## 1.12.0
 - Services: Add AutoStart service to automatically open Jacktook when Kodi boots (optional toggle in Settings > General > Startup).
 - Services: Add WidgetRefresh background service to periodically refresh Kodi widgets on a configurable timer (0-180 minutes) with optional notifications.
