@@ -2549,7 +2549,7 @@ msgstr "Nu se poate finaliza resetarea la setările din fabrică."
 
 msgctxt "#90291"
 msgid "Reset settings to defaults, clear caches, and wipe local addon history/database data."
-msgstr "Resetează setările la valorile implicite, șterge cache-ul și șterge datele locale de istoric/bază de date ale add-on-ului."
+msgstr "Resetează setările la valorile implicite, golește cache-ul și șterge istoricul add-on-ului și datele din baza de date."
 
 msgctxt "#90292"
 msgid "Trakt Library"
@@ -2557,7 +2557,7 @@ msgstr "Biblioteca Trakt"
 
 msgctxt "#90293"
 msgid "Trakt Discovery"
-msgstr "Descoperire Trakt"
+msgstr "Descoperă Trakt"
 
 msgctxt "#90294"
 msgid "Collection"
