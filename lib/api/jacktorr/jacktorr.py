@@ -15,70 +15,106 @@ class TorrServer(object):
         self._auth = HTTPBasicAuth(self._username, self._password)
         self._session = session or requests
 
+    @staticmethod
+    def _normalize_json_response(data):
+        """Normalize TorrServer responses that may return a list instead of a dict.
+
+        Some TorrServer versions wrap single-object responses in a list.
+        This helper unwraps the first element so callers can always
+        access keys like ["hash"] without TypeError.
+        """
+        if isinstance(data, list):
+            if not data:
+                raise TorrServerError("TorrServer returned empty list")
+            return data[0]
+        return data
+
+    def _extract_hash(self, response):
+        """Parse a TorrServer response and extract the torrent hash.
+
+        Handles both dict and list response formats defensively.
+        """
+        result = self._normalize_json_response(response.json())
+        return result["hash"]
+
     @property
     def torr_version(self):
         """tests server status"""
         return self._get("/echo").content
 
     def add_magnet(self, magnet, title="", poster="", data=""):
-        return self._post(
-            "/torrents",
-            data=dumps(
-                {
-                    "action": "add",
-                    "link": magnet,
-                    "title": title,
-                    "poster": poster,
-                    "data": data,
-                    "save_to_db": True,
-                }
-            ),
-        ).json()["hash"]
+        return self._extract_hash(
+            self._post(
+                "/torrents",
+                data=dumps(
+                    {
+                        "action": "add",
+                        "link": magnet,
+                        "title": title,
+                        "poster": poster,
+                        "data": data,
+                        "save_to_db": True,
+                    }
+                ),
+            )
+        )
 
     def add_torrent(self, path, title="", poster="", data=""):
         with open(path, "rb") as file:
-            return self._post(
+            return self._extract_hash(
+                self._post(
+                    "/torrent/upload",
+                    files={"file": file},
+                    data={
+                        "save": "true",
+                        "title": title,
+                        "poster": poster,
+                        "data": data,
+                    },
+                )
+            )
+
+    def add_torrent_obj(self, obj, title="", poster="", data=""):
+        return self._extract_hash(
+            self._post(
                 "/torrent/upload",
-                files={"file": file},
+                files={"file": obj},
                 data={
                     "save": "true",
                     "title": title,
                     "poster": poster,
                     "data": data,
                 },
-            ).json()["hash"]
-
-    def add_torrent_obj(self, obj, title="", poster="", data=""):
-        return self._post(
-            "/torrent/upload",
-            files={"file": obj},
-            data={
-                "save": "true",
-                "title": title,
-                "poster": poster,
-                "data": data,
-            },
-        ).json()["hash"]
+            )
+        )
 
     def torrents(self):
         """read info about all torrents (doesn't fill file_stats info)"""
-        return self._post("/torrents", data=dumps({"action": "list"})).json()
+        return self._normalize_json_response(
+            self._post("/torrents", data=dumps({"action": "list"})).json()
+        )
 
     def get_torrent_info_by_hash(self, hash):
         """not extended info"""
-        return self._post(
-            "/torrents", data=dumps({"action": "get", "hash": hash})
-        ).json()
+        return self._normalize_json_response(
+            self._post(
+                "/torrents", data=dumps({"action": "get", "hash": hash})
+            ).json()
+        )
 
     def get_torrent_info(self, link):
         """read extended info of one torrent"""
-        return self._get("/stream", params={"link": link, "stat": "true"}).json()
+        return self._normalize_json_response(
+            self._get("/stream", params={"link": link, "stat": "true"}).json()
+        )
 
     def get_torrent_file_info(self, link, file_index=1):
         """read extended info of file of torrent"""
-        return self._get(
-            "/stream", params={"link": link, "index": file_index, "stat": "true"}
-        ).json()
+        return self._normalize_json_response(
+            self._get(
+                "/stream", params={"link": link, "index": file_index, "stat": "true"}
+            ).json()
+        )
 
     def drop_torrent(self, hash):
         return self._post("/torrents", data=dumps({"action": "drop", "hash": hash}))
