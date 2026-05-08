@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import Dict, List, Any, Optional
 from lib.api.debrid.torbox import Torbox
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
@@ -197,9 +198,34 @@ class TorboxHelper:
         if not torrent_info:
             return None
 
+        torrent_files = torrent_info.get("files", []) or []
+        if not torrent_files and info_hash:
+            kodilog(
+                "TorboxHelper.get_link: torrent has no files yet, retrying metadata fetch for hash={!r}".format(
+                    str(info_hash).lower()[:12]
+                )
+            )
+            for _ in range(3):
+                time.sleep(1)
+                refreshed_info = self.client.get_available_torrent(info_hash)
+                if refreshed_info:
+                    torrent_info = refreshed_info
+                    torrent_files = refreshed_info.get("files", []) or []
+                    if torrent_files:
+                        break
+
+        if not torrent_files:
+            kodilog(
+                "TorboxHelper.get_link: no playable files available yet for hash={!r}".format(
+                    str(info_hash).lower()[:12]
+                )
+            )
+            notification("Torbox is still processing this torrent. Please try again in a moment.")
+            return None
+
         video_files = [
             item
-            for item in torrent_info["files"]
+            for item in torrent_files
             if any(get_file_name(item).lower().endswith(ext) for ext in EXTENSIONS)
         ]
         if not video_files:
