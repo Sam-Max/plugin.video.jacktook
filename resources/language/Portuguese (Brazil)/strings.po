@@ -3768,35 +3768,35 @@ msgid "Get your API key at ratingposterdb.com"
 msgstr ""
 
 msgctxt "#90765"
-msgid "Codec Filters"
+msgid "Filter by Codecs"
 msgstr ""
 
 msgctxt "#90766"
-msgid "HDR Filters"
+msgid "Filter by HDR"
 msgstr ""
 
 msgctxt "#90767"
-msgid "HEVC / H.265"
+msgid "Include HEVC / H.265"
 msgstr ""
 
 msgctxt "#90768"
-msgid "AV1"
+msgid "Include AV1"
 msgstr ""
 
 msgctxt "#90769"
-msgid "H.264"
+msgid "Include H.264"
 msgstr ""
 
 msgctxt "#90770"
-msgid "Dolby Vision"
+msgid "Include Dolby Vision"
 msgstr ""
 
 msgctxt "#90771"
-msgid "HDR10 / HDR10+"
+msgid "Include HDR10 / HDR10+"
 msgstr ""
 
 msgctxt "#90772"
-msgid "HDR (generic)"
+msgid "Include HDR (generic)"
 msgstr ""
 
 msgctxt "#90774"
