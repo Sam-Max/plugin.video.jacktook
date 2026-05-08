@@ -1933,15 +1933,15 @@ msgstr "Senha"
 
 msgctxt "#90129"
 msgid "Test Connection"
-msgstr ""
+msgstr "Testar conexão"
 
 msgctxt "#90131"
 msgid "Webdav"
-msgstr ""
+msgstr "WebDAV"
 
 msgctxt "#90132"
 msgid "Remote Path"
-msgstr ""
+msgstr "Caminho remoto"
 
 msgctxt "#90133"
 msgid "The hostname or IP address of your WebDAV server (e.g., http://mywebdav.com or https://192.168.1.100)."
@@ -1949,11 +1949,11 @@ msgstr "The hostname or IP address of your WebDAV server (e.g., http://mywebdav.
 
 msgctxt "#90134"
 msgid "The username required for authenticating with your WebDAV server"
-msgstr ""
+msgstr "O nome de usuário necessário para autenticação no seu servidor WebDAV"
 
 msgctxt "#90135"
 msgid "The password for the specified username to authenticate with your WebDAV server"
-msgstr ""
+msgstr "A senha do nome de usuário especificado para autenticação no seu servidor WebDAV"
 
 msgctxt "#90136"
 msgid "The base path or directory on the WebDAV server where your media files are located (e.g., /movies)."
@@ -1961,11 +1961,11 @@ msgstr "The base path or directory on the WebDAV server where your media files a
 
 msgctxt "#90137"
 msgid "Click to verify if the WebDAV client can successfully connect to the configured server using the provided credentials."
-msgstr ""
+msgstr "Clique para verificar se o cliente WebDAV consegue se conectar com sucesso ao servidor configurado usando as credenciais fornecidas."
 
 msgctxt "#90138"
 msgid "Remove Custom Addon"
-msgstr ""
+msgstr "Remover addon personalizado"
 
 msgctxt "#90139"
 msgid "Playback"
@@ -1973,23 +1973,23 @@ msgstr "Reprodução"
 
 msgctxt "#90140"
 msgid "Super quick play"
-msgstr ""
+msgstr "Reprodução super rápida"
 
 msgctxt "#90141"
 msgid "Re-ask to play last played video"
-msgstr ""
+msgstr "Perguntar novamente para reproduzir o último vídeo reproduzido"
 
 msgctxt "#90142"
 msgid "Replay Dialog"
-msgstr ""
+msgstr "Diálogo de repetição"
 
 msgctxt "#90143"
 msgid "Do you want to play last watched?"
-msgstr ""
+msgstr "Deseja reproduzir o último assistido?"
 
 msgctxt "#90144"
 msgid "Could not resolve playback URL"
-msgstr ""
+msgstr "Não foi possível resolver a URL de reprodução"
 
 msgctxt "#90145"
 msgid "Precaching Enabled"
@@ -1997,39 +1997,39 @@ msgstr "Pré-carregamento Ativado"
 
 msgctxt "#90171"
 msgid "Autoscrape Next Episode"
-msgstr ""
+msgstr "Autoscrape do próximo episódio"
 
 msgctxt "#90172"
 msgid "Pre-resolve the next episode's playback URL in the background while watching."
-msgstr ""
+msgstr "Pré-resolve em segundo plano a URL de reprodução do próximo episódio enquanto você assiste."
 
 msgctxt "#90173"
 msgid "Autoscrape Threshold"
-msgstr ""
+msgstr "Limiar do autoscrape"
 
 msgctxt "#90174"
 msgid "Percentage of playback to trigger background pre-resolution."
-msgstr ""
+msgstr "Percentual da reprodução para acionar a pré-resolução em segundo plano."
 
 msgctxt "#90175"
 msgid "Autoscrape Episode Count"
-msgstr ""
+msgstr "Quantidade de episódios do autoscrape"
 
 msgctxt "#90176"
 msgid "Number of upcoming episodes to pre-resolve."
-msgstr ""
+msgstr "Número de próximos episódios para pré-resolver."
 
 msgctxt "#90177"
 msgid "Autoscrape Cache TTL"
-msgstr ""
+msgstr "TTL do cache do autoscrape"
 
 msgctxt "#90178"
 msgid "Hours to keep resolved playback data in cache."
-msgstr ""
+msgstr "Horas para manter em cache os dados de reprodução resolvidos."
 
 msgctxt "#30901"
 msgid "Show Only Stremio Catalogs"
-msgstr ""
+msgstr "Mostrar apenas catálogos do Stremio"
 
 msgctxt "#30902"
 msgid "Hides embedded items (TMDb, Trakt, etc.) and shows only Stremio catalogs in menus."
@@ -2093,19 +2093,19 @@ msgstr "Filtrar por Qualidade"
 
 msgctxt "#32301"
 msgid "Filter by Provider"
-msgstr ""
+msgstr "Filtrar por provedor"
 
 msgctxt "#32302"
 msgid "Filter by Source"
-msgstr ""
+msgstr "Filtrar por fonte"
 
 msgctxt "#32303"
 msgid "Filter by Language"
-msgstr ""
+msgstr "Filtrar por idioma"
 
 msgctxt "#32304"
 msgid "Filter by Torrents"
-msgstr ""
+msgstr "Filtrar por torrents"
 
 msgctxt "#32305"
 msgid "Filter by Debrid"
@@ -2113,7 +2113,7 @@ msgstr "Filtrar por Debrid"
 
 msgctxt "#32306"
 msgid "Reset Filter"
-msgstr ""
+msgstr "Redefinir filtro"
 
 msgctxt "#30930"
 msgid "Ping Addons"
@@ -2209,7 +2209,7 @@ msgstr "Ignorar a ordenação nativa dos add-ons do Stremio"
 
 msgctxt "#90212"
 msgid "If enabled, addons specified won't have their results re-ordered or filtered by Jacktook's native quality and size thresholds."
-msgstr ""
+msgstr "Se ativado, os addons especificados não terão seus resultados reordenados nem filtrados pelos limites nativos de qualidade e tamanho do Jacktook."
 
 msgctxt "#90213"
 msgid "Select Bypassed Addons"
@@ -2217,7 +2217,7 @@ msgstr "Selecionar add-ons a ignorar"
 
 msgctxt "#90214"
 msgid "Select which Stremio addons bypass Jacktook's native size and quality filtering."
-msgstr ""
+msgstr "Selecione quais addons do Stremio ignoram a filtragem nativa de tamanho e qualidade do Jacktook."
 
 msgctxt "#90215"
 msgid "Downgrade"
@@ -2229,27 +2229,27 @@ msgstr "Instala uma versao publicada anterior do Jacktook. A versao atual e salv
 
 msgctxt "#30932"
 msgid "Update Action"
-msgstr ""
+msgstr "Ação de atualização"
 
 msgctxt "#30933"
 msgid "Choose how to handle background update checks."
-msgstr ""
+msgstr "Escolha como lidar com as verificações de atualização em segundo plano."
 
 msgctxt "#30934"
 msgid "Ask"
-msgstr ""
+msgstr "Perguntar"
 
 msgctxt "#30935"
 msgid "Notify"
-msgstr ""
+msgstr "Notificar"
 
 msgctxt "#90216"
 msgid "Volume Check Enabled"
-msgstr ""
+msgstr "Verificação de volume ativada"
 
 msgctxt "#90217"
 msgid "Automatically limits volume if it is above the threshold before playback."
-msgstr ""
+msgstr "Limita automaticamente o volume se ele estiver acima do limite antes da reprodução."
 
 msgctxt "#90218"
 msgid "Volume Threshold"
@@ -2257,15 +2257,15 @@ msgstr "Limite de volume"
 
 msgctxt "#90219"
 msgid "The volume percentage above which the warning triggers."
-msgstr ""
+msgstr "A porcentagem de volume acima da qual o aviso é acionado."
 
 msgctxt "#90220"
 msgid "High Volume Warning"
-msgstr ""
+msgstr "Aviso de volume alto"
 
 msgctxt "#90221"
 msgid "High volume detected. Adjusting to %s%% for safety."
-msgstr ""
+msgstr "Volume alto detectado. Ajustando para %s%% por segurança."
 
 msgctxt "#90222"
 msgid "Fanart.tv Configuration"
@@ -2273,19 +2273,19 @@ msgstr "Fanart.tv Configuração"
 
 msgctxt "#90223"
 msgid "Client Key"
-msgstr ""
+msgstr "Chave do cliente"
 
 msgctxt "#90224"
 msgid "Your personal Fanart.tv client key for higher quality assets."
-msgstr ""
+msgstr "Sua chave pessoal de cliente do Fanart.tv para recursos de maior qualidade."
 
 msgctxt "#90225"
 msgid "Debrid Notifications"
-msgstr ""
+msgstr "Notificações Debrid"
 
 msgctxt "#90226"
 msgid "Debrid Expiration Notification"
-msgstr ""
+msgstr "Notificação de expiração do Debrid"
 
 msgctxt "#90227"
 msgid "Enable or disable notifications when your Debrid subscription is about to expire."
@@ -2297,15 +2297,15 @@ msgstr "Expiration Threshold (Days)"
 
 msgctxt "#90229"
 msgid "How many days before expiration to start notifying."
-msgstr ""
+msgstr "Quantos dias antes da expiração começar a notificar."
 
 msgctxt "#90230"
 msgid "%s expires in %d days."
-msgstr ""
+msgstr "%s expira em %d dias."
 
 msgctxt "#90231"
 msgid "%s expires today!"
-msgstr ""
+msgstr "%s expira hoje!"
 
 msgctxt "#90232"
 msgid "Easynews"
@@ -2313,19 +2313,19 @@ msgstr "Easynews"
 
 msgctxt "#90233"
 msgid "Enable EasyNews as a direct stream provider."
-msgstr ""
+msgstr "Ativar o EasyNews como provedor de stream direto."
 
 msgctxt "#90234"
 msgid "Your EasyNews username."
-msgstr ""
+msgstr "Seu nome de usuário do EasyNews."
 
 msgctxt "#90235"
 msgid "Your EasyNews password."
-msgstr ""
+msgstr "Sua senha do EasyNews."
 
 msgctxt "#90236"
 msgid "Request timeout in seconds."
-msgstr ""
+msgstr "Tempo limite da requisição em segundos."
 
 msgctxt "#90237"
 msgid "Account Information"
@@ -2333,15 +2333,15 @@ msgstr "Informações da conta"
 
 msgctxt "#90238"
 msgid "Search Dialog Style"
-msgstr ""
+msgstr "Estilo da caixa de diálogo de busca"
 
 msgctxt "#90239"
 msgid "Background"
-msgstr ""
+msgstr "Plano de fundo"
 
 msgctxt "#90240"
 msgid "Detailed Status"
-msgstr ""
+msgstr "Status detalhado"
 
 msgctxt "#90241"
 msgid "Search Status"
@@ -2377,7 +2377,7 @@ msgstr "Cancelado"
 
 msgctxt "#90249"
 msgid "Your personal Jackgram API token for authentication."
-msgstr ""
+msgstr "Seu token pessoal da API do Jackgram para autenticação."
 
 msgctxt "#90250"
 msgid "Subtitles Found"
@@ -2665,27 +2665,27 @@ msgstr "Nao foi possivel baixar o backup de configuracoes."
 
 msgctxt "#90352"
 msgid "Source Select Style"
-msgstr ""
+msgstr "Estilo da seleção de fontes"
 
 msgctxt "#90353"
 msgid "Modern"
-msgstr ""
+msgstr "Moderno"
 
 msgctxt "#90354"
 msgid "OLED"
-msgstr ""
+msgstr "OLED"
 
 msgctxt "#90355"
 msgid "Cyberpunk"
-msgstr ""
+msgstr "Cyberpunk"
 
 msgctxt "#90356"
 msgid "Forest"
-msgstr ""
+msgstr "Floresta"
 
 msgctxt "#90357"
 msgid "Gold"
-msgstr ""
+msgstr "Dourado"
 
 msgctxt "#90358"
 msgid "No playable results found"
@@ -3717,87 +3717,87 @@ msgstr "Nenhuma fonte disponível"
 
 msgctxt "#90179"
 msgid "Stinger Notifications"
-msgstr ""
+msgstr "Notificações de stinger"
 
 msgctxt "#90180"
 msgid "Show a notification when a movie has post-credit scenes."
-msgstr ""
+msgstr "Mostrar uma notificação quando um filme tiver cenas pós-créditos."
 
 msgctxt "#90181"
 msgid "Stinger Notification Time"
-msgstr ""
+msgstr "Momento da notificação de stinger"
 
 msgctxt "#90182"
 msgid "Seconds before the end to show the stinger notification."
-msgstr ""
+msgstr "Segundos antes do fim para mostrar a notificação de stinger."
 
 msgctxt "#90183"
 msgid "Stay tuned after the credits!"
-msgstr ""
+msgstr "Fique ligado após os créditos!"
 
 msgctxt "#90757"
 msgid "Image Resolution"
-msgstr ""
+msgstr "Resolução da imagem"
 
 msgctxt "#90758"
 msgid "Low"
-msgstr ""
+msgstr "Baixa"
 
 msgctxt "#90759"
 msgid "Medium"
-msgstr ""
+msgstr "Média"
 
 msgctxt "#90760"
 msgid "High"
-msgstr ""
+msgstr "Alta"
 
 msgctxt "#90761"
 msgid "Original"
-msgstr ""
+msgstr "Original"
 
 msgctxt "#90762"
 msgid "Enable RPDB Posters"
-msgstr ""
+msgstr "Ativar pôsteres RPDB"
 
 msgctxt "#90763"
 msgid "RPDB API Key"
-msgstr ""
+msgstr "Chave da API do RPDB"
 
 msgctxt "#90764"
 msgid "Get your API key at ratingposterdb.com"
-msgstr ""
+msgstr "Obtenha sua chave de API em ratingposterdb.com"
 
 msgctxt "#90765"
 msgid "Filter by Codecs"
-msgstr ""
+msgstr "Filtrar por codecs"
 
 msgctxt "#90766"
 msgid "Filter by HDR"
-msgstr ""
+msgstr "Filtrar por HDR"
 
 msgctxt "#90767"
 msgid "Include HEVC / H.265"
-msgstr ""
+msgstr "Incluir HEVC / H.265"
 
 msgctxt "#90768"
 msgid "Include AV1"
-msgstr ""
+msgstr "Incluir AV1"
 
 msgctxt "#90769"
 msgid "Include H.264"
-msgstr ""
+msgstr "Incluir H.264"
 
 msgctxt "#90770"
 msgid "Include Dolby Vision"
-msgstr ""
+msgstr "Incluir Dolby Vision"
 
 msgctxt "#90771"
 msgid "Include HDR10 / HDR10+"
-msgstr ""
+msgstr "Incluir HDR10 / HDR10+"
 
 msgctxt "#90772"
 msgid "Include HDR (generic)"
-msgstr ""
+msgstr "Incluir HDR (genérico)"
 
 msgctxt "#90774"
 msgid "Organize downloads by type"

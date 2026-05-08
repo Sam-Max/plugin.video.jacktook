@@ -1997,35 +1997,35 @@ msgstr "Предкэширование включено"
 
 msgctxt "#90171"
 msgid "Autoscrape Next Episode"
-msgstr ""
+msgstr "Автопоиск следующего эпизода"
 
 msgctxt "#90172"
 msgid "Pre-resolve the next episode's playback URL in the background while watching."
-msgstr ""
+msgstr "Предварительно определять URL воспроизведения следующего эпизода в фоне во время просмотра."
 
 msgctxt "#90173"
 msgid "Autoscrape Threshold"
-msgstr ""
+msgstr "Порог автопоиска"
 
 msgctxt "#90174"
 msgid "Percentage of playback to trigger background pre-resolution."
-msgstr ""
+msgstr "Процент воспроизведения, при котором запускается фоновое предварительное определение."
 
 msgctxt "#90175"
 msgid "Autoscrape Episode Count"
-msgstr ""
+msgstr "Количество эпизодов для автопоиска"
 
 msgctxt "#90176"
 msgid "Number of upcoming episodes to pre-resolve."
-msgstr ""
+msgstr "Количество следующих эпизодов для предварительного определения."
 
 msgctxt "#90177"
 msgid "Autoscrape Cache TTL"
-msgstr ""
+msgstr "TTL кэша автопоиска"
 
 msgctxt "#90178"
 msgid "Hours to keep resolved playback data in cache."
-msgstr ""
+msgstr "Сколько часов хранить в кэше определённые данные воспроизведения."
 
 msgctxt "#30901"
 msgid "Show Only Stremio Catalogs"
@@ -3709,31 +3709,31 @@ msgstr "Сначала локализованный"
 
 msgctxt "#90755"
 msgid "Manage Sources"
-msgstr ""
+msgstr "Управление источниками"
 
 msgctxt "#90756"
 msgid "No sources available"
-msgstr ""
+msgstr "Нет доступных источников"
 
 msgctxt "#90179"
 msgid "Stinger Notifications"
-msgstr ""
+msgstr "Уведомления о сценах после титров"
 
 msgctxt "#90180"
 msgid "Show a notification when a movie has post-credit scenes."
-msgstr ""
+msgstr "Показывать уведомление, если в фильме есть сцены после титров."
 
 msgctxt "#90181"
 msgid "Stinger Notification Time"
-msgstr ""
+msgstr "Время уведомления о сцене после титров"
 
 msgctxt "#90182"
 msgid "Seconds before the end to show the stinger notification."
-msgstr ""
+msgstr "За сколько секунд до конца показать уведомление о сцене после титров."
 
 msgctxt "#90183"
 msgid "Stay tuned after the credits!"
-msgstr ""
+msgstr "Не выключайте после титров!"
 
 msgctxt "#90757"
 msgid "Image Resolution"
@@ -3769,11 +3769,11 @@ msgstr "Poluchite API-klyuch na ratingposterdb.com"
 
 msgctxt "#90765"
 msgid "Filter by Codecs"
-msgstr ""
+msgstr "Фильтр по кодекам"
 
 msgctxt "#90766"
 msgid "Filter by HDR"
-msgstr ""
+msgstr "Фильтр по HDR"
 
 msgctxt "#90767"
 msgid "Include HEVC / H.265"
@@ -3985,28 +3985,28 @@ msgstr "Magneto"
 
 msgctxt "#90301"
 msgid "Enable external scraper module integration."
-msgstr ""
+msgstr "Включить интеграцию внешнего модуля scraper."
 
 msgctxt "#90302"
 msgid "Choose External Scraper Module"
-msgstr ""
+msgstr "Выбрать внешний модуль scraper"
 
 msgctxt "#90303"
 msgid "Select an external scraper addon module to use for torrent search."
-msgstr ""
+msgstr "Выберите внешний модуль scraper addon для поиска торрентов."
 
 msgctxt "#90304"
 msgid "Choose External Scraper"
-msgstr ""
+msgstr "Выбрать внешний scraper"
 
 msgctxt "#90305"
 msgid "Selected Module"
-msgstr ""
+msgstr "Выбранный модуль"
 
 msgctxt "#90306"
 msgid "Open External Scraper Settings"
-msgstr ""
+msgstr "Открыть настройки внешнего scraper"
 
 msgctxt "#90307"
 msgid "Open the settings for the selected external scraper module."
-msgstr ""
+msgstr "Открыть настройки выбранного внешнего модуля scraper."

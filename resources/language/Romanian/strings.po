@@ -4153,11 +4153,11 @@ msgstr "Obține cheia API de la ratingposterdb.com"
 
 msgctxt "#90765"
 msgid "Filter by Codecs"
-msgstr ""
+msgstr "Filtrare după codecuri"
 
 msgctxt "#90766"
 msgid "Filter by HDR"
-msgstr ""
+msgstr "Filtrare după HDR"
 
 msgctxt "#90767"
 msgid "Include HEVC / H.265"
@@ -4373,24 +4373,24 @@ msgstr "Enable external scraper module integration."
 
 msgctxt "#90302"
 msgid "Choose External Scraper Module"
-msgstr ""
+msgstr "Alege modulul scraper extern"
 
 msgctxt "#90303"
 msgid "Select an external scraper addon module to use for torrent search."
-msgstr ""
+msgstr "Selectează un modul addon scraper extern de folosit pentru căutarea de torrente."
 
 msgctxt "#90304"
 msgid "Choose External Scraper"
-msgstr ""
+msgstr "Alege scraper extern"
 
 msgctxt "#90305"
 msgid "Selected Module"
-msgstr ""
+msgstr "Modul selectat"
 
 msgctxt "#90306"
 msgid "Open External Scraper Settings"
-msgstr ""
+msgstr "Deschide setările scraperului extern"
 
 msgctxt "#90307"
 msgid "Open the settings for the selected external scraper module."
-msgstr ""
+msgstr "Deschide setările pentru modulul scraper extern selectat."
