@@ -26,9 +26,11 @@ session.mount("https://webservice.fanart.tv", requests.adapters.HTTPAdapter(pool
 def get_fanart(media_type: str, language: str, media_id: str) -> dict:
     """
     Fetch localized artwork (poster, fanart, clearlogo, etc.) from fanart.tv.
+
     Supports movies and TV shows, with language fallback: local → English → universal.
     """
     if not media_id:
+
         return DEFAULT_FANART.copy()
 
     url = BASE_URL.format(media_type=media_type, media_id=media_id)
@@ -77,10 +79,12 @@ def get_fanart(media_type: str, language: str, media_id: str) -> dict:
 def select_art(art_list: list, language: str) -> str:
     """
     Return the best matching artwork URL from a list of art objects.
+
     Preference order: user's language → English → universal.
     Sorts by number of likes (descending).
     """
     if not art_list:
+
         return ""
 
     try:
@@ -118,9 +122,11 @@ def select_art(art_list: list, language: str) -> str:
 def add_fanart(media_type: str, language: str, media_id: str, meta: dict) -> dict:
     """
     Update an existing metadata dictionary with fanart data.
+
     Always returns a complete dict (never None).
     """
     try:
+
         meta.update(get_fanart(media_type, language, media_id))
     except Exception:
         meta.update(DEFAULT_FANART)

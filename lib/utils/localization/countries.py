@@ -1761,9 +1761,7 @@ LANGUAGE_NAME_TO_CODE = {
 
 
 def _check_flag(flag, country):
-    if country["flag"] == flag:
-        return True
-    return False
+    return country["flag"] == flag
 
 
 def _return_language(country):
@@ -1771,9 +1769,7 @@ def _return_language(country):
 
 
 def _flag_is_minor_than(flag, country):
-    if country["flag"] < flag:
-        return True
-    return False
+    return country["flag"] < flag
 
 
 def _binary_search(validate_func, return_func, is_minor_func, array, target, low, high):

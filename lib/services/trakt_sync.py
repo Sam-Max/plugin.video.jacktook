@@ -49,20 +49,12 @@ class TraktSyncService:
     ):
         duration_ms = int((monotonic() - started_at) * 1000)
         kodilog(
-            "Trakt sync[{}]: completed outcome={} force={} forced_defaults={} detected_buckets={} applied_buckets={} duration_ms={}".format(
-                cycle_context,
-                outcome,
-                force,
-                forced_defaults,
-                self._format_buckets(detected_buckets),
-                self._format_buckets(applied_buckets),
-                duration_ms,
-            )
+            f"Trakt sync[{cycle_context}]: completed outcome={outcome} force={force} forced_defaults={forced_defaults} detected_buckets={self._format_buckets(detected_buckets)} applied_buckets={self._format_buckets(applied_buckets)} duration_ms={duration_ms}"
         )
 
     def _log_sync_failure(self, cycle_context, force, error):
         kodilog(
-            "Trakt sync[{}]: failed force={} error={}".format(cycle_context, force, error),
+            f"Trakt sync[{cycle_context}]: failed force={force} error={error}",
             level=xbmc.LOGERROR,
         )
 

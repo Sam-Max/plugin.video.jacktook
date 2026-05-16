@@ -41,5 +41,5 @@ class Company(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["movies"] % company_id, params="page={}".format(page), key="results"
+            self._urls["movies"] % company_id, params=f"page={page}", key="results"
         )

@@ -48,7 +48,7 @@ def extract_season(res):
         regex = r"\s(\d+)$"
         cour = False
         if isinstance(res.get("title"), dict):
-            for lang, name in res.get("title").items():
+            for _lang, name in res.get("title").items():
                 if name is not None and (" part " in name.lower() or " cour " in name.lower()):
                     cour = True
                     break

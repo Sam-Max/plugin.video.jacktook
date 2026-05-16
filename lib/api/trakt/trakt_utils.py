@@ -64,8 +64,10 @@ def add_trakt_watchlist_context_menu(media_type, ids, include_add=True, include_
 
 
 def add_trakt_watched_context_menu(
-    media_type, season=None, episode=None, ids={}, include_add=True, include_remove=True
+    media_type, season=None, episode=None, ids=None, include_add=True, include_remove=True
 ):
+    if ids is None:
+        ids = {}
     filtered_ids = clean_ids(
         {
             "tmdb": ids.get("tmdb_id") or ids.get("tmdb"),
@@ -222,7 +224,7 @@ def jsondate_to_datetime(jsondate_object, resformat, remove_time=False):
 def datetime_workaround(data, str_format):
     try:
         datetime_object = datetime.strptime(data, str_format)
-    except:
+    except Exception:
         datetime_object = datetime(*(time.strptime(data, str_format)[0:6]))
     return datetime_object
 
@@ -253,7 +255,7 @@ def sort_list(sort_key, sort_direction, list_data):
         if sort_key == "random":
             return sorted(list_data, key=lambda k: random.random())
         return list_data
-    except:
+    except Exception:
         return list_data
 
 
@@ -276,7 +278,7 @@ def title_key(title):
         else:
             offset = 0
         return title[offset:]
-    except:
+    except Exception:
         return title
 
 

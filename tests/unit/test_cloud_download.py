@@ -296,7 +296,7 @@ class TestDownloadCloudFile:
             debrid, "get_public_ip", return_value="1.2.3.4"
         ), patch.object(
             debrid.cache, "get", side_effect=[None, "https://tb.example.com/Movie.mkv"]
-        ) as mock_cache_get, patch.object(debrid.cache, "set") as mock_cache_set:
+        ), patch.object(debrid.cache, "set") as mock_cache_set:
             result1 = debrid.resolve_cloud_download_url(
                 {
                     "debrid_type": "TB",

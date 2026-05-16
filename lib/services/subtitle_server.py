@@ -4,7 +4,6 @@ Local web server for uploading subtitle files from a browser.
 Serves a web UI with drag & drop file upload and exposes an API endpoint
 to receive the subtitle file via HTTP POST.
 """
-
 import json
 import os
 import socket
@@ -28,6 +27,7 @@ SUBTITLE_EXTENSIONS = {".srt", ".ass", ".ssa", ".sub", ".vtt", ".txt"}
 def _ensure_upload_dir():
     """Create upload directory if it doesn't exist."""
     upload_dir = os.path.join(ADDON_PROFILE_PATH, "Subtitles", "uploads")
+
     os.makedirs(upload_dir, exist_ok=True)
     return upload_dir
 
@@ -35,16 +35,18 @@ def _ensure_upload_dir():
 def _is_valid_extension(filename):
     """Check if file has a supported subtitle extension."""
     ext = os.path.splitext(filename)[1].lower()
+
     return ext in SUBTITLE_EXTENSIONS
 
 
 class SubtitleUploadHandler(BaseHTTPRequestHandler):
     """Handles HTTP requests for subtitle upload."""
-
     @property
+
     def wrapper_server(self):
         """Get the SubtitleUploadServer wrapper instance."""
         # The wrapper is stored as an attribute on the HTTPServer
+
         return getattr(self.server, "wrapper_server", None)
 
     def log_message(self, format, *args):
@@ -76,9 +78,9 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Error</title>
     <style>
-        body {{ font-family: sans-serif; background: #0d1117; color: #e6edf3; 
+        body {{ font-family: sans-serif; background: #0d1117; color: #e6edf3;
                display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-        .error-box {{ background: #161b22; border: 1px solid #f85149; border-radius: 12px; 
+        .error-box {{ background: #161b22; border: 1px solid #f85149; border-radius: 12px;
                       padding: 30px; text-align: center; max-width: 400px; }}
         h1 {{ color: #f85149; margin: 0 0 15px 0; }}
         p {{ color: #8b949e; margin: 0; }}
@@ -99,6 +101,7 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     def _html_escape(text):
         """Escape HTML special characters to prevent XSS."""
         return (
+
             text.replace("&", "&amp;")
             .replace("<", "&lt;")
             .replace(">", "&gt;")
@@ -115,9 +118,9 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Successful</title>
     <style>
-        body {{ font-family: sans-serif; background: #0d1117; color: #e6edf3; 
+        body {{ font-family: sans-serif; background: #0d1117; color: #e6edf3;
                display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-        .success-box {{ background: #161b22; border: 1px solid #3fb950; border-radius: 12px; 
+        .success-box {{ background: #161b22; border: 1px solid #3fb950; border-radius: 12px;
                         padding: 30px; text-align: center; max-width: 400px; }}
         h1 {{ color: #3fb950; margin: 0 0 15px 0; }}
         p {{ color: #8b949e; margin: 0; }}
@@ -168,12 +171,14 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     def _serve_status(self):
         """Return current upload status."""
         wrapper = self.wrapper_server
+
         uploaded_file = wrapper.get_uploaded_file() if wrapper else None
         self._send_json({"uploaded": uploaded_file is not None, "path": uploaded_file})
 
     def _parse_multipart(self):
         """
         Parse multipart/form-data without cgi module.
+
         Returns (filename, file_content) tuple or (None, error_message).
         """
         content_type = self.headers.get("Content-Type", "")
@@ -273,6 +278,7 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     def _handle_upload(self):
         """Handle multipart form data upload."""
         try:
+
             filename, file_content = self._parse_multipart()
 
             if filename is None:
@@ -334,8 +340,8 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
 
 class SubtitleUploadServer:
     """Threaded HTTP server for subtitle uploads."""
-
     def __init__(self, port=8082):
+
         self.port = port
         self._server = None
         self._thread = None
@@ -382,6 +388,7 @@ class SubtitleUploadServer:
     def set_uploaded_file(self, file_path):
         """Called by handler when file is uploaded."""
         self._uploaded_file = file_path
+
         self._upload_event.set()
 
     def get_uploaded_file(self):
@@ -400,6 +407,7 @@ class SubtitleUploadServer:
 def _is_port_available(port):
     """Check if a port is available for binding."""
     try:
+
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(("0.0.0.0", port))
@@ -412,6 +420,7 @@ def _is_port_available(port):
 def find_available_port(preferred=8082, max_attempts=10):
     """Find an available port, starting from the preferred one."""
     for offset in range(max_attempts):
+
         port = preferred + offset
         if _is_port_available(port):
             return port
@@ -429,6 +438,7 @@ def find_available_port(preferred=8082, max_attempts=10):
 def get_local_ip():
     """Get the machine's LAN IP address."""
     try:
+
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]

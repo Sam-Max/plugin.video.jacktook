@@ -25,7 +25,7 @@ from lib.utils.views.last_files import add_last_files_context_menu, parse_time
 
 def has_continue_watching_items():
     all_items = PickleDatabase().get_key("jt:lfh").items()
-    for title, data in all_items:
+    for _title, data in all_items:
         progress = float(data.get("progress", 0))
         if 5 < progress < 90:
             return True

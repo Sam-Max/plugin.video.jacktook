@@ -126,10 +126,7 @@ def _is_source_enabled(indexer_key, stremio_addon_key=None):
 
     # Not listed but enabled in settings → enabled (handles stale caches)
     setting_key = BUILTIN_INDEXER_SETTINGS.get(indexer_key)
-    if setting_key and get_setting(setting_key):
-        return True
-
-    return False
+    return bool(setting_key and get_setting(setting_key))
 
 
 def _clean_title_candidate(value) -> str:

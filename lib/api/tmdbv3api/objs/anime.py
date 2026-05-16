@@ -15,19 +15,19 @@ class TmdbAnime(TMDb):
     def cartoons_popular(self, mode, page_no):
         return self._request_obj(
             (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
-            params="with_keywords=6513-cartoon&page={}".format(page_no),
+            params=f"with_keywords=6513-cartoon&page={page_no}",
         )
 
     def animation_popular(self, mode, page_no):
         return self._request_obj(
             (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
-            params="with_keywords=297442&page={}".format(page_no),
+            params=f"with_keywords=297442&page={page_no}",
         )
 
     def anime_popular(self, mode, page_no):
         return self._request_obj(
             (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
-            params="with_keywords=210024&page={}".format(page_no),
+            params=f"with_keywords=210024&page={page_no}",
         )
 
     def anime_popular_recent(self, mode, page_no):
@@ -61,21 +61,17 @@ class TmdbAnime(TMDb):
         current_date, future_date = get_dates(7, reverse=False)
         return self._request_obj(
             (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
-            params="with_keywords=210024&air_date.gte={}&air_date.lte={}&page={}".format(
-                current_date, future_date, page_no
-            ),
+            params=f"with_keywords=210024&air_date.gte={current_date}&air_date.lte={future_date}&page={page_no}",
         )
 
     def anime_top_rated(self, mode, page_no):
         return self._request_obj(
             (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
-            params="with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page={}".format(
-                page_no
-            ),
+            params=f"with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page={page_no}",
         )
 
     def anime_search(self, query, mode, page_no, adult=False):
-        params = "query={}&page={}".format(query, page_no)
+        params = f"query={query}&page={page_no}"
 
         if adult is not None:
             params += "&include_adult={}".format("true") if adult else "false"

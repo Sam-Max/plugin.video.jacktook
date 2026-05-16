@@ -458,7 +458,9 @@ def build_play_trailer_context_menu_item(ids, media_type, title=None, title_key=
     )
 
 
-def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
+def add_tmdb_movie_context_menu(mode, media_type, title=None, ids=None):
+    if ids is None:
+        ids = {}
     context_menu = [
         (
             translation(90049),
@@ -572,7 +574,9 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids={}):
     return context_menu
 
 
-def add_tmdb_show_context_menu(mode, ids={}, title=None):
+def add_tmdb_show_context_menu(mode, ids=None, title=None):
+    if ids is None:
+        ids = {}
     context_menu = [
         (
             "Extras",
@@ -638,7 +642,9 @@ def add_tmdb_show_context_menu(mode, ids={}, title=None):
     return context_menu
 
 
-def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids={}):
+def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids=None):
+    if ids is None:
+        ids = {}
     return [
         (
             translation(90049),

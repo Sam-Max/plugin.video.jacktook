@@ -29,9 +29,8 @@ class SourcePackSelect(SourcePackWindow):
 
     def handle_action(self, action_id: int, control_id: Optional[int] = None) -> None:
         self.position = self.display_list.getSelectedPosition()
-        if action_id == 7:
-            if control_id == 1000:
-                self._resolve_item()
+        if action_id == 7 and control_id == 1000:
+            self._resolve_item()
 
     def _resolve_item(self) -> None:
         self.setProperty("resolving", "true")

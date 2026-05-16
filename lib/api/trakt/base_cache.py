@@ -1,4 +1,5 @@
 import ast
+import contextlib
 import os
 import sqlite3 as database
 import time
@@ -105,13 +106,11 @@ def check_databases_integrity():
             dbcon = database.connect(database_location)
             for db_table in tables:
                 dbcon.execute(command_base % db_table)
-        except:
+        except Exception:
             database_errors.append(database_name)
             if os.path.exists(database_location):
-                try:
+                with contextlib.suppress(BaseException):
                     dbcon.close()
-                except:
-                    pass
                 delete_file(database_location)
 
     command_base = "SELECT * FROM %s LIMIT 1"
@@ -147,7 +146,7 @@ class BaseCache:
                         self.set_memory_cache(result, string, cache_data[0])
                     else:
                         self.delete(string)
-        except:
+        except Exception:
             pass
         return result
 
@@ -157,7 +156,7 @@ class BaseCache:
             expires = get_timestamp(expiration)
             dbcon.execute(BASE_SET % self.table, (string, self._serialize(data), int(expires)))
             self.set_memory_cache(data, string, int(expires))
-        except:
+        except Exception:
             return None
 
     def get_memory_cache(self, string, current_time):
@@ -168,7 +167,7 @@ class BaseCache:
                 cachedata = self._deserialize(cachedata)
                 if cachedata[0] > current_time:
                     result = cachedata[1]
-        except:
+        except Exception:
             pass
         return result
 
@@ -177,7 +176,7 @@ class BaseCache:
             cachedata = (expires, data)
             cachedata_repr = self._serialize(cachedata)
             set_property(media_prop % string, cachedata_repr)
-        except:
+        except Exception:
             pass
 
     @staticmethod
@@ -193,7 +192,7 @@ class BaseCache:
             dbcon = connect_database(self.dbfile)
             dbcon.execute(BASE_DELETE % self.table, (string,))
             self.delete_memory_cache(string)
-        except:
+        except Exception:
             pass
 
     def delete_memory_cache(self, string):

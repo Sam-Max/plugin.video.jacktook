@@ -1,3 +1,4 @@
+import contextlib
 from time import time
 
 import xbmc
@@ -40,14 +41,10 @@ class WidgetRefreshService:
             except Exception as e:
                 kodilog(f"WidgetRefresh error: {e}", level=xbmc.LOGERROR)
 
-        try:
+        with contextlib.suppress(BaseException):
             del monitor
-        except:
-            pass
-        try:
+        with contextlib.suppress(BaseException):
             del player
-        except:
-            pass
         kodilog("WidgetRefresh Service Finished", level=xbmc.LOGINFO)
 
     def condition_check(self, player):
@@ -66,10 +63,7 @@ class WidgetRefreshService:
             return True
 
         # No refrescar si el timer es 0 (desactivado)
-        if self.next_refresh is None:
-            return True
-
-        return False
+        return self.next_refresh is None
 
     def set_next_refresh(self, _time):
         self.offset = int(get_setting("widget_refresh_timer", 60))

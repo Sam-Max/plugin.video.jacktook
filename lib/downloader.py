@@ -1,9 +1,11 @@
+import contextlib
 import json
 import os
 import re
 import ssl
 import threading
 import time
+from typing import Optional
 from urllib.parse import parse_qsl, unquote, urlparse
 from urllib.request import Request, urlopen
 
@@ -209,7 +211,7 @@ class Downloader:
         url: str,
         destination: str,
         name: str,
-        registry_id: str = None,
+        registry_id: Optional[str] = None,
         show_progress: bool = True,
     ):
         self.url = url
@@ -595,18 +597,18 @@ def handle_delete_file(params):
 def _count_active_downloads(directory):
     """Count downloads that are in-progress (downloading or paused) recursively
     across all subdirectories.
-    """
+    """  # noqa: D205
     count = 0
-    try:
+
+    with contextlib.suppress(Exception):
         count = _walk_count_active(directory)
-    except Exception:
-        pass
     return count
 
 
 def _walk_count_active(directory):
     """Recursively walk a directory using xbmcvfs and count active downloads."""
     count = 0
+
     dirs, files = xbmcvfs.listdir(directory)
     for f in files:
         f = f.decode("utf-8") if isinstance(f, bytes) else f

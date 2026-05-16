@@ -78,8 +78,8 @@ class AniList:
 # GraphQL Anilist
 BASE_GRAPH = """
     query (
-        $page: Int, 
-        $perPage: Int, 
+        $page: Int,
+        $perPage: Int,
         $sort: [MediaSort],
         $format:[MediaFormat],
         $season: MediaSeason,
@@ -88,7 +88,7 @@ BASE_GRAPH = """
         ) {
         Page (page: $page, perPage: $perPage) {
             ANIME: media (
-                type: $type, 
+                type: $type,
                 format_in: $format,
                 season: $season,
                 status: $status,
@@ -118,14 +118,14 @@ BASE_GRAPH = """
 
 SEARCH = """
     query (
-        $query: String, 
-        $page: Int, 
+        $query: String,
+        $page: Int,
         $perPage: Int,
         $format:[MediaFormat]
     ) {
         Page (page: $page, perPage: $perPage) {
             ANIME: media (
-                search: $query, 
+                search: $query,
                 type: ANIME,
                 format_in: $format,
             ) {
@@ -149,7 +149,7 @@ SEARCH = """
 SEARCH_ID = """
     query ($id: Int) {
         Media (
-            id: $id, 
+            id: $id,
             type: ANIME
         ) {
             id

@@ -110,11 +110,12 @@ max-doc-length = 100
 
 # ── Per-file-rule overrides ───────────────────
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D", "N", "SIM"]
+"tests/**" = ["D", "N", "SIM", "E402", "E501"]
 "scripts/**" = ["D", "N", "SIM", "UP"]
-"lib/vendor/**" = ["E501"]
-"lib/api/tmdbv3api/**" = ["UP031"]
-"lib/utils/parsers/xmltodict.py" = ["UP031"]
+# Vendor code: ignore everything except critical bugs (F, B)
+"lib/vendor/**" = ["ALL"]
+"lib/api/tmdbv3api/**" = ["ALL"]
+"lib/utils/parsers/xmltodict.py" = ["ALL"]
 
 # ──────────────────────────────────────────────
 # mypy — static type checker

@@ -172,7 +172,7 @@ class TorrServer:
         try:
             return self._session.request(method, self._base_url + url, auth=self._auth, **kwargs)
         except Exception as e:
-            raise TorrServerError(str(e))
+            raise TorrServerError(str(e)) from e
 
 
 class TorrServerError(Exception):

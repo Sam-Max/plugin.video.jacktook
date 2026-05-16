@@ -22,7 +22,7 @@ class Provider(TMDb):
         """
         return self._request_obj(
             self._urls["movie"],
-            params="watch_region={}".format(region) if region else "",
+            params=f"watch_region={region}" if region else "",
             key="results",
         )
 
@@ -33,6 +33,6 @@ class Provider(TMDb):
         """
         return self._request_obj(
             self._urls["tv"],
-            params="watch_region={}".format(region) if region else "",
+            params=f"watch_region={region}" if region else "",
             key="results",
         )

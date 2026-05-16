@@ -1,3 +1,4 @@
+import contextlib
 import json
 import threading
 
@@ -152,10 +153,8 @@ class ExtrasWindow(BaseWindow):
             # ── Fanart.tv for clearlogo and better backgrounds ──
             language_index = get_setting("language", 18)
             lang = "en"
-            try:
+            with contextlib.suppress(Exception):
                 lang = LANGUAGES[int(language_index)].split("-")[0]
-            except Exception:
-                pass
 
             media_type_fa = "movies" if self.media_type == "movie" else "tv"
             fa_id = str(self.tmdb_id)
@@ -209,10 +208,8 @@ class ExtrasWindow(BaseWindow):
             vote_average = getattr(data, "vote_average", None)
             if vote_average and float(vote_average) > 0:
                 self.setProperty("tmdb_rating", "true")
-                try:
+                with contextlib.suppress(Exception):
                     self.getControl(4005).setLabel(f"{float(vote_average):.1f}")
-                except Exception:
-                    pass
 
             # Year and runtime — populate Line 2 (control 2001)
             line2_parts = []
@@ -242,18 +239,14 @@ class ExtrasWindow(BaseWindow):
                     line2_parts.append(str(status))
 
             if line2_parts:
-                try:
+                with contextlib.suppress(Exception):
                     self.getControl(2001).setLabel("  •  ".join(line2_parts))
-                except Exception:
-                    pass
 
             # Vote count / Tagline — populate Line 3 (control 3001)
             tagline = getattr(data, "tagline", "")
             if tagline:
-                try:
+                with contextlib.suppress(Exception):
                     self.getControl(3001).setLabel(f"[I]{tagline}[/I]")
-                except Exception:
-                    pass
 
         except Exception as e:
             kodilog(f"Error populating metadata: {e}")

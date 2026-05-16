@@ -1,3 +1,4 @@
+import contextlib
 import json
 from http import HTTPStatus
 from time import sleep, time
@@ -94,7 +95,7 @@ class PlexApi:
             raise HTTPException(
                 status_code=504,
                 detail="Plex server timeout error",
-            )
+            ) from None
 
     def get_plex_user(self):
         response = self.client.get(
@@ -115,10 +116,8 @@ class PlexApi:
     def logout(self):
         self.auth_token = ""
         set_setting("plex_token", "")
-        try:
+        with contextlib.suppress(BaseException):
             self.client.close()
-        except:
-            pass
         set_setting("plex_user", "")
         set_setting("plex_server_name", "")
         set_setting("plex_discovery_url", "")

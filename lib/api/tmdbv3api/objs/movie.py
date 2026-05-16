@@ -46,7 +46,7 @@ class Movie(TMDb):
         """
         return self._request_obj(
             self._urls["details"] % movie_id,
-            params="append_to_response={}".format(append_to_response),
+            params=f"append_to_response={append_to_response}",
         )
 
     def account_states(self, movie_id):
@@ -58,7 +58,7 @@ class Movie(TMDb):
         """
         return self._request_obj(
             self._urls["account_states"] % movie_id,
-            params="session_id={}".format(self.session_id),
+            params=f"session_id={self.session_id}",
         )
 
     def alternative_titles(self, movie_id, country=None):
@@ -70,7 +70,7 @@ class Movie(TMDb):
         """
         return self._request_obj(
             self._urls["alternative_titles"] % movie_id,
-            params="country={}".format(country) if country else "",
+            params=f"country={country}" if country else "",
             key="titles",
         )
 
@@ -84,11 +84,11 @@ class Movie(TMDb):
         :param page: int
         :return:
         """
-        params = "page={}".format(page)
+        params = f"page={page}"
         if start_date:
-            params += "&start_date={}".format(start_date)
+            params += f"&start_date={start_date}"
         if end_date:
-            params += "&end_date={}".format(end_date)
+            params += f"&end_date={end_date}"
         return self._request_obj(self._urls["changes"] % movie_id, params=params, key="changes")
 
     def credits(self, movie_id):
@@ -120,7 +120,7 @@ class Movie(TMDb):
         """
         return self._request_obj(
             self._urls["images"] % movie_id,
-            params="include_image_language={}".format(include_image_language)
+            params=f"include_image_language={include_image_language}"
             if include_image_language
             else "",
         )
@@ -141,7 +141,7 @@ class Movie(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["lists"] % movie_id, params="page={}".format(page), key="results"
+            self._urls["lists"] % movie_id, params=f"page={page}", key="results"
         )
 
     def recommendations(self, movie_id, page=1):
@@ -153,7 +153,7 @@ class Movie(TMDb):
         """
         return self._request_obj(
             self._urls["recommendations"] % movie_id,
-            params="page={}".format(page),
+            params=f"page={page}",
             key="results",
         )
 
@@ -173,7 +173,7 @@ class Movie(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["reviews"] % movie_id, params="page={}".format(page), key="results"
+            self._urls["reviews"] % movie_id, params=f"page={page}", key="results"
         )
 
     def similar(self, movie_id, page=1):
@@ -184,7 +184,7 @@ class Movie(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["similar"] % movie_id, params="page={}".format(page), key="results"
+            self._urls["similar"] % movie_id, params=f"page={page}", key="results"
         )
 
     def translations(self, movie_id):
@@ -203,7 +203,7 @@ class Movie(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["videos"] % movie_id, params="page={}".format(page), key="results"
+            self._urls["videos"] % movie_id, params=f"page={page}", key="results"
         )
 
     def watch_providers(self, movie_id):
@@ -222,7 +222,7 @@ class Movie(TMDb):
         """
         self._request_obj(
             self._urls["rate_movie"] % movie_id,
-            params="session_id={}".format(self.session_id),
+            params=f"session_id={self.session_id}",
             method="POST",
             json={"value": rating},
         )
@@ -234,7 +234,7 @@ class Movie(TMDb):
         """
         self._request_obj(
             self._urls["delete_rating"] % movie_id,
-            params="session_id={}".format(self.session_id),
+            params=f"session_id={self.session_id}",
             method="DELETE",
         )
 
@@ -252,9 +252,9 @@ class Movie(TMDb):
         :param page: int
         :return:
         """
-        params = "page={}".format(page)
+        params = f"page={page}"
         if region:
-            params += "&region={}".format(region)
+            params += f"&region={region}"
         return self._request_obj(self._urls["now_playing"], params=params, key="results")
 
     def popular(self, region=None, page=1):
@@ -264,9 +264,9 @@ class Movie(TMDb):
         :param page: int
         :return:
         """
-        params = "page={}".format(page)
+        params = f"page={page}"
         if region:
-            params += "&region={}".format(region)
+            params += f"&region={region}"
         return self._request_obj(self._urls["popular"], params=params, key="results")
 
     def top_rated(self, region=None, page=1):
@@ -276,9 +276,9 @@ class Movie(TMDb):
         :param page: int
         :return:
         """
-        params = "page={}".format(page)
+        params = f"page={page}"
         if region:
-            params += "&region={}".format(region)
+            params += f"&region={region}"
         return self._request_obj(self._urls["top_rated"], params=params, key="results")
 
     def upcoming(self, region=None, page=1):
@@ -288,9 +288,9 @@ class Movie(TMDb):
         :param page: int
         :return:
         """
-        params = "page={}".format(page)
+        params = f"page={page}"
         if region:
-            params += "&region={}".format(region)
+            params += f"&region={region}"
         return self._request_obj(self._urls["upcoming"], params=params, key="results")
 
     def search(self, term, page=1):

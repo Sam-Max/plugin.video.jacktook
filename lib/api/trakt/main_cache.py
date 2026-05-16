@@ -19,7 +19,7 @@ class MainCache(BaseCache):
             dbcon.execute(DELETE_ALL)
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
     def delete_all_folderscrapers(self):
@@ -35,7 +35,7 @@ class MainCache(BaseCache):
             for item in remove_list:
                 self.delete_memory_cache(str(item))
             return True
-        except:
+        except Exception:
             return False
 
     def clean_database(self):
@@ -44,7 +44,7 @@ class MainCache(BaseCache):
             dbcon.execute(CLEAN, (get_timestamp(),))
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
 

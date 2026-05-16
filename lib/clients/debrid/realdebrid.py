@@ -60,7 +60,7 @@ class RealDebridHelper:
                 if res.infoHash in torr_available_hashes:
                     res.isCached = True
                     cached_results.append(res)
-                elif res.isCached == True:
+                elif res.isCached:
                     cached_results.append(res)
                 else:
                     res.isCached = False
@@ -87,7 +87,7 @@ class RealDebridHelper:
             self._handle_torrent_status(torrent_info, is_pack)
             return torrent_info.get("id")
         except Exception as e:
-            raise ProviderException(str(e))
+            raise ProviderException(str(e)) from e
 
     def add_torrent_file(
         self,
@@ -112,7 +112,7 @@ class RealDebridHelper:
             self._handle_torrent_status(torrent_info, is_pack)
             return torrent_info.get("id")
         except Exception as e:
-            raise ProviderException(str(e))
+            raise ProviderException(str(e)) from e
 
     def _handle_torrent_status(self, torrent_info: Dict, is_pack: bool = False) -> Optional[str]:
         """Processes torrent_info status and handles errors or file selection."""
@@ -193,8 +193,8 @@ class RealDebridHelper:
             selected_files = [f for f in files if f.get("selected") == 1]
             try:
                 file_index = selected_files.index(match_file)
-            except ValueError:
-                raise ProviderException("Could not map episode to Real-Debrid link.")
+            except ValueError as exc:
+                raise ProviderException("Could not map episode to Real-Debrid link.") from exc
 
             data["url"] = create_download_for_link(links[file_index])
             return data

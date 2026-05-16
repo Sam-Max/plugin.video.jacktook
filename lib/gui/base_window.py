@@ -99,7 +99,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             control = self.getControl(control_id)
         except RuntimeError as e:
             kodilog(f"Control does not exist {control_id}", {e})
-            raise ValueError(f"Control with Id {control_id} does not exist")
+            raise ValueError(f"Control with Id {control_id} does not exist") from e
 
         if not isinstance(control, xbmcgui.ControlList):
             raise AttributeError(f"Control with Id {control_id} should be of type ControlList")

@@ -1,3 +1,4 @@
+import contextlib
 import datetime
 import json
 import random
@@ -79,10 +80,8 @@ class TraktBase:
         set_setting("trakt_user", EMPTY_USER)
         set_setting("is_trakt_auth", "false")
         notification(translation(90408), time=5000)
-        try:
+        with contextlib.suppress(BaseException):
             TraktCache().clear_all_trakt_cache_data()
-        except:
-            pass
 
     def call_trakt(
         self,
@@ -124,10 +123,10 @@ class TraktBase:
             sleep(retry_after * 1000)
             response = self._send_request(path, params, data, headers, is_delete, method)
 
-        kodilog("Trakt response status code: {}".format(response.status_code))
+        kodilog(f"Trakt response status code: {response.status_code}")
         try:
             response.raise_for_status()
-        except requests.HTTPError:
+        except requests.HTTPError as error:
             status_code = response.status_code
             if status_code == 401:
                 self._handle_unauthorized()
@@ -147,16 +146,16 @@ class TraktBase:
             }
             error_message = error_messages.get(status_code, f"HTTP Error: {status_code}")
             kodilog(f"Trakt API error: {response.text}")
-            raise ProviderException(f"Trakt API error: {error_message}")
+            raise ProviderException(f"Trakt API error: {error_message}") from error
         except requests.RequestException as error:
             error_message = f"Trakt API error: {error}"
-            raise ProviderException(error_message)
+            raise ProviderException(error_message) from error
 
         return self._process_response(response, method, pagination)
 
     def _send_request(self, path, params, data, headers, is_delete, method):
         url = self.api_endpoint % path
-        kodilog("Trakt URL: {}".format(url))
+        kodilog(f"Trakt URL: {url}")
         if method == "post":
             return requests.post(url, json=data, headers=headers, timeout=self.timeout)
         elif method == "delete":
@@ -180,10 +179,8 @@ class TraktBase:
         if method == "sort_by_headers":
             headers = response.headers
             if "X-Sort-By" in headers and "X-Sort-How" in headers:
-                try:
+                with contextlib.suppress(Exception):
                     result = sort_list(headers["X-Sort-By"], headers["X-Sort-How"], result)
-                except Exception:
-                    pass
 
         if pagination:
             return result, response.headers.get("X-Pagination-Page-Count")
@@ -322,10 +319,8 @@ class TraktAuthentication(TraktBase):
 
         # Generate QR code for the verification URL
         qr_code = make_qrcode(verification_url)
-        try:
+        with contextlib.suppress(BaseException):
             copy2clip(user_code)
-        except:
-            pass
 
         # Create and display QR code dialog
         progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
@@ -360,12 +355,10 @@ class TraktAuthentication(TraktBase):
                     progressDialog.update_progress(progress)
                 else:
                     break
-        except:
+        except Exception:
             pass
-        try:
+        with contextlib.suppress(BaseException):
             progressDialog.close_dialog()
-        except:
-            pass
         return result
 
     def trakt_authenticate(self):
@@ -385,7 +378,7 @@ class TraktAuthentication(TraktBase):
                 set_setting("is_trakt_auth", "true")
                 notification(translation(90385), time=3000)
                 return True
-        except:
+        except Exception:
             kodilog("Trakt user not found, setting to empty user")
             set_setting("is_trakt_auth", "false")
             notification(translation(90384), time=3000)
@@ -417,7 +410,7 @@ class TraktAuthentication(TraktBase):
 class TraktMovies(TraktBase):
     def trakt_movies_trending(self, page_no):
         set_pluging_category(translation(90028))
-        string = "trakt_movies_trending_{}".format(page_no)
+        string = f"trakt_movies_trending_{page_no}"
         params = {
             "path": "movies/trending",
             "params": {"limit": 20},
@@ -428,8 +421,8 @@ class TraktMovies(TraktBase):
     def trakt_movies_trending_recent(self, page_no):
         set_pluging_category(translation(90024))
         current_year = get_datetime().year
-        years = "{}-{}".format(str(current_year - 1), str(current_year))
-        string = "trakt_movies_trending_recent_{}".format(page_no)
+        years = f"{current_year - 1!s}-{current_year!s}"
+        string = f"trakt_movies_trending_recent_{page_no}"
         params = {
             "path": "movies/trending",
             "params": {"limit": 20, "years": years},
@@ -445,7 +438,7 @@ class TraktMovies(TraktBase):
 
     def trakt_movies_most_watched(self, page_no):
         set_pluging_category(translation(90029))
-        string = "trakt_movies_most_watched_{}".format(page_no)
+        string = f"trakt_movies_most_watched_{page_no}"
         params = {
             "path": "movies/watched/daily",
             "params": {"limit": 20},
@@ -455,7 +448,7 @@ class TraktMovies(TraktBase):
 
     def trakt_movies_most_favorited(self, page_no):
         set_pluging_category(translation(90030))
-        string = "trakt_movies_most_favorited{}".format(page_no)
+        string = f"trakt_movies_most_favorited{page_no}"
         params = {
             "path": "movies/favorited/daily",
             "params": {"limit": 20},
@@ -465,7 +458,7 @@ class TraktMovies(TraktBase):
 
     def trakt_recommendations(self, media_type):
         set_pluging_category(translation(90033))
-        string = "trakt_recommendations_{}".format(media_type)
+        string = f"trakt_recommendations_{media_type}"
         params = {
             "path": "/recommendations/%s",
             "path_insert": media_type,
@@ -509,7 +502,7 @@ class TraktMovies(TraktBase):
 class TraktTV(TraktBase):
     def trakt_tv_trending(self, page_no):
         set_pluging_category(translation(90028))
-        string = "trakt_tv_trending_{}".format(page_no)
+        string = f"trakt_tv_trending_{page_no}"
         params = {
             "path": "shows/trending",
             "params": {"limit": 20},
@@ -520,8 +513,8 @@ class TraktTV(TraktBase):
     def trakt_tv_trending_recent(self, page_no):
         set_pluging_category(translation(90024))
         current_year = get_datetime().year
-        years = "{}-{}".format(str(current_year - 1), str(current_year))
-        string = "trakt_tv_trending_recent_{}".format(page_no)
+        years = f"{current_year - 1!s}-{current_year!s}"
+        string = f"trakt_tv_trending_recent_{page_no}"
         params = {
             "path": "shows/trending",
             "params": {"limit": 20, "years": years},
@@ -531,7 +524,7 @@ class TraktTV(TraktBase):
 
     def trakt_tv_most_watched(self, page_no):
         set_pluging_category(translation(90029))
-        string = "trakt_tv_most_watched_{}".format(page_no)
+        string = f"trakt_tv_most_watched_{page_no}"
         params = {
             "path": "shows/watched/daily",
             "params": {"limit": 20},
@@ -541,7 +534,7 @@ class TraktTV(TraktBase):
 
     def trakt_tv_most_favorited(self, page_no):
         set_pluging_category(translation(90030))
-        string = "trakt_tv_most_favorited_{}".format(page_no)
+        string = f"trakt_tv_most_favorited_{page_no}"
         params = {
             "path": "shows/favorited/daily",
             "params": {"limit": 20},
@@ -551,7 +544,7 @@ class TraktTV(TraktBase):
 
     def trakt_recommendations(self, media_type):
         set_pluging_category(translation(90033))
-        string = "trakt_recommendations_{}".format(media_type)
+        string = f"trakt_recommendations_{media_type}"
         params = {
             "path": "/recommendations/%s",
             "path_insert": media_type,
@@ -756,9 +749,9 @@ class TraktTV(TraktBase):
                             hidden.append(int(tmdb_id))
             return hidden
 
-        string = "trakt_hidden_items_{}".format(section)
+        string = f"trakt_hidden_items_{section}"
         params = {
-            "path": "users/hidden/{}".format(section),
+            "path": f"users/hidden/{section}",
             "params": {"limit": 1000},
             "with_auth": True,
             "pagination": False,
@@ -788,9 +781,9 @@ class TraktAnime(TraktBase):
 
     def trakt_anime_trending(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = "trakt_anime_trending_{}_{}".format(mode, page_no)
+        string = f"trakt_anime_trending_{mode}_{page_no}"
         params = {
-            "path": "{}/trending".format(path_prefix),
+            "path": f"{path_prefix}/trending",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
@@ -799,10 +792,10 @@ class TraktAnime(TraktBase):
     def trakt_anime_trending_recent(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
         current_year = get_datetime().year
-        years = "{}-{}".format(str(current_year - 1), str(current_year))
-        string = "trakt_anime_trending_recent_{}_{}".format(mode, page_no)
+        years = f"{current_year - 1!s}-{current_year!s}"
+        string = f"trakt_anime_trending_recent_{mode}_{page_no}"
         params = {
-            "path": "{}/trending".format(path_prefix),
+            "path": f"{path_prefix}/trending",
             "params": {"genres": "anime", "limit": 20, "years": years},
             "page_no": page_no,
         }
@@ -810,9 +803,9 @@ class TraktAnime(TraktBase):
 
     def trakt_anime_most_watched(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = "trakt_anime_most_watched_{}_{}".format(mode, page_no)
+        string = f"trakt_anime_most_watched_{mode}_{page_no}"
         params = {
-            "path": "{}/watched/daily".format(path_prefix),
+            "path": f"{path_prefix}/watched/daily",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
@@ -820,9 +813,9 @@ class TraktAnime(TraktBase):
 
     def trakt_anime_most_favorited(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = "trakt_anime_most_favorited_{}_{}".format(mode, page_no)
+        string = f"trakt_anime_most_favorited_{mode}_{page_no}"
         params = {
-            "path": "{}/favorited/daily".format(path_prefix),
+            "path": f"{path_prefix}/favorited/daily",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
         }
@@ -918,7 +911,7 @@ class TraktLists(TraktBase):
     def trakt_watchlist(self, media_type):
         kodilog("Fetching trakt watchlist")
         result = self.trakt_fetch_sorted_list("watchlist", media_type)
-        kodilog("Watchlist result: {}".format(result), level=xbmc.LOGDEBUG)
+        kodilog(f"Watchlist result: {result}", level=xbmc.LOGDEBUG)
         return result
 
     def add_to_watchlist(self, media_type, ids):
@@ -1081,7 +1074,7 @@ class TraktLists(TraktBase):
     def mark_as_watched(self, media_type, season, episode, ids):
         payload = self._history_payload(media_type, season, episode, ids)
 
-        kodilog("Payload: {}".format(payload))
+        kodilog(f"Payload: {payload}")
 
         response = self.call_trakt(
             "sync/history",
@@ -1219,7 +1212,7 @@ class TraktLists(TraktBase):
 
             return normalized
 
-        string = "trakt_search_lists_{}_{}".format(search_title, page_no)
+        string = f"trakt_search_lists_{search_title}_{page_no}"
         return cache_object(_process, string, "dummy_arg", False, 4)
 
     def trakt_favorites(self, media_type):
@@ -1241,7 +1234,7 @@ class TraktLists(TraktBase):
             ]
 
         media_type = "movies" if media_type in ("movie", "movies") else "shows"
-        string = "trakt_favorites_{}".format(media_type)
+        string = f"trakt_favorites_{media_type}"
         params = {
             "path": "users/me/favorites/%s/%s",
             "path_insert": (media_type, "title"),
@@ -1266,7 +1259,7 @@ class TraktLists(TraktBase):
                 if i["type"] in ("movie", "show")
             ]
 
-        string = "trakt_list_contents_{}_{}_{}_{}".format(list_type, user, slug, trakt_id)
+        string = f"trakt_list_contents_{list_type}_{user}_{slug}_{trakt_id}"
         if list_type == "my_lists" and trakt_id:
             params = {
                 "path": "users/me/lists/%s/items",
@@ -1295,7 +1288,7 @@ class TraktLists(TraktBase):
 
     def trakt_trending_popular_lists(self, list_type, page_no):
         set_pluging_category(translation(90072))
-        string = "trakt_{}_user_lists_{}".format(list_type, page_no)
+        string = f"trakt_{list_type}_user_lists_{page_no}"
         params = {
             "path": "lists/%s",
             "path_insert": list_type,
@@ -1392,7 +1385,7 @@ class TraktLists(TraktBase):
 
     def delete_list(self, trakt_id):
         response = self.call_trakt(
-            "users/me/lists/{}".format(trakt_id),
+            f"users/me/lists/{trakt_id}",
             method="delete",
             with_auth=True,
             pagination=False,
@@ -1405,7 +1398,7 @@ class TraktLists(TraktBase):
         path = (
             f"users/{user_slug}/lists/{trakt_id}/like"
             if user_slug
-            else "lists/{}/like".format(trakt_id)
+            else f"lists/{trakt_id}/like"
         )
         response = self.call_trakt(
             path,
@@ -1420,7 +1413,7 @@ class TraktLists(TraktBase):
         path = (
             f"users/{user_slug}/lists/{trakt_id}/like"
             if user_slug
-            else "lists/{}/like".format(trakt_id)
+            else f"lists/{trakt_id}/like"
         )
         response = self.call_trakt(
             path,
@@ -1443,17 +1436,15 @@ class TraktLists(TraktBase):
         )
         for key in ("tmdb", "tvdb"):
             if key in normalized_ids:
-                try:
+                with contextlib.suppress(TypeError, ValueError):
                     normalized_ids[key] = int(normalized_ids[key])
-                except (TypeError, ValueError):
-                    pass
 
         payload = {media_key: [{"ids": normalized_ids}]}
         return payload
 
     def add_item_to_list(self, trakt_id, media_type, ids):
         response = self.call_trakt(
-            "users/me/lists/{}/items".format(trakt_id),
+            f"users/me/lists/{trakt_id}/items",
             data=self._list_item_payload(media_type, ids),
             with_auth=True,
             pagination=False,
@@ -1464,7 +1455,7 @@ class TraktLists(TraktBase):
 
     def remove_item_from_list(self, trakt_id, media_type, ids):
         response = self.call_trakt(
-            "users/me/lists/{}/items/remove".format(trakt_id),
+            f"users/me/lists/{trakt_id}/items/remove",
             data=self._list_item_payload(media_type, ids),
             with_auth=True,
             pagination=False,
@@ -1616,7 +1607,7 @@ class TraktCache(TraktBase):
                 dbcon.execute(BASE_DELETE % table)
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
     def clear_cache(self, cache_type):

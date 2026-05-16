@@ -20,7 +20,7 @@ def torrentio_toggle_providers(params):
 
     options = []
     selected_indexes = []
-    for i, (key, name, logo) in enumerate(all_torrentio_providers):
+    for i, (key, name, _logo) in enumerate(all_torrentio_providers):
         item = xbmcgui.ListItem(label=name)
         item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "torrentio.png")})
         options.append(item)

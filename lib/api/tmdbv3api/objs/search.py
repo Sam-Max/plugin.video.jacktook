@@ -26,7 +26,7 @@ class Search(TMDb):
         """
         return self._request_obj(
             self._urls["companies"],
-            params="query={}&page={}".format(quote(term), page),
+            params=f"query={quote(term)}&page={page}",
             key="results",
         )
 
@@ -39,7 +39,7 @@ class Search(TMDb):
         """
         return self._request_obj(
             self._urls["collections"],
-            params="query={}&page={}".format(quote(term), page),
+            params=f"query={quote(term)}&page={page}",
             key="results",
         )
 
@@ -52,7 +52,7 @@ class Search(TMDb):
         """
         return self._request_obj(
             self._urls["keywords"],
-            params="query={}&page={}".format(quote(term), page),
+            params=f"query={quote(term)}&page={page}",
             key="results",
         )
 
@@ -76,16 +76,16 @@ class Search(TMDb):
         :param page: int
         :return:
         """
-        params = "query={}&page={}".format(quote(term), page)
+        params = f"query={quote(term)}&page={page}"
         if adult is not None:
             params += "&include_adult={}".format("true") if adult else "false"
         if region is not None:
-            params += "&region={}".format(quote(region))
+            params += f"&region={quote(region)}"
         if year is not None:
-            params += "&year={}".format(year)
+            params += f"&year={year}"
         if release_year is not None:
-            params += "&primary_release_year={}".format(release_year)
-        params += "&append_to_response={}".format(append_to_response)
+            params += f"&primary_release_year={release_year}"
+        params += f"&append_to_response={append_to_response}"
         return self._request_obj(self._urls["movies"], params=params, key="results")
 
     def multi(self, term, adult=None, region=None, page=1):
@@ -98,11 +98,11 @@ class Search(TMDb):
         :param page: int
         :return:
         """
-        params = "query={}&page={}".format(quote(term), page)
+        params = f"query={quote(term)}&page={page}"
         if adult is not None:
             params += "&include_adult={}".format("true") if adult else "false"
         if region is not None:
-            params += "&region={}".format(quote(region))
+            params += f"&region={quote(region)}"
         return self._request_obj(self._urls["multi"], params=params, key="results")
 
     def people(self, term, adult=None, region=None, page=1):
@@ -114,11 +114,11 @@ class Search(TMDb):
         :param page: int
         :return:
         """
-        params = "query={}&page={}".format(quote(term), page)
+        params = f"query={quote(term)}&page={page}"
         if adult is not None:
             params += "&include_adult={}".format("true") if adult else "false"
         if region is not None:
-            params += "&region={}".format(quote(region))
+            params += f"&region={quote(region)}"
         return self._request_obj(self._urls["people"], params=params, key="results")
 
     def tv_shows(
@@ -137,10 +137,10 @@ class Search(TMDb):
         :param page: int
         :return:
         """
-        params = "query={}&page={}".format(quote(term), page)
+        params = f"query={quote(term)}&page={page}"
         if adult is not None:
             params += "&include_adult={}".format("true") if adult else "false"
         if release_year is not None:
-            params += "&first_air_date_year={}".format(release_year)
-        params += "&append_to_response={}".format(append_to_response)
+            params += f"&first_air_date_year={release_year}"
+        params += f"&append_to_response={append_to_response}"
         return self._request_obj(self._urls["tv_shows"], params=params, key="results")

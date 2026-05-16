@@ -16,6 +16,7 @@ _SENTINEL = "__introdb_none__"
 def get_segments(imdb_id, season, episode):
     """
     Fetch intro/recap/outro segment timestamps from IntroDB for a given episode.
+
     Results are cached in memory for 24 hours to avoid redundant API calls.
 
     Args:
@@ -28,6 +29,7 @@ def get_segments(imdb_id, season, episode):
         or None if the request fails or no data is available.
     """
     if not imdb_id or not season or not episode:
+
         return None
 
     cache_key = f"{imdb_id}.S{season}E{episode}"

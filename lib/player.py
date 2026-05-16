@@ -60,7 +60,9 @@ class JacktookPLayer(xbmc.Player):
         self._is_trakt_scrobble_active = False
         self._playback_was_paused = False
 
-    def run(self, data={}):
+    def run(self, data=None):
+        if data is None:
+            data = {}
         self.set_constants(data)
         self.clear_playback_properties()
         self.add_external_trakt_scrolling()
@@ -289,9 +291,8 @@ class JacktookPLayer(xbmc.Player):
         try:
             if self.getTotalTime() not in total_time_errors and get_visibility(
                 video_fullscreen_check
-            ):
-                if self.on_started:
-                    self.on_started()
+            ) and self.on_started:
+                self.on_started()
         except Exception as e:
             kodilog(f"Error in handle_playback_start: {e}")
 

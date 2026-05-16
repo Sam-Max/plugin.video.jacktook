@@ -50,7 +50,7 @@ def trakt_secret():
 
 
 def trakt_lists_sort_order(setting):
-    return int(get_setting("trakt_sort_{}".format(setting), "0"))
+    return int(get_setting(f"trakt_sort_{setting}", "0"))
 
 
 def get_update_action():

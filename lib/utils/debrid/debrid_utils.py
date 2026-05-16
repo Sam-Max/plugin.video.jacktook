@@ -407,11 +407,10 @@ def extract_info_hash(res: TorrentStream) -> Optional[str]:
         if res.infoHash:
             return res.infoHash.lower()
 
-        if res.guid:
-            if res.guid.startswith("magnet:?") or len(res.guid) == 40:
-                info_hash = get_info_hash_from_magnet(res.guid)
-                if info_hash:
-                    return info_hash.lower()
+        if res.guid and (res.guid.startswith("magnet:?") or len(res.guid) == 40):
+            info_hash = get_info_hash_from_magnet(res.guid)
+            if info_hash:
+                return info_hash.lower()
 
         if res.url and res.url.startswith("magnet:?"):
             info_hash = get_info_hash_from_magnet(res.url)
@@ -435,7 +434,7 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
 
     try:
         current_uri = uri
-        for redirect_count in range(5):
+        for _redirect_count in range(5):
             res = requests.get(
                 current_uri,
                 allow_redirects=False,

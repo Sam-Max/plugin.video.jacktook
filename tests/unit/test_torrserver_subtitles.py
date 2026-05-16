@@ -187,7 +187,7 @@ class TestDownloadAndPlaySubtitles:
             module.xbmcgui.Dialog, "yesno", return_value=True
         ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
             module.xbmc, "Player"
-        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
+        ) as MockPlayer, patch.object(module, "notification"):
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/translated.srt"]
             MockManager.return_value = mock_manager
@@ -218,7 +218,7 @@ class TestDownloadAndPlaySubtitles:
             module.xbmcgui.Dialog, "yesno", return_value=False
         ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
             module.xbmc, "Player"
-        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
+        ) as MockPlayer, patch.object(module, "notification"):
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/sub.srt"]
             MockManager.return_value = mock_manager
@@ -244,7 +244,7 @@ class TestDownloadAndPlaySubtitles:
 
         with patch.object(module, "SubtitleManager") as MockManager, patch.object(
             module, "get_torrserver_api"
-        ) as mock_api, patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+        ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
             module.xbmc, "Player"
         ) as MockPlayer, patch.object(module, "notification") as mock_notification:
             mock_manager = MagicMock()

@@ -1,3 +1,4 @@
+import contextlib
 import threading
 from typing import Dict, List, Optional
 
@@ -568,10 +569,8 @@ class SourceSelect(BaseWindow):
                     if poll_count > 1200:
                         kodilog("[UPLOAD_SUBTITLE] Polling timeout")
                         upload_complete.set()
-                        try:
+                        with contextlib.suppress(BaseException):
                             dialog.close()
-                        except:
-                            pass
                         break
                 kodilog("[UPLOAD_SUBTITLE] Polling thread ended")
 
@@ -608,7 +607,7 @@ class SourceSelect(BaseWindow):
         selected_source,
         pack_select: bool = False,
         is_subtitle_download=False,
-        local_subtitle_path: str = None,
+        local_subtitle_path: Optional[str] = None,
     ) -> None:
         self.setProperty("resolving", "true")
         resolver_window = ResolverWindow(

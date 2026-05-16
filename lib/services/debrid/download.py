@@ -1,3 +1,5 @@
+import contextlib
+
 from xbmcgui import DialogProgress
 
 from lib.utils.general.utils import supported_video_extensions
@@ -45,10 +47,8 @@ def run_realdebrid_download(client, magnet_url, pack=False):
             client, torrent_id, torrent_info, progress_dialog, interval, pack
         )
 
-    try:
+    with contextlib.suppress(Exception):
         progress_dialog.close()
-    except Exception:
-        pass
 
     ksleep(500)
     if cancelled:

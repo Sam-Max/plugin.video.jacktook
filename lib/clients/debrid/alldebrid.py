@@ -53,7 +53,7 @@ class AllDebridHelper:
                 if res.infoHash in torr_available_hashes:
                     res.isCached = True
                     cached_results.append(res)
-                elif res.isCached == True:
+                elif res.isCached:
                     cached_results.append(res)
                 else:
                     res.isCached = False
@@ -192,8 +192,8 @@ class AllDebridHelper:
         try:
             response = self.client.get_user_info()
             user = response["user"]
-        except Exception:
-            raise ProviderException("Failed to retrieve All-Debrid user info.")
+        except Exception as exc:
+            raise ProviderException("Failed to retrieve All-Debrid user info.") from exc
         status = "Premium" if user["isPremium"] else "Not Active"
         expires = datetime.fromtimestamp(user["premiumUntil"])
         days_remaining = (expires - datetime.today()).days

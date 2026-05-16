@@ -39,7 +39,7 @@ class TestTorrentsContextMenu:
             nav, "apply_section_view"
         ), patch.object(nav, "set_pluging_category"), patch.object(
             nav, "action_url_run"
-        ) as mock_action_url, patch.object(nav, "addDirectoryItem") as mock_add_dir, patch(
+        ) as mock_action_url, patch.object(nav, "addDirectoryItem"), patch(
             "lib.utils.torrent.torrserver_utils.get_torrent_meta",
             return_value=mock_meta,
         ):

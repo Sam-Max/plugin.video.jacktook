@@ -48,8 +48,9 @@ class DownloadManagerWindow(BaseWindow):
         and register or update any downloads in the registry. This ensures
         that downloads started before the window was opened, or organized
         into subfolders, appear in the manager.
-        """
+        """  # noqa: D205
         download_dir = _translatePath(_get_setting("download_dir"))
+
         if not download_dir or not xbmcvfs.exists(download_dir):
             kodilog(f"[DownloadManagerWindow] Download directory not found: {download_dir}")
             return
@@ -63,6 +64,7 @@ class DownloadManagerWindow(BaseWindow):
     def _walk_and_sync(self, directory, manager):
         """Recursively walk a directory using xbmcvfs and sync .jacktook.json files."""
         dirs, files = xbmcvfs.listdir(directory)
+
         for filename in files:
             filename = filename.decode("utf-8") if isinstance(filename, bytes) else filename
             if not filename.endswith(".jacktook.json"):
@@ -221,7 +223,7 @@ class DownloadManagerWindow(BaseWindow):
                 # Build secondary info line
                 parts = []
                 if entry.status == "completed":
-                    status_str = translation(90811)  # "Completed"
+                    translation(90811)  # "Completed"
                 elif speed_str:
                     parts.append(speed_str)
                 if eta_str and entry.status != "completed":

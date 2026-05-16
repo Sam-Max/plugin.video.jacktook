@@ -114,7 +114,7 @@ class Torrent:
         comment=None,
         source=None,
         creation_date=None,
-        created_by="{} {}".format(_PACKAGE_NAME, __version__),
+        created_by=f"{_PACKAGE_NAME} {__version__}",
         piece_size=None,
         piece_size_min=None,
         piece_size_max=None,

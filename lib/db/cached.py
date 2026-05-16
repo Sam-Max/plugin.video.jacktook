@@ -182,7 +182,7 @@ class MemoryCache(_BaseCache):
             data = self._window.getProperty(self._database + "_KEY_INDEX_")
             if data:
                 return self._load_func(b64decode(data))
-        except:
+        except Exception:
             pass
         return set()
 
@@ -190,7 +190,7 @@ class MemoryCache(_BaseCache):
         try:
             blob = self._dump_func(index)
             self._window.setProperty(self._database + "_KEY_INDEX_", b64encode(blob).decode())
-        except:
+        except Exception:
             pass
 
     def _add_key_to_index(self, key):

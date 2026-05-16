@@ -18,7 +18,7 @@ class ListsCache(BaseCache):
             dbcon.execute(DELETE_ALL)
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
     def delete_prefix(self, prefix):
@@ -31,7 +31,7 @@ class ListsCache(BaseCache):
             dbcon.execute(DELETE_PREFIX % prefix)
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
     def clean_database(self):
@@ -40,7 +40,7 @@ class ListsCache(BaseCache):
             dbcon.execute(CLEAN, (get_timestamp(),))
             dbcon.execute("VACUUM")
             return True
-        except:
+        except Exception:
             return False
 
 

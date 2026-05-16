@@ -1,3 +1,4 @@
+import contextlib
 import json
 from datetime import datetime, timedelta
 
@@ -240,9 +241,8 @@ class TraktClient:
     def _normalize_trakt_media_type(media_type, ids):
         if media_type in ("tv", "show", "shows", "tvshow", "tvshows", "anime"):
             return "shows"
-        if media_type in ("movie", "movies"):
-            if ids.get("tvdb") or ids.get("tvdb_id"):
-                return "shows"
+        if media_type in ("movie", "movies") and (ids.get("tvdb") or ids.get("tvdb_id")):
+            return "shows"
         if ids.get("tvdb") or ids.get("tvdb_id"):
             return "shows"
 
@@ -315,10 +315,8 @@ class TraktClient:
         if first_air_date is None and isinstance(show_details, dict):
             first_air_date = show_details.get("first_air_date")
         if first_air_date:
-            try:
+            with contextlib.suppress(TypeError, ValueError):
                 show_item["year"] = int(str(first_air_date)[:4])
-            except (TypeError, ValueError):
-                pass
 
         return {"shows": [show_item]}
 
@@ -1234,10 +1232,6 @@ class TraktPresentation:
         user_ids = user_data.get("ids", {})
         user_slug = _normalize_user_slug(user_ids.get("slug") or user_data.get("username"))
 
-        info_labels = {
-            "title": list_title,
-            "plot": description,
-        }
 
         url = build_url(
             "trakt_list_content",
@@ -1489,8 +1483,8 @@ class TraktPresentation:
 
         ids = TraktPresentation._resolve_media_ids("tv", res.get("show", {}).get("ids", {}))
         tmdb_id = ids["tmdb_id"]
-        imdb_id = ids["imdb_id"]
-        tvdb_id = ids["tvdb_id"]
+        ids["imdb_id"]
+        ids["tvdb_id"]
 
         if not tmdb_id:
             return

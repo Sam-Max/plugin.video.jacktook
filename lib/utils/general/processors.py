@@ -228,9 +228,11 @@ class PreProcessBuilder(BaseProcessBuilder):
     def filter_by_source(self) -> "PreProcessBuilder":
         """
         Categorize torrents into SourceCategory buckets and filter them
+
         depending on Kodi settings (quality_filter group).
         """
         source_buckets: Dict[SourceCategory, List[TorrentStream]] = {
+
             cat: [] for cat in SourceCategory
         }
 

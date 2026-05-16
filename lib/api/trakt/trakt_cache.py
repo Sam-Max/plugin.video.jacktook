@@ -23,7 +23,7 @@ class TraktCache:
             cache_data = dbcon.execute(TC_BASE_GET, (string,)).fetchone()
             if cache_data:
                 result = eval(cache_data[0])
-        except:
+        except Exception:
             pass
         return result
 
@@ -31,14 +31,14 @@ class TraktCache:
         try:
             dbcon = connect_database("trakt_db")
             dbcon.execute(TC_BASE_SET, (string, repr(data)))
-        except:
+        except Exception:
             return None
 
     def delete(self, string):
         try:
             dbcon = connect_database("trakt_db")
             dbcon.execute(TC_BASE_DELETE, (string,))
-        except:
+        except Exception:
             pass
 
     def clear_all(self):
@@ -46,7 +46,7 @@ class TraktCache:
             dbcon = connect_database("trakt_db")
             dbcon.execute("DELETE FROM trakt_data")
             dbcon.execute("VACUUM")
-        except:
+        except Exception:
             pass
 
 
@@ -89,7 +89,7 @@ class TraktWatched:
             self._delete("DELETE FROM watched", ())
             self._delete("DELETE FROM progress", ())
             self._delete("DELETE FROM watched_status", ())
-        except:
+        except Exception:
             pass
 
     def _executemany(self, command, insert_list):
@@ -113,7 +113,7 @@ class TraktWatched:
 
             result = dbcon.execute(command, args).fetchone()
             return result is not None
-        except:
+        except Exception:
             return False
 
     def get_progress(self, db_type, media_id, season=None, episode=None):
@@ -130,7 +130,7 @@ class TraktWatched:
             if result:
                 return float(result[0])
             return 0.0
-        except:
+        except Exception:
             return 0.0
 
 
@@ -157,17 +157,17 @@ def reset_activity(latest_activities):
             cached_data = default_activities()
         dbcon.execute(DELETE, (string,))
         trakt_cache.set(string, latest_activities)
-    except:
+    except Exception:
         cached_data = default_activities()
     return cached_data
 
 
 def clear_trakt_hidden_data(list_type):
-    string = "trakt_hidden_items_{}".format(list_type)
+    string = f"trakt_hidden_items_{list_type}"
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))
-    except:
+    except Exception:
         pass
 
 
@@ -176,11 +176,11 @@ def clear_trakt_collection_watchlist_data(list_type, media_type):
         media_type = "movie"
     if media_type in ("tvshows", "shows"):
         media_type = "tvshow"
-    string = "trakt_{}_{}".format(list_type, media_type)
+    string = f"trakt_{list_type}_{media_type}"
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))
-    except:
+    except Exception:
         pass
 
 
@@ -189,16 +189,16 @@ def clear_trakt_list_contents_data(list_type):
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE_LIKE % string)
-    except:
+    except Exception:
         pass
 
 
 def clear_trakt_list_data(list_type):
-    string = "trakt_{}".format(list_type)
+    string = f"trakt_{list_type}"
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))
-    except:
+    except Exception:
         pass
 
 
@@ -206,7 +206,7 @@ def clear_trakt_calendar():
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE_LIKE % "trakt_get_my_calendar_%")
-    except:
+    except Exception:
         return
 
 
@@ -214,7 +214,7 @@ def clear_trakt_recommendations():
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE_LIKE % "trakt_recommendations_%")
-    except:
+    except Exception:
         return
 
 
@@ -222,7 +222,7 @@ def clear_trakt_favorites():
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE_LIKE % "trakt_favorites_%")
-    except:
+    except Exception:
         return
 
 
@@ -233,7 +233,7 @@ def clear_trakt_watchlist():
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE_LIKE % "trakt_watchlist_%")
-    except:
+    except Exception:
         pass
 
 

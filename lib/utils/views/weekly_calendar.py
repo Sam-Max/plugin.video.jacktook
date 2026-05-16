@@ -45,9 +45,11 @@ def show_weekly_calendar(library=False):
     def calculate_adjusted_broadcast(date_str, offset_hours):
         """
         Calculates an adjusted date and time based on a manual hour offset.
+
         Assumes the original air time is midnight (00:00).
         """
         if not date_str:
+
             return None, None
 
         try:
@@ -221,6 +223,7 @@ def get_episodes_for_show(ids):
 def is_this_week(date_str):
     """Check if the date_str (YYYY-MM-DD) is in the current week."""
     try:
+
         d = parse_date_str(date_str)
         today = date.today()
         year, week, _ = today.isocalendar()
@@ -233,6 +236,7 @@ def is_this_week(date_str):
 def parse_date_str(date_str: str) -> date:
     """Parse a date string (YYYY-MM-DD or similar) into a date object without using datetime.strptime."""
     date_str_cleaned = date_str.strip().split("T")[0]
+
     match = re.search(r"(\d{4})[\-\/]?(\d{1,2})[\-\/]?(\d{1,2})", date_str_cleaned)
     if match:
         year, month, day = map(int, match.groups())

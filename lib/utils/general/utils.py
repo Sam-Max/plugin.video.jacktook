@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import json
 import os
@@ -307,10 +308,8 @@ class DialogListener:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        try:
+        with contextlib.suppress(BaseException):
             self._dialog.close()
-        except:
-            pass
 
 
 def is_debrid_activated():
@@ -397,7 +396,9 @@ def make_listing(data):
     return list_item
 
 
-def set_media_infoTag(list_item, data, fanart_data={}, mode="video", detailed=False):
+def set_media_infoTag(list_item, data, fanart_data=None, mode="video", detailed=False):
+    if fanart_data is None:
+        fanart_data = {}
     mode = "movies" if mode in ("movie", "movies") else mode
     info_tag = list_item.getVideoInfoTag()
 
@@ -999,12 +1000,16 @@ def cache_results(results, query, mode, media_type, episode, cache_scope=""):
         set_cached(results, query, params=("index", cache_scope))
 
 
-def get_cached(path, params={}):
+def get_cached(path, params=None):
+    if params is None:
+        params = {}
     identifier = f"{path}|{params}"
     return cache.get(identifier)
 
 
-def set_cached(data, path, params={}):
+def set_cached(data, path, params=None):
+    if params is None:
+        params = {}
     identifier = f"{path}|{params}"
     cache.set(
         identifier,
@@ -1027,7 +1032,9 @@ def db_get(name, func, path, params):
     return data
 
 
-def tvdb_get(path, params={}):
+def tvdb_get(path, params=None):
+    if params is None:
+        params = {}
     identifier = f"{path}|{params}"
     data = cache.get(identifier)
     if data:
@@ -1281,7 +1288,7 @@ def unzip(zip_location, destination_location, destination_check):
             status = True
         else:
             status = False
-    except:
+    except Exception:
         status = False
     return status
 
@@ -1393,10 +1400,7 @@ def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStrea
 
 def is_torrent_url(uri):
     res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
-    if res.status_code == 200 and res.headers.get("Content-Type") == "application/octet-stream":
-        return True
-    else:
-        return False
+    return bool(res.status_code == 200 and res.headers.get("Content-Type") == "application/octet-stream")
 
 
 def supported_video_extensions():
@@ -1569,7 +1573,7 @@ def show_log_export_dialog(params):
                         try:
                             count -= 1
                             progressDialog.update_progress(count)
-                        except:
+                        except Exception:
                             pass
                         sleep(1000 * count)
                 else:

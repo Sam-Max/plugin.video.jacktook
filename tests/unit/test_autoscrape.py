@@ -235,7 +235,7 @@ def test_run_next_dialog_fast_path_from_cache():
         "lib.gui.custom_dialogs.cache"
     ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch("xbmcgui.ListItem") as mock_listitem, patch(
+    ) as mock_window_cls, patch("xbmcgui.ListItem"), patch(
         "lib.gui.custom_dialogs.build_url"
     ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
         mock_playlist.size.return_value = 2
@@ -273,7 +273,7 @@ def test_run_next_dialog_fallback_on_cache_miss():
         "lib.gui.custom_dialogs.cache"
     ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch("xbmcgui.ListItem") as mock_listitem, patch(
+    ) as mock_window_cls, patch("xbmcgui.ListItem"), patch(
         "lib.gui.custom_dialogs.build_url"
     ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
         mock_playlist.size.return_value = 2

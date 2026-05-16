@@ -192,7 +192,7 @@ class PeopleClient(BaseTmdbClient):
         from lib.gui.actor_info_window import ActorInfoWindow
         from lib.utils.kodi.utils import ADDON_PATH
 
-        mode = params.get("mode")
+        params.get("mode")
         person_id = params.get("person_id")
         window = ActorInfoWindow(
             "actor_info.xml",

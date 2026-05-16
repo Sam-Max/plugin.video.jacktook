@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import xml.etree.ElementTree as ET
@@ -115,16 +116,16 @@ def _validate_downloaded_zip(zip_path, expected_version):
 
             xml_data = zip_file.read(addon_xml)
     except (BadZipFile, KeyError, ValueError) as exc:
-        raise ValueError(str(exc))
+        raise ValueError(str(exc)) from exc
 
     try:
         version = ET.fromstring(xml_data).attrib.get("version")
     except ET.ParseError as exc:
-        raise ValueError(f"Invalid addon.xml: {exc}")
+        raise ValueError(f"Invalid addon.xml: {exc}") from exc
 
     if version != expected_version:
         raise ValueError(
-            "Package version mismatch: expected {}, found {}".format(expected_version, version)
+            f"Package version mismatch: expected {expected_version}, found {version}"
         )
 
 
@@ -136,7 +137,7 @@ def _validate_installed_version(destination_dir, expected_version):
     version = _read_addon_version_from_xml(addon_xml_path)
     if version != expected_version:
         raise ValueError(
-            "Installed version mismatch: expected {}, found {}".format(expected_version, version)
+            f"Installed version mismatch: expected {expected_version}, found {version}"
         )
 
 
@@ -323,10 +324,8 @@ def update_addon(new_version):
     except Exception as e:
         kodilog(f"Error extracting update to staging: {e}")
         delete_file(zip_path)
-        try:
+        with contextlib.suppress(Exception):
             _safe_remove_path(staging_dir)
-        except Exception:
-            pass
         dialog_ok(heading=HEADING, line1=translation(90590))
         return
 
@@ -354,10 +353,8 @@ def update_addon(new_version):
             kodilog(f"Error restoring previous addon version: {restore_error}")
 
         delete_file(zip_path)
-        try:
+        with contextlib.suppress(Exception):
             _safe_remove_path(staging_dir)
-        except Exception:
-            pass
         dialog_ok(heading=HEADING, line1=translation(90590))
         return
 

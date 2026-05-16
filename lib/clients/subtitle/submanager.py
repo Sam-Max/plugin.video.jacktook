@@ -19,6 +19,7 @@ class KodiJsonRpcClient:
     def json_rpc(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Send a JSON-RPC request to Kodi."""
         request_data = {
+
             "jsonrpc": "2.0",
             "method": method,
             "id": 1,
@@ -46,9 +47,11 @@ class SubtitleManager(KodiJsonRpcClient):
     def get_kodi_preferred_subtitle_language(self, iso_format: bool = False) -> str:
         """
         Get the preferred subtitle language from Kodi settings.
+
         Returns the language in ISO format if iso_format is True.
         """
         subtitle_language = self.json_rpc(
+
             "Settings.GetSettingValue", {"setting": "locale.subtitlelanguage"}
         )
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import contextlib
 import json
 import os
 import re
@@ -232,7 +233,7 @@ def clear_property(prop):
 
 def burst_addon_settings():
     close_all_dialog()
-    xbmc.executebuiltin("Addon.OpenSettings({})".format(JACKTOOK_BURST_ADOON_ID))
+    xbmc.executebuiltin(f"Addon.OpenSettings({JACKTOOK_BURST_ADOON_ID})")
 
 
 def get_kodi_version():
@@ -253,7 +254,7 @@ def is_jacktorr_addon_enabled():
     try:
         if not xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
             return False
-        addon = xbmcaddon.Addon(JACKTORR_ADDON_ID)
+        xbmcaddon.Addon(JACKTORR_ADDON_ID)
         # If the addon is disabled, this will raise RuntimeError
         return True
     except RuntimeError:
@@ -265,7 +266,7 @@ def is_youtube_addon_enabled():
     try:
         if not xbmc.getCondVisibility(f"System.HasAddon({YOUTUBE_ADDON_ID})"):
             return False
-        addon = xbmcaddon.Addon(YOUTUBE_ADDON_ID)
+        xbmcaddon.Addon(YOUTUBE_ADDON_ID)
         # If the addon is disabled, this will raise RuntimeError
         return True
     except RuntimeError:
@@ -284,9 +285,11 @@ def is_burst_addon():
 def enable_addon(addon_id: str):
     """
     Enable a Kodi addon using JSON-RPC.
+
     Returns True if successful, False otherwise.
     """
     request = {
+
         "jsonrpc": "2.0",
         "method": "Addons.SetAddonEnabled",
         "params": {"addonid": addon_id, "enabled": True},
@@ -375,10 +378,7 @@ def dialogyesno(header, text):
         header,
         text,
     )
-    if confirmed:
-        return True
-    else:
-        return False
+    return bool(confirmed)
 
 
 def dialog_select(heading, _list):
@@ -488,7 +488,7 @@ def disable_enable_addon(addon_id=ADDON_ID):
                 }
             )
         )
-    except:
+    except Exception:
         pass
 
 
@@ -503,7 +503,7 @@ def update_kodi_addons_db(addon_id=ADDON_ID):
             (addon_id, 1, date),
         )
         dbcon.close()
-    except:
+    except Exception:
         pass
 
 
@@ -520,6 +520,7 @@ def bytes_to_human_readable(size: int, unit: str = "B") -> str:
 def convert_size_to_bytes(size_str: str) -> int:
     """Convert size string to bytes."""
     match = re.match(r"(\d+(?:\.\d+)?)\s*(GB|MB|KB|B)", size_str, re.IGNORECASE)
+
     if match:
         size, unit = match.groups()
         size = float(size)
@@ -566,7 +567,7 @@ def get_view_setting_key(view_key):
 
 
 def get_view_property_key(view_key):
-    return "jacktook.{}".format(view_key)
+    return f"jacktook.{view_key}"
 
 
 def _get_named_view_id(name, default="current"):
@@ -694,9 +695,9 @@ def copy2clip(txt):
     platform = sys.platform
     if platform == "win32":
         try:
-            cmd = "echo {}|clip".format(txt.strip())
+            cmd = f"echo {txt.strip()}|clip"
             return subprocess.check_call(cmd, shell=True)
-        except:
+        except Exception:
             pass
     elif platform == "linux2":
         try:
@@ -704,7 +705,7 @@ def copy2clip(txt):
 
             p = Popen(["xsel", "-pi"], stdin=PIPE)
             p.communicate(input=txt)
-        except:
+        except Exception:
             pass
 
 
@@ -716,6 +717,7 @@ def get_datetime(string: bool = False, dt: bool = False) -> Union[date, datetime
     :return: By default, returns a date object.
     """
     now = datetime.now()
+
     if dt:
         return now
     else:
@@ -738,10 +740,8 @@ def cancel_playback():
     PLAYLIST.clear()
     close_busy_dialog()
     close_all_dialog()
-    try:
+    with contextlib.suppress(Exception):
         xbmc.Player().stop()
-    except Exception:
-        pass
     setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
 
@@ -768,4 +768,4 @@ def is_widget():
 
 
 def end_of_directory(cache=True):
-    endOfDirectory(ADDON_HANDLE, cacheToDisc=False if is_widget() or not cache else True)
+    endOfDirectory(ADDON_HANDLE, cacheToDisc=not (is_widget() or not cache))

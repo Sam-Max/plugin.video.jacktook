@@ -29,7 +29,7 @@ def notify_all(sender, message, data=None):
 
 
 def run_script(script_id, *args):
-    xbmc.executebuiltin("RunScript({})".format(",".join((script_id,) + args)))
+    xbmc.executebuiltin("RunScript({})".format(",".join((script_id, *args))))
 
 
 def execute_json_rpc(method, rpc_version="2.0", rpc_id=1, **params):

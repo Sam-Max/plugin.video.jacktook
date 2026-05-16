@@ -1,3 +1,4 @@
+import contextlib
 from time import time
 
 from lib.gui.qr_progress_dialog import QRProgressDialog
@@ -181,10 +182,8 @@ def run_premiumize_auth(client):
             dialog_ok(translation(90546), translation(90547) % error)
             break
 
-    try:
+    with contextlib.suppress(Exception):
         progressDialog.close()
-    except Exception:
-        pass
 
 
 def run_torbox_auth(client):

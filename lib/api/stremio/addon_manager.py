@@ -70,7 +70,7 @@ def build_addon_instance_label(addon_like: Any) -> str:
 
 
 class Catalog:
-    def __init__(self, type: str, id: str, name: str, extra: List[dict] = None):
+    def __init__(self, type: str, id: str, name: str, extra: Optional[List[dict]] = None):
         self.type = type
         self.id = id
         self.name = name
@@ -285,10 +285,9 @@ class AddonManager:
             if addon.manifest.id == "org.stremio.local":
                 continue
             for resource in addon.manifest.resources:
-                if isinstance(resource, str):
-                    if resource == resource_name:
-                        result.append(addon)
-                        break
+                if isinstance(resource, str) and resource == resource_name:
+                    result.append(addon)
+                    break
 
                 if resource.name == resource_name:
                     result.append(addon)

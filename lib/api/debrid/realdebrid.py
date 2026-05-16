@@ -124,7 +124,7 @@ class RealDebrid(DebridClient):
                 "code": code,
             }
         except Exception as e:
-            raise ProviderException(f"Invalid token {e}")
+            raise ProviderException(f"Invalid token {e}") from e
 
     def get_device_code(self):
         return self._make_request(
@@ -311,9 +311,8 @@ class RealDebrid(DebridClient):
         if "download" in response:
             return response
 
-        if "error_code" in response:
-            if response["error_code"] == 23:
-                raise ProviderException("Exceed remote traffic limit")
+        if "error_code" in response and response["error_code"] == 23:
+            raise ProviderException("Exceed remote traffic limit")
         raise ProviderException(f"Failed to create download link. response: {response}")
 
     def delete_torrent(self, torrent_id):

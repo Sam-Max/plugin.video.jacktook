@@ -30,9 +30,7 @@ def validate_credentials(indexer: str, host: Optional[str], api_key: Optional[st
     """
     if not validate_host(host, indexer):
         return False
-    if api_key is not None and not validate_key(api_key, indexer):
-        return False
-    return True
+    return not (api_key is not None and not validate_key(api_key, indexer))
 
 
 def build_jackett_client() -> Optional[object]:

@@ -31,9 +31,11 @@ class DeepLTranslator:
     def _handle_deepl_response(self, response, context=""):
         """
         Handle DeepL API responses, showing a Kodi dialog and logging errors for non-200 codes.
+
         Returns True if response is OK, otherwise False.
         """
         if response.status_code == 200:
+
             return True
 
         status_messages = {
@@ -66,9 +68,11 @@ class DeepLTranslator:
     ):
         """
         Download the translated document from DeepL and save it as an .srt file.
+
         The file path is determined based on whether season/episode info is provided.
         """
         if season and episode:
+
             new_subtitle_file_path = (
                 f"{ADDON_PROFILE_PATH}Subtitles/{imdb_id}/{season}/{episode}/"
                 f"Translated_Subtitle No.{idx}.S{season}E{episode}.{lang_name}.srt"
@@ -158,9 +162,11 @@ class DeepLTranslator:
     def validate_file_limits(self, file_path):
         """
         Check if a file meets size and character count limits.
+
         Raises Exception and notifies the user if not.
         """
         MAX_FILE_SIZE_KB = 150
+
         MAX_CHARACTERS = 1000000
 
         stats = stat(file_path)
@@ -186,9 +192,11 @@ class DeepLTranslator:
     def filter_files_within_limits(self, file_paths):
         """
         Returns a list of file paths that are within the allowed limits.
+
         Notifies the user for each file that is skipped.
         """
         valid_files = []
+
         for file_path in file_paths:
             try:
                 self.validate_file_limits(file_path)
@@ -250,9 +258,11 @@ class DeepLTranslator:
     def get_free_characters_left(self):
         """
         Query DeepL API for remaining free characters.
+
         Returns the number of free characters left, or 0 if unavailable.
         """
         url = f"{self.base_url}/usage"
+
         headers = {"Authorization": f"DeepL-Auth-Key {self.api_key}"}
         try:
             response = requests.get(url, headers=headers)
@@ -269,10 +279,12 @@ class DeepLTranslator:
     def prompt_user_for_cost(self, subtitle_paths):
         """
         Show a dialog to the user with the estimated translation cost and ask for confirmation.
+
         Only show cost if free usage is exhausted.
         Returns True if user confirms, False otherwise.
         """
         free_chars_left = self.get_free_characters_left()
+
         total_characters, estimated_cost = self.calculate_translation_cost(subtitle_paths)
 
         if free_chars_left > total_characters:
@@ -334,9 +346,11 @@ class DeepLTranslator:
     def translate_multiple_subtitles(self, sub_paths, imdbid, season, episode):
         """
         Process multiple subtitle files by translating each one.
+
         Only files within limits are processed.
         """
         # Filter files within limits and notify user for skipped files
+
         valid_sub_paths = self.filter_files_within_limits(sub_paths)
         if not valid_sub_paths:
             self.notification("No subtitle files are within the allowed limits.")

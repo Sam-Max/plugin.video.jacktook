@@ -24,6 +24,7 @@ def byte_is_integer(b):
 def group_by(it, n):
     """
     >>> list(group_by([1, 2, 3, 4], 2))
+
     [(1, 2), (3, 4)]
     """
     return zip(*[itertools.islice(it2, i, None, n) for i, it2 in enumerate(itertools.tee(it))])
@@ -132,7 +133,7 @@ def decode(s):
 def encode(obj):
     def generator(obj):
         if isinstance(obj, dict):
-            if not all(isinstance(k, bytes) for k in obj.keys()):
+            if not all(isinstance(k, bytes) for k in obj):
                 raise ValueError("Dictionary keys must be strings")
             yield DICT_START
             # Dictionary keys should be sorted according to the BEP-0003:

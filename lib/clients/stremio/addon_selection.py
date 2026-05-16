@@ -216,10 +216,9 @@ def stremio_toggle_catalogs(params, check_availability=False):
                 ):
                     is_tv = True
                     break
-            elif res.name == "stream":
-                if "tv" in res.types or "channel" in res.types:
-                    is_tv = True
-                    break
+            elif res.name == "stream" and ("tv" in res.types or "channel" in res.types):
+                is_tv = True
+                break
         if not is_tv:
             filtered_addons.append(addon)
     addons = filtered_addons
@@ -327,7 +326,7 @@ def add_custom_stremio_addon(params):
 
         resources = manifest.get("resources", [])
         # Normalize resources to list of dicts or strings
-        if isinstance(resources, dict) or isinstance(resources, str):
+        if isinstance(resources, (dict, str)):
             resources = [resources]
 
         # Determine capabilities

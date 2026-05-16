@@ -31,7 +31,7 @@ class Account(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["details"], params="session_id={}".format(self.session_id)
+            self._urls["details"], params=f"session_id={self.session_id}"
         )
 
     def created_lists(self, page=1):
@@ -42,12 +42,12 @@ class Account(TMDb):
         """
         return self._request_obj(
             self._urls["created_lists"] % self.account_id,
-            params="session_id={}&page={}".format(self.session_id, page),
+            params=f"session_id={self.session_id}&page={page}",
             key="results",
         )
 
     def _get_list(self, url, asc_sort=True, page=1):
-        params = "session_id={}&page={}".format(self.session_id, page)
+        params = f"session_id={self.session_id}&page={page}"
         if asc_sort is False:
             params += "&sort_by=created_at.desc"
         return self._request_obj(self._urls[url] % self.account_id, params=params, key="results")
@@ -81,7 +81,7 @@ class Account(TMDb):
             raise TMDbException("Media Type should be tv or movie.")
         self._request_obj(
             self._urls["favorite"] % self.account_id,
-            params="session_id={}".format(self.session_id),
+            params=f"session_id={self.session_id}",
             method="POST",
             json={
                 "media_type": media_type,
@@ -154,7 +154,7 @@ class Account(TMDb):
             raise TMDbException("Media Type should be tv or movie.")
         self._request_obj(
             self._urls["watchlist"] % self.account_id,
-            "session_id={}".format(self.session_id),
+            f"session_id={self.session_id}",
             method="POST",
             json={
                 "media_type": media_type,

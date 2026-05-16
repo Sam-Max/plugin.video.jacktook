@@ -199,7 +199,7 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
 
 def _save_jacktorr_playback_metadata(magnet: str, data: Dict[str, Any]) -> None:
     ids = data.get("ids") if isinstance(data.get("ids"), dict) else {}
-    imdb_id = ids.get("imdb_id")
+    ids.get("imdb_id")
     mode = data.get("mode", "")
     tv_data = data.get("tv_data") or {}
     title = data.get("title", "")

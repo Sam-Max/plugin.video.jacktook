@@ -179,7 +179,7 @@ class StremioAddonClient(BaseClient):
             else:
                 info_hash = stream.infoHash
                 url = stream.url
-                is_cached = True if url else False
+                is_cached = bool(url)
 
             stream_type = IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT
             stream_provider = stream.get_provider() or parsed["provider"]

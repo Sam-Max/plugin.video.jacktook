@@ -170,7 +170,7 @@ class TestDownloadManagerWindow:
         window.getControl = MagicMock(return_value=mock_list)
         window._rebuild_list = MagicMock()
 
-        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs:
+        with patch("lib.gui.download_manager_window.xbmcvfs"):
             window.onClick(14006)  # Delete
             assert manager.get_entry("/dl/a.mkv") is None
 

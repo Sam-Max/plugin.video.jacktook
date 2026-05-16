@@ -20,9 +20,11 @@ class MDblistAPI:
     def search_lists(self, query: str) -> List[Dict[str, Any]]:
         """
         Searches lists on MDblist by query string.
+
         Returns a list of dictionaries representing each matching list.
         """
         if not query:
+
             raise ValueError("Query string must not be empty.")
         url = f"{self.BASE_URL}lists/search"
         params = {"query": query, "apikey": self.api_key}
@@ -31,42 +33,48 @@ class MDblistAPI:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to search lists: {e}")
+            raise MDblistAPIError(f"Failed to search lists: {e}") from e
 
     def get_user_lists(self) -> List[Dict[str, Any]]:
         """
         Fetches user lists from MDblist API.
+
         Returns a list of dictionaries representing each user list.
         """
         url = f"{self.BASE_URL}lists/user"
+
         params = {"apikey": self.api_key}
         try:
             response = self.session.get(url, params=params)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to fetch user lists: {e}")
+            raise MDblistAPIError(f"Failed to fetch user lists: {e}") from e
 
     def get_top_lists(self) -> List[Dict[str, Any]]:
         """
         Fetches top lists from MDblist API.
+
         Returns a list of dictionaries representing each top list.
         """
         url = f"{self.BASE_URL}lists/top"
+
         params = {"apikey": self.api_key}
         try:
             response = self.session.get(url, params=params)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to fetch top lists: {e}")
+            raise MDblistAPIError(f"Failed to fetch top lists: {e}") from e
 
     def get_list_by_id(self, list_id: str) -> Optional[Dict[str, Any]]:
         """
         Fetches a single list by its ID.
+
         Returns a dictionary representing the list, or None if not found.
         """
         if not list_id:
+
             raise ValueError("List ID must not be empty.")
         url = f"{self.BASE_URL}lists/{list_id}"
         params = {"apikey": self.api_key}
@@ -75,9 +83,9 @@ class MDblistAPI:
             response.raise_for_status()
             return response.json()
         except requests.HTTPError as e:
-            raise MDblistAPIError(f"Failed to fetch list by ID: {e}")
+            raise MDblistAPIError(f"Failed to fetch list by ID: {e}") from e
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to fetch list by ID: {e}")
+            raise MDblistAPIError(f"Failed to fetch list by ID: {e}") from e
 
     def get_bulk_ratings(
         self,
@@ -88,9 +96,11 @@ class MDblistAPI:
     ) -> Dict[str, Any]:
         """
         Fetches bulk ratings for a list of IDs from MDblist API.
+
         Returns a dictionary with ratings for each ID.
         """
         if not ids or not isinstance(ids, list):
+
             raise ValueError("IDs must be a non-empty list.")
         provider = provider or self.provider
         url = f"{self.BASE_URL}rating/{media_type}/{return_rating}"
@@ -102,7 +112,7 @@ class MDblistAPI:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to fetch bulk ratings: {e}")
+            raise MDblistAPIError(f"Failed to fetch bulk ratings: {e}") from e
 
     def get_list_items(
         self,
@@ -121,9 +131,11 @@ class MDblistAPI:
     ) -> Dict[str, Any]:
         """
         Fetches items from a specified list with pagination and filters.
+
         Returns a dict with 'movies', 'shows', and pagination info.
         """
         if not list_id:
+
             raise ValueError("List ID must not be empty.")
         url = f"{self.BASE_URL}lists/{list_id}/items"
         params = {
@@ -149,4 +161,4 @@ class MDblistAPI:
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:
-            raise MDblistAPIError(f"Failed to fetch list items: {e}")
+            raise MDblistAPIError(f"Failed to fetch list items: {e}") from e

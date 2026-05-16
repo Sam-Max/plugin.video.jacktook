@@ -18,7 +18,7 @@ try:
         mappingDB = os.path.join(mappingPath, "resources", "data", "anime_mappings.db")
     else:
         mappingDB = None
-except:
+except Exception:
     OTAKU_ADDON = None
     mappingDB = None
 

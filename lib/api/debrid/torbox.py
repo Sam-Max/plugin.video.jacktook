@@ -139,7 +139,7 @@ class Torbox(DebridClient):
             if "Request timed out" in str(exc):
                 raise ProviderException(
                     "Torbox timed out while checking your cloud torrents. Please try again."
-                )
+                ) from exc
             raise
 
     def get_torrent_info(self, magnet_id):

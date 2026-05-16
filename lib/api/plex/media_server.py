@@ -25,9 +25,7 @@ def check_server_connection(url, access_token):
             },
             timeout=settings.plex_requests_timeout,
         )
-        if response.status_code != HTTPStatus.OK:
-            return False
-        return True
+        return response.status_code == HTTPStatus.OK
     except (Timeout, ConnectionError):
         return False
 

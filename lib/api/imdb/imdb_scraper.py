@@ -33,9 +33,11 @@ def _clean(text):
 def get_imdb_extras(imdb_id):
     """
     Fetch IMDb extras (reviews, trivia, goofs, parental guide) via GraphQL.
+
     Returns a dict with keys: reviews, trivia, blunders, parentsguide.
     """
     if not imdb_id:
+
         return {"reviews": [], "trivia": [], "blunders": [], "parentsguide": []}
 
     cache_key = f"imdb_extras_gql_{imdb_id}"
@@ -176,9 +178,11 @@ def get_imdb_extras(imdb_id):
 def get_imdb_more_like_this(imdb_id):
     """
     Fetch "More Like This" titles from IMDb via GraphQL.
+
     Returns a list of IMDb IDs (tt...).
     """
     if not imdb_id:
+
         return []
 
     cache_key = f"imdb_more_like_this_{imdb_id}"
@@ -218,6 +222,7 @@ def get_imdb_goofs(imdb_id):
 def get_imdb_parentsguide(imdb_id):
     """Legacy wrapper. Use get_imdb_extras() for new code."""
     extras = get_imdb_extras(imdb_id)
+
     guide = extras.get("parentsguide", [])
     # Convert to legacy text format for compatibility
     result = []

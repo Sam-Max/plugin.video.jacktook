@@ -82,10 +82,11 @@ class PlayWindow(BaseWindow):
     def smart_play_action(self):
         """
         Perform the default smartplay action at window timeout
+
         :return:
         """
-
     def close(self):
+
         self.closed = True
         super().close()
 

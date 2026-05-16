@@ -1,3 +1,4 @@
+import contextlib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Thread
 
@@ -27,10 +28,8 @@ class StartupPreloader:
                 elif isinstance(results, dict):
                     items = results.get("results", [])
                 else:
-                    try:
+                    with contextlib.suppress(BaseException):
                         items = list(results)
-                    except:
-                        pass
 
                 if not isinstance(items, list):
                     items = list(items)
@@ -42,7 +41,7 @@ class StartupPreloader:
                         tmdb_id = (
                             getattr(item, "id", None) if hasattr(item, "id") else item.get("id")
                         )
-                        name = (
+                        (
                             getattr(item, "name", "Unknown")
                             if hasattr(item, "name")
                             else item.get("name", "Unknown")

@@ -27,4 +27,4 @@ def to_binary(s):
     if is_text(s):
         return s.encode("utf-8", "strict")
 
-    raise TypeError("expected binary or text (found {})".format(type(s)))
+    raise TypeError(f"expected binary or text (found {type(s)})")

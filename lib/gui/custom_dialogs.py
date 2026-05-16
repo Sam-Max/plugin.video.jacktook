@@ -1,3 +1,4 @@
+import contextlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
@@ -77,10 +78,8 @@ class CustomDialog(WindowXMLDialog):
             self.getControl(self._qrcode).setImage(self.qrcode_path)
             self.getControl(self._qrcode).setVisible(True)
         else:
-            try:
+            with contextlib.suppress(BaseException):
                 self.getControl(self._qrcode).setVisible(False)
-            except:
-                pass
 
     def onClick(self, controlId):
         if controlId == self._close_button_id:
