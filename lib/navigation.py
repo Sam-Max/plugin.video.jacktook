@@ -1,16 +1,26 @@
 import json
 import os
-from lib.api.trakt.trakt import ProviderException, TraktAPI
-from lib.clients.trakt.trakt import TraktClient
 
+import xbmcgui
+from xbmcgui import ListItem
+from xbmcplugin import (
+    addDirectoryItem,
+    setResolvedUrl,
+)
+
+import lib.nav.debrid as debrid_navigation
+import lib.nav.library_history as library_history_navigation
+from lib.api.trakt.trakt import ProviderException, TraktAPI
 from lib.clients.stremio.catalog_menus import list_stremio_catalogs
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
 )
-
+from lib.clients.trakt.trakt import TraktClient
+from lib.clients.youtube_resolver import (
+    extract_video_id,
+    resolve_item_trailer,
+)
 from lib.db.cached import RuntimeCache, cache
-
-from lib.downloader import downloads_viewer
 from lib.gui.custom_dialogs import (
     CustomDialog,
     download_dialog_mock,
@@ -18,90 +28,87 @@ from lib.gui.custom_dialogs import (
     run_next_mock,
     source_select_mock,
 )
-
 from lib.player import JacktookPLayer
-from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
-    ADDON_PATH,
-    ADDON_VERSION,
-    CHANGELOG_PATH,
-    JACKTORR_ADDON,
-    add_directory_items_batch,
-    apply_section_view,
-    action_url_run,
-    build_url,
-    burst_addon_settings,
-    capture_current_view_id,
-    dialog_text,
-    end_of_directory,
-    execute_builtin,
-    finish_action,
-    clear_cached_settings,
-    get_setting,
-    is_youtube_addon_enabled,
-    kodilog,
-    notification,
-    play_info_hash,
-    reset_saved_views,
-    save_view_id,
-    set_setting,
-    translation,
-    make_list_item,
-)
-from lib.utils.player.utils import resolve_playback_url
-from lib.utils.torrent.torrserver_init import get_torrserver_api
-from lib.utils.torrentio.utils import open_providers_selection
-from lib.utils.kodi.settings import addon_settings
-from lib.utils.kodi.settings_backup import (
-    export_settings_backup as kodi_export_settings_backup,
-    factory_reset_action as kodi_factory_reset_action,
-    reset_all_settings_action as kodi_reset_all_settings_action,
-    restore_settings_backup as kodi_restore_settings_backup,
-)
-from lib.utils.general.utils import (
-    build_list_item,
-    clear_all_cache,
-    clear_trakt_db_cache,
-    clear_tmdb_cache as utils_clear_tmdb_cache,
-    clear_stremio_cache as utils_clear_stremio_cache,
-    clear_debrid_cache as utils_clear_debrid_cache,
-    clear_mdblist_cache as utils_clear_mdblist_cache,
-    clear_database_cache as utils_clear_database_cache,
-    make_listing,
-    set_content_type,
-    set_pluging_category,
-    show_log_export_dialog,
-)
-from lib.clients.youtube_resolver import (
-    extract_video_id,
-    resolve_item_trailer,
-)
-import lib.nav.debrid as debrid_navigation
-import lib.nav.library_history as library_history_navigation
+from lib.updater import downgrade_addon_menu, updates_check_addon
 from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
     movie_items,
+    root_menu_items,
     trakt_movie_discovery_items,
     trakt_movie_library_items,
     trakt_tv_discovery_items,
     trakt_tv_library_items,
     tv_items,
 )
-
-from lib.updater import updates_check_addon, downgrade_addon_menu
-
-from xbmcgui import ListItem
-import xbmcgui
-from xbmcplugin import (
-    addDirectoryItem,
-    setResolvedUrl,
+from lib.utils.general.utils import (
+    build_list_item,
+    clear_all_cache,
+    clear_trakt_db_cache,
+    make_listing,
+    set_content_type,
+    set_pluging_category,
+    show_log_export_dialog,
 )
-
-
-from lib.utils.general.items_menus import (
-    root_menu_items,
+from lib.utils.general.utils import (
+    clear_database_cache as utils_clear_database_cache,
 )
+from lib.utils.general.utils import (
+    clear_debrid_cache as utils_clear_debrid_cache,
+)
+from lib.utils.general.utils import (
+    clear_mdblist_cache as utils_clear_mdblist_cache,
+)
+from lib.utils.general.utils import (
+    clear_stremio_cache as utils_clear_stremio_cache,
+)
+from lib.utils.general.utils import (
+    clear_tmdb_cache as utils_clear_tmdb_cache,
+)
+from lib.utils.kodi.settings import addon_settings
+from lib.utils.kodi.settings_backup import (
+    export_settings_backup as kodi_export_settings_backup,
+)
+from lib.utils.kodi.settings_backup import (
+    factory_reset_action as kodi_factory_reset_action,
+)
+from lib.utils.kodi.settings_backup import (
+    reset_all_settings_action as kodi_reset_all_settings_action,
+)
+from lib.utils.kodi.settings_backup import (
+    restore_settings_backup as kodi_restore_settings_backup,
+)
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    ADDON_VERSION,
+    CHANGELOG_PATH,
+    JACKTORR_ADDON,
+    action_url_run,
+    add_directory_items_batch,
+    apply_section_view,
+    build_url,
+    burst_addon_settings,
+    capture_current_view_id,
+    clear_cached_settings,
+    dialog_text,
+    end_of_directory,
+    execute_builtin,
+    finish_action,
+    get_setting,
+    is_youtube_addon_enabled,
+    kodilog,
+    make_list_item,
+    notification,
+    play_info_hash,
+    reset_saved_views,
+    save_view_id,
+    set_setting,
+    translation,
+)
+from lib.utils.player.utils import resolve_playback_url
+from lib.utils.torrent.torrserver_init import get_torrserver_api
+from lib.utils.torrentio.utils import open_providers_selection
 
 
 def _menu_condition_signature(items):
@@ -430,10 +437,26 @@ def telegram_menu(params):
     set_pluging_category(translation(90013))
     add_directory_items_batch(
         [
-            (build_url("search_direct", mode="direct"), build_list_item(translation(90006), "search.png"), True),
-            (build_url("list_jackgram_latest_movies", page=1), build_list_item(translation(90369), "movies.png"), True),
-            (build_url("list_jackgram_latest_series", page=1), build_list_item(translation(90370), "tv.png"), True),
-            (build_url("list_jackgram_raw_files", page=1), build_list_item(translation(90371), "cloud.png"), True),
+            (
+                build_url("search_direct", mode="direct"),
+                build_list_item(translation(90006), "search.png"),
+                True,
+            ),
+            (
+                build_url("list_jackgram_latest_movies", page=1),
+                build_list_item(translation(90369), "movies.png"),
+                True,
+            ),
+            (
+                build_url("list_jackgram_latest_series", page=1),
+                build_list_item(translation(90370), "tv.png"),
+                True,
+            ),
+            (
+                build_url("list_jackgram_raw_files", page=1),
+                build_list_item(translation(90371), "cloud.png"),
+                True,
+            ),
         ]
     )
     end_of_directory()
@@ -550,17 +573,29 @@ def search_menu(params):
     directory_items = []
 
     directory_items.append(
-        (build_url("handle_tmdb_search", mode="multi", page=1), build_list_item(translation(90207), "search.png"), True)
+        (
+            build_url("handle_tmdb_search", mode="multi", page=1),
+            build_list_item(translation(90207), "search.png"),
+            True,
+        )
     )
 
     # -- Direct Search --
     directory_items.append(
-        (build_url("search_direct", mode="direct"), build_list_item(translation(90011), "search.png"), True)
+        (
+            build_url("search_direct", mode="direct"),
+            build_list_item(translation(90011), "search.png"),
+            True,
+        )
     )
 
     # -- Keyword Search --
     directory_items.append(
-        (build_url("handle_keyword_search", mode="multi"), build_list_item(translation(90368), "tmdb.png"), True)
+        (
+            build_url("handle_keyword_search", mode="multi"),
+            build_list_item(translation(90368), "tmdb.png"),
+            True,
+        )
     )
 
     # -- Recent TMDb Searches --
@@ -572,11 +607,15 @@ def search_menu(params):
 
         for _, text in tmdb_history[:5]:
             list_item = make_list_item(label=f"[I]{text}[/I]")
-            list_item.setArt(
-                {"icon": os.path.join(ADDON_PATH, "resources", "img", "tmdb.png")}
-            )
+            list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "tmdb.png")})
             list_item.setProperty("IsPlayable", "false")
-            directory_items.append((build_url("handle_tmdb_search", mode="multi", page=1, query=text), list_item, True))
+            directory_items.append(
+                (
+                    build_url("handle_tmdb_search", mode="multi", page=1, query=text),
+                    list_item,
+                    True,
+                )
+            )
 
     # -- Recent Direct Searches --
     direct_history = cache.get_list(key="direct")
@@ -587,18 +626,20 @@ def search_menu(params):
 
         for mode, text in direct_history[:5]:
             list_item = make_list_item(label=f"[I]{text}[/I]")
-            list_item.setArt(
-                {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
-            )
+            list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
             list_item.setProperty("IsPlayable", "true")
-            directory_items.append((build_url("search", mode=mode, query=text, direct=True), list_item, False))
+            directory_items.append(
+                (
+                    build_url("search", mode=mode, query=text, direct=True),
+                    list_item,
+                    False,
+                )
+            )
 
     # -- Clear All Search History --
     if tmdb_history or direct_history:
         clear_li = make_list_item(label=translation(90210))
-        clear_li.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
-        )
+        clear_li.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
         directory_items.append((build_url("clear_search_history"), clear_li, False))
 
     add_directory_items_batch(directory_items)
@@ -753,9 +794,12 @@ def torrents(params):
         parsed_data = {}
         if info_hash:
             from lib.utils.torrent.torrserver_utils import get_torrent_meta
+
             parsed_data = get_torrent_meta(info_hash)
 
-        parsed_ids = parsed_data.get("ids", {}) if isinstance(parsed_data.get("ids", {}), dict) else {}
+        parsed_ids = (
+            parsed_data.get("ids", {}) if isinstance(parsed_data.get("ids", {}), dict) else {}
+        )
         meta = {
             "title": parsed_data.get("title") or torrent.get("title", ""),
             "mode": parsed_data.get("mode", ""),
@@ -782,9 +826,7 @@ def torrents(params):
             context_menu_items.append(
                 (
                     translation(30709),
-                    action_url_run(
-                        "torrent_action", info_hash=info_hash, action_str="drop"
-                    ),
+                    action_url_run("torrent_action", info_hash=info_hash, action_str="drop"),
                 )
             )
 
@@ -1126,7 +1168,7 @@ def downgrade_addon(params):
 
 
 def show_changelog(params):
-        dialog_text(translation(90577), file=CHANGELOG_PATH)
+    dialog_text(translation(90577), file=CHANGELOG_PATH)
 
 
 def donate(params):

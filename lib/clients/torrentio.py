@@ -1,10 +1,10 @@
 import re
-from typing import List, Dict, Tuple, Optional, Any, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.localization.countries import find_language_by_unicode
-from lib.utils.kodi.utils import convert_size_to_bytes, kodilog, translation
 from lib.utils.general.utils import USER_AGENT_HEADER, unicode_flag_to_country_code
+from lib.utils.kodi.utils import convert_size_to_bytes, translation
+from lib.utils.localization.countries import find_language_by_unicode
 
 
 class Torrentio(BaseClient):
@@ -27,13 +27,13 @@ class Torrentio(BaseClient):
             else:
                 self.handle_exception(translation(30228))
                 return None
-            
+
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res)
         except Exception as e:
-            self.handle_exception(f"{translation(30228)}: {str(e)}")
+            self.handle_exception(f"{translation(30228)}: {e!s}")
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()

@@ -1,28 +1,30 @@
-import requests
-from datetime import timedelta
 from collections import Counter
-from lib.db.cached import cache
-from lib.utils.general.utils import USER_AGENT_HEADER
-from lib.utils.kodi.utils import (
-    kodilog,
-    get_setting,
-    set_setting,
-    ADDON,
-    translation,
-)
-from lib.utils.kodi.settings import get_int_setting
+from datetime import timedelta
+
+import requests
+import xbmcgui
+
+from lib.api.stremio.addon_manager import build_addon_instance_key
 from lib.clients.stremio.constants import (
-    STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_ADDONS_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
-    excluded_addons,
-    encode_selected_ids,
     decode_selected_ids,
+    encode_selected_ids,
+    excluded_addons,
 )
-from lib.clients.stremio.helpers import get_addons, ping_addons, get_addon_merge_key
-from lib.api.stremio.addon_manager import build_addon_instance_key
-import xbmcgui
+from lib.clients.stremio.helpers import get_addon_merge_key, get_addons, ping_addons
+from lib.db.cached import cache
+from lib.utils.general.utils import USER_AGENT_HEADER
+from lib.utils.kodi.settings import get_int_setting
+from lib.utils.kodi.utils import (
+    ADDON,
+    get_setting,
+    kodilog,
+    set_setting,
+    translation,
+)
 
 
 def _ping_addons_with_progress(addons):
@@ -124,10 +126,7 @@ def _filter_excluded_addons(addons):
         addon
         for addon in addons
         if addon.manifest.id not in excluded_addons
-        and (
-            not addon.manifest.isConfigurationRequired()
-            or addon.transport_name == "custom"
-        )
+        and (not addon.manifest.isConfigurationRequired() or addon.transport_name == "custom")
     ]
 
 
@@ -299,9 +298,7 @@ def stremio_toggle_tv_addons(params, check_availability=False):
 
 def add_custom_stremio_addon(params):
     dialog = xbmcgui.Dialog()
-    url = dialog.input(
-        translation(90523), type=xbmcgui.INPUT_ALPHANUM
-    )
+    url = dialog.input(translation(90523), type=xbmcgui.INPUT_ALPHANUM)
     if not url:
         dialog.ok(translation(90522), translation(90524))
         return
@@ -326,15 +323,11 @@ def add_custom_stremio_addon(params):
         if not id_:
             dialog.ok(translation(90522), translation(90526))
             return
-        addon_key = build_addon_instance_key(
-            {"manifest": manifest, "transportUrl": response.url}
-        )
+        addon_key = build_addon_instance_key({"manifest": manifest, "transportUrl": response.url})
 
         resources = manifest.get("resources", [])
         # Normalize resources to list of dicts or strings
-        if isinstance(resources, dict):
-            resources = [resources]
-        elif isinstance(resources, str):
+        if isinstance(resources, dict) or isinstance(resources, str):
             resources = [resources]
 
         # Determine capabilities
@@ -389,9 +382,7 @@ def add_custom_stremio_addon(params):
 
         # Add to selected catalogs if catalog
         if is_catalog:
-            selected_catalog_keys = decode_selected_ids(
-                cache.get(STREMIO_ADDONS_CATALOGS_KEY)
-            )
+            selected_catalog_keys = decode_selected_ids(cache.get(STREMIO_ADDONS_CATALOGS_KEY))
             if addon_key not in selected_catalog_keys:
                 selected_catalog_keys.append(addon_key)
                 cache.set(
@@ -433,11 +424,7 @@ def remove_custom_stremio_addon(params=None):
     options = []
     for addon in removable_addons:
         manifest = addon.get("manifest", {})
-        name = (
-            manifest.get("name")
-            or manifest.get("id")
-            or addon.get("transportUrl", "Unknown")
-        )
+        name = manifest.get("name") or manifest.get("id") or addon.get("transportUrl", "Unknown")
         desc = manifest.get("description", "")
         item = xbmcgui.ListItem(label=name, label2=desc)
 
@@ -467,11 +454,7 @@ def remove_custom_stremio_addon(params=None):
             to_remove_keys.add(addon_key)
 
     # Remove from user_addons
-    new_user_addons = [
-        a
-        for a in user_addons
-        if build_addon_instance_key(a) not in to_remove_keys
-    ]
+    new_user_addons = [a for a in user_addons if build_addon_instance_key(a) not in to_remove_keys]
     cache.set(STREMIO_USER_ADDONS, new_user_addons, timedelta(days=365 * 20))
 
     # Remove from selected stream/catalogs/tv if present
@@ -483,9 +466,7 @@ def remove_custom_stremio_addon(params=None):
         selected_keys = decode_selected_ids(cache.get(cache_key))
         if selected_keys:
             selected_keys = [k for k in selected_keys if k not in to_remove_keys]
-            cache.set(
-                cache_key, encode_selected_ids(selected_keys), timedelta(days=365 * 20)
-            )
+            cache.set(cache_key, encode_selected_ids(selected_keys), timedelta(days=365 * 20))
 
     xbmcgui.Dialog().ok(translation(90531), translation(90534))
 
@@ -503,9 +484,7 @@ def stremio_bypass_addons_select(params=None):
 
     selected_ids = []
     for addon in addons:
-        if addon.key() in selected_values:
-            selected_ids.append(addon.key())
-        elif addon.manifest.name.lower() in selected_values:
+        if addon.key() in selected_values or addon.manifest.name.lower() in selected_values:
             selected_ids.append(addon.key())
 
     title = translation(90213)

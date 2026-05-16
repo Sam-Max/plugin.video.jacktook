@@ -1,13 +1,12 @@
-from urllib.parse import parse_qs, urlparse
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
-from lib.clients.trakt.trakt import BaseTraktClient
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_movie_context_menu,
     add_tmdb_show_context_menu,
 )
-
+from lib.clients.trakt.trakt import BaseTraktClient
 
 TRAILER_LABEL = "Play Trailer"
 
@@ -46,7 +45,10 @@ def _parse_runplugin_command(command):
 
 
 def test_movie_context_menu_contains_play_trailer_when_tmdb_id_exists():
-    with patch("lib.clients.tmdb.utils.utils.translation", side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}"):
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}",
+    ):
         menu = add_tmdb_movie_context_menu(
             mode="movies",
             media_type="movie",
@@ -68,7 +70,10 @@ def test_movie_context_menu_contains_play_trailer_when_tmdb_id_exists():
 
 
 def test_movie_context_menu_hides_play_trailer_without_tmdb_or_youtube_metadata():
-    with patch("lib.clients.tmdb.utils.utils.translation", side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}"):
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}",
+    ):
         menu = add_tmdb_movie_context_menu(
             mode="movies",
             media_type="movie",
@@ -106,7 +111,10 @@ def test_movie_context_menu_contains_search_modes_entry():
 
 
 def test_tv_context_menu_contains_play_trailer_when_tmdb_id_exists():
-    with patch("lib.clients.tmdb.utils.utils.translation", side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}"):
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}",
+    ):
         menu = add_tmdb_show_context_menu(
             mode="tv",
             title="Demo Show",
@@ -132,9 +140,9 @@ def test_base_tmdb_client_passes_show_title_to_context_menu_builder():
     with patch(
         "lib.clients.tmdb.base.add_tmdb_show_context_menu",
         return_value=[("tmdb-tv", "cmd")],
-    ) as add_context_menu, patch(
-        "lib.clients.tmdb.base.is_trakt_auth", return_value=False
-    ), patch("lib.clients.tmdb.base.add_kodi_dir_item"):
+    ) as add_context_menu, patch("lib.clients.tmdb.base.is_trakt_auth", return_value=False), patch(
+        "lib.clients.tmdb.base.add_kodi_dir_item"
+    ):
         BaseTmdbClient.add_media_directory_item(
             list_item=list_item,
             mode="tv",
@@ -142,17 +150,15 @@ def test_base_tmdb_client_passes_show_title_to_context_menu_builder():
             ids={"tmdb_id": 1399},
         )
 
-    add_context_menu.assert_called_once_with(
-        "tv", ids={"tmdb_id": 1399}, title="Demo Show"
-    )
+    add_context_menu.assert_called_once_with("tv", ids={"tmdb_id": 1399}, title="Demo Show")
 
 
 def test_trakt_movie_context_menu_contains_play_trailer_when_tmdb_id_exists():
     list_item = MagicMock()
 
-    with patch(
-        "lib.clients.trakt.trakt.is_trakt_auth", return_value=False
-    ), patch("lib.clients.trakt.trakt.add_kodi_dir_item"), patch(
+    with patch("lib.clients.trakt.trakt.is_trakt_auth", return_value=False), patch(
+        "lib.clients.trakt.trakt.add_kodi_dir_item"
+    ), patch(
         "lib.clients.tmdb.utils.utils.translation",
         side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}",
     ):
@@ -181,11 +187,9 @@ def test_trakt_movie_context_menu_contains_play_trailer_when_tmdb_id_exists():
 def test_trakt_show_context_menu_contains_play_trailer_when_tmdb_id_exists():
     list_item = MagicMock()
 
-    with patch(
-        "lib.clients.trakt.trakt.is_trakt_auth", return_value=True
-    ), patch(
-            "lib.clients.trakt.trakt.BaseTraktClient._trakt_context_menu",
-            return_value=[("watched", "cmd")],
+    with patch("lib.clients.trakt.trakt.is_trakt_auth", return_value=True), patch(
+        "lib.clients.trakt.trakt.BaseTraktClient._trakt_context_menu",
+        return_value=[("watched", "cmd")],
     ), patch("lib.clients.trakt.trakt.add_kodi_dir_item"), patch(
         "lib.clients.tmdb.utils.utils.translation",
         side_effect=lambda value: TRAILER_LABEL if value == 90672 else f"t-{value}",

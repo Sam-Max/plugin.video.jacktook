@@ -9,7 +9,7 @@ from . import _stream as stream
 class find_torrent_files:
     """Iterator over ``(torrent_file, torrent_file_counter, exception)`` tuples"""
 
-    def __init__(self, *paths, max_file_size=float('inf')):
+    def __init__(self, *paths, max_file_size=float("inf")):
         self._paths = paths
         self._counter = 0
         self._max_file_size = max_file_size
@@ -34,7 +34,7 @@ class find_torrent_files:
             except OSError as e:
                 yield None, self._counter, error.ReadError(e.errno, str(path))
 
-        elif os.path.basename(path).lower().endswith('.torrent'):
+        elif os.path.basename(path).lower().endswith(".torrent"):
             try:
                 file_size = os.path.getsize(path)
             except OSError:
@@ -75,10 +75,10 @@ def is_file_match(torrent, candidate):
     """
     # Compare relative file paths and file sizes.
     # Order of files is important.
-    torrent_info, candidate_info = torrent.metainfo['info'], candidate.metainfo['info']
+    torrent_info, candidate_info = torrent.metainfo["info"], candidate.metainfo["info"]
 
     # Don't bother doing anything else if the names are different
-    if torrent_info['name'] != candidate_info['name']:
+    if torrent_info["name"] != candidate_info["name"]:
         return False
 
     torrent_id = _get_filepaths_and_sizes(torrent_info)
@@ -89,27 +89,30 @@ def is_file_match(torrent, candidate):
 
     return False
 
+
 def _get_filepaths_and_sizes(info):
-    name = info['name']
+    name = info["name"]
 
     # Singlefile torrent
-    length = info.get('length', None)
+    length = info.get("length", None)
     if length:
         return [(name, length)]
 
     # Multifile torrent
-    files = info.get('files', None)
+    files = info.get("files", None)
     if files:
         files_and_sizes = []
         for file in files:
-            files_and_sizes.append((
-                os.sep.join((name, *file['path'])),
-                file['length'],
-            ))
+            files_and_sizes.append(
+                (
+                    os.sep.join((name, *file["path"])),
+                    file["length"],
+                )
+            )
         return sorted(files_and_sizes)
 
     else:
-        raise RuntimeError(f'Unable to find files: {info!r}')
+        raise RuntimeError(f"Unable to find files: {info!r}")
 
 
 def is_content_match(torrent, candidate):
@@ -126,7 +129,7 @@ def is_content_match(torrent, candidate):
     returned `True`.
     """
     if not torrent.path:
-        raise RuntimeError(f'Torrent does not have a file system path: {torrent!r}')
+        raise RuntimeError(f"Torrent does not have a file system path: {torrent!r}")
 
     # Compare some piece hashes for each file
     with stream.TorrentFileStream(candidate, content_path=torrent.path) as tfs:
@@ -135,9 +138,7 @@ def is_content_match(torrent, candidate):
             all_file_piece_indexes = tfs.get_piece_indexes_of_file(file)
             middle_piece_index = int(len(all_file_piece_indexes) / 2)
             some_file_piece_indexes = (
-                all_file_piece_indexes[:1]
-                + [middle_piece_index]
-                + all_file_piece_indexes[-1:]
+                all_file_piece_indexes[:1] + [middle_piece_index] + all_file_piece_indexes[-1:]
             )
             check_piece_indexes.update(some_file_piece_indexes)
 
@@ -152,25 +153,25 @@ def copy(from_torrent, to_torrent):
     Copy ``pieces``, ``piece length`` and ``files`` from `from_torrent` to
     `to_torrent`
     """
-    source_info = from_torrent.metainfo['info']
-    to_torrent.metainfo['info']['pieces'] = source_info['pieces']
-    to_torrent.metainfo['info']['piece length'] = source_info['piece length']
-    if 'files' in from_torrent.metainfo['info']:
+    source_info = from_torrent.metainfo["info"]
+    to_torrent.metainfo["info"]["pieces"] = source_info["pieces"]
+    to_torrent.metainfo["info"]["piece length"] = source_info["piece length"]
+    if "files" in from_torrent.metainfo["info"]:
         # Confirm both file lists are identical while ignoring order
         def make_sortable(files):
             return [tuple(f.items()) for f in files]
 
         # Only include "length" and "files" fields
         source_files = [
-            {'length': file['length'], 'path': file['path']}
-            for file in source_info['files']
+            {"length": file["length"], "path": file["path"]} for file in source_info["files"]
         ]
 
-        assert sorted(make_sortable(to_torrent.metainfo['info']['files'])) \
-            == sorted(make_sortable(source_files))
+        assert sorted(make_sortable(to_torrent.metainfo["info"]["files"])) == sorted(
+            make_sortable(source_files)
+        )
 
         # Copy file order from `source_info`
-        to_torrent.metainfo['info']['files'] = source_files
+        to_torrent.metainfo["info"]["files"] = source_files
 
 
 class ReuseCallback(generate._IntervaledCallback):

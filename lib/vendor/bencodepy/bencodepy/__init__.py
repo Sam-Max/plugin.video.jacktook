@@ -18,7 +18,7 @@ from .encoder import BencodeEncoder
 from .exceptions import BencodeDecodeError
 
 try:
-    from typing import Dict, List, Tuple, Deque, Union, TextIO, BinaryIO, Any
+    from typing import Any, BinaryIO, Deque, Dict, List, TextIO, Tuple, Union
 except ImportError:
     Dict = List = Tuple = Deque = Union = TextIO = BinaryIO = Any = None
 
@@ -33,27 +33,33 @@ except ImportError:
     pathlib = None
 
 __all__ = (
-    'Bencached',
-    'Bencode',
-    'BencodeDecoder',
-    'BencodeDecodeError',
-    'BencodeEncoder',
-    'bencode',
-    'bdecode',
-    'bread',
-    'bwrite',
-    'encode',
-    'decode'
+    "Bencached",
+    "Bencode",
+    "BencodeDecodeError",
+    "BencodeDecoder",
+    "BencodeEncoder",
+    "bdecode",
+    "bencode",
+    "bread",
+    "bwrite",
+    "decode",
+    "encode",
 )
 
 
-class Bencode(object):
-    def __init__(self, encoding=None, encoding_fallback=None, dict_ordered=False, dict_ordered_sort=False):
+class Bencode:
+    def __init__(
+        self,
+        encoding=None,
+        encoding_fallback=None,
+        dict_ordered=False,
+        dict_ordered_sort=False,
+    ):
         self.decoder = BencodeDecoder(
             encoding=encoding,
             encoding_fallback=encoding_fallback,
             dict_ordered=dict_ordered,
-            dict_ordered_sort=dict_ordered_sort
+            dict_ordered_sort=dict_ordered_sort,
         )
 
         self.encoder = BencodeEncoder()
@@ -84,9 +90,10 @@ class Bencode(object):
         """
         return self.encoder.encode(value)
 
-    def read(self,
-             fd  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
-             ):
+    def read(
+        self,
+        fd,  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
+    ):
         # type: (...) -> Union[Tuple, List, OrderedDict, bool, int, str, bytes]
         """Return bdecoded data from filename, file, or file-like object.
 
@@ -95,18 +102,19 @@ class Bencode(object):
         raised.
         """
         if isinstance(fd, (bytes, str)):
-            with open(fd, 'rb') as fd:
+            with open(fd, "rb") as fd:
                 return self.decode(fd.read())
         elif pathlib is not None and isinstance(fd, (pathlib.Path, pathlib.PurePath)):
-            with open(str(fd), 'rb') as fd:
+            with open(str(fd), "rb") as fd:
                 return self.decode(fd.read())
         else:
             return self.decode(fd.read())
 
-    def write(self,
-              data,  # type: Union[Tuple, List, OrderedDict, Dict, bool, int, str, bytes]
-              fd     # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
-              ):
+    def write(
+        self,
+        data,  # type: Union[Tuple, List, OrderedDict, Dict, bool, int, str, bytes]
+        fd,  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
+    ):
         # type: (...) -> None
         """Write data in bencoded form to filename, file, or file-like object.
 
@@ -115,10 +123,10 @@ class Bencode(object):
         exception raised.
         """
         if isinstance(fd, (bytes, str)):
-            with open(fd, 'wb') as fd:
+            with open(fd, "wb") as fd:
                 fd.write(self.encode(data))
         elif pathlib is not None and isinstance(fd, (pathlib.Path, pathlib.PurePath)):
-            with open(str(fd), 'wb') as fd:
+            with open(str(fd), "wb") as fd:
                 fd.write(self.encode(data))
         else:
             fd.write(self.encode(data))
@@ -155,8 +163,9 @@ def bdecode(value):
     return DEFAULT.decode(value)
 
 
-def bread(fd  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
-          ):
+def bread(
+    fd,  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
+):
     # type: (...) -> Union[Tuple, List, OrderedDict, bool, int, str, bytes]
     """Return bdecoded data from filename, file, or file-like object.
 
@@ -167,9 +176,10 @@ def bread(fd  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, 
     return DEFAULT.read(fd)
 
 
-def bwrite(data,  # type: Union[Tuple, List, OrderedDict, Dict, bool, int, str, bytes]
-           fd     # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
-           ):
+def bwrite(
+    data,  # type: Union[Tuple, List, OrderedDict, Dict, bool, int, str, bytes]
+    fd,  # type: Union[bytes, str, pathlib.Path, pathlib.PurePath, TextIO, BinaryIO]
+):
     # type: (...) -> None
     """Write data in bencoded form to filename, file, or file-like object.
 

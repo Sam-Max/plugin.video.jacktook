@@ -1,0 +1,188 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plugin.video.jacktook"
+version = "1.13.0"
+description = "Kodi addon for searching and streaming torrents via debrid services"
+requires-python = ">=3.7"
+
+# ──────────────────────────────────────────────
+# Ruff — linter + formatter
+# ──────────────────────────────────────────────
+
+[tool.ruff]
+# Target Python 3.7+ for Kodi compatibility (the addon has a py37 compat checker)
+target-version = "py37"
+line-length = 100
+indent-width = 4
+
+# Files/directories to exclude
+exclude = [
+    ".git",
+    ".venv",
+    ".agent",
+    ".agents",
+    ".opencode",
+    ".worktrees",
+    ".mypy_cache",
+    ".pytest_cache",
+    "docs",
+    "scripts",
+    "tests/manual_*.py",
+    "__pycache__",
+    "*.pyc",
+]
+
+# ── Formatter ─────────────────────────────────
+[tool.ruff.format]
+# Use Black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+skip-magic-trailing-comma = false
+
+# ── Linter ────────────────────────────────────
+[tool.ruff.lint]
+# Start with a pragmatic set of rules — expand as needed
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # Pyflakes (logic errors)
+    "I",    # isort (import ordering)
+    "N",    # pep8-naming
+    "UP",   # pyupgrade (only safe auto-fixes for target version)
+    "B",    # flake8-bugbear (likely bugs)
+    "SIM",  # flake8-simplify (simplifications)
+    "D",    # pydocstyle (docstring conventions)
+    "YTT",  # flake8-2020 (version check idioms)
+    "RUF",  # Ruff-specific rules
+]
+
+# Ignore rules that are too noisy for this codebase
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in __init__
+    "D200",   # One-line docstring should fit on one line
+    "D203",   # 1 blank line required before class docstring
+    "D212",   # Multi-line docstring summary should start at first line
+    "D213",   # Multi-line docstring summary should start at second line
+    "D401",   # First line should be in imperative mood
+    "D402",   # First line should not be function's signature
+    "D413",   # Blank line after last section
+    "D414",   # Section has no content
+    "D415",   # First line should end with period
+    "D416",   # Section name should end with colon
+    "D417",   # Missing argument descriptions
+    "N802",   # Function name should be lowercase (allow camelCase for Kodi compat)
+    "N803",   # Argument name should be lowercase
+    "N806",   # Variable in function should be lowercase
+    "N815",   # Variable in class scope should not be mixedCase
+    "SIM108", # Use ternary operator (if-else blocks)
+    "SIM115", # Use context handler for opening files
+    "SIM117", # Merge with-statements
+    "UP007",  # Use X | Y for type unions (not compatible with py37)
+    "UP006",  # Use X instead of typing.X
+    "UP035",  # Import from typing deprecated
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+]
+
+# ── isort settings ────────────────────────────
+[tool.ruff.lint.isort]
+known-first-party = ["lib"]
+known-third-party = ["xbmc", "xbmcgui", "xbmcplugin", "xbmcaddon", "xbmcvfs"]
+force-single-line = false
+order-by-type = true
+
+# ── pydocstyle ────────────────────────────────
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# ── pycodestyle ───────────────────────────────
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 100
+
+# ── Per-file-rule overrides ───────────────────
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "N", "SIM"]
+"scripts/**" = ["D", "N", "SIM", "UP"]
+"lib/vendor/**" = ["E501"]
+"lib/api/tmdbv3api/**" = ["UP031"]
+"lib/utils/parsers/xmltodict.py" = ["UP031"]
+
+# ──────────────────────────────────────────────
+# mypy — static type checker
+# ──────────────────────────────────────────────
+
+[tool.mypy]
+python_version = "3.13"
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+no_implicit_optional = true
+show_error_codes = true
+ignore_missing_imports = true
+
+# Exclude test/script/doc directories from initial file discovery
+exclude = [
+    "tests/",
+    "scripts/",
+    "docs/",
+]
+
+# ──────────────────────────────────────────────
+# pytest — test runner
+# ──────────────────────────────────────────────
+
+# Per-module overrides: skip vendored third-party code
+[[tool.mypy.overrides]]
+module = "lib.vendor.*"
+follow_imports = "skip"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "lib.utils.parsers.xmltodict"
+follow_imports = "skip"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "lib.api.tmdbv3api.*"
+follow_imports = "skip"
+ignore_errors = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-q",
+    "--tb=short",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "verify_*.py"]
+filterwarnings = [
+    "ignore::DeprecationWarning:lib.db.cached:413",
+]
+
+# ──────────────────────────────────────────────
+# Coverage — pytest-cov
+# ──────────────────────────────────────────────
+
+[tool.coverage.run]
+source = ["lib"]
+omit = [
+    "tests/*",
+    "scripts/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+skip_empty = true
+fail_under = 0

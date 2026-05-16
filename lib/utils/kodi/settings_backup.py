@@ -1,11 +1,12 @@
 import json
 import os
-from datetime import datetime, timedelta, timezone
 import xml.etree.ElementTree as ET
+from datetime import datetime, timedelta, timezone
 
 import requests
 import xbmcgui
 
+from lib.api.stremio.addon_manager import build_addon_instance_key
 from lib.clients.stremio.constants import (
     STREMIO_ADDONS_CATALOGS_KEY,
     STREMIO_ADDONS_KEY,
@@ -14,7 +15,6 @@ from lib.clients.stremio.constants import (
     decode_selected_ids,
     encode_selected_ids,
 )
-from lib.api.stremio.addon_manager import build_addon_instance_key
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
@@ -37,10 +37,9 @@ from lib.utils.kodi.utils import (
     notification,
     set_cached_setting_property,
     set_setting,
-    translation,
     translatePath,
+    translation,
 )
-
 
 BACKUP_VERSION = 1
 CUSTOM_ADDON_EXPIRY = timedelta(days=365 * 20)
@@ -92,9 +91,7 @@ AUTH_STATE_SETTING_IDS = {
     "is_trakt_auth",
 }
 
-SCRUBBED_SETTING_IDS = (
-    SENSITIVE_SETTING_IDS | IDENTITY_SETTING_IDS | AUTH_STATE_SETTING_IDS
-)
+SCRUBBED_SETTING_IDS = SENSITIVE_SETTING_IDS | IDENTITY_SETTING_IDS | AUTH_STATE_SETTING_IDS
 
 EXTRA_DYNAMIC_SETTINGS = {
     "trakt_token": "",
@@ -158,7 +155,9 @@ def _get_custom_stremio_addons(user_addons=None):
 
 def _get_custom_selection_map(custom_addons):
     custom_keys = {
-        addon_key for addon_key in (_custom_addon_key(addon) for addon in custom_addons) if addon_key
+        addon_key
+        for addon_key in (_custom_addon_key(addon) for addon in custom_addons)
+        if addon_key
     }
     selections = {}
     for label, cache_key in CUSTOM_SELECTION_KEYS.items():
@@ -245,7 +244,9 @@ def _normalize_custom_addons(custom_addons):
 
 def _filtered_custom_selection_map(cache_payload, custom_addons):
     custom_keys = {
-        addon_key for addon_key in (_custom_addon_key(addon) for addon in custom_addons) if addon_key
+        addon_key
+        for addon_key in (_custom_addon_key(addon) for addon in custom_addons)
+        if addon_key
     }
     raw_selections = cache_payload.get("custom_stremio_selections", {})
     filtered = {}

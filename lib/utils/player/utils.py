@@ -113,7 +113,12 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
 
 
 def get_torrent_url_for_client(
-    magnet: str, url: str, mode: str, ids: Any, client: str = "", data: Optional[Dict[str, Any]] = None
+    magnet: str,
+    url: str,
+    mode: str,
+    ids: Any,
+    client: str = "",
+    data: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
     torrent_client = client or str(get_setting("torrent_client"))
     if torrent_client in [Players.TORREST]:
@@ -126,9 +131,7 @@ def get_torrent_url_for_client(
         raise TorrentException(f"Unknown torrent client selected: {torrent_client}")
 
 
-def get_torrent_client_selection(
-    magnet: str, url: str, mode: str, ids: Any
-) -> Optional[str]:
+def get_torrent_client_selection(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
     chosen_client = Dialog().select(translation(90341), torrent_clients)
     if chosen_client < 0:
         return None
@@ -167,12 +170,7 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
 def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = None) -> Optional[str]:
     kodilog(
-        "Preparing Jacktorr URL with magnet={!r}, url={!r}, has_magnet={}, has_url={}".format(
-            summarize_locator_for_log(magnet),
-            summarize_locator_for_log(url),
-            bool(magnet),
-            bool(url),
-        ),
+        f"Preparing Jacktorr URL with magnet={summarize_locator_for_log(magnet)!r}, url={summarize_locator_for_log(url)!r}, has_magnet={bool(magnet)}, has_url={bool(url)}",
         level=LOGDEBUG,
     )
     if not is_jacktorr_addon():
@@ -262,9 +260,7 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
 
 
 class TorrentException(Exception):
-    def __init__(
-        self, message: str, status_code: Optional[int] = None, error_content: Any = None
-    ):
+    def __init__(self, message: str, status_code: Optional[int] = None, error_content: Any = None):
         self.message = message
         self.status_code = status_code
         self.error_content = error_content
@@ -282,7 +278,9 @@ def get_autoscrape_cache_key(id_value: Any, season: Any, episode: Any) -> str:
     return f"as:{id_value}_{season}_{episode}"
 
 
-def cache_autoscrape_result(key: str, data: Dict[str, Any], ttl_hours: Optional[int] = None) -> None:
+def cache_autoscrape_result(
+    key: str, data: Dict[str, Any], ttl_hours: Optional[int] = None
+) -> None:
     """Cache resolved playback data with a TTL (default from autoscrape_ttl setting)."""
     if ttl_hours is None:
         ttl_hours = int(get_setting("autoscrape_ttl", 4) or 4)
@@ -329,9 +327,7 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
 
         # Apply auto_play heuristics to select best source
         preferred_quality = str(get_setting("auto_play_quality", "1080p"))
-        quality_matches = [
-            r for r in results if preferred_quality.lower() in r.quality.lower()
-        ]
+        quality_matches = [r for r in results if preferred_quality.lower() in r.quality.lower()]
         if not quality_matches:
             quality_matches = results
 

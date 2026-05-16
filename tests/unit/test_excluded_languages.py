@@ -12,9 +12,7 @@ class TestGetExcludedLanguages:
             assert get_excluded_languages() == []
 
     def test_returns_parsed_json(self):
-        with patch(
-            "lib.clients.tmdb.utils.utils.get_setting", return_value='["ja", "ko"]'
-        ):
+        with patch("lib.clients.tmdb.utils.utils.get_setting", return_value='["ja", "ko"]'):
             assert get_excluded_languages() == ["ja", "ko"]
 
     def test_returns_empty_on_invalid_json(self):
@@ -28,9 +26,7 @@ class TestFilterExcludedLanguages:
             MagicMock(original_language="en"),
             MagicMock(original_language="ja"),
         ]
-        with patch(
-            "lib.clients.tmdb.utils.utils.get_excluded_languages", return_value=[]
-        ):
+        with patch("lib.clients.tmdb.utils.utils.get_excluded_languages", return_value=[]):
             filtered = filter_excluded_languages(results)
         assert len(filtered) == 2
 

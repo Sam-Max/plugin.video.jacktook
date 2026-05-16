@@ -1,20 +1,19 @@
-# -*- coding: utf-8 -*-
 """
 Local web server for uploading subtitle files from a browser.
 
 Serves a web UI with drag & drop file upload and exposes an API endpoint
 to receive the subtitle file via HTTP POST.
 """
+
+import json
 import os
 import socket
 import threading
-import json
 import uuid
 from datetime import datetime
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from lib.utils.kodi.utils import ADDON_PROFILE_PATH, kodilog
-
 
 _WEB_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -23,7 +22,7 @@ _WEB_DIR = os.path.join(
 )
 
 # Supported subtitle extensions
-SUBTITLE_EXTENSIONS = {'.srt', '.ass', '.ssa', '.sub', '.vtt', '.txt'}
+SUBTITLE_EXTENSIONS = {".srt", ".ass", ".ssa", ".sub", ".vtt", ".txt"}
 
 
 def _ensure_upload_dir():
@@ -46,7 +45,7 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     def wrapper_server(self):
         """Get the SubtitleUploadServer wrapper instance."""
         # The wrapper is stored as an attribute on the HTTPServer
-        return getattr(self.server, 'wrapper_server', None)
+        return getattr(self.server, "wrapper_server", None)
 
     def log_message(self, format, *args):
         kodilog(f"[SubtitleServer] {format % args}")
@@ -99,7 +98,13 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     @staticmethod
     def _html_escape(text):
         """Escape HTML special characters to prevent XSS."""
-        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#39;")
+        return (
+            text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&#39;")
+        )
 
     def _send_success_page(self, filename):
         safe_filename = self._html_escape(filename)
@@ -155,7 +160,7 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
     def _serve_index(self):
         index_path = os.path.join(_WEB_DIR, "upload.html")
         try:
-            with open(index_path, "r", encoding="utf-8") as f:
+            with open(index_path, encoding="utf-8") as f:
                 self._send_html(f.read())
         except FileNotFoundError:
             self.send_error(500, "Upload page not found")
@@ -164,39 +169,36 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
         """Return current upload status."""
         wrapper = self.wrapper_server
         uploaded_file = wrapper.get_uploaded_file() if wrapper else None
-        self._send_json({
-            "uploaded": uploaded_file is not None,
-            "path": uploaded_file
-        })
+        self._send_json({"uploaded": uploaded_file is not None, "path": uploaded_file})
 
     def _parse_multipart(self):
         """
         Parse multipart/form-data without cgi module.
         Returns (filename, file_content) tuple or (None, error_message).
         """
-        content_type = self.headers.get('Content-Type', '')
-        
-        if not content_type.startswith('multipart/form-data'):
+        content_type = self.headers.get("Content-Type", "")
+
+        if not content_type.startswith("multipart/form-data"):
             return None, "Invalid content type"
 
         # Extract boundary from content-type
-        boundary_marker = 'boundary='
+        boundary_marker = "boundary="
         boundary_idx = content_type.find(boundary_marker)
         if boundary_idx == -1:
             return None, "No boundary in content type"
-        
-        boundary = content_type[boundary_idx + len(boundary_marker):]
-        boundary = boundary.strip('"')
-        boundary_bytes = ('--' + boundary).encode('utf-8')
-        end_boundary_bytes = ('--' + boundary + '--').encode('utf-8')
 
-        content_length = int(self.headers.get('Content-Length', 0))
+        boundary = content_type[boundary_idx + len(boundary_marker) :]
+        boundary = boundary.strip('"')
+        boundary_bytes = ("--" + boundary).encode("utf-8")
+        end_boundary_bytes = ("--" + boundary + "--").encode("utf-8")
+
+        content_length = int(self.headers.get("Content-Length", 0))
         if content_length == 0:
             return None, "No data received"
 
         # Read raw POST data
         post_data = self.rfile.read(content_length)
-        
+
         # Find first boundary
         start_idx = post_data.find(boundary_bytes)
         if start_idx == -1:
@@ -204,49 +206,49 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
 
         # Parse each part
         pos = start_idx + len(boundary_bytes)
-        
+
         while pos < len(post_data):
             # Check for end boundary
-            if post_data[pos:pos + 2] == b'--':
+            if post_data[pos : pos + 2] == b"--":
                 break
-            
+
             # Skip CRLF after boundary
-            if post_data[pos:pos + 2] == b'\r\n':
+            if post_data[pos : pos + 2] == b"\r\n":
                 pos += 2
-            elif post_data[pos:pos + 1] == b'\n':
+            elif post_data[pos : pos + 1] == b"\n":
                 pos += 1
-            
+
             # Find headers end (double CRLF)
-            header_end = post_data.find(b'\r\n\r\n', pos)
+            header_end = post_data.find(b"\r\n\r\n", pos)
             if header_end == -1:
-                header_end = post_data.find(b'\n\n', pos)
+                header_end = post_data.find(b"\n\n", pos)
                 header_end_len = 2
                 if header_end == -1:
                     continue
             else:
                 header_end_len = 4
-            
-            headers = post_data[pos:header_end].decode('utf-8', errors='replace')
+
+            headers = post_data[pos:header_end].decode("utf-8", errors="replace")
             pos = header_end + header_end_len
-            
+
             # Check if this is a file field
-            if 'Content-Disposition' not in headers:
+            if "Content-Disposition" not in headers:
                 continue
-                
+
             # Find next boundary
             next_boundary = post_data.find(boundary_bytes, pos)
             if next_boundary == -1:
                 next_boundary = post_data.find(end_boundary_bytes, pos)
             if next_boundary == -1:
                 break
-            
+
             # Extract field data (remove trailing CRLF)
             field_data = post_data[pos:next_boundary]
-            if field_data.endswith(b'\r\n'):
+            if field_data.endswith(b"\r\n"):
                 field_data = field_data[:-2]
-            elif field_data.endswith(b'\n'):
+            elif field_data.endswith(b"\n"):
                 field_data = field_data[:-1]
-            
+
             # Parse Content-Disposition for filename
             if 'filename="' in headers or "filename='" in headers:
                 # Extract filename
@@ -256,23 +258,23 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
                     quote_char = "'"
                 else:
                     quote_char = '"'
-                
+
                 if filename_start != -1:
                     filename_start += 10  # len('filename="')
                     filename_end = headers.find(quote_char, filename_start)
                     if filename_end != -1:
                         filename = headers[filename_start:filename_end]
                         return filename, field_data
-            
+
             pos = next_boundary
-        
+
         return None, "No file found in upload"
 
     def _handle_upload(self):
         """Handle multipart form data upload."""
         try:
             filename, file_content = self._parse_multipart()
-            
+
             if filename is None:
                 error_msg = file_content
                 kodilog(f"[SubtitleServer] Upload error: {error_msg}")
@@ -280,13 +282,16 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
                 return
 
             filename = os.path.basename(filename)
-            
+
             # Validate extension
             if not _is_valid_extension(filename):
                 ext = os.path.splitext(filename)[1].lower() or "unknown"
-                self._send_json({
-                    "error": f"Invalid file type: {ext}. Supported: {', '.join(SUBTITLE_EXTENSIONS)}"
-                }, 400)
+                self._send_json(
+                    {
+                        "error": f"Invalid file type: {ext}. Supported: {', '.join(SUBTITLE_EXTENSIONS)}"
+                    },
+                    400,
+                )
                 return
 
             # Save the file with unique name to avoid collisions
@@ -296,32 +301,33 @@ class SubtitleUploadHandler(BaseHTTPRequestHandler):
             safe_filename = f"{timestamp}_{unique_id}_{filename}"
             file_path = os.path.join(upload_dir, safe_filename)
 
-            with open(file_path, 'wb') as f:
-                f.write(file_content if isinstance(file_content, bytes) else file_content.encode('utf-8'))
+            with open(file_path, "wb") as f:
+                f.write(
+                    file_content
+                    if isinstance(file_content, bytes)
+                    else file_content.encode("utf-8")
+                )
 
             kodilog(f"[SubtitleServer] File uploaded: {file_path}")
-            
+
             # Notify server instance
             wrapper = self.wrapper_server
             if wrapper:
                 wrapper.set_uploaded_file(file_path)
             else:
                 kodilog("[SubtitleServer] Warning: wrapper_server not available")
-            
+
             # Send success response (HTML page for browser, JSON for API)
-            accept = self.headers.get('Accept', '')
-            if 'application/json' in accept:
-                self._send_json({
-                    "success": True,
-                    "filename": filename,
-                    "path": file_path
-                })
+            accept = self.headers.get("Accept", "")
+            if "application/json" in accept:
+                self._send_json({"success": True, "filename": filename, "path": file_path})
             else:
                 self._send_success_page(filename)
 
         except Exception as e:
             kodilog(f"[SubtitleServer] Upload error: {e}")
             import traceback
+
             kodilog(traceback.format_exc())
             self._send_json({"error": str(e)}, 500)
 
@@ -343,9 +349,7 @@ class SubtitleUploadServer:
             self._server = HTTPServer(("0.0.0.0", self.port), SubtitleUploadHandler)
             # Store reference to this wrapper so handlers can access it
             self._server.wrapper_server = self
-            self._thread = threading.Thread(
-                target=self._server.serve_forever, daemon=True
-            )
+            self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
             self._thread.start()
             kodilog(f"[SubtitleServer] Started on port {self.port}")
         except OSError:
@@ -354,9 +358,7 @@ class SubtitleUploadServer:
             try:
                 self._server = HTTPServer(("0.0.0.0", self.port), SubtitleUploadHandler)
                 self._server.wrapper_server = self
-                self._thread = threading.Thread(
-                    target=self._server.serve_forever, daemon=True
-                )
+                self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
                 self._thread.start()
                 kodilog(f"[SubtitleServer] Started on fallback port {self.port}")
             except Exception as e:

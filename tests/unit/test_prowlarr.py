@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from lib.clients.prowlarr import Prowlarr
 
@@ -63,9 +64,7 @@ def test_prowlarr_search_variant_mapping(prowlarr_client):
 
         with patch("lib.clients.prowlarr.get_prowlarr_timeout", return_value=10):
             # Test with variant and year
-            prowlarr_client.search(
-                "Spirited Away", "movies", variant=None, year=2001
-            )
+            prowlarr_client.search("Spirited Away", "movies", variant=None, year=2001)
 
         call_args = mock_get.call_args
         params = call_args[1]["params"]

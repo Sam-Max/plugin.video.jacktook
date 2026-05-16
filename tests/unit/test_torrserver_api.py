@@ -5,7 +5,7 @@ instead of a dict for some endpoints, causing TypeError when
 accessing ["hash"] on the list.
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -86,9 +86,7 @@ class TestExtractHash:
 
     def test_list_with_multiple_items_takes_first_hash(self, torrserver):
         """Multi-item list takes first element's hash."""
-        response = _make_response(
-            [{"hash": "first_hash"}, {"hash": "second_hash"}]
-        )
+        response = _make_response([{"hash": "first_hash"}, {"hash": "second_hash"}])
         result = torrserver._extract_hash(response)
         assert result == "first_hash"
 
@@ -110,17 +108,13 @@ class TestAddMagnet:
 
     def test_add_magnet_dict_response(self, torrserver):
         """add_magnet handles dict response from TorrServer."""
-        torrserver._session.request.return_value = _make_response(
-            {"hash": "magnet_hash_1"}
-        )
+        torrserver._session.request.return_value = _make_response({"hash": "magnet_hash_1"})
         result = torrserver.add_magnet("magnet:?xt=urn:btih:abc123")
         assert result == "magnet_hash_1"
 
     def test_add_magnet_list_response(self, torrserver):
         """add_magnet handles list response from TorrServer (issue #193)."""
-        torrserver._session.request.return_value = _make_response(
-            [{"hash": "magnet_hash_1"}]
-        )
+        torrserver._session.request.return_value = _make_response([{"hash": "magnet_hash_1"}])
         result = torrserver.add_magnet("magnet:?xt=urn:btih:abc123")
         assert result == "magnet_hash_1"
 
@@ -130,18 +124,14 @@ class TestAddTorrentObj:
 
     def test_add_torrent_obj_dict_response(self, torrserver):
         """add_torrent_obj handles dict response from TorrServer."""
-        torrserver._session.request.return_value = _make_response(
-            {"hash": "torrent_hash_1"}
-        )
+        torrserver._session.request.return_value = _make_response({"hash": "torrent_hash_1"})
         mock_file = MagicMock()
         result = torrserver.add_torrent_obj(mock_file)
         assert result == "torrent_hash_1"
 
     def test_add_torrent_obj_list_response(self, torrserver):
         """add_torrent_obj handles list response from TorrServer (issue #193)."""
-        torrserver._session.request.return_value = _make_response(
-            [{"hash": "torrent_hash_1"}]
-        )
+        torrserver._session.request.return_value = _make_response([{"hash": "torrent_hash_1"}])
         mock_file = MagicMock()
         result = torrserver.add_torrent_obj(mock_file)
         assert result == "torrent_hash_1"
@@ -152,9 +142,7 @@ class TestAddTorrent:
 
     def test_add_torrent_dict_response(self, torrserver, tmp_path):
         """add_torrent handles dict response from TorrServer."""
-        torrserver._session.request.return_value = _make_response(
-            {"hash": "file_hash_1"}
-        )
+        torrserver._session.request.return_value = _make_response({"hash": "file_hash_1"})
         torrent_file = tmp_path / "test.torrent"
         torrent_file.write_bytes(b"d8:announce17:http://test.com4:info6:teste")
         result = torrserver.add_torrent(str(torrent_file))
@@ -162,9 +150,7 @@ class TestAddTorrent:
 
     def test_add_torrent_list_response(self, torrserver, tmp_path):
         """add_torrent handles list response from TorrServer (issue #193)."""
-        torrserver._session.request.return_value = _make_response(
-            [{"hash": "file_hash_1"}]
-        )
+        torrserver._session.request.return_value = _make_response([{"hash": "file_hash_1"}])
         torrent_file = tmp_path / "test.torrent"
         torrent_file.write_bytes(b"d8:announce17:http://test.com4:info6:teste")
         result = torrserver.add_torrent(str(torrent_file))

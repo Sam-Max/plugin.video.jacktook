@@ -14,100 +14,71 @@ class TmdbAnime(TMDb):
 
     def cartoons_popular(self, mode, page_no):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
-            ),
-            params="with_keywords=6513-cartoon&page=%s" % page_no,
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=6513-cartoon&page={}".format(page_no),
         )
 
     def animation_popular(self, mode, page_no):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
-            ),
-            params="with_keywords=297442&page=%s" % page_no,
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=297442&page={}".format(page_no),
         )
 
     def anime_popular(self, mode, page_no):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
-            ),
-            params="with_keywords=210024&page=%s" % page_no,
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=210024&page={}".format(page_no),
         )
 
     def anime_popular_recent(self, mode, page_no):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
-            ),
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
             params=(
-                "with_keywords=210024&sort_by=first_air_date.desc&include_null_first_air_dates=false&first_air_date_year=%s&page=%s"
-                % (years_tvshows[0]["id"], page_no)
+                "with_keywords=210024&sort_by=first_air_date.desc&include_null_first_air_dates=false&first_air_date_year={}&page={}".format(
+                    years_tvshows[0]["id"], page_no
+                )
             ),
         )
 
     def anime_year(self, params):
-        year_param = (
-            "first_air_date_year" if params["mode"] == "tv" else "primary_release_year"
-        )
+        year_param = "first_air_date_year" if params["mode"] == "tv" else "primary_release_year"
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if params["mode"] == "tv"
-                else self._urls["discover_movie"]
+            (self._urls["discover_tv"] if params["mode"] == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=210024&include_null_first_air_dates=false&{}={}&page={}".format(
+                year_param, params["year"], params["page"]
             ),
-            params="with_keywords=210024&include_null_first_air_dates=false&%s=%s&page=%s"
-            % (year_param, params["year"], params["page"]),
         )
 
     def anime_genres(self, params):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if params["mode"] == "tv"
-                else self._urls["discover_movie"]
+            (self._urls["discover_tv"] if params["mode"] == "tv" else self._urls["discover_movie"]),
+            params="&with_keywords=210024&with_genres={}&include_null_first_air_dates=false&first_air_date.lte={}&page={}".format(
+                params["genre_id"], get_current_date(), params["page"]
             ),
-            params="&with_keywords=210024&with_genres=%s&include_null_first_air_dates=false&first_air_date.lte=%s&page=%s"
-            % (params["genre_id"], get_current_date(), params["page"]),
         )
 
     def anime_on_the_air(self, mode, page_no):
         current_date, future_date = get_dates(7, reverse=False)
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=210024&air_date.gte={}&air_date.lte={}&page={}".format(
+                current_date, future_date, page_no
             ),
-            params="with_keywords=210024&air_date.gte=%s&air_date.lte=%s&page=%s"
-            % (current_date, future_date, page_no),
         )
 
     def anime_top_rated(self, mode, page_no):
         return self._request_obj(
-            (
-                self._urls["discover_tv"]
-                if mode == "tv"
-                else self._urls["discover_movie"]
+            (self._urls["discover_tv"] if mode == "tv" else self._urls["discover_movie"]),
+            params="with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page={}".format(
+                page_no
             ),
-            params="with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page=%s"
-            % page_no,
         )
 
     def anime_search(self, query, mode, page_no, adult=False):
-        params = "query=%s&page=%s" % (query, page_no)
+        params = "query={}&page={}".format(query, page_no)
 
         if adult is not None:
-            params += "&include_adult=%s" % "true" if adult else "false"
+            params += "&include_adult={}".format("true") if adult else "false"
 
         return self._request_obj(
             self._urls["search_tv"] if mode == "tv" else self._urls["search_movie"],
@@ -117,10 +88,5 @@ class TmdbAnime(TMDb):
 
     def tmdb_keywords(self, mode, tmdb_id):
         return self._request_obj(
-            (
-                self._urls["tv_keywords"]
-                if mode == "tv"
-                else self._urls["movie_keywords"]
-            )
-            % tmdb_id,
+            (self._urls["tv_keywords"] if mode == "tv" else self._urls["movie_keywords"]) % tmdb_id,
         )

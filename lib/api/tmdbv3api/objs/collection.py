@@ -4,8 +4,8 @@ from lib.api.tmdbv3api.tmdb import TMDb
 class Collection(TMDb):
     _urls = {
         "details": "/collection/%s",
-        "images": "/collection/%s/images", 
-        "translations": "/collection/%s/translations"
+        "images": "/collection/%s/images",
+        "translations": "/collection/%s/translations",
     }
 
     def details(self, collection_id):

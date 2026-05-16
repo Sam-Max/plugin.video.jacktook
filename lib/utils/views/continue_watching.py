@@ -1,23 +1,26 @@
-# -*- coding: utf-8 -*-
-from lib.jacktook.utils import kodilog
 import json
 import os
+
 from xbmc import executebuiltin
-from xbmcplugin import endOfDirectory, setContent
+from xbmcplugin import setContent
+
+from lib.db.pickle_db import PickleDatabase
+from lib.utils.general.utils import (
+    format_season_episode,
+    set_pluging_category,
+    truncate_text,
+)
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
+    end_of_directory,
     make_list_item,
     translation,
 )
-from lib.db.pickle_db import PickleDatabase
-from lib.utils.general.utils import set_pluging_category
 from lib.utils.views.last_files import add_last_files_context_menu, parse_time
-from lib.utils.kodi.utils import end_of_directory
-from lib.utils.general.utils import format_season_episode, truncate_text
 
 
 def has_continue_watching_items():
@@ -56,9 +59,7 @@ def show_continue_watching():
 
         if tv_data:
             show_name = tv_data.get("name", "")
-            episode_label = format_season_episode(
-                tv_data.get("season"), tv_data.get("episode")
-            )
+            episode_label = format_season_episode(tv_data.get("season"), tv_data.get("episode"))
             if episode_label:
                 label = f"{show_name or label_title} {episode_label}"
             else:

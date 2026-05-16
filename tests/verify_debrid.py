@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from unittest.mock import MagicMock
 
 if "pytest" in sys.modules:
@@ -58,11 +58,11 @@ sys.modules["lib.api.tvdbapi.tvdbapi"] = MagicMock()
 sys.modules["lib.api.tvdbapi"] = MagicMock()
 
 # 4. Now import the clients
-from lib.api.debrid.realdebrid import RealDebrid
 from lib.api.debrid.alldebrid import AllDebrid
-from lib.api.debrid.torbox import Torbox
-from lib.api.debrid.premiumize import Premiumize
 from lib.api.debrid.debrider import Debrider
+from lib.api.debrid.premiumize import Premiumize
+from lib.api.debrid.realdebrid import RealDebrid
+from lib.api.debrid.torbox import Torbox
 
 # === CONFIGURATION: ADD YOUR TOKENS HERE ===
 TOKENS = {
@@ -93,7 +93,7 @@ def test_service(name, client_class, token):
                 f"FAILED: {name} returned None. Check if token is valid or if account has premium."
             )
     except Exception as e:
-        print(f"ERROR testing {name}: {str(e)}")
+        print(f"ERROR testing {name}: {e!s}")
 
 
 if __name__ == "__main__":

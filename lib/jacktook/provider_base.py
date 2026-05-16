@@ -4,6 +4,8 @@ import sys
 import threading
 import time
 
+import xbmc
+
 from .utils import (
     ADDON_ID,
     bytes_to_str,
@@ -13,10 +15,8 @@ from .utils import (
     run_script,
     str_to_bytes,
 )
-import xbmc
 
-
-__all__ = ["ProviderResult", "Provider"]
+__all__ = ["Provider", "ProviderResult"]
 
 
 def get_providers():
@@ -60,7 +60,7 @@ class ProviderResult(dict):
     set_size, size = _setter_and_getter("size")
 
 
-class Provider(object):
+class Provider:
     def __init__(self):
         self._methods = {}
         for name in dir(self):
@@ -81,9 +81,7 @@ class Provider(object):
     def search_season(self, tmdb_id, show_title, season_number, titles):
         raise NotImplementedError("'search_season' method must be implemented")
 
-    def search_episode(
-        self, tmdb_id, show_title, season_number, episode_number, titles
-    ):
+    def search_episode(self, tmdb_id, show_title, season_number, episode_number, titles):
         raise NotImplementedError("'search_episode' method must be implemented")
 
     def resolve(self, provider_data):
@@ -99,9 +97,7 @@ class Provider(object):
         if method in self._methods:
             try:
                 data = json.loads(base64.b64decode(data_b64))
-                value = self._methods[method](
-                    *data.get("args", []), **data.get("kwargs", {})
-                )
+                value = self._methods[method](*data.get("args", []), **data.get("kwargs", {}))
             except Exception as e:
                 kodilog(f"Failed running method '{method}': {e}")
                 value = None
@@ -116,9 +112,9 @@ class Provider(object):
 
 class ProviderListener(xbmc.Monitor):
     def __init__(self, providers, method, timeout=10):
-        super(ProviderListener, self).__init__()
+        super().__init__()
         self._waiting = {i: True for i in providers}
-        self._method = "Other.{}.{}".format(ADDON_ID, method)
+        self._method = f"Other.{ADDON_ID}.{method}"
         self._timeout = timeout
         self._data = {}
         self._lock = threading.Lock()

@@ -1,11 +1,13 @@
-from datetime import datetime
+import json
 import random
 import re
 import time
-import json
+from datetime import datetime
+
 import xbmc
-from lib.utils.kodi.utils import action_url_run, kodilog
+
 from lib.utils.kodi.settings import get_setting
+from lib.utils.kodi.utils import action_url_run, kodilog
 
 
 def is_trakt_auth():
@@ -35,26 +37,30 @@ def add_trakt_watchlist_context_menu(media_type, ids, include_add=True, include_
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return _filter_trakt_actions([
-        (
-            "Add to Trakt Watchlist",
-            action_url_run(
-                "trakt_add_to_watchlist",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+    return _filter_trakt_actions(
+        [
+            (
+                "Add to Trakt Watchlist",
+                action_url_run(
+                    "trakt_add_to_watchlist",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "add",
             ),
-            "add",
-        ),
-        (
-            "Remove from Trakt Watchlist",
-            action_url_run(
-                "trakt_remove_from_watchlist",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+            (
+                "Remove from Trakt Watchlist",
+                action_url_run(
+                    "trakt_remove_from_watchlist",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "remove",
             ),
-            "remove",
-        ),
-    ], include_add, include_remove)
+        ],
+        include_add,
+        include_remove,
+    )
 
 
 def add_trakt_watched_context_menu(
@@ -67,30 +73,34 @@ def add_trakt_watched_context_menu(
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return _filter_trakt_actions([
-        (
-            "Mark as Watched on Trakt",
-            action_url_run(
-                "trakt_mark_as_watched",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
-                season=json.dumps(season),
-                episode=json.dumps(episode),
+    return _filter_trakt_actions(
+        [
+            (
+                "Mark as Watched on Trakt",
+                action_url_run(
+                    "trakt_mark_as_watched",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                    season=json.dumps(season),
+                    episode=json.dumps(episode),
+                ),
+                "add",
             ),
-            "add",
-        ),
-        (
-            "Mark as Unwatched on Trakt",
-            action_url_run(
-                "trakt_mark_as_unwatched",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
-                season=json.dumps(season),
-                episode=json.dumps(episode),
+            (
+                "Mark as Unwatched on Trakt",
+                action_url_run(
+                    "trakt_mark_as_unwatched",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                    season=json.dumps(season),
+                    episode=json.dumps(episode),
+                ),
+                "remove",
             ),
-            "remove",
-        ),
-    ], include_add, include_remove)
+        ],
+        include_add,
+        include_remove,
+    )
 
 
 def add_trakt_collection_context_menu(media_type, ids, include_add=True, include_remove=True):
@@ -101,26 +111,30 @@ def add_trakt_collection_context_menu(media_type, ids, include_add=True, include
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return _filter_trakt_actions([
-        (
-            "Add to Collection",
-            action_url_run(
-                "add_to_collection",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+    return _filter_trakt_actions(
+        [
+            (
+                "Add to Collection",
+                action_url_run(
+                    "add_to_collection",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "add",
             ),
-            "add",
-        ),
-        (
-            "Remove from Collection",
-            action_url_run(
-                "remove_from_collection",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+            (
+                "Remove from Collection",
+                action_url_run(
+                    "remove_from_collection",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "remove",
             ),
-            "remove",
-        ),
-    ], include_add, include_remove)
+        ],
+        include_add,
+        include_remove,
+    )
 
 
 def add_trakt_favorites_context_menu(media_type, ids, include_add=True, include_remove=True):
@@ -131,26 +145,30 @@ def add_trakt_favorites_context_menu(media_type, ids, include_add=True, include_
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return _filter_trakt_actions([
-        (
-            "Add to Trakt Favorites",
-            action_url_run(
-                "trakt_add_to_favorites",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+    return _filter_trakt_actions(
+        [
+            (
+                "Add to Trakt Favorites",
+                action_url_run(
+                    "trakt_add_to_favorites",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "add",
             ),
-            "add",
-        ),
-        (
-            "Remove from Trakt Favorites",
-            action_url_run(
-                "trakt_remove_from_favorites",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+            (
+                "Remove from Trakt Favorites",
+                action_url_run(
+                    "trakt_remove_from_favorites",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "remove",
             ),
-            "remove",
-        ),
-    ], include_add, include_remove)
+        ],
+        include_add,
+        include_remove,
+    )
 
 
 def add_trakt_custom_list_context_menu(media_type, ids, include_add=True, include_remove=True):
@@ -161,26 +179,30 @@ def add_trakt_custom_list_context_menu(media_type, ids, include_add=True, includ
             "imdb": ids.get("imdb_id") or ids.get("imdb"),
         }
     )
-    return _filter_trakt_actions([
-        (
-            "Add to Trakt List",
-            action_url_run(
-                "trakt_add_item_to_list",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+    return _filter_trakt_actions(
+        [
+            (
+                "Add to Trakt List",
+                action_url_run(
+                    "trakt_add_item_to_list",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "add",
             ),
-            "add",
-        ),
-        (
-            "Remove from Trakt List",
-            action_url_run(
-                "trakt_remove_item_from_list",
-                media_type=media_type,
-                ids=json.dumps(filtered_ids),
+            (
+                "Remove from Trakt List",
+                action_url_run(
+                    "trakt_remove_item_from_list",
+                    media_type=media_type,
+                    ids=json.dumps(filtered_ids),
+                ),
+                "remove",
             ),
-            "remove",
-        ),
-    ], include_add, include_remove)
+        ],
+        include_add,
+        include_remove,
+    )
 
 
 def clean_ids(ids_dict):
@@ -219,25 +241,15 @@ def sort_list(sort_key, sort_direction, list_data):
                 reverse=reverse,
             )
         if sort_key == "released":
-            return sorted(
-                list_data, key=lambda x: released_key(x[x["type"]]), reverse=reverse
-            )
+            return sorted(list_data, key=lambda x: released_key(x[x["type"]]), reverse=reverse)
         if sort_key == "runtime":
-            return sorted(
-                list_data, key=lambda x: x[x["type"]].get("runtime", 0), reverse=reverse
-            )
+            return sorted(list_data, key=lambda x: x[x["type"]].get("runtime", 0), reverse=reverse)
         if sort_key == "popularity":
-            return sorted(
-                list_data, key=lambda x: x[x["type"]].get("votes", 0), reverse=reverse
-            )
+            return sorted(list_data, key=lambda x: x[x["type"]].get("votes", 0), reverse=reverse)
         if sort_key == "percentage":
-            return sorted(
-                list_data, key=lambda x: x[x["type"]].get("rating", 0), reverse=reverse
-            )
+            return sorted(list_data, key=lambda x: x[x["type"]].get("rating", 0), reverse=reverse)
         if sort_key == "votes":
-            return sorted(
-                list_data, key=lambda x: x[x["type"]].get("votes", 0), reverse=reverse
-            )
+            return sorted(list_data, key=lambda x: x[x["type"]].get("votes", 0), reverse=reverse)
         if sort_key == "random":
             return sorted(list_data, key=lambda k: random.random())
         return list_data

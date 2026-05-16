@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lib.jacktook.client import Burst
 from lib.domain.torrent import TorrentStream
+from lib.jacktook.client import Burst
 
 
 @pytest.fixture

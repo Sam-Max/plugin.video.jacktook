@@ -4,38 +4,37 @@ These tests verify the data-mapping, provider-filtering and result-parsing
 logic without requiring the ``script.module.magneto`` addon to be installed.
 """
 
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from lib.clients.external_scraper import ExternalScraperClient, _BYTES_PER_GB
+from lib.clients.external_scraper import _BYTES_PER_GB, ExternalScraperClient
 from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import Indexer
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def external_scraper_client():
     """Return a ExternalScraperClient whose providers are not loaded yet."""
     with patch.object(ExternalScraperClient, "_init_providers", return_value=False):
-        client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+        client = ExternalScraperClient(
+            "script.module.magneto", "Magneto Module", notification=MagicMock()
+        )
     return client
 
 
 @pytest.fixture
 def external_scraper_client_with_providers():
     """Return a ExternalScraperClient with a mocked provider list."""
-    with patch.object(
-        ExternalScraperClient, "_resolve_addon_path", return_value="/fake/magneto"
-    ):
-        with patch.object(
-            ExternalScraperClient, "_init_providers", return_value=True
-        ):
-            client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+    with patch.object(ExternalScraperClient, "_resolve_addon_path", return_value="/fake/magneto"):
+        with patch.object(ExternalScraperClient, "_init_providers", return_value=True):
+            client = ExternalScraperClient(
+                "script.module.magneto", "Magneto Module", notification=MagicMock()
+            )
             client.initialized = True
             client._providers = []
             return client
@@ -61,6 +60,7 @@ class FakeProvider:
 
 def make_provider(results=None, pack_results=None, **kwargs):
     """Return a *class* that produces FakeProvider instances with the given data."""
+
     class _ConfiguredProvider(FakeProvider):
         def __init__(self):
             super().__init__(results=results, pack_results=pack_results)
@@ -73,6 +73,7 @@ def make_provider(results=None, pack_results=None, **kwargs):
 # ---------------------------------------------------------------------------
 # _build_data
 # ---------------------------------------------------------------------------
+
 
 class TestBuildData:
     def test_movie_data_dict(self, external_scraper_client):
@@ -131,6 +132,7 @@ class TestBuildData:
 # ---------------------------------------------------------------------------
 # _map_results
 # ---------------------------------------------------------------------------
+
 
 class TestMapResults:
     def test_basic_movie_result(self, external_scraper_client):
@@ -206,39 +208,27 @@ class TestMapResults:
 
     def test_explicit_is_pack_override(self, external_scraper_client):
         """When is_pack=True is passed, force isPack even without package key."""
-        scraper_results = [
-            {"name": "Pack", "hash": "H", "url": "", "size": 1.0, "seeders": 1}
-        ]
-        mapped = external_scraper_client._map_results(
-            scraper_results, "provider", is_pack=True
-        )
+        scraper_results = [{"name": "Pack", "hash": "H", "url": "", "size": 1.0, "seeders": 1}]
+        mapped = external_scraper_client._map_results(scraper_results, "provider", is_pack=True)
         assert mapped[0].isPack is True
 
     def test_size_conversion(self, external_scraper_client):
-        scraper_results = [
-            {"name": "Tiny", "hash": "H", "url": "", "size": 0.5, "seeders": 1}
-        ]
+        scraper_results = [{"name": "Tiny", "hash": "H", "url": "", "size": 0.5, "seeders": 1}]
         mapped = external_scraper_client._map_results(scraper_results, "p")
         assert mapped[0].size == int(0.5 * _BYTES_PER_GB)
 
     def test_zero_size_when_missing(self, external_scraper_client):
-        scraper_results = [
-            {"name": "NoSize", "hash": "H", "url": "", "size": 0, "seeders": 1}
-        ]
+        scraper_results = [{"name": "NoSize", "hash": "H", "url": "", "size": 0, "seeders": 1}]
         mapped = external_scraper_client._map_results(scraper_results, "p")
         assert mapped[0].size == 0
 
     def test_seeders_default_to_zero(self, external_scraper_client):
-        scraper_results = [
-            {"name": "NoSeeders", "hash": "H", "url": "", "size": 1.0}
-        ]
+        scraper_results = [{"name": "NoSeeders", "hash": "H", "url": "", "size": 1.0}]
         mapped = external_scraper_client._map_results(scraper_results, "p")
         assert mapped[0].seeders == 0
 
     def test_quality_defaults_to_na(self, external_scraper_client):
-        scraper_results = [
-            {"name": "NoQuality", "hash": "H", "url": "", "size": 1.0, "seeders": 1}
-        ]
+        scraper_results = [{"name": "NoQuality", "hash": "H", "url": "", "size": 1.0, "seeders": 1}]
         mapped = external_scraper_client._map_results(scraper_results, "p")
         assert mapped[0].quality == "N/A"
 
@@ -263,18 +253,20 @@ class TestMapResults:
 # Provider filtering
 # ---------------------------------------------------------------------------
 
+
 class TestProviderFiltering:
     def test_tv_skips_movie_only_providers(self, external_scraper_client_with_providers):
         client = external_scraper_client_with_providers
 
         client._providers = [
             ("movie_only", make_provider(hasEpisodes=False)),
-            ("tv_prov", make_provider(results=[{"name": "Ep1", "hash": "H", "size": 1}])),
+            (
+                "tv_prov",
+                make_provider(results=[{"name": "Ep1", "hash": "H", "size": 1}]),
+            ),
         ]
 
-        results = client.search(
-            "", "Show", "tv", "tv", season=1, episode=1
-        )
+        results = client.search("", "Show", "tv", "tv", season=1, episode=1)
         assert len(results) == 1
         assert results[0].title == "Ep1"
 
@@ -283,7 +275,10 @@ class TestProviderFiltering:
 
         client._providers = [
             ("tv_only", make_provider(hasMovies=False)),
-            ("movie_prov", make_provider(results=[{"name": "Movie", "hash": "H", "size": 1}])),
+            (
+                "movie_prov",
+                make_provider(results=[{"name": "Movie", "hash": "H", "size": 1}]),
+            ),
         ]
 
         results = client.search("", "Movie", "movies", "movies", season=0, episode=0)
@@ -313,6 +308,7 @@ class TestProviderFiltering:
 # sources_packs integration
 # ---------------------------------------------------------------------------
 
+
 class TestPackIntegration:
     def test_tv_calls_sources_packs_when_capable(self, external_scraper_client_with_providers):
         client = external_scraper_client_with_providers
@@ -323,7 +319,12 @@ class TestPackIntegration:
                 make_provider(
                     results=[{"name": "Ep1", "hash": "E1", "size": 1}],
                     pack_results=[
-                        {"name": "S01 Pack", "hash": "S01", "size": 10, "package": "season"}
+                        {
+                            "name": "S01 Pack",
+                            "hash": "S01",
+                            "size": 10,
+                            "package": "season",
+                        }
                     ],
                     pack_capable=True,
                 ),
@@ -336,9 +337,7 @@ class TestPackIntegration:
         assert "S01 Pack" in titles
         assert any(r.isPack for r in results)
 
-    def test_tv_skips_sources_packs_when_not_capable(
-        self, external_scraper_client_with_providers
-    ):
+    def test_tv_skips_sources_packs_when_not_capable(self, external_scraper_client_with_providers):
         client = external_scraper_client_with_providers
 
         client._providers = [
@@ -374,6 +373,7 @@ class TestPackIntegration:
 # ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
+
 
 class TestErrorHandling:
     def test_provider_exception_gracefully_ignored(self, external_scraper_client_with_providers):
@@ -420,7 +420,13 @@ class TestErrorHandling:
         """If one item fails to map, the rest are still processed."""
         results = [
             {"name": "Good", "hash": "H", "url": "", "size": 1, "seeders": 1},
-            {"name": "Bad", "hash": None, "url": None, "size": "crash", "seeders": None},
+            {
+                "name": "Bad",
+                "hash": None,
+                "url": None,
+                "size": "crash",
+                "seeders": None,
+            },
             {"name": "AlsoGood", "hash": "G", "url": "", "size": 2, "seeders": 2},
         ]
         mapped = external_scraper_client._map_results(results, "p")
@@ -428,13 +434,16 @@ class TestErrorHandling:
 
     def test_uninitialized_client_returns_empty(self):
         with patch.object(ExternalScraperClient, "_init_providers", return_value=False):
-            client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+            client = ExternalScraperClient(
+                "script.module.magneto", "Magneto Module", notification=MagicMock()
+            )
         assert client.search("", "Title", "movies", "movies", season=0, episode=0) == []
 
 
 # ---------------------------------------------------------------------------
 # Addon resolution
 # ---------------------------------------------------------------------------
+
 
 class TestAddonResolution:
     @patch("xbmcaddon.Addon")
@@ -443,7 +452,9 @@ class TestAddonResolution:
         mock_addon.getAddonInfo.return_value = "/path/to/magneto"
         mock_addon_class.return_value = mock_addon
 
-        client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+        client = ExternalScraperClient(
+            "script.module.magneto", "Magneto Module", notification=MagicMock()
+        )
         path = client._resolve_addon_path()
         assert path == "/path/to/magneto"
 
@@ -452,14 +463,18 @@ class TestAddonResolution:
     def test_resolve_via_jsonrpc_fallback(self, mock_rpc, mock_addon):
         mock_rpc.return_value = '{"result": {"addon": {"path": "/rpc/magneto"}}}'
 
-        client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+        client = ExternalScraperClient(
+            "script.module.magneto", "Magneto Module", notification=MagicMock()
+        )
         path = client._resolve_addon_path()
         assert path == "/rpc/magneto"
 
     @patch("xbmcaddon.Addon", side_effect=Exception("not installed"))
     @patch("xbmc.executeJSONRPC", return_value='{"error": {}}')
     def test_resolve_returns_none_on_failure(self, mock_rpc, mock_addon):
-        client = ExternalScraperClient("script.module.magneto", "Magneto Module", notification=MagicMock())
+        client = ExternalScraperClient(
+            "script.module.magneto", "Magneto Module", notification=MagicMock()
+        )
         path = client._resolve_addon_path()
         assert path is None
         assert client.initialized is False

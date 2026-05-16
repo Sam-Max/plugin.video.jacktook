@@ -1,5 +1,4 @@
-import pytest
-from lib.utils.parsers.title_parser import parse_title_info, extract_codec_hdr
+from lib.utils.parsers.title_parser import extract_codec_hdr, parse_title_info
 
 
 def test_parse_title_info_complex():

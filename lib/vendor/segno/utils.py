@@ -10,12 +10,21 @@ Utility functions useful for writers or QR Code objects.
 
 DOES NOT belong to the public API.
 """
+
 from itertools import chain, repeat
+
 from . import consts
 
-__all__ = ('get_default_border_size', 'get_border', 'get_symbol_size',
-           'check_valid_scale', 'check_valid_border', 'matrix_to_lines',
-           'matrix_iter', 'matrix_iter_verbose')
+__all__ = (
+    "check_valid_border",
+    "check_valid_scale",
+    "get_border",
+    "get_default_border_size",
+    "get_symbol_size",
+    "matrix_iter",
+    "matrix_iter_verbose",
+    "matrix_to_lines",
+)
 
 
 def get_default_border_size(matrix_size):
@@ -140,10 +149,15 @@ def matrix_iter(matrix, matrix_size, scale=1, border=None):
     border = get_border(matrix_size, border)
     width, height = matrix_size
     border_row = [0x0] * width
-    width_range, height_range = range(-border, width + border), range(-border, height + border)
+    width_range, height_range = (
+        range(-border, width + border),
+        range(-border, height + border),
+    )
     for i in height_range:
         r = matrix[i] if 0 <= i < height else border_row
-        row = tuple(chain.from_iterable(repeat(r[j] if 0 <= j < width else 0x0, scale) for j in width_range))
+        row = tuple(
+            chain.from_iterable(repeat(r[j] if 0 <= j < width else 0x0, scale) for j in width_range)
+        )
         for s in repeat(None, scale):
             yield row
 
@@ -169,6 +183,7 @@ def matrix_iter_verbose(matrix, matrix_size, scale=1, border=None):
     :raises: :py:exc:`ValueError` if an illegal scale or border value is provided
     """
     from segno import encoder
+
     check_valid_border(border)
     scale = int(scale)
     check_valid_scale(scale)
@@ -188,37 +203,53 @@ def matrix_iter_verbose(matrix, matrix_size, scale=1, border=None):
                 # Alignment pattern
                 alignment_val = alignment_matrix[i][j]
                 if alignment_val != 0x2:
-                    return (consts.TYPE_ALIGNMENT_PATTERN_LIGHT, consts.TYPE_ALIGNMENT_PATTERN_DARK)[alignment_val]
-                if is_square and width > 41:  # QR Codes < version 7 do not carry any version information
-                    if (i < 6 and width - 12 < j < width - 8) \
-                            or (height - 12 < i < height - 8 and j < 6):
+                    return (
+                        consts.TYPE_ALIGNMENT_PATTERN_LIGHT,
+                        consts.TYPE_ALIGNMENT_PATTERN_DARK,
+                    )[alignment_val]
+                if (
+                    is_square and width > 41
+                ):  # QR Codes < version 7 do not carry any version information
+                    if (i < 6 and width - 12 < j < width - 8) or (
+                        height - 12 < i < height - 8 and j < 6
+                    ):
                         return (consts.TYPE_VERSION_LIGHT, consts.TYPE_VERSION_DARK)[val]
                 # Dark module
                 if i == height - 8 and j == 8:
                     return consts.TYPE_DARKMODULE
             # Timing - IMPORTANT: Check alignment (see above) in advance!
-            if (not is_micro and ((i == 6 and 7 < j < width - 8) or (j == 6 and 7 < i < height - 8))) \
-                    or (is_micro and ((i == 0 and j > 7) or (j == 0 and i > 7))):
+            if (
+                not is_micro and ((i == 6 and 7 < j < width - 8) or (j == 6 and 7 < i < height - 8))
+            ) or (is_micro and ((i == 0 and j > 7) or (j == 0 and i > 7))):
                 return (consts.TYPE_TIMING_LIGHT, consts.TYPE_TIMING_DARK)[val]
             # Format - IMPORTANT: Check timing (see above) in advance!
-            if (i == 8 and (j < 9 or (not is_micro and j > width - 10))) \
-                    or (j == 8 and (i < 8 or (not is_micro and i > height - 9))):
+            if (i == 8 and (j < 9 or (not is_micro and j > width - 10))) or (
+                j == 8 and (i < 8 or (not is_micro and i > height - 9))
+            ):
                 return (consts.TYPE_FORMAT_LIGHT, consts.TYPE_FORMAT_DARK)[val]
             # Finder pattern
             # top left             top right
-            if (i < 7 and (j < 7 or (not is_micro and j > width - 8))) \
-                    or (not is_micro and i > height - 8 and j < 7):  # bottom left
-                return (consts.TYPE_FINDER_PATTERN_LIGHT, consts.TYPE_FINDER_PATTERN_DARK)[val]
+            if (i < 7 and (j < 7 or (not is_micro and j > width - 8))) or (
+                not is_micro and i > height - 8 and j < 7
+            ):  # bottom left
+                return (
+                    consts.TYPE_FINDER_PATTERN_LIGHT,
+                    consts.TYPE_FINDER_PATTERN_DARK,
+                )[val]
             # Separator
             # top left              top right
-            if (i < 8 and (j < 8 or (not is_micro and j > width - 9))) \
-                    or (not is_micro and (i > height - 9 and j < 8)):  # bottom left
+            if (i < 8 and (j < 8 or (not is_micro and j > width - 9))) or (
+                not is_micro and (i > height - 9 and j < 8)
+            ):  # bottom left
                 return consts.TYPE_SEPARATOR
             return (consts.TYPE_DATA_LIGHT, consts.TYPE_DATA_DARK)[val]
         else:
             return consts.TYPE_QUIET_ZONE
 
-    width_range, height_range = range(-border, width + border), range(-border, height + border)
+    width_range, height_range = (
+        range(-border, width + border),
+        range(-border, height + border),
+    )
     for i in height_range:
         row = tuple(chain.from_iterable(repeat(get_bit(i, j), scale) for j in width_range))
         for s in repeat(None, scale):

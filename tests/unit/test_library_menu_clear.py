@@ -18,19 +18,37 @@ def test_library_menu_adds_clear_context_menu(monkeypatch):
     monkeypatch.setattr(
         library_history,
         "translation",
-        lambda value: {90202: "My TvShows", 90203: "My Movies", 90201: "Library", 90021: "Upcoming Episodes", 90690: "Clear All Items"}.get(value, str(value)),
+        lambda value: {
+            90202: "My TvShows",
+            90203: "My Movies",
+            90201: "Library",
+            90021: "Upcoming Episodes",
+            90690: "Clear All Items",
+        }.get(value, str(value)),
     )
     monkeypatch.setattr(library_history, "set_pluging_category", lambda *args, **kwargs: None)
-    monkeypatch.setattr(library_history, "end_of_directory", lambda *args, **kwargs: end_calls.append(kwargs))
+    monkeypatch.setattr(
+        library_history,
+        "end_of_directory",
+        lambda *args, **kwargs: end_calls.append(kwargs),
+    )
     monkeypatch.setattr(
         library_history,
         "container_update",
-        lambda action, **params: "Container.Update(plugin://plugin.video.jacktook?action={}{})".format(
-            action,
-            "".join("&{}={}".format(key, value) for key, value in params.items()),
+        lambda action, **params: (
+            "Container.Update(plugin://plugin.video.jacktook?action={}{})".format(
+                action,
+                "".join(f"&{key}={value}" for key, value in params.items()),
+            )
         ),
     )
-    monkeypatch.setattr(library_history, "build_url", lambda action, **params: "plugin://plugin.video.jacktook?action={}{}".format(action, "".join("&{}={}".format(key, value) for key, value in params.items())))
+    monkeypatch.setattr(
+        library_history,
+        "build_url",
+        lambda action, **params: "plugin://plugin.video.jacktook?action={}{}".format(
+            action, "".join(f"&{key}={value}" for key, value in params.items())
+        ),
+    )
     monkeypatch.setattr(
         library_history,
         "add_directory_items_batch",
@@ -41,8 +59,18 @@ def test_library_menu_adds_clear_context_menu(monkeypatch):
 
     assert added[0].label == "My TvShows"
     assert added[1].label == "My Movies"
-    assert added[0].context_menu == [("Clear All Items", "Container.Update(plugin://plugin.video.jacktook?action=library_shows&clear=1)")]
-    assert added[1].context_menu == [("Clear All Items", "Container.Update(plugin://plugin.video.jacktook?action=library_movies&clear=1)")]
+    assert added[0].context_menu == [
+        (
+            "Clear All Items",
+            "Container.Update(plugin://plugin.video.jacktook?action=library_shows&clear=1)",
+        )
+    ]
+    assert added[1].context_menu == [
+        (
+            "Clear All Items",
+            "Container.Update(plugin://plugin.video.jacktook?action=library_movies&clear=1)",
+        )
+    ]
     assert end_calls == [{"cache": False}]
 
 

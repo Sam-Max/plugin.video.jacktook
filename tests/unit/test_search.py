@@ -1,8 +1,6 @@
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.search import (
     SearchVariant,
@@ -32,9 +30,7 @@ def test_build_title_fallback_queries_default_variant_uses_tmdb_titles():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Ataque a los Titanes",
             {"tmdb_id": "1429"},
@@ -56,9 +52,7 @@ def test_build_title_fallback_queries_supports_variants_and_year():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         title_year_queries = _build_title_fallback_queries(
             "Ataque a los Titanes",
             {"tmdb_id": "1429"},
@@ -232,9 +226,7 @@ def test_submit_search_tasks_managed_filters_stremio_addons(
 
     # Only addon1 should be submitted
     stremio_calls = [
-        call
-        for call in manager.submit_task.call_args_list
-        if call[0][1] == Indexer.STREMIO
+        call for call in manager.submit_task.call_args_list if call[0][1] == Indexer.STREMIO
     ]
     assert len(stremio_calls) == 1
     assert stremio_calls[0][1]["scoped_addon_url"] == "http://a.com"

@@ -25,15 +25,17 @@ from ._stream import TorrentFileStream
 
 QUEUE_CLOSED = object()
 
-_debug = logging.getLogger('torf').debug
+_debug = logging.getLogger("torf").debug
+
 
 def _thread_name():
     return threading.current_thread().name
 
+
 def _pretty_bytes(b):
     if isinstance(b, (bytes, bytearray)) and len(b) > 8:
         # return b[:8].hex() + '...' + b[-8:].hex()
-        return b[:8] + b'...' + b[-8:]
+        return b[:8] + b"..." + b[-8:]
     else:
         return b
 
@@ -76,12 +78,12 @@ class Worker:
                 self._thread.start()
             except RuntimeError as e:
                 if fail_ok:
-                    _debug(f'{self.name}: Failed to start thread: {e!r} - but that\'s ok')
+                    _debug(f"{self.name}: Failed to start thread: {e!r} - but that's ok")
                 else:
-                    _debug(f'{self.name}: Failed to start thread: {e!r}')
+                    _debug(f"{self.name}: Failed to start thread: {e!r}")
                     raise
             else:
-                _debug(f'{self.name}: Started')
+                _debug(f"{self.name}: Started")
 
     def join(self, *args, **kwargs):
         if self.is_running:
@@ -102,7 +104,7 @@ class Reader(Worker):
         self._piece_queue = queue.Queue(maxsize=queue_size)
         self._stop = False
         self._memory_error_timestamp = -1
-        super().__init__(name='reader', worker=self._push_pieces)
+        super().__init__(name="reader", worker=self._push_pieces)
 
     def _push_pieces(self):
         stream = TorrentFileStream(self._torrent)
@@ -111,10 +113,14 @@ class Reader(Worker):
             for piece_index, (piece, filepath, exceptions) in enumerate(iter_pieces):
                 # _debug(f'{_thread_name()}: Read #{piece_index}')
                 if self._stop:
-                    _debug(f'{_thread_name()}: Stopped reading')
+                    _debug(f"{_thread_name()}: Stopped reading")
                     break
                 elif exceptions:
-                    self._push_piece(piece_index=piece_index, filepath=filepath, exceptions=exceptions)
+                    self._push_piece(
+                        piece_index=piece_index,
+                        filepath=filepath,
+                        exceptions=exceptions,
+                    )
                 elif piece:
                     self._push_piece(piece_index=piece_index, filepath=filepath, piece=piece)
                 else:
@@ -125,12 +131,12 @@ class Reader(Worker):
                 # _debug(f'{_thread_name()}: {self._piece_queue.qsize()} pieces queued')
 
         except BaseException as e:
-            _debug(f'{_thread_name()}: Exception while reading: {e!r}')
+            _debug(f"{_thread_name()}: Exception while reading: {e!r}")
             raise
 
         finally:
             self._piece_queue.put(QUEUE_CLOSED)
-            _debug(f'{_thread_name()}: Piece queue is now exhausted')
+            _debug(f"{_thread_name()}: Piece queue is now exhausted")
             stream.close()
 
     def _push_piece(self, *, piece_index, filepath, piece=None, exceptions=()):
@@ -145,7 +151,7 @@ class Reader(Worker):
             old_maxsize = self._piece_queue.maxsize
             new_maxsize = max(1, int(old_maxsize * 0.9))
             if new_maxsize != old_maxsize:
-                _debug(f'{_thread_name()}: Reducing piece_queue.maxsize to {new_maxsize}')
+                _debug(f"{_thread_name()}: Reducing piece_queue.maxsize to {new_maxsize}")
                 self._piece_queue.maxsize = new_maxsize
                 self._memory_error_timestamp = now
             else:
@@ -154,7 +160,7 @@ class Reader(Worker):
     def stop(self):
         """Stop reading and close the piece queue"""
         if not self._stop:
-            _debug(f'{_thread_name()}: {type(self).__name__}: Setting stop flag')
+            _debug(f"{_thread_name()}: {type(self).__name__}: Setting stop flag")
             self._stop = True
 
     @property
@@ -180,7 +186,7 @@ class HasherPool:
 
         # Janitor takes care of closing the hash queue, removing idle hashers, etc
         self._janitor = Worker(
-            name='janitor',
+            name="janitor",
             worker=self._janitor_thread,
             start=False,
         )
@@ -188,7 +194,7 @@ class HasherPool:
         # Hashers read from piece_queue and push to hash_queue
         self._hashers = [
             Worker(
-                name='hasher1',
+                name="hasher1",
                 # One hasher is vital an may not die from boredom
                 worker=lambda: self._hasher_thread(is_vital=True),
                 start=False,
@@ -197,7 +203,7 @@ class HasherPool:
         for i in range(2, hasher_threads + 1):
             self._hashers.append(
                 Worker(
-                    name=f'hasher{i}',
+                    name=f"hasher{i}",
                     # All other hashers should die if they are bored
                     worker=lambda: self._hasher_thread(is_vital=False),
                     start=False,
@@ -223,13 +229,13 @@ class HasherPool:
                 task = piece_queue.get(timeout=0.5)
             except queue.Empty:
                 if not is_vital:
-                    _debug(f'{_thread_name()}: I am bored, byeee!')
+                    _debug(f"{_thread_name()}: I am bored, byeee!")
                     break
                 else:
-                    _debug(f'{_thread_name()}: I am bored, but needed.')
+                    _debug(f"{_thread_name()}: I am bored, but needed.")
             else:
                 if task is QUEUE_CLOSED:
-                    _debug(f'{_thread_name()}: piece_queue is closed')
+                    _debug(f"{_thread_name()}: piece_queue is closed")
                     # Repeat QUEUE_CLOSED to the next sibling. This ensures
                     # there is always one more QUEUE_CLOSED queued than running
                     # threads. Otherwise, one thread might consume multiple
@@ -257,11 +263,11 @@ class HasherPool:
 
     def _janitor_thread(self):
         while True:
-            _debug(f'{_thread_name()}: Waiting for finalize event')
+            _debug(f"{_thread_name()}: Waiting for finalize event")
             finalization_initiated = self._finalize_event.wait(timeout=1.0)
             if finalization_initiated:
                 self._wait_for_hashers()
-                _debug(f'{_thread_name()}: Closing hash queue')
+                _debug(f"{_thread_name()}: Closing hash queue")
                 self._hash_queue.put(QUEUE_CLOSED)
                 break
 
@@ -269,28 +275,28 @@ class HasherPool:
                 # Remove terminated idle hashers
                 for hasher in tuple(self._hashers):
                     if not hasher.is_running:
-                        _debug(f'{_thread_name()}: Pruning {hasher.name}')
+                        _debug(f"{_thread_name()}: Pruning {hasher.name}")
                         self._hashers.remove(hasher)
 
-        _debug(f'{_thread_name()}: Terminating')
+        _debug(f"{_thread_name()}: Terminating")
 
     def _wait_for_hashers(self):
         while True:
             # _debug(f'{_thread_name()}: Hashers running: {[h.name for h in self._hashers if h.is_running]}')
             if all(not h.is_running for h in self._hashers):
-                _debug(f'{_thread_name()}: All hashers terminated')
+                _debug(f"{_thread_name()}: All hashers terminated")
                 break
 
     def join(self):
         """Block until all threads have terminated"""
         for hasher in self._hashers:
-            _debug(f'{_thread_name()}: Joining {hasher.name}')
+            _debug(f"{_thread_name()}: Joining {hasher.name}")
             hasher.join()
-        _debug(f'{_thread_name()}: Joined all hashers')
+        _debug(f"{_thread_name()}: Joined all hashers")
 
-        _debug(f'{_thread_name()}: Joining {self._janitor.name}')
+        _debug(f"{_thread_name()}: Joining {self._janitor.name}")
         self._janitor.join()
-        _debug(f'{_thread_name()}: Joined {self._janitor.name}')
+        _debug(f"{_thread_name()}: Joined {self._janitor.name}")
 
     @property
     def hash_queue(self):
@@ -337,7 +343,7 @@ class Collector:
                     self._collect(*task)
 
         except BaseException as e:
-            _debug(f'{_thread_name()}: Exception while dequeueing piece hashes: {e!r}')
+            _debug(f"{_thread_name()}: Exception while dequeueing piece hashes: {e!r}")
             self._cancel()
             raise
 
@@ -365,8 +371,12 @@ class Collector:
         if self._callback:
             # _debug(f'{_thread_name()}: Collector callback: {self._callback}')
             maybe_cancel = self._callback(
-                piece_index, len(self._pieces_seen), self._pieces_total,
-                filepath, piece_hash, exceptions,
+                piece_index,
+                len(self._pieces_seen),
+                self._pieces_total,
+                filepath,
+                piece_hash,
+                exceptions,
             )
             # _debug(f'{_thread_name()}: Collector callback return value: {maybe_cancel}')
             if maybe_cancel is not None:
@@ -380,11 +390,11 @@ class Collector:
         self._reader.stop()
 
     def _finalize(self):
-        _debug(f'{_thread_name()}: Joining {self._reader}')
+        _debug(f"{_thread_name()}: Joining {self._reader}")
         self._reader.join()
-        _debug(f'{_thread_name()}: Joining {self._hashers}')
+        _debug(f"{_thread_name()}: Joining {self._hashers}")
         self._hashers.join()
-        _debug(f'{_thread_name()}: hash_queue has {self._hashers.hash_queue.qsize()} items left')
+        _debug(f"{_thread_name()}: hash_queue has {self._hashers.hash_queue.qsize()} items left")
 
     @property
     def hashes(self):
@@ -397,6 +407,7 @@ class _IntervaledCallback:
     Callable that calls `callback`, but only if at least `interval` seconds
     elapsed since the previous call
     """
+
     def __init__(self, callback, interval=0):
         self._callback = callback
         self._interval = interval
@@ -422,22 +433,33 @@ class _TranslatingCallback:
         )
 
     def __call__(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
-        force = self._force_callback(piece_index, pieces_done, pieces_total,
-                                     filepath, piece_hash, exceptions)
-        return self._intervaled_callback(piece_index, pieces_done, pieces_total,
-                                         filepath, piece_hash, exceptions,
-                                         force=force)
+        force = self._force_callback(
+            piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+        )
+        return self._intervaled_callback(
+            piece_index,
+            pieces_done,
+            pieces_total,
+            filepath,
+            piece_hash,
+            exceptions,
+            force=force,
+        )
 
-    def _force_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _force_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         # Figure out if we must ignore the interval for this call. This method
         # is called for every hashed piece and should be as efficient as
         # possible.
-        raise NotImplementedError('You must implement this method!')
+        raise NotImplementedError("You must implement this method!")
 
-    def _call_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _call_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         # Translate arguments for the actual callback. This method is only
         # called at intervals (e.g. once per second).
-        raise NotImplementedError('You must implement this method!')
+        raise NotImplementedError("You must implement this method!")
 
 
 class GenerateCallback(_TranslatingCallback):
@@ -446,10 +468,14 @@ class GenerateCallback(_TranslatingCallback):
     :meth:`~.Torrent.generate`
     """
 
-    def _force_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _force_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         return exceptions or pieces_done >= pieces_total
 
-    def _call_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _call_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         if exceptions:
             # Torrent creation errors are always fatal and must be raised
             raise exceptions[0]
@@ -463,6 +489,7 @@ class VerifyCallback(_TranslatingCallback):
     Translate arguments from :class:`Collector` to what's specified by
     :meth:`~.Torrent.verify`
     """
+
     def __init__(self, *args, path, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -482,34 +509,48 @@ class VerifyCallback(_TranslatingCallback):
             for file in self._torrent.files
         )
 
-    def _force_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _force_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         return (
             # Always report exceptions
             exceptions
             # Always report completion
             or pieces_done >= pieces_total
             # Always report hash mismatch
-            or piece_hash is not None and piece_hash != self._exp_hashes[piece_index]
+            or (piece_hash is not None and piece_hash != self._exp_hashes[piece_index])
         )
 
-    def _call_callback(self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions):
+    def _call_callback(
+        self, piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+    ):
         if (
             # Don't add verification error if there are other errors
             not exceptions
             # Piece hash was calculated and doesn't match
-            and piece_hash is not None and piece_hash != self._exp_hashes[piece_index]
+            and piece_hash is not None
+            and piece_hash != self._exp_hashes[piece_index]
         ):
-            exceptions = (errors.VerifyContentError(
-                filepath, piece_index, self._torrent.piece_size, self._exp_file_sizes,
-            ),)
+            exceptions = (
+                errors.VerifyContentError(
+                    filepath,
+                    piece_index,
+                    self._torrent.piece_size,
+                    self._exp_file_sizes,
+                ),
+            )
 
         if self._callback:
             # Callback can raise exception or handle it otherwise
             def call_callback(fpath, exception):
                 return self._callback(
-                    self._torrent, fpath,
-                    pieces_done, pieces_total, piece_index,
-                    piece_hash, exception,
+                    self._torrent,
+                    fpath,
+                    pieces_done,
+                    pieces_total,
+                    piece_index,
+                    piece_hash,
+                    exception,
                 )
 
             if exceptions:
@@ -530,10 +571,10 @@ class VerifyCallback(_TranslatingCallback):
 
     @staticmethod
     def _get_path_from_exception(exception):
-        for attr in ('filepath', 'path'):
+        for attr in ("filepath", "path"):
             try:
                 return getattr(exception, attr)
             except AttributeError:
                 pass
 
-        raise RuntimeError(f'Failed to get path from {exception!r}')
+        raise RuntimeError(f"Failed to get path from {exception!r}")

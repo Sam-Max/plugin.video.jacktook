@@ -1,4 +1,5 @@
 import warnings
+
 from lib.api.tmdbv3api.tmdb import TMDb
 
 
@@ -9,12 +10,14 @@ class Configuration(TMDb):
         "jobs": "/configuration/jobs",
         "languages": "/configuration/languages",
         "primary_translations": "/configuration/primary_translations",
-        "timezones": "/configuration/timezones"
+        "timezones": "/configuration/timezones",
     }
 
     def info(self):
-        warnings.warn("info method is deprecated use tmdbv3api.Configuration().api_configuration()",
-                      DeprecationWarning)
+        warnings.warn(
+            "info method is deprecated use tmdbv3api.Configuration().api_configuration()",
+            DeprecationWarning,
+        )
         return self.api_configuration()
 
     def api_configuration(self):

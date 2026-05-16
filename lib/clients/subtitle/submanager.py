@@ -1,7 +1,10 @@
 import json
 import os
-
 from typing import Any, Dict, List, Optional
+
+import xbmc
+import xbmcgui
+
 from lib.clients.subtitle.deepl import DeepLTranslator
 from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
 from lib.utils.kodi.utils import (
@@ -11,14 +14,9 @@ from lib.utils.kodi.utils import (
     translation,
 )
 
-import xbmc
-import xbmcgui
-
 
 class KodiJsonRpcClient:
-    def json_rpc(
-        self, method: str, params: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    def json_rpc(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Send a JSON-RPC request to Kodi."""
         request_data = {
             "jsonrpc": "2.0",
@@ -89,9 +87,7 @@ class SubtitleManager(KodiJsonRpcClient):
 
         if folder_path is None:
             folder_path = (
-                os.path.join(
-                    ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode)
-                )
+                os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode))
                 if mode == "tv"
                 else os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
             )
@@ -126,7 +122,12 @@ class SubtitleManager(KodiJsonRpcClient):
             return None
 
         subtitle_paths = self.opensub_client.download_subtitles_batch(
-            subtitles, imdb_id, title=title, season=season, episode=episode, folder_path=folder_path
+            subtitles,
+            imdb_id,
+            title=title,
+            season=season,
+            episode=episode,
+            folder_path=folder_path,
         )
 
         if get_setting("deepl_enabled"):
@@ -136,10 +137,8 @@ class SubtitleManager(KodiJsonRpcClient):
                 translation(90255),
             )
             if yes:
-                translated_subtitles_paths = (
-                    self.translator.translate_multiple_subtitles(
-                        subtitle_paths, imdb_id, season, episode
-                    )
+                translated_subtitles_paths = self.translator.translate_multiple_subtitles(
+                    subtitle_paths, imdb_id, season, episode
                 )
                 return translated_subtitles_paths
 

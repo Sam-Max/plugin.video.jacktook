@@ -1,15 +1,15 @@
 from json import dumps
+from urllib.parse import quote
+
 import requests
 from requests.auth import HTTPBasicAuth
-from urllib.parse import quote
+
 from lib.utils.kodi.utils import notification
 
 
-class TorrServer(object):
+class TorrServer:
     def __init__(self, host, port, username, password, ssl_enabled=False, session=None):
-        self._base_url = "{}://{}:{}".format(
-            "https" if ssl_enabled else "http", host, port
-        )
+        self._base_url = "{}://{}:{}".format("https" if ssl_enabled else "http", host, port)
         self._username = username
         self._password = password
         self._auth = HTTPBasicAuth(self._username, self._password)
@@ -39,7 +39,7 @@ class TorrServer(object):
 
     @property
     def torr_version(self):
-        """tests server status"""
+        """Tests server status"""
         return self._get("/echo").content
 
     def add_magnet(self, magnet, title="", poster="", data=""):
@@ -89,38 +89,34 @@ class TorrServer(object):
         )
 
     def torrents(self):
-        """read info about all torrents (doesn't fill file_stats info)"""
+        """Read info about all torrents (doesn't fill file_stats info)"""
         return self._normalize_json_response(
             self._post("/torrents", data=dumps({"action": "list"})).json()
         )
 
     def get_torrent_info_by_hash(self, hash):
-        """not extended info"""
+        """Not extended info"""
         return self._normalize_json_response(
-            self._post(
-                "/torrents", data=dumps({"action": "get", "hash": hash})
-            ).json()
+            self._post("/torrents", data=dumps({"action": "get", "hash": hash})).json()
         )
 
     def get_torrent_info(self, link):
-        """read extended info of one torrent"""
+        """Read extended info of one torrent"""
         return self._normalize_json_response(
             self._get("/stream", params={"link": link, "stat": "true"}).json()
         )
 
     def get_torrent_file_info(self, link, file_index=1):
-        """read extended info of file of torrent"""
+        """Read extended info of file of torrent"""
         return self._normalize_json_response(
-            self._get(
-                "/stream", params={"link": link, "index": file_index, "stat": "true"}
-            ).json()
+            self._get("/stream", params={"link": link, "index": file_index, "stat": "true"}).json()
         )
 
     def drop_torrent(self, hash):
         return self._post("/torrents", data=dumps({"action": "drop", "hash": hash}))
 
     def remove_torrent(self, info_hash, save_to_db=True):
-        """delete torrent from TorrServer"""
+        """Delete torrent from TorrServer"""
         return self._post(
             "/torrents",
             data=dumps({"action": "rem", "hash": info_hash, "save_to_db": save_to_db}),
@@ -140,7 +136,7 @@ class TorrServer(object):
         )
 
     def preload_torrent(self, link, file_id=1, title=""):
-        """preload torrent"""
+        """Preload torrent"""
         return self._get(
             "/stream",
             params={
@@ -153,7 +149,7 @@ class TorrServer(object):
         )
 
     def get_stream_url(self, link, path, file_id):
-        """returns the stream url"""
+        """Returns the stream url"""
         return f"{self._base_url}/stream/{quote(path)}?link={link}&index={file_id}&play"
 
     def get_settings(self):
@@ -174,9 +170,7 @@ class TorrServer(object):
 
     def _request(self, method, url, **kwargs):
         try:
-            return self._session.request(
-                method, self._base_url + url, auth=self._auth, **kwargs
-            )
+            return self._session.request(method, self._base_url + url, auth=self._auth, **kwargs)
         except Exception as e:
             raise TorrServerError(str(e))
 

@@ -112,9 +112,7 @@ def test_remove_from_collection_uses_all_known_ids_for_shows():
     with patch.object(trakt_lists, "call_trakt", return_value={}) as call_trakt, patch(
         "lib.api.trakt.trakt.lists_cache.delete_prefix"
     ), patch("lib.api.trakt.trakt.clear_trakt_collection_watchlist_data"):
-        trakt_lists.remove_from_collection(
-            "shows", {"tmdb": "44", "tvdb": "55", "imdb": "tt66"}
-        )
+        trakt_lists.remove_from_collection("shows", {"tmdb": "44", "tvdb": "55", "imdb": "tt66"})
 
     call_trakt.assert_called_once_with(
         "sync/collection/remove",
@@ -236,9 +234,7 @@ def test_build_show_collection_season_payload_uses_season_numbers_only():
 def test_normalize_trakt_media_type_prefers_show_when_tvdb_present():
     from lib.clients.trakt.trakt import TraktClient
 
-    result = TraktClient._normalize_trakt_media_type(
-        "movies", {"tmdb": 44, "tvdb": 55}
-    )
+    result = TraktClient._normalize_trakt_media_type("movies", {"tmdb": 44, "tvdb": 55})
 
     assert result == "shows"
 
@@ -269,9 +265,7 @@ def test_build_collection_remove_payload_uses_existing_collection_entry():
             }
         ],
     ):
-        payload = trakt_lists.build_collection_remove_payload(
-            "shows", {"tmdb": 99, "tvdb": 77}
-        )
+        payload = trakt_lists.build_collection_remove_payload("shows", {"tmdb": 99, "tvdb": 77})
 
     assert payload == {
         "shows": [

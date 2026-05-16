@@ -1,16 +1,14 @@
-from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
-from lib.api.stremio.models import Stream, Meta, MetaPreview
-from lib.clients.base import BaseClient, TorrentStream
+import re
+from typing import Any, Dict, List, Optional
 
+from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
+from lib.api.stremio.models import Meta, MetaPreview, Stream
+from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.settings import get_int_setting
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
-
-import re
-from typing import List, Dict, Optional, Any
-
 
 EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
 
@@ -145,17 +143,13 @@ class StremioAddonClient(BaseClient):
             if res.status_code != 200:
                 return []
             response = self.parse_response(res)
-            kodilog(
-                f"Stremio addon {self.addon.manifest.name} returned {len(response)} results"
-            )
+            kodilog(f"Stremio addon {self.addon.manifest.name} returned {len(response)} results")
             return response
         except Exception as e:
-            self.handle_exception(f"Error in {self.addon.manifest.name}: {str(e)}")
+            self.handle_exception(f"Error in {self.addon.manifest.name}: {e!s}")
             return []
 
-    def parse_response(
-        self, res: Any, is_external_cache: bool = False
-    ) -> List[TorrentStream]:
+    def parse_response(self, res: Any, is_external_cache: bool = False) -> List[TorrentStream]:
         if not is_external_cache:
             res_json = res.json()
             streams = res_json.get("streams", [])
@@ -175,9 +169,7 @@ class StremioAddonClient(BaseClient):
 
         for item in streams:
             stream = Stream.from_dict(item)
-            parsed = self.parse_torrent_description(
-                stream.description or stream.title or ""
-            )
+            parsed = self.parse_torrent_description(stream.description or stream.title or "")
 
             if is_external_cache:
                 match = re.search(r"\b\w{40}\b", stream.url or "")

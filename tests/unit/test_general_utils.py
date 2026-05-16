@@ -1,21 +1,23 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
+
 from lib.utils.general.utils import (
-    is_url,
-    is_magnet_link,
-    info_hash_to_magnet,
-    supported_video_extensions,
+    TMDB_IMAGE_SIZES,
+    build_media_metadata,
     extract_publish_date,
     extract_release_group,
-    unicode_flag_to_country_code,
-    is_video,
-    get_random_color,
     format_season_episode,
     get_image_size,
-    set_listitem_artwork,
-    TMDB_IMAGE_SIZES,
+    get_random_color,
     get_rpdb_poster,
-    build_media_metadata,
+    info_hash_to_magnet,
+    is_magnet_link,
+    is_url,
+    is_video,
+    set_listitem_artwork,
+    supported_video_extensions,
+    unicode_flag_to_country_code,
 )
 
 
@@ -112,23 +114,17 @@ class TestGetImageSize:
         ],
     )
     def test_maps_setting_to_tier(self, setting_value, expected_sizes):
-        with patch(
-            "lib.utils.general.utils.get_setting_fresh", return_value=setting_value
-        ):
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value=setting_value):
             for image_type in ("poster", "thumb", "profile", "fanart"):
                 assert get_image_size(image_type) == expected_sizes[image_type]
 
     def test_invalid_setting_defaults_to_high(self):
-        with patch(
-            "lib.utils.general.utils.get_setting_fresh", return_value="99"
-        ):
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="99"):
             assert get_image_size("poster") == TMDB_IMAGE_SIZES["high"]["poster"]
             assert get_image_size("fanart") == TMDB_IMAGE_SIZES["high"]["fanart"]
 
     def test_unknown_image_type_returns_empty_string(self):
-        with patch(
-            "lib.utils.general.utils.get_setting_fresh", return_value="2"
-        ):
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
             assert get_image_size("unknown_type") == ""
 
 
@@ -157,9 +153,7 @@ class TestSetListitemArtwork:
             "poster_path": "/poster.jpg",
             "backdrop_path": "/backdrop.jpg",
         }
-        with patch(
-            "lib.utils.general.utils.get_setting_fresh", return_value=setting_value
-        ):
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value=setting_value):
             set_listitem_artwork(item, data, {})
 
         assert item.setArt.called
@@ -171,9 +165,7 @@ class TestSetListitemArtwork:
     def test_falls_back_when_no_paths(self):
         item = self._make_mock_item()
         data = {}
-        with patch(
-            "lib.utils.general.utils.get_setting_fresh", return_value="2"
-        ):
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
             set_listitem_artwork(item, data, {})
 
         assert item.setArt.called
@@ -230,7 +222,8 @@ class TestGetRpdbPoster:
         with patch("lib.utils.general.utils.cache") as mock_cache:
             mock_cache.get.return_value = None
             with patch(
-                "requests.get", side_effect=req_mod.exceptions.RequestException("timeout")
+                "requests.get",
+                side_effect=req_mod.exceptions.RequestException("timeout"),
             ):
                 result = get_rpdb_poster("tt1234567", "test_key")
                 assert result is None
@@ -288,9 +281,7 @@ class TestBuildMediaMetadataRpdb:
                 "rpdb_api_key": "test_key",
             }.get(key, default),
         ):
-            with patch(
-                "lib.utils.general.utils.get_rpdb_poster", return_value=rpdb_url
-            ):
+            with patch("lib.utils.general.utils.get_rpdb_poster", return_value=rpdb_url):
                 with patch(
                     "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
                     return_value=self._make_tmdb_details(),
@@ -312,9 +303,7 @@ class TestBuildMediaMetadataRpdb:
                 "rpdb_api_key": "test_key",
             }.get(key, default),
         ):
-            with patch(
-                "lib.utils.general.utils.get_rpdb_poster", return_value=None
-            ):
+            with patch("lib.utils.general.utils.get_rpdb_poster", return_value=None):
                 with patch(
                     "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
                     return_value=self._make_tmdb_details(),
@@ -336,9 +325,7 @@ class TestBuildMediaMetadataRpdb:
                 "rpdb_api_key": "",
             }.get(key, default),
         ):
-            with patch(
-                "lib.utils.general.utils.get_rpdb_poster"
-            ) as mock_get_rpdb:
+            with patch("lib.utils.general.utils.get_rpdb_poster") as mock_get_rpdb:
                 with patch(
                     "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
                     return_value=self._make_tmdb_details(),
@@ -361,9 +348,7 @@ class TestBuildMediaMetadataRpdb:
                 "rpdb_api_key": "test_key",
             }.get(key, default),
         ):
-            with patch(
-                "lib.utils.general.utils.get_rpdb_poster"
-            ) as mock_get_rpdb:
+            with patch("lib.utils.general.utils.get_rpdb_poster") as mock_get_rpdb:
                 with patch(
                     "lib.clients.tmdb.utils.utils.get_tmdb_media_details",
                     return_value=self._make_tmdb_details(),

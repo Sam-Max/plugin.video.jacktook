@@ -1,20 +1,19 @@
 import os
 import pickle
+import re
 import sqlite3
 import sys
 import threading
 import traceback
-import re
-
-from base64 import b64encode, b64decode
+from base64 import b64decode, b64encode
 from datetime import datetime, timedelta
 from hashlib import sha256
 
-from lib.jacktook.utils import kodilog
-
-import xbmcaddon
 import xbmc
+import xbmcaddon
 import xbmcgui
+
+from lib.jacktook.utils import kodilog
 
 PY3 = sys.version_info.major >= 3
 if PY3:
@@ -22,9 +21,7 @@ if PY3:
 else:
     from xbmc import translatePath
 
-ADDON_DATA = translatePath(
-    xbmcaddon.Addon("plugin.video.jacktook").getAddonInfo("profile")
-)
+ADDON_DATA = translatePath(xbmcaddon.Addon("plugin.video.jacktook").getAddonInfo("profile"))
 ADDON_ID = xbmcaddon.Addon().getAddonInfo("id")
 
 if not PY3:
@@ -49,7 +46,7 @@ def pickle_hash(obj):
     return h.hexdigest()
 
 
-class _BaseCache(object):
+class _BaseCache:
     __instance = None
 
     _load_func = staticmethod(pickle.loads)
@@ -148,7 +145,7 @@ class MemoryCache(_BaseCache):
             self._window.setProperty(self._database + key, b64encode(blob).decode())
         except Exception as e:
             kodilog(
-                f"[MemoryCache] Error storing key {key!r}: {str(e)}",
+                f"[MemoryCache] Error storing key {key!r}: {e!s}",
                 level=xbmc.LOGERROR,
             )
             kodilog(traceback.format_exc(), level=xbmc.LOGERROR)
@@ -192,9 +189,7 @@ class MemoryCache(_BaseCache):
     def _save_key_index(self, index):
         try:
             blob = self._dump_func(index)
-            self._window.setProperty(
-                self._database + "_KEY_INDEX_", b64encode(blob).decode()
-            )
+            self._window.setProperty(self._database + "_KEY_INDEX_", b64encode(blob).decode())
         except:
             pass
 
@@ -291,7 +286,7 @@ class SQLiteCache(_BaseCache):
             ")"
         )
         for k, v in SQLITE_SETTINGS.items():
-            self._conn.execute("PRAGMA {}={}".format(k, v))
+            self._conn.execute(f"PRAGMA {k}={v}")
         self._cleanup_interval = cleanup_interval
         self._last_cleanup = datetime.utcnow()
         self.clean_up()
@@ -368,12 +363,12 @@ class SQLiteCache(_BaseCache):
                     ),
                 )
                 kodilog(
-                    "Set cache for key '{}' with expiry {}".format(key, expires),
+                    f"Set cache for key '{key}' with expiry {expires}",
                     level=xbmc.LOGDEBUG,
                 )
             except Exception as e:
                 kodilog(
-                    "Failed to set cache for key '{}': {}".format(key, str(e)),
+                    f"Failed to set cache for key '{key}': {e!s}",
                     level=xbmc.LOGERROR,
                 )
                 # fallback to raw in‑memory store
@@ -396,7 +391,7 @@ class SQLiteCache(_BaseCache):
         self._conn.execute("DELETE FROM `cached` WHERE key LIKE ?", (pattern,))
 
     def _set_version(self, version):
-        self._conn.execute("PRAGMA user_version={}".format(version))
+        self._conn.execute(f"PRAGMA user_version={version}")
 
     @property
     def version(self):

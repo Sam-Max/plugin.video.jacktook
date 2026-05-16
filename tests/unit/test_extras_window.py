@@ -18,7 +18,9 @@ def test_extras_trailer_button_uses_play_trailer_route():
     with patch(
         "lib.gui.extras_window.build_url",
         return_value="plugin://plugin.video.jacktook/?action=play_trailer&tmdb_id=4604&media_type=tv&title=Smallville",
-    ) as build_url_mock, patch.object(window, "close") as close_mock, patch("lib.gui.extras_window.execute_builtin") as execute_builtin:
+    ) as build_url_mock, patch.object(window, "close") as close_mock, patch(
+        "lib.gui.extras_window.execute_builtin"
+    ) as execute_builtin:
         window._handle_click(11)
 
     build_url_mock.assert_called_once_with(

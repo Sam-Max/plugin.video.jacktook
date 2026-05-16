@@ -1,9 +1,9 @@
 from lib.api.jacktorr.jacktorr import TorrServer
 from lib.utils.general.utils import (
-    get_service_host,
-    get_port,
-    get_username,
     get_password,
+    get_port,
+    get_service_host,
+    get_username,
     ssl_enabled,
 )
 from lib.utils.kodi.utils import JACKTORR_ADDON

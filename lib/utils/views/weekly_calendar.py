@@ -1,31 +1,28 @@
-from datetime import datetime, date, timedelta
-from copy import copy
 import os
 import re
+from copy import copy
+from datetime import date, datetime, timedelta
 
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
-    ADDON_PATH,
-    add_directory_items_batch,
-    apply_section_view,
-    build_url,
-    end_of_directory,
-    translation,
-    kodi_play_media,
-    make_list_item,
-)
 from lib.utils.general.utils import (
     execute_thread_pool,
     set_media_infoTag,
     set_pluging_category,
     translate_weekday,
 )
-from lib.utils.kodi.utils import get_setting
-
-
+from lib.utils.kodi.utils import (
+    ADDON_PATH,
+    add_directory_items_batch,
+    apply_section_view,
+    build_url,
+    end_of_directory,
+    get_setting,
+    kodi_play_media,
+    make_list_item,
+    translation,
+)
 
 
 def show_weekly_calendar(library=False):
@@ -36,9 +33,7 @@ def show_weekly_calendar(library=False):
     else:
         source_dict = PickleDatabase().get_key("jt:lth")
 
-    tv_shows = [
-        (title, data) for title, data in source_dict.items() if data.get("mode") == "tv"
-    ]
+    tv_shows = [(title, data) for title, data in source_dict.items() if data.get("mode") == "tv"]
 
     results = []
 
@@ -98,9 +93,7 @@ def show_weekly_calendar(library=False):
     date_item = make_list_item(
         label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
     )
-    date_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
-    )
+    date_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
     directory_items.append(("", date_item, False))
 
     today_str = datetime.now().strftime("%Y-%m-%d")
@@ -144,9 +137,7 @@ def show_weekly_calendar(library=False):
 
         # Mark if episode is released today
         is_today = ep["air_date"] == today_str
-        mark = (
-            f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
-        )
+        mark = "[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
 
         ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']} {ep.get('air_time', '00:00')}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
@@ -201,18 +192,16 @@ def get_episodes_for_show(ids):
 
     try:
         show_details = tmdb_get("tv_details", tmdb_id)
-        seasons = getattr(show_details, "seasons")
+        seasons = show_details.seasons
         seasons = [s for s in seasons if s.get("season_number", 0) > 0]
         if not seasons:
             return [], show_details
         latest_season = max(seasons, key=lambda s: s.get("season_number", 0))
         season_number = latest_season.get("season_number")
-        season_details = tmdb_get(
-            "season_details", {"id": tmdb_id, "season": season_number}
-        )
+        season_details = tmdb_get("season_details", {"id": tmdb_id, "season": season_number})
 
         episodes = []
-        for ep in getattr(season_details, "episodes"):
+        for ep in season_details.episodes:
             air_date = ep.get("air_date")
             if air_date:
                 episodes.append(
@@ -238,7 +227,7 @@ def is_this_week(date_str):
         d_year, d_week, _ = d.isocalendar()
         return (d_year, d_week) == (year, week)
     except Exception as e:
-        kodilog(f"Error: {str(e)}")
+        kodilog(f"Error: {e!s}")
 
 
 def parse_date_str(date_str: str) -> date:

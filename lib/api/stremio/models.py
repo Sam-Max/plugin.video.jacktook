@@ -1,5 +1,6 @@
-from typing import List, Optional, Any, Dict, Union
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Union
+
 
 @dataclass
 class MetaLink:
@@ -8,12 +9,13 @@ class MetaLink:
     url: str
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MetaLink':
+    def from_dict(cls, data: Dict[str, Any]) -> "MetaLink":
         return cls(
             name=data.get("name", ""),
             category=data.get("category", ""),
-            url=data.get("url", "")
+            url=data.get("url", ""),
         )
+
 
 @dataclass
 class StreamBehaviorHints:
@@ -26,7 +28,7 @@ class StreamBehaviorHints:
     filename: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'StreamBehaviorHints':
+    def from_dict(cls, data: Dict[str, Any]) -> "StreamBehaviorHints":
         return cls(
             countryWhitelist=data.get("countryWhitelist", []),
             notWebReady=data.get("notWebReady", False),
@@ -34,8 +36,9 @@ class StreamBehaviorHints:
             proxyHeaders=data.get("proxyHeaders", {}),
             videoHash=data.get("videoHash"),
             videoSize=data.get("videoSize"),
-            filename=data.get("filename")
+            filename=data.get("filename"),
         )
+
 
 @dataclass
 class Stream:
@@ -48,7 +51,7 @@ class Stream:
     title: Optional[str] = None
     description: Optional[str] = None
     behaviorHints: Optional[StreamBehaviorHints] = None
-    
+
     # Custom/Extended fields
     fileMustInclude: Optional[List[str]] = None
     nzbUrl: Optional[str] = None
@@ -58,11 +61,11 @@ class Stream:
     sevenZipUrls: List[str] = field(default_factory=list)
     tgzUrls: List[str] = field(default_factory=list)
     tarUrls: List[str] = field(default_factory=list)
-    
+
     meta: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Stream':
+    def from_dict(cls, data: Dict[str, Any]) -> "Stream":
         hints = data.get("behaviorHints")
         return cls(
             url=data.get("url"),
@@ -82,30 +85,31 @@ class Stream:
             sevenZipUrls=data.get("7zipUrls", []),
             tgzUrls=data.get("tgzUrls", []),
             tarUrls=data.get("tarUrls", []),
-            meta=data.get("meta", {})
+            meta=data.get("meta", {}),
         )
 
     def get_parsed_title(self) -> str:
         filename = self.behaviorHints.filename if self.behaviorHints else None
         title = filename or self.description or self.title
         return title.splitlines()[0] if title else ""
-    
+
     def get_sub_indexer(self, addon: Any) -> str:
         if not self.name:
             return ""
-        
+
         name_parts = self.name.split()
         if len(name_parts) > 1:
             return name_parts[1]
-        
-        return "" 
-        
+
+        return ""
+
     def get_parsed_size(self) -> int:
         size = self.behaviorHints.videoSize if self.behaviorHints else None
         return size or self.meta.get("size") or 0
-    
-    def get_provider(self) -> str: 
+
+    def get_provider(self) -> str:
         return self.meta.get("indexer") or ""
+
 
 @dataclass
 class Video:
@@ -123,7 +127,7 @@ class Video:
     imdbEpisode: Optional[Union[int, str]] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Video':
+    def from_dict(cls, data: Dict[str, Any]) -> "Video":
         return cls(
             id=data.get("id", ""),
             title=data.get("title", ""),
@@ -136,16 +140,18 @@ class Video:
             trailers=[Stream.from_dict(t) for t in data.get("trailers", [])],
             overview=data.get("overview"),
             imdbSeason=data.get("imdbSeason"),
-            imdbEpisode=data.get("imdbEpisode")
+            imdbEpisode=data.get("imdbEpisode"),
         )
+
 
 @dataclass
 class MetaBehaviorHints:
     defaultVideoId: Optional[str] = None
-    
+
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MetaBehaviorHints':
+    def from_dict(cls, data: Dict[str, Any]) -> "MetaBehaviorHints":
         return cls(defaultVideoId=data.get("defaultVideoId"))
+
 
 @dataclass
 class Meta:
@@ -162,7 +168,7 @@ class Meta:
     cast: List[str] = field(default_factory=list)
     imdbRating: Optional[str] = None
     released: Optional[str] = None
-    trailers: List[Dict[str, str]] = field(default_factory=list) # simplified for now
+    trailers: List[Dict[str, str]] = field(default_factory=list)  # simplified for now
     links: List[MetaLink] = field(default_factory=list)
     videos: List[Video] = field(default_factory=list)
     runtime: Optional[str] = None
@@ -176,7 +182,7 @@ class Meta:
     genres: List[str] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Meta':
+    def from_dict(cls, data: Dict[str, Any]) -> "Meta":
         hints = data.get("behaviorHints")
         return cls(
             id=data.get("id", ""),
@@ -203,7 +209,7 @@ class Meta:
             behaviorHints=MetaBehaviorHints.from_dict(hints) if hints else None,
             moviedb_id=data.get("moviedb_id"),
             imdb_id=data.get("imdb_id"),
-            genres=data.get("genres", [])
+            genres=data.get("genres", []),
         )
 
 
@@ -228,7 +234,7 @@ class MetaPreview:
     streams: List[Stream] = field(default_factory=list)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'MetaPreview':
+    def from_dict(cls, data: Dict[str, Any]) -> "MetaPreview":
         return cls(
             id=data.get("id", ""),
             type=data.get("type", ""),
@@ -246,5 +252,5 @@ class MetaPreview:
             trailers=data.get("trailers", []),
             moviedb_id=data.get("moviedb_id"),
             imdb_id=data.get("imdb_id"),
-            streams=[Stream.from_dict(s) for s in data.get("streams", [])]
+            streams=[Stream.from_dict(s) for s in data.get("streams", [])],
         )

@@ -21,6 +21,7 @@ class Premiumize(DebridClient):
 
     def remove_auth(self):
         from lib.utils.kodi.utils import set_setting
+
         self.token = ""
         set_setting("premiumize_token", "")
         set_setting("premiumize_authorized", "false")
@@ -114,11 +115,7 @@ class Premiumize(DebridClient):
     def get_torrent_info(self, torrent_id):
         transfer_list = self.get_transfer_list()
         torrent_info = next(
-            (
-                torrent
-                for torrent in transfer_list["transfers"]
-                if torrent["id"] == torrent_id
-            ),
+            (torrent for torrent in transfer_list["transfers"] if torrent["id"] == torrent_id),
             None,
         )
         return torrent_info
@@ -180,6 +177,6 @@ class Premiumize(DebridClient):
             expires = datetime.datetime.fromtimestamp(premium_until)
             days = (expires - datetime.datetime.now()).days
             return days
-        except Exception as e:
+        except Exception:
             # kodilog(f"Error calculating Premiumize days remaining: {e}")
             return None

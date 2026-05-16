@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from lib.api.debrid.base import ProviderException
 from lib.clients.debrid.realdebrid import RealDebridHelper
@@ -19,7 +20,7 @@ def test_get_link_multi_file_movie_uses_largest_selected_file():
         ],
     }
     helper.client.create_download_link.side_effect = lambda link: {
-        "download": "https://download/{}".format(link)
+        "download": f"https://download/{link}"
     }
 
     result = helper.get_link("info-hash", {})

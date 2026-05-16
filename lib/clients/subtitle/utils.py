@@ -55,7 +55,7 @@ def get_deepl_language_code(language_name):
         "Türkçe": "tr",
         "Українська": "uk",
     }
-    return language_mapping.get(language_name, None)
+    return language_mapping.get(language_name)
 
 
 def get_language_code(language_name):
@@ -95,7 +95,7 @@ def get_language_code(language_name):
         "Chinese": "zho",
     }
 
-    return language_map.get(language_name, None)
+    return language_map.get(language_name)
 
 
 def language_code_to_name(code):

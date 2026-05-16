@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional, Any
+from typing import Any, List, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -16,9 +16,7 @@ def normalize_transport_url(url: str) -> str:
     if path.endswith("/manifest.json"):
         path = path[: -len("/manifest.json")]
 
-    return urlunsplit(
-        (parts.scheme.lower(), parts.netloc.lower(), path, parts.query, "")
-    )
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, parts.query, ""))
 
 
 def build_addon_base_url(transport_url: str) -> str:
@@ -35,12 +33,7 @@ def build_addon_instance_key(addon_like: Any) -> str:
         transport_url = addon_like.transport_url or ""
     elif isinstance(addon_like, dict):
         manifest = addon_like.get("manifest") or {}
-        addon_id = (
-            manifest.get("id")
-            or addon_like.get("id")
-            or addon_like.get("name")
-            or ""
-        )
+        addon_id = manifest.get("id") or addon_like.get("id") or addon_like.get("name") or ""
         transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
 
     normalized_url = normalize_transport_url(transport_url)
@@ -57,10 +50,7 @@ def build_addon_instance_label(addon_like: Any) -> str:
     else:
         manifest = addon_like.get("manifest") or {}
         name = (
-            manifest.get("name")
-            or manifest.get("id")
-            or addon_like.get("name")
-            or "Unknown Addon"
+            manifest.get("name") or manifest.get("id") or addon_like.get("name") or "Unknown Addon"
         )
         transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
         transport_name = addon_like.get("transportName") or addon_like.get("transport_name") or ""
@@ -237,9 +227,7 @@ class AddonManager:
                     )
                     if isinstance(resource, str)
                     else Resource(
-                        name=(
-                            resource["name"] if isinstance(resource, dict) else resource
-                        ),
+                        name=(resource["name"] if isinstance(resource, dict) else resource),
                         types=resource.get("types", item["manifest"].get("types", [])),
                         id_prefixes=resource.get(
                             "idPrefixes", item["manifest"].get("idPrefixes", [])
@@ -316,10 +304,7 @@ class AddonManager:
                 continue
             for resource in addon.manifest.resources:
                 if isinstance(resource, str):
-                    if (
-                        resource == resource_name
-                        and id_prefix in addon.manifest.id_prefixes
-                    ):
+                    if resource == resource_name and id_prefix in addon.manifest.id_prefixes:
                         result.append(addon)
                         break
 

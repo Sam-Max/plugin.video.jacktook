@@ -12,12 +12,13 @@
 
 """bencode.py - bencode encoder."""
 
-from .common import Bencached
-from .compat import PY2, to_binary
 from collections import deque
 
+from .common import Bencached
+from .compat import PY2, to_binary
+
 try:
-    from typing import Dict, List, Tuple, Deque, Union, TextIO, BinaryIO, Any
+    from typing import Any, BinaryIO, Deque, Dict, List, TextIO, Tuple, Union
 except ImportError:
     Dict = List = Tuple = Deque = Union = TextIO = BinaryIO = Any = None
 
@@ -32,14 +33,22 @@ except ImportError:
     pathlib = None
 
 
-class BencodeEncoder(object):
+class BencodeEncoder:
     def __init__(self):
         # noinspection PyDictCreation
         self.encode_func = {}
         self.encode_func[Bencached] = self.encode_bencached
 
         if PY2:
-            from types import DictType, IntType, ListType, LongType, StringType, TupleType, UnicodeType
+            from types import (
+                DictType,
+                IntType,
+                ListType,
+                LongType,
+                StringType,
+                TupleType,
+                UnicodeType,
+            )
 
             self.encode_func[DictType] = self.encode_dict
             self.encode_func[IntType] = self.encode_int
@@ -85,7 +94,7 @@ class BencodeEncoder(object):
         self.encode_func[type(value)](value, r)
 
         # Join parts
-        return b''.join(r)
+        return b"".join(r)
 
     def encode_bencached(self, x, r):
         # type: (Bencached, Deque[bytes]) -> None
@@ -93,7 +102,7 @@ class BencodeEncoder(object):
 
     def encode_int(self, x, r):
         # type: (int, Deque[bytes]) -> None
-        r.extend((b'i', str(x).encode('utf-8'), b'e'))
+        r.extend((b"i", str(x).encode("utf-8"), b"e"))
 
     def encode_bool(self, x, r):
         # type: (bool, Deque[bytes]) -> None
@@ -104,7 +113,7 @@ class BencodeEncoder(object):
 
     def encode_bytes(self, x, r):
         # type: (bytes, Deque[bytes]) -> None
-        r.extend((str(len(x)).encode('utf-8'), b':', x))
+        r.extend((str(len(x)).encode("utf-8"), b":", x))
 
     def encode_string(self, x, r):
         # type: (str, Deque[bytes]) -> None
@@ -112,16 +121,16 @@ class BencodeEncoder(object):
 
     def encode_list(self, x, r):
         # type: (List, Deque[bytes]) -> None
-        r.append(b'l')
+        r.append(b"l")
 
         for i in x:
             self.encode_func[type(i)](i, r)
 
-        r.append(b'e')
+        r.append(b"e")
 
     def encode_dict(self, x, r):
         # type: (Dict, Deque[bytes]) -> None
-        r.append(b'd')
+        r.append(b"d")
 
         # force all keys to bytes, because str and bytes are incomparable
         ilist = [(to_binary(k), v) for k, v in x.items()]
@@ -131,4 +140,4 @@ class BencodeEncoder(object):
             self.encode_func[type(k)](k, r)
             self.encode_func[type(v)](v, r)
 
-        r.append(b'e')
+        r.append(b"e")

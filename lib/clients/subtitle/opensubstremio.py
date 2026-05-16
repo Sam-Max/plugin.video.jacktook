@@ -1,6 +1,10 @@
 import os
+from typing import Any, Callable, Dict, List, Optional
+
 import requests
-from typing import Callable, List, Optional, Dict, Any
+import xbmc
+import xbmcgui
+
 from lib.clients.subtitle.utils import (
     get_language_code,
     language_code_to_name,
@@ -13,8 +17,6 @@ from lib.utils.kodi.utils import (
     kodilog,
     translation,
 )
-import xbmcgui
-import xbmc
 
 
 class OpenSubtitleStremioClient:
@@ -40,9 +42,7 @@ class OpenSubtitleStremioClient:
         try:
             response = requests.get(url)
             if response.status_code != 200:
-                self.notification(
-                    f"Failed to fetch subtitles, status code {response.status_code}"
-                )
+                self.notification(f"Failed to fetch subtitles, status code {response.status_code}")
                 return None
             data = response.json()
             kodilog(f"OpenSubtitles Subtitles Response: {data}", level=xbmc.LOGDEBUG)
@@ -65,16 +65,12 @@ class OpenSubtitleStremioClient:
         sub_language = get_setting("subtitle_language")
         auto_subtitle_download = get_setting("auto_subtitle_download")
         if auto_subtitle_download:
-            filtered = [
-                s for s in subtitles if s.get("lang") == get_language_code(sub_language)
-            ]
+            filtered = [s for s in subtitles if s.get("lang") == get_language_code(sub_language)]
             if filtered:
                 return filtered
 
         items = [
-            xbmcgui.ListItem(
-                label=translation(90665) % i, label2=language_code_to_name(s["lang"])
-            )
+            xbmcgui.ListItem(label=translation(90665) % i, label2=language_code_to_name(s["lang"]))
             for i, s in enumerate(subtitles)
         ]
 
@@ -129,34 +125,29 @@ class OpenSubtitleStremioClient:
         title = slugify_title(title)
 
         if folder_path:
-            file_path = os.path.join(
-                folder_path, f"Subtitle No.{index}.{title}.{lang_name}.srt"
-            )
+            file_path = os.path.join(folder_path, f"Subtitle No.{index}.{title}.{lang_name}.srt")
         else:
             base_path = os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
             if season and episode:
                 file_path = os.path.join(
-                    base_path, str(season), str(episode),
-                    f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt"
+                    base_path,
+                    str(season),
+                    str(episode),
+                    f"Subtitle No.{index}.{title}.S{season}E{episode}.{lang_name}.srt",
                 )
             elif season:
                 file_path = os.path.join(
-                    base_path, str(season),
-                    f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt"
+                    base_path,
+                    str(season),
+                    f"Subtitle No.{index}.{title}.S{season}.{lang_name}.srt",
                 )
             else:
-                file_path = os.path.join(
-                    base_path, f"Subtitle No.{index}.{title}.{lang_name}.srt"
-                )
+                file_path = os.path.join(base_path, f"Subtitle No.{index}.{title}.{lang_name}.srt")
 
         try:
-            response = requests.get(
-                url, stream=True, headers=USER_AGENT_HEADER, timeout=15
-            )
+            response = requests.get(url, stream=True, headers=USER_AGENT_HEADER, timeout=15)
             if response.status_code != 200:
-                self.notification(
-                    f"Failed to download {url}, status code {response.status_code}"
-                )
+                self.notification(f"Failed to download {url}, status code {response.status_code}")
                 raise Exception(f"HTTP {response.status_code}")
             with open(file_path, "wb") as file:
                 for chunk in response.iter_content(chunk_size=8192):

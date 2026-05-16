@@ -1,5 +1,7 @@
 import warnings
+
 from lib.api.tmdbv3api.tmdb import TMDb
+
 from .search import Search
 
 
@@ -28,7 +30,7 @@ class Person(TMDb):
         """
         return self._request_obj(
             self._urls["details"] % person_id,
-            params="append_to_response=%s" % append_to_response
+            params="append_to_response={}".format(append_to_response),
         )
 
     def changes(self, person_id, start_date=None, end_date=None, page=1):
@@ -41,16 +43,12 @@ class Person(TMDb):
         :param page: int
         :return:
         """
-        params = "page=%s" % page
+        params = "page={}".format(page)
         if start_date:
-            params += "&start_date=%s" % start_date
+            params += "&start_date={}".format(start_date)
         if end_date:
-            params += "&end_date=%s" % end_date
-        return self._request_obj(
-            self._urls["changes"] % person_id,
-            params=params,
-            key="changes"
-        )
+            params += "&end_date={}".format(end_date)
+        return self._request_obj(self._urls["changes"] % person_id, params=params, key="changes")
 
     def movie_credits(self, person_id):
         """
@@ -91,10 +89,7 @@ class Person(TMDb):
         :param person_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["images"] % person_id,
-            key="profiles"
-        )
+        return self._request_obj(self._urls["images"] % person_id, key="profiles")
 
     def tagged_images(self, person_id, page=1):
         """
@@ -105,8 +100,8 @@ class Person(TMDb):
         """
         return self._request_obj(
             self._urls["tagged_images"] % person_id,
-            params="page=%s" % page,
-            key="results"
+            params="page={}".format(page),
+            key="results",
         )
 
     def translations(self, person_id):
@@ -115,10 +110,7 @@ class Person(TMDb):
         :param person_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["translations"] % person_id,
-            key="translations"
-        )
+        return self._request_obj(self._urls["translations"] % person_id, key="translations")
 
     def latest(self):
         """
@@ -134,9 +126,7 @@ class Person(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["popular"],
-            params="page=%s" % page,
-            key="results"
+            self._urls["popular"], params="page={}".format(page), key="results"
         )
 
     def search(self, term, page=1):
@@ -146,6 +136,8 @@ class Person(TMDb):
         :param page: int
         :return:
         """
-        warnings.warn("search method is deprecated use tmdbv3api.Search().people(params)",
-                      DeprecationWarning)
+        warnings.warn(
+            "search method is deprecated use tmdbv3api.Search().people(params)",
+            DeprecationWarning,
+        )
         return Search().people(term, page=page)

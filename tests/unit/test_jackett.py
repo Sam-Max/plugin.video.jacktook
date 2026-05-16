@@ -1,15 +1,14 @@
-import pytest
-from unittest.mock import MagicMock, patch
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from lib.clients.jackett import Jackett
 from lib.domain.torrent import TorrentStream
 
 # Load fixture data
-FIXTURE_PATH = os.path.join(
-    os.path.dirname(__file__), "../fixtures/jackett_response.xml"
-)
-with open(FIXTURE_PATH, "r") as f:
+FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "../fixtures/jackett_response.xml")
+with open(FIXTURE_PATH) as f:
     XML_RESPONSE = f.read()
 
 

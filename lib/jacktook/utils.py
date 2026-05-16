@@ -1,4 +1,5 @@
 import json
+
 import xbmc
 import xbmcaddon
 
@@ -15,9 +16,7 @@ ADDON_NAME = ADDON.getAddonInfo("name")
 
 
 def get_installed_addons(addon_type="", content="unknown", enabled="all"):
-    data = execute_json_rpc(
-        "Addons.GetAddons", type=addon_type, content=content, enabled=enabled
-    )
+    data = execute_json_rpc("Addons.GetAddons", type=addon_type, content=content, enabled=enabled)
     addons = data["result"].get("addons")
     return [(a["addonid"], a["type"]) for a in addons] if addons else []
 
@@ -36,12 +35,9 @@ def run_script(script_id, *args):
 def execute_json_rpc(method, rpc_version="2.0", rpc_id=1, **params):
     return json.loads(
         xbmc.executeJSONRPC(
-            json.dumps(
-                dict(jsonrpc=rpc_version, method=method, params=params, id=rpc_id)
-            )
+            json.dumps(dict(jsonrpc=rpc_version, method=method, params=params, id=rpc_id))
         )
     )
-
 
 
 class ResolveTimeoutError(Exception):

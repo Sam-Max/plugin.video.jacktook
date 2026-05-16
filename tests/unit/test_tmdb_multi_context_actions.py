@@ -1,7 +1,7 @@
 import json
 from types import SimpleNamespace
-from urllib.parse import parse_qs, urlparse
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.clients.tmdb.tmdb import TmdbClient
@@ -59,15 +59,15 @@ def test_movie_multi_context_menu_passes_media_type_to_context_actions():
 
 
 def test_search_tmdb_recommendations_uses_movie_endpoint_for_multi_movie():
-    results = SimpleNamespace(total_results=1, total_pages=2, results=[SimpleNamespace(id=11, title="R")])
+    results = SimpleNamespace(
+        total_results=1, total_pages=2, results=[SimpleNamespace(id=11, title="R")]
+    )
 
     with patch("lib.clients.tmdb.tmdb.tmdb_get", return_value=results) as tmdb_get, patch(
         "lib.clients.tmdb.tmdb.set_content_type"
-    ) as set_content_type, patch(
-        "lib.clients.tmdb.tmdb.set_pluging_category"
-    ), patch("lib.clients.tmdb.tmdb.make_list_item", return_value=MagicMock()), patch(
-        "lib.clients.tmdb.tmdb.set_media_infoTag"
-    ), patch(
+    ) as set_content_type, patch("lib.clients.tmdb.tmdb.set_pluging_category"), patch(
+        "lib.clients.tmdb.tmdb.make_list_item", return_value=MagicMock()
+    ), patch("lib.clients.tmdb.tmdb.set_media_infoTag"), patch(
         "lib.clients.tmdb.tmdb.BaseTmdbClient.add_media_directory_item",
         return_value=("url", MagicMock(), False),
     ), patch("lib.clients.tmdb.tmdb.add_directory_items_batch"), patch(
@@ -92,15 +92,15 @@ def test_search_tmdb_recommendations_uses_movie_endpoint_for_multi_movie():
 
 
 def test_search_tmdb_similar_uses_movie_endpoint_for_multi_movie():
-    results = SimpleNamespace(total_results=1, total_pages=2, results=[SimpleNamespace(id=22, title="S")])
+    results = SimpleNamespace(
+        total_results=1, total_pages=2, results=[SimpleNamespace(id=22, title="S")]
+    )
 
     with patch("lib.clients.tmdb.tmdb.tmdb_get", return_value=results) as tmdb_get, patch(
         "lib.clients.tmdb.tmdb.set_content_type"
-    ) as set_content_type, patch(
-        "lib.clients.tmdb.tmdb.set_pluging_category"
-    ), patch("lib.clients.tmdb.tmdb.make_list_item", return_value=MagicMock()), patch(
-        "lib.clients.tmdb.tmdb.set_media_infoTag"
-    ), patch(
+    ) as set_content_type, patch("lib.clients.tmdb.tmdb.set_pluging_category"), patch(
+        "lib.clients.tmdb.tmdb.make_list_item", return_value=MagicMock()
+    ), patch("lib.clients.tmdb.tmdb.set_media_infoTag"), patch(
         "lib.clients.tmdb.tmdb.BaseTmdbClient.add_media_directory_item",
         return_value=("url", MagicMock(), False),
     ), patch("lib.clients.tmdb.tmdb.add_directory_items_batch"), patch(

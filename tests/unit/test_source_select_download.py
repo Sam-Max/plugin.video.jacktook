@@ -33,7 +33,11 @@ def test_download_file_uses_episode_filename_when_tv_data_is_present():
         source_select_module.SourceSelect,
         "_ensure_playback_info",
         return_value=playback_info,
-    ), patch("lib.downloader.get_destination_path", return_value="/downloads") as mock_get_dest, patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
+    ), patch(
+        "lib.downloader.get_destination_path", return_value="/downloads"
+    ) as mock_get_dest, patch.object(
+        source_select_module, "action_url_run", return_value="builtin"
+    ) as action_url_run, patch.object(
         source_select_module.xbmc, "executebuiltin"
     ) as executebuiltin:
         source_select._download_file(selected_source)
@@ -71,7 +75,11 @@ def test_download_file_uses_year_for_movie_filename():
         source_select_module.SourceSelect,
         "_ensure_playback_info",
         return_value=playback_info,
-    ), patch("lib.downloader.get_destination_path", return_value="/downloads") as mock_get_dest, patch.object(source_select_module, "action_url_run", return_value="builtin") as action_url_run, patch.object(
+    ), patch(
+        "lib.downloader.get_destination_path", return_value="/downloads"
+    ) as mock_get_dest, patch.object(
+        source_select_module, "action_url_run", return_value="builtin"
+    ) as action_url_run, patch.object(
         source_select_module.xbmc, "executebuiltin"
     ) as executebuiltin:
         source_select._download_file(selected_source)
@@ -136,13 +144,15 @@ def test_populate_sources_list_shows_debrid_type_for_stremio_debrid_sources():
             "badges": "",
             "release_group": "",
         },
-    ), patch.object(source_select_module, "bytes_to_human_readable", return_value="1 KB"), patch.object(
+    ), patch.object(
+        source_select_module, "bytes_to_human_readable", return_value="1 KB"
+    ), patch.object(
         source_select_module, "get_provider_color", side_effect=lambda value: value
-    ), patch.object(source_select_module, "get_random_color", side_effect=lambda value: value), patch.object(
-        source_select_module, "get_colored_languages", return_value=""
-    ), patch.object(source_select_module, "extract_publish_date", return_value=""), patch.object(
-        source_select_module, "get_source_status", return_value="[B]Cached[/B]"
-    ):
+    ), patch.object(
+        source_select_module, "get_random_color", side_effect=lambda value: value
+    ), patch.object(source_select_module, "get_colored_languages", return_value=""), patch.object(
+        source_select_module, "extract_publish_date", return_value=""
+    ), patch.object(source_select_module, "get_source_status", return_value="[B]Cached[/B]"):
         source_select.populate_sources_list()
 
     assert source_select.display_list.items[0].properties["type"] == DebridType.TB
@@ -168,13 +178,21 @@ def test_torrent_context_menu_does_not_include_download_video():
     dialog = MagicMock()
     dialog.contextmenu.return_value = -1
 
-    with patch.object(source_select_module, "translation", side_effect=lambda key: labels.get(key, str(key))), \
-         patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog):
+    with patch.object(
+        source_select_module,
+        "translation",
+        side_effect=lambda key: labels.get(key, str(key)),
+    ), patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog):
         source_select._handle_context_menu_action()
 
     shown_items = dialog.contextmenu.call_args.args[0]
     assert "Download video" not in shown_items
-    assert shown_items == ["Download to debrid", "Add to TorrServer", "Download subtitles", "Upload subtitle"]
+    assert shown_items == [
+        "Download to debrid",
+        "Add to TorrServer",
+        "Download subtitles",
+        "Upload subtitle",
+    ]
 
 
 def test_torrent_context_menu_download_subtitles_resolves_for_subtitle_download():
@@ -192,8 +210,9 @@ def test_torrent_context_menu_download_subtitles_resolves_for_subtitle_download(
     dialog = MagicMock()
     dialog.contextmenu.return_value = 2
 
-    with patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog), \
-         patch.object(source_select, "_resolve_item") as resolve_item:
+    with patch.object(source_select_module.xbmcgui, "Dialog", return_value=dialog), patch.object(
+        source_select, "_resolve_item"
+    ) as resolve_item:
         source_select._handle_context_menu_action()
 
     resolve_item.assert_called_once_with(selected_source, is_subtitle_download=True)

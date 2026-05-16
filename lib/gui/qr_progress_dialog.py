@@ -1,4 +1,5 @@
 import xbmcgui
+
 from lib.utils.kodi.utils import translation
 
 
@@ -28,13 +29,13 @@ class QRProgressDialog(xbmcgui.WindowXMLDialog):
     ):
         self.title = title
         self.qr_image_path = qr_code
-        
+
         # If custom message provided, use it directly (bypass translation formatting)
         if custom_message:
             self.message = custom_message
         elif is_debrid:
             if debrid_type == "RealDebrid":
-                self.message = "%s\n\n%s" % (
+                self.message = "{}\n\n{}".format(
                     translation(90541) % "https://real-debrid.com/device",
                     translation(90542) % user_code,
                 )

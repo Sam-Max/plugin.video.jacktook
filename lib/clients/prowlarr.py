@@ -1,17 +1,15 @@
+import concurrent.futures
+from typing import Any, Callable, Dict, List, Optional
+
 from lib.clients.base import BaseClient, TorrentStream
 from lib.jacktook.utils import kodilog
 from lib.utils.kodi.logging import summarize_locator_for_log
-from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.kodi.settings import get_prowlarr_timeout
-
-from typing import Dict, List, Optional, Any, Callable
-import concurrent.futures
+from lib.utils.kodi.utils import get_setting, notification, translation
 
 
 class Prowlarr(BaseClient):
-    def __init__(
-        self, host: str, apikey: str, port: str, notification: Callable
-    ) -> None:
+    def __init__(self, host: str, apikey: str, port: str, notification: Callable) -> None:
         super().__init__(host, notification)
         self.base_url = f"{self.host}:{port}/api/v1/search"
         self.apikey = apikey
@@ -52,9 +50,7 @@ class Prowlarr(BaseClient):
                         }
                         if indexers:
                             indexer_ids = [
-                                i.strip()
-                                for i in indexers.replace(",", " ").split()
-                                if i.strip()
+                                i.strip() for i in indexers.replace(",", " ").split() if i.strip()
                             ]
                             if indexer_ids:
                                 params_ep["indexerIds"] = indexer_ids
@@ -76,9 +72,7 @@ class Prowlarr(BaseClient):
                         }
                         if indexers:
                             indexer_ids = [
-                                i.strip()
-                                for i in indexers.replace(",", " ").split()
-                                if i.strip()
+                                i.strip() for i in indexers.replace(",", " ").split() if i.strip()
                             ]
                             if indexer_ids:
                                 params_season["indexerIds"] = indexer_ids
@@ -102,9 +96,7 @@ class Prowlarr(BaseClient):
                         params["categories"] = [2000, 5070, 5000, 127720, 140679]
                     if indexers:
                         indexer_ids = [
-                            i.strip()
-                            for i in indexers.replace(",", " ").split()
-                            if i.strip()
+                            i.strip() for i in indexers.replace(",", " ").split() if i.strip()
                         ]
                         if indexer_ids:
                             params["indexerIds"] = indexer_ids
@@ -128,7 +120,7 @@ class Prowlarr(BaseClient):
                             results.extend(res)
             return results if results else None
         except Exception as e:
-            self.handle_exception(f"{translation(30230)}: {str(e)}")
+            self.handle_exception(f"{translation(30230)}: {e!s}")
             return None
 
     @staticmethod

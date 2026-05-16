@@ -1,21 +1,20 @@
-# -*- coding: utf-8 -*-
 import ast
 import os
-import time
 import sqlite3 as database
+import time
+
+import xbmcaddon
+from xbmcvfs import translatePath
+
 from lib.utils.kodi.utils import (
+    clear_property,
     delete_file,
     dialog_ok,
     get_property,
     notification,
     set_property,
-    clear_property,
     translation,
 )
-
-import xbmcaddon
-from xbmcvfs import translatePath
-
 
 userdata_path = translatePath(xbmcaddon.Addon().getAddonInfo("profile"))
 databases_path = os.path.join(userdata_path, "databases/")
@@ -50,9 +49,7 @@ table_creators = {
 last_played text, resume_id integer, title text, unique (db_type, media_id, season, episode))",
         "CREATE TABLE IF NOT EXISTS watched_status (db_type text not null, media_id text not null, status text, unique (db_type, media_id))",
     ),
-    "lists_db": (
-        "CREATE TABLE IF NOT EXISTS lists (id text unique, data text, expires integer)",
-    ),
+    "lists_db": ("CREATE TABLE IF NOT EXISTS lists (id text unique, data text, expires integer)",),
     "maincache_db": (
         "CREATE TABLE IF NOT EXISTS maincache (id text unique, data text, expires integer)",
     ),
@@ -125,14 +122,13 @@ def check_databases_integrity():
     if database_errors:
         dialog_ok(
             heading=translation(90432),
-            line1=translation(90433)
-            % ", ".join(database_errors),
+            line1=translation(90433) % ", ".join(database_errors),
         )
     else:
         notification(translation(90426), time=3000)
 
 
-class BaseCache(object):
+class BaseCache:
     def __init__(self, dbfile, table):
         self.table = table
         self.dbfile = dbfile
@@ -159,9 +155,7 @@ class BaseCache(object):
         try:
             dbcon = connect_database(self.dbfile)
             expires = get_timestamp(expiration)
-            dbcon.execute(
-                BASE_SET % self.table, (string, self._serialize(data), int(expires))
-            )
+            dbcon.execute(BASE_SET % self.table, (string, self._serialize(data), int(expires)))
             self.set_memory_cache(data, string, int(expires))
         except:
             return None

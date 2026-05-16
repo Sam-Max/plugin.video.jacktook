@@ -1,4 +1,3 @@
-import os
 from unittest.mock import patch
 
 from lib.api.tmdbv3api.as_obj import AsObj
@@ -52,7 +51,12 @@ def test_choose_tmdb_trailer_prefers_trailer_over_teaser_then_official_flag():
 def test_choose_tmdb_trailer_ignores_non_youtube_and_unrelated_types():
     videos = [
         {"site": "Vimeo", "type": "Trailer", "official": True, "key": "vimeo123456"},
-        {"site": "YouTube", "type": "Behind the Scenes", "official": True, "key": "bts12345678"},
+        {
+            "site": "YouTube",
+            "type": "Behind the Scenes",
+            "official": True,
+            "key": "bts12345678",
+        },
     ]
 
     assert choose_tmdb_trailer(videos) is None

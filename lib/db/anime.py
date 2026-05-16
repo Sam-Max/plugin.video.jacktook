@@ -1,11 +1,11 @@
 import os
 import threading
 from sqlite3 import dbapi2 as db
-from lib.utils.kodi.utils import notification, translation
 
 import xbmcaddon
 from xbmcvfs import translatePath
 
+from lib.utils.kodi.utils import notification, translation
 
 try:
     if xbmc.getCondVisibility("System.HasAddon(script.otaku.mappings)"):
@@ -34,7 +34,7 @@ def get_all_ids(anilist_id):
     conn.row_factory = _dict_factory
     conn.execute("PRAGMA FOREIGN_KEYS = 1")
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM anime WHERE anilist_id IN ({0})".format(anilist_id))
+    cursor.execute(f"SELECT * FROM anime WHERE anilist_id IN ({anilist_id})")
     mapping = cursor.fetchone()
     cursor.close()
     try_release_lock(mappingDB_lock)

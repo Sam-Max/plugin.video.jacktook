@@ -14,12 +14,20 @@ def test_play_trailer_resolves_and_hands_off_to_kodi():
     with patch(
         "lib.navigation.resolve_item_trailer",
         return_value={
-            "trailer": {"yt_id": "dQw4w9WgXcQ", "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"},
-            "playback": {"video_url": "https://video.example/trailer.m3u8", "source_type": "hls"},
+            "trailer": {
+                "yt_id": "dQw4w9WgXcQ",
+                "youtube_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            },
+            "playback": {
+                "video_url": "https://video.example/trailer.m3u8",
+                "source_type": "hls",
+            },
         },
-    ) as resolve_item_trailer, patch("lib.navigation.ListItem", return_value=list_item) as list_item_cls, patch(
-        "lib.navigation.setResolvedUrl"
-    ) as set_resolved_url, patch("lib.navigation.notification") as notification:
+    ) as resolve_item_trailer, patch(
+        "lib.navigation.ListItem", return_value=list_item
+    ) as list_item_cls, patch("lib.navigation.setResolvedUrl") as set_resolved_url, patch(
+        "lib.navigation.notification"
+    ) as notification:
         from lib.navigation import play_trailer
 
         play_trailer(params)
@@ -100,8 +108,14 @@ def test_play_trailer_notifies_when_no_resolved_video_url():
 def test_play_trailer_uses_mode_when_media_type_missing():
     with patch(
         "lib.navigation.resolve_item_trailer",
-        return_value={"trailer": {"yt_id": None}, "playback": {"audio_url": "https://video.example/audio.m4a"}},
-    ) as resolve_item_trailer, patch("lib.navigation.translation", side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}"), patch("lib.navigation.notification") as notification:
+        return_value={
+            "trailer": {"yt_id": None},
+            "playback": {"audio_url": "https://video.example/audio.m4a"},
+        },
+    ) as resolve_item_trailer, patch(
+        "lib.navigation.translation",
+        side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}",
+    ), patch("lib.navigation.notification") as notification:
         from lib.navigation import play_trailer
 
         play_trailer({"tmdb_id": "1399", "mode": "tv", "title": "Demo Show"})
@@ -122,9 +136,7 @@ def test_play_trailer_logs_when_resolution_fails():
     ), patch("lib.navigation.kodilog") as log_mock, patch(
         "lib.navigation.translation",
         side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}",
-    ), patch(
-        "lib.navigation.notification"
-    ):
+    ), patch("lib.navigation.notification"):
         from lib.navigation import play_trailer
 
         play_trailer({"tmdb_id": "1399", "media_type": "tv", "title": "Demo Show"})
@@ -176,9 +188,12 @@ def test_play_trailer_notifies_when_direct_playback_unavailable_and_no_youtube_i
     ) as resolve_item_trailer, patch(
         "lib.navigation.is_youtube_addon_enabled",
         return_value=True,
-    ) as is_youtube_addon_enabled, patch("lib.navigation.translation", side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}"), patch(
-        "lib.navigation.execute_builtin"
-    ) as execute_builtin, patch("lib.navigation.notification") as notification:
+    ) as is_youtube_addon_enabled, patch(
+        "lib.navigation.translation",
+        side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}",
+    ), patch("lib.navigation.execute_builtin") as execute_builtin, patch(
+        "lib.navigation.notification"
+    ) as notification:
         from lib.navigation import play_trailer
 
         play_trailer(
@@ -249,9 +264,12 @@ def test_play_trailer_notifies_when_youtube_addon_is_missing_for_fallback():
     ) as resolve_item_trailer, patch(
         "lib.navigation.is_youtube_addon_enabled",
         return_value=False,
-    ) as is_youtube_addon_enabled, patch("lib.navigation.translation", side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}"), patch(
-        "lib.navigation.execute_builtin"
-    ) as execute_builtin, patch("lib.navigation.notification") as notification:
+    ) as is_youtube_addon_enabled, patch(
+        "lib.navigation.translation",
+        side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}",
+    ), patch("lib.navigation.execute_builtin") as execute_builtin, patch(
+        "lib.navigation.notification"
+    ) as notification:
         from lib.navigation import play_trailer
 
         play_trailer(
@@ -290,9 +308,7 @@ def test_play_trailer_logs_unavailable_youtube_addon_fallback_details():
     ), patch(
         "lib.navigation.translation",
         side_effect=lambda value: "Trailer unavailable" if value == 90673 else f"t-{value}",
-    ), patch(
-        "lib.navigation.notification"
-    ), patch("lib.navigation.kodilog") as log_mock:
+    ), patch("lib.navigation.notification"), patch("lib.navigation.kodilog") as log_mock:
         from lib.navigation import play_trailer
 
         play_trailer(

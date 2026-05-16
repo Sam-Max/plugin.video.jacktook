@@ -1,14 +1,26 @@
 import hashlib
 import json
-from io import BytesIO
 import os
-import requests
 from datetime import timedelta
+from io import BytesIO
 from urllib.parse import quote
-from lib.clients.subtitle.deepl import DeepLTranslator
+
+import requests
+import xbmc
+import xbmcgui
+from xbmcgui import Dialog
+from xbmcplugin import addDirectoryItem
+
+from lib.clients.subtitle.deepl import DeepLTranslator  # noqa: F401 — imported for test mocking
 from lib.clients.subtitle.submanager import SubtitleManager
 from lib.db.cached import cache
-from lib.utils.kodi.kodi_formats import is_picture, is_text, is_video, is_music
+from lib.utils.general.utils import (
+    USER_AGENT_HEADER,
+    build_list_item,
+    get_info_hash_from_magnet,
+    set_pluging_category,
+)
+from lib.utils.kodi.kodi_formats import is_music, is_picture, is_text, is_video
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PROFILE_PATH,
@@ -17,28 +29,15 @@ from lib.utils.kodi.utils import (
     buffer_and_play,
     build_url,
     end_of_directory,
-    get_setting,
+    get_setting,  # noqa: F401 — imported for test mocking
     kodilog,
     notification,
     refresh,
     show_picture,
     translation,
 )
-from lib.utils.general.utils import (
-    USER_AGENT_HEADER,
-    build_list_item,
-    get_info_hash_from_magnet,
-    set_pluging_category,
-)
-from lib.vendor.bencodepy import bencodepy
-
-from xbmcplugin import addDirectoryItem
-from xbmcgui import Dialog
-
-import xbmc
-import xbmcgui
-
 from lib.utils.torrent.torrserver_init import get_torrserver_api
+from lib.vendor.bencodepy import bencodepy
 
 
 def _buffer_and_play_url(info_hash, file_id, path):
@@ -125,7 +124,11 @@ def torrent_files(params):
 
                 if info_type == "video":
                     parsed_data = _parse_torrent_meta(info)
-                    parsed_ids = parsed_data.get("ids", {}) if isinstance(parsed_data.get("ids", {}), dict) else {}
+                    parsed_ids = (
+                        parsed_data.get("ids", {})
+                        if isinstance(parsed_data.get("ids", {}), dict)
+                        else {}
+                    )
                     meta = {
                         "title": parsed_data.get("title") or info.get("title", ""),
                         "mode": parsed_data.get("mode", ""),
@@ -226,9 +229,7 @@ def display_text(params):
     Dialog().textviewer(params.get("path"), r.text)
 
 
-def add_source_to_torrserver(
-    magnet="", url="", info_hash="", title="", poster="", data=""
-):
+def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="", data=""):
     if not JACKTORR_ADDON:
         notification(translation(30253))
         return None
@@ -241,13 +242,7 @@ def add_source_to_torrserver(
     try:
         added_hash = None
         kodilog(
-            "add_source_to_torrserver input: info_hash={!r}, title={!r}, has_magnet={}, has_url={}, has_data={}".format(
-                info_hash,
-                title,
-                bool(magnet),
-                bool(url),
-                bool(data),
-            )
+            f"add_source_to_torrserver input: info_hash={info_hash!r}, title={title!r}, has_magnet={bool(magnet)}, has_url={bool(url)}, has_data={bool(data)}"
         )
 
         if url and url.startswith("http"):
@@ -256,14 +251,8 @@ def add_source_to_torrserver(
                 response.raise_for_status()
                 torrent_obj = BytesIO(response.content)
                 torrent_obj.name = "torrent.torrent"
-                added_hash = api.add_torrent_obj(
-                    torrent_obj, title=title, poster=poster
-                )
-                kodilog(
-                    "add_source_to_torrserver added torrent URL: returned_hash={!r}".format(
-                        added_hash
-                    )
-                )
+                added_hash = api.add_torrent_obj(torrent_obj, title=title, poster=poster)
+                kodilog(f"add_source_to_torrserver added torrent URL: returned_hash={added_hash!r}")
             except Exception as exc:
                 kodilog(f"Failed to add torrent URL to TorrServer: {exc}")
 
@@ -273,11 +262,7 @@ def add_source_to_torrserver(
 
             if magnet:
                 added_hash = api.add_magnet(magnet, title=title, poster=poster)
-                kodilog(
-                    "add_source_to_torrserver added magnet: returned_hash={!r}".format(
-                        added_hash
-                    )
-                )
+                kodilog(f"add_source_to_torrserver added magnet: returned_hash={added_hash!r}")
             else:
                 notification(translation(90361))
                 return None

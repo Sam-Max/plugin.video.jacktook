@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
+from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.services.webserver import StremioWebServer, get_local_ip
 from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.utils.kodi.utils import ADDON_PATH, kodilog, translation
-
 
 _SERVER_PORT = 8081
 

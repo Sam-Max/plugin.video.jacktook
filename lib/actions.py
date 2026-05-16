@@ -1,13 +1,14 @@
 import json
+
 from lib.domain.torrent import TorrentStream
 from lib.gui.resolver_window import ResolverWindow
 from lib.utils.kodi.utils import ADDON_PATH
-from lib.downloader import handle_download_file
+
 
 def resolve_for_pack_selection(params):
     data = json.loads(params["data"])
     info_hash = data.get("infoHash")
-    
+
     source = TorrentStream(
         guid="",
         url=data.get("url"),
@@ -89,5 +90,3 @@ def resolve_for_subtitles(params):
     )
     resolver_window.doModal()
     del resolver_window
-
-

@@ -103,9 +103,7 @@ def test_build_up_next_entries_finds_next_aired_episode():
             "seasons": [
                 {
                     "number": 1,
-                    "episodes": [
-                        {"number": 1, "last_watched_at": "2026-03-10T18:00:00.000Z"}
-                    ],
+                    "episodes": [{"number": 1, "last_watched_at": "2026-03-10T18:00:00.000Z"}],
                 }
             ],
         }

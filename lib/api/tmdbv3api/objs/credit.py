@@ -1,9 +1,8 @@
 from lib.api.tmdbv3api.tmdb import TMDb
 
+
 class Credit(TMDb):
-    _urls = {
-        "details": "/credit/%s"
-    }
+    _urls = {"details": "/credit/%s"}
 
     def details(self, credit_id):
         """

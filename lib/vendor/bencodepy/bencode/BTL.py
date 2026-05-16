@@ -3,7 +3,4 @@
 # Compatibility with previous versions:
 from bencode.exceptions import BencodeDecodeError as BTFailure  # noqa: F401
 
-
-__all__ = (
-    'BTFailure'
-)
+__all__ = "BTFailure"

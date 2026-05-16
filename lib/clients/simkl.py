@@ -1,18 +1,18 @@
 import json
+
 import requests
+
 
 class SIMKL:
     def __init__(self):
-        self.ClientID = (
-            "59dfdc579d244e1edf6f89874d521d37a69a95a1abd349910cb056a1872ba2c8"
-        )
+        self.ClientID = "59dfdc579d244e1edf6f89874d521d37a69a95a1abd349910cb056a1872ba2c8"
         self.base_url = "https://api.simkl.com/"
         self.imagePath = "https://wsrv.nl/?url=https://simkl.in/episodes/%s_w.webp"
 
     def _to_url(self, url=""):
         if url.startswith("/"):
             url = url[1:]
-        return "%s/%s" % (self.base_url[:-1], url)
+        return "{}/{}".format(self.base_url[:-1], url)
 
     def make_request(self, endpoint, params):
         res = requests.get(

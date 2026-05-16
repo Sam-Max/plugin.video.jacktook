@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from lib.api.debrid.easydebrid import EasyDebrid
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import dialog_text, get_setting, notification, translation
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -14,14 +15,12 @@ from lib.utils.general.utils import (
     set_cached,
     supported_video_extensions,
 )
-from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.utils import dialog_text, get_setting, notification, translation
 
 
 class EasyDebridHelper:
     def __init__(self):
-        self.client = EasyDebrid(
-            token=get_setting("easydebrid_token"), user_ip=get_public_ip()
-        )
+        self.client = EasyDebrid(token=get_setting("easydebrid_token"), user_ip=get_public_ip())
 
     def check_cached(
         self,
@@ -49,9 +48,7 @@ class EasyDebridHelper:
             if res in filtered_results:
                 # Get index in filtered results for matching cached response
                 index = filtered_results.index(res)
-                is_cached = (
-                    cached_response[index] if index < len(cached_response) else False
-                )
+                is_cached = cached_response[index] if index < len(cached_response) else False
                 res.isCached = bool(is_cached)
                 if res.isCached:
                     cached_results.append(res)

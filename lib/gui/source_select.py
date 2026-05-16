@@ -1,47 +1,47 @@
-from typing import List, Optional, Dict
+import threading
+from typing import Dict, List, Optional
+
+import xbmc
+import xbmcgui
+
 from lib.domain.torrent import TorrentStream
-from lib.gui.filter_type_window import FilterTypeWindow
-from lib.gui.filter_items_window import FilterWindow
 from lib.gui.base_window import BaseWindow
+from lib.gui.filter_items_window import FilterWindow
+from lib.gui.filter_type_window import FilterTypeWindow
+from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
-from lib.utils.debrid.debrid_utils import (
-    add_source_to_debrid,
-    get_torrent_data_from_uri,
-    get_source_status,
-)
-from lib.utils.kodi.utils import (
-    action_url_run,
-    bytes_to_human_readable,
-    ADDON_PATH,
-    get_setting,
-    kodilog,
-    notification,
-    translatePath,
-    translation,
-)
-from lib.utils.general.utils import (
-    IndexerType,
-    extract_publish_date,
-    get_info_hash_from_magnet,
-    get_colored_languages,
-    get_provider_color,
-    get_random_color,
-    format_season_episode,
-    safe_json_loads,
-    normalize_tv_data,
-)
-from lib.utils.parsers.title_parser import parse_title_info
-from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
-
-import xbmcgui
-import xbmc
-import threading
 
 # For web subtitle upload
 from lib.services.subtitle_server import SubtitleUploadServer, get_local_ip
+from lib.utils.debrid.debrid_utils import (
+    add_source_to_debrid,
+    get_source_status,
+    get_torrent_data_from_uri,
+)
 from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.utils.general.utils import (
+    IndexerType,
+    extract_publish_date,
+    format_season_episode,
+    get_colored_languages,
+    get_info_hash_from_magnet,
+    get_provider_color,
+    get_random_color,
+    normalize_tv_data,
+    safe_json_loads,
+)
+from lib.utils.kodi.utils import (
+    ADDON_PATH,
+    action_url_run,
+    bytes_to_human_readable,
+    get_setting,
+    kodilog,
+    notification,
+    translation,
+)
+from lib.utils.parsers.title_parser import parse_title_info
+from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
 
 THEMES = {
     "0": {"card_bg": "FF362e33", "card_focus": "992A3E5C", "card_accent": "FF00559D"},
@@ -137,9 +137,7 @@ class SourceSelect(BaseWindow):
         del filter_type_popup
 
         def get_unique(attr):
-            return sorted(
-                set(getattr(s, attr) for s in self.sources if getattr(s, attr))
-            )
+            return sorted(set(getattr(s, attr) for s in self.sources if getattr(s, attr)))
 
         filter_map = {
             "quality": {
@@ -163,8 +161,7 @@ class SourceSelect(BaseWindow):
                 "filter": lambda val: [
                     s
                     for s in self.sources
-                    if val in getattr(s, "languages", [])
-                    or val in getattr(s, "fullLanguages", [])
+                    if val in getattr(s, "languages", []) or val in getattr(s, "fullLanguages", [])
                 ],
             },
         }
@@ -232,12 +229,8 @@ class SourceSelect(BaseWindow):
                 ]
             )
         elif selected_source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID):
-            menu_items.extend(
-                [translation(90083), translation(90082), translation(90744)]
-            )
-            menu_actions.extend(
-                ["download_file", "subtitle_download", "upload_subtitle"]
-            )
+            menu_items.extend([translation(90083), translation(90082), translation(90744)])
+            menu_actions.extend(["download_file", "subtitle_download", "upload_subtitle"])
         else:
             menu_items.extend(
                 [
@@ -286,9 +279,7 @@ class SourceSelect(BaseWindow):
         selected_item = quality_list.getSelectedItem()
         if selected_item:
             selected_quality = selected_item.getProperty("quality")
-            filtered_sources = [
-                s for s in self.sources if selected_quality in s.quality
-            ]
+            filtered_sources = [s for s in self.sources if selected_quality in s.quality]
             if not filtered_sources:
                 kodilog("No sources found matching the filter")
                 return
@@ -350,13 +341,9 @@ class SourceSelect(BaseWindow):
                 menu_item.setProperty("seeders", str(source.seeders))
             if source.peers and not source.isCached:
                 menu_item.setProperty("peers", str(source.peers))
-            menu_item.setProperty(
-                "fullLanguages", get_colored_languages(source.fullLanguages)
-            )
+            menu_item.setProperty("fullLanguages", get_colored_languages(source.fullLanguages))
             menu_item.setProperty("provider", get_random_color(source.provider))
-            menu_item.setProperty(
-                "publishDate", extract_publish_date(source.publishDate)
-            )
+            menu_item.setProperty("publishDate", extract_publish_date(source.publishDate))
             menu_item.setProperty("quality", source.quality)
             menu_item.setProperty("status", get_source_status(source))
             menu_item.setProperty("isPack", str(source.isPack))
@@ -371,9 +358,7 @@ class SourceSelect(BaseWindow):
         self.populate_sources_list()
         if self.list_sources:
             self.set_default_focus(self.display_list, 1000, control_list_reset=True)
-            self.display_list.selectItem(
-                min(current_position, len(self.list_sources) - 1)
-            )
+            self.display_list.selectItem(min(current_position, len(self.list_sources) - 1))
 
     def _download_to_debrid(self, selected_source) -> None:
         kodilog("SourceSelect _download_to_debrid entered")
@@ -389,8 +374,8 @@ class SourceSelect(BaseWindow):
 
         if url:
             kodilog(f"Fetching torrent URL to extract info_hash: {url}")
-            torrent_data, magnet_candidate, extracted_hash, torrent_url = (
-                get_torrent_data_from_uri(url)
+            torrent_data, magnet_candidate, extracted_hash, torrent_url = get_torrent_data_from_uri(
+                url
             )
             if magnet_candidate and not magnet:
                 magnet = magnet_candidate
@@ -407,8 +392,7 @@ class SourceSelect(BaseWindow):
             info_hash,
             selected_source.debridType,
             torrent_data=torrent_data,
-            torrent_name=selected_source.title
-            or self.item_information.get("title", ""),
+            torrent_name=selected_source.title or self.item_information.get("title", ""),
         )
         if debrid_type:
             kodilog(f"SourceSelect download_to_debrid succeeded via {debrid_type}")
@@ -424,6 +408,7 @@ class SourceSelect(BaseWindow):
         poster = self.item_information.get("poster", "")
 
         import json as _json
+
         metadata = {
             "title": title,
             "mode": self.item_information.get("mode", ""),
@@ -450,7 +435,9 @@ class SourceSelect(BaseWindow):
             return
 
         try:
-            title = (self.playback_info.get("title") or self.item_information.get("title") or "").strip()
+            title = (
+                self.playback_info.get("title") or self.item_information.get("title") or ""
+            ).strip()
             year = self.item_information.get("year", "")
             tv_data = self.playback_info.get("tv_data")
             if isinstance(tv_data, str):
@@ -466,11 +453,15 @@ class SourceSelect(BaseWindow):
                 file_name = title
 
             mode = self.playback_info.get("mode", "movie")
-            dest_data = {"title": title, "mode": "movies" if mode in ("movie", "movies") else mode}
+            dest_data = {
+                "title": title,
+                "mode": "movies" if mode in ("movie", "movies") else mode,
+            }
             if tv_data:
                 dest_data["tv_data"] = tv_data
 
             from lib.downloader import get_destination_path
+
             destination = get_destination_path(dest_data)
             if not destination:
                 notification(translation(90407))
@@ -485,10 +476,8 @@ class SourceSelect(BaseWindow):
                 )
             )
         except Exception as e:
-            kodilog(f"Failed to start download: {str(e)}")
-            xbmcgui.Dialog().notification(
-                translation(90653), translation(90654) % str(e)
-            )
+            kodilog(f"Failed to start download: {e!s}")
+            xbmcgui.Dialog().notification(translation(90653), translation(90654) % str(e))
 
     def _upload_subtitle(self, selected_source) -> None:
         """Show upload subtitle dialog with local/web options."""
@@ -512,9 +501,7 @@ class SourceSelect(BaseWindow):
             1, translation(90745), "files", ".srt|.ass|.ssa|.sub|.vtt|.txt"
         )
         if not subtitle_file:
-            kodilog(
-                "[UPLOAD_SUBTITLE] User cancelled subtitle upload (no file selected)"
-            )
+            kodilog("[UPLOAD_SUBTITLE] User cancelled subtitle upload (no file selected)")
             return
         self._resolve_item(selected_source, local_subtitle_path=subtitle_file)
 
@@ -567,18 +554,14 @@ class SourceSelect(BaseWindow):
                     # Check if file was uploaded
                     file_path = server.get_uploaded_file()
                     if file_path:
-                        kodilog(
-                            f"[UPLOAD_SUBTITLE] File detected via polling: {file_path}"
-                        )
+                        kodilog(f"[UPLOAD_SUBTITLE] File detected via polling: {file_path}")
                         subtitle_result[0] = file_path
                         upload_complete.set()
                         # Close dialog from thread
                         try:
                             dialog.close()
                         except Exception as e:
-                            kodilog(
-                                f"[UPLOAD_SUBTITLE] Error closing dialog from thread: {e}"
-                            )
+                            kodilog(f"[UPLOAD_SUBTITLE] Error closing dialog from thread: {e}")
                         break
 
                     # Timeout after 10 minutes

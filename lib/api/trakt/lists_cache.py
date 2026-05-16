@@ -1,6 +1,5 @@
 from lib.api.trakt.base_cache import BaseCache, get_timestamp
 
-
 GET_ALL = "SELECT id FROM lists"
 DELETE_ALL = "DELETE FROM lists"
 DELETE_PREFIX = 'DELETE FROM lists WHERE id LIKE "%s%%"'

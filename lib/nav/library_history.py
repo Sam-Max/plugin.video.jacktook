@@ -1,16 +1,20 @@
-from datetime import timedelta
 import os
+from datetime import timedelta
 
 from xbmcgui import Dialog
 from xbmcplugin import addDirectoryItem, endOfDirectory
 
 from lib.db.cached import cache
 from lib.utils.general.items_menus import history_menu_items, library_menu_items
-from lib.utils.general.utils import build_list_item, clear_history_by_type, set_pluging_category
+from lib.utils.general.utils import (
+    build_list_item,
+    clear_history_by_type,
+    set_pluging_category,
+)
 from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
-    ADDON_PATH,
     ADDON_HANDLE,
+    ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
@@ -64,9 +68,7 @@ def _render_menu(items, cache_listing=True):
             context_menu.append(
                 (
                     label,
-                    container_update(
-                        context_item["action"], **context_item.get("params", {})
-                    ),
+                    container_update(context_item["action"], **context_item.get("params", {})),
                 )
             )
         if context_menu:
@@ -127,8 +129,7 @@ def remove_from_library(params):
 
 
 def clear_library(params):
-    from lib.utils.views.library import clear_library_items
-    from lib.utils.views.library import show_library_items
+    from lib.utils.views.library import clear_library_items, show_library_items
 
     kodilog(f"clear_library action invoked with params={params}")
 
@@ -142,8 +143,9 @@ def clear_library(params):
 
 
 def add_to_library(params):
-    from lib.utils.general.utils import add_to_library as add_lib
     import json
+
+    from lib.utils.general.utils import add_to_library as add_lib
 
     data = params.get("data")
     if data:
@@ -188,9 +190,7 @@ def search_direct(params):
 
     for item_mode, text in cache.get_list(key=mode):
         list_item = make_list_item(label=f"[I]{text}[/I]")
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
-        )
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
         list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [

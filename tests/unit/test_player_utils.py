@@ -12,9 +12,9 @@ def test_jacktorr_playback_saves_metadata_under_infohash_and_magnet_hash():
         "info_hash": "SOURCEHASH",
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), \
-         patch("lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"), \
-         patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
         url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
 
     assert url.startswith("plugin://plugin.video.jacktorr/play_magnet")
@@ -35,9 +35,9 @@ def test_jacktorr_playback_deduplicates_matching_infohash_and_magnet_hash():
         "info_hash": "SAMEHASH",
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), \
-         patch("lib.utils.general.utils.get_info_hash_from_magnet", return_value="SAMEHASH"), \
-         patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="SAMEHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
         utils.get_jacktorr_url("magnet:?xt=urn:btih:SAMEHASH", "", data=data)
 
     mock_save.assert_called_once()

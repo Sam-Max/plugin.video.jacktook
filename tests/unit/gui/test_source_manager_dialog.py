@@ -1,8 +1,6 @@
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 
 class FakeAddon:
     def __init__(self, key, name):
@@ -74,7 +72,12 @@ class TestOpenSourceManagerDialog:
         ],
     )
     def test_stremio_addons_included_when_enabled(
-        self, mock_get_addons, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
+        self,
+        mock_get_addons,
+        mock_cache,
+        mock_listitem,
+        mock_dialog_cls,
+        mock_get_setting,
     ):
         def setting_side_effect(key):
             return key == "stremio_enabled"
@@ -200,7 +203,12 @@ class TestOpenSourceManagerDialog:
         return_value=[FakeAddon("addon1|url1", "Addon One")],
     )
     def test_stremio_addon_cache_key_format(
-        self, mock_get_addons, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
+        self,
+        mock_get_addons,
+        mock_cache,
+        mock_listitem,
+        mock_dialog_cls,
+        mock_get_setting,
     ):
         def setting_side_effect(key):
             return key == "stremio_enabled"
@@ -228,6 +236,7 @@ class TestOpenSourceManagerDialog:
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
         """When no prior selection exists, all enabled sources should be preselected."""
+
         def setting_side_effect(key):
             return key in ("jackett_enabled", "prowlarr_enabled")
 
@@ -258,6 +267,7 @@ class TestOpenSourceManagerDialog:
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
         """A source enabled in settings but missing from cache should be auto-selected."""
+
         def setting_side_effect(key):
             return key in ("jackett_enabled", "prowlarr_enabled")
 

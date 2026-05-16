@@ -1,5 +1,6 @@
 import re
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
+
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import convert_size_to_bytes, translation
 
@@ -24,14 +25,14 @@ class Elfhosted(BaseClient):
             else:
                 self.handle_exception(translation(30231))
                 return None
-            
+
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
                 return
             response = self.parse_response(res)
             return response
         except Exception as e:
-            self.handle_exception(f"{translation(30231)}: {str(e)}")
+            self.handle_exception(f"{translation(30231)}: {e!s}")
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
         res = res.json()

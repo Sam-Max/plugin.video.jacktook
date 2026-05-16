@@ -1,14 +1,18 @@
 import json
-from datetime import datetime, timedelta
 import os
 import threading
+from datetime import datetime, timedelta
 from typing import List, Optional
+from urllib import parse
+
+import xbmc
+from xbmcplugin import addDirectoryItem
 
 from lib.api.mdblist.mdblist import MDblistAPI
 from lib.api.tmdbv3api.as_obj import AsObj
-from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.api.tmdbv3api.objs.collection import Collection
+from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.episode import Episode
 from lib.api.tmdbv3api.objs.find import Find
 from lib.api.tmdbv3api.objs.genre import Genre
@@ -16,29 +20,22 @@ from lib.api.tmdbv3api.objs.movie import Movie
 from lib.api.tmdbv3api.objs.person import Person
 from lib.api.tmdbv3api.objs.search import Search
 from lib.api.tmdbv3api.objs.season import Season
-from lib.api.tmdbv3api.objs.discover import Discover
 from lib.api.tmdbv3api.objs.trending import Trending
 from lib.api.tmdbv3api.objs.tv import TV
-
+from lib.api.tmdbv3api.tmdb import TMDb
+from lib.db.cached import cache
+from lib.utils.general.utils import execute_thread_pool
+from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
     action_url_run,
     container_update,
-    execute_builtin,
     get_setting,
-    kodilog,
     kodi_play_media,
+    kodilog,
     translation,
 )
-from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
-from lib.utils.general.utils import execute_thread_pool
-from urllib import parse
-
-from lib.db.cached import cache
-import xbmc
-from xbmcplugin import addDirectoryItem
-
 
 LANGUAGES = [
     "ar-AE",
@@ -280,14 +277,10 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "search_multi": lambda p: Search().multi(p["query"], page=p["page"]),
         "search_collections": lambda p: Search().collections(p["query"], p["page"]),
         "search_people": lambda p: Search().people(p["query"], p["page"]),
-        "movie_details": lambda p: Movie().details(
-            p["id"] if isinstance(p, dict) else p
-        ),
+        "movie_details": lambda p: Movie().details(p["id"] if isinstance(p, dict) else p),
         "tv_details": lambda p: TV().details(p["id"] if isinstance(p, dict) else p),
         "season_details": lambda p: Season().details(p["id"], p["season"]),
-        "episode_details": lambda p: Episode().details(
-            p["id"], p["season"], p["episode"]
-        ),
+        "episode_details": lambda p: Episode().details(p["id"], p["season"], p["episode"]),
         "movie_genres": lambda _: Genre().movie_list(),
         "show_genres": lambda _: Genre().tv_list(),
         "discover_movie": lambda p: Discover().discover_movies(p),
@@ -302,42 +295,24 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "popular_people": lambda p: Person().popular(page=p),
         "trending_people": lambda p: Trending().person_week(page=p),
         "latest_people": lambda p: Person().latest(),
-        "person_details": lambda p: Person().details(
-            p["id"] if isinstance(p, dict) else p
-        ),
+        "person_details": lambda p: Person().details(p["id"] if isinstance(p, dict) else p),
         "person_credits": lambda p: Person().combined_credits(
             p["id"] if isinstance(p, dict) else p
         ),
-        "person_tv_credits": lambda p: Person().tv_credits(
-            p["id"] if isinstance(p, dict) else p
-        ),
+        "person_tv_credits": lambda p: Person().tv_credits(p["id"] if isinstance(p, dict) else p),
         "person_movie_credits": lambda p: Person().movie_credits(
             p["id"] if isinstance(p, dict) else p
         ),
         "tv_credits": lambda p: TV().credits(p["id"] if isinstance(p, dict) else p),
-        "movie_credits": lambda p: Movie().credits(
-            p["id"] if isinstance(p, dict) else p
-        ),
-        "person_ids": lambda p: Person().external_ids(
-            p["id"] if isinstance(p, dict) else p
-        ),
-        "find_by_tvdb": lambda p: Find().find_by_tvdb_id(
-            p["id"] if isinstance(p, dict) else p
-        ),
-        "find_by_imdb_id": lambda p: Find().find_by_imdb_id(
-            p["id"] if isinstance(p, dict) else p
-        ),
+        "movie_credits": lambda p: Movie().credits(p["id"] if isinstance(p, dict) else p),
+        "person_ids": lambda p: Person().external_ids(p["id"] if isinstance(p, dict) else p),
+        "find_by_tvdb": lambda p: Find().find_by_tvdb_id(p["id"] if isinstance(p, dict) else p),
+        "find_by_imdb_id": lambda p: Find().find_by_imdb_id(p["id"] if isinstance(p, dict) else p),
         "anime_year": lambda p: TmdbAnime().anime_year(p),
         "anime_genres": lambda p: TmdbAnime().anime_genres(p),
-        "collection_details": lambda p: Collection().details(
-            p["id"] if isinstance(p, dict) else p
-        ),
-        "collection_images": lambda p: Collection().images(
-            p["id"] if isinstance(p, dict) else p
-        ),
-        "tv_recommendations": lambda p: TV().recommendations(
-            tv_id=p["id"], page=p["page"]
-        ),
+        "collection_details": lambda p: Collection().details(p["id"] if isinstance(p, dict) else p),
+        "collection_images": lambda p: Collection().images(p["id"] if isinstance(p, dict) else p),
+        "tv_recommendations": lambda p: TV().recommendations(tv_id=p["id"], page=p["page"]),
         "movie_recommendations": lambda p: Movie().recommendations(
             movie_id=p["id"], page=p["page"]
         ),
@@ -360,9 +335,7 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         cache.set(
             key=identifier,
             data=data,
-            expires=timedelta(
-                hours=get_cache_expiration() if is_cache_enabled() else 0
-            ),
+            expires=timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         )
 
     return data
@@ -397,9 +370,7 @@ def mdblist_get(path, params=None) -> Optional[List]:
         cache.set(
             key=identifier,
             data=data,
-            expires=timedelta(
-                hours=get_cache_expiration() if is_cache_enabled() else 0
-            ),
+            expires=timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         )
 
     return data
@@ -425,11 +396,11 @@ def get_movie_keywords(tmdb_id):
     try:
         res = tmdb_get("movie_keywords", tmdb_id)
         keywords = []
-        for k in getattr(res, 'keywords', []):
+        for k in getattr(res, "keywords", []):
             # Support both AsObj (runtime) and dict (tests)
-            name = getattr(k, 'name', None)
+            name = getattr(k, "name", None)
             if not name and isinstance(k, dict):
-                name = k.get('name')
+                name = k.get("name")
             if name:
                 keywords.append(name)
         return keywords
@@ -445,9 +416,7 @@ def filter_anime_by_keyword(results, mode):
 
     def check_and_append(item, filtered_anime, list_lock):
         keywords_data = anime_api.tmdb_keywords(mode, item["id"])
-        keywords = (
-            keywords_data["results"] if mode == "tv" else keywords_data["keywords"]
-        )
+        keywords = keywords_data["results"] if mode == "tv" else keywords_data["keywords"]
         for keyword in keywords:
             if keyword["id"] == 210024:
                 with list_lock:
@@ -469,9 +438,7 @@ def _build_trailer_ids(ids, title=None, title_key="title"):
 
 def build_play_trailer_context_menu_item(ids, media_type, title=None, title_key="title"):
     trailer_ids = _build_trailer_ids(ids=ids, title=title, title_key=title_key)
-    if not any(
-        trailer_ids.get(key) for key in ("trailer_yt_id", "trailer_url", "tmdb_id")
-    ):
+    if not any(trailer_ids.get(key) for key in ("trailer_yt_id", "trailer_url", "tmdb_id")):
         return None
 
     params = {

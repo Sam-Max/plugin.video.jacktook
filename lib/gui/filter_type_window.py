@@ -1,4 +1,5 @@
 import xbmcgui
+
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.utils import translation
 

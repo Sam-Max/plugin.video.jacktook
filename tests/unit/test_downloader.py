@@ -15,7 +15,9 @@ def _load_downloader_module():
 def test_normalize_file_name_preserves_valid_video_extension():
     downloader = _load_downloader_module()
 
-    assert downloader.normalize_file_name("Movie.mp4", "https://example.com/Movie.mkv") == "Movie.mp4"
+    assert (
+        downloader.normalize_file_name("Movie.mp4", "https://example.com/Movie.mkv") == "Movie.mp4"
+    )
 
 
 def test_normalize_file_name_uses_url_extension_when_title_has_none():
@@ -79,12 +81,17 @@ def test_handle_download_file_passes_url_to_normalizer():
 
 # --- Tests for get_destination_path ---
 
+
 def test_get_destination_path_flat_when_disabled():
     downloader = _load_downloader_module()
 
-    with patch.object(downloader, "get_setting", side_effect=lambda key, default=False: False if key == "organize_downloads" else default), patch.object(
-        downloader, "translatePath", return_value="/downloads"
-    ), patch.object(downloader.xbmcvfs, "mkdirs") as mock_mkdirs:
+    with patch.object(
+        downloader,
+        "get_setting",
+        side_effect=lambda key, default=False: False if key == "organize_downloads" else default,
+    ), patch.object(downloader, "translatePath", return_value="/downloads"), patch.object(
+        downloader.xbmcvfs, "mkdirs"
+    ) as mock_mkdirs:
         result = downloader.get_destination_path({"title": "Movie", "mode": "movies"})
 
     assert result == "/downloads"
@@ -167,6 +174,7 @@ def test_get_destination_path_fallback_to_title_for_show_name():
 
 # --- Tests for get_download_metadata ---
 
+
 def test_get_download_metadata_returns_defaults_when_missing():
     downloader = _load_downloader_module()
 
@@ -186,14 +194,16 @@ def test_get_download_metadata_reads_existing_json():
         with open(meta_path, "w") as f:
             json.dump({"status": "paused", "progress": 42, "title": "Video"}, f)
 
-        with patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
-             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
+        with patch.object(
+            downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)
+        ), patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
             result = downloader.get_download_metadata(path)
 
     assert result == {"status": "paused", "progress": 42, "title": "Video"}
 
 
 # --- Tests for handle_pause_download ---
+
 
 def test_handle_pause_download_sets_cancel_flag_and_metadata():
     downloader = _load_downloader_module()
@@ -204,18 +214,19 @@ def test_handle_pause_download_sets_cancel_flag_and_metadata():
         with open(meta_path, "w") as f:
             json.dump({"status": "downloading", "progress": 50, "title": "Video"}, f)
 
-        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, \
-             patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
-             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, patch.object(
+            downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)
+        ), patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
             downloader.handle_pause_download({"file_path": json.dumps(path)})
 
         cache_set.assert_called_once_with(path, True)
-        with open(meta_path, "r") as f:
+        with open(meta_path) as f:
             meta = json.load(f)
         assert meta["status"] == "paused"
 
 
 # --- Tests for resume_download ---
+
 
 def test_resume_download_clears_flag_and_starts_downloader():
     downloader = _load_downloader_module()
@@ -226,15 +237,21 @@ def test_resume_download_clears_flag_and_starts_downloader():
         open(path, "a").close()
         with open(meta_path, "w") as f:
             json.dump(
-                {"status": "paused", "progress": 50, "title": "Video", "url": "https://example.com/video.mkv"},
+                {
+                    "status": "paused",
+                    "progress": 50,
+                    "title": "Video",
+                    "url": "https://example.com/video.mkv",
+                },
                 f,
             )
 
         downloader_instance = MagicMock()
-        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, \
-             patch.object(downloader, "Downloader", return_value=downloader_instance) as downloader_cls, \
-             patch.object(downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)), \
-             patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
+        with patch.object(downloader.cancel_flag_cache, "set") as cache_set, patch.object(
+            downloader, "Downloader", return_value=downloader_instance
+        ) as downloader_cls, patch.object(
+            downloader.xbmcvfs, "exists", side_effect=lambda p: os.path.exists(p)
+        ), patch.object(downloader, "open_file", side_effect=lambda p, m="r": open(p, m)):
             downloader.resume_download({"file_path": json.dumps(path)})
 
         cache_set.assert_called_once_with(path, False)
@@ -247,6 +264,7 @@ def test_resume_download_clears_flag_and_starts_downloader():
 
 
 # --- Tests for download_video with organization ---
+
 
 def test_get_destination_path_tv_with_custom_folder_names():
     downloader = _load_downloader_module()
@@ -298,16 +316,25 @@ def test_download_video_uses_organized_destination():
     ) as mock_get_dest, patch.object(
         downloader, "handle_download_file"
     ) as mock_handle, patch.object(downloader, "normalize_file_name", return_value="Movie.mkv"):
-        data = {"title": "Movie", "mode": "movies", "url": "https://example.com/Movie.mkv"}
+        data = {
+            "title": "Movie",
+            "mode": "movies",
+            "url": "https://example.com/Movie.mkv",
+        }
         downloader.download_video({"data": json.dumps(data)})
 
     mock_get_dest.assert_called_once_with(data)
     mock_handle.assert_called_once_with(
-        {"destination": "/downloads/Movies", "file_name": "Movie", "url": "https://example.com/Movie.mkv"}
+        {
+            "destination": "/downloads/Movies",
+            "file_name": "Movie",
+            "url": "https://example.com/Movie.mkv",
+        }
     )
 
 
 # --- Tests for Downloader registry integration ---
+
 
 def test_downloader_accepts_registry_id():
     downloader = _load_downloader_module()
@@ -336,9 +363,14 @@ def test_start_download_updates_registry_per_chunk():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",
@@ -349,7 +381,12 @@ def test_start_download_updates_registry_per_chunk():
     dl.file_size = 3 * 1024 * 1024  # 3 MB
 
     mock_response = MagicMock()
-    mock_response.read.side_effect = [b"x" * (1024 * 1024), b"x" * (1024 * 1024), b"x" * (1024 * 1024), b""]
+    mock_response.read.side_effect = [
+        b"x" * (1024 * 1024),
+        b"x" * (1024 * 1024),
+        b"x" * (1024 * 1024),
+        b"",
+    ]
     mock_response.headers = {"Content-Length": str(3 * 1024 * 1024)}
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -399,9 +436,9 @@ def test_start_download_persists_live_metrics_to_metadata_when_paused():
 
         with patch.object(downloader, "KodiProgressHandler") as mock_handler_cls, patch.object(
             downloader, "urlopen", return_value=mock_response
+        ), patch.object(downloader.xbmcvfs, "exists", return_value=False), patch.object(
+            downloader.xbmcvfs, "rename"
         ), patch.object(
-            downloader.xbmcvfs, "exists", return_value=False
-        ), patch.object(downloader.xbmcvfs, "rename"), patch.object(
             downloader, "open_file", side_effect=lambda p, m="r": open(p, m)
         ), patch.object(downloader.time, "time", side_effect=[0, 1, 1]):
             mock_handler = MagicMock()
@@ -411,7 +448,7 @@ def test_start_download_persists_live_metrics_to_metadata_when_paused():
             dl.monitor.abortRequested.return_value = False
             dl._start_download()
 
-        with open(dl.meta_path, "r") as f:
+        with open(dl.meta_path) as f:
             meta = json.load(f)
 
     assert meta["status"] == "paused"
@@ -426,9 +463,14 @@ def test_start_download_sets_registry_status_paused_on_cancel():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",
@@ -476,9 +518,14 @@ def test_start_download_respects_registry_cancel_flag():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    entry = manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    entry = manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
     entry.cancel_flag = True
 
     dl = downloader.Downloader(
@@ -520,9 +567,14 @@ def test_start_download_sets_registry_status_error_on_exception():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",
@@ -554,9 +606,14 @@ def test_update_registry_calculates_speed_and_eta():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",
@@ -580,9 +637,14 @@ def test_update_registry_speed_zero_when_no_start_time():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",
@@ -604,9 +666,14 @@ def test_update_registry_eta_zero_when_download_complete():
     downloader = _load_downloader_module()
 
     from lib.download_manager import DownloadManager
+
     manager = DownloadManager()
     manager.clear()
-    manager.register(name="Movie.mkv", dest_path="/downloads/Movie.mkv", url="https://example.com/Movie.mkv")
+    manager.register(
+        name="Movie.mkv",
+        dest_path="/downloads/Movie.mkv",
+        url="https://example.com/Movie.mkv",
+    )
 
     dl = downloader.Downloader(
         url="https://example.com/Movie.mkv",

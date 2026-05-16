@@ -1,9 +1,10 @@
 import re
+from typing import Any, Callable, List, Optional, Tuple
 from urllib.parse import quote
+
 from lib.clients.base import BaseClient, TorrentStream
+from lib.utils.general.utils import Indexer, IndexerType
 from lib.utils.kodi.utils import kodilog
-from lib.utils.general.utils import IndexerType, Indexer
-from typing import List, Optional, Any, Callable, Tuple
 
 VIDEO_EXTENSIONS = (
     "m4v,3g2,3gp,nsv,tp,ts,ty,pls,rm,rmvb,mpd,ifo,mov,qt,divx,xvid,bivx,vob,nrg,img,iso,udf,pva,wmv,asf,asx,ogm,m2v,avi,bin,dat,mpg,mpeg,mp4,mkv,"
@@ -31,9 +32,7 @@ SEARCH_PARAMS = {
 
 
 class Easynews(BaseClient):
-    def __init__(
-        self, user: str, password: str, timeout: int, notification: Callable
-    ) -> None:
+    def __init__(self, user: str, password: str, timeout: int, notification: Callable) -> None:
         super().__init__("https://members.easynews.com", notification)
         self.user = user
         self.password = password
@@ -107,9 +106,7 @@ class Easynews(BaseClient):
                 if re.match(r"^\d+s", duration) or re.match(r"^[0-5]m", duration):
                     continue
 
-                url = down_url + quote(
-                    f"/{dl_farm}/{dl_port}/{post_hash}{ext}/{post_title}{ext}"
-                )
+                url = down_url + quote(f"/{dl_farm}/{dl_port}/{post_hash}{ext}/{post_title}{ext}")
                 title = post_title
 
                 results.append(
@@ -182,6 +179,7 @@ class Easynews(BaseClient):
 
     def get_info(self) -> None:
         from datetime import datetime
+
         from lib.utils.kodi.utils import dialog_text, kodilog, translation
 
         try:

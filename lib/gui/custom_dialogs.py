@@ -1,5 +1,10 @@
 import json
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
+
+import xbmc
+import xbmcgui
+from xbmcgui import WindowXML, WindowXMLDialog
 
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
@@ -7,15 +12,10 @@ from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.play_next_window import PlayNext
 from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
+from lib.gui.search_status_window import SearchStatusWindow, SearchTaskManager
+from lib.gui.source_select import SourceSelect
 from lib.player import JacktookPLayer
 from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, build_url, kodilog, translation
-from lib.gui.source_select import SourceSelect
-from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
-from concurrent.futures import ThreadPoolExecutor
-
-from xbmcgui import WindowXMLDialog, WindowXML
-import xbmcgui
-import xbmc
 
 
 class CustomWindow(WindowXML):
@@ -115,9 +115,7 @@ _mock_information = {
 }
 
 
-def source_select(
-    item_info: Dict[str, str], xml_file: str, sources: List[TorrentStream]
-) -> bool:
+def source_select(item_info: Dict[str, str], xml_file: str, sources: List[TorrentStream]) -> bool:
     window = SourceSelect(
         xml_file,
         ADDON_PATH,
@@ -154,7 +152,7 @@ def run_next_dialog(params):
 
             if action == "next_episode":
                 xbmc.log(
-                    f"[JACKTOOK] Next Episode triggered from dialog.",
+                    "[JACKTOOK] Next Episode triggered from dialog.",
                     xbmc.LOGINFO,
                 )
                 player = xbmc.Player()
@@ -183,6 +181,7 @@ def run_next_dialog(params):
                 id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
                 if id_value is not None:
                     from lib.utils.player.utils import get_autoscrape_cache_key
+
                     cache_key = get_autoscrape_cache_key(id_value, season, next_episode)
                     cached_data = cache.get(cache_key)
                     if cached_data:
@@ -332,8 +331,6 @@ def search_status_mock():
         manager.submit_task("Stremio", "stremio", dummy_task, 8, False, 20)
         manager.submit_task("Prowlarr", "prowlarr", dummy_task, 4, True, 0)
 
-        window = SearchStatusWindow(
-            "search_status.xml", ADDON_PATH, task_manager=manager
-        )
+        window = SearchStatusWindow("search_status.xml", ADDON_PATH, task_manager=manager)
         window.doModal()
         del window

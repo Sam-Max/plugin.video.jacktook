@@ -1,10 +1,11 @@
 import os
+import xml.etree.ElementTree as ET
 from urllib.parse import unquote, urlparse
+
 import requests
 from requests.auth import HTTPBasicAuth
-import xml.etree.ElementTree as ET
-from lib.utils.kodi.utils import kodilog
 
+from lib.utils.kodi.utils import kodilog
 
 VIDEO_EXTS = {
     ".mkv",
@@ -24,9 +25,7 @@ TEXT_EXTS = {".txt", ".log", ".nfo", ".xml", ".json", ".md", ".srt"}
 
 
 class WebDAVClient:
-    def __init__(
-        self, hostname, username=None, password=None, port=None, remote_path=None
-    ):
+    def __init__(self, hostname, username=None, password=None, port=None, remote_path=None):
         self.username = username
         self.password = password
         kodilog(f"WebDAV Client initialized with hostname: {hostname}")
@@ -89,9 +88,7 @@ class WebDAVClient:
 
         headers = {"Depth": "1"}
         try:
-            r = requests.request(
-                "PROPFIND", url, headers=headers, auth=self.auth, timeout=15
-            )
+            r = requests.request("PROPFIND", url, headers=headers, auth=self.auth, timeout=15)
             r.raise_for_status()
         except requests.exceptions.RequestException as e:
             # Check if it's an HTTP error with a response
@@ -136,20 +133,14 @@ class WebDAVClient:
 
                 # Build Auth URL
                 creds = (
-                    f"{self.username}:{self.password}@"
-                    if self.username and self.password
-                    else ""
+                    f"{self.username}:{self.password}@" if self.username and self.password else ""
                 )
-                clean_host = self.server_root.replace("http://", "").replace(
-                    "https://", ""
-                )
+                clean_host = self.server_root.replace("http://", "").replace("https://", "")
 
                 # Extract only the path from href to avoid issues with absolute URLs
                 # (e.g. server returning http://localhost:8080/...)
                 href_path = urlparse(href).path
-                file_url = (
-                    f"{self.scheme}://{creds}{clean_host}/{href_path.lstrip('/')}"
-                )
+                file_url = f"{self.scheme}://{creds}{clean_host}/{href_path.lstrip('/')}"
 
                 items.append(
                     {
@@ -171,9 +162,7 @@ class WebDAVClient:
         try:
             headers = {"Depth": "1"}
             kodilog(f"Testing connection to {url}")
-            r = requests.request(
-                "PROPFIND", url, headers=headers, auth=self.auth, timeout=10
-            )
+            r = requests.request("PROPFIND", url, headers=headers, auth=self.auth, timeout=10)
             r.raise_for_status()
 
             # Parse XML to make sure server responded properly
@@ -181,7 +170,7 @@ class WebDAVClient:
 
             return {
                 "success": True,
-                "message": f"WebDAV server reachable",
+                "message": "WebDAV server reachable",
             }
 
         except requests.exceptions.RequestException as e:

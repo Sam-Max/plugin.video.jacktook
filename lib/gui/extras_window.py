@@ -1,22 +1,22 @@
 import json
-import os
 import threading
-from lib.gui.base_window import BaseWindow
-from lib.utils.kodi.utils import (
-    ADDON_PATH,
-    kodilog,
-    execute_builtin,
-    notification,
-    get_setting,
-    build_url,
-    translation,
-)
-from lib.clients.tmdb.utils.utils import tmdb_get, LANGUAGES
+
+import xbmcgui
+
 from lib.api.fanart.fanart import get_fanart
 from lib.api.imdb.imdb_scraper import get_imdb_extras
+from lib.clients.tmdb.utils.utils import LANGUAGES, tmdb_get
+from lib.gui.base_window import BaseWindow
 from lib.utils.general.utils import truncate_text
-import xbmcgui
-import xbmc
+from lib.utils.kodi.utils import (
+    ADDON_PATH,
+    build_url,
+    execute_builtin,
+    get_setting,
+    kodilog,
+    notification,
+    translation,
+)
 
 
 class ExtrasWindow(BaseWindow):
@@ -193,11 +193,7 @@ class ExtrasWindow(BaseWindow):
             if genres:
                 genre_names = []
                 for g in genres:
-                    name = (
-                        g.get("name", "")
-                        if hasattr(g, "get")
-                        else getattr(g, "name", "")
-                    )
+                    name = g.get("name", "") if hasattr(g, "get") else getattr(g, "name", "")
                     if name:
                         genre_names.append(name)
                 if genre_names:
@@ -306,15 +302,9 @@ class ExtrasWindow(BaseWindow):
         if not self.tmdb_id:
             return
         try:
-            path = (
-                "movie_recommendations"
-                if self.media_type == "movie"
-                else "tv_recommendations"
-            )
+            path = "movie_recommendations" if self.media_type == "movie" else "tv_recommendations"
             data = tmdb_get(path, {"id": self.tmdb_id, "page": 1})
-            self.populate_media_list(
-                self.recommended_list_id, data, "recommended.number"
-            )
+            self.populate_media_list(self.recommended_list_id, data, "recommended.number")
         except Exception as e:
             kodilog(f"Error fetching recommended: {e}")
 
@@ -326,9 +316,7 @@ class ExtrasWindow(BaseWindow):
         try:
             path = "movie_similar" if self.media_type == "movie" else "tv_similar"
             data = tmdb_get(path, {"id": self.tmdb_id, "page": 1})
-            self.populate_media_list(
-                self.similar_list_id, data, "more_like_this.number"
-            )
+            self.populate_media_list(self.similar_list_id, data, "more_like_this.number")
         except Exception as e:
             kodilog(f"Error fetching similar: {e}")
 
@@ -337,11 +325,7 @@ class ExtrasWindow(BaseWindow):
     def fetch_ai_similar(self):
         if not self.tmdb_id:
             return
-        path = (
-            "movie_recommendations"
-            if self.media_type == "movie"
-            else "tv_recommendations"
-        )
+        path = "movie_recommendations" if self.media_type == "movie" else "tv_recommendations"
         data = tmdb_get(path, {"id": self.tmdb_id, "page": 2})
         self.populate_media_list(self.ai_similar_list_id, data, "ai_similar.number")
 
@@ -699,18 +683,14 @@ class ExtrasWindow(BaseWindow):
             # 2. IMDb Trivia
             try:
                 trivia = extras.get("trivia", [])
-                self._populate_text_panel(
-                    self.trivia_list_id, trivia, "imdb_trivia.number"
-                )
+                self._populate_text_panel(self.trivia_list_id, trivia, "imdb_trivia.number")
             except Exception as e:
                 kodilog(f"Error populating trivia: {e}")
 
             # 3. IMDb Goofs / Blunders
             try:
                 blunders = extras.get("blunders", [])
-                self._populate_text_panel(
-                    self.blunders_list_id, blunders, "imdb_blunders.number"
-                )
+                self._populate_text_panel(self.blunders_list_id, blunders, "imdb_blunders.number")
             except Exception as e:
                 kodilog(f"Error populating blunders: {e}")
 
@@ -755,14 +735,10 @@ class ExtrasWindow(BaseWindow):
                 if results:
                     for rev in results:
                         content = getattr(rev, "content", "") or rev.get("content", "")
-                        author = getattr(rev, "author", "") or rev.get(
-                            "author", "Unknown"
-                        )
+                        author = getattr(rev, "author", "") or rev.get("author", "Unknown")
                         if content:
                             reviews_list.append(f"[B]{author}[/B]\n{content}")
-            self._populate_text_panel(
-                self.reviews_list_id, reviews_list, "imdb_reviews.number"
-            )
+            self._populate_text_panel(self.reviews_list_id, reviews_list, "imdb_reviews.number")
         except Exception as e:
             kodilog(f"Error fetching TMDB reviews: {e}")
 
@@ -783,14 +759,10 @@ class ExtrasWindow(BaseWindow):
                     user = comment.get("user", {}).get("username", "Unknown")
                     if text:
                         comments_list.append(f"[B]{user}[/B]\n{text}")
-            self._populate_text_panel(
-                self.comments_list_id, comments_list, "trakt_comments.number"
-            )
+            self._populate_text_panel(self.comments_list_id, comments_list, "trakt_comments.number")
         except Exception as e:
             kodilog(f"Error fetching trakt comments: {e}")
-            self._populate_text_panel(
-                self.comments_list_id, [], "trakt_comments.number"
-            )
+            self._populate_text_panel(self.comments_list_id, [], "trakt_comments.number")
 
     def _populate_text_panel(self, list_id, string_list, count_property):
         try:
@@ -832,9 +804,7 @@ class ExtrasWindow(BaseWindow):
             try:
                 from lib.api.trakt.trakt import TraktAPI
 
-                TraktAPI().lists.add_to_watchlist(
-                    self.media_type, {"tmdb": self.tmdb_id}
-                )
+                TraktAPI().lists.add_to_watchlist(self.media_type, {"tmdb": self.tmdb_id})
                 notification(translation(90409))
             except Exception as e:
                 kodilog(f"Error modifying trakt watchlist: {e}")
@@ -845,13 +815,9 @@ class ExtrasWindow(BaseWindow):
                 from lib.api.trakt.trakt import TraktAPI
 
                 if self.media_type == "movie":
-                    TraktAPI().lists.mark_as_watched(
-                        "movie", None, None, {"tmdb": self.tmdb_id}
-                    )
+                    TraktAPI().lists.mark_as_watched("movie", None, None, {"tmdb": self.tmdb_id})
                 else:
-                    TraktAPI().lists.mark_as_watched(
-                        "show", None, None, {"tmdb": self.tmdb_id}
-                    )
+                    TraktAPI().lists.mark_as_watched("show", None, None, {"tmdb": self.tmdb_id})
                 notification(translation(90411))
             except Exception as e:
                 kodilog(f"Error marking watched on trakt: {e}")

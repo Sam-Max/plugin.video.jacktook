@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Jacktook addon router — lazy-loading dispatcher.
 
@@ -6,9 +5,9 @@ Uses prefix-based routing with lazy imports to avoid loading all addon
 modules on every invocation. Only the modules needed for the current
 action are imported.
 """
+
 import sys
 from urllib import parse
-
 
 # ---------------------------------------------------------------------------
 # Action sets for set-based lookups
@@ -119,7 +118,10 @@ def _is_stremio_action(action):
 
 
 def _is_tmdb_action(action):
-    return action in ("tmdb_search_modes", "tmdb_episode_search_modes") or action.startswith(
+    return action in (
+        "tmdb_search_modes",
+        "tmdb_episode_search_modes",
+    ) or action.startswith(
         (
             "handle_tmdb",
             "search_tmdb",
@@ -222,13 +224,13 @@ def _route_stremio(action, params):
         "stremio_bypass_addons_select",
     ):
         from lib.clients.stremio.addon_selection import (
-            stremio_toggle_addons,
-            stremio_toggle_catalogs,
-            stremio_toggle_tv_addons,
-            stremio_filtered_selection,
             add_custom_stremio_addon,
             remove_custom_stremio_addon,
             stremio_bypass_addons_select,
+            stremio_filtered_selection,
+            stremio_toggle_addons,
+            stremio_toggle_catalogs,
+            stremio_toggle_tv_addons,
         )
 
         actions = {
@@ -388,11 +390,11 @@ def _route_trakt(action, params):
         actions[action](params)
     else:
         from lib.navigation import (
+            list_trakt_page,
             trakt_auth,
             trakt_auth_revoke,
             trakt_group_menu,
             trakt_list_content,
-            list_trakt_page,
         )
 
         actions = {
@@ -409,25 +411,25 @@ def _route_trakt(action, params):
 
 def _route_debrid(action, params):
     from lib.navigation import (
-        rd_auth,
-        rd_remove_auth,
         ad_auth,
         ad_remove_auth,
-        real_debrid_info,
         alldebrid_info,
-        debrider_auth,
-        debrider_remove_auth,
-        debrider_info,
-        get_rd_downloads,
-        get_tb_downloads,
         cloud,
         cloud_details,
+        debrider_auth,
+        debrider_info,
+        debrider_remove_auth,
+        easynews_info,
+        get_rd_downloads,
+        get_tb_downloads,
         pm_auth,
         pm_remove_auth,
+        rd_auth,
+        rd_remove_auth,
+        real_debrid_info,
         tb_auth,
         tb_remove_auth,
         torbox_info,
-        easynews_info,
     )
 
     actions = {
@@ -461,9 +463,9 @@ def _route_telegram(action, params):
         telegram_menu(params)
     else:
         from lib.clients.jackgram.utils import (
-            list_jackgram_raw_files,
             list_jackgram_latest_movies,
             list_jackgram_latest_series,
+            list_jackgram_raw_files,
             list_jackgram_title_sources,
         )
 
@@ -481,10 +483,10 @@ def _route_telegram(action, params):
 def _route_torrserver(action, params):
     if action in ("torrent_action", "torrent_files", "display_picture", "display_text"):
         from lib.utils.torrent.torrserver_utils import (
-            torrent_action,
-            torrent_files,
             display_picture,
             display_text,
+            torrent_action,
+            torrent_files,
         )
 
         actions = {
@@ -496,8 +498,8 @@ def _route_torrserver(action, params):
         actions[action](params)
     elif action in ("download_torrent_subtitles", "download_and_play_subtitles"):
         from lib.utils.torrent.torrserver_utils import (
-            download_torrent_subtitles,
             download_and_play_subtitles,
+            download_torrent_subtitles,
         )
 
         actions = {
@@ -517,10 +519,10 @@ def _route_torrserver(action, params):
 
 def _route_webdav(action, params):
     from lib.clients.webdav.client import (
-        list_webdav,
-        webdav_provider_test,
         display_text_webdav,
+        list_webdav,
         show_picture_webdav,
+        webdav_provider_test,
     )
 
     actions = {
@@ -544,14 +546,14 @@ def _route_downloads(action, params):
         "downloads_viewer",
     ):
         from lib.downloader import (
-            download_video,
-            handle_download_file,
-            handle_cancel_download,
-            handle_pause_download,
-            handle_delete_file,
-            resume_download,
             download_cloud_file,
+            download_video,
             downloads_viewer,
+            handle_cancel_download,
+            handle_delete_file,
+            handle_download_file,
+            handle_pause_download,
+            resume_download,
         )
 
         actions = {
@@ -595,14 +597,14 @@ def _route_mdblist(action, params):
 def _route_cache(action, params):
     from lib.navigation import (
         clear_all_cached,
-        clear_trakt_cache,
-        clear_tmdb_cache,
-        clear_stremio_cache,
-        clear_debrid_cache,
-        clear_mdblist_cache,
         clear_database_cache,
+        clear_debrid_cache,
         clear_history,
+        clear_mdblist_cache,
         clear_search_history,
+        clear_stremio_cache,
+        clear_tmdb_cache,
+        clear_trakt_cache,
     )
 
     actions = {
@@ -656,10 +658,10 @@ def _route_gui(action, params):
         del window
     else:
         from lib.navigation import (
-            test_source_select,
-            test_run_next,
-            test_resume_dialog,
             test_download_dialog,
+            test_resume_dialog,
+            test_run_next,
+            test_source_select,
         )
 
         actions = {
@@ -720,55 +722,55 @@ def _route_core(action, params):
         delete_last_title_entry(params)
     else:
         from lib.navigation import (
-            tv_shows_items,
-            movies_items,
-            trakt_group_menu,
-            direct_menu,
-            search_menu,
-            anime_menu,
-            anime_item,
-            anime_search,
-            animation_menu,
+            add_to_library,
+            addon_update,
             animation_item,
-            tv_menu,
+            animation_menu,
+            anime_item,
+            anime_menu,
+            anime_search,
+            choose_view,
+            clear_library,
+            continue_watching_menu,
+            direct_menu,
+            donate,
+            downgrade_addon,
+            easynews_info,
+            export_settings_backup,
+            factory_reset,
+            files_history,
+            history_menu,
+            kodi_logs,
+            library_calendar,
+            library_menu,
+            library_movies,
+            library_shows,
+            movies_items,
+            next_page_anime,
+            open_burst_config,
+            play_autoscraped,
+            play_from_pack,
+            play_media,
+            play_trailer,
+            play_url,
+            remove_from_continue_watching,
+            remove_from_library,
+            reset_all_settings,
+            reset_views,
+            restore_settings_backup,
+            save_view,
             search,
             search_direct,
             search_item,
-            next_page_anime,
-            play_media,
-            play_autoscraped,
-            play_from_pack,
-            play_trailer,
-            play_url,
-            settings_menu,
+            search_menu,
             settings,
-            export_settings_backup,
-            restore_settings_backup,
-            reset_all_settings,
-            factory_reset,
-            history_menu,
-            files_history,
-            titles_history,
-            titles_calendar,
-            library_menu,
-            continue_watching_menu,
-            library_shows,
-            library_movies,
-            library_calendar,
-            remove_from_library,
-            clear_library,
-            remove_from_continue_watching,
-            add_to_library,
-            donate,
-            addon_update,
-            downgrade_addon,
+            settings_menu,
             show_changelog,
-            open_burst_config,
-            kodi_logs,
-            easynews_info,
-            choose_view,
-            save_view,
-            reset_views,
+            titles_calendar,
+            titles_history,
+            trakt_group_menu,
+            tv_menu,
+            tv_shows_items,
             views_menu,
         )
 

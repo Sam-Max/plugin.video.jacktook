@@ -1,4 +1,5 @@
 import re
+
 import requests
 
 
@@ -37,13 +38,9 @@ def extract_season(res):
                 if name is not None
             ]
         else:
-            s_ids += [
-                re.findall(regex, name, re.IGNORECASE) for name in res.get("title")
-            ]
+            s_ids += [re.findall(regex, name, re.IGNORECASE) for name in res.get("title")]
 
-        s_ids += [
-            re.findall(regex, name, re.IGNORECASE) for name in res.get("synonyms")
-        ]
+        s_ids += [re.findall(regex, name, re.IGNORECASE) for name in res.get("synonyms")]
 
     s_ids = [s[0] for s in s_ids if s]
 
@@ -52,9 +49,7 @@ def extract_season(res):
         cour = False
         if isinstance(res.get("title"), dict):
             for lang, name in res.get("title").items():
-                if name is not None and (
-                    " part " in name.lower() or " cour " in name.lower()
-                ):
+                if name is not None and (" part " in name.lower() or " cour " in name.lower()):
                     cour = True
                     break
             if not cour:
@@ -63,23 +58,15 @@ def extract_season(res):
                     for lang, name in res.get("title").items()
                     if name is not None
                 ]
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE)
-                    for name in res.get("synonyms")
-                ]
+                s_ids += [re.findall(regex, name, re.IGNORECASE) for name in res.get("synonyms")]
         else:
             for name in res.get("title"):
                 if " part " in name.lower() or " cour " in name.lower():
                     cour = True
                     break
             if not cour:
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE) for name in res.get("title")
-                ]
-                s_ids += [
-                    re.findall(regex, name, re.IGNORECASE)
-                    for name in res.get("synonyms")
-                ]
+                s_ids += [re.findall(regex, name, re.IGNORECASE) for name in res.get("title")]
+                s_ids += [re.findall(regex, name, re.IGNORECASE) for name in res.get("synonyms")]
         s_ids = [s[0] for s in s_ids if s and int(s[0]) < 20]
 
     return s_ids

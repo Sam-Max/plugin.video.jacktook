@@ -18,13 +18,15 @@ class TestDownloadTorrentSubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-              patch.object(module, "notification") as mock_notification, \
-              patch.object(module, "ADDON_PROFILE_PATH", "/addon/profile"), \
-              patch.object(module.os.path, "exists", return_value=True), \
-              patch.object(module, "get_torrserver_api") as mock_api, \
-              patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-              patch.object(module.xbmc, "Player") as MockPlayer:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "notification"
+        ) as mock_notification, patch.object(
+            module, "ADDON_PROFILE_PATH", "/addon/profile"
+        ), patch.object(module.os.path, "exists", return_value=True), patch.object(
+            module, "get_torrserver_api"
+        ) as mock_api, patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/sub.srt"]
             mock_manager.last_fetch_status = None
@@ -40,7 +42,17 @@ class TestDownloadTorrentSubtitles:
             module.download_torrent_subtitles(params)
 
             MockManager.assert_called_once_with(
-                data={"title": "Test Movie", "mode": "movies", "ids": {"imdb_id": "tt123", "tmdb_id": "", "tvdb_id": "", "original_id": ""}, "tv_data": {}},
+                data={
+                    "title": "Test Movie",
+                    "mode": "movies",
+                    "ids": {
+                        "imdb_id": "tt123",
+                        "tmdb_id": "",
+                        "tvdb_id": "",
+                        "original_id": "",
+                    },
+                    "tv_data": {},
+                },
                 notification=module.notification,
             )
             mock_manager.fetch_subtitles.assert_called_once_with(
@@ -59,8 +71,9 @@ class TestDownloadTorrentSubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "notification"
+        ) as mock_notification:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = None
             mock_manager.last_fetch_status = "not_found"
@@ -77,10 +90,11 @@ class TestDownloadTorrentSubtitles:
             "meta": json.dumps({"title": "Test Movie"}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "notification") as mock_notification, \
-             patch.object(module, "ADDON_PROFILE_PATH", "/addon/profile"), \
-             patch.object(module.os.path, "exists", return_value=True):
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "notification"
+        ) as mock_notification, patch.object(
+            module, "ADDON_PROFILE_PATH", "/addon/profile"
+        ), patch.object(module.os.path, "exists", return_value=True):
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = None
             mock_manager.last_fetch_status = "no_imdb"
@@ -89,7 +103,17 @@ class TestDownloadTorrentSubtitles:
             module.download_torrent_subtitles(params)
 
             MockManager.assert_called_once_with(
-                data={"title": "Test Movie", "mode": "movies", "ids": {"tmdb_id": "", "tvdb_id": "", "imdb_id": "", "original_id": ""}, "tv_data": {}},
+                data={
+                    "title": "Test Movie",
+                    "mode": "movies",
+                    "ids": {
+                        "tmdb_id": "",
+                        "tvdb_id": "",
+                        "imdb_id": "",
+                        "original_id": "",
+                    },
+                    "tv_data": {},
+                },
                 notification=module.notification,
             )
             mock_manager.fetch_subtitles.assert_called_once_with(
@@ -104,8 +128,9 @@ class TestDownloadTorrentSubtitles:
             "meta": json.dumps({}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "notification"
+        ) as mock_notification:
             module.download_torrent_subtitles(params)
 
             MockManager.assert_not_called()
@@ -122,11 +147,11 @@ class TestDownloadAndPlaySubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "get_setting", return_value=False), \
-             patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-             patch.object(module.xbmc, "Player") as MockPlayer, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "get_setting", return_value=False
+        ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/sub.srt"]
             mock_manager.last_fetch_status = None
@@ -142,12 +167,12 @@ class TestDownloadAndPlaySubtitles:
             playback_url = "plugin://plugin.video.jacktorr/buffer_and_play?info_hash=abc123&file_id=1&path=movie.mkv"
             MockListItem.assert_called_once_with(label="Test Movie", path=playback_url)
             mock_listitem.setSubtitles.assert_called_once_with(["/path/to/sub.srt"])
-            mock_player.play.assert_called_once_with(
-                playback_url, mock_listitem
-            )
+            mock_player.play.assert_called_once_with(playback_url, mock_listitem)
             mock_notification.assert_not_called()
 
-    def test_uses_subtitle_paths_returned_by_manager_without_second_translation_prompt(self):
+    def test_uses_subtitle_paths_returned_by_manager_without_second_translation_prompt(
+        self,
+    ):
         module = _load_torrserver_utils()
         params = {
             "hash": "abc123",
@@ -156,13 +181,13 @@ class TestDownloadAndPlaySubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "DeepLTranslator") as MockTranslator, \
-             patch.object(module, "get_setting", return_value=True), \
-             patch.object(module.xbmcgui.Dialog, "yesno", return_value=True), \
-             patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-             patch.object(module.xbmc, "Player") as MockPlayer, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "DeepLTranslator"
+        ) as MockTranslator, patch.object(module, "get_setting", return_value=True), patch.object(
+            module.xbmcgui.Dialog, "yesno", return_value=True
+        ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/translated.srt"]
             MockManager.return_value = mock_manager
@@ -187,13 +212,13 @@ class TestDownloadAndPlaySubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "DeepLTranslator") as MockTranslator, \
-             patch.object(module, "get_setting", return_value=True), \
-             patch.object(module.xbmcgui.Dialog, "yesno", return_value=False), \
-             patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-             patch.object(module.xbmc, "Player") as MockPlayer, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "DeepLTranslator"
+        ) as MockTranslator, patch.object(module, "get_setting", return_value=True), patch.object(
+            module.xbmcgui.Dialog, "yesno", return_value=False
+        ), patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/sub.srt"]
             MockManager.return_value = mock_manager
@@ -217,11 +242,11 @@ class TestDownloadAndPlaySubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "get_torrserver_api") as mock_api, \
-             patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-             patch.object(module.xbmc, "Player") as MockPlayer, \
-             patch.object(module, "notification") as mock_notification:
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "get_torrserver_api"
+        ) as mock_api, patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer, patch.object(module, "notification") as mock_notification:
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = None
             mock_manager.last_fetch_status = "not_found"
@@ -242,14 +267,15 @@ class TestDownloadAndPlaySubtitles:
             "meta": json.dumps({"title": "Test Movie", "ids": {"imdb_id": "tt123"}}),
         }
 
-        with patch.object(module, "SubtitleManager") as MockManager, \
-             patch.object(module, "DeepLTranslator") as MockTranslator, \
-             patch.object(module, "get_setting", return_value=True), \
-             patch.object(module.xbmcgui.Dialog, "yesno", return_value=True) as yesno, \
-             patch.object(module.xbmcgui, "ListItem") as MockListItem, \
-             patch.object(module.xbmc, "Player") as MockPlayer, \
-             patch.object(module, "notification") as mock_notification, \
-             patch.object(module, "kodilog"):
+        with patch.object(module, "SubtitleManager") as MockManager, patch.object(
+            module, "DeepLTranslator"
+        ) as MockTranslator, patch.object(module, "get_setting", return_value=True), patch.object(
+            module.xbmcgui.Dialog, "yesno", return_value=True
+        ) as yesno, patch.object(module.xbmcgui, "ListItem") as MockListItem, patch.object(
+            module.xbmc, "Player"
+        ) as MockPlayer, patch.object(module, "notification") as mock_notification, patch.object(
+            module, "kodilog"
+        ):
             mock_manager = MagicMock()
             mock_manager.fetch_subtitles.return_value = ["/path/to/sub.srt"]
             MockManager.return_value = mock_manager
@@ -280,9 +306,9 @@ class TestTorrentMetadataCache:
         def fake_get(key):
             return stored.get(key)
 
-        with patch.object(module.cache, "set", side_effect=fake_set), \
-             patch.object(module.cache, "get", side_effect=fake_get), \
-             patch.object(module, "kodilog"):
+        with patch.object(module.cache, "set", side_effect=fake_set), patch.object(
+            module.cache, "get", side_effect=fake_get
+        ), patch.object(module, "kodilog"):
             module.save_torrent_meta("ABC123", meta)
             result = module.get_torrent_meta("abc123")
 
@@ -293,8 +319,9 @@ class TestTorrentMetadataCache:
         module = _load_torrserver_utils()
         meta = {"title": "Test Movie", "ids": {"imdb_id": "tt123"}}
 
-        with patch.object(module.cache, "get", return_value=meta) as mock_get, \
-             patch.object(module, "kodilog"):
+        with patch.object(module.cache, "get", return_value=meta) as mock_get, patch.object(
+            module, "kodilog"
+        ):
             result = module.get_torrent_meta("  ABC123  ")
 
         assert result == meta

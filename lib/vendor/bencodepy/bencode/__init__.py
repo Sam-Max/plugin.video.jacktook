@@ -12,29 +12,29 @@
 
 """bencode.py - bencode encoder + decoder."""
 
+from bencodepy import Bencached, Bencode
+
 from bencode.BTL import BTFailure
 from bencode.exceptions import BencodeDecodeError
 
-from bencodepy import Bencached, Bencode
-
 __all__ = (
-    'BTFailure',
-    'Bencached',
-    'BencodeDecodeError',
-    'bencode',
-    'bdecode',
-    'bread',
-    'bwrite',
-    'encode',
-    'decode'
+    "BTFailure",
+    "Bencached",
+    "BencodeDecodeError",
+    "bdecode",
+    "bencode",
+    "bread",
+    "bwrite",
+    "decode",
+    "encode",
 )
 
 
 DEFAULT = Bencode(
-    encoding='utf-8',
-    encoding_fallback='value',
+    encoding="utf-8",
+    encoding_fallback="value",
     dict_ordered=True,
-    dict_ordered_sort=True
+    dict_ordered_sort=True,
 )
 
 bdecode = DEFAULT.decode

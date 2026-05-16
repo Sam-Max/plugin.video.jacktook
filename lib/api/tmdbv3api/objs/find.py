@@ -2,9 +2,7 @@ from lib.api.tmdbv3api.tmdb import TMDb
 
 
 class Find(TMDb):
-    _urls = {
-        "find": "/find/%s"
-    }
+    _urls = {"find": "/find/%s"}
 
     def find(self, external_id, external_source):
         """
@@ -15,7 +13,7 @@ class Find(TMDb):
         """
         return self._request_obj(
             self._urls["find"] % external_id.replace("/", "%2F"),
-            params="external_source=" + external_source
+            params="external_source=" + external_source,
         )
 
     def find_by_imdb_id(self, imdb_id):

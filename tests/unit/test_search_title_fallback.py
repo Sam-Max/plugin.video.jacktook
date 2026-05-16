@@ -3,17 +3,17 @@ from unittest.mock import patch
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.domain.torrent import TorrentStream
 from lib.search import (
-    _build_title_fallback_queries,
-    _perform_search_with_title_fallback,
-    SearchVariant,
     TITLE_LANGUAGE_ENGLISH_FIRST,
     TITLE_LANGUAGE_ENGLISH_ONLY,
     TITLE_LANGUAGE_LOCALIZED_FIRST,
+    SearchVariant,
+    _build_title_fallback_queries,
+    _perform_search_with_title_fallback,
 )
 
 
 def test_search_variant_enum_values():
-    if not hasattr(SearchVariant, '__members__'):
+    if not hasattr(SearchVariant, "__members__"):
         return
     assert SearchVariant.DEFAULT.value == "default"
     assert SearchVariant.TITLE_YEAR.value == "title_year"
@@ -33,9 +33,7 @@ def test_build_title_fallback_queries_default_variant_uses_fallback_behavior():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Intocable",
             {"tmdb_id": "77338"},
@@ -71,9 +69,7 @@ def test_build_title_fallback_queries_original_title_uses_tmdb_original():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Spirited Away",
             {"tmdb_id": "129"},
@@ -96,9 +92,7 @@ def test_build_title_fallback_queries_original_title_year_appends_year():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Spirited Away",
             {"tmdb_id": "129"},
@@ -134,9 +128,7 @@ def test_build_title_fallback_queries_original_title_fallbacks_to_query():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Some Movie",
             {"tmdb_id": "123"},
@@ -163,9 +155,7 @@ def test_build_title_fallback_queries_prefers_english_translation_for_movies():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Intocable",
             {"tmdb_id": "77338"},
@@ -192,9 +182,7 @@ def test_build_title_fallback_queries_english_first_reorders_candidates():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Intocable",
             {"tmdb_id": "77338"},
@@ -217,9 +205,7 @@ def test_build_title_fallback_queries_english_first_falls_back_to_original_befor
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Avatar: Fuego y ceniza",
             {"tmdb_id": "123456"},
@@ -246,9 +232,7 @@ def test_build_title_fallback_queries_english_only_skips_localized_query():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
         queries = _build_title_fallback_queries(
             "Intocable",
             {"tmdb_id": "77338"},
@@ -275,12 +259,8 @@ def test_build_title_fallback_queries_uses_original_name_when_needed_for_tv():
         }
     )
 
-    with patch(
-        "lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details
-    ):
-        queries = _build_title_fallback_queries(
-            "Ataque a los Titanes", {"tmdb_id": "1429"}, "tv"
-        )
+    with patch("lib.clients.tmdb.utils.utils.get_tmdb_media_details", return_value=details):
+        queries = _build_title_fallback_queries("Ataque a los Titanes", {"tmdb_id": "1429"}, "tv")
 
     assert queries == [
         "Ataque a los Titanes",

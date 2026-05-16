@@ -1,15 +1,17 @@
 import os
 from datetime import timedelta
+
+import xbmcgui
+
+from lib.clients.stremio.constants import (
+    TORRENTIO_PROVIDERS_KEY,
+    all_torrentio_providers,
+)
 from lib.db.cached import cache
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     translation,
 )
-from lib.clients.stremio.constants import (
-    TORRENTIO_PROVIDERS_KEY,
-    all_torrentio_providers,
-)
-import xbmcgui
 
 
 def torrentio_toggle_providers(params):
@@ -20,9 +22,7 @@ def torrentio_toggle_providers(params):
     selected_indexes = []
     for i, (key, name, logo) in enumerate(all_torrentio_providers):
         item = xbmcgui.ListItem(label=name)
-        item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "torrentio.png")}
-        )
+        item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "torrentio.png")})
         options.append(item)
         if key in selected_ids:
             selected_indexes.append(i)
@@ -37,6 +37,4 @@ def torrentio_toggle_providers(params):
         return
 
     new_selected_ids = [all_torrentio_providers[i][0] for i in selected]
-    cache.set(
-        TORRENTIO_PROVIDERS_KEY, ",".join(new_selected_ids), timedelta(days=365 * 20)
-    )
+    cache.set(TORRENTIO_PROVIDERS_KEY, ",".join(new_selected_ids), timedelta(days=365 * 20))

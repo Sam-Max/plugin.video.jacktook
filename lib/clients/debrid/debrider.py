@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.debrider import Debrider
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import dialog_text, get_setting, notification
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -15,14 +16,12 @@ from lib.utils.general.utils import (
     set_cached,
     supported_video_extensions,
 )
-from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.utils import dialog_text, get_setting, notification
 
 
 class DebriderHelper:
     def __init__(self):
-        self.client = Debrider(
-            token=get_setting("debrider_token"), user_ip=get_public_ip()
-        )
+        self.client = Debrider(token=get_setting("debrider_token"), user_ip=get_public_ip())
 
     def check_cached(
         self,
@@ -125,9 +124,7 @@ class DebriderHelper:
                 not response.get("message", "")
                 or "task added successfully" not in response.get("message", "").lower()
             ):
-                raise ProviderException(
-                    f"Failed to add magnet link to Debrider {response}"
-                )
+                raise ProviderException(f"Failed to add magnet link to Debrider {response}")
         except Exception as e:
             notification(str(e))
             raise

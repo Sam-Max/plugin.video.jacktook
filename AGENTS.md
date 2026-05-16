@@ -111,23 +111,46 @@ Notes:
 
 ## 7) Lint / Static Checks
 
-No dedicated linter config (`pyproject.toml`, `setup.cfg`, `tox.ini`, `pytest.ini`) is present.
+Configuration lives in `pyproject.toml` under `[tool.ruff]` and `[tool.mypy]`.
 
-Recommended lightweight checks:
+### Ruff — linter + formatter
+
+Ruff replaces Black, isort, Flake8, and many other tools. Configuration in `pyproject.toml`.
 
 ```bash
-python3 -m py_compile jacktook.py service.py
-python3 scripts/check_py37_compat.py .
+# Lint project source (auto-fix where safe)
+.venv/bin/ruff check --fix
+
+# Format all source files (Black-compatible)
+.venv/bin/ruff format
+
+# Check formatting without modifying
+.venv/bin/ruff format --check
 ```
 
-`scripts/check_py37_compat.py` scans for syntax/features that break Python 3.7 compatibility assumptions.
+Notable rule groups enabled: `E`, `W`, `F`, `I`, `N`, `UP`, `B`, `SIM`, `D` (Google convention, relaxed), `YTT`, `RUF`.
+
+### mypy — static type checker
+
+```bash
+# Type-check all project source (excludes tests, scripts, docs, lib/vendor)
+.venv/bin/mypy .
+```
+
+- `ignore_missing_imports = true` — Kodi modules (`xbmc`, `xbmcgui`, etc.) are expected to be unavailable in the dev environment.
+- Vendor code (`lib/vendor/`, `lib/api/tmdbv3api/`, `lib/utils/parsers/xmltodict.py`) is excluded via `[[tool.mypy.overrides]]` with `follow_imports = "skip"` and `ignore_errors = true`.
+- `no_implicit_optional = true` — all `Optional` type hints must be explicit.
+
+### CI-friendly one-liner
+
+```bash
+.venv/bin/ruff check && .venv/bin/ruff format --check && .venv/bin/mypy .
+```
 
 ## 8) Known Test Environment Caveats
 
-- In this environment, `python3 -m pytest -q` currently has one failing test:
-  - `tests/unit/test_general_utils.py::test_supported_video_extensions`
-- Root cause is environment/mocking behavior of `xbmc.getSupportedMedia` (returns empty without specific mock setup).
-- If touching video extension logic, ensure deterministic mocking of `getSupportedMedia`.
+- All unit tests pass cleanly with `python3 -m pytest -q`.
+- If touching video extension logic, ensure deterministic mocking of `getSupportedMedia` in tests.
 
 ## 9) Code Style Guidelines
 

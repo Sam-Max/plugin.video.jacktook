@@ -1,5 +1,14 @@
 from datetime import timedelta
+
+import xbmcgui
+
 from lib.api.stremio.api_client import Stremio
+from lib.clients.stremio.constants import (
+    STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_ADDONS_KEY,
+    STREMIO_USER_ADDONS,
+)
+from lib.clients.stremio.helpers import merge_addons_lists
 from lib.db.cached import cache
 from lib.utils.kodi.utils import (
     get_setting,
@@ -7,21 +16,11 @@ from lib.utils.kodi.utils import (
     set_setting,
     translation,
 )
-from lib.clients.stremio.constants import (
-    STREMIO_ADDONS_KEY,
-    STREMIO_ADDONS_CATALOGS_KEY,
-    STREMIO_USER_ADDONS,
-)
-from lib.clients.stremio.helpers import merge_addons_lists
-import xbmcgui
 
 
 def stremio_login(params):
     dialog = xbmcgui.Dialog()
-    dialog.ok(
-        translation(90612),
-        translation(90613)
-    )
+    dialog.ok(translation(90612), translation(90613))
 
     email = dialog.input(heading=translation(90614), type=xbmcgui.INPUT_ALPHANUM)
     if not email:
@@ -46,9 +45,7 @@ def log_in(email, password, dialog):
         # Only merge user account addons with custom addons
         user_account_addons = stremio.get_my_addons() or []
         all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
-        custom_addons = [
-            a for a in all_user_addons if a.get("transportName") == "custom"
-        ]
+        custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
         all_addons = merge_addons_lists(user_account_addons, custom_addons)
         cache.set(STREMIO_USER_ADDONS, all_addons, timedelta(days=365 * 20))
 
@@ -99,9 +96,7 @@ def stremio_logout(params):
         cache.set(STREMIO_ADDONS_CATALOGS_KEY, None, timedelta(seconds=1))
         # Do not clear custom addons, only clear login state and user (login) addons
         all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
-        custom_addons = [
-            a for a in all_user_addons if a.get("transportName") == "custom"
-        ]
+        custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
         cache.set(STREMIO_USER_ADDONS, custom_addons, timedelta(days=365 * 20))
 
         set_setting("stremio_loggedin", "false")

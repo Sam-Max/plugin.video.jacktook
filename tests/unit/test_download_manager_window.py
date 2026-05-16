@@ -1,8 +1,5 @@
 import threading
-import time
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from lib.download_manager import DownloadManager
 from lib.gui.download_manager_window import DownloadManagerWindow
@@ -194,7 +191,9 @@ class TestDownloadManagerWindow:
     def test_poll_loop_updates_selected_properties(self):
         manager = DownloadManager()
         manager.register(name="a.mkv", dest_path="/dl/a.mkv", url="https://example.com/a.mkv")
-        manager.update_progress("/dl/a.mkv", downloaded=50, speed=1000, eta=60, progress=50, size=100)
+        manager.update_progress(
+            "/dl/a.mkv", downloaded=50, speed=1000, eta=60, progress=50, size=100
+        )
 
         window = DownloadManagerWindow("download_manager.xml", "")
         window.setProperty = MagicMock()
@@ -239,11 +238,17 @@ class TestDownloadManagerWindow:
         window = DownloadManagerWindow("download_manager.xml", "")
         window.setProperty = MagicMock()
 
-        meta = {"title": "Completed Movie", "status": "completed", "progress": 100, "url": "https://example.com/movie.mkv"}
-        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, \
-             patch("lib.gui.download_manager_window.get_download_metadata", return_value=meta), \
-             patch("lib.gui.download_manager_window._get_setting", return_value="/dl"), \
-             patch("lib.gui.download_manager_window._translatePath", side_effect=lambda x: x):
+        meta = {
+            "title": "Completed Movie",
+            "status": "completed",
+            "progress": 100,
+            "url": "https://example.com/movie.mkv",
+        }
+        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, patch(
+            "lib.gui.download_manager_window.get_download_metadata", return_value=meta
+        ), patch("lib.gui.download_manager_window._get_setting", return_value="/dl"), patch(
+            "lib.gui.download_manager_window._translatePath", side_effect=lambda x: x
+        ):
             mock_vfs.exists.return_value = True
             mock_vfs.listdir.return_value = ([], ["movie.mkv.jacktook.json"])
             window._sync_from_disk()
@@ -260,11 +265,17 @@ class TestDownloadManagerWindow:
         window = DownloadManagerWindow("download_manager.xml", "")
         window.setProperty = MagicMock()
 
-        meta = {"title": "Cancelled File", "status": "cancelled", "progress": 30, "url": "https://example.com/cancel.mkv"}
-        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, \
-             patch("lib.gui.download_manager_window.get_download_metadata", return_value=meta), \
-             patch("lib.gui.download_manager_window._get_setting", return_value="/dl"), \
-             patch("lib.gui.download_manager_window._translatePath", side_effect=lambda x: x):
+        meta = {
+            "title": "Cancelled File",
+            "status": "cancelled",
+            "progress": 30,
+            "url": "https://example.com/cancel.mkv",
+        }
+        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, patch(
+            "lib.gui.download_manager_window.get_download_metadata", return_value=meta
+        ), patch("lib.gui.download_manager_window._get_setting", return_value="/dl"), patch(
+            "lib.gui.download_manager_window._translatePath", side_effect=lambda x: x
+        ):
             mock_vfs.exists.return_value = True
             mock_vfs.listdir.return_value = ([], ["cancel.mkv.jacktook.json"])
             window._sync_from_disk()
@@ -279,16 +290,26 @@ class TestDownloadManagerWindow:
         manager = DownloadManager()
         # Pre-register an entry at the path that _sync_from_disk would compute
         existing_dest = f"{download_dir}/existing.mkv"
-        manager.register(name="Existing", dest_path=existing_dest, url="https://example.com/existing.mkv")
+        manager.register(
+            name="Existing",
+            dest_path=existing_dest,
+            url="https://example.com/existing.mkv",
+        )
 
         window = DownloadManagerWindow("download_manager.xml", "")
         window.setProperty = MagicMock()
 
-        meta = {"title": "Existing", "status": "completed", "progress": 100, "url": "https://example.com/existing.mkv"}
-        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, \
-             patch("lib.gui.download_manager_window.get_download_metadata", return_value=meta), \
-             patch("lib.gui.download_manager_window._get_setting", return_value=download_dir), \
-             patch("lib.gui.download_manager_window._translatePath", side_effect=lambda x: x):
+        meta = {
+            "title": "Existing",
+            "status": "completed",
+            "progress": 100,
+            "url": "https://example.com/existing.mkv",
+        }
+        with patch("lib.gui.download_manager_window.xbmcvfs") as mock_vfs, patch(
+            "lib.gui.download_manager_window.get_download_metadata", return_value=meta
+        ), patch("lib.gui.download_manager_window._get_setting", return_value=download_dir), patch(
+            "lib.gui.download_manager_window._translatePath", side_effect=lambda x: x
+        ):
             mock_vfs.exists.return_value = True
             mock_vfs.listdir.return_value = ([], ["existing.mkv.jacktook.json"])
             window._sync_from_disk()

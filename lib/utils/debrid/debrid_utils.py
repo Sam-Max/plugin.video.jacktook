@@ -1,23 +1,25 @@
 import base64
-from concurrent.futures import ThreadPoolExecutor
 import copy
 import json
-import requests
+from concurrent.futures import ThreadPoolExecutor
 from threading import Lock
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
+import requests
+from xbmc import LOGDEBUG
+from xbmcgui import Dialog
+
 from lib.api.debrid.base import ProviderException
-from lib.db.cached import cache
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.easydebrid import EasyDebridHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
-from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
+from lib.clients.debrid.torbox import TorboxHelper
 from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
-from lib.utils.kodi.utils import get_setting, kodilog, notification, translation
-from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
+from lib.db.cached import cache
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     USER_AGENT_HEADER,
     DebridType,
@@ -35,12 +37,9 @@ from lib.utils.general.utils import (
     is_url,
     set_cached,
 )
-from lib.domain.torrent import TorrentStream
 from lib.utils.kodi.logging import summarize_locator_for_log
-
-from xbmcgui import Dialog
-from xbmc import LOGDEBUG
-
+from lib.utils.kodi.utils import get_setting, kodilog, notification, translation
+from lib.utils.torrent.torrserver_utils import extract_torrent_metadata
 
 DEBRID_HELPERS = {
     DebridType.RD: RealDebridHelper,
@@ -125,7 +124,7 @@ def _is_torrent_ready_in_debrid(debrid_type: str, info_hash: str) -> bool:
     """Check if a torrent is ready/cached in the specified debrid service."""
     if not info_hash:
         return False
-    
+
     try:
         if debrid_type == DebridType.RD:
             torrent_info = RealDebridHelper().client.get_available_torrent(info_hash)
@@ -138,9 +137,11 @@ def _is_torrent_ready_in_debrid(debrid_type: str, info_hash: str) -> bool:
                 return True
         elif debrid_type == DebridType.TB:
             torrent_info = TorboxHelper().client.get_available_torrent(info_hash)
-            if (torrent_info and 
-                torrent_info.get("download_finished") and 
-                torrent_info.get("download_present")):
+            if (
+                torrent_info
+                and torrent_info.get("download_finished")
+                and torrent_info.get("download_present")
+            ):
                 return True
         elif debrid_type == DebridType.DB:
             info = DebriderHelper().get_info(info_hash)
@@ -148,7 +149,7 @@ def _is_torrent_ready_in_debrid(debrid_type: str, info_hash: str) -> bool:
                 return True
     except Exception as e:
         kodilog(f"Error checking if torrent is ready in {debrid_type}: {e}")
-    
+
     return False
 
 
@@ -215,23 +216,23 @@ def add_source_to_debrid(
         adder = _DEBRID_ADDERS.get(debrid_type)
         if not adder:
             raise ValueError(f"Unsupported debrid cloud transfer type: {debrid_type}")
-        
+
         if debrid_type == DebridType.DB:
             result = adder(info_hash)
         else:
             result = adder(info_hash, torrent_data, torrent_name)
-        
+
         if not result:
             raise ProviderException(f"Failed to add torrent to {debrid_type}: no response data")
 
         kodilog(f"Debrid transfer succeeded: debrid={debrid_type}, result={result is not None}")
-        
+
         is_ready = _is_torrent_ready_in_debrid(debrid_type, info_hash)
         if is_ready:
             notification(translation(90362) % debrid_type)
         else:
             notification(translation(90694) % debrid_type)
-        
+
         return debrid_type
     except Exception as exc:
         kodilog(f"Failed to add source to debrid cloud: {exc}")
@@ -270,9 +271,7 @@ def check_debrid_cached(
         kodilog("No debrid services enabled for caching check.")
         return direct_results
 
-    execute_debrid_checks(
-        check_functions, results, cached_results, uncached_results, dialog, lock
-    )
+    execute_debrid_checks(check_functions, results, cached_results, uncached_results, dialog, lock)
 
     cached_results.extend(direct_results)
     if should_include_uncached():
@@ -315,9 +314,7 @@ def execute_debrid_checks(
     dialog: Dialog,
     lock: Lock,
 ):
-    with ThreadPoolExecutor(
-        max_workers=int(get_setting("thread_number", 6))
-    ) as executor:
+    with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
         futures = [
             executor.submit(
                 fn,
@@ -366,18 +363,18 @@ def get_source_status(res: TorrentStream) -> str:
 
     if res.isPack:
         if is_cached:
-            label = f"[B]Cached-[Pack][/B]"
+            label = "[B]Cached-[Pack][/B]"
         elif res.addedToDebrid:
             label = f"[B]{added_label}-[Pack][/B]"
         else:
-            label = f"[B]Download-[Pack][/B]"
+            label = "[B]Download-[Pack][/B]"
     else:
         if is_cached:
-            label = f"[B]Cached[/B]"
+            label = "[B]Cached[/B]"
         elif res.addedToDebrid:
             label = f"[B]{added_label}[/B]"
         else:
-            label = f"[B]Download[/B]"
+            label = "[B]Download[/B]"
     return label
 
 
@@ -385,9 +382,7 @@ def get_pack_info(debrid_type, info_hash):
     return get_debrid_helper(debrid_type).get_pack_info(info_hash)
 
 
-def filter_results(
-    results: List[TorrentStream], direct_results: List[TorrentStream]
-) -> None:
+def filter_results(results: List[TorrentStream], direct_results: List[TorrentStream]) -> None:
     filtered_results = []
     dropped_results = []
 
@@ -448,10 +443,7 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
                 headers=USER_AGENT_HEADER,
             )
             kodilog(
-                "get_torrent_data_from_uri: GET request to {} returned status code: {}".format(
-                    summarize_locator_for_log(current_uri),
-                    res.status_code,
-                )
+                f"get_torrent_data_from_uri: GET request to {summarize_locator_for_log(current_uri)} returned status code: {res.status_code}"
             )
 
             if 300 <= res.status_code < 400:
@@ -460,10 +452,7 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
                     break
 
                 kodilog(
-                    "get_torrent_data_from_uri: Redirect {} -> {}".format(
-                        summarize_locator_for_log(current_uri),
-                        summarize_locator_for_log(location),
-                    )
+                    f"get_torrent_data_from_uri: Redirect {summarize_locator_for_log(current_uri)} -> {summarize_locator_for_log(location)}"
                 )
 
                 if location.startswith("magnet:?"):
@@ -476,9 +465,7 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
 
             if res.status_code == 200:
                 kodilog(
-                    "get_torrent_data_from_uri: Processing content from {}".format(
-                        summarize_locator_for_log(current_uri)
-                    )
+                    f"get_torrent_data_from_uri: Processing content from {summarize_locator_for_log(current_uri)}"
                 )
                 if res.url.startswith("magnet:"):
                     magnet = str(res.url or "")
@@ -487,21 +474,20 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
 
                 magnet = extract_torrent_metadata(res.content)
                 kodilog(
-                    "get_torrent_data_from_uri: Extracted magnet: {}".format(
-                        summarize_locator_for_log(magnet)
-                    )
+                    f"get_torrent_data_from_uri: Extracted magnet: {summarize_locator_for_log(magnet)}"
                 )
                 if magnet:
                     torrent_data = bytes(res.content or b"")
                     info_hash = get_info_hash_from_magnet(magnet).lower()
                     torrent_url = current_uri
                     kodilog(
-                        "get_torrent_data_from_uri: Preserving torrent URL for playback: {}".format(
-                            summarize_locator_for_log(torrent_url)
-                        )
+                        f"get_torrent_data_from_uri: Preserving torrent URL for playback: {summarize_locator_for_log(torrent_url)}"
                     )
-                return torrent_data, str(magnet or ""), str(info_hash or ""), str(
-                    torrent_url or ""
+                return (
+                    torrent_data,
+                    str(magnet or ""),
+                    str(info_hash or ""),
+                    str(torrent_url or ""),
                 )
 
             break
@@ -570,9 +556,9 @@ def process_external_cache(data: dict, debrid: str, token: str, url: str):
                 },
             }
             headers = {
-                "encoded_user_data": base64.b64encode(
-                    json.dumps(params).encode("utf-8")
-                ).decode("utf-8")
+                "encoded_user_data": base64.b64encode(json.dumps(params).encode("utf-8")).decode(
+                    "utf-8"
+                )
             }
 
         elif service == "comet":
@@ -593,9 +579,7 @@ def process_external_cache(data: dict, debrid: str, token: str, url: str):
                     "remove_unknown_languages": False,
                 },
             }
-            params_encoded = base64.b64encode(
-                json.dumps(params).encode("utf-8")
-            ).decode("utf-8")
+            params_encoded = base64.b64encode(json.dumps(params).encode("utf-8")).decode("utf-8")
             base_link = f"https://comet.elfhosted.com/{params_encoded}"
             headers = {}
 

@@ -1,6 +1,7 @@
-from lib.utils.kodi.utils import get_setting, execute_builtin
-from lib.utils.kodi.logging import kodilog
 import xbmc
+
+from lib.utils.kodi.logging import kodilog
+from lib.utils.kodi.utils import execute_builtin, get_setting
 
 
 class AutoStartService:

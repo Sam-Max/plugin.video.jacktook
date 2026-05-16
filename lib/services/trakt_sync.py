@@ -1,8 +1,9 @@
 from time import monotonic
 
 import xbmc
-from lib.api.trakt.trakt import TraktAPI
+
 from lib.api.trakt.lists_cache import lists_cache
+from lib.api.trakt.trakt import TraktAPI
 from lib.api.trakt.trakt_cache import (
     clear_trakt_calendar,
     clear_trakt_favorites,
@@ -13,12 +14,12 @@ from lib.api.trakt.trakt_cache import (
     reset_activity,
     trakt_watched_cache,
 )
-from lib.utils.kodi.utils import get_property_no_fallback, kodilog, get_setting
-
+from lib.utils.kodi.utils import get_property_no_fallback, get_setting, kodilog
 
 PAUSE_SERVICES_PROP = "jacktook.pause_services"
 DEFAULT_SYNC_INTERVAL_MINUTES = 15
 WAIT_STEP_SECONDS = 5
+
 
 class TraktSyncService:
     def __init__(self, api=None, monitor=None):
@@ -48,8 +49,7 @@ class TraktSyncService:
     ):
         duration_ms = int((monotonic() - started_at) * 1000)
         kodilog(
-            "Trakt sync[%s]: completed outcome=%s force=%s forced_defaults=%s detected_buckets=%s applied_buckets=%s duration_ms=%s"
-            % (
+            "Trakt sync[{}]: completed outcome={} force={} forced_defaults={} detected_buckets={} applied_buckets={} duration_ms={}".format(
                 cycle_context,
                 outcome,
                 force,
@@ -62,8 +62,7 @@ class TraktSyncService:
 
     def _log_sync_failure(self, cycle_context, force, error):
         kodilog(
-            "Trakt sync[%s]: failed force=%s error=%s"
-            % (cycle_context, force, error),
+            "Trakt sync[{}]: failed force={} error={}".format(cycle_context, force, error),
             level=xbmc.LOGERROR,
         )
 
@@ -173,10 +172,7 @@ class TraktSyncService:
                 )
                 return applied_buckets
 
-            kodilog(
-                "Trakt sync: changed buckets = %s"
-                % ", ".join(sorted(applied_buckets))
-            )
+            kodilog("Trakt sync: changed buckets = {}".format(", ".join(sorted(applied_buckets))))
             self._apply_activity_changes(applied_buckets)
             self._log_sync_summary(
                 cycle_context,

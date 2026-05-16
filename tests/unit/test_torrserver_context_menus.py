@@ -26,23 +26,36 @@ class TestTorrentsContextMenu:
             "stat": 1,
         }
 
-        mock_meta = {"title": "Test Movie", "mode": "tv", "ids": {"imdb_id": "tt123"}, "tv_data": {"season": 1, "episode": 2}}
+        mock_meta = {
+            "title": "Test Movie",
+            "mode": "tv",
+            "ids": {"imdb_id": "tt123"},
+            "tv_data": {"season": 1, "episode": 2},
+        }
 
-        with patch.object(nav, "get_torrserver_api") as mock_api, \
-             patch.object(nav, "JACKTORR_ADDON", True), \
-             patch.object(nav, "end_of_directory"), \
-             patch.object(nav, "apply_section_view"), \
-             patch.object(nav, "set_pluging_category"), \
-             patch.object(nav, "action_url_run") as mock_action_url, \
-             patch.object(nav, "addDirectoryItem") as mock_add_dir, \
-             patch("lib.utils.torrent.torrserver_utils.get_torrent_meta", return_value=mock_meta):
+        with patch.object(nav, "get_torrserver_api") as mock_api, patch.object(
+            nav, "JACKTORR_ADDON", True
+        ), patch.object(nav, "end_of_directory"), patch.object(
+            nav, "apply_section_view"
+        ), patch.object(nav, "set_pluging_category"), patch.object(
+            nav, "action_url_run"
+        ) as mock_action_url, patch.object(nav, "addDirectoryItem") as mock_add_dir, patch(
+            "lib.utils.torrent.torrserver_utils.get_torrent_meta",
+            return_value=mock_meta,
+        ):
             mock_api.return_value.torrents.return_value = [mock_torrent]
-            mock_action_url.side_effect = lambda name, **kwargs: "RunPlugin({})".format(nav.build_url(name, **kwargs))
+            mock_action_url.side_effect = lambda name, **kwargs: (
+                f"RunPlugin({nav.build_url(name, **kwargs)})"
+            )
 
             nav.torrents({})
 
             # Find the call for download_torrent_subtitles
-            subtitle_calls = [call for call in mock_action_url.call_args_list if call.args[0] == "download_torrent_subtitles"]
+            subtitle_calls = [
+                call
+                for call in mock_action_url.call_args_list
+                if call.args[0] == "download_torrent_subtitles"
+            ]
             assert len(subtitle_calls) == 1
             call_kwargs = subtitle_calls[0].kwargs
             assert call_kwargs["hash"] == "abc123"
@@ -59,20 +72,27 @@ class TestTorrentsContextMenu:
             "stat": 1,
         }
 
-        with patch.object(nav, "get_torrserver_api") as mock_api, \
-             patch.object(nav, "JACKTORR_ADDON", True), \
-             patch.object(nav, "end_of_directory"), \
-             patch.object(nav, "apply_section_view"), \
-             patch.object(nav, "set_pluging_category"), \
-             patch.object(nav, "action_url_run") as mock_action_url, \
-             patch.object(nav, "addDirectoryItem"), \
-             patch("lib.utils.torrent.torrserver_utils.get_torrent_meta", return_value={}):
+        with patch.object(nav, "get_torrserver_api") as mock_api, patch.object(
+            nav, "JACKTORR_ADDON", True
+        ), patch.object(nav, "end_of_directory"), patch.object(
+            nav, "apply_section_view"
+        ), patch.object(nav, "set_pluging_category"), patch.object(
+            nav, "action_url_run"
+        ) as mock_action_url, patch.object(nav, "addDirectoryItem"), patch(
+            "lib.utils.torrent.torrserver_utils.get_torrent_meta", return_value={}
+        ):
             mock_api.return_value.torrents.return_value = [mock_torrent]
-            mock_action_url.side_effect = lambda name, **kwargs: "RunPlugin({})".format(nav.build_url(name, **kwargs))
+            mock_action_url.side_effect = lambda name, **kwargs: (
+                f"RunPlugin({nav.build_url(name, **kwargs)})"
+            )
 
             nav.torrents({})
 
-            subtitle_calls = [call for call in mock_action_url.call_args_list if call.args[0] == "download_torrent_subtitles"]
+            subtitle_calls = [
+                call
+                for call in mock_action_url.call_args_list
+                if call.args[0] == "download_torrent_subtitles"
+            ]
             assert len(subtitle_calls) == 1
             meta = json.loads(subtitle_calls[0].kwargs["meta"])
             assert meta["title"] == "Fallback Title"
@@ -87,30 +107,41 @@ class TestTorrentFilesContextMenu:
         mock_list_item = MagicMock()
         mock_list_item.getVideoInfoTag.return_value = mock_video_tag
 
-        mock_meta = {"title": "Test Movie", "mode": "movies", "ids": {"imdb_id": "tt123"}, "tv_data": {}}
+        mock_meta = {
+            "title": "Test Movie",
+            "mode": "movies",
+            "ids": {"imdb_id": "tt123"},
+            "tv_data": {},
+        }
 
-        with patch.object(utils, "get_torrserver_api") as mock_api, \
-             patch.object(utils, "is_video", return_value=True), \
-             patch.object(utils, "is_picture", return_value=False), \
-             patch.object(utils, "is_text", return_value=False), \
-             patch.object(utils, "is_music", return_value=False), \
-             patch.object(utils, "set_pluging_category"), \
-             patch.object(utils, "end_of_directory"), \
-             patch.object(utils, "action_url_run") as mock_action_url, \
-             patch.object(utils, "addDirectoryItem") as mock_add_dir, \
-             patch.object(utils, "build_list_item", return_value=mock_list_item), \
-             patch.object(utils, "get_torrent_meta", return_value=mock_meta):
+        with patch.object(utils, "get_torrserver_api") as mock_api, patch.object(
+            utils, "is_video", return_value=True
+        ), patch.object(utils, "is_picture", return_value=False), patch.object(
+            utils, "is_text", return_value=False
+        ), patch.object(utils, "is_music", return_value=False), patch.object(
+            utils, "set_pluging_category"
+        ), patch.object(utils, "end_of_directory"), patch.object(
+            utils, "action_url_run"
+        ) as mock_action_url, patch.object(utils, "addDirectoryItem") as mock_add_dir, patch.object(
+            utils, "build_list_item", return_value=mock_list_item
+        ), patch.object(utils, "get_torrent_meta", return_value=mock_meta):
             mock_api.return_value.get_torrent_info.return_value = {
                 "title": "Test Movie",
                 "hash": "abc123",
                 "file_stats": [{"path": "movie.mkv", "id": "1"}],
             }
             mock_api.return_value.get_stream_url.return_value = "http://serve/url"
-            mock_action_url.side_effect = lambda name, **kwargs: "RunPlugin({})".format(utils.build_url(name, **kwargs))
+            mock_action_url.side_effect = lambda name, **kwargs: (
+                f"RunPlugin({utils.build_url(name, **kwargs)})"
+            )
 
             utils.torrent_files({"info_hash": "abc123"})
 
-            subtitle_calls = [call for call in mock_action_url.call_args_list if call.args[0] == "download_and_play_subtitles"]
+            subtitle_calls = [
+                call
+                for call in mock_action_url.call_args_list
+                if call.args[0] == "download_and_play_subtitles"
+            ]
             assert len(subtitle_calls) == 1
             call_kwargs = subtitle_calls[0].kwargs
             assert call_kwargs["hash"] == "abc123"
@@ -132,28 +163,34 @@ class TestTorrentFilesContextMenu:
         mock_list_item = MagicMock()
         mock_list_item.getVideoInfoTag.return_value = mock_video_tag
 
-        with patch.object(utils, "get_torrserver_api") as mock_api, \
-             patch.object(utils, "is_video", return_value=True), \
-             patch.object(utils, "is_picture", return_value=False), \
-             patch.object(utils, "is_text", return_value=False), \
-             patch.object(utils, "is_music", return_value=False), \
-             patch.object(utils, "set_pluging_category"), \
-             patch.object(utils, "end_of_directory"), \
-             patch.object(utils, "action_url_run") as mock_action_url, \
-             patch.object(utils, "addDirectoryItem"), \
-             patch.object(utils, "build_list_item", return_value=mock_list_item), \
-             patch.object(utils, "get_torrent_meta", return_value={}):
+        with patch.object(utils, "get_torrserver_api") as mock_api, patch.object(
+            utils, "is_video", return_value=True
+        ), patch.object(utils, "is_picture", return_value=False), patch.object(
+            utils, "is_text", return_value=False
+        ), patch.object(utils, "is_music", return_value=False), patch.object(
+            utils, "set_pluging_category"
+        ), patch.object(utils, "end_of_directory"), patch.object(
+            utils, "action_url_run"
+        ) as mock_action_url, patch.object(utils, "addDirectoryItem"), patch.object(
+            utils, "build_list_item", return_value=mock_list_item
+        ), patch.object(utils, "get_torrent_meta", return_value={}):
             mock_api.return_value.get_torrent_info.return_value = {
                 "title": "Fallback Title",
                 "hash": "abc123",
                 "file_stats": [{"path": "movie.mkv", "id": "1"}],
             }
             mock_api.return_value.get_stream_url.return_value = "http://serve/url"
-            mock_action_url.side_effect = lambda name, **kwargs: "RunPlugin({})".format(utils.build_url(name, **kwargs))
+            mock_action_url.side_effect = lambda name, **kwargs: (
+                f"RunPlugin({utils.build_url(name, **kwargs)})"
+            )
 
             utils.torrent_files({"info_hash": "abc123"})
 
-            subtitle_calls = [call for call in mock_action_url.call_args_list if call.args[0] == "download_and_play_subtitles"]
+            subtitle_calls = [
+                call
+                for call in mock_action_url.call_args_list
+                if call.args[0] == "download_and_play_subtitles"
+            ]
             assert len(subtitle_calls) == 1
             meta = json.loads(subtitle_calls[0].kwargs["meta"])
             assert meta["title"] == "Fallback Title"

@@ -1,9 +1,9 @@
 import json
-import requests
-
 from http import HTTPStatus
+
+import requests
 from requests.exceptions import ConnectionError, Timeout
-from lib.api.plex.settings import settings
+
 from lib.api.plex.models.plex_models import (
     PlexEpisodeMeta,
     PlexLibrarySection,
@@ -11,6 +11,7 @@ from lib.api.plex.models.plex_models import (
     PlexMediaType,
     PlexServer,
 )
+from lib.api.plex.settings import settings
 from lib.api.plex.utils import PlexUnauthorizedError
 from lib.utils.kodi.utils import kodilog
 
@@ -128,7 +129,7 @@ def imdb_to_plex_id(imdb_id, token, mode, media_type):
         url="https://metadata.provider.plex.tv/library/metadata/matches",
         params={
             "X-Plex-Token": token,
-            "type": 1 if (media_type == "movies" or mode =="movies") else 2,
+            "type": 1 if (media_type == "movies" or mode == "movies") else 2,
             "title": f"imdb-{imdb_id}",
             "guid": f"com.plexapp.agents.imdb://{imdb_id}?lang=en",
         },

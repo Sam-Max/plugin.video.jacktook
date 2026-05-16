@@ -1,5 +1,6 @@
 from lib.api.tmdbv3api.tmdb import TMDb
 
+
 class Certification(TMDb):
     _urls = {
         "movie_list": "/certification/movie/list",

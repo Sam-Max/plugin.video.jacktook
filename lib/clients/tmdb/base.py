@@ -1,6 +1,20 @@
 from datetime import datetime
 
 from lib.api.tmdbv3api.as_obj import AsObj
+from lib.api.trakt.trakt_utils import (
+    add_trakt_collection_context_menu,
+    add_trakt_custom_list_context_menu,
+    add_trakt_favorites_context_menu,
+    add_trakt_watched_context_menu,
+    add_trakt_watchlist_context_menu,
+    is_trakt_auth,
+)
+from lib.clients.tmdb.utils.utils import (
+    add_kodi_dir_item,
+    add_tmdb_movie_context_menu,
+    add_tmdb_show_context_menu,
+    tmdb_get,
+)
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.utils import (
     add_directory_items_batch,
@@ -11,29 +25,13 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
-from lib.clients.tmdb.utils.utils import (
-    add_kodi_dir_item,
-    add_tmdb_movie_context_menu,
-    add_tmdb_show_context_menu,
-    tmdb_get,
-)
-from lib.api.trakt.trakt_utils import (
-    add_trakt_collection_context_menu,
-    add_trakt_custom_list_context_menu,
-    add_trakt_favorites_context_menu,
-    add_trakt_watchlist_context_menu,
-    add_trakt_watched_context_menu,
-    is_trakt_auth,
-)
 
 
 class BaseTmdbClient:
     @staticmethod
     def add_media_directory_item(list_item, mode, title, ids, media_type="", batch=False):
         if mode == "movies" or (mode == "multi" and media_type == "movie"):
-            context_menu = add_tmdb_movie_context_menu(
-                mode, media_type, title=title, ids=ids
-            )
+            context_menu = add_tmdb_movie_context_menu(mode, media_type, title=title, ids=ids)
             if is_trakt_auth():
                 context_menu += (
                     add_trakt_watchlist_context_menu("movies", ids)

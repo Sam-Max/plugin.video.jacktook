@@ -1,3 +1,7 @@
+import json
+
+from xbmcplugin import addDirectoryItem
+
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.utils.general.utils import (
     Indexer,
@@ -9,7 +13,6 @@ from lib.utils.general.utils import (
     set_media_infoTag,
     set_watched_title,
 )
-
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     apply_section_view,
@@ -21,9 +24,6 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
-
-from xbmcplugin import addDirectoryItem
-import json
 
 
 def check_jackgram_active():
@@ -49,9 +49,7 @@ def list_jackgram_latest_movies(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_movies(page=page)
-    process_results(
-        results, add_jackgram_title_item, "list_jackgram_latest_movies", page
-    )
+    process_results(results, add_jackgram_title_item, "list_jackgram_latest_movies", page)
 
 
 def list_jackgram_latest_series(query):
@@ -61,9 +59,7 @@ def list_jackgram_latest_series(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_series(page=page)
-    process_results(
-        results, add_jackgram_title_item, "list_jackgram_latest_series", page
-    )
+    process_results(results, add_jackgram_title_item, "list_jackgram_latest_series", page)
 
 
 def list_jackgram_raw_files(query):
@@ -73,9 +69,7 @@ def list_jackgram_raw_files(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_files(page=page)
-    process_results(
-        results, add_jackgram_raw_file_item, "list_jackgram_raw_files", page
-    )
+    process_results(results, add_jackgram_raw_file_item, "list_jackgram_raw_files", page)
 
 
 def add_jackgram_raw_file_item(item):
@@ -109,8 +103,8 @@ def add_jackgram_title_item(entry):
     # Normalize mode
     mode = "movies" if api_type == "movie" else api_type
 
-    imdb_id = getattr(details, "external_ids").get("imdb_id")
-    tvdb_id = getattr(details, "external_ids").get("tvdb_id")
+    imdb_id = details.external_ids.get("imdb_id")
+    tvdb_id = details.external_ids.get("tvdb_id")
     entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     list_item = make_list_item(label=title)

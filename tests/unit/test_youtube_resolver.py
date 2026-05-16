@@ -1,6 +1,6 @@
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 from lib.clients.youtube_resolver import (
     extract_video_id,
@@ -10,7 +10,6 @@ from lib.clients.youtube_resolver import (
     resolve_trailer_playback,
     select_best_stream,
 )
-
 
 WATCH_HTML = """
 <html>
@@ -452,10 +451,11 @@ def test_resolve_trailer_playback_tries_android_vr_android_then_ios_clients():
     resolved = resolve_trailer_playback("dQw4w9WgXcQ", session=session)
 
     assert resolved["video_url"] == "https://video.example/final.m3u8"
-    assert [
-        call[1]["json"]["context"]["client"]["clientName"]
-        for call in session.post_calls
-    ] == ["ANDROID_VR", "ANDROID", "IOS"]
+    assert [call[1]["json"]["context"]["client"]["clientName"] for call in session.post_calls] == [
+        "ANDROID_VR",
+        "ANDROID",
+        "IOS",
+    ]
     assert [call[1]["headers"]["User-Agent"] for call in session.post_calls] == [
         (
             "com.google.android.apps.youtube.vr.oculus/1.56.21 "
@@ -469,9 +469,11 @@ def test_resolve_trailer_playback_tries_android_vr_android_then_ios_clients():
         "3",
         "5",
     ]
-    assert [
-        call[1]["headers"]["X-YouTube-Client-Version"] for call in session.post_calls
-    ] == ["1.56.21", "20.10.35", "20.10.1"]
+    assert [call[1]["headers"]["X-YouTube-Client-Version"] for call in session.post_calls] == [
+        "1.56.21",
+        "20.10.35",
+        "20.10.1",
+    ]
     assert [call[1]["headers"]["X-Goog-Visitor-Id"] for call in session.post_calls] == [
         "visitor-token",
         "visitor-token",
@@ -508,17 +510,14 @@ def test_call_player_api_sends_origin_and_html5_preference():
     _, post_kwargs = session.post_calls[0]
     assert post_kwargs["headers"]["Origin"] == "https://www.youtube.com"
     assert (
-        post_kwargs["headers"]["User-Agent"]
-        == "com.google.android.apps.youtube.vr.oculus/1.56.21 "
+        post_kwargs["headers"]["User-Agent"] == "com.google.android.apps.youtube.vr.oculus/1.56.21 "
         "(Linux; U; Android 12; en_US; Quest 3; Build/SQ3A.220605.009.A1) gzip"
     )
     assert post_kwargs["headers"]["X-YouTube-Client-Name"] == "28"
     assert post_kwargs["headers"]["X-YouTube-Client-Version"] == "1.56.21"
     assert post_kwargs["headers"]["X-Goog-Visitor-Id"] == "visitor-token"
     assert (
-        post_kwargs["json"]["playbackContext"]["contentPlaybackContext"][
-            "html5Preference"
-        ]
+        post_kwargs["json"]["playbackContext"]["contentPlaybackContext"]["html5Preference"]
         == "HTML5_PREF_WANTS"
     )
 
@@ -551,8 +550,7 @@ def test_resolve_trailer_playback_logs_player_api_error_details():
         assert resolve_trailer_playback("dQw4w9WgXcQ", session=session) is None
 
     assert any(
-        "bad client" in str(call) and "preview=" in str(call)
-        for call in log_mock.call_args_list
+        "bad client" in str(call) and "preview=" in str(call) for call in log_mock.call_args_list
     )
 
 
@@ -648,7 +646,9 @@ def test_resolve_item_trailer_playback_falls_back_to_tmdb_trailer(monkeypatch):
     ]
 
 
-def test_resolve_item_trailer_playback_returns_none_when_no_direct_or_tmdb_trailer(monkeypatch):
+def test_resolve_item_trailer_playback_returns_none_when_no_direct_or_tmdb_trailer(
+    monkeypatch,
+):
     monkeypatch.setattr(
         "lib.clients.youtube_resolver.resolve_tmdb_trailer",
         lambda tmdb_id, media_type: None,

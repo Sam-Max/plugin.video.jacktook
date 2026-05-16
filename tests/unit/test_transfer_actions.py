@@ -2,8 +2,8 @@ from unittest.mock import MagicMock, patch
 
 from lib.clients.debrid.torbox import TorboxHelper
 from lib.nav import debrid as debrid_navigation
-from lib.utils.general.utils import DebridType
 from lib.utils.debrid import debrid_utils
+from lib.utils.general.utils import DebridType
 from lib.utils.torrent import torrserver_utils
 
 
@@ -19,9 +19,7 @@ def test_add_source_to_torrserver_uses_magnet_when_available():
         )
 
     assert result == "abc123"
-    api.add_magnet.assert_called_once_with(
-        "magnet:?xt=urn:btih:abc123", title="Test", poster=""
-    )
+    api.add_magnet.assert_called_once_with("magnet:?xt=urn:btih:abc123", title="Test", poster="")
     notification.assert_called_once()
 
 
@@ -91,18 +89,14 @@ def test_add_source_to_torrserver_falls_back_to_magnet_when_url_fails():
 
     with patch.object(torrserver_utils, "JACKTORR_ADDON", True), patch.object(
         torrserver_utils, "get_torrserver_api", return_value=api
-    ), patch.object(
-        torrserver_utils.requests, "get", side_effect=Exception("network")
-    ):
+    ), patch.object(torrserver_utils.requests, "get", side_effect=Exception("network")):
         result = torrserver_utils.add_source_to_torrserver(
             url="https://example.com/details/1",
             magnet="magnet:?xt=urn:btih:abc123",
         )
 
     assert result == "abc123"
-    api.add_magnet.assert_called_once_with(
-        "magnet:?xt=urn:btih:abc123", title="", poster=""
-    )
+    api.add_magnet.assert_called_once_with("magnet:?xt=urn:btih:abc123", title="", poster="")
 
 
 def test_add_source_to_debrid_uses_preferred_enabled_service():
@@ -178,9 +172,7 @@ def test_torbox_helper_get_link_uses_cloud_ids_when_present():
 
     assert data is not None
     assert data["url"] == "https://download"
-    helper.client.create_download_link.assert_called_once_with(
-        "torrent-1", "file-2", "127.0.0.1"
-    )
+    helper.client.create_download_link.assert_called_once_with("torrent-1", "file-2", "127.0.0.1")
 
 
 def test_get_tb_downloads_builds_playable_cloud_entries():

@@ -1,7 +1,10 @@
 import json
 import os
-from datetime import datetime, timedelta
 from dataclasses import asdict
+from datetime import datetime, timedelta
+
+from xbmcplugin import addDirectoryItem, setContent
+
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
     get_selected_catalogs_addons,
@@ -11,30 +14,32 @@ from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_movie_context_menu,
     add_tmdb_show_context_menu,
+    tmdb_get,
 )
-from lib.clients.tmdb.utils.utils import tmdb_get
-from lib.utils.general.utils import add_next_button, truncate_text
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
-from lib.utils.stremio.catalogs_utils import catalogs_get_cache
+from lib.utils.general.utils import (
+    IndexerType,
+    add_next_button,
+    info_hash_to_magnet,
+    truncate_text,
+)
+from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
     add_directory_items_batch,
     build_url,
     container_update,
     end_of_directory,
     kodi_play_media,
+    kodilog,
     make_list_item,
     notification,
     show_keyboard,
-    kodilog,
     translation,
 )
-from lib.utils.general.utils import info_hash_to_magnet, IndexerType
-
-from xbmcplugin import addDirectoryItem, setContent
-from lib.utils.kodi.settings import get_cache_expiration
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH
-
+from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 
 CATALOG_PAGE_SIZE = 25
 
@@ -66,9 +71,7 @@ def _show_search_catalog_history(params):
 
     for (text,) in cache.get_list(key=history_key):
         list_item = make_list_item(label=f"[I]{text}[/I]")
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")}
-        )
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
         addDirectoryItem(
             ADDON_HANDLE,
             build_url(
@@ -242,15 +245,10 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             if menu_type == "anime" and target_type == "series":
                 allowed_types.append("anime")
 
-            if (
-                target_type in ["movie", "series", "tv"]
-                and catalog_type not in allowed_types
-            ):
+            if target_type in ["movie", "series", "tv"] and catalog_type not in allowed_types:
                 continue
 
-            search_capabilities = any(
-                extra.get("name") == "search" for extra in catalog.extra
-            )
+            search_capabilities = any(extra.get("name") == "search" for extra in catalog.extra)
 
             if search_capabilities:
                 listitem = make_list_item(label=f"{translation(90006)} {catalog_name}")
@@ -377,9 +375,7 @@ def list_catalog(params):
             skip=skip + len(metas),
         )
         list_item = make_list_item(label=translation(90515))
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True
-        )
+        addDirectoryItem(handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True)
 
     end_of_directory()
 
@@ -516,9 +512,7 @@ def add_meta_items(metas, params):
                     meta_id=meta_id,
                 )
             elif tmdb_id or imdb_id:
-                url = build_url(
-                    "show_seasons_details", ids=ids, mode="tv", media_type="tv"
-                )
+                url = build_url("show_seasons_details", ids=ids, mode="tv", media_type="tv")
             else:
                 url = build_url(
                     "list_stremio_seasons",
@@ -634,18 +628,13 @@ def add_meta_items(metas, params):
             elif meta_type in ["series", "anime"]:
                 context_menu.extend(
                     _filter_tmdb_context_menu(
-                        add_tmdb_show_context_menu(
-                            mode="tv", ids=context_menu_ids, title=name
-                        )
+                        add_tmdb_show_context_menu(mode="tv", ids=context_menu_ids, title=name)
                     )
                 )
 
         _append_context_menu_items(list_item, context_menu)
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder
-        )
-
+        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder)
 
 
 def list_stremio_seasons(params):
@@ -665,8 +654,7 @@ def list_stremio_seasons(params):
         return
 
     available_seasons = set(
-        int(video.imdbSeason) if video.imdbSeason else int(video.season)
-        for video in videos
+        int(video.imdbSeason) if video.imdbSeason else int(video.season) for video in videos
     )
     items = []
     for season in available_seasons:
@@ -679,9 +667,7 @@ def list_stremio_seasons(params):
         )
         list_item = make_list_item(label=f"{translation(90512)} {season}")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(
-            meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
-        )
+        info_tag.setUniqueID(meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf")
         info_tag.setTitle(meta_data.name)
         info_tag.setPlot(truncate_text(meta_data.description or ""))
         info_tag.setRating(float(meta_data.imdbRating or 0))
@@ -731,14 +717,12 @@ def list_stremio_episodes(params):
         imdb_id = meta_data.imdb_id
         res = tmdb_get("find_by_imdb_id", imdb_id)
         if getattr(res, "tv_results", []):
-            tmdb_id = str(getattr(res, "tv_results")[0]["id"])
+            tmdb_id = str(res.tv_results[0]["id"])
 
     if not tmdb_id and not imdb_id and meta_data.name:
         kodilog(f"No IDs found for {meta_data.name}. Searching TMDB...")
         year = meta_data.releaseInfo.split("-")[0] if meta_data.releaseInfo else ""
-        results = tmdb_get(
-            "search_tv", {"query": meta_data.name, "page": 1, "year": year}
-        )
+        results = tmdb_get("search_tv", {"query": meta_data.name, "page": 1, "year": year})
         if results and results.results:
             try:
                 tmdb_id = str(results.results[0].id)
@@ -753,16 +737,12 @@ def list_stremio_episodes(params):
             kodilog(f"Resolved IMDB ID: {imdb_id} from TMDB ID: {tmdb_id}")
 
     addon = get_addon_by_base_url(params["addon_url"])
-    has_stream_resource = addon_has_stream(
-        params["addon_url"], params["catalog_type"], addon=addon
-    )
+    has_stream_resource = addon_has_stream(params["addon_url"], params["catalog_type"], addon=addon)
     items = []
     for video in videos:
         try:
             season = int(video.imdbSeason) if video.imdbSeason else int(video.season)
-            episode = (
-                int(video.imdbEpisode) if video.imdbEpisode else int(video.episode)
-            )
+            episode = int(video.imdbEpisode) if video.imdbEpisode else int(video.episode)
         except (ValueError, TypeError):
             continue
 
@@ -801,9 +781,7 @@ def list_stremio_episodes(params):
 
         list_item = make_list_item(label=f"{season}x{episode}. {title}")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setUniqueID(
-            meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf"
-        )
+        info_tag.setUniqueID(meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf")
         info_tag.setTitle(title)
         info_tag.setPlot(truncate_text(video.overview or ""))
         info_tag.setRating(float(meta_data.imdbRating or 0))
@@ -836,14 +814,17 @@ def list_stremio_episodes(params):
         ]
         context_menu_ids = _resolve_tmdb_ids_for_context_menu(ids, "series")
         if _has_reliable_tmdb_ids(context_menu_ids):
-            context_menu = _filter_tmdb_context_menu(
-                add_tmdb_episode_context_menu(
-                    mode="tv",
-                    tv_name=meta_data.name,
-                    tv_data=tv_data,
-                    ids=context_menu_ids,
+            context_menu = (
+                _filter_tmdb_context_menu(
+                    add_tmdb_episode_context_menu(
+                        mode="tv",
+                        tv_name=meta_data.name,
+                        tv_data=tv_data,
+                        ids=context_menu_ids,
+                    )
                 )
-            ) + context_menu
+                + context_menu
+            )
         else:
             context_menu.insert(
                 0,

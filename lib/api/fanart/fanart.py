@@ -1,4 +1,5 @@
 import requests
+
 from lib.utils.kodi.utils import get_setting
 
 API_KEY = "a7ad21743fd710fccb738232f2fbdcfc"
@@ -19,9 +20,7 @@ DEFAULT_FANART = {
 
 # Shared HTTP session (persistent, connection pooled)
 session = requests.Session()
-session.mount(
-    "https://webservice.fanart.tv", requests.adapters.HTTPAdapter(pool_maxsize=100)
-)
+session.mount("https://webservice.fanart.tv", requests.adapters.HTTPAdapter(pool_maxsize=100))
 
 
 def get_fanart(media_type: str, language: str, media_id: str) -> dict:
@@ -54,12 +53,8 @@ def get_fanart(media_type: str, language: str, media_id: str) -> dict:
             "poster": select_art(get("movieposter"), language),
             "fanart": select_art(get("moviebackground"), language),
             "banner": select_art(get("moviebanner"), language),
-            "clearart": select_art(
-                get("movieart", []) + get("hdmovieclearart", []), language
-            ),
-            "clearlogo": select_art(
-                get("movielogo", []) + get("hdmovielogo", []), language
-            ),
+            "clearart": select_art(get("movieart", []) + get("hdmovieclearart", []), language),
+            "clearlogo": select_art(get("movielogo", []) + get("hdmovielogo", []), language),
             "landscape": select_art(get("moviethumb"), language),
             "discart": select_art(get("moviedisc"), language),
             "fanart_added": True,
@@ -91,17 +86,13 @@ def select_art(art_list: list, language: str) -> str:
     try:
         # 1. User's language (e.g. 'es')
         matches = [
-            (x["url"], int(x.get("likes", 0)))
-            for x in art_list
-            if x.get("lang") == language
+            (x["url"], int(x.get("likes", 0))) for x in art_list if x.get("lang") == language
         ]
 
         # 2. English fallback
         if not matches and language != "en":
             matches = [
-                (x["url"], int(x.get("likes", 0)))
-                for x in art_list
-                if x.get("lang") == "en"
+                (x["url"], int(x.get("likes", 0))) for x in art_list if x.get("lang") == "en"
             ]
 
         # 3. Universal fallback ('00' or no lang)

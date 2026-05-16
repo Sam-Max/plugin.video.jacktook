@@ -1,13 +1,12 @@
 import json
 from unittest.mock import MagicMock
 
+from lib import search
 from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Meta, MetaPreview
-from lib.clients.stremio import helpers
+from lib.clients.stremio import catalog_menus, helpers
 from lib.clients.stremio.catalog_menus import CATALOG_PAGE_SIZE
-from lib.clients.stremio import catalog_menus
 from lib.domain.torrent import TorrentStream
-from lib import search
 
 
 def test_merge_addons_lists_keeps_same_manifest_id_with_different_urls():
@@ -80,10 +79,14 @@ def test_process_search_results_bypasses_exact_addon_instance(monkeypatch):
 
     processed_batches = []
 
-    monkeypatch.setattr(search, "get_setting", lambda key, default=None: {
-        "stremio_bypass_addons": True,
-        "stremio_bypass_addon_list": "org.example.addon|https://example.com/one",
-    }.get(key, default))
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda key, default=None: {
+            "stremio_bypass_addons": True,
+            "stremio_bypass_addon_list": "org.example.addon|https://example.com/one",
+        }.get(key, default),
+    )
     monkeypatch.setattr(search, "pre_process_results", lambda results, *args, **kwargs: results)
     monkeypatch.setattr(
         search,
@@ -144,9 +147,7 @@ def test_list_catalog_locally_paginates_when_catalog_has_no_skip(monkeypatch):
         "catalogs_get_cache",
         lambda *args, **kwargs: {"metas": metas},
     )
-    monkeypatch.setattr(
-        catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: False
-    )
+    monkeypatch.setattr(catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: False)
     monkeypatch.setattr(
         catalog_menus,
         "add_meta_items",
@@ -190,9 +191,7 @@ def test_list_catalog_uses_server_skip_when_manifest_supports_it(monkeypatch):
         "catalogs_get_cache",
         lambda path, params, **kwargs: captured_kwargs.update(kwargs) or {"metas": []},
     )
-    monkeypatch.setattr(
-        catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: True
-    )
+    monkeypatch.setattr(catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: True)
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
@@ -221,18 +220,26 @@ def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
 
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.cache, "get_list", lambda key: [("Naruto",), ("Bleach",)])
-    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90006: "Search", 90210: "Clear All Search History"}.get(value, str(value)))
+    monkeypatch.setattr(
+        catalog_menus,
+        "translation",
+        lambda value: {90006: "Search", 90210: "Clear All Search History"}.get(value, str(value)),
+    )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(
         catalog_menus,
         "addDirectoryItem",
-        lambda handle, url, listitem, isFolder=True: added_items.append((listitem.label, url, isFolder)),
+        lambda handle, url, listitem, isFolder=True: added_items.append(
+            (listitem.label, url, isFolder)
+        ),
     )
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         catalog_menus,
         "build_url",
-        lambda action, **kwargs: "{}:{}:{}".format(action, kwargs.get("query", ""), kwargs.get("is_keyboard", True)),
+        lambda action, **kwargs: "{}:{}:{}".format(
+            action, kwargs.get("query", ""), kwargs.get("is_keyboard", True)
+        ),
     )
 
     catalog_menus.search_catalog(
@@ -341,13 +348,23 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
             return "https://example.com/addon"
 
     monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
-    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90006: "Search"}.get(value, str(value)))
+    monkeypatch.setattr(
+        catalog_menus,
+        "translation",
+        lambda value: {90006: "Search"}.get(value, str(value)),
+    )
     monkeypatch.setattr(catalog_menus, "_addon_has_resource", lambda *args, **kwargs: True)
-    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label=label))
+    monkeypatch.setattr(
+        catalog_menus,
+        "make_list_item",
+        lambda label="", path="": _ListItem(label=label),
+    )
     monkeypatch.setattr(
         catalog_menus,
         "build_url",
-        lambda action=None, **kwargs: f"{action}:{kwargs.get('catalog_id', '')}:{kwargs.get('page', '')}",
+        lambda action=None, **kwargs: (
+            f"{action}:{kwargs.get('catalog_id', '')}:{kwargs.get('page', '')}"
+        ),
     )
     monkeypatch.setattr(
         catalog_menus,
@@ -357,7 +374,9 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
     monkeypatch.setattr(
         catalog_menus,
         "addDirectoryItem",
-        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("should not use addDirectoryItem")),
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("should not use addDirectoryItem")
+        ),
     )
 
     catalog_menus.list_stremio_catalogs(menu_type="series", sub_menu_type="series")
@@ -415,7 +434,11 @@ def test_search_catalog_backfills_missing_menu_type(monkeypatch):
         "catalogs_get_cache",
         lambda *args, **kwargs: {"metas": []},
     )
-    monkeypatch.setattr(catalog_menus, "add_meta_items", lambda metas, params: (_ for _ in ()).throw(AssertionError(params)))
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_meta_items",
+        lambda metas, params: (_ for _ in ()).throw(AssertionError(params)),
+    )
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
     monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
@@ -447,7 +470,11 @@ def test_clear_stremio_search_history_clears_only_current_catalog(monkeypatch):
     shown = []
 
     monkeypatch.setattr(catalog_menus.cache, "clear_list", lambda key: cleared.append(key))
-    monkeypatch.setattr(catalog_menus, "_show_search_catalog_history", lambda params: shown.append(params))
+    monkeypatch.setattr(
+        catalog_menus,
+        "_show_search_catalog_history",
+        lambda params: shown.append(params),
+    )
 
     params = {
         "addon_url": "https://anime-kitsu.strem.fun",
@@ -651,17 +678,31 @@ def test_add_meta_items_uses_tmdb_context_menu_only_for_reliable_tmdb_ids(monkey
 
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
+    monkeypatch.setattr(
+        catalog_menus,
+        "translation",
+        lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)),
+    )
     monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
-    monkeypatch.setattr(catalog_menus, "kodi_play_media", lambda **kwargs: f"PlayMedia({kwargs['name']})")
-    monkeypatch.setattr(catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)")
+    monkeypatch.setattr(
+        catalog_menus,
+        "kodi_play_media",
+        lambda **kwargs: f"PlayMedia({kwargs['name']})",
+    )
+    monkeypatch.setattr(
+        catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)"
+    )
     monkeypatch.setattr(
         catalog_menus,
         "add_tmdb_movie_context_menu",
-        lambda **kwargs: [("Extras", "extras"), ("Play Trailer", "trailer"), ("Add to Library", "tmdb-lib")],
+        lambda **kwargs: [
+            ("Extras", "extras"),
+            ("Play Trailer", "trailer"),
+            ("Add to Library", "tmdb-lib"),
+        ],
     )
     monkeypatch.setattr(
         catalog_menus,
@@ -670,8 +711,20 @@ def test_add_meta_items_uses_tmdb_context_menu_only_for_reliable_tmdb_ids(monkey
     )
 
     metas = [
-        MetaPreview(id="tmdb:100", type="movie", name="Reliable Movie", poster="", description="desc"),
-        MetaPreview(id="custom:200", type="movie", name="Custom Movie", poster="", description="desc"),
+        MetaPreview(
+            id="tmdb:100",
+            type="movie",
+            name="Reliable Movie",
+            poster="",
+            description="desc",
+        ),
+        MetaPreview(
+            id="custom:200",
+            type="movie",
+            name="Custom Movie",
+            poster="",
+            description="desc",
+        ),
     ]
 
     catalog_menus.add_meta_items(
@@ -722,19 +775,31 @@ def test_add_meta_items_resolves_tmdb_id_from_imdb_for_context_menu(monkeypatch)
 
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "translation", lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)))
+    monkeypatch.setattr(
+        catalog_menus,
+        "translation",
+        lambda value: {90205: "Add to Library", 90116: "Open Settings"}.get(value, str(value)),
+    )
     monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
     monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
-    monkeypatch.setattr(catalog_menus, "kodi_play_media", lambda **kwargs: f"PlayMedia({kwargs['name']})")
-    monkeypatch.setattr(catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)")
+    monkeypatch.setattr(
+        catalog_menus,
+        "kodi_play_media",
+        lambda **kwargs: f"PlayMedia({kwargs['name']})",
+    )
+    monkeypatch.setattr(
+        catalog_menus, "container_update", lambda **kwargs: "Container.Update(settings)"
+    )
     monkeypatch.setattr(
         catalog_menus.cache,
         "get",
-        lambda key: type("FindResult", (), {"movie_results": [{"id": 550}], "tv_results": []})()
-        if key == "find_by_imdb_id|tt0133093"
-        else None,
+        lambda key: (
+            type("FindResult", (), {"movie_results": [{"id": 550}], "tv_results": []})()
+            if key == "find_by_imdb_id|tt0133093"
+            else None
+        ),
     )
 
     def _movie_context_menu(**kwargs):
@@ -749,7 +814,14 @@ def test_add_meta_items_resolves_tmdb_id_from_imdb_for_context_menu(monkeypatch)
     )
 
     metas = [
-        MetaPreview(id="tt0133093", type="movie", name="The Matrix", poster="", description="desc", imdb_id="tt0133093"),
+        MetaPreview(
+            id="tt0133093",
+            type="movie",
+            name="The Matrix",
+            poster="",
+            description="desc",
+            imdb_id="tt0133093",
+        ),
     ]
 
     catalog_menus.add_meta_items(
@@ -779,7 +851,12 @@ def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
                 type(
                     "Stream",
                     (),
-                    {"title": "Movie Stream", "description": "Stream plot", "url": "https://video", "infoHash": ""},
+                    {
+                        "title": "Movie Stream",
+                        "description": "Stream plot",
+                        "url": "https://video",
+                        "infoHash": "",
+                    },
                 )()
             ]
         },
@@ -801,7 +878,9 @@ def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
             "addon_url": "https://example.com/addon",
             "catalog_type": "movie",
             "meta_id": "custom:movie",
-            "ids": json.dumps({"tmdb_id": "100", "imdb_id": "tt100", "original_id": "custom:movie"}),
+            "ids": json.dumps(
+                {"tmdb_id": "100", "imdb_id": "tt100", "original_id": "custom:movie"}
+            ),
             "poster": "poster.jpg",
             "fanart": "fanart.jpg",
             "genres": json.dumps(["Drama"]),

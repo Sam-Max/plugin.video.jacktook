@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
-from datetime import date, datetime, timedelta
 import json
 import os
 import re
-import xml.etree.ElementTree as ET
 import sys
 import time
+import xml.etree.ElementTree as ET
+from datetime import date, datetime, timedelta
 from typing import Any, Union
-
 from urllib.parse import quote, urlencode
-from lib.db.cached import cache
-from lib.utils.kodi.logging import kodilog
 
 import xbmc
 import xbmcaddon
 import xbmcgui
-
-from xbmcgui import Window, ListItem
-from xbmcplugin import addDirectoryItems, setResolvedUrl, endOfDirectory
+from xbmcgui import ListItem, Window
+from xbmcplugin import addDirectoryItems, endOfDirectory, setResolvedUrl
 from xbmcvfs import (
-    translatePath as translate_path,
-    delete as xbmc_delete,
-    listdir,
     File as xbmcvfs_File,
 )
+from xbmcvfs import (
+    delete as xbmc_delete,
+)
+from xbmcvfs import (
+    listdir,
+)
+from xbmcvfs import (
+    translatePath as translate_path,
+)
 
+from lib.db.cached import cache
+from lib.utils.kodi.logging import kodilog
 
 _URL = sys.argv[0]
 
@@ -69,9 +73,7 @@ ADDON_VERSION = ADDON.getAddonInfo("version")
 ADDON_NAME = ADDON.getAddonInfo("name")
 PLAYLIST = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
 
-CHANGELOG_PATH = translate_path(
-    "special://home/addons/plugin.video.jacktook/CHANGELOG.md"
-)
+CHANGELOG_PATH = translate_path("special://home/addons/plugin.video.jacktook/CHANGELOG.md")
 
 progressDialog = xbmcgui.DialogProgress()
 
@@ -120,9 +122,7 @@ def rebuild_settings_snapshot():
         if os.path.exists(profile_xml):
             root = ET.parse(profile_xml).getroot()
             settings_dict = {
-                item.get("id"): (item.text or "")
-                for item in root.iter("setting")
-                if item.get("id")
+                item.get("id"): (item.text or "") for item in root.iter("setting") if item.get("id")
             }
         else:
             settings_dict = {}
@@ -232,7 +232,7 @@ def clear_property(prop):
 
 def burst_addon_settings():
     close_all_dialog()
-    xbmc.executebuiltin("Addon.OpenSettings(%s)" % JACKTOOK_BURST_ADOON_ID)
+    xbmc.executebuiltin("Addon.OpenSettings({})".format(JACKTOOK_BURST_ADOON_ID))
 
 
 def get_kodi_version():
@@ -311,7 +311,7 @@ def logger(message, level=xbmc.LOGINFO):
 
 
 def get_url(**kwargs):
-    return "{}?{}".format(_URL, urlencode(kwargs))
+    return f"{_URL}?{urlencode(kwargs)}"
 
 
 def set_art(list_item, artwork_url):
@@ -340,7 +340,7 @@ def compat(line1, line2, line3):
 
 
 def kodi_refresh():
-	execute_builtin('UpdateLibrary(video,special://skin/foo)')
+    execute_builtin("UpdateLibrary(video,special://skin/foo)")
 
 
 def refresh():
@@ -397,7 +397,7 @@ def container_update(name, **kwargs):
     :param path: The path where to update.
     :type path: str
     """
-    return "Container.Update({})".format(build_url(name, **kwargs))
+    return f"Container.Update({build_url(name, **kwargs)})"
 
 
 def container_refresh():
@@ -405,7 +405,7 @@ def container_refresh():
 
 
 def action_url_run(name, **kwargs):
-    return "RunPlugin({})".format(build_url(name, **kwargs))
+    return f"RunPlugin({build_url(name, **kwargs)})"
 
 
 def build_url(action, **params):
@@ -433,7 +433,7 @@ def buffer_and_play(info_hash, file_id, path):
 
 
 def kodi_play_media(name, *args, **kwargs):
-    return "PlayMedia({})".format(build_url(name, *args, **kwargs))
+    return f"PlayMedia({build_url(name, *args, **kwargs)})"
 
 
 def show_busy_dialog():
@@ -441,7 +441,7 @@ def show_busy_dialog():
 
 
 def show_picture(url):
-    xbmc.executebuiltin('ShowPicture("{}")'.format(url))
+    xbmc.executebuiltin(f'ShowPicture("{url}")')
 
 
 def close_busy_dialog():
@@ -495,11 +495,9 @@ def disable_enable_addon(addon_id=ADDON_ID):
 def update_kodi_addons_db(addon_id=ADDON_ID):
     try:
         import sqlite3 as database
-        
+
         date = time.strftime("%Y-%m-%d %H:%M:%S")
-        dbcon = database.connect(
-            translate_path("special://database/Addons33.db"), timeout=40.0
-        )
+        dbcon = database.connect(translate_path("special://database/Addons33.db"), timeout=40.0)
         dbcon.execute(
             "INSERT OR REPLACE INTO installed (addonID, enabled, lastUpdated) VALUES (?, ?, ?)",
             (addon_id, 1, date),
@@ -564,11 +562,11 @@ SECTION_VIEW_KEYS = (
 
 
 def get_view_setting_key(view_key):
-    return "saved_%s" % view_key.replace(".", "_")
+    return "saved_{}".format(view_key.replace(".", "_"))
 
 
 def get_view_property_key(view_key):
-    return "jacktook.%s" % view_key
+    return "jacktook.{}".format(view_key)
 
 
 def _get_named_view_id(name, default="current"):
@@ -696,7 +694,7 @@ def copy2clip(txt):
     platform = sys.platform
     if platform == "win32":
         try:
-            cmd = "echo %s|clip" % txt.strip()
+            cmd = "echo {}|clip".format(txt.strip())
             return subprocess.check_call(cmd, shell=True)
         except:
             pass
@@ -770,6 +768,4 @@ def is_widget():
 
 
 def end_of_directory(cache=True):
-    endOfDirectory(
-        ADDON_HANDLE, cacheToDisc=False if is_widget() or not cache else True
-    )
+    endOfDirectory(ADDON_HANDLE, cacheToDisc=False if is_widget() or not cache else True)

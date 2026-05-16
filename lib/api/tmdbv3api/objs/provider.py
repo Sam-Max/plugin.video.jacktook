@@ -13,10 +13,7 @@ class Provider(TMDb):
         Returns a list of all of the countries we have watch provider (OTT/streaming) data for.
         :return:
         """
-        return self._request_obj(
-            self._urls["regions"],
-            key="results"
-        )
+        return self._request_obj(self._urls["regions"], key="results")
 
     def movie_providers(self, region=None):
         """
@@ -25,8 +22,8 @@ class Provider(TMDb):
         """
         return self._request_obj(
             self._urls["movie"],
-            params="watch_region=%s" % region if region else "",
-            key="results"
+            params="watch_region={}".format(region) if region else "",
+            key="results",
         )
 
     def tv_providers(self, region=None):
@@ -36,6 +33,6 @@ class Provider(TMDb):
         """
         return self._request_obj(
             self._urls["tv"],
-            params="watch_region=%s" % region if region else "",
-            key="results"
+            params="watch_region={}".format(region) if region else "",
+            key="results",
         )

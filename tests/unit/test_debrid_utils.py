@@ -13,9 +13,7 @@ def test_get_magnet_from_uri_follows_redirect_to_magnet():
     with patch(
         "lib.utils.debrid.debrid_utils.requests.get", return_value=redirect_response
     ) as mock_get:
-        magnet, info_hash, torrent_url = get_magnet_from_uri(
-            "https://jackett.local/dl/test"
-        )
+        magnet, info_hash, torrent_url = get_magnet_from_uri("https://jackett.local/dl/test")
 
     assert magnet.startswith("magnet:?xt=urn:btih:1234567890ABCDEF")
     assert info_hash == "1234567890abcdef1234567890abcdef12345678"
@@ -38,9 +36,7 @@ def test_get_magnet_from_uri_follows_http_redirect_chain():
         "lib.utils.debrid.debrid_utils.requests.get",
         side_effect=[first_response, second_response],
     ) as mock_get:
-        magnet, info_hash, torrent_url = get_magnet_from_uri(
-            "https://jackett.local/dl/test"
-        )
+        magnet, info_hash, torrent_url = get_magnet_from_uri("https://jackett.local/dl/test")
 
     assert magnet.startswith("magnet:?xt=urn:btih:ABCDEF1234567890")
     assert info_hash == "abcdef1234567890abcdef1234567890abcdef12"
@@ -60,9 +56,7 @@ def test_get_magnet_from_uri_preserves_torrent_url_for_playback():
         "lib.utils.debrid.debrid_utils.extract_torrent_metadata",
         return_value="magnet:?xt=urn:btih:AAAABBBBCCCCDDDDEEEEFFFF0000111122223333&dn=Test",
     ):
-        magnet, info_hash, torrent_url = get_magnet_from_uri(
-            "https://jackett.local/dl/test"
-        )
+        magnet, info_hash, torrent_url = get_magnet_from_uri("https://jackett.local/dl/test")
 
     assert magnet.startswith("magnet:?xt=urn:btih:AAAABBBBCCCCDDDDEEEEFFFF")
     assert info_hash == "aaaabbbbccccddddeeeeffff0000111122223333"

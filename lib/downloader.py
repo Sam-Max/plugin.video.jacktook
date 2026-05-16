@@ -1,39 +1,40 @@
 import json
 import os
+import re
 import ssl
 import threading
-import re
 import time
-from urllib.request import Request, urlopen
 from urllib.parse import parse_qsl, unquote, urlparse
-from lib.utils.general.utils import set_pluging_category, supported_video_extensions
-from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
-    apply_section_view,
-    action_url_run,
-    build_url,
-    bytes_to_human_readable,
-    get_setting,
-    kodilog,
-    translatePath,
-    ADDON_PATH,
-    notification,
-    open_file,
-    translation,
-)
-from lib.db.cached import MemoryCache
-from lib.download_manager import DownloadManager
-from lib.gui.custom_progress import CustomProgressDialog
-from lib.nav.debrid import resolve_cloud_download_url
+from urllib.request import Request, urlopen
 
+import xbmc
+import xbmcgui
+import xbmcvfs
 from xbmcplugin import (
     addDirectoryItems,
     endOfDirectory,
     setContent,
 )
-import xbmcgui
-import xbmcvfs
-import xbmc
+
+from lib.db.cached import MemoryCache
+from lib.download_manager import DownloadManager
+from lib.gui.custom_progress import CustomProgressDialog
+from lib.nav.debrid import resolve_cloud_download_url
+from lib.utils.general.utils import set_pluging_category, supported_video_extensions
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    action_url_run,
+    apply_section_view,
+    build_url,
+    bytes_to_human_readable,
+    get_setting,
+    kodilog,
+    notification,
+    open_file,
+    translatePath,
+    translation,
+)
 
 cancel_flag_cache = MemoryCache()
 
@@ -51,7 +52,9 @@ def handle_download_file(params):
     file_name = normalize_file_name(params.get("file_name", ""), url)
     dest_path = os.path.join(destination, file_name)
     cancel_key = dest_path
-    kodilog(f"[Downloader] handle_download_file: file_name={file_name}, dest_path={dest_path}, url_length={len(url)}")
+    kodilog(
+        f"[Downloader] handle_download_file: file_name={file_name}, dest_path={dest_path}, url_length={len(url)}"
+    )
 
     manager = DownloadManager()
     entry = manager.register(name=file_name, dest_path=dest_path, url=url)
@@ -82,17 +85,22 @@ def download_cloud_file(params):
     debrid_type = params.get("debrid_type", "")
 
     if not url and debrid_type in ("TB", "Torbox"):
-        url = resolve_cloud_download_url({
-            "debrid_type": debrid_type,
-            "torrent_id": params.get("torrent_id", ""),
-            "file_id": params.get("file_id", ""),
-        })
+        url = resolve_cloud_download_url(
+            {
+                "debrid_type": debrid_type,
+                "torrent_id": params.get("torrent_id", ""),
+                "file_id": params.get("file_id", ""),
+            }
+        )
 
     if not url:
         notification("Download link unavailable.")
         return
 
-    dest_data = {"title": filename, "mode": "movies" if mode in ("movie", "movies") else mode}
+    dest_data = {
+        "title": filename,
+        "mode": "movies" if mode in ("movie", "movies") else mode,
+    }
     destination = get_destination_path(dest_data)
     if not destination:
         notification("Invalid download destination.")
@@ -154,7 +162,15 @@ def download_video(params):
 
 
 class ProgressHandler:
-    def update(self, percent: int, message: str, downloaded_str: str = "", size_str: str = "", speed_str: str = "", eta_str: str = ""):
+    def update(
+        self,
+        percent: int,
+        message: str,
+        downloaded_str: str = "",
+        size_str: str = "",
+        speed_str: str = "",
+        eta_str: str = "",
+    ):
         pass
 
     def cancelled(self) -> bool:
@@ -169,7 +185,15 @@ class KodiProgressHandler(ProgressHandler):
         self.dialog = CustomProgressDialog("custom_progress_dialog.xml", addon_path)
         self.dialog.show_dialog()
 
-    def update(self, percent: int, message: str, downloaded_str: str = "", size_str: str = "", speed_str: str = "", eta_str: str = ""):
+    def update(
+        self,
+        percent: int,
+        message: str,
+        downloaded_str: str = "",
+        size_str: str = "",
+        speed_str: str = "",
+        eta_str: str = "",
+    ):
         self.dialog.update_progress(percent, message, downloaded_str, size_str, speed_str, eta_str)
 
     def cancelled(self) -> bool:
@@ -203,7 +227,15 @@ class Downloader:
         self.meta_path = self.dest_path + ".jacktook.json"
         self._start_time = None
 
-    def _write_metadata(self, status: str, progress: int = 0, size: int = 0, downloaded: int = 0, speed: int = 0, eta: int = 0):
+    def _write_metadata(
+        self,
+        status: str,
+        progress: int = 0,
+        size: int = 0,
+        downloaded: int = 0,
+        speed: int = 0,
+        eta: int = 0,
+    ):
         try:
             meta = {
                 "title": self.name,
@@ -218,7 +250,7 @@ class Downloader:
             with open_file(self.meta_path, "w") as f:
                 json.dump(meta, f)
         except Exception as e:
-            kodilog(f"[Downloader] Failed to write metadata: {str(e)}")
+            kodilog(f"[Downloader] Failed to write metadata: {e!s}")
 
     def _update_registry(self, downloaded: int, percent: int):
         if not self.registry_id:
@@ -288,7 +320,7 @@ class Downloader:
                 self.headers = dict(parse_qsl(self.url.rsplit("|", 1)[1]))
                 self.url = self.url.split("|")[0]
         except Exception as e:
-            kodilog(f"[Downloader] Failed to parse headers: {str(e)}")
+            kodilog(f"[Downloader] Failed to parse headers: {e!s}")
 
     def _validate_url(self):
         try:
@@ -306,7 +338,7 @@ class Downloader:
             self.file_size = int(response.headers.get("Content-Length", 0))
             return True
         except Exception as e:
-            kodilog(f"[Downloader] Validation error: {str(e)}")
+            kodilog(f"[Downloader] Validation error: {e!s}")
             return False
 
     def _start_download(self):
@@ -453,7 +485,7 @@ class Downloader:
                     notification(f"Download completed: {self.name}")
         except Exception as e:
             self._set_registry_status("error")
-            notification(f"Download error: {str(e)}")
+            notification(f"Download error: {e!s}")
         finally:
             if self.progress_handler:
                 self.progress_handler.close()
@@ -483,7 +515,7 @@ def handle_pause_download(params, refresh=True):
                 with open_file(meta_path, "w") as f:
                     json.dump(meta, f)
         except Exception as e:
-            kodilog(f"[Downloader] Failed to update pause metadata: {str(e)}")
+            kodilog(f"[Downloader] Failed to update pause metadata: {e!s}")
         if refresh:
             xbmc.executebuiltin("Container.Refresh")
     else:
@@ -510,7 +542,7 @@ def resume_download(params):
         with open_file(meta_path, "r") as f:
             meta = json.load(f)
     except Exception as e:
-        kodilog(f"[Downloader] Failed to read metadata for resume: {str(e)}")
+        kodilog(f"[Downloader] Failed to read metadata for resume: {e!s}")
         notification("No metadata found for resume.")
         return
 
@@ -553,16 +585,17 @@ def handle_delete_file(params):
         meta_path = final_path + ".jacktook.json"
         if xbmcvfs.exists(meta_path):
             xbmcvfs.delete(meta_path)
-        notification(f"File Deleted")
+        notification("File Deleted")
         xbmc.executebuiltin("Container.Refresh")
     except Exception as e:
-        kodilog(f"Error deleting file: {str(e)}")
-        notification(f"Failed to delete file: {str(e)}")
+        kodilog(f"Error deleting file: {e!s}")
+        notification(f"Failed to delete file: {e!s}")
 
 
 def _count_active_downloads(directory):
     """Count downloads that are in-progress (downloading or paused) recursively
-    across all subdirectories."""
+    across all subdirectories.
+    """
     count = 0
     try:
         count = _walk_count_active(directory)
@@ -613,14 +646,10 @@ def downloads_viewer(params):
             ]
             active_count = len(active_downloads)
 
-        active_label = (
-            f"[COLOR red]{translation(90373)}: {active_count}[/COLOR]"
-        )
+        active_label = f"[COLOR red]{translation(90373)}: {active_count}[/COLOR]"
         active_item = xbmcgui.ListItem(label=active_label)
         active_item.setProperty("IsPlayable", "false")
-        active_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "download.png")}
-        )
+        active_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "download.png")})
         item_list.append(("", active_item, False))
 
         for item in directories + files:
@@ -705,9 +734,7 @@ def downloads_viewer(params):
                     context_menu.append(
                         (
                             translation(90782),
-                            action_url_run(
-                                "handle_delete_file", file_path=json.dumps(item_path)
-                            ),
+                            action_url_run("handle_delete_file", file_path=json.dumps(item_path)),
                         )
                     )
 
@@ -726,7 +753,7 @@ def downloads_viewer(params):
         endOfDirectory(ADDON_HANDLE)
         apply_section_view("view.downloads", content_type="files")
     except Exception as e:
-        notification(f"Error: {str(e)}", translation(90662))
+        notification(f"Error: {e!s}", translation(90662))
         endOfDirectory(ADDON_HANDLE, succeeded=False)
 
 

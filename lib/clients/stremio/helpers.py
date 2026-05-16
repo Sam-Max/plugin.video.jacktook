@@ -1,22 +1,25 @@
-from typing import List, Callable, Optional
-import requests
 import concurrent.futures
+from typing import Callable, List, Optional
+
+import requests
+
 from lib.api.stremio.addon_manager import (
     Addon,
     AddonManager,
     build_addon_instance_key,
-    normalize_transport_url,
 )
 from lib.api.stremio.api_client import Stremio
-from lib.db.cached import cache
-from lib.utils.kodi.utils import get_setting, kodilog
 from lib.clients.stremio.constants import (
-    STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_ADDONS_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
     decode_selected_ids,
 )
+from lib.db.cached import cache
+from lib.utils.kodi.utils import get_setting, kodilog
+
+
 def get_addon_merge_key(addon):
     return build_addon_instance_key(addon)
 
@@ -76,9 +79,7 @@ def _resolve_selected_addons(catalog: AddonManager, selected_ids_list: List[str]
 def get_addons():
     all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
     custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
-    cached_account_addons = [
-        a for a in all_user_addons if a.get("transportName") != "custom"
-    ]
+    cached_account_addons = [a for a in all_user_addons if a.get("transportName") != "custom"]
     user_addons = list(cached_account_addons)
 
     logged_in = get_setting("stremio_loggedin")

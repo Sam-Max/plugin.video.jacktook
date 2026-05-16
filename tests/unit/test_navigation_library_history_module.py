@@ -6,12 +6,11 @@ from lib.nav import library_history
 def test_history_menu_renders_history_items():
     with patch("lib.nav.library_history.set_pluging_category") as set_category, patch(
         "lib.nav.library_history.add_directory_items_batch"
-    ) as add_directory_items_batch, patch(
-        "lib.nav.library_history.end_of_directory"
-    ), patch(
+    ) as add_directory_items_batch, patch("lib.nav.library_history.end_of_directory"), patch(
         "lib.nav.library_history.build_url", side_effect=lambda action, **kwargs: action
     ), patch(
-        "lib.nav.library_history.build_list_item", side_effect=lambda label, *_args, **_kwargs: label
+        "lib.nav.library_history.build_list_item",
+        side_effect=lambda label, *_args, **_kwargs: label,
     ):
         library_history.history_menu({})
 

@@ -1,4 +1,5 @@
 import json
+
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.utils import add_kodi_dir_item, tmdb_get
 from lib.utils.general.utils import (
@@ -11,10 +12,9 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.utils import (
     build_url,
     end_of_directory,
-    kodilog,
     make_list_item,
-    show_keyboard,
     notification,
+    show_keyboard,
     translation,
 )
 
@@ -41,9 +41,7 @@ class PeopleClient(BaseTmdbClient):
             end_of_directory(cache=False)
             return
 
-        execute_thread_pool(
-            getattr(data, "results"), PeopleClient.show_people_details, mode
-        )
+        execute_thread_pool(data.results, PeopleClient.show_people_details, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -82,7 +80,7 @@ class PeopleClient(BaseTmdbClient):
                 return
             PeopleClient.show_people_details(person, mode)
 
-        execute_thread_pool(getattr(credits, "cast"), get_media_credits)
+        execute_thread_pool(credits.cast, get_media_credits)
 
         end_of_directory()
 
@@ -95,9 +93,7 @@ class PeopleClient(BaseTmdbClient):
             notification(translation(90389))
             return
 
-        execute_thread_pool(
-            getattr(data, "results"), PeopleClient.show_people_details, mode
-        )
+        execute_thread_pool(data.results, PeopleClient.show_people_details, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -117,9 +113,7 @@ class PeopleClient(BaseTmdbClient):
             notification(translation(90389))
             return
 
-        execute_thread_pool(
-            getattr(data, "results"), PeopleClient.show_people_details, mode
-        )
+        execute_thread_pool(data.results, PeopleClient.show_people_details, mode)
 
         add_next_button(
             "handle_tmdb_query",
@@ -150,8 +144,8 @@ class PeopleClient(BaseTmdbClient):
 
         tmdb_id = credit.get("id")
         details = tmdb_get(f"{media_type}_details", tmdb_id)
-        imdb_id = getattr(details, "external_ids").get("imdb_id")
-        tvdb_id = getattr(details, "external_ids").get("tvdb_id")
+        imdb_id = details.external_ids.get("imdb_id")
+        tvdb_id = details.external_ids.get("tvdb_id")
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
@@ -189,9 +183,7 @@ class PeopleClient(BaseTmdbClient):
         set_media_infoTag(list_item, data=details, mode=mode)
         add_kodi_dir_item(
             list_item=list_item,
-            url=build_url(
-                "handle_tmdb_person_info", mode=mode, person_id=person.get("id")
-            ),
+            url=build_url("handle_tmdb_person_info", mode=mode, person_id=person.get("id")),
             is_folder=False,
         )
 
@@ -218,17 +210,13 @@ class PeopleClient(BaseTmdbClient):
 
         if mode == "movies":
             media_type = "movie"
-            person_credits = tmdb_get(
-                "person_movie_credits", params=params.get("person_id")
-            )
+            person_credits = tmdb_get("person_movie_credits", params=params.get("person_id"))
             if not person_credits:
                 notification(translation(90421))
                 return
         elif mode == "tv":
             media_type = "tv"
-            person_credits = tmdb_get(
-                "person_tv_credits", params=params.get("person_id")
-            )
+            person_credits = tmdb_get("person_tv_credits", params=params.get("person_id"))
             if not person_credits:
                 notification(translation(90421))
                 return
@@ -240,12 +228,8 @@ class PeopleClient(BaseTmdbClient):
         def get_date(c):
             return c.get("release_date") or c.get("first_air_date") or ""
 
-        credits = sorted(
-            getattr(person_credits, "cast", []), key=get_date, reverse=True
-        )
+        credits = sorted(getattr(person_credits, "cast", []), key=get_date, reverse=True)
 
-        execute_thread_pool(
-            credits, PeopleClient.show_credited_people, mode, media_type
-        )
+        execute_thread_pool(credits, PeopleClient.show_credited_people, mode, media_type)
 
         end_of_directory()

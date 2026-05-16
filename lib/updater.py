@@ -1,32 +1,31 @@
-# -*- coding: utf-8 -*-
-import shutil
-import requests
 import os
-from zipfile import ZipFile, BadZipFile
+import shutil
 import xml.etree.ElementTree as ET
+from zipfile import BadZipFile, ZipFile
+
+import requests
 import xbmc
 from xbmcvfs import translatePath as translate_path
 
+from lib.utils.general.utils import unzip
 from lib.utils.kodi.utils import (
     ADDON_VERSION,
-    notification,
-    dialog_ok,
-    dialogyesno,
     close_all_dialog,
-    execute_builtin,
-    delete_file,
-    update_local_addons,
-    disable_enable_addon,
-    update_kodi_addons_db,
-    dialog_text,
-    dialog_select,
-    show_busy_dialog,
     close_busy_dialog,
+    delete_file,
+    dialog_ok,
+    dialog_select,
+    dialog_text,
+    dialogyesno,
+    disable_enable_addon,
+    execute_builtin,
     kodilog,
+    notification,
+    show_busy_dialog,
     translation,
+    update_kodi_addons_db,
+    update_local_addons,
 )
-from lib.utils.general.utils import unzip
-
 
 # =========================
 # Constants
@@ -41,9 +40,7 @@ DESTINATION_DIR = translate_path(f"special://home/addons/{ADDON_ID}")
 CHANGELOG_PATH = translate_path(f"special://home/addons/{ADDON_ID}/CHANGELOG.md")
 
 BASE_REPO_URL = "https://github.com/Sam-Max/repository.jacktook/raw/main/packages"
-BASE_ZIP_URL = (
-    "https://raw.githubusercontent.com/Sam-Max/repository.jacktook/main/repo/zips"
-)
+BASE_ZIP_URL = "https://raw.githubusercontent.com/Sam-Max/repository.jacktook/main/repo/zips"
 
 VERSION_FILE = f"{BASE_REPO_URL}/jacktook_version"
 CHANGELOG_FILE = f"{BASE_REPO_URL}/jacktook_changelog"
@@ -127,8 +124,7 @@ def _validate_downloaded_zip(zip_path, expected_version):
 
     if version != expected_version:
         raise ValueError(
-            "Package version mismatch: expected %s, found %s"
-            % (expected_version, version)
+            "Package version mismatch: expected {}, found {}".format(expected_version, version)
         )
 
 
@@ -140,8 +136,7 @@ def _validate_installed_version(destination_dir, expected_version):
     version = _read_addon_version_from_xml(addon_xml_path)
     if version != expected_version:
         raise ValueError(
-            "Installed version mismatch: expected %s, found %s"
-            % (expected_version, version)
+            "Installed version mismatch: expected {}, found {}".format(expected_version, version)
         )
 
 
@@ -253,9 +248,7 @@ def downgrade_addon_menu():
 
         versions.sort(key=n, reverse=True)
 
-    selected_index = dialog_select(
-        heading=translation(90585), _list=versions
-    )
+    selected_index = dialog_select(heading=translation(90585), _list=versions)
 
     if selected_index == -1:
         return
@@ -334,9 +327,7 @@ def update_addon(new_version):
             _safe_remove_path(staging_dir)
         except Exception:
             pass
-        dialog_ok(
-            heading=HEADING, line1=translation(90590)
-        )
+        dialog_ok(heading=HEADING, line1=translation(90590))
         return
 
     replaced_existing_install = False
@@ -388,7 +379,7 @@ def update_addon(new_version):
     disable_enable_addon()
     update_kodi_addons_db()
     notification(heading=HEADING, message="Reloading Kodi profile to apply addon changes")
-    execute_builtin('LoadProfile(%s)' % xbmc.getInfoLabel("System.ProfileName"), True)
+    execute_builtin("LoadProfile({})".format(xbmc.getInfoLabel("System.ProfileName")), True)
 
     notification(heading=HEADING, message=translation(90593))
     kodilog("Update process finished successfully.")

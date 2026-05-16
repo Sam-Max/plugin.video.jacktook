@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-
 import logging
 import os
 import time
 
 import requests
-
-from lib.utils.kodi.utils import kodilog
 
 from .as_obj import AsObj
 from .exceptions import TMDbException
@@ -19,7 +15,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class TMDb(object):
+class TMDb:
     _session = None
     TMDB_API_KEY = "TMDB_API_KEY"
     TMDB_LANGUAGE = "TMDB_LANGUAGE"
@@ -178,13 +174,9 @@ class TMDb(object):
             if self.wait_on_rate_limit:
                 logger.warning("Rate limit reached. Sleeping for: %d" % sleep_time)
                 time.sleep(abs(sleep_time))
-                return self._request_obj(
-                    action, params, call_cached, method, data, json, key
-                )
+                return self._request_obj(action, params, call_cached, method, data, json, key)
             else:
-                raise TMDbException(
-                    "Rate limit reached. Try again in %d seconds." % sleep_time
-                )
+                raise TMDbException("Rate limit reached. Try again in %d seconds." % sleep_time)
 
         json = req.json()
 

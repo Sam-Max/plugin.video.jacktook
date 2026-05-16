@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 from unittest.mock import MagicMock
 
 # --- Create stub classes for xbmcgui to avoid type hint issues in Python 3.13 ---

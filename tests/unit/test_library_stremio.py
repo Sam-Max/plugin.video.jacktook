@@ -8,7 +8,9 @@ def test_get_library_entries_prioritizes_stremio_metadata(monkeypatch):
     monkeypatch.setattr(library.cache, "set", lambda *args, **kwargs: None)
 
     tmdb_calls = []
-    monkeypatch.setattr(library, "tmdb_get", lambda *args, **kwargs: tmdb_calls.append((args, kwargs)))
+    monkeypatch.setattr(
+        library, "tmdb_get", lambda *args, **kwargs: tmdb_calls.append((args, kwargs))
+    )
 
     entries = library._get_library_entries(
         [
@@ -101,16 +103,26 @@ def test_show_library_items_renders_stremio_entry_without_tmdb(monkeypatch):
         def setProperty(self, key, value):
             self.properties[key] = value
 
-    monkeypatch.setattr(library, "make_list_item", lambda label="", path="", offscreen=True: _ListItem(label=label))
+    monkeypatch.setattr(
+        library,
+        "make_list_item",
+        lambda label="", path="", offscreen=True: _ListItem(label=label),
+    )
     monkeypatch.setattr(library, "set_pluging_category", lambda *args, **kwargs: None)
     monkeypatch.setattr(library, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(library, "end_of_directory", lambda *args, **kwargs: None)
-    monkeypatch.setattr(library, "translation", lambda value: {90202: "My Shows", 90204: "Remove from Library"}.get(value, str(value)))
+    monkeypatch.setattr(
+        library,
+        "translation",
+        lambda value: {90202: "My Shows", 90204: "Remove from Library"}.get(value, str(value)),
+    )
     monkeypatch.setattr(library, "set_media_infoTag", lambda *args, **kwargs: None)
     monkeypatch.setattr(
         library,
         "add_directory_items_batch",
-        lambda items: added.extend((url, listitem.label, is_folder) for url, listitem, is_folder in items),
+        lambda items: added.extend(
+            (url, listitem.label, is_folder) for url, listitem, is_folder in items
+        ),
     )
     monkeypatch.setattr(
         library.PickleDatabase,
@@ -146,7 +158,9 @@ def test_library_treats_entries_with_stremio_route_fields_as_stremio(monkeypatch
     monkeypatch.setattr(library.cache, "set", lambda *args, **kwargs: None)
 
     tmdb_calls = []
-    monkeypatch.setattr(library, "tmdb_get", lambda *args, **kwargs: tmdb_calls.append((args, kwargs)))
+    monkeypatch.setattr(
+        library, "tmdb_get", lambda *args, **kwargs: tmdb_calls.append((args, kwargs))
+    )
 
     entries = library._get_library_entries(
         [

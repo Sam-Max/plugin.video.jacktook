@@ -25,7 +25,10 @@ def test_sync_activities_applies_changed_buckets():
     api.sync.get_last_activities.return_value = {"movies": {"watched_at": "new"}}
     service = TraktSyncService(api=api, monitor=MagicMock())
 
-    with patch("lib.services.trakt_sync.reset_activity", return_value={"movies": {"watched_at": "old"}}), patch.object(
+    with patch(
+        "lib.services.trakt_sync.reset_activity",
+        return_value={"movies": {"watched_at": "old"}},
+    ), patch.object(
         service, "_get_changed_buckets", return_value={"watched_movies", "lists"}
     ) as changed_buckets, patch.object(service, "_apply_activity_changes") as apply_changes:
         result = service.sync_activities()
@@ -40,7 +43,10 @@ def test_sync_activities_logs_changed_buckets():
     api.sync.get_last_activities.return_value = {"movies": {"watched_at": "new"}}
     service = TraktSyncService(api=api, monitor=MagicMock())
 
-    with patch("lib.services.trakt_sync.reset_activity", return_value={"movies": {"watched_at": "old"}}), patch.object(
+    with patch(
+        "lib.services.trakt_sync.reset_activity",
+        return_value={"movies": {"watched_at": "old"}},
+    ), patch.object(
         service, "_get_changed_buckets", return_value={"watched_movies", "lists"}
     ), patch.object(service, "_apply_activity_changes"), patch(
         "lib.services.trakt_sync.kodilog"

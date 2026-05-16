@@ -2,7 +2,7 @@ import copy
 import threading
 import time
 from datetime import datetime
-from typing import Any, List, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
@@ -10,12 +10,7 @@ from lib.clients.debrid.common import (
     ensure_direct_playable_file_for_provider,
     get_file_name,
 )
-from lib.utils.kodi.logging import kodilog
-from lib.utils.kodi.utils import (
-    get_setting,
-    dialog_text,
-    translation,
-)
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -26,7 +21,12 @@ from lib.utils.general.utils import (
     set_cached,
     supported_video_extensions,
 )
-from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.logging import kodilog
+from lib.utils.kodi.utils import (
+    dialog_text,
+    get_setting,
+    translation,
+)
 
 
 class LinkNotFoundError(Exception):
@@ -49,9 +49,7 @@ class RealDebridHelper:
         # Checks if torrents are cached in Real-Debrid.
         torr_available = self.client.get_user_torrent_list()
         torr_available_hashes = [
-            t.get("hash")
-            for t in torr_available
-            if isinstance(t, dict) and t.get("hash")
+            t.get("hash") for t in torr_available if isinstance(t, dict) and t.get("hash")
         ]
 
         for res in copy.deepcopy(results):
@@ -75,9 +73,7 @@ class RealDebridHelper:
         """Adds a magnet link to Real-Debrid and returns the torrent ID."""
         try:
             kodilog(
-                "RealDebridHelper.add_magnet: checking existing torrent for hash={!r}".format(
-                    str(info_hash).lower()[:12]
-                )
+                f"RealDebridHelper.add_magnet: checking existing torrent for hash={str(info_hash).lower()[:12]!r}"
             )
             torrent_info = self.client.get_available_torrent(info_hash)
             if not torrent_info:
@@ -118,9 +114,7 @@ class RealDebridHelper:
         except Exception as e:
             raise ProviderException(str(e))
 
-    def _handle_torrent_status(
-        self, torrent_info: Dict, is_pack: bool = False
-    ) -> Optional[str]:
+    def _handle_torrent_status(self, torrent_info: Dict, is_pack: bool = False) -> Optional[str]:
         """Processes torrent_info status and handles errors or file selection."""
         status = torrent_info["status"]
         torrent_id = torrent_info.get("id", "unknown")
@@ -128,10 +122,12 @@ class RealDebridHelper:
             self.client.delete_torrent(torrent_info["id"])
             raise ProviderException(f"Torrent cannot be downloaded: {status}")
         elif status in ["queued", "downloading", "magnet_conversion"]:
-            kodilog(f"RealDebridHelper: Torrent {torrent_id} is still being processed (status: {status}). It has been added to your cloud but is not ready yet.")
+            kodilog(
+                f"RealDebridHelper: Torrent {torrent_id} is still being processed (status: {status}). It has been added to your cloud but is not ready yet."
+            )
             return torrent_id
         elif status == "waiting_files_selection":
-            if "files" in torrent_info and torrent_info["files"]:
+            if torrent_info.get("files"):
                 self.handle_file_selection(torrent_info, is_pack)
             else:
                 raise ProviderException("No files available for this torrent yet.")
@@ -142,9 +138,7 @@ class RealDebridHelper:
         extensions = supported_video_extensions()[:-1]
 
         video_files = [
-            item
-            for item in files
-            if any(item["path"].lower().endswith(ext) for ext in extensions)
+            item for item in files if any(item["path"].lower().endswith(ext) for ext in extensions)
         ]
 
         if video_files:
@@ -156,9 +150,7 @@ class RealDebridHelper:
             if torrents_ids:
                 self.client.select_files(torrent_info["id"], ",".join(torrents_ids))
 
-    def get_link(
-        self, info_hash: str, data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def get_link(self, info_hash: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a Real-Debrid torrent."""
         torrent_id = self.add_magnet(info_hash)
         torrent_info = self.client.get_torrent_info(torrent_id)
@@ -178,9 +170,7 @@ class RealDebridHelper:
         # --- Single-file torrent ---
         if len(links) == 1:
             single_file = files[0] if files else {}
-            ensure_direct_playable_file_for_provider(
-                get_file_name(single_file), "Real-Debrid"
-            )
+            ensure_direct_playable_file_for_provider(get_file_name(single_file), "Real-Debrid")
             data["url"] = create_download_for_link(links[0])
             return data
 
@@ -190,21 +180,15 @@ class RealDebridHelper:
             season = tv_data.get("season")
             episode = tv_data.get("episode")
 
-            possible_matches = filter_debrid_episode(
-                files, episode_num=episode, season_num=season
-            )
+            possible_matches = filter_debrid_episode(files, episode_num=episode, season_num=season)
             if not possible_matches:
                 raise ProviderException("No matching episode found in torrent.")
 
-            match_file = next(
-                (f for f in possible_matches if f.get("selected") == 1), None
-            )
+            match_file = next((f for f in possible_matches if f.get("selected") == 1), None)
             if not match_file:
                 raise ValueError("File is not cached")
 
-            ensure_direct_playable_file_for_provider(
-                get_file_name(match_file), "Real-Debrid"
-            )
+            ensure_direct_playable_file_for_provider(get_file_name(match_file), "Real-Debrid")
 
             selected_files = [f for f in files if f.get("selected") == 1]
             try:
@@ -218,9 +202,7 @@ class RealDebridHelper:
         selected_files = [f for f in files if f.get("selected") == 1]
         if selected_files:
             largest_file = max(selected_files, key=lambda f: f.get("bytes", 0))
-            ensure_direct_playable_file_for_provider(
-                get_file_name(largest_file), "Real-Debrid"
-            )
+            ensure_direct_playable_file_for_provider(get_file_name(largest_file), "Real-Debrid")
             try:
                 file_index = selected_files.index(largest_file)
             except ValueError:
@@ -235,7 +217,6 @@ class RealDebridHelper:
 
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
-
         pack_info = cast(Dict[str, Any], data.get("pack_info", {}) or {})
         file_position = pack_info.get("file_position", "")
         torrent_id = pack_info.get("torrent_id", "")
@@ -281,9 +262,7 @@ class RealDebridHelper:
         try:
             expires = datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
         except ValueError:
-            expires = datetime(
-                *(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6])
-            )
+            expires = datetime(*(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6]))
 
         days_remaining = (expires - datetime.today()).days
         body = [

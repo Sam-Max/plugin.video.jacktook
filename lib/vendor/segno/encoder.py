@@ -11,20 +11,22 @@ DOES NOT belong to the public API.
 
 "QR Code" and "Micro QR Code" are registered trademarks of DENSO WAVE INCORPORATED.
 """
-from operator import itemgetter, gt, lt, xor
-from functools import partial, reduce
-from itertools import islice, chain, product
-import re
-import math
+
 import codecs
-from collections import namedtuple
-from . import consts
-from itertools import zip_longest
+import math
+import re
 import sys
+from collections import namedtuple
+from functools import partial, reduce
+from itertools import chain, islice, product, zip_longest
+from operator import gt, itemgetter, lt, xor
+
+from . import consts
+
 _MAX_PENALTY_SCORE = sys.maxsize
 del sys
 
-__all__ = ('encode', 'encode_sequence', 'DataOverflowError')
+__all__ = ("DataOverflowError", "encode", "encode_sequence")
 
 
 class DataOverflowError(ValueError):
@@ -39,33 +41,47 @@ class DataOverflowError(ValueError):
     """
 
 
-Code = namedtuple('Code', 'matrix version error mask segments')
+Code = namedtuple("Code", "matrix version error mask segments")
 
 
-def encode(content, error=None, version=None, mode=None, mask=None,
-           encoding=None, eci=False, micro=None, boost_error=True):
+def encode(
+    content,
+    error=None,
+    version=None,
+    mode=None,
+    mask=None,
+    encoding=None,
+    eci=False,
+    micro=None,
+    boost_error=True,
+):
     version = normalize_version(version)
     if not micro and micro is not None and version in consts.MICRO_VERSIONS:
-        raise ValueError(f'A Micro QR Code version ("{get_version_name(version)}") '
-                         'is provided but parameter "micro" is False')
+        raise ValueError(
+            f'A Micro QR Code version ("{get_version_name(version)}") '
+            'is provided but parameter "micro" is False'
+        )
     if micro and version is not None and version not in consts.MICRO_VERSIONS:
         raise ValueError(f'Illegal Micro QR Code version "{get_version_name(version)}"')
     error = normalize_errorlevel(error, accept_none=True)
     mode = normalize_mode(mode)
-    if mode is not None and version is not None \
-            and not is_mode_supported(mode, version):
-        raise ValueError(f'Mode "{get_mode_name(mode)}" is not available in version "{get_version_name(version)}"')
+    if mode is not None and version is not None and not is_mode_supported(mode, version):
+        raise ValueError(
+            f'Mode "{get_mode_name(mode)}" is not available in version "{get_version_name(version)}"'
+        )
     if error == consts.ERROR_LEVEL_H and (micro or version in consts.MICRO_VERSIONS):
         raise ValueError('Error correction level "H" is not available for Micro QR Codes')
     if eci and (micro or version in consts.MICRO_VERSIONS):
-        raise ValueError('The ECI mode is not available for Micro QR Codes')
+        raise ValueError("The ECI mode is not available for Micro QR Codes")
     segments = prepare_data(content, mode, encoding)
     guessed_version = find_version(segments, error, eci=eci, micro=micro)
     if version is None:
         version = guessed_version
     elif guessed_version > version:
-        raise DataOverflowError(f'The provided data does not fit into version "{get_version_name(version)}"'
-                                f'Proposal: version {get_version_name(guessed_version)}')
+        raise DataOverflowError(
+            f'The provided data does not fit into version "{get_version_name(version)}"'
+            f"Proposal: version {get_version_name(guessed_version)}"
+        )
     if error is None and version != consts.VERSION_M1:
         error = consts.ERROR_LEVEL_L
     is_micro = version < 1
@@ -73,8 +89,17 @@ def encode(content, error=None, version=None, mode=None, mask=None,
     return _encode(segments, error, version, mask, eci, boost_error)
 
 
-def encode_sequence(content, error=None, version=None, mode=None, mask=None,
-                    encoding=None, eci=False, boost_error=True, symbol_count=None):
+def encode_sequence(
+    content,
+    error=None,
+    version=None,
+    mode=None,
+    mask=None,
+    encoding=None,
+    eci=False,
+    boost_error=True,
+    symbol_count=None,
+):
     def one_item_segments(chunk, mode):
         segs = Segments()
         segs.add_segment(make_segment(chunk, mode=mode, encoding=encoding))
@@ -82,10 +107,11 @@ def encode_sequence(content, error=None, version=None, mode=None, mask=None,
 
     def divide_into_chunks(data, num):
         k, m = divmod(len(data), num)
-        return [data[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(num)]
+        return [data[i * k + min(i, m) : (i + 1) * k + min(i + 1, m)] for i in range(num)]
 
-    def calc_qrcode_bit_length(char_count, ver_range, mode, encoding=None,
-                               is_eci=False, is_sa=False):
+    def calc_qrcode_bit_length(
+        char_count, ver_range, mode, encoding=None, is_eci=False, is_sa=False
+    ):
         overhead = 4  # Mode indicator for QR Codes, only
         # Number of bits in character count indicator
         overhead += consts.CHAR_COUNT_INDICATOR_LENGTH[mode][ver_range]
@@ -112,8 +138,9 @@ def encode_sequence(content, error=None, version=None, mode=None, mask=None,
     def number_of_symbols_by_version(content, version, error, mode):
         length = len(content)
         ver_range = version_range(version)
-        bit_length = calc_qrcode_bit_length(length, ver_range, mode, encoding,
-                                            is_eci=eci, is_sa=True)
+        bit_length = calc_qrcode_bit_length(
+            length, ver_range, mode, encoding, is_eci=eci, is_sa=True
+        )
         capacity = consts.SYMBOL_CAPACITY[version][error]
         # Initial result does not contain the overhead of SA mode for all QR Codes
         cnt = int(math.ceil(bit_length / capacity))
@@ -124,12 +151,14 @@ def encode_sequence(content, error=None, version=None, mode=None, mask=None,
     version = normalize_version(version)
     if version is not None:
         if version < 1:
-            raise ValueError('This function does not accept Micro QR Code versions. '
-                             f'Provided: "{get_version_name(version)}"')
+            raise ValueError(
+                "This function does not accept Micro QR Code versions. "
+                f'Provided: "{get_version_name(version)}"'
+            )
     elif symbol_count is None:
-        raise ValueError('Please provide either a QR Code version or the symbol count')
+        raise ValueError("Please provide either a QR Code version or the symbol count")
     if symbol_count is not None and not 1 <= symbol_count <= 16:
-        raise ValueError('The symbol count must be in range 1 .. 16')
+        raise ValueError("The symbol count must be in range 1 .. 16")
     error = normalize_errorlevel(error, accept_none=True)
     if error is None:
         error = consts.ERROR_LEVEL_L
@@ -147,31 +176,49 @@ def encode_sequence(content, error=None, version=None, mode=None, mask=None,
             pass
         if guessed_version and guessed_version <= (version or guessed_version):
             # Return iterable of size 1
-            return [_encode(segments, error=error, version=(version or guessed_version),
-                            mask=mask, eci=eci, boost_error=boost_error)]
+            return [
+                _encode(
+                    segments,
+                    error=error,
+                    version=(version or guessed_version),
+                    mask=mask,
+                    eci=eci,
+                    boost_error=boost_error,
+                )
+            ]
     if len(segments.modes) > 1:
-        raise ValueError('This function cannot handle more than one mode (yet). Sorry.')
+        raise ValueError("This function cannot handle more than one mode (yet). Sorry.")
     mode = segments.modes[0]  # CHANGE iff more than one mode is supported!
     # Creating one QR code failed or max_no is not None
     if mode == consts.MODE_NUMERIC:
         content = str(content)
     if symbol_count is not None and len(content) < symbol_count:
-        raise ValueError(f'The content is not long enough to be divided into {symbol_count} symbols')
+        raise ValueError(
+            f"The content is not long enough to be divided into {symbol_count} symbols"
+        )
     sa_parity_data = calc_structured_append_parity(content)
     num_symbols = symbol_count or 16
     if version is not None:
         num_symbols = number_of_symbols_by_version(content, version, error, mode)
     if num_symbols > 16:
-        raise DataOverflowError(f'The data does not fit into Structured Append version {version}')
+        raise DataOverflowError(f"The data does not fit into Structured Append version {version}")
     chunks = divide_into_chunks(content, num_symbols)
     if symbol_count is not None:
         segments = one_item_segments(max(chunks, key=len), mode)
         version = find_version(segments, error, eci=eci, micro=False, is_sa=True)
-    sa_info = partial(_StructuredAppendInfo, total=len(chunks) - 1,
-                      parity=sa_parity_data)
-    return [_encode(one_item_segments(chunk, mode), error=error, version=version,
-                    mask=mask, eci=eci, boost_error=boost_error,
-                    sa_info=sa_info(i)) for i, chunk in enumerate(chunks)]
+    sa_info = partial(_StructuredAppendInfo, total=len(chunks) - 1, parity=sa_parity_data)
+    return [
+        _encode(
+            one_item_segments(chunk, mode),
+            error=error,
+            version=version,
+            mask=mask,
+            eci=eci,
+            boost_error=boost_error,
+            sa_info=sa_info(i),
+        )
+        for i, chunk in enumerate(chunks)
+    ]
 
 
 def _encode(segments, error, version, mask, eci, boost_error, sa_info=None):
@@ -224,14 +271,18 @@ def _encode(segments, error, version, mask, eci, boost_error, sa_info=None):
 
 def boost_error_level(version, error, segments, eci, is_sa=False):
     if error not in (consts.ERROR_LEVEL_H, None) and len(segments) == 1:
-        levels = [consts.ERROR_LEVEL_L, consts.ERROR_LEVEL_M,
-                  consts.ERROR_LEVEL_Q, consts.ERROR_LEVEL_H]
+        levels = [
+            consts.ERROR_LEVEL_L,
+            consts.ERROR_LEVEL_M,
+            consts.ERROR_LEVEL_Q,
+            consts.ERROR_LEVEL_H,
+        ]
         if version < 1:
             levels.pop()  # H isn't support by Micro QR Codes
             if version < consts.VERSION_M4:
                 levels.pop()  # Error level Q isn't supported by M2 and M3
         data_length = segments.bit_length_with_overhead(version, eci, is_sa=is_sa)
-        for error_level in levels[levels.index(error) + 1:]:
+        for error_level in levels[levels.index(error) + 1 :]:
             if consts.SYMBOL_CAPACITY[version][error_level] >= data_length:
                 error = error_level
             else:
@@ -243,8 +294,7 @@ def write_segment(buff, segment, ver, ver_range, eci=False):
     mode = segment.mode
     append_bits = buff.append_bits
     # Write ECI header if requested
-    if eci and mode == consts.MODE_BYTE \
-            and segment.encoding != consts.DEFAULT_BYTE_ENCODING:
+    if eci and mode == consts.MODE_BYTE and segment.encoding != consts.DEFAULT_BYTE_ENCODING:
         append_bits(consts.MODE_ECI, 4)
         append_bits(get_eci_assignment_number(segment.encoding), 8)
     if ver is None:  # QR Code
@@ -255,8 +305,7 @@ def write_segment(buff, segment, ver, ver_range, eci=False):
     elif ver > consts.VERSION_M1:  # Micro QR Code (M1 has no mode indicator)
         append_bits(consts.MODE_TO_MICRO_MODE_MAPPING[mode], ver + 3)
     # Character count indicator
-    append_bits(segment.char_count,
-                consts.CHAR_COUNT_INDICATOR_LENGTH[mode][ver_range])
+    append_bits(segment.char_count, consts.CHAR_COUNT_INDICATOR_LENGTH[mode][ver_range])
     buff.extend(segment.bits)
 
 
@@ -280,20 +329,26 @@ def write_pad_codewords(buff, version, capacity, length):
 
 
 # Finder pattern (includes separator around each side!)
-_FINDER_PATTERN = ((0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0),
-                   (0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x0),
-                   (0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0),
-                   (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
-                   (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
-                   (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
-                   (0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0),
-                   (0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x0),
-                   (0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0))
+_FINDER_PATTERN = (
+    (0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0),
+    (0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x0),
+    (0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0),
+    (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
+    (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
+    (0x0, 0x1, 0x0, 0x1, 0x1, 0x1, 0x0, 0x1, 0x0),
+    (0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0),
+    (0x0, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x0),
+    (0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0),
+)
 
 
 def add_finder_patterns(matrix, width, height):
     is_square = width == height
-    corners = ((0, 0), (0, len(matrix) - 8), (-8, 0))  # Upper left, upper right, bottom left
+    corners = (
+        (0, 0),
+        (0, len(matrix) - 8),
+        (-8, 0),
+    )  # Upper left, upper right, bottom left
     if is_square and width < 21:
         corners = ((0, 0),)
     finder_range = range(8)
@@ -301,7 +356,7 @@ def add_finder_patterns(matrix, width, height):
         offset = 1 if i == 0 else 0
         sepoffset = 0 if j != 0 else 1
         for r in finder_range:
-            matrix[i + r][j:j + 8] = _FINDER_PATTERN[offset + r][sepoffset:sepoffset + 8]
+            matrix[i + r][j : j + 8] = _FINDER_PATTERN[offset + r][sepoffset : sepoffset + 8]
 
 
 def add_timing_pattern(matrix, is_micro):
@@ -316,14 +371,38 @@ def add_timing_pattern(matrix, is_micro):
 
 def add_alignment_patterns(matrix, width, height):
     is_square = width == height
-    version = (width - 17) // 4  # QR Codes: version * 4 +  17 == width / height of the matrix w/o border
+    version = (
+        width - 17
+    ) // 4  # QR Codes: version * 4 +  17 == width / height of the matrix w/o border
     if is_square and version < 2:  # QR Codes version < 2 don't have alignment patterns
         return
-    pattern = (0x1, 0x1, 0x1, 0x1, 0x1,
-               0x1, 0x0, 0x0, 0x0, 0x1,
-               0x1, 0x0, 0x1, 0x0, 0x1,
-               0x1, 0x0, 0x0, 0x0, 0x1,
-               0x1, 0x1, 0x1, 0x1, 0x1)
+    pattern = (
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+        0x0,
+        0x0,
+        0x0,
+        0x1,
+        0x1,
+        0x0,
+        0x1,
+        0x0,
+        0x1,
+        0x1,
+        0x0,
+        0x0,
+        0x0,
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+        0x1,
+    )
     positions = consts.ALIGNMENT_POS[version - 2]
     alignment_range = range(5)
     min_pos = positions[0]
@@ -335,7 +414,7 @@ def add_alignment_patterns(matrix, width, height):
         # The x and y values represent the center of the alignment pattern
         i, j = x - 2, y - 2
         for r in alignment_range:
-            matrix[i + r][j:j + 5] = pattern[r * 5:r * 5 + 5]
+            matrix[i + r][j : j + 5] = pattern[r * 5 : r * 5 + 5]
 
 
 def add_codewords(matrix, codewords, version):
@@ -362,8 +441,10 @@ def add_codewords(matrix, codewords, version):
                     row[j] = codewords[idx]
                     idx += 1
     if idx != len(codewords):  # pragma: no cover
-        raise ValueError('Internal error: Adding codewords to matrix failed. '
-                         f'Added {idx} of {len(codewords)} codewords')
+        raise ValueError(
+            "Internal error: Adding codewords to matrix failed. "
+            f"Added {idx} of {len(codewords)} codewords"
+        )
 
 
 def make_final_message(version, error, buff):
@@ -377,11 +458,25 @@ def make_final_message(version, error, buff):
         cw_four = to_binary(data_blocks[0].pop(-1) >> 4, 4)
     res = Buffer()
     # Write codewords
-    res.extend(chain(*map(to_binary, (x for x in chain.from_iterable(zip_longest(*data_blocks)) if x is not None))))
+    res.extend(
+        chain(
+            *map(
+                to_binary,
+                (x for x in chain.from_iterable(zip_longest(*data_blocks)) if x is not None),
+            )
+        )
+    )
     if cw_four is not None:
         res.extend(cw_four)
     # Write error codewords
-    res.extend(chain(*map(to_binary, (x for x in chain.from_iterable(zip_longest(*error_blocks)) if x is not None))))
+    res.extend(
+        chain(
+            *map(
+                to_binary,
+                (x for x in chain.from_iterable(zip_longest(*error_blocks)) if x is not None),
+            )
+        )
+    )
     remainder = 0
     if version in (2, 3, 4, 5, 6):
         remainder = 7
@@ -389,7 +484,7 @@ def make_final_message(version, error, buff):
         remainder = 3
     elif version in (21, 22, 23, 24, 25, 26, 27):
         remainder = 4
-    res.extend(b'\0' * remainder)
+    res.extend(b"\0" * remainder)
     return res
 
 
@@ -444,8 +539,7 @@ def find_and_apply_best_mask(matrix, width, height, proposed_mask=None):
     mask_patterns = get_data_mask_functions(is_micro)
     # If the user supplied a mask pattern, the evaluation step is skipped
     if proposed_mask is not None:
-        apply_mask(matrix, mask_patterns[proposed_mask], width, height,
-                   is_encoding_region)
+        apply_mask(matrix, mask_patterns[proposed_mask], width, height, is_encoding_region)
         return proposed_mask, matrix
 
     best_matrix = None
@@ -483,9 +577,11 @@ def mask_scores(matrix, width, height):
         idx = seq.find(n3_pattern)
         while idx != -1:
             offset = idx + 7
-            if idx in (0, qr_size - 7) \
-                    or not any(seq[max(idx - 4, 0):min(idx, qr_size)]) \
-                    or not any(seq[max(offset, 0):min(offset + 4, qr_size)]):
+            if (
+                idx in (0, qr_size - 7)
+                or not any(seq[max(idx - 4, 0) : min(idx, qr_size)])
+                or not any(seq[max(offset, 0) : min(offset + 4, qr_size)])
+            ):
                 count += 40  # N3 = 40
             else:
                 offset = idx + 4
@@ -543,7 +639,7 @@ def mask_scores(matrix, width, height):
         if n1_col_counter >= 5:
             score_n1 += n1_col_counter - 2
     # N4
-    percent = float(dark_module_counter) / (qr_size ** 2)
+    percent = float(dark_module_counter) / (qr_size**2)
     score_n4 = 10 * int(abs(percent * 100 - 50) / 5)  # N4 = 10
     return score_n1, score_n2, score_n3, score_n4
 
@@ -654,7 +750,7 @@ def data_to_bytes(data, encoding):
                 data = data.encode(encoding)
             except UnicodeError:
                 # Use UTF-8
-                encoding = 'utf-8'
+                encoding = "utf-8"
                 data = data.encode(encoding)
     return data, len(data), encoding
 
@@ -668,25 +764,31 @@ def make_segment(data, mode, encoding=None):
     if segment_mode is not None:
         # Check if user provided mode is applicable for the given segment_data
         if segment_mode < guessed_mode:
-            raise ValueError(f'The provided mode "{get_mode_name(segment_mode)}" '
-                             f'is not applicable for {segment_data!r}. '
-                             f'Proposal: {get_mode_name(guessed_mode)}')
+            raise ValueError(
+                f'The provided mode "{get_mode_name(segment_mode)}" '
+                f"is not applicable for {segment_data!r}. "
+                f"Proposal: {get_mode_name(guessed_mode)}"
+            )
     else:
         segment_mode = guessed_mode
     if segment_mode != consts.MODE_BYTE:
         segment_encoding = None
-    char_count = segment_length if segment_mode not in (consts.MODE_KANJI, consts.MODE_HANZI) else segment_length // 2
+    char_count = (
+        segment_length
+        if segment_mode not in (consts.MODE_KANJI, consts.MODE_HANZI)
+        else segment_length // 2
+    )
     buff = Buffer()
     append_bits = buff.append_bits
     if segment_mode == consts.MODE_NUMERIC:
         for i in range(0, segment_length, 3):
-            chunk = segment_data[i:i + 3]
+            chunk = segment_data[i : i + 3]
             append_bits(int(chunk), len(chunk) * 3 + 1)
     elif segment_mode == consts.MODE_ALPHANUMERIC:
         # ISO/IEC 18004:2015(E) -- 7.4.4 Alphanumeric mode (page 26)
         to_byte = consts.ALPHANUMERIC_CHARS.find
         for i in range(0, segment_length, 2):
-            chunk = segment_data[i:i + 2]
+            chunk = segment_data[i : i + 2]
             if len(chunk) > 1:
                 append_bits(to_byte(chunk[0]) * 45 + to_byte(chunk[1]), 11)
             else:
@@ -700,32 +802,32 @@ def make_segment(data, mode, encoding=None):
         # Note: len(segment.data)! segment.data_length = len(segment.data) / 2!!
         for i in range(0, segment_length, 2):
             code = (segment_data[i] << 8) | segment_data[i + 1]
-            if 0xa1a1 <= code <= 0xaafe:
+            if 0xA1A1 <= code <= 0xAAFE:
                 # For characters with GB2312 values from A1A1HEX to AAFEHEX:
                 # a) Subtract A1A1HEX from GB2312 value;
-                diff = code - 0xa1a1
-            elif 0xb0a1 <= code <= 0xfafe:
+                diff = code - 0xA1A1
+            elif 0xB0A1 <= code <= 0xFAFE:
                 # For characters with GB2312 values from B0A1HEX to FAFEHEX:
                 # a) Subtract A6A1HEX from GB2312 value;
-                diff = code - 0xa6a1
+                diff = code - 0xA6A1
             else:  # pragma: no cover
-                raise ValueError(f'Invalid Hanzi bytes: {code}')
-            append_bits(((diff >> 8) * 0x60) + (diff & 0xff), 13)
+                raise ValueError(f"Invalid Hanzi bytes: {code}")
+            append_bits(((diff >> 8) * 0x60) + (diff & 0xFF), 13)
     else:
         # ISO/IEC 18004:2015(E) -- 7.4.6 Kanji mode (page 29)
         for i in range(0, segment_length, 2):
             code = (segment_data[i] << 8) | segment_data[i + 1]
-            if 0x8140 <= code <= 0x9ffc:
+            if 0x8140 <= code <= 0x9FFC:
                 # 1. a) For characters with Shift JIS values from 8140HEX to 9FFCHEX:
                 # Subtract 8140HEX from Shift JIS value;
                 diff = code - 0x8140
-            elif 0xe040 <= code <= 0xebbf:
+            elif 0xE040 <= code <= 0xEBBF:
                 # 2. a) For characters with Shift JIS values from E040HEX to EBBFHEX:
                 # Subtract C140HEX from Shift JIS value;
-                diff = code - 0xc140
+                diff = code - 0xC140
             else:  # pragma: no cover
-                raise ValueError(f'Invalid Kanji bytes: {code}')
-            append_bits(((diff >> 8) * 0xc0) + (diff & 0xff), 13)
+                raise ValueError(f"Invalid Kanji bytes: {code}")
+            append_bits(((diff >> 8) * 0xC0) + (diff & 0xFF), 13)
     return _Segment(buff.getbits(), char_count, segment_mode, segment_encoding)
 
 
@@ -775,8 +877,10 @@ def normalize_version(version):
         except (KeyError, AttributeError):
             error = True
     if error or (not 0 < version < 41 and version not in consts.MICRO_VERSIONS):
-        raise ValueError(f'Unsupported version "{version}". '
-                         f'Supported: {", ".join(sorted(consts.MICRO_VERSION_MAPPING.keys()))} and 1 .. 40')
+        raise ValueError(
+            f'Unsupported version "{version}". '
+            f"Supported: {', '.join(sorted(consts.MICRO_VERSION_MAPPING.keys()))} and 1 .. 40"
+        )
     return version
 
 
@@ -786,8 +890,10 @@ def normalize_mode(mode):
     try:
         return consts.MODE_MAPPING[mode.lower()]
     except (KeyError, AttributeError):
-        raise ValueError(f'Illegal mode "{mode}". '
-                         f'Supported values: {", ".join(sorted(consts.MODE_MAPPING.keys()))}')
+        raise ValueError(
+            f'Illegal mode "{mode}". '
+            f"Supported values: {', '.join(sorted(consts.MODE_MAPPING.keys()))}"
+        )
 
 
 def normalize_mask(mask, is_micro):
@@ -796,11 +902,15 @@ def normalize_mask(mask, is_micro):
     try:
         mask = int(mask)
     except ValueError:
-        raise ValueError(f'Invalid data mask "{mask}". '
-                         'Must be an integer or a string which represents an integer value.')
+        raise ValueError(
+            f'Invalid data mask "{mask}". '
+            "Must be an integer or a string which represents an integer value."
+        )
     if is_micro:
         if not 0 <= mask < 4:
-            raise ValueError(f'Invalid data mask "{mask}" for Micro QR Code. Must be in range 0 .. 3')
+            raise ValueError(
+                f'Invalid data mask "{mask}" for Micro QR Code. Must be in range 0 .. 3'
+            )
     else:
         if not 0 <= mask < 8:
             raise ValueError(f'Invalid data mask "{mask}". Must be in range 0 .. 7')
@@ -810,7 +920,7 @@ def normalize_mask(mask, is_micro):
 def normalize_errorlevel(error, accept_none=False):
     if error is None:
         if not accept_none:
-            raise ValueError('The error level must be provided')
+            raise ValueError("The error level must be provided")
         return error
     try:
         return consts.ERROR_MAPPING[error.upper()]
@@ -843,7 +953,7 @@ def get_version_name(version_const):
     raise ValueError(f'Unknown version constant "{version_const}"')
 
 
-_ALPHANUMERIC_PATTERN = re.compile(br'^[' + re.escape(consts.ALPHANUMERIC_CHARS) + br']+\Z')
+_ALPHANUMERIC_PATTERN = re.compile(rb"^[" + re.escape(consts.ALPHANUMERIC_CHARS) + rb"]+\Z")
 
 
 def is_alphanumeric(data):
@@ -857,7 +967,7 @@ def is_kanji(data):
     data_iter = iter(data)
     for i in range(0, data_len, 2):
         code = (next(data_iter) << 8) | next(data_iter)
-        if not (0x8140 <= code <= 0x9ffc or 0xe040 <= code <= 0xebbf):
+        if not (0x8140 <= code <= 0x9FFC or 0xE040 <= code <= 0xEBBF):
             return False
     return True
 
@@ -885,16 +995,18 @@ def find_version(segments, error, eci, micro, is_sa=False):
         if error is None and version != consts.VERSION_M1:
             error = consts.ERROR_LEVEL_L
         try:
-            if consts.SYMBOL_CAPACITY[version][error] >= segments.bit_length_with_overhead(version, eci, is_sa):
+            if consts.SYMBOL_CAPACITY[version][error] >= segments.bit_length_with_overhead(
+                version, eci, is_sa
+            ):
                 return version
         except KeyError:
             pass
-    help_txt = ''
+    help_txt = ""
     if micro is None:
-        help_txt = '(Micro) '
+        help_txt = "(Micro) "
     elif micro:
-        help_txt = 'Micro '
-    raise DataOverflowError(f'Data too large. No {help_txt}QR Code can handle the provided data')
+        help_txt = "Micro "
+    raise DataOverflowError(f"Data too large. No {help_txt}QR Code can handle the provided data")
 
 
 def calc_matrix_size(ver):
@@ -905,12 +1017,12 @@ def calc_structured_append_parity(content):
     if not isinstance(content, str):
         content = str(content)
     try:
-        data = content.encode('iso-8859-1')
+        data = content.encode("iso-8859-1")
     except UnicodeError:
         try:
-            data = content.encode('shift-jis')
+            data = content.encode("shift-jis")
         except (LookupError, UnicodeError):
-            data = content.encode('utf-8')
+            data = content.encode("utf-8")
     return reduce(xor, data)
 
 
@@ -979,7 +1091,7 @@ def get_data_mask_functions(is_micro):
 
 
 class Segments:
-    __slots__ = ('bit_length', 'modes', 'segments')
+    __slots__ = ("bit_length", "modes", "segments")
 
     def __init__(self):
         self.segments = []
@@ -995,9 +1107,12 @@ class Segments:
             prev_seg = self.segments[-1]
             if prev_seg.mode == segment.mode and prev_seg.encoding == segment.encoding:
                 # Merge segment with previous segment
-                segment = _Segment(prev_seg.bits + segment.bits,
-                                   prev_seg.char_count + segment.char_count,
-                                   segment.mode, segment.encoding)
+                segment = _Segment(
+                    prev_seg.bits + segment.bits,
+                    prev_seg.char_count + segment.char_count,
+                    segment.mode,
+                    segment.encoding,
+                )
                 self.bit_length -= len(prev_seg.bits)
                 del self.segments[-1]
                 del self.modes[-1]
@@ -1018,9 +1133,12 @@ class Segments:
         overhead = 0
         # ECI overhead
         if eci:
-            no_eci_indicators = sum(1 for segment in self.segments
-                                    if segment.mode == consts.MODE_BYTE
-                                    and segment.encoding != consts.DEFAULT_BYTE_ENCODING)
+            no_eci_indicators = sum(
+                1
+                for segment in self.segments
+                if segment.mode == consts.MODE_BYTE
+                and segment.encoding != consts.DEFAULT_BYTE_ENCODING
+            )
             overhead += no_eci_indicators * 4  # ECI indicator
             overhead += no_eci_indicators * 8  # ECI assignment no
         if is_sa:
@@ -1051,7 +1169,7 @@ class _Segment(tuple):
 
 
 class Buffer:
-    __slots__ = ['_data']
+    __slots__ = ["_data"]
 
     def __init__(self, iterable=()):
         self._data = bytearray(iterable)
@@ -1070,7 +1188,9 @@ class Buffer:
         Returns an iterable of integers interpreting the content of `seq`
         as sequence of binary numbers of length 8.
         """
-        return (int(''.join(map(str, g)), 2) for g in zip_longest(*[iter(self._data)] * 8, fillvalue=0))
+        return (
+            int("".join(map(str, g)), 2) for g in zip_longest(*[iter(self._data)] * 8, fillvalue=0)
+        )
 
     def __len__(self):
         return len(self._data)

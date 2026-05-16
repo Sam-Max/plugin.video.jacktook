@@ -1,18 +1,10 @@
 import json
+
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_show_context_menu,
     tmdb_get,
-)
-from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
-    add_directory_items_batch,
-    apply_section_view,
-    build_url,
-    end_of_directory,
-    get_setting,
-    make_list_item,
 )
 from lib.utils.general.utils import (
     execute_thread_pool_collection,
@@ -20,8 +12,14 @@ from lib.utils.general.utils import (
     set_content_type,
     set_media_infoTag,
 )
-
-
+from lib.utils.kodi.utils import (
+    add_directory_items_batch,
+    apply_section_view,
+    build_url,
+    end_of_directory,
+    get_setting,
+    make_list_item,
+)
 
 
 def show_seasons_details(params):
@@ -49,8 +47,8 @@ def show_season_info(ids, mode, media_type):
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
     details = tmdb_get("tv_details", tmdb_id)
-    name = getattr(details, "name")
-    seasons = getattr(details, "seasons")
+    name = details.name
+    seasons = details.seasons
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
     results = execute_thread_pool_collection(
@@ -91,9 +89,7 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
 
     context_menu = add_tmdb_show_context_menu(mode, ids)
     if is_trakt_auth():
-        context_menu += add_trakt_watched_context_menu(
-            "shows", season=season_number, ids=ids
-        )
+        context_menu += add_trakt_watched_context_menu("shows", season=season_number, ids=ids)
     list_item.addContextMenuItems(context_menu)
 
     url = build_url(
@@ -123,13 +119,11 @@ def show_episodes_details(params):
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
-    season_details = tmdb_get(
-        "season_details", {"id": ids.get("tmdb_id"), "season": season}
-    )
+    season_details = tmdb_get("season_details", {"id": ids.get("tmdb_id"), "season": season})
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
     results = execute_thread_pool_collection(
-        getattr(season_details, "episodes"),
+        season_details.episodes,
         _process_episode,
         tv_name,
         season,
@@ -155,9 +149,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
 
     list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")
-    set_media_infoTag(
-        list_item, data=episode, fanart_data=fanart_details, mode="episode"
-    )
+    set_media_infoTag(list_item, data=episode, fanart_data=fanart_details, mode="episode")
 
     context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids)
     if is_trakt_auth():

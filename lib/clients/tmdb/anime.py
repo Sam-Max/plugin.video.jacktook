@@ -3,7 +3,6 @@ from lib.clients.tmdb.utils.utils import (
     get_tmdb_movie_details,
     get_tmdb_show_details,
 )
-
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     Animation,
@@ -14,13 +13,12 @@ from lib.utils.general.utils import (
     set_media_infoTag,
     set_pluging_category,
 )
-
 from lib.utils.kodi.utils import (
     end_of_directory,
     kodilog,
     make_list_item,
-    show_keyboard,
     notification,
+    show_keyboard,
     translation,
 )
 
@@ -57,9 +55,7 @@ class TmdbAnimeClient(BaseTmdbClient):
             notification("No results found")
             return
         execute_thread_pool(data.results, TmdbAnimeClient.show_anime_results, submode)
-        add_next_button(
-            "next_page_anime", page=page, mode=mode, submode=submode, category=category
-        )
+        add_next_button("next_page_anime", page=page, mode=mode, submode=submode, category=category)
         end_of_directory()
 
     @staticmethod
@@ -88,12 +84,12 @@ class TmdbAnimeClient(BaseTmdbClient):
         if mode == "movies":
             title = res.title
             movie_details = get_tmdb_movie_details(tmdb_id)
-            imdb_id = getattr(movie_details, "external_ids").get("imdb_id", "")
+            imdb_id = movie_details.external_ids.get("imdb_id", "")
             tvdb_id = ""
         elif mode == "tv":
             title = res.name
             show_details = get_tmdb_show_details(tmdb_id)
-            external_ids = getattr(show_details, "external_ids")
+            external_ids = show_details.external_ids
             imdb_id = external_ids.get("imdb_id", "")
             tvdb_id = external_ids.get("tvdb_id", "")
         else:

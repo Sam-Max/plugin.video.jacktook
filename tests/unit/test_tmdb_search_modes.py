@@ -11,7 +11,9 @@ def test_tmdb_search_modes_runs_title_year_search_for_movies():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception Alt"), patch("lib.search.run_search_entry") as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception Alt"
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 0
         dialog_cls.return_value.numeric.return_value = "2010"
 
@@ -45,7 +47,10 @@ def test_tmdb_search_modes_runs_original_title_search_for_movies():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Sen to Chihiro no kamikakushi"), patch("lib.search.run_search_entry") as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard",
+        return_value="Sen to Chihiro no kamikakushi",
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 1
 
         TmdbClient.tmdb_search_modes(
@@ -71,7 +76,9 @@ def test_tmdb_search_modes_returns_early_when_dialog_cancelled():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch("lib.search.run_search_entry") as run_search_entry:
+    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch(
+        "lib.search.run_search_entry"
+    ) as run_search_entry:
         dialog_cls.return_value.select.return_value = -1
 
         TmdbClient.tmdb_search_modes(
@@ -93,7 +100,9 @@ def test_tmdb_search_modes_returns_early_when_year_input_cancelled():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch("lib.search.run_search_entry") as run_search_entry:
+    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch(
+        "lib.search.run_search_entry"
+    ) as run_search_entry:
         dialog_cls.return_value.select.return_value = 0
         dialog_cls.return_value.numeric.return_value = ""
 
@@ -116,9 +125,9 @@ def test_tmdb_search_modes_rejects_invalid_manual_year():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch("lib.clients.tmdb.tmdb.notification") as notification, patch(
-        "lib.search.run_search_entry"
-    ) as run_search_entry:
+    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Inception"), patch(
+        "lib.clients.tmdb.tmdb.notification"
+    ) as notification, patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 2
         dialog_cls.return_value.numeric.return_value = "20ab"
 
@@ -166,9 +175,9 @@ def test_tmdb_episode_search_modes_runs_search_with_edited_title_season_episode(
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Alt"), patch(
-        "lib.search.run_search_entry"
-    ) as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Alt"
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 0
         dialog_cls.return_value.numeric.side_effect = ["2", "5"]
 
@@ -203,9 +212,9 @@ def test_tmdb_episode_search_modes_runs_search_with_original_title():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Original"), patch(
-        "lib.search.run_search_entry"
-    ) as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Original"
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 1
         dialog_cls.return_value.numeric.side_effect = ["3", "8"]
 
@@ -232,9 +241,9 @@ def test_tmdb_episode_search_modes_runs_full_show_title_year_without_tv_data():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Alt"), patch(
-        "lib.search.run_search_entry"
-    ) as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad Alt"
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 2
         dialog_cls.return_value.numeric.return_value = "2008"
 
@@ -318,9 +327,9 @@ def test_tmdb_episode_search_modes_returns_early_when_season_cancelled():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad"), patch(
-        "lib.search.run_search_entry"
-    ) as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad"
+    ), patch("lib.search.run_search_entry") as run_search_entry:
         dialog_cls.return_value.select.return_value = 0
         dialog_cls.return_value.numeric.return_value = ""
 
@@ -343,9 +352,11 @@ def test_tmdb_episode_search_modes_rejects_invalid_season():
 
     with patch.object(TmdbClient, "_get_tmdb_metadata", return_value=tmdb_obj), patch(
         "lib.clients.tmdb.tmdb.xbmcgui.Dialog"
-    ) as dialog_cls, patch("lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad"), patch(
-        "lib.clients.tmdb.tmdb.notification"
-    ) as notification, patch("lib.search.run_search_entry") as run_search_entry:
+    ) as dialog_cls, patch(
+        "lib.clients.tmdb.tmdb.show_keyboard", return_value="Breaking Bad"
+    ), patch("lib.clients.tmdb.tmdb.notification") as notification, patch(
+        "lib.search.run_search_entry"
+    ) as run_search_entry:
         dialog_cls.return_value.select.return_value = 0
         dialog_cls.return_value.numeric.return_value = "abc"
 

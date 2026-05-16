@@ -101,7 +101,9 @@ def test_update_addon_keeps_current_install_when_zip_is_invalid(monkeypatch, tmp
 
     updater.update_addon("1.7.2")
 
-    assert updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
+    assert (
+        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
+    )
     assert dialog_calls
 
 
@@ -130,7 +132,9 @@ def test_update_addon_restores_backup_when_install_move_fails(monkeypatch, tmp_p
 
     updater.update_addon("1.7.2")
 
-    assert updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
+    assert (
+        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
+    )
     assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-backup"))
 
 
@@ -147,6 +151,8 @@ def test_update_addon_installs_valid_downgrade(monkeypatch, tmp_path):
 
     updater.update_addon("1.7.2")
 
-    assert updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.7.2"
+    assert (
+        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.7.2"
+    )
     assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-backup"))
     assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-staging"))

@@ -1,6 +1,6 @@
-from .utils import get_setting, get_property, ADDON_ID
 import xbmc
 
+from .utils import ADDON_ID, get_setting
 
 EMPTY_USER = "unknown_user"
 
@@ -50,7 +50,7 @@ def trakt_secret():
 
 
 def trakt_lists_sort_order(setting):
-    return int(get_setting("trakt_sort_%s" % setting, "0"))
+    return int(get_setting("trakt_sort_{}".format(setting), "0"))
 
 
 def get_update_action():

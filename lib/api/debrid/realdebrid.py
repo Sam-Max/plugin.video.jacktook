@@ -1,13 +1,14 @@
+from base64 import b64decode, b64encode
+
 from lib.api.debrid.base import DebridClient, ProviderException
-from base64 import b64encode, b64decode
+from lib.services.debrid.auth import run_realdebrid_auth
+from lib.services.debrid.download import run_realdebrid_download
 from lib.utils.kodi.utils import (
     dialog_ok,
     kodilog,
     set_setting,
     translation,
 )
-from lib.services.debrid.auth import run_realdebrid_auth
-from lib.services.debrid.download import run_realdebrid_download
 
 
 class RealDebrid(DebridClient):
@@ -30,9 +31,7 @@ class RealDebrid(DebridClient):
                 token_data["client_secret"],
                 token_data["code"],
             )
-            self.headers["Authorization"] = (
-                f"Bearer {access_token_data['access_token']}"
-            )
+            self.headers["Authorization"] = f"Bearer {access_token_data['access_token']}"
 
     def _handle_service_specific_errors(self, error_data: dict, status_code: int):
         error_code = error_data.get("error_code")
@@ -247,9 +246,7 @@ class RealDebrid(DebridClient):
         return self._make_request("GET", f"{self.BASE_URL}/torrents")
 
     def get_user_downloads_list(self, page=1):
-        return self._make_request(
-            "GET", f"{self.BASE_URL}/downloads", params={"page": page}
-        )
+        return self._make_request("GET", f"{self.BASE_URL}/downloads", params={"page": page})
 
     def get_user(self):
         return self._make_request("GET", f"{self.BASE_URL}/user")
@@ -267,9 +264,7 @@ class RealDebrid(DebridClient):
             import datetime
 
             try:
-                expires = datetime.datetime.strptime(
-                    expiration, "%Y-%m-%dT%H:%M:%S.%fZ"
-                )
+                expires = datetime.datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
             except ValueError:
                 expires = datetime.datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%SZ")
 

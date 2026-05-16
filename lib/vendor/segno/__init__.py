@@ -9,27 +9,54 @@ QR Code and Micro QR Code implementation.
 
 "QR Code" and "Micro QR Code" are registered trademarks of DENSO WAVE INCORPORATED.
 """
-import sys
+
 import io
-from . import encoder
+import sys
+
+from . import encoder, utils, writers
 from .encoder import DataOverflowError
-from . import writers, utils
 
-__version__ = '1.6.6'
+__version__ = "1.6.6"
 
-__all__ = ('make', 'make_qr', 'make_micro', 'make_sequence', 'QRCode',
-           'QRCodeSequence', 'DataOverflowError')
+__all__ = (
+    "DataOverflowError",
+    "QRCode",
+    "QRCodeSequence",
+    "make",
+    "make_micro",
+    "make_qr",
+    "make_sequence",
+)
 
 
-def make(content, error=None, version=None, mode=None, mask=None, encoding=None,
-         eci=False, micro=None, boost_error=True):
-    return QRCode(encoder.encode(content, error, version, mode, mask, encoding,
-                                 eci, micro, boost_error=boost_error))
-
+def make(
+    content,
+    error=None,
+    version=None,
+    mode=None,
+    mask=None,
+    encoding=None,
+    eci=False,
+    micro=None,
+    boost_error=True,
+):
+    return QRCode(
+        encoder.encode(
+            content,
+            error,
+            version,
+            mode,
+            mask,
+            encoding,
+            eci,
+            micro,
+            boost_error=boost_error,
+        )
+    )
 
 
 class QRCode:
-    __slots__ = ('_error', '_matrix_size', '_mode', '_version', 'mask', 'matrix')
+    __slots__ = ("_error", "_matrix_size", "_mode", "_version", "mask", "matrix")
 
     def __init__(self, code):
         matrix = code.matrix
@@ -59,7 +86,7 @@ class QRCode:
     @property
     def designator(self):
         version = str(self.version)
-        return '-'.join((version, self.error) if self.error else (version,))
+        return "-".join((version, self.error) if self.error else (version,))
 
     @property
     def default_border_size(self):
@@ -81,13 +108,14 @@ class QRCode:
         iterfn = utils.matrix_iter_verbose if verbose else utils.matrix_iter
         return iterfn(self.matrix, self._matrix_size, scale, border)
 
-    def show(self, delete_after=20, scale=10, border=None, dark='#000',
-             light='#fff'):  # pragma: no cover
+    def show(
+        self, delete_after=20, scale=10, border=None, dark="#000", light="#fff"
+    ):  # pragma: no cover
         import os
-        import time
         import tempfile
-        import webbrowser
         import threading
+        import time
+        import webbrowser
         from urllib.parse import urljoin
         from urllib.request import pathname2url
 
@@ -98,7 +126,7 @@ class QRCode:
             except OSError:
                 pass
 
-        f = tempfile.NamedTemporaryFile('wb', suffix='.png', delete=False)
+        f = tempfile.NamedTemporaryFile("wb", suffix=".png", delete=False)
         try:
             self.save(f, scale=scale, dark=dark, light=light, border=border)
         except:
@@ -106,30 +134,36 @@ class QRCode:
             os.unlink(f.name)
             raise
         f.close()
-        webbrowser.open_new_tab(urljoin('file:', pathname2url(f.name)))
+        webbrowser.open_new_tab(urljoin("file:", pathname2url(f.name)))
         if delete_after is not None:
             t = threading.Thread(target=delete_file, args=(f.name,))
             t.start()
 
-    def svg_data_uri(self, xmldecl=False, encode_minimal=False,
-                     omit_charset=False, nl=False, **kw):
-        return writers.as_svg_data_uri(self.matrix, self._matrix_size,
-                                       xmldecl=xmldecl, nl=nl,
-                                       encode_minimal=encode_minimal,
-                                       omit_charset=omit_charset, **kw)
+    def svg_data_uri(self, xmldecl=False, encode_minimal=False, omit_charset=False, nl=False, **kw):
+        return writers.as_svg_data_uri(
+            self.matrix,
+            self._matrix_size,
+            xmldecl=xmldecl,
+            nl=nl,
+            encode_minimal=encode_minimal,
+            omit_charset=omit_charset,
+            **kw,
+        )
 
     def svg_inline(self, **kw):
         buff = io.BytesIO()
-        self.save(buff, kind='svg', xmldecl=False, svgns=False, nl=False, **kw)
-        return buff.getvalue().decode(kw.get('encoding', 'utf-8'))
+        self.save(buff, kind="svg", xmldecl=False, svgns=False, nl=False, **kw)
+        return buff.getvalue().decode(kw.get("encoding", "utf-8"))
 
     def png_data_uri(self, **kw):
         return writers.as_png_data_uri(self.matrix, self._matrix_size, **kw)
 
     def terminal(self, out=None, border=None, compact=False):
         if compact:
-            writers.write_terminal_compact(self.matrix, self._matrix_size, out or sys.stdout, border)
-        elif out is None and sys.platform == 'win32':  # pragma: no cover
+            writers.write_terminal_compact(
+                self.matrix, self._matrix_size, out or sys.stdout, border
+            )
+        elif out is None and sys.platform == "win32":  # pragma: no cover
             try:
                 writers.write_terminal_win(self.matrix, self._matrix_size, border)
             except OSError:
@@ -141,17 +175,17 @@ class QRCode:
         writers.save(self.matrix, self._matrix_size, out, kind, **kw)
 
     def __getattr__(self, name):
-        if name.startswith('to_'):
+        if name.startswith("to_"):
             try:
                 import importlib_metadata as metadata
             except ImportError:
                 from importlib import metadata
             from functools import partial
-            for ep in metadata.entry_points(group='segno.plugin.converter',
-                                            name=name[3:]):
+
+            for ep in metadata.entry_points(group="segno.plugin.converter", name=name[3:]):
                 plugin = ep.load()
                 return partial(plugin, self)
-        raise AttributeError(f'{self.__class__} object has no attribute {name}')
+        raise AttributeError(f"{self.__class__} object has no attribute {name}")
 
 
 class QRCodeSequence(tuple):
@@ -168,9 +202,9 @@ class QRCodeSequence(tuple):
         filename = lambda o, n: o  # noqa: E731
         m = len(self)
         if m > 1 and isinstance(out, str):
-            dot_idx = out.rfind('.')
+            dot_idx = out.rfind(".")
             if dot_idx > -1:
-                out = out[:dot_idx] + '-{0:02d}-{1:02d}' + out[dot_idx:]
+                out = out[:dot_idx] + "-{0:02d}-{1:02d}" + out[dot_idx:]
                 filename = lambda o, n: o.format(m, n)  # noqa: E731
         for n, qrcode in enumerate(self, start=1):
             qrcode.save(filename(out, n), kind=kind, **kw)

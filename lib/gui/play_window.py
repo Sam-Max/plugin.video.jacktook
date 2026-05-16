@@ -1,7 +1,9 @@
 import abc
+
+import xbmc
+
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.utils import kodilog
-import xbmc
 
 
 class PlayWindow(BaseWindow):
@@ -44,9 +46,7 @@ class PlayWindow(BaseWindow):
         super().onInit()
 
     def calculate_percent(self):
-        return (
-            (int(self.getTotalTime()) - int(self.getTime())) / float(self.duration)
-        ) * 100
+        return ((int(self.getTotalTime()) - int(self.getTime())) / float(self.duration)) * 100
 
     def background_tasks(self):
         try:

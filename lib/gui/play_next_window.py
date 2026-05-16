@@ -1,6 +1,4 @@
 from lib.gui.play_window import PlayWindow
-
-
 from lib.utils.kodi.utils import get_setting
 
 

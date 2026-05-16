@@ -1,5 +1,7 @@
-import requests
 from datetime import timedelta
+
+import requests
+
 from lib.db.cached import MemoryCache
 from lib.utils.kodi.utils import kodilog
 
@@ -43,9 +45,7 @@ def get_segments(imdb_id, season, episode):
         if cached == _SENTINEL:
             kodilog(f"IntroDB: Cache hit (no data) for {imdb_id} S{season}E{episode}")
             return None
-        kodilog(
-            f"IntroDB: Cache hit for {imdb_id} S{season}E{episode} data={cached}"
-        )
+        kodilog(f"IntroDB: Cache hit for {imdb_id} S{season}E{episode} data={cached}")
         return cached
 
     try:
@@ -89,7 +89,5 @@ def get_segments(imdb_id, season, episode):
         kodilog(f"IntroDB: Request failed for {imdb_id} S{season}E{episode}: {e}")
         return None
     except (ValueError, KeyError) as e:
-        kodilog(
-            f"IntroDB: Failed to parse response for {imdb_id} S{season}E{episode}: {e}"
-        )
+        kodilog(f"IntroDB: Failed to parse response for {imdb_id} S{season}E{episode}: {e}")
         return None

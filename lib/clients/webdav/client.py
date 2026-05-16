@@ -1,4 +1,12 @@
 import requests
+from xbmcgui import Dialog
+from xbmcplugin import (
+    SORT_METHOD_FILE,
+    SORT_METHOD_LABEL_IGNORE_THE,
+    addDirectoryItem,
+    addSortMethod,
+)
+
 from lib.api.webdav.webdav import WebDAVClient
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
@@ -12,8 +20,6 @@ from lib.utils.kodi.utils import (
     show_picture,
     translation,
 )
-from xbmcgui import Dialog
-from xbmcplugin import addDirectoryItem, addSortMethod, SORT_METHOD_LABEL_IGNORE_THE, SORT_METHOD_FILE
 
 
 def list_webdav(params):
@@ -36,9 +42,7 @@ def list_webdav(params):
 
         # --- FOLDERS ---
         if item["type"] == "folder":
-            new_relative_path = (
-                f"{relative_path}/{item['name']}" if relative_path else item["name"]
-            )
+            new_relative_path = f"{relative_path}/{item['name']}" if relative_path else item["name"]
             url = build_url("list_webdav", path=new_relative_path)
             is_folder = True
 
@@ -80,9 +84,7 @@ def list_webdav(params):
             url = item["url"]
             is_folder = False
 
-        addDirectoryItem(
-            handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder
-        )
+        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder)
 
     addSortMethod(ADDON_HANDLE, SORT_METHOD_LABEL_IGNORE_THE)
     addSortMethod(ADDON_HANDLE, SORT_METHOD_FILE)

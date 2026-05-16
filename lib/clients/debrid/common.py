@@ -1,9 +1,8 @@
 from typing import Any, Dict, Optional
 
 from lib.api.debrid.base import ProviderException
-from lib.utils.kodi.utils import translation
 from lib.utils.general.utils import supported_video_extensions
-
+from lib.utils.kodi.utils import translation
 
 PACKED_RELEASE_FALLBACK_TEMPLATE = (
     "{provider} cannot directly play packed releases (.rar/.zip). "
@@ -50,9 +49,7 @@ def ensure_direct_playable_file(filename: Optional[str]) -> None:
     raise ProviderException(get_packed_release_message("This provider"))
 
 
-def ensure_direct_playable_file_for_provider(
-    filename: Optional[str], provider_name: str
-) -> None:
+def ensure_direct_playable_file_for_provider(filename: Optional[str], provider_name: str) -> None:
     if not filename:
         return
 

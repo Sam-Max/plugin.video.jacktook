@@ -1,7 +1,8 @@
 from typing import Any, Callable, Dict, Optional
-from lib.utils.kodi.utils import get_setting, notification, translation
+
 from lib.utils.general.utils import Indexer
 from lib.utils.kodi.settings import get_int_setting
+from lib.utils.kodi.utils import get_setting, notification, translation
 
 
 def validate_host(host: Optional[str], indexer: str) -> Optional[bool]:
@@ -23,9 +24,7 @@ def update_dialog(title: str, message: str, dialog: Any, percent: int = 0) -> No
         dialog.update(percent, translation(90661) % title, message)
 
 
-def validate_credentials(
-    indexer: str, host: Optional[str], api_key: Optional[str] = None
-) -> bool:
+def validate_credentials(indexer: str, host: Optional[str], api_key: Optional[str] = None) -> bool:
     """
     Validates the host and API key for a given indexer.
     """
@@ -103,7 +102,6 @@ def build_easynews_client() -> Optional[object]:
 def build_external_scraper_client() -> Optional[object]:
     from lib.clients.external_scraper import ExternalScraperClient
     from lib.utils.kodi.utils import kodilog
-    from lib.utils.kodi.utils import set_setting
 
     kodilog("[ExternalScraper] build_external_scraper_client() called")
 
@@ -111,7 +109,9 @@ def build_external_scraper_client() -> Optional[object]:
     if not module_id:
         return None
 
-    module_display_name = get_setting("external_scraper_module_name") or module_id.split(".")[-1].title()
+    module_display_name = (
+        get_setting("external_scraper_module_name") or module_id.split(".")[-1].title()
+    )
     client = ExternalScraperClient(module_id, module_display_name, notification)
     kodilog(
         f"[ExternalScraper] initialized={client.initialized}, "

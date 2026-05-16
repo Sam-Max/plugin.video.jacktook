@@ -1,7 +1,7 @@
 from lib.api.debrid.base import DebridClient
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.utils import dialog_ok, set_setting, translation
 from lib.services.debrid.auth import run_debrider_auth
+from lib.utils.kodi.utils import dialog_ok, set_setting, translation
 
 
 class Debrider(DebridClient):
@@ -58,7 +58,7 @@ class Debrider(DebridClient):
         )
 
     def get_device_auth_status(self, code):
-        "Check the status of device authentication using a code."
+        """Check the status of device authentication using a code."""
         return self._make_request(
             "GET",
             f"{self.AUTH_URL}/device/auth",
@@ -109,16 +109,12 @@ class Debrider(DebridClient):
             import datetime
 
             try:
-                expires = datetime.datetime.strptime(
-                    premium_until, "%Y-%m-%dT%H:%M:%S.%fZ"
-                )
+                expires = datetime.datetime.strptime(premium_until, "%Y-%m-%dT%H:%M:%S.%fZ")
             except ValueError:
-                expires = datetime.datetime.strptime(
-                    premium_until, "%Y-%m-%dT%H:%M:%SZ"
-                )
+                expires = datetime.datetime.strptime(premium_until, "%Y-%m-%dT%H:%M:%SZ")
 
             days = (expires - datetime.datetime.utcnow()).days
             return days
-        except Exception as e:
+        except Exception:
             # kodilog(f"Error calculating Debrider days remaining: {e}")
             return None

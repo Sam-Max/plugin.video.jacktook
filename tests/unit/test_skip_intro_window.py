@@ -8,9 +8,7 @@ def test_on_init_starts_background_monitor_thread(mock_thread_cls):
     thread = MagicMock()
     mock_thread_cls.return_value = thread
 
-    window = SkipIntroWindow(
-        "skip_intro.xml", "", segment_data={"end_sec": 30}, label="Skip Intro"
-    )
+    window = SkipIntroWindow("skip_intro.xml", "", segment_data={"end_sec": 30}, label="Skip Intro")
     window.setProperty = MagicMock()
 
     window.onInit()

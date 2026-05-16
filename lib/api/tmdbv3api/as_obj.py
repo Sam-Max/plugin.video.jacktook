@@ -1,6 +1,4 @@
-# encoding: utf-8
 import sys
-from .exceptions import TMDbException
 
 
 class AsObj:
@@ -12,9 +10,7 @@ class AsObj:
         self._obj_list = []
         self._list_only = False
         if isinstance(self._json, list):
-            self._obj_list = [
-                AsObj(o) if isinstance(o, (dict, list)) else o for o in self._json
-            ]
+            self._obj_list = [AsObj(o) if isinstance(o, (dict, list)) else o for o in self._json]
             self._list_only = True
         elif dict_key:
             self._obj_list = [
@@ -30,9 +26,7 @@ class AsObj:
             for key, value in self._json.items():
                 if isinstance(value, (dict, list)):
                     if self._key and key == self._key:
-                        final = AsObj(
-                            value, dict_key=isinstance(value, dict), dict_key_name=key
-                        )
+                        final = AsObj(value, dict_key=isinstance(value, dict), dict_key_name=key)
                         self._obj_list = final
                     else:
                         final = AsObj(value)

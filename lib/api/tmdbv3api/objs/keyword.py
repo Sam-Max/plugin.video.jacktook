@@ -1,10 +1,8 @@
 from lib.api.tmdbv3api.tmdb import TMDb
 
+
 class Keyword(TMDb):
-    _urls = {
-        "details": "/keyword/%s",
-        "movies": "/keyword/%s/movies"
-    }
+    _urls = {"details": "/keyword/%s", "movies": "/keyword/%s/movies"}
 
     def details(self, keyword_id):
         """

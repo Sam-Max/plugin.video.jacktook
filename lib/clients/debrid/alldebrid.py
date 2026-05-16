@@ -1,10 +1,11 @@
+import threading
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from lib.api.debrid.alldebrid import AllDebrid
 from lib.api.debrid.base import ProviderException
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
-from lib.utils.kodi.utils import dialog_text, get_setting, kodilog, notification, translation
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -13,8 +14,13 @@ from lib.utils.general.utils import (
     info_hash_to_magnet,
     supported_video_extensions,
 )
-from lib.domain.torrent import TorrentStream
-import threading
+from lib.utils.kodi.utils import (
+    dialog_text,
+    get_setting,
+    kodilog,
+    notification,
+    translation,
+)
 
 
 class AllDebridHelper:
@@ -33,9 +39,7 @@ class AllDebridHelper:
         # Checks if torrents are cached in AllDebrid.
         torr_available = self.client.get_user_torrent_list()
         magnets = (
-            torr_available.get("data", {}).get("magnets")
-            or torr_available.get("magnets")
-            or []
+            torr_available.get("data", {}).get("magnets") or torr_available.get("magnets") or []
         )
         torr_available_hashes = [
             m.get("hash") for m in magnets if isinstance(m, dict) and m.get("hash")
@@ -58,9 +62,7 @@ class AllDebridHelper:
         if get_setting("show_uncached"):
             cached_results.extend(uncached_results)
 
-    def get_link(
-        self, info_hash: str, data: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    def get_link(self, info_hash: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
         result = self.client.add_magnet(info_hash_to_magnet(info_hash))
         magnet = result.get("data", {}).get("magnets", [])[0]
@@ -98,9 +100,7 @@ class AllDebridHelper:
         season = data["tv_data"].get("season", "")
         episode = data["tv_data"].get("episode", "")
 
-        matched = filter_debrid_episode(
-            flat_files, episode_num=episode, season_num=season
-        )
+        matched = filter_debrid_episode(flat_files, episode_num=episode, season_num=season)
         if not matched:
             raise ProviderException("No matching episode found in torrent.")
 
@@ -141,7 +141,6 @@ class AllDebridHelper:
 
     def get_pack_link(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a file inside a Real-Debrid torrent pack."""
-
         pack_info = data.get("pack_info", {})
         link = pack_info.get("url", "")
 
@@ -170,8 +169,7 @@ class AllDebridHelper:
             (f.get("l"), get_file_name(f))
             for f in flat_files
             if any(
-                get_file_name(f).lower().endswith(ext)
-                for ext in supported_video_extensions()[:-1]
+                get_file_name(f).lower().endswith(ext) for ext in supported_video_extensions()[:-1]
             )
         ]
         if not files:
@@ -194,7 +192,7 @@ class AllDebridHelper:
         try:
             response = self.client.get_user_info()
             user = response["user"]
-        except Exception as e:
+        except Exception:
             raise ProviderException("Failed to retrieve All-Debrid user info.")
         status = "Premium" if user["isPremium"] else "Not Active"
         expires = datetime.fromtimestamp(user["premiumUntil"])

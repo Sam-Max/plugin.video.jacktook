@@ -1,12 +1,11 @@
-from typing import List, Dict, Optional, Any, Callable
+from typing import Any, Callable, Dict, List, Optional
+
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import kodilog, translation
 
 
 class Jackgram(BaseClient):
-    def __init__(
-        self, host: str, notification: Callable, token: Optional[str] = None
-    ) -> None:
+    def __init__(self, host: str, notification: Callable, token: Optional[str] = None) -> None:
         super().__init__(host, notification)
         self.token = token
         if token:

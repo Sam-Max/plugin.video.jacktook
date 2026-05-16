@@ -14,7 +14,12 @@ class Season(TMDb):
         "videos": "/tv/%s/season/%s/videos",
     }
 
-    def details(self, tv_id, season_num, append_to_response="videos,trailers,images,credits,translations,runtime"):
+    def details(
+        self,
+        tv_id,
+        season_num,
+        append_to_response="videos,trailers,images,credits,translations,runtime",
+    ):
         """
         Get the TV season details by id.
         :param tv_id: int
@@ -24,7 +29,7 @@ class Season(TMDb):
         """
         return self._request_obj(
             self._urls["details"] % (tv_id, season_num),
-            params="append_to_response=%s" % append_to_response
+            params="append_to_response={}".format(append_to_response),
         )
 
     def account_states(self, tv_id, season_num):
@@ -36,8 +41,8 @@ class Season(TMDb):
         """
         return self._request_obj(
             self._urls["account_states"] % (tv_id, season_num),
-            params="session_id=%s" % self.session_id,
-            key="results"
+            params="session_id={}".format(self.session_id),
+            key="results",
         )
 
     def aggregate_credits(self, tv_id, season_num):
@@ -61,16 +66,12 @@ class Season(TMDb):
         :param page: int
         :return:
         """
-        params = "page=%s" % page
+        params = "page={}".format(page)
         if start_date:
-            params += "&start_date=%s" % start_date
+            params += "&start_date={}".format(start_date)
         if end_date:
-            params += "&end_date=%s" % end_date
-        return self._request_obj(
-            self._urls["changes"] % season_id,
-            params=params,
-            key="changes"
-        )
+            params += "&end_date={}".format(end_date)
+        return self._request_obj(self._urls["changes"] % season_id, params=params, key="changes")
 
     def credits(self, tv_id, season_num):
         """
@@ -100,8 +101,10 @@ class Season(TMDb):
         """
         return self._request_obj(
             self._urls["images"] % (tv_id, season_num),
-            params="include_image_language=%s" % include_image_language if include_image_language else "",
-            key="posters"
+            params="include_image_language={}".format(include_image_language)
+            if include_image_language
+            else "",
+            key="posters",
         )
 
     def translations(self, tv_id, season_num):
@@ -111,8 +114,7 @@ class Season(TMDb):
         :param season_num: int
         """
         return self._request_obj(
-            self._urls["translations"] % (tv_id, season_num),
-            key="translations"
+            self._urls["translations"] % (tv_id, season_num), key="translations"
         )
 
     def videos(self, tv_id, season_num, include_video_language=None, page=1):
@@ -124,10 +126,7 @@ class Season(TMDb):
         :param page: int
         :return:
         """
-        params = "page=%s" % page
+        params = "page={}".format(page)
         if include_video_language:
-            params += "&include_video_language=%s" % include_video_language
-        return self._request_obj(
-            self._urls["videos"] % (tv_id, season_num),
-            params=params
-        )
+            params += "&include_video_language={}".format(include_video_language)
+        return self._request_obj(self._urls["videos"] % (tv_id, season_num), params=params)

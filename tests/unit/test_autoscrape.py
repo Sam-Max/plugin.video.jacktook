@@ -1,12 +1,8 @@
-from datetime import timedelta
-from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
 import json
 import re
-
-import pytest
-
-from lib.db.cached import RuntimeCache
+from datetime import timedelta
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 
 def test_get_autoscrape_cache_key_format():
@@ -57,14 +53,13 @@ def test_autoscrape_next_episode_resolves_and_caches():
 
     with patch("lib.search.search_client", return_value=[fake_result]) as mock_search, patch(
         "lib.utils.player.utils.resolve_playback_url", return_value=resolved_data
-    ) as mock_resolve, patch(
-        "lib.utils.player.utils.cache"
-    ) as mock_cache, patch(
-        "lib.utils.player.utils.get_setting", side_effect=lambda key, default=None: {
+    ) as mock_resolve, patch("lib.utils.player.utils.cache") as mock_cache, patch(
+        "lib.utils.player.utils.get_setting",
+        side_effect=lambda key, default=None: {
             "autoscrape_next_episode": True,
             "auto_play": True,
             "auto_play_quality": "1080p",
-        }.get(key, default)
+        }.get(key, default),
     ):
         item_data = {
             "mode": "tv",
@@ -90,11 +85,12 @@ def test_autoscrape_next_episode_no_results_does_not_cache():
     with patch("lib.search.search_client", return_value=[]) as mock_search, patch(
         "lib.utils.player.utils.cache"
     ) as mock_cache, patch(
-        "lib.utils.player.utils.get_setting", side_effect=lambda key, default=None: {
+        "lib.utils.player.utils.get_setting",
+        side_effect=lambda key, default=None: {
             "autoscrape_next_episode": True,
             "auto_play": True,
             "auto_play_quality": "1080p",
-        }.get(key, default)
+        }.get(key, default),
     ):
         item_data = {
             "mode": "tv",
@@ -116,7 +112,11 @@ def test_autoscrape_next_episode_disabled_exits_early():
     with patch("lib.search.search_client") as mock_search, patch(
         "lib.utils.player.utils.get_setting", return_value=False
     ):
-        item_data = {"mode": "tv", "ids": {"tmdb_id": "123"}, "tv_data": {"season": 1, "episode": 1}}
+        item_data = {
+            "mode": "tv",
+            "ids": {"tmdb_id": "123"},
+            "tv_data": {"season": 1, "episode": 1},
+        }
         next_tv_data = {"season": 1, "episode": 2, "name": "Next Ep"}
 
         autoscrape_next_episode(item_data, next_tv_data)
@@ -131,9 +131,7 @@ def test_play_autoscraped_cache_hit_plays_directly():
 
     with patch("lib.navigation.cache") as mock_cache, patch(
         "lib.navigation.JacktookPLayer"
-    ) as mock_player_cls, patch(
-        "lib.search.run_search_entry"
-    ) as mock_search_entry:
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry:
         mock_cache.get.return_value = cached_data
 
         params = {
@@ -154,9 +152,7 @@ def test_play_autoscraped_cache_miss_falls_back():
 
     with patch("lib.navigation.cache") as mock_cache, patch(
         "lib.navigation.JacktookPLayer"
-    ) as mock_player_cls, patch(
-        "lib.search.run_search_entry"
-    ) as mock_search_entry:
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry:
         mock_cache.get.return_value = None
 
         params = {
@@ -205,7 +201,9 @@ def test_monitor_autoscrape_threshold_spawns_thread_once():
 
     # Must spawn a Thread with target=autoscrape_next_episode
     threshold_match = re.search(
-        r"def check_autoscrape_threshold\(self\):(?P<body>.*?)def check_next_dialog", source, re.S
+        r"def check_autoscrape_threshold\(self\):(?P<body>.*?)def check_next_dialog",
+        source,
+        re.S,
     )
     assert threshold_match is not None
     threshold_body = threshold_match.group("body")
@@ -213,13 +211,17 @@ def test_monitor_autoscrape_threshold_spawns_thread_once():
 
     # Must reset autoscrape_started in set_constants
     constants_match = re.search(
-        r"def set_constants\(self, data\):(?P<body>.*?)def fetch_introdb_segments", source, re.S
+        r"def set_constants\(self, data\):(?P<body>.*?)def fetch_introdb_segments",
+        source,
+        re.S,
     )
     assert constants_match is not None
     assert "self.autoscrape_started = False" in constants_match.group("body")
 
     # Must call check_autoscrape_threshold inside monitor loop
-    monitor_match = re.search(r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S)
+    monitor_match = re.search(
+        r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S
+    )
     assert monitor_match is not None
     assert "self.check_autoscrape_threshold()" in monitor_match.group("body")
 
@@ -231,17 +233,11 @@ def test_run_next_dialog_fast_path_from_cache():
 
     with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
         "lib.gui.custom_dialogs.cache"
-    ) as mock_cache, patch(
-        "lib.gui.custom_dialogs.xbmc"
-    ) as mock_xbmc, patch(
+    ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch(
-        "xbmcgui.ListItem"
-    ) as mock_listitem, patch(
+    ) as mock_window_cls, patch("xbmcgui.ListItem") as mock_listitem, patch(
         "lib.gui.custom_dialogs.build_url"
-    ) as mock_build_url, patch(
-        "lib.gui.custom_dialogs.JacktookPLayer"
-    ) as mock_player_cls:
+    ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
         mock_playlist.size.return_value = 2
         mock_playlist.getposition.return_value = 0
         mock_window = MagicMock()
@@ -252,7 +248,16 @@ def test_run_next_dialog_fast_path_from_cache():
         mock_player.isPlaying.return_value = True
         mock_xbmc.Player.return_value = mock_player
 
-        params = {"item_info": json.dumps({"mode": "tv", "title": "Show", "ids": {"tmdb_id": "123"}, "tv_data": {"season": 1, "episode": 1}})}
+        params = {
+            "item_info": json.dumps(
+                {
+                    "mode": "tv",
+                    "title": "Show",
+                    "ids": {"tmdb_id": "123"},
+                    "tv_data": {"season": 1, "episode": 1},
+                }
+            )
+        }
 
         run_next_dialog(params)
 
@@ -266,17 +271,11 @@ def test_run_next_dialog_fallback_on_cache_miss():
 
     with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
         "lib.gui.custom_dialogs.cache"
-    ) as mock_cache, patch(
-        "lib.gui.custom_dialogs.xbmc"
-    ) as mock_xbmc, patch(
+    ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch(
-        "xbmcgui.ListItem"
-    ) as mock_listitem, patch(
+    ) as mock_window_cls, patch("xbmcgui.ListItem") as mock_listitem, patch(
         "lib.gui.custom_dialogs.build_url"
-    ) as mock_build_url, patch(
-        "lib.gui.custom_dialogs.JacktookPLayer"
-    ) as mock_player_cls:
+    ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
         mock_playlist.size.return_value = 2
         mock_playlist.getposition.return_value = 0
         mock_window = MagicMock()
@@ -288,7 +287,16 @@ def test_run_next_dialog_fallback_on_cache_miss():
         mock_xbmc.Player.return_value = mock_player
         mock_build_url.return_value = "plugin://test"
 
-        params = {"item_info": json.dumps({"mode": "tv", "title": "Show", "ids": {"tmdb_id": "123"}, "tv_data": {"season": 1, "episode": 1}})}
+        params = {
+            "item_info": json.dumps(
+                {
+                    "mode": "tv",
+                    "title": "Show",
+                    "ids": {"tmdb_id": "123"},
+                    "tv_data": {"season": 1, "episode": 1},
+                }
+            )
+        }
 
         run_next_dialog(params)
 

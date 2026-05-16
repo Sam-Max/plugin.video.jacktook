@@ -1,4 +1,3 @@
-
 class PlexUnauthorizedError(BaseException):
     pass
 
@@ -11,6 +10,3 @@ class HTTPException(BaseException):
     ):
         self.status_code = status_code
         self.detail = detail
-
-
-

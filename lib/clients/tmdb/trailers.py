@@ -5,7 +5,6 @@ from lib.api.tmdbv3api.objs.movie import Movie
 from lib.api.tmdbv3api.objs.tv import TV
 from lib.utils.kodi.utils import kodilog
 
-
 YOUTUBE_WATCH_URL = "https://www.youtube.com/watch?v={}"
 
 

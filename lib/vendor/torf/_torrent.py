@@ -33,18 +33,20 @@ from . import _generate as generate
 from . import _reuse as reuse
 from . import _utils as utils
 
-_PACKAGE_NAME = __name__.split('.')[0]
+_PACKAGE_NAME = __name__.split(".")[0]
 
 # os.sched_getaffinity() is only available on some Unix platforms.
 try:
     NCORES = len(os.sched_getaffinity(0))
 except AttributeError:
     import multiprocessing
+
     NCORES = multiprocessing.cpu_count()
 
-DEFAULT_TORRENT_NAME = 'UNNAMED TORRENT'
+DEFAULT_TORRENT_NAME = "UNNAMED TORRENT"
 
-class Torrent():
+
+class Torrent:
     """
     Torrent metainfo representation
 
@@ -97,20 +99,37 @@ class Torrent():
     {'bar': ['x', 'y', 'z'], 'foo': 12}
     """
 
-    def __init__(self, path=None, name=None,
-                 exclude_globs=(), exclude_regexs=(),
-                 include_globs=(), include_regexs=(),
-                 trackers=None, webseeds=None, httpseeds=None,
-                 private=None, comment=None, source=None, creation_date=None,
-                 created_by='%s %s' % (_PACKAGE_NAME, __version__),
-                 piece_size=None, piece_size_min=None, piece_size_max=None,
-                 randomize_infohash=False):
+    def __init__(
+        self,
+        path=None,
+        name=None,
+        exclude_globs=(),
+        exclude_regexs=(),
+        include_globs=(),
+        include_regexs=(),
+        trackers=None,
+        webseeds=None,
+        httpseeds=None,
+        private=None,
+        comment=None,
+        source=None,
+        creation_date=None,
+        created_by="{} {}".format(_PACKAGE_NAME, __version__),
+        piece_size=None,
+        piece_size_min=None,
+        piece_size_max=None,
+        randomize_infohash=False,
+    ):
         self._path = None
         self._metainfo = {}
-        self._exclude = {'globs'  : utils.MonitoredList(callback=self._filters_changed, type=str),
-                         'regexs' : utils.MonitoredList(callback=self._filters_changed, type=re.compile)}
-        self._include = {'globs'  : utils.MonitoredList(callback=self._filters_changed, type=str),
-                         'regexs' : utils.MonitoredList(callback=self._filters_changed, type=re.compile)}
+        self._exclude = {
+            "globs": utils.MonitoredList(callback=self._filters_changed, type=str),
+            "regexs": utils.MonitoredList(callback=self._filters_changed, type=re.compile),
+        }
+        self._include = {
+            "globs": utils.MonitoredList(callback=self._filters_changed, type=str),
+            "regexs": utils.MonitoredList(callback=self._filters_changed, type=re.compile),
+        }
 
         self.piece_size_min = piece_size_min
         self.piece_size_max = piece_size_max
@@ -150,8 +169,8 @@ class Torrent():
 
         The ``info`` key is guaranteed to exist.
         """
-        if 'info' not in self._metainfo:
-            self._metainfo['info'] = {}
+        if "info" not in self._metainfo:
+            self._metainfo["info"] = {}
         return self._metainfo
 
     @property
@@ -179,11 +198,12 @@ class Torrent():
         if value is None:
             # Keep info about name and files, but forget where they are stored
             self._path = None
-            self.metainfo['info'].pop('pieces', None)
+            self.metainfo["info"].pop("pieces", None)
         else:
             basepath = pathlib.Path(str(value))
-            filepaths = tuple(utils.File(fp, size=utils.real_size(fp))
-                              for fp in utils.list_files(basepath))
+            filepaths = tuple(
+                utils.File(fp, size=utils.real_size(fp)) for fp in utils.list_files(basepath)
+            )
             self._set_files(filepaths, basepath)
 
     @property
@@ -215,14 +235,15 @@ class Torrent():
             directory
         :raises ValueError: if any file is not a :class:`File` object
         """
-        info = self.metainfo['info']
-        if self.mode == 'singlefile':
-            files = (utils.File(info.get('name', DEFAULT_TORRENT_NAME), size=self.size),)
-        elif self.mode == 'multifile':
-            basedir = info.get('name', DEFAULT_TORRENT_NAME)
-            files = (utils.File(os.path.join(basedir, *fileinfo['path']),
-                                size=fileinfo['length'])
-                     for fileinfo in info['files'])
+        info = self.metainfo["info"]
+        if self.mode == "singlefile":
+            files = (utils.File(info.get("name", DEFAULT_TORRENT_NAME), size=self.size),)
+        elif self.mode == "multifile":
+            basedir = info.get("name", DEFAULT_TORRENT_NAME)
+            files = (
+                utils.File(os.path.join(basedir, *fileinfo["path"]), size=fileinfo["length"])
+                for fileinfo in info["files"]
+            )
         else:
             files = ()
         return utils.Files(files, callback=self._files_changed)
@@ -233,12 +254,12 @@ class Torrent():
     @files.setter
     def files(self, files):
         if not isinstance(files, utils.Iterable):
-            raise ValueError(f'Not an Iterable: {files}')
+            raise ValueError(f"Not an Iterable: {files}")
         for f in files:
             if not isinstance(f, utils.File):
-                raise ValueError(f'Not a File object: {f}')
+                raise ValueError(f"Not a File object: {f}")
             elif f.is_absolute():
-                raise error.PathError(f, msg='Not a relative path')
+                raise error.PathError(f, msg="Not a relative path")
 
         if not files:
             self._set_files(files=())
@@ -248,8 +269,8 @@ class Torrent():
             try:
                 basepath = os.path.commonpath(files)
             except ValueError:
-                basepath = ''
-            if basepath == '':
+                basepath = ""
+            if basepath == "":
                 raise error.CommonPathError(files)
             self._set_files(files, pathlib.Path(basepath))
 
@@ -271,12 +292,14 @@ class Torrent():
         """
         filepaths = ()
         if self.path is not None:
-            if self.mode == 'singlefile':
+            if self.mode == "singlefile":
                 filepaths = (self.path,)
-            elif self.mode == 'multifile':
+            elif self.mode == "multifile":
                 dirpath = self.path
-                filepaths = (os.path.join(dirpath, *fileinfo['path'])
-                             for fileinfo in self.metainfo['info']['files'])
+                filepaths = (
+                    os.path.join(dirpath, *fileinfo["path"])
+                    for fileinfo in self.metainfo["info"]["files"]
+                )
         return utils.Filepaths(filepaths, callback=self._filepaths_changed)
 
     def _filepaths_changed(self, filepaths):
@@ -285,7 +308,7 @@ class Torrent():
     @filepaths.setter
     def filepaths(self, filepaths):
         if not isinstance(filepaths, utils.Iterable):
-            raise ValueError(f'Not an Iterable: {filepaths}')
+            raise ValueError(f"Not an Iterable: {filepaths}")
 
         filepaths = utils.Filepaths(filepaths)  # Resolve directories
         if not filepaths:
@@ -295,14 +318,12 @@ class Torrent():
             # resolve symlinks so the user isn't confronted with unexpected
             # paths in case of an error.
             cwd = pathlib.Path.cwd()
-            filepaths_abs = tuple(fp if fp.is_absolute() else cwd / fp
-                                  for fp in filepaths)
+            filepaths_abs = tuple(fp if fp.is_absolute() else cwd / fp for fp in filepaths)
             try:
                 basepath = pathlib.Path(os.path.commonpath(filepaths_abs))
             except ValueError:
                 raise error.CommonPathError(filepaths)
-            filepaths = tuple(utils.File(fp, size=utils.real_size(fp))
-                              for fp in filepaths)
+            filepaths = tuple(utils.File(fp, size=utils.real_size(fp)) for fp in filepaths)
             self._set_files(filepaths, basepath)
 
     def _set_files(self, files, basepath=None):
@@ -314,6 +335,7 @@ class Torrent():
         :param basepath: path-like that all paths in `files` start with; may be
             ``None`` if ``files`` is empty
         """
+
         def abspath(p):
             # Absolute path without resolved symlinks
             if p.is_absolute():
@@ -330,30 +352,35 @@ class Torrent():
             return pathlib.Path(abspath(p)).relative_to(abspath(basepath).parent)
 
         # Apply filters to relative paths with torrent name as first segment
-        exclude_globs = tuple(str(g) for g in self._exclude['globs'])
-        exclude_regexs = tuple(re.compile(r) for r in self._exclude['regexs'])
+        exclude_globs = tuple(str(g) for g in self._exclude["globs"])
+        exclude_regexs = tuple(re.compile(r) for r in self._exclude["regexs"])
         exclude = tuple(itertools.chain(exclude_globs, exclude_regexs))
-        include_globs = tuple(str(g) for g in self._include['globs'])
-        include_regexs = tuple(re.compile(r) for r in self._include['regexs'])
+        include_globs = tuple(str(g) for g in self._include["globs"])
+        include_regexs = tuple(re.compile(r) for r in self._include["regexs"])
         include = tuple(itertools.chain(include_globs, include_regexs))
-        files = utils.filter_files(files, getter=relpath_with_parent,
-                                   exclude=exclude, include=include,
-                                   hidden=False, empty=False)
+        files = utils.filter_files(
+            files,
+            getter=relpath_with_parent,
+            exclude=exclude,
+            include=include,
+            hidden=False,
+            empty=False,
+        )
 
-        info = self.metainfo['info']
+        info = self.metainfo["info"]
         if not files or all(f.size <= 0 for f in files):
-            info.pop('files', None)
-            info.pop('length', None)
-            info.pop('pieces', None)
-            info.pop('md5sum', None)
+            info.pop("files", None)
+            info.pop("length", None)
+            info.pop("pieces", None)
+            info.pop("md5sum", None)
         elif len(files) == 1 and files[0] == basepath:
             # There is only one file and it is not in a directory.
             # NOTE: A directory with a single file in it is a multifile torrent.
-            info['length'] = files[0].size
-            info['name'] = files[0].name
-            info.pop('files', None)
-            info.pop('pieces', None)
-            info.pop('md5sum', None)
+            info["length"] = files[0].size
+            info["name"] = files[0].name
+            info.pop("files", None)
+            info.pop("pieces", None)
+            info.pop("md5sum", None)
         else:
             if str(basepath) == os.curdir:
                 # Name of current working directory
@@ -371,13 +398,12 @@ class Torrent():
 
             files_info = []
             for f in sorted(files):
-                files_info.append({'length': f.size,
-                                   'path'  : list(relpath_without_parent(f).parts)})
-            info['name'] = name
-            info['files'] = files_info
-            info.pop('length', None)
-            info.pop('pieces', None)
-            info.pop('md5sum', None)
+                files_info.append({"length": f.size, "path": list(relpath_without_parent(f).parts)})
+            info["name"] = name
+            info["files"] = files_info
+            info.pop("length", None)
+            info.pop("pieces", None)
+            info.pop("md5sum", None)
 
         # Set new path attribute if basepath exists
         if basepath is not None and os.path.exists(basepath):
@@ -407,13 +433,13 @@ class Torrent():
         ``[!SEQ]`` matches any char not in ``SEQ``
         ========== ================================
         """
-        return self._exclude['globs']
+        return self._exclude["globs"]
 
     @exclude_globs.setter
     def exclude_globs(self, value):
         if not isinstance(value, utils.Iterable):
-            raise ValueError(f'Must be Iterable, not {type(value).__name__}: {value}')
-        self._exclude['globs'][:] = value
+            raise ValueError(f"Must be Iterable, not {type(value).__name__}: {value}")
+        self._exclude["globs"][:] = value
 
     @property
     def include_globs(self):
@@ -422,13 +448,13 @@ class Torrent():
 
         See :attr:`exclude_globs`.
         """
-        return self._include['globs']
+        return self._include["globs"]
 
     @include_globs.setter
     def include_globs(self, value):
         if not isinstance(value, utils.Iterable):
-            raise ValueError(f'Must be Iterable, not {type(value).__name__}: {value}')
-        self._include['globs'][:] = value
+            raise ValueError(f"Must be Iterable, not {type(value).__name__}: {value}")
+        self._include["globs"][:] = value
 
     @property
     def exclude_regexs(self):
@@ -442,13 +468,13 @@ class Torrent():
 
         :raises re.error: if any regular expression is invalid
         """
-        return self._exclude['regexs']
+        return self._exclude["regexs"]
 
     @exclude_regexs.setter
     def exclude_regexs(self, value):
         if not isinstance(value, utils.Iterable):
-            raise ValueError(f'Must be Iterable, not {type(value).__name__}: {value}')
-        self._exclude['regexs'][:] = value
+            raise ValueError(f"Must be Iterable, not {type(value).__name__}: {value}")
+        self._exclude["regexs"][:] = value
 
     @property
     def include_regexs(self):
@@ -457,13 +483,13 @@ class Torrent():
 
         See :attr:`exclude_regexs`.
         """
-        return self._include['regexs']
+        return self._include["regexs"]
 
     @include_regexs.setter
     def include_regexs(self, value):
         if not isinstance(value, utils.Iterable):
-            raise ValueError(f'Must be Iterable, not {type(value).__name__}: {value}')
-        self._include['regexs'][:] = value
+            raise ValueError(f"Must be Iterable, not {type(value).__name__}: {value}")
+        self._include["regexs"][:] = value
 
     def _filters_changed(self, _):
         """Callback for MonitoredLists in Torrent._exclude"""
@@ -494,7 +520,7 @@ class Torrent():
                          'foo.txt': File('Torrent/foo.txt',
                                          size=123456)}}
         """
-        tree = {}   # Complete directory tree
+        tree = {}  # Complete directory tree
         paths = (tuple(f.parts) for f in self.files)
         for path in paths:
             dirpath = path[:-1]  # Path without filename
@@ -521,17 +547,17 @@ class Torrent():
         Setting this property sets or removes ``name`` in
         :attr:`metainfo`\\ ``['info']``.
         """
-        if 'name' not in self.metainfo['info'] and self.path is not None:
-            self.metainfo['info']['name'] = self.path.name
-        return self.metainfo['info'].get('name', None)
+        if "name" not in self.metainfo["info"] and self.path is not None:
+            self.metainfo["info"]["name"] = self.path.name
+        return self.metainfo["info"].get("name", None)
 
     @name.setter
     def name(self, value):
         if value is None:
-            self.metainfo['info'].pop('name', None)
+            self.metainfo["info"].pop("name", None)
             self.name  # Set default name
         else:
-            self.metainfo['info']['name'] = str(value)
+            self.metainfo["info"]["name"] = str(value)
 
     @property
     def mode(self):
@@ -540,19 +566,18 @@ class Torrent():
         ``multifile`` if it contains one or more files in a directory, or
         ``None`` if no content is specified (i.e. :attr:`files` is empty).
         """
-        if 'length' in self.metainfo['info']:
-            return 'singlefile'
-        elif 'files' in self.metainfo['info']:
-            return 'multifile'
+        if "length" in self.metainfo["info"]:
+            return "singlefile"
+        elif "files" in self.metainfo["info"]:
+            return "multifile"
 
     @property
     def size(self):
         """Total size of content in bytes"""
-        if self.mode == 'singlefile':
-            return self.metainfo['info']['length']
-        elif self.mode == 'multifile':
-            return sum(fileinfo['length']
-                       for fileinfo in self.metainfo['info']['files'])
+        if self.mode == "singlefile":
+            return self.metainfo["info"]["length"]
+        elif self.mode == "multifile":
+            return sum(fileinfo["length"] for fileinfo in self.metainfo["info"]["files"])
         else:
             return 0
 
@@ -573,22 +598,22 @@ class Torrent():
         elif isinstance(path, abc.Iterable):
             path = tuple(str(part) for part in path)
         else:
-            raise ValueError(f'Must be str, Path or Iterable, not {type(path).__name__}: {path}')
-        if self.mode == 'singlefile' and path == (self.name,):
-            return self.metainfo['info']['length']
-        elif self.mode == 'multifile':
+            raise ValueError(f"Must be str, Path or Iterable, not {type(path).__name__}: {path}")
+        if self.mode == "singlefile" and path == (self.name,):
+            return self.metainfo["info"]["length"]
+        elif self.mode == "multifile":
             file_sizes = []
-            for info in self.metainfo['info']['files']:
-                this_path = (self.name,) + tuple(c for c in info['path'] if c)
+            for info in self.metainfo["info"]["files"]:
+                this_path = (self.name,) + tuple(c for c in info["path"] if c)
                 if this_path == path:
                     # path points to file
-                    return info['length']
+                    return info["length"]
                 elif utils.iterable_startswith(this_path, path):
                     # path points to directory
-                    file_sizes.append(info['length'])
+                    file_sizes.append(info["length"])
             if file_sizes:
                 return sum(file_sizes)
-        raise error.PathError(os.path.join(*path), msg='Unknown path')
+        raise error.PathError(os.path.join(*path), msg="Unknown path")
 
     @property
     def piece_size(self):
@@ -603,13 +628,13 @@ class Torrent():
         Setting this property sets or removes ``piece length`` in
         :attr:`metainfo`\\ ``['info']``.
         """
-        return self.metainfo['info'].get('piece length', 0)
+        return self.metainfo["info"].get("piece length", 0)
 
     @piece_size.setter
     def piece_size(self, value):
         if value is None:
             if self.size <= 0:
-                self.metainfo['info'].pop('piece length', None)
+                self.metainfo["info"].pop("piece length", None)
                 return
             else:
                 value = self.calculate_piece_size(
@@ -621,15 +646,15 @@ class Torrent():
         try:
             piece_length = int(value)
         except (TypeError, ValueError):
-            raise ValueError(f'piece_size must be int, not {type(value).__name__}: {value!r}')
+            raise ValueError(f"piece_size must be int, not {type(value).__name__}: {value!r}")
         else:
             if not utils.is_divisible_by_16_kib(piece_length):
                 raise error.PieceSizeError(piece_length)
             elif not self.piece_size_min <= piece_length <= self.piece_size_max:
-                raise error.PieceSizeError(piece_length,
-                                           min=self.piece_size_min,
-                                           max=self.piece_size_max)
-            self.metainfo['info']['piece length'] = piece_length
+                raise error.PieceSizeError(
+                    piece_length, min=self.piece_size_min, max=self.piece_size_max
+                )
+            self.metainfo["info"]["piece length"] = piece_length
 
     @property
     def piece_size_min(self):
@@ -706,19 +731,17 @@ class Torrent():
 
         :return: calculated piece size
         """
-        if size <= 2**30:          # 1 GiB / 1024 pieces = 1 MiB max
+        if size <= 2**30:  # 1 GiB / 1024 pieces = 1 MiB max
             pieces = size / 1024
-        elif size <= 4 * 2**30:    # 4 GiB / 2048 pieces = 2 MiB max
+        elif size <= 4 * 2**30:  # 4 GiB / 2048 pieces = 2 MiB max
             pieces = size / 2048
-        elif size <= 6 * 2**30:    # 6 GiB / 3072 pieces = 2 MiB max
+        elif size <= 6 * 2**30:  # 6 GiB / 3072 pieces = 2 MiB max
             pieces = size / 3072
-        elif size <= 8 * 2**30:    # 8 GiB / 2048 pieces = 4 MiB max
+        elif size <= 8 * 2**30 or size <= 16 * 2**30:  # 8 GiB / 2048 pieces = 4 MiB max
             pieces = size / 2048
-        elif size <= 16 * 2**30:   # 16 GiB / 2048 pieces = 8 MiB max
-            pieces = size / 2048
-        elif size <= 32 * 2**30:   # 32 GiB / 4096 pieces = 8 MiB max
+        elif size <= 32 * 2**30:  # 32 GiB / 4096 pieces = 8 MiB max
             pieces = size / 4096
-        elif size <= 64 * 2**30:   # 64 GiB / 8192 pieces = 8 MiB max
+        elif size <= 64 * 2**30:  # 64 GiB / 8192 pieces = 8 MiB max
             pieces = size / 8192
         else:
             pieces = size / 10240
@@ -744,11 +767,10 @@ class Torrent():
     @property
     def hashes(self):
         """Tuple of SHA1 piece hashes as :class:`bytes`"""
-        hashes = self.metainfo['info'].get('pieces')
+        hashes = self.metainfo["info"].get("pieces")
         if isinstance(hashes, (bytes, bytearray)):
             # Each hash is 20 bytes long
-            return tuple(bytes(hashes[pos : pos + 20])
-                         for pos in range(0, len(hashes), 20))
+            return tuple(bytes(hashes[pos : pos + 20]) for pos in range(0, len(hashes), 20))
         else:
             return ()
 
@@ -783,8 +805,8 @@ class Torrent():
         :raises ValueError: if set to anything that isn't an iterable or a
             string
         """
-        tiers = list(self.metainfo.get('announce-list', ()))
-        announce = self.metainfo.get('announce', None)
+        tiers = list(self.metainfo.get("announce-list", ()))
+        announce = self.metainfo.get("announce", None)
         flat_urls = tuple(url for tier in tiers for url in tier)
         if announce is not None and announce not in flat_urls:
             tiers.insert(0, [announce])
@@ -797,24 +819,23 @@ class Torrent():
         if isinstance(value, abc.Iterable):
             self._trackers_changed(utils.Trackers(value))
         else:
-            raise ValueError(f'Must be Iterable, str or None, not {type(value).__name__}: {value}')
+            raise ValueError(f"Must be Iterable, str or None, not {type(value).__name__}: {value}")
 
     def _trackers_changed(self, trackers):
         # Set "announce" to first tracker of first tier
         try:
-            self.metainfo['announce'] = str(trackers[0][0])
+            self.metainfo["announce"] = str(trackers[0][0])
         except IndexError:
-            self.metainfo.pop('announce', None)
+            self.metainfo.pop("announce", None)
 
         # Remove "announce-list" if there's only one tracker
         if len(trackers.flat) <= 1:
-            self.metainfo.pop('announce-list', None)
+            self.metainfo.pop("announce-list", None)
         else:
-            if 'announce-list' not in self.metainfo:
-                self.metainfo['announce-list'] = []
+            if "announce-list" not in self.metainfo:
+                self.metainfo["announce-list"] = []
             # Set announce-list without changing its identity
-            self.metainfo['announce-list'][:] = ([str(url) for url in tier]
-                                                 for tier in trackers)
+            self.metainfo["announce-list"][:] = ([str(url) for url in tier] for tier in trackers)
 
     @property
     def webseeds(self):
@@ -831,8 +852,7 @@ class Torrent():
         :raises ValueError: if set to anything that isn't an iterable or a
             string
         """
-        return utils.URLs(self.metainfo.get('url-list', ()),
-                          callback=self._webseeds_changed)
+        return utils.URLs(self.metainfo.get("url-list", ()), callback=self._webseeds_changed)
 
     @webseeds.setter
     def webseeds(self, value):
@@ -843,14 +863,14 @@ class Torrent():
         elif value is None:
             urls = utils.URLs(())
         else:
-            raise ValueError(f'Must be Iterable, str or None, not {type(value).__name__}: {value}')
+            raise ValueError(f"Must be Iterable, str or None, not {type(value).__name__}: {value}")
         self._webseeds_changed(urls)
 
     def _webseeds_changed(self, webseeds):
         if webseeds:
-            self.metainfo['url-list'] = [str(url) for url in webseeds]
+            self.metainfo["url-list"] = [str(url) for url in webseeds]
         else:
-            self.metainfo.pop('url-list', None)
+            self.metainfo.pop("url-list", None)
 
     @property
     def httpseeds(self):
@@ -867,8 +887,7 @@ class Torrent():
         :raises ValueError: if set to anything that isn't an iterable or a
             string
         """
-        return utils.URLs(self.metainfo.get('httpseeds', ()),
-                          callback=self._httpseeds_changed)
+        return utils.URLs(self.metainfo.get("httpseeds", ()), callback=self._httpseeds_changed)
 
     @httpseeds.setter
     def httpseeds(self, value):
@@ -879,14 +898,14 @@ class Torrent():
         elif value is None:
             urls = utils.URLs(())
         else:
-            raise ValueError(f'Must be Iterable, str or None, not {type(value).__name__}: {value}')
+            raise ValueError(f"Must be Iterable, str or None, not {type(value).__name__}: {value}")
         self._httpseeds_changed(urls)
 
     def _httpseeds_changed(self, httpseeds):
         if httpseeds:
-            self.metainfo['httpseeds'] = [str(url) for url in httpseeds]
+            self.metainfo["httpseeds"] = [str(url) for url in httpseeds]
         else:
-            self.metainfo.pop('httpseeds', None)
+            self.metainfo.pop("httpseeds", None)
 
     @property
     def private(self):
@@ -897,17 +916,17 @@ class Torrent():
         :attr:`metainfo`\\ ``['info']``\\ ``['private']`` exists, ``None``
         otherwise.
         """
-        if 'private' in self.metainfo['info']:
-            return bool(self.metainfo['info']['private'])
+        if "private" in self.metainfo["info"]:
+            return bool(self.metainfo["info"]["private"])
         else:
             return None
 
     @private.setter
     def private(self, value):
         if value is None:
-            self.metainfo['info'].pop('private', None)
+            self.metainfo["info"].pop("private", None)
         else:
-            self.metainfo['info']['private'] = bool(value)
+            self.metainfo["info"]["private"] = bool(value)
 
     @property
     def comment(self):
@@ -916,14 +935,14 @@ class Torrent():
 
         Setting this property sets or removes :attr:`metainfo`\\ ``['comment']``.
         """
-        return self.metainfo.get('comment', None)
+        return self.metainfo.get("comment", None)
 
     @comment.setter
     def comment(self, value):
         if value is not None:
-            self.metainfo['comment'] = str(value)
+            self.metainfo["comment"] = str(value)
         else:
-            self.metainfo.pop('comment', None)
+            self.metainfo.pop("comment", None)
 
     @property
     def creation_date(self):
@@ -936,20 +955,19 @@ class Torrent():
         Setting this property sets or removes
         :attr:`metainfo`\\ ``['creation date']``.
         """
-        return self.metainfo.get('creation date', None)
+        return self.metainfo.get("creation date", None)
 
     @creation_date.setter
     def creation_date(self, value):
         if isinstance(value, (float, int)):
-            self.metainfo['creation date'] = datetime.fromtimestamp(value)
+            self.metainfo["creation date"] = datetime.fromtimestamp(value)
         elif isinstance(value, datetime):
-            self.metainfo['creation date'] = value
+            self.metainfo["creation date"] = value
         elif not value:
-            self.metainfo.pop('creation date', None)
+            self.metainfo.pop("creation date", None)
         else:
             raise ValueError(
-                'Must be None, int or datetime object, '
-                f'not {type(value).__name__}: {value!r}'
+                f"Must be None, int or datetime object, not {type(value).__name__}: {value!r}"
             )
 
     @property
@@ -960,14 +978,14 @@ class Torrent():
         Setting this property sets or removes
         :attr:`metainfo`\\ ``['created by']``.
         """
-        return self.metainfo.get('created by', None)
+        return self.metainfo.get("created by", None)
 
     @created_by.setter
     def created_by(self, value):
         if value is not None:
-            self.metainfo['created by'] = str(value)
+            self.metainfo["created by"] = str(value)
         else:
-            self.metainfo.pop('created by', None)
+            self.metainfo.pop("created by", None)
 
     @property
     def source(self):
@@ -977,14 +995,14 @@ class Torrent():
         Setting this property sets or removes
         :attr:`metainfo`\\ ``['info']``\\ ``['created by']``.
         """
-        return self.metainfo['info'].get('source', None)
+        return self.metainfo["info"].get("source", None)
 
     @source.setter
     def source(self, value):
         if value is not None:
-            self.metainfo['info']['source'] = str(value)
+            self.metainfo["info"]["source"] = str(value)
         else:
-            self.metainfo['info'].pop('source', None)
+            self.metainfo["info"].pop("source", None)
 
     @property
     def infohash(self):
@@ -998,7 +1016,7 @@ class Torrent():
             # Try to calculate infohash
             self.validate()
             try:
-                info = utils.encode_dict(self.metainfo['info'])
+                info = utils.encode_dict(self.metainfo["info"])
             except ValueError as e:
                 raise error.MetainfoError(e)
             else:
@@ -1027,7 +1045,7 @@ class Torrent():
         :attr:`metainfo`\\ ``['info']``\\ ``['entropy']`` to a random integer.
         Setting it to ``False`` removes that field.
         """
-        return bool(self.metainfo['info'].get('entropy', False))
+        return bool(self.metainfo["info"].get("entropy", False))
 
     @randomize_infohash.setter
     def randomize_infohash(self, value):
@@ -1035,9 +1053,10 @@ class Torrent():
             # According to BEP0003 "Integers have no size limitation", but some
             # parsers seem to have problems with large numbers.
             import random
-            self.metainfo['info']['entropy'] = random.randint(int(-2e9), int(2e9))
+
+            self.metainfo["info"]["entropy"] = random.randint(int(-2e9), int(2e9))
         else:
-            self.metainfo['info'].pop('entropy', None)
+            self.metainfo["info"].pop("entropy", None)
 
     @property
     def is_ready(self):
@@ -1081,9 +1100,9 @@ class Torrent():
             otherwise
         """
         if self.path is None:
-            raise RuntimeError('generate() called with no path specified')
+            raise RuntimeError("generate() called with no path specified")
         elif sum(utils.real_size(fp) for fp in self.filepaths) < 1:
-            raise error.PathError(self.path, msg='Empty or all files excluded')
+            raise error.PathError(self.path, msg="Empty or all files excluded")
 
         hasher_threads = threads or NCORES
 
@@ -1112,17 +1131,18 @@ class Torrent():
 
         # Collect piece hashes
         piece_hashes = collector.collect()
-        concatenated_piece_hashes = b''.join(piece_hashes)
+        concatenated_piece_hashes = b"".join(piece_hashes)
         hashes_count = len(concatenated_piece_hashes) / 20
         if hashes_count == self.pieces:
-            self.metainfo['info']['pieces'] = concatenated_piece_hashes
+            self.metainfo["info"]["pieces"] = concatenated_piece_hashes
             return True
         elif hashes_count < self.pieces:
             # Hashing was cancelled
             return False
         else:
-            raise RuntimeError('Unexpected number of hashes generated: '
-                               f'{hashes_count} instead of {self.pieces}')
+            raise RuntimeError(
+                f"Unexpected number of hashes generated: {hashes_count} instead of {self.pieces}"
+            )
 
     def verify(self, path, threads=None, callback=None, interval=0):
         """
@@ -1185,13 +1205,15 @@ class Torrent():
             filepath = None
             piece_hash = None
             exceptions = (exception,)
-            verify_callback(piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions)
+            verify_callback(
+                piece_index, pieces_done, pieces_total, filepath, piece_hash, exceptions
+            )
 
-        if self.mode == 'singlefile' and os.path.isdir(path):
+        if self.mode == "singlefile" and os.path.isdir(path):
             early_exception(error.VerifyIsDirectoryError(path))
             return False
 
-        elif self.mode == 'multifile' and not os.path.isdir(path):
+        elif self.mode == "multifile" and not os.path.isdir(path):
             early_exception(error.VerifyNotDirectoryError(path))
             return False
 
@@ -1284,8 +1306,14 @@ class Torrent():
                 fs_filepath = filepaths[file_index][0]
                 torrent_filepath = filepaths[file_index][1]
                 files_done = file_index + 1
-                return_value = callback(self, fs_filepath, torrent_filepath,
-                                        files_done, files_total, exception)
+                return_value = callback(
+                    self,
+                    fs_filepath,
+                    torrent_filepath,
+                    files_done,
+                    files_total,
+                    exception,
+                )
                 if return_value is not None:
                     return True
             elif exception:
@@ -1300,7 +1328,7 @@ class Torrent():
         # for a directory if we expect one because we are iterating over files
         # (filepaths), so the path "foo/bar/baz" will result in a ReadError if
         # "foo" or "foo/bar" is a file.
-        if self.mode == 'singlefile' and os.path.isdir(path):
+        if self.mode == "singlefile" and os.path.isdir(path):
             exception = error.VerifyIsDirectoryError(path)
             cancel(file_index=0, exception=exception)
             return False
@@ -1348,91 +1376,123 @@ class Torrent():
             torrent file or magnet link
         """
         md = self.metainfo
-        info = md['info']
+        info = md["info"]
 
         # Check values shared by singlefile and multifile torrents
-        utils.assert_type(md, ('info',), (dict,), must_exist=True)
-        utils.assert_type(md, ('info', 'name'), (str,), must_exist=True)
-        utils.assert_type(md, ('info', 'piece length'), (int,), must_exist=True,
-                          check=utils.is_divisible_by_16_kib)
-        utils.assert_type(md, ('info', 'pieces'), (abc.ByteString,), must_exist=True)
-        utils.assert_type(md, ('info', 'private'), (bool, int), must_exist=False)
-        utils.assert_type(md, ('announce',), (str,), must_exist=False, check=utils.is_url)
-        utils.assert_type(md, ('announce-list',), (utils.Iterable,), must_exist=False)
-        for i,_ in enumerate(md.get('announce-list', ())):
-            utils.assert_type(md, ('announce-list', i), (utils.Iterable,))
-            for j,_ in enumerate(md['announce-list'][i]):
-                utils.assert_type(md, ('announce-list', i, j), (str,), check=utils.is_url)
+        utils.assert_type(md, ("info",), (dict,), must_exist=True)
+        utils.assert_type(md, ("info", "name"), (str,), must_exist=True)
+        utils.assert_type(
+            md,
+            ("info", "piece length"),
+            (int,),
+            must_exist=True,
+            check=utils.is_divisible_by_16_kib,
+        )
+        utils.assert_type(md, ("info", "pieces"), (abc.ByteString,), must_exist=True)
+        utils.assert_type(md, ("info", "private"), (bool, int), must_exist=False)
+        utils.assert_type(md, ("announce",), (str,), must_exist=False, check=utils.is_url)
+        utils.assert_type(md, ("announce-list",), (utils.Iterable,), must_exist=False)
+        for i, _ in enumerate(md.get("announce-list", ())):
+            utils.assert_type(md, ("announce-list", i), (utils.Iterable,))
+            for j, _ in enumerate(md["announce-list"][i]):
+                utils.assert_type(md, ("announce-list", i, j), (str,), check=utils.is_url)
 
-        if len(info['pieces']) == 0:
+        if len(info["pieces"]) == 0:
             raise error.MetainfoError("['info']['pieces'] is empty")
 
-        elif len(info['pieces']) % 20 != 0:
+        elif len(info["pieces"]) % 20 != 0:
             raise error.MetainfoError("length of ['info']['pieces'] is not divisible by 20")
 
-        elif 'length' in info and 'files' in info:
+        elif "length" in info and "files" in info:
             raise error.MetainfoError("['info'] includes both 'length' and 'files'")
 
-        elif 'length' in info:
+        elif "length" in info:
             # Validate info as singlefile torrent
-            utils.assert_type(md, ('info', 'length'), (int, float), must_exist=True)
-            utils.assert_type(md, ('info', 'md5sum'), (str,), must_exist=False, check=utils.is_md5sum)
+            utils.assert_type(md, ("info", "length"), (int, float), must_exist=True)
+            utils.assert_type(
+                md, ("info", "md5sum"), (str,), must_exist=False, check=utils.is_md5sum
+            )
 
             # Validate expected number of pieces
-            piece_count = int(len(info['pieces']) / 20)
-            exp_piece_count = math.ceil(info['length'] / info['piece length'])
+            piece_count = int(len(info["pieces"]) / 20)
+            exp_piece_count = math.ceil(info["length"] / info["piece length"])
             if piece_count != exp_piece_count:
-                raise error.MetainfoError(f'Expected {exp_piece_count} pieces but there are {piece_count}')
+                raise error.MetainfoError(
+                    f"Expected {exp_piece_count} pieces but there are {piece_count}"
+                )
 
             if self.path is not None:
                 # Check if filepath actually points to a file
                 if not os.path.isfile(self.path):
-                    raise error.MetainfoError(f"Metainfo includes {self.path} as file, but it is not a file")
+                    raise error.MetainfoError(
+                        f"Metainfo includes {self.path} as file, but it is not a file"
+                    )
 
                 # Check if size matches
                 path_size = utils.real_size(self.path)
-                if path_size != info['length']:
-                    raise error.MetainfoError(f"Mismatching file sizes in metainfo ({info['length']})"
-                                              f" and file system ({path_size}): {self.path}")
+                if path_size != info["length"]:
+                    raise error.MetainfoError(
+                        f"Mismatching file sizes in metainfo ({info['length']})"
+                        f" and file system ({path_size}): {self.path}"
+                    )
 
-        elif 'files' in info:
+        elif "files" in info:
             # Validate info as multifile torrent
-            utils.assert_type(md, ('info', 'files'), (utils.Iterable,), must_exist=True)
-            for i,fileinfo in enumerate(info['files']):
-                utils.assert_type(md, ('info', 'files', i), (abc.Mapping,), must_exist=True)
-                utils.assert_type(md, ('info', 'files', i, 'length'), (int, float), must_exist=True)
-                utils.assert_type(md, ('info', 'files', i, 'path'), (utils.Iterable,), must_exist=True)
-                utils.assert_type(md, ('info', 'files', i, 'md5sum'), (str,), must_exist=False, check=utils.is_md5sum)
-                for j,item in enumerate(fileinfo['path']):
-                    utils.assert_type(md, ('info', 'files', i, 'path', j), (str,))
+            utils.assert_type(md, ("info", "files"), (utils.Iterable,), must_exist=True)
+            for i, fileinfo in enumerate(info["files"]):
+                utils.assert_type(md, ("info", "files", i), (abc.Mapping,), must_exist=True)
+                utils.assert_type(md, ("info", "files", i, "length"), (int, float), must_exist=True)
+                utils.assert_type(
+                    md, ("info", "files", i, "path"), (utils.Iterable,), must_exist=True
+                )
+                utils.assert_type(
+                    md,
+                    ("info", "files", i, "md5sum"),
+                    (str,),
+                    must_exist=False,
+                    check=utils.is_md5sum,
+                )
+                for j, item in enumerate(fileinfo["path"]):
+                    utils.assert_type(md, ("info", "files", i, "path", j), (str,))
 
             # - validate() should ensure that ['info']['pieces'] is math.ceil(self.size /
             #   self.piece_size) bytes long.
-            piece_count = int(len(info['pieces']) / 20)
-            exp_piece_count = math.ceil(sum(fileinfo['length'] for fileinfo in info['files'])
-                                        / info['piece length'])
+            piece_count = int(len(info["pieces"]) / 20)
+            exp_piece_count = math.ceil(
+                sum(fileinfo["length"] for fileinfo in info["files"]) / info["piece length"]
+            )
             if piece_count != exp_piece_count:
-                raise error.MetainfoError(f'Expected {exp_piece_count} pieces but there are {piece_count}')
+                raise error.MetainfoError(
+                    f"Expected {exp_piece_count} pieces but there are {piece_count}"
+                )
 
             if self.path is not None:
                 # Check if filepath actually points to a directory
                 if not os.path.isdir(self.path):
-                    raise error.MetainfoError(f"Metainfo includes {self.path} as directory, but it is not a directory")
+                    raise error.MetainfoError(
+                        f"Metainfo includes {self.path} as directory, but it is not a directory"
+                    )
 
-                for i,fileinfo in enumerate(info['files']):
-                    filepath = os.path.join(self.path, os.path.join(*fileinfo['path']))
+                for i, fileinfo in enumerate(info["files"]):
+                    filepath = os.path.join(self.path, os.path.join(*fileinfo["path"]))
 
                     # Check if filepath exists and is a file
                     if not os.path.exists(filepath):
-                        raise error.MetainfoError(f"Metainfo includes file that doesn't exist: {filepath}")
+                        raise error.MetainfoError(
+                            f"Metainfo includes file that doesn't exist: {filepath}"
+                        )
                     if not os.path.isfile(filepath):
-                        raise error.MetainfoError(f"Metainfo includes file that isn't a file: {filepath}")
+                        raise error.MetainfoError(
+                            f"Metainfo includes file that isn't a file: {filepath}"
+                        )
 
                     # Check if sizes match
                     filesize = utils.real_size(filepath)
-                    if filesize != fileinfo['length']:
-                        raise error.MetainfoError(f"Mismatching file sizes in metainfo ({fileinfo['length']})"
-                                                  f" and file system ({filesize}): {filepath}")
+                    if filesize != fileinfo["length"]:
+                        raise error.MetainfoError(
+                            f"Mismatching file sizes in metainfo ({fileinfo['length']})"
+                            f" and file system ({filesize}): {filepath}"
+                        )
 
         else:
             raise error.MetainfoError("Missing 'length' or 'files' in 'info'")
@@ -1504,7 +1564,7 @@ class Torrent():
         self.write_stream(content, validate=validate)
         content.seek(0)
         try:
-            with open(filepath, 'wb') as f:
+            with open(filepath, "wb") as f:
                 f.write(content.read())
         except OSError as e:
             raise error.WriteError(e.errno, filepath)
@@ -1521,24 +1581,23 @@ class Torrent():
 
         :raises MetainfoError: if :attr:`metainfo` is invalid
         """
-        kwargs = {'xt': 'urn:btih:' + self.infohash}
+        kwargs = {"xt": "urn:btih:" + self.infohash}
         if name:
-            kwargs['dn'] = self.name
+            kwargs["dn"] = self.name
         if size:
-            kwargs['xl'] = self.size
+            kwargs["xl"] = self.size
 
         if tracker:
-            kwargs['tr'] = (self.trackers[0][0],)
+            kwargs["tr"] = (self.trackers[0][0],)
         elif trackers:
-            kwargs['tr'] = (url
-                            for tier in self.trackers
-                            for url in tier)
+            kwargs["tr"] = (url for tier in self.trackers for url in tier)
 
         if self.webseeds is not None:
-            kwargs['ws'] = self.webseeds
+            kwargs["ws"] = self.webseeds
 
         # Prevent circular import issues
         from ._magnet import Magnet
+
         return Magnet(**kwargs)
 
     # Maximum number of bytes that read() reads from torrent files.  This limit
@@ -1581,29 +1640,31 @@ class Torrent():
 
             # Extract 'pieces' from metainfo before decoding because it's the
             # only byte sequence that isn't supposed to be decoded to a string.
-            if (b'info' in metainfo_enc and
-                isinstance(metainfo_enc[b'info'], dict) and
-                b'pieces' in metainfo_enc[b'info']):
-                pieces = metainfo_enc[b'info'].pop(b'pieces')
+            if (
+                b"info" in metainfo_enc
+                and isinstance(metainfo_enc[b"info"], dict)
+                and b"pieces" in metainfo_enc[b"info"]
+            ):
+                pieces = metainfo_enc[b"info"].pop(b"pieces")
                 metainfo = utils.decode_dict(metainfo_enc)
-                metainfo['info']['pieces'] = pieces
+                metainfo["info"]["pieces"] = pieces
             else:
                 metainfo = utils.decode_dict(metainfo_enc)
 
             # "info" must be a dictionary.  If validation is not wanted, it's OK
             # if it doesn't exist because the "metainfo" property will add it
             # automatically.
-            utils.assert_type(metainfo, ('info',), (dict,), must_exist=validate)
+            utils.assert_type(metainfo, ("info",), (dict,), must_exist=validate)
 
             torrent = cls()
             torrent._metainfo = metainfo
 
             # Convert "creation date" to datetime.datetime and "private" to
             # bool, but only if they exist
-            if b'creation date' in metainfo_enc:
-                torrent.creation_date = metainfo_enc[b'creation date']
-            if b'private' in metainfo_enc.get(b'info', {}):
-                torrent.private = metainfo_enc[b'info'][b'private']
+            if b"creation date" in metainfo_enc:
+                torrent.creation_date = metainfo_enc[b"creation date"]
+            if b"private" in metainfo_enc.get(b"info", {}):
+                torrent.private = metainfo_enc[b"info"][b"private"]
 
             if validate:
                 torrent.validate()
@@ -1628,7 +1689,7 @@ class Torrent():
         :return: New :class:`Torrent` instance
         """
         try:
-            with open(filepath, 'rb') as f:
+            with open(filepath, "rb") as f:
                 return cls.read_stream(f, validate=validate)
         except (OSError, error.ReadError) as e:
             raise error.ReadError(e.errno, filepath)
@@ -1638,6 +1699,7 @@ class Torrent():
     def copy(self):
         """Create a new :class:`Torrent` instance with the same metainfo"""
         from copy import deepcopy
+
         cp = type(self)()
         cp._metainfo = deepcopy(self._metainfo)
         return cp
@@ -1697,18 +1759,20 @@ class Torrent():
         :return: `True` if a matching torrent was found, `False` otherwise
         """
         if not self.path:
-            raise RuntimeError('reuse() called with no path specified')
+            raise RuntimeError("reuse() called with no path specified")
         elif not self.files:
-            raise RuntimeError('reuse() called while file list is empty')
+            raise RuntimeError("reuse() called while file list is empty")
 
         if isinstance(path, (str, pathlib.PurePath)):
             paths = [path]
         elif isinstance(path, abc.Iterable):
             paths = tuple(path)
         else:
-            raise ValueError(f'Invalid path argument: {path!r}')
+            raise ValueError(f"Invalid path argument: {path!r}")
 
-        torrent_file_items = reuse.find_torrent_files(*paths, max_file_size=self.MAX_TORRENT_FILE_SIZE)
+        torrent_file_items = reuse.find_torrent_files(
+            *paths, max_file_size=self.MAX_TORRENT_FILE_SIZE
+        )
         maybe_call_callback = reuse.ReuseCallback(
             callback=callback,
             interval=interval,
@@ -1723,7 +1787,7 @@ class Torrent():
                 elif exception:
                     raise exception
                 else:
-                    raise RuntimeError('Both candidate_path and exception are None?!')
+                    raise RuntimeError("Both candidate_path and exception are None?!")
 
             except (error.ReadError, error.BdecodeError, error.MetainfoError) as e:
                 cancelled = maybe_call_callback(candidate_path, files_done, False, e)
@@ -1742,7 +1806,9 @@ class Torrent():
                         reuse.copy(candidate, self)
                         return True
                     else:
-                        cancelled = maybe_call_callback(candidate_path, files_done, False, exception)
+                        cancelled = maybe_call_callback(
+                            candidate_path, files_done, False, exception
+                        )
                         if cancelled is not None:
                             break
 
@@ -1758,8 +1824,8 @@ class Torrent():
         args = []
 
         def get_class_default(name):
-            if hasattr(type(self), f'{param.name}_default'):
-                return getattr(type(self), f'{param.name}_default')
+            if hasattr(type(self), f"{param.name}_default"):
+                return getattr(type(self), f"{param.name}_default")
             elif hasattr(type(self), param.name):
                 return getattr(type(self), param.name)
 
@@ -1776,8 +1842,8 @@ class Torrent():
                 # Keyword argument value is different from class default
                 and value != get_class_default(param.name)
             ):
-                args.append(f'{param.name}={value!r}')
-        return type(self).__name__ + '(' + ', '.join(args) + ')'
+                args.append(f"{param.name}={value!r}")
+        return type(self).__name__ + "(" + ", ".join(args) + ")"
 
     def __eq__(self, other):
         if isinstance(other, type(self)):

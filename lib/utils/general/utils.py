@@ -1,36 +1,43 @@
+import hashlib
+import json
 import os
 import re
-import hashlib
 import unicodedata
-import json
-from email.utils import parsedate_to_datetime
-from enum import Enum
-from urllib.parse import unquote
-import requests
-from typing import Dict, List
-from zipfile import ZipFile
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
+from enum import Enum
+from typing import Dict, List
+from urllib.parse import unquote
+from zipfile import ZipFile
+
+import requests
+import xbmc
+from xbmc import getSupportedMedia
+from xbmcgui import Dialog, DialogProgressBG
+from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
 
 from lib.api.fanart.fanart import get_fanart
 from lib.api.tmdbv3api.tmdb import TMDb
-from lib.clients.subtitle.utils import get_language_code
-from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.api.trakt.trakt_cache import trakt_watched_cache, trakt_cache
 from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.main_cache import main_cache
-from lib.utils.debrid.qrcode_utils import make_qrcode
-from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
-from lib.clients.base import TorrentStream
+from lib.api.trakt.trakt_cache import trakt_cache, trakt_watched_cache
 from lib.api.tvdbapi.tvdbapi import TVDBAPI
-from lib.db.cached import cache
+from lib.clients.base import TorrentStream
 from lib.clients.stremio.constants import (
-    STREMIO_ADDONS_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_ADDONS_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
 )
+from lib.clients.subtitle.utils import get_language_code
+from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
+from lib.gui.qr_progress_dialog import QRProgressDialog
+from lib.utils.debrid.qrcode_utils import make_qrcode
+from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
+from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
@@ -53,18 +60,7 @@ from lib.utils.kodi.utils import (
     translatePath,
     translation,
 )
-
-from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.vendor.torf._magnet import Magnet
-
-from collections import deque
-
-from xbmcgui import Dialog
-from xbmcgui import DialogProgressBG
-from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
-from xbmc import getSupportedMedia
-import xbmc
-
 
 pickle_db = PickleDatabase()
 
@@ -82,7 +78,12 @@ TMDB_IMAGE_SIZES = {
     "low": {"poster": "w185", "thumb": "w185", "profile": "w185", "fanart": "w300"},
     "medium": {"poster": "w342", "thumb": "w342", "profile": "w342", "fanart": "w780"},
     "high": {"poster": "w780", "thumb": "w780", "profile": "w780", "fanart": "w1280"},
-    "original": {"poster": "original", "thumb": "original", "profile": "original", "fanart": "original"},
+    "original": {
+        "poster": "original",
+        "thumb": "original",
+        "profile": "original",
+        "fanart": "original",
+    },
 }
 
 
@@ -578,9 +579,7 @@ def _set_trakt_ui_state(list_item, info_tag, data, mode):
     if not tmdb_id or season is None or episode is None:
         return
 
-    is_watched = trakt_watched_cache.get_watched_status(
-        "episode", tmdb_id, season, episode
-    )
+    is_watched = trakt_watched_cache.get_watched_status("episode", tmdb_id, season, episode)
     if is_watched:
         info_tag.setPlaycount(1)
         return
@@ -594,8 +593,7 @@ def _set_show_info(info_tag, data, mode):
         seasons = list(data["seasons"])
         if isinstance(seasons, list):
             named_seasons = [
-                (season.get("season_number", 0), season.get("name", ""))
-                for season in seasons
+                (season.get("season_number", 0), season.get("name", "")) for season in seasons
             ]
             info_tag.addSeasons(named_seasons)
         else:
@@ -833,9 +831,7 @@ def build_media_metadata(ids, mode: str) -> dict:
         if mode == "movies" and getattr(res, "movie_results", []):
             tmdb_id = str(res.movie_results[0]["id"])
             ids["tmdb_id"] = tmdb_id
-        elif mode in ("tv", "episode", "season", "anime") and getattr(
-            res, "tv_results", []
-        ):
+        elif mode in ("tv", "episode", "season", "anime") and getattr(res, "tv_results", []):
             tmdb_id = str(res.tv_results[0]["id"])
             ids["tmdb_id"] = tmdb_id
 
@@ -965,9 +961,7 @@ def is_in_library(title):
 
 
 def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
-    identifier = "{}|{}".format(
-        "fanart.tv", tvdb_id if tvdb_id and tvdb_id != "None" else tmdb_id
-    )
+    identifier = "{}|{}".format("fanart.tv", tvdb_id if tvdb_id and tvdb_id != "None" else tmdb_id)
     cached = cache.get(identifier)
     if cached:
         return cached
@@ -1006,12 +1000,12 @@ def cache_results(results, query, mode, media_type, episode, cache_scope=""):
 
 
 def get_cached(path, params={}):
-    identifier = "{}|{}".format(path, params)
+    identifier = f"{path}|{params}"
     return cache.get(identifier)
 
 
 def set_cached(data, path, params={}):
-    identifier = "{}|{}".format(path, params)
+    identifier = f"{path}|{params}"
     cache.set(
         identifier,
         data,
@@ -1020,7 +1014,7 @@ def set_cached(data, path, params={}):
 
 
 def db_get(name, func, path, params):
-    identifier = "{}|{}".format(path, params)
+    identifier = f"{path}|{params}"
     data = cache.get(identifier)
     if not data:
         if name == "search_client":
@@ -1034,7 +1028,7 @@ def db_get(name, func, path, params):
 
 
 def tvdb_get(path, params={}):
-    identifier = "{}|{}".format(path, params)
+    identifier = f"{path}|{params}"
     data = cache.get(identifier)
     if data:
         return data
@@ -1089,9 +1083,7 @@ def get_random_color(provider_name, formatted=True):
     spec = 10
     for i in range(0, 3):
         offset = spec * i
-        rounded = round(
-            int(hash[offset : offset + spec], 16) / int("F" * spec, 16) * 255
-        )
+        rounded = round(int(hash[offset : offset + spec], 16) / int("F" * spec, 16) * 255)
         colors.append(int(max(rounded, PROVIDER_COLOR_MIN_BRIGHTNESS)))
 
     while (sum(colors) / 3) < PROVIDER_COLOR_MIN_BRIGHTNESS:
@@ -1335,13 +1327,7 @@ def filter_debrid_episode(
     ep_minus_1 = str(episode_num - 1).zfill(2)
 
     def get_filename(file):
-        return (
-            file.get("path")
-            or file.get("filename")
-            or file.get("name")
-            or file.get("n")
-            or ""
-        )
+        return file.get("path") or file.get("filename") or file.get("name") or file.get("n") or ""
 
     # Normalize filenames for matching
     def normalize_title(title):
@@ -1407,10 +1393,7 @@ def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStrea
 
 def is_torrent_url(uri):
     res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
-    if (
-        res.status_code == 200
-        and res.headers.get("Content-Type") == "application/octet-stream"
-    ):
+    if res.status_code == 200 and res.headers.get("Content-Type") == "application/octet-stream":
         return True
     else:
         return False
@@ -1423,9 +1406,7 @@ def supported_video_extensions():
 
 def add_next_button(func_name, page=1, **kwargs):
     list_item = make_list_item(label="Next")
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
-    )
+    list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
 
     page += 1
     addDirectoryItem(
@@ -1557,7 +1538,7 @@ def show_log_export_dialog(params):
     kodi_log_path = os.path.join(translatePath("special://logpath"), log_file)
     if os.path.exists(kodi_log_path):
         try:
-            with open(kodi_log_path, "r", encoding="utf-8", errors="ignore") as f:
+            with open(kodi_log_path, encoding="utf-8", errors="ignore") as f:
                 lines = deque(f, maxlen=500)
 
             content = "".join(reversed(lines))
@@ -1576,7 +1557,7 @@ def show_log_export_dialog(params):
                 copy2clip(paste_url)
                 progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
                 progressDialog.setup(
-                            translation(90569),
+                    translation(90569),
                     qr_code,
                     paste_url,
                     is_debrid=False,
@@ -1707,8 +1688,8 @@ def parse_time(item):
             if "," in normalized:
                 weekday_part, remainder = normalized.split(",", 1)
                 weekday_key = weekday_part.strip().lower()
-                normalized = "{},{}".format(
-                    day_replacements.get(weekday_key, weekday_part.strip()), remainder
+                normalized = (
+                    f"{day_replacements.get(weekday_key, weekday_part.strip())},{remainder}"
                 )
 
             normalized = re.sub(
@@ -1749,17 +1730,17 @@ def format_season_episode(season, episode):
     episode_value = normalize(episode)
 
     if isinstance(season_value, int) and isinstance(episode_value, int):
-        return "S{:02d}E{:02d}".format(season_value, episode_value)
+        return f"S{season_value:02d}E{episode_value:02d}"
     if season_value is not None and episode_value is not None:
-        return "S{}E{}".format(season_value, episode_value)
+        return f"S{season_value}E{episode_value}"
     if season_value is not None:
         if isinstance(season_value, int):
-            return "S{:02d}".format(season_value)
-        return "S{}".format(season_value)
+            return f"S{season_value:02d}"
+        return f"S{season_value}"
     if episode_value is not None:
         if isinstance(episode_value, int):
-            return "E{:02d}".format(episode_value)
-        return "E{}".format(episode_value)
+            return f"E{episode_value:02d}"
+        return f"E{episode_value}"
     return ""
 
 

@@ -1,5 +1,7 @@
+from typing import Any, Dict, List, Optional
+
 import requests
-from typing import List, Dict, Any, Optional
+
 from lib.utils.kodi.utils import get_setting
 
 
@@ -96,9 +98,7 @@ class MDblistAPI:
         payload = {"ids": ids, "provider": provider}
         headers = {"Content-Type": "application/json"}
         try:
-            response = self.session.post(
-                url, params=params, json=payload, headers=headers
-            )
+            response = self.session.post(url, params=params, json=payload, headers=headers)
             response.raise_for_status()
             return response.json()
         except requests.RequestException as e:

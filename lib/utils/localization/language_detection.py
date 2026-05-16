@@ -1,5 +1,6 @@
-from lib.utils.localization.countries import find_language_by_unicode
 import re
+
+from lib.utils.localization.countries import find_language_by_unicode
 
 langsSet = {
     "bosnian",
@@ -541,9 +542,7 @@ def extract_unicode_flags(text):
 
 def find_languages_in_string(s: str) -> set:
     pattern = r"\b(?:" + "|".join(re.escape(word) for word in langsSet) + r")\b"
-    flags = " ".join(
-        [find_language_by_unicode(flag) for flag in extract_unicode_flags(s)]
-    )
+    flags = " ".join([find_language_by_unicode(flag) for flag in extract_unicode_flags(s)])
     swf = f"{s} {flags}"
     matches = re.findall(pattern, swf.lower())
     matches = [language_codes.get(match) for match in matches]

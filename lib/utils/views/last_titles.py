@@ -6,7 +6,6 @@ from lib.db.pickle_db import PickleDatabase
 from lib.jacktook.utils import kodilog
 from lib.utils.general.utils import parse_time, set_media_infoTag, set_pluging_category
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
@@ -16,9 +15,6 @@ from lib.utils.kodi.utils import (
     make_list_item,
     translation,
 )
-
-
-
 
 pickle_db = PickleDatabase()
 
@@ -50,9 +46,7 @@ def show_last_titles(params):
     directory_items = []
 
     list_item = make_list_item(label="Clear Titles")
-    list_item.setArt(
-        {"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")}
-    )
+    list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     directory_items.append((build_url("clear_history", type="lth"), list_item, True))
 
     for title, data in items:
@@ -71,14 +65,12 @@ def show_last_titles(params):
 
         list_item = make_list_item(label=f"{title} — {formatted_time}")
         set_media_infoTag(list_item, data=details, mode=mode)
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
         list_item.addContextMenuItems(
             [
                 (
                     "Delete from history",
-                    f'RunPlugin({build_url("delete_last_title_entry", title=title)})',
+                    f"RunPlugin({build_url('delete_last_title_entry', title=title)})",
                 )
             ]
         )
@@ -96,7 +88,8 @@ def show_last_titles(params):
             directory_items.append(
                 (
                     build_url(
-                        "list_jackgram_title_sources", data=json.dumps(data.get("tg_data"))
+                        "list_jackgram_title_sources",
+                        data=json.dumps(data.get("tg_data")),
                     ),
                     list_item,
                     True,
@@ -105,10 +98,8 @@ def show_last_titles(params):
 
     # "Next Page"
     if end < total:
-        list_item = make_list_item(label=f"Next Page")
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")}
-        )
+        list_item = make_list_item(label="Next Page")
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
         directory_items.append((build_url("titles_history", page=page + 1), list_item, True))
 
     add_directory_items_batch(directory_items)

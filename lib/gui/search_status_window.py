@@ -1,15 +1,13 @@
-from dataclasses import dataclass, field
-from typing import List, Optional, Callable, Dict, Any
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 import threading
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass
+from typing import Callable, List, Optional
 
 import xbmc
-import xbmcgui
 
-from lib.utils.kodi.utils import kodilog, translation
-from lib.gui.base_window import BaseWindow
 from lib.domain.torrent import TorrentStream
-
+from lib.gui.base_window import BaseWindow
+from lib.utils.kodi.utils import kodilog, translation
 
 STATUS_MAP = {
     "Pending": 90244,
@@ -24,9 +22,7 @@ STATUS_MAP = {
 class SearchTask:
     name: str
     indexer_key: str
-    status: str = (
-        "Pending"  # "Pending", "In Progress", "Completed", "Failed", "Cancelled"
-    )
+    status: str = "Pending"  # "Pending", "In Progress", "Completed", "Failed", "Cancelled"
     result_count: int = 0
     error: str = ""
     future: Optional[Future] = None
@@ -38,9 +34,7 @@ class SearchTaskManager:
         self.tasks: List[SearchTask] = []
         self._cancel_event = threading.Event()
 
-    def submit_task(
-        self, name: str, indexer_key: str, fn: Callable, *args, **kwargs
-    ) -> SearchTask:
+    def submit_task(self, name: str, indexer_key: str, fn: Callable, *args, **kwargs) -> SearchTask:
         task = SearchTask(name=name, indexer_key=indexer_key)
         self.tasks.append(task)
 
@@ -124,9 +118,7 @@ class SearchStatusWindow(BaseWindow):
             if i >= self.MAX_TASK_SLOTS:
                 break
             self.setProperty(f"task_{i}_name", task.name)
-            self.setProperty(
-                f"task_{i}_status", translation(STATUS_MAP.get(task.status, 90244))
-            )
+            self.setProperty(f"task_{i}_status", translation(STATUS_MAP.get(task.status, 90244)))
             self.setProperty(f"task_{i}_color", self._get_status_color(task.status))
             self.setProperty(f"task_{i}_results", "")
             show_spinner = "true" if task.status == "In Progress" and task.result_count == 0 else ""

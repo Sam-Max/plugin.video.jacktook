@@ -1,5 +1,11 @@
 import traceback
+from os import path as ospath
+from os import stat
+from time import sleep
+
 import requests
+import xbmcgui
+
 from lib.clients.subtitle.utils import get_deepl_language_code, slugify
 from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
@@ -7,10 +13,6 @@ from lib.utils.kodi.utils import (
     kodilog,
     translation,
 )
-from os import path as ospath, stat
-from time import sleep
-
-import xbmcgui
 
 
 def show_dialog(title, message):
@@ -48,7 +50,7 @@ class DeepLTranslator:
             f"Unexpected error occurred (status code: {response.status_code}).",
         )
 
-        msg = f"DeepL API error during {context}.\n" f"{user_message}\n\n"
+        msg = f"DeepL API error during {context}.\n{user_message}\n\n"
         self.notification(heading=translation(90652), message=msg)
         return False
 
@@ -90,9 +92,7 @@ class DeepLTranslator:
             "Content-Type": "application/json",
         }
 
-        response = requests.post(
-            url, json={"document_key": document_key}, headers=headers
-        )
+        response = requests.post(url, json={"document_key": document_key}, headers=headers)
         if not self._handle_deepl_response(response, "result download"):
             raise Exception("DeepL API error during result download")
 
@@ -110,7 +110,7 @@ class DeepLTranslator:
         total_character_count = 0
         for file_path in subtitle_paths:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
 
                 lines = content.split("\n")
@@ -171,7 +171,7 @@ class DeepLTranslator:
             self.notification(msg)
             raise Exception(msg)
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         character_count = len(content)
@@ -181,9 +181,7 @@ class DeepLTranslator:
             self.notification(msg)
             raise Exception(msg)
 
-        kodilog(
-            f"File check passed: Size={file_size_kb:.2f}KB, Characters={character_count}"
-        )
+        kodilog(f"File check passed: Size={file_size_kb:.2f}KB, Characters={character_count}")
 
     def filter_files_within_limits(self, file_paths):
         """
@@ -209,9 +207,7 @@ class DeepLTranslator:
             "Authorization": f"DeepL-Auth-Key {self.api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.get(
-            url, params={"document_key": document_key}, headers=headers
-        )
+        response = requests.get(url, params={"document_key": document_key}, headers=headers)
 
         kodilog("Check status response text: " + response.text)
 
@@ -242,13 +238,11 @@ class DeepLTranslator:
         total_characters = 0
         for file_path in subtitle_paths:
             try:
-                with open(file_path, "r", encoding="utf-8") as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read()
                 total_characters += len(content)
             except Exception as error:
-                kodilog(
-                    f"Error reading file for cost calculation: {file_path}: {error}"
-                )
+                kodilog(f"Error reading file for cost calculation: {file_path}: {error}")
 
         estimated_cost = (total_characters / 1_000_000) * PRICE_PER_MILLION
         return total_characters, estimated_cost
@@ -279,9 +273,7 @@ class DeepLTranslator:
         Returns True if user confirms, False otherwise.
         """
         free_chars_left = self.get_free_characters_left()
-        total_characters, estimated_cost = self.calculate_translation_cost(
-            subtitle_paths
-        )
+        total_characters, estimated_cost = self.calculate_translation_cost(subtitle_paths)
 
         if free_chars_left > total_characters:
             message = translation(90666) % (free_chars_left, total_characters)

@@ -1,13 +1,14 @@
-from urllib.parse import quote
-from typing import Any, List, Optional
 import concurrent
+from typing import Any, List, Optional
+from urllib.parse import quote
+
 import requests
 
 from lib.clients.base import BaseClient
 from lib.domain.torrent import TorrentStream
 from lib.jacktook.utils import kodilog
-from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.general.utils import USER_AGENT_HEADER
+from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.settings import get_jackett_timeout
 from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.parsers import xmltodict
@@ -97,9 +98,7 @@ class Jackett(BaseClient):
                             year=year,
                         )
                         futures.append(
-                            executor.submit(
-                                self.session.get, url_ep, timeout=get_jackett_timeout()
-                            )
+                            executor.submit(self.session.get, url_ep, timeout=get_jackett_timeout())
                         )
                     if get_setting("include_season_packs"):
                         url_season = self._build_url(
@@ -132,9 +131,7 @@ class Jackett(BaseClient):
                         year=year,
                     )
                     futures.append(
-                        executor.submit(
-                            self.session.get, url, timeout=get_jackett_timeout()
-                        )
+                        executor.submit(self.session.get, url, timeout=get_jackett_timeout())
                     )
 
             for future in concurrent.futures.as_completed(futures):
@@ -147,7 +144,7 @@ class Jackett(BaseClient):
                     notification(f"{translation(30229)} ({response.status_code})")
             return results if results else None
         except Exception as e:
-            self.handle_exception(f"{translation(30229)}: {str(e)}")
+            self.handle_exception(f"{translation(30229)}: {e!s}")
             return None
 
     def search(
@@ -173,7 +170,7 @@ class Jackett(BaseClient):
                 year=year,
             )
         except Exception as e:
-            self.handle_exception(f"{translation(30229)}: {str(e)}")
+            self.handle_exception(f"{translation(30229)}: {e!s}")
             return None
 
     def parse_response(self, res: Any) -> Optional[List[TorrentStream]]:
@@ -190,7 +187,7 @@ class Jackett(BaseClient):
                 kodilog(f"Parsed {len(results)} results from Jackett")
                 return results
         except Exception as e:
-            self.handle_exception(f"Error parsing Jackett response: {str(e)}")
+            self.handle_exception(f"Error parsing Jackett response: {e!s}")
             return None
 
     def extract_result(self, results: List[TorrentStream], item: dict) -> None:

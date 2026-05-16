@@ -1,33 +1,33 @@
-# -*- coding: utf-8 -*-
 """
 Local web server for managing Stremio addon sources from a phone/browser.
 
 Serves a web UI and exposes small JSON endpoints for CRUD operations
 on the Stremio custom addons stored in the Kodi addon cache.
 """
+
+import ipaddress
 import json
 import os
 import socket
 import threading
-import ipaddress
 from datetime import timedelta
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
+from lib.api.stremio.addon_manager import build_addon_instance_key
+from lib.clients.stremio.constants import (
+    STREMIO_ADDONS_CATALOGS_KEY,
+    STREMIO_ADDONS_KEY,
+    STREMIO_TV_ADDONS_KEY,
+    STREMIO_USER_ADDONS,
+    decode_selected_ids,
+    encode_selected_ids,
+)
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import kodilog
-from lib.clients.stremio.constants import (
-    STREMIO_ADDONS_KEY,
-    STREMIO_ADDONS_CATALOGS_KEY,
-    STREMIO_TV_ADDONS_KEY,
-    STREMIO_USER_ADDONS,
-    encode_selected_ids,
-    decode_selected_ids,
-)
-from lib.api.stremio.addon_manager import build_addon_instance_key
 
 _CACHE_EXPIRY = timedelta(days=365 * 20)
 _WEB_DIR = os.path.join(
@@ -44,11 +44,7 @@ _WEB_DIR = os.path.join(
 
 def _get_user_addons():
     """Return list of custom addon dicts from cache."""
-    return [
-        a
-        for a in (cache.get(STREMIO_USER_ADDONS) or [])
-        if a.get("transportName") == "custom"
-    ]
+    return [a for a in (cache.get(STREMIO_USER_ADDONS) or []) if a.get("transportName") == "custom"]
 
 
 def _get_selected_ids():
@@ -65,6 +61,7 @@ def _get_selected_ids():
 
 def _addon_capabilities(manifest):
     """Determine stream/catalog/tv capabilities from a manifest dict."""
+
     def supports_searchable_stream(prefixes):
         normalized = {str(prefix).rstrip(":") for prefix in (prefixes or []) if prefix}
         return bool(normalized.intersection({"tt", "tmdb"}))
@@ -84,9 +81,10 @@ def _addon_capabilities(manifest):
 
             if res_name == "stream":
                 # Stremio addon providing streams
-                if any(t in res_types for t in ("movie", "series", "anime")) and supports_searchable_stream(res_prefixes):
-                    is_stream = True
-                elif supports_searchable_stream(res_prefixes):
+                if (
+                    any(t in res_types for t in ("movie", "series", "anime"))
+                    and supports_searchable_stream(res_prefixes)
+                ) or supports_searchable_stream(res_prefixes):
                     is_stream = True
 
                 if any(t in res_types for t in ("tv", "channel")):
@@ -97,7 +95,9 @@ def _addon_capabilities(manifest):
 
         elif isinstance(res, str):
             if res == "stream":
-                if any(t in types for t in ("movie", "series", "anime")) and supports_searchable_stream(manifest_prefixes):
+                if any(
+                    t in types for t in ("movie", "series", "anime")
+                ) and supports_searchable_stream(manifest_prefixes):
                     is_stream = True
                 if any(t in types for t in ("tv", "channel")):
                     is_tv = True
@@ -178,16 +178,11 @@ def _sync_add_addon(url):
         kodilog(f"[WebServer] Failed to add addon: {error}")
         return None, f"Failed to fetch manifest: {error or 'unknown error'}"
 
-    addon_key = build_addon_instance_key(
-        {"manifest": manifest, "transportUrl": resp.url}
-    )
+    addon_key = build_addon_instance_key({"manifest": manifest, "transportUrl": resp.url})
 
     # Check duplicate
     user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
-    if any(
-        build_addon_instance_key(a) == addon_key
-        for a in user_addons
-    ):
+    if any(build_addon_instance_key(a) == addon_key for a in user_addons):
         return None, "This addon is already added."
 
     caps = _addon_capabilities(manifest)
@@ -214,11 +209,7 @@ def _sync_add_addon(url):
 def _sync_remove_addon(addon_id):
     """Remove addon by manifest ID from all caches."""
     user_addons = list(cache.get(STREMIO_USER_ADDONS) or [])
-    new_addons = [
-        a
-        for a in user_addons
-        if build_addon_instance_key(a) != addon_id
-    ]
+    new_addons = [a for a in user_addons if build_addon_instance_key(a) != addon_id]
     cache.set(STREMIO_USER_ADDONS, new_addons, _CACHE_EXPIRY)
 
     for cache_key in [
@@ -348,9 +339,7 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header(
-            "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"
-        )
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
 
@@ -359,7 +348,7 @@ class StremioRequestHandler(BaseHTTPRequestHandler):
     def _serve_index(self):
         index_path = os.path.join(_WEB_DIR, "index.html")
         try:
-            with open(index_path, "r", encoding="utf-8") as f:
+            with open(index_path, encoding="utf-8") as f:
                 self._send_html(f.read())
         except FileNotFoundError:
             self.send_error(500, "Web UI not found")
@@ -500,9 +489,7 @@ class StremioWebServer:
             return
         try:
             self._server = HTTPServer(("0.0.0.0", self.port), StremioRequestHandler)
-            self._thread = threading.Thread(
-                target=self._server.serve_forever, daemon=True
-            )
+            self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
             self._thread.start()
             kodilog(f"[WebServer] Started on port {self.port}")
         except Exception as e:

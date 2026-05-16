@@ -9,7 +9,7 @@ class AniZipApi:
         res = self.make_request(url="mappings", params=params)
         if res:
             return res["mappings"]
-        
+
     def episodes(self, anilist_id):
         params = {"anilist_id": anilist_id}
         res = self.make_request(url="mappings", params=params)

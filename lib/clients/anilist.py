@@ -172,7 +172,5 @@ SEARCH_ID = """
 def anilist_client():
     return AniList(
         get_setting("anilist_client_id", "14375"),
-        get_setting(
-            "anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"
-        ),
+        get_setting("anilist_client_secret", "tOJ5CJA9JM2pmJrHM8XaZgnM9XgL7HaLTM3krdML"),
     )

@@ -1,6 +1,6 @@
-from lib.utils.kodi.utils import ADDON_HANDLE
-
 from xbmcplugin import addDirectoryItem
+
+from lib.utils.kodi.utils import ADDON_HANDLE
 
 
 def add_kodi_dir_item(

@@ -1,5 +1,6 @@
-from lib.utils.kodi.utils import kodilog, translation
 import xbmcgui
+
+from lib.utils.kodi.utils import kodilog, translation
 
 
 class CustomProgressDialog(xbmcgui.WindowXMLDialog):
@@ -24,7 +25,15 @@ class CustomProgressDialog(xbmcgui.WindowXMLDialog):
         self.getControl(12006).setLabel(f"{self.progress}%")
         self.setFocusId(12003)
 
-    def update_progress(self, percent, message=None, downloaded_str="", size_str="", speed_str="", eta_str=""):
+    def update_progress(
+        self,
+        percent,
+        message=None,
+        downloaded_str="",
+        size_str="",
+        speed_str="",
+        eta_str="",
+    ):
         self.progress = percent
         try:
             self.getControl(12004).setPercent(percent)

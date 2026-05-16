@@ -1,24 +1,21 @@
-import pytest
-from unittest.mock import MagicMock, patch
-import os
 import json
+import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 from lib.api.debrid.realdebrid import RealDebrid
 
 # Load fixture data
-FIXTURE_PATH = os.path.join(
-    os.path.dirname(__file__), "../fixtures/realdebrid_response.json"
-)
-with open(FIXTURE_PATH, "r") as f:
+FIXTURE_PATH = os.path.join(os.path.dirname(__file__), "../fixtures/realdebrid_response.json")
+with open(FIXTURE_PATH) as f:
     JSON_DATA = json.load(f)
 
 
 @pytest.fixture
 def rd_client():
     mock_session = MagicMock()
-    with patch.object(
-        RealDebrid, "decode_token_str", return_value={"private_token": "secret"}
-    ):
+    with patch.object(RealDebrid, "decode_token_str", return_value={"private_token": "secret"}):
         client = RealDebrid(token="test_token", session=mock_session)
         client.headers = {"Authorization": f"Bearer {client.token}"}
         return client

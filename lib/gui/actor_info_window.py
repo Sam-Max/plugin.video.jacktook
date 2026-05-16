@@ -1,13 +1,13 @@
 import threading
+
+import xbmcgui
+
+from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.utils import (
-    ADDON_PATH,
-    kodilog,
-    notification,
     execute_builtin,
+    kodilog,
 )
-from lib.clients.tmdb.utils.utils import tmdb_get
-import xbmcgui
 
 
 class ActorInfoWindow(BaseWindow):

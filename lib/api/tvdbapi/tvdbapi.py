@@ -1,7 +1,10 @@
-import requests
 from datetime import timedelta
+
+import requests
+
 from lib.db.cached import cache
-from lib.utils.kodi.settings import is_cache_enabled, get_cache_expiration
+from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
+
 
 class TVDBAPI:
     def __init__(self):
@@ -15,7 +18,7 @@ class TVDBAPI:
     def get_token(self):
         identifier = "tvdb_token"
         token = cache.get(identifier)
-        if token: 
+        if token:
             return token
         else:
             res = requests.post(self.baseUrl + "login", json=self.apiKey, headers=self.headers)
@@ -30,12 +33,7 @@ class TVDBAPI:
 
     def get_request(self, url):
         token = self.get_token()
-        self.headers.update(
-            {
-                "Authorization": "Bearer {0}".format(token),
-                "Accept": "application/json"
-            }
-        )
+        self.headers.update({"Authorization": f"Bearer {token}", "Accept": "application/json"})
         url = self.baseUrl + url
         response = requests.get(url, headers=self.headers)
         if response:
@@ -47,13 +45,13 @@ class TVDBAPI:
 
     def get_imdb_id(self, tvdb_id):
         imdb_id = None
-        url = "series/{}/extended".format(tvdb_id)
+        url = f"series/{tvdb_id}/extended"
         data = self.get_request(url)
         if data:
             imdb_id = [x.get("id") for x in data["remoteIds"] if x.get("type") == 2]
         return imdb_id[0] if imdb_id else None
 
     def get_seasons(self, tvdb_id):
-        url = "seasons/{}/extended".format(tvdb_id)
+        url = f"seasons/{tvdb_id}/extended"
         data = self.get_request(url)
         return data

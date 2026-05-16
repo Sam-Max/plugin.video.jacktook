@@ -110,11 +110,7 @@ def _list_compatible_modules() -> list:
         data = json.loads(response)
         addons = data.get("result", {}).get("addons", [])
         # Exclude Kodi's own system modules
-        return [
-            a
-            for a in addons
-            if not a["addonid"].startswith(("xbmc.", "kodi."))
-        ]
+        return [a for a in addons if not a["addonid"].startswith(("xbmc.", "kodi."))]
     except Exception as exc:
         kodilog(f"ExternalScraper: failed to list modules: {exc}")
         return []

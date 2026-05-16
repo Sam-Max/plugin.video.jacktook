@@ -1,9 +1,10 @@
+import json
+
 from lib.utils.kodi.utils import (
     action_url_run,
     kodi_play_media,
     translation,
 )
-import json
 
 
 def add_last_files_context_menu(data):

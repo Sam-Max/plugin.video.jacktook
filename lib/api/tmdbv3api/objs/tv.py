@@ -1,11 +1,13 @@
 import warnings
+
 from lib.api.tmdbv3api.tmdb import TMDb
+
 from .search import Search
 
 try:
     from urllib import quote
 except ImportError:
-    from urllib.parse import quote
+    pass
 
 
 class TV(TMDb):
@@ -37,7 +39,11 @@ class TV(TMDb):
         "top_rated": "/tv/top_rated",
     }
 
-    def details(self, tv_id, append_to_response="videos,trailers,images,credits,translations,external_ids"):
+    def details(
+        self,
+        tv_id,
+        append_to_response="videos,trailers,images,credits,translations,external_ids",
+    ):
         """
         Get the primary TV show details by id.
         :param tv_id: int
@@ -46,7 +52,7 @@ class TV(TMDb):
         """
         return self._request_obj(
             self._urls["details"] % tv_id,
-            params="append_to_response=%s" % append_to_response,
+            params="append_to_response={}".format(append_to_response),
         )
 
     def account_states(self, tv_id):
@@ -58,7 +64,7 @@ class TV(TMDb):
         """
         return self._request_obj(
             self._urls["account_states"] % tv_id,
-            params="session_id=%s" % self.session_id
+            params="session_id={}".format(self.session_id),
         )
 
     def aggregate_credits(self, tv_id):
@@ -77,10 +83,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["alternative_titles"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["alternative_titles"] % tv_id, key="results")
 
     def changes(self, tv_id, start_date=None, end_date=None, page=1):
         """
@@ -91,16 +94,12 @@ class TV(TMDb):
         :param end_date: str
         :param page: int
         """
-        params = "page=%s" % page
+        params = "page={}".format(page)
         if start_date:
-            params += "&start_date=%s" % start_date
+            params += "&start_date={}".format(start_date)
         if end_date:
-            params += "&end_date=%s" % end_date
-        return self._request_obj(
-            self._urls["changes"] % tv_id,
-            params=params,
-            key="changes"
-        )
+            params += "&end_date={}".format(end_date)
+        return self._request_obj(self._urls["changes"] % tv_id, params=params, key="changes")
 
     def content_ratings(self, tv_id):
         """
@@ -108,10 +107,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["content_ratings"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["content_ratings"] % tv_id, key="results")
 
     def credits(self, tv_id):
         """
@@ -127,10 +123,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["episode_groups"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["episode_groups"] % tv_id, key="results")
 
     def external_ids(self, tv_id):
         """
@@ -153,7 +146,9 @@ class TV(TMDb):
         """
         return self._request_obj(
             self._urls["images"] % tv_id,
-            params="include_image_language=%s" % include_image_language if include_image_language else ""
+            params="include_image_language={}".format(include_image_language)
+            if include_image_language
+            else "",
         )
 
     def keywords(self, tv_id):
@@ -162,10 +157,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["keywords"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["keywords"] % tv_id, key="results")
 
     def recommendations(self, tv_id, page=1):
         """
@@ -176,8 +168,8 @@ class TV(TMDb):
         """
         return self._request_obj(
             self._urls["recommendations"] % tv_id,
-            params="page=%s" % page,
-            key="results"
+            params="page={}".format(page),
+            key="results",
         )
 
     def reviews(self, tv_id, page=1):
@@ -188,9 +180,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["reviews"] % tv_id,
-            params="page=%s" % page,
-            key="results"
+            self._urls["reviews"] % tv_id, params="page={}".format(page), key="results"
         )
 
     def screened_theatrically(self, tv_id):
@@ -199,10 +189,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["screened_theatrically"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["screened_theatrically"] % tv_id, key="results")
 
     def similar(self, tv_id, page=1):
         """
@@ -212,9 +199,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["similar"] % tv_id,
-            params="page=%s" % page,
-            key="results"
+            self._urls["similar"] % tv_id, params="page={}".format(page), key="results"
         )
 
     def translations(self, tv_id):
@@ -223,10 +208,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["translations"] % tv_id,
-            key="translations"
-        )
+        return self._request_obj(self._urls["translations"] % tv_id, key="translations")
 
     def videos(self, tv_id, include_video_language=None, page=1):
         """
@@ -236,13 +218,10 @@ class TV(TMDb):
         :param page: int
         :return:
         """
-        params = "page=%s" % page
+        params = "page={}".format(page)
         if include_video_language:
-            params += "&include_video_language=%s" % include_video_language
-        return self._request_obj(
-            self._urls["videos"] % tv_id,
-            params=params
-        )
+            params += "&include_video_language={}".format(include_video_language)
+        return self._request_obj(self._urls["videos"] % tv_id, params=params)
 
     def watch_providers(self, tv_id):
         """
@@ -250,10 +229,7 @@ class TV(TMDb):
         :param tv_id: int
         :return:
         """
-        return self._request_obj(
-            self._urls["watch_providers"] % tv_id,
-            key="results"
-        )
+        return self._request_obj(self._urls["watch_providers"] % tv_id, key="results")
 
     def rate_tv_show(self, tv_id, rating):
         """
@@ -263,9 +239,9 @@ class TV(TMDb):
         """
         self._request_obj(
             self._urls["rate_tv_show"] % tv_id,
-            params="session_id=%s" % self.session_id,
+            params="session_id={}".format(self.session_id),
             method="POST",
-            json={"value": rating}
+            json={"value": rating},
         )
 
     def delete_rating(self, tv_id):
@@ -275,8 +251,8 @@ class TV(TMDb):
         """
         self._request_obj(
             self._urls["delete_rating"] % tv_id,
-            params="session_id=%s" % self.session_id,
-            method="DELETE"
+            params="session_id={}".format(self.session_id),
+            method="DELETE",
         )
 
     def latest(self):
@@ -294,9 +270,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["airing_today"],
-            params="page=%s" % page,
-            key="results"
+            self._urls["airing_today"], params="page={}".format(page), key="results"
         )
 
     def on_the_air(self, page=1):
@@ -306,9 +280,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["on_the_air"],
-            params="page=%s" % page,
-            key="results"
+            self._urls["on_the_air"], params="page={}".format(page), key="results"
         )
 
     def popular(self, page=1):
@@ -318,9 +290,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["popular"],
-            params="page=%s" % page,
-            key="results"
+            self._urls["popular"], params="page={}".format(page), key="results"
         )
 
     def top_rated(self, page=1):
@@ -330,9 +300,7 @@ class TV(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["top_rated"],
-            params="page=%s" % page,
-            key="results"
+            self._urls["top_rated"], params="page={}".format(page), key="results"
         )
 
     def search(self, term, page=1):
@@ -342,6 +310,8 @@ class TV(TMDb):
         :param page:
         :return:
         """
-        warnings.warn("search method is deprecated use tmdbv3api.Search().tv_shows(term)",
-                      DeprecationWarning)
+        warnings.warn(
+            "search method is deprecated use tmdbv3api.Search().tv_shows(term)",
+            DeprecationWarning,
+        )
         return Search().tv_shows(term, page=page)

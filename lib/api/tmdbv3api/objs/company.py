@@ -3,10 +3,10 @@ from lib.api.tmdbv3api.tmdb import TMDb
 
 class Company(TMDb):
     _urls = {
-        "details": "/company/%s", 
+        "details": "/company/%s",
         "alternative_names": "/company/%s/alternative_names",
         "images": "/company/%s/images",
-        "movies": "/company/%s/movies"
+        "movies": "/company/%s/movies",
     }
 
     def details(self, company_id):
@@ -41,7 +41,5 @@ class Company(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["movies"] % company_id,
-            params="page=%s" % page,
-            key="results"
+            self._urls["movies"] % company_id, params="page={}".format(page), key="results"
         )

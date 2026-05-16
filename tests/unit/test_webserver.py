@@ -1,6 +1,3 @@
-from unittest.mock import MagicMock
-
-
 from lib.services.webserver import _addon_capabilities
 
 

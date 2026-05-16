@@ -1,6 +1,6 @@
+import os
 from threading import Thread
 from time import time
-import os
 
 import xbmc
 import xbmcaddon
@@ -21,10 +21,9 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     set_property_no_fallback,
-    translation,
     translatePath,
+    translation,
 )
-
 
 first_run_update_prop = "jacktook.first_run_update"
 pause_services_prop = "jacktook.pause_services"
@@ -72,9 +71,7 @@ class UpdateCheck:
 
 
 def TMDBHelperAutoInstall():
-    jacktook_select_path = (
-        "special://home/addons/plugin.video.jacktook/jacktook.select.json"
-    )
+    jacktook_select_path = "special://home/addons/plugin.video.jacktook/jacktook.select.json"
 
     if not xbmcvfs.exists(jacktook_select_path):
         kodilog("jacktook.select.json file not found!", level=xbmc.LOGERROR)
@@ -134,7 +131,7 @@ def _read_text_file(path):
         return None
 
     try:
-        with open(translated_path, "r", encoding="utf-8") as file_obj:
+        with open(translated_path, encoding="utf-8") as file_obj:
             return file_obj.read()
     except OSError as error:
         kodilog(f"Failed to read {path}: {error}", level=xbmc.LOGERROR)
@@ -229,32 +226,34 @@ class JacktookMOnitor(xbmc.Monitor):
         TMDBHelperAutoInstall()
         try:
             from lib.services.autostart import AutoStartService
+
             AutoStartService().run()
         except Exception as e:
             kodilog(f"AutoStart failed: {e}", level=xbmc.LOGERROR)
         try:
             from lib.services.widget_refresh import WidgetRefreshService
+
             Thread(target=WidgetRefreshService().run).start()
         except Exception as e:
             kodilog(f"WidgetRefresh failed: {e}", level=xbmc.LOGERROR)
 
     def onScreensaverActivated(self):
         set_property_no_fallback(pause_services_prop, "true")
-        kodilog(
-            "PAUSING Jacktook Services Due to Device Sleep", level=xbmc.LOGINFO
-        )
+        kodilog("PAUSING Jacktook Services Due to Device Sleep", level=xbmc.LOGINFO)
 
     def onScreensaverDeactivated(self):
         clear_property(pause_services_prop)
-        kodilog(
-            "UNPAUSING Jacktook Services Due to Device Awake", level=xbmc.LOGINFO
-        )
+        kodilog("UNPAUSING Jacktook Services Due to Device Awake", level=xbmc.LOGINFO)
 
     def onSettingsChanged(self):
         clear_cached_settings()
         from lib.utils.tmdb_init import ensure_tmdb_init
+
         ensure_tmdb_init()
-        kodilog("Cleared cached settings and refreshed TMDB language after Kodi settings change", level=xbmc.LOGINFO)
+        kodilog(
+            "Cleared cached settings and refreshed TMDB language after Kodi settings change",
+            level=xbmc.LOGINFO,
+        )
 
     def onNotification(self, sender, method, data):
         if method == "System.OnSleep":

@@ -1,5 +1,7 @@
 import xbmcgui
+
 from lib.gui.base_window import BaseWindow
+
 
 class FilterWindow(BaseWindow):
     def __init__(self, xml_file, location, filter):
@@ -10,13 +12,12 @@ class FilterWindow(BaseWindow):
     def onInit(self):
         self.list_control = self.getControl(2000)
         self.list_control.reset()
-        
+
         for q in self.filter:
             item = xbmcgui.ListItem(label=q)
             self.list_control.addItem(item)
 
         self.set_default_focus(self.list_control, 2000, control_list_reset=True)
-
 
     def handle_action(self, action_id, control_id=None):
         if action_id == 7:  # Select

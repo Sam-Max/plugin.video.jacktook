@@ -1,18 +1,24 @@
-from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
+from lib.api.tmdbv3api.objs.search import Search
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.clients.tmdb.anime import TmdbAnimeClient
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.people_client import PeopleClient
-from lib.api.tmdbv3api.objs.search import Search
-from lib.clients.tmdb.utils.utils import add_kodi_dir_item, filter_excluded_languages, tmdb_get
+from lib.clients.tmdb.utils.utils import (
+    add_kodi_dir_item,
+    filter_excluded_languages,
+    tmdb_get,
+)
 from lib.db.cached import cache
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
+    Anime,
     add_next_button,
     execute_thread_pool,
     set_content_type,
@@ -20,8 +26,6 @@ from lib.utils.general.utils import (
     set_pluging_category,
     translate_weekday,
 )
-
-from lib.db.pickle_db import PickleDatabase
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     add_directory_items_batch,
@@ -31,17 +35,17 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     kodilog,
     make_list_item,
+    notification,
     show_busy_dialog,
     show_keyboard,
-    notification,
     translation,
 )
-
 from lib.utils.views.shows import show_episode_info, show_season_info
-from lib.utils.views.weekly_calendar import is_this_week, parse_date_str
-from lib.utils.views.weekly_calendar import get_episodes_for_show
-
-from lib.utils.general.utils import Anime
+from lib.utils.views.weekly_calendar import (
+    get_episodes_for_show,
+    is_this_week,
+    parse_date_str,
+)
 
 
 def _apply_tmdb_view(mode, content_type=""):
@@ -55,8 +59,9 @@ def _apply_tmdb_view(mode, content_type=""):
         return apply_section_view("view.episodes", content_type or "episodes")
     return apply_section_view("view.main", content_type=content_type)
 
-import xbmcgui
+
 import xbmc
+import xbmcgui
 
 
 class TmdbClient(BaseTmdbClient):
@@ -250,9 +255,7 @@ class TmdbClient(BaseTmdbClient):
             )
 
         def handle_years_or_genres():
-            return TmdbAnimeClient().handle_anime_years_or_genres(
-                category, mode, page, submode
-            )
+            return TmdbAnimeClient().handle_anime_years_or_genres(category, mode, page, submode)
 
         handlers = {
             Anime.SEARCH: handle_search,
@@ -268,9 +271,7 @@ class TmdbClient(BaseTmdbClient):
         if handler:
             data = handler()
             if data:
-                TmdbAnimeClient().process_anime_results(
-                    data, submode, page, mode, category
-                )
+                TmdbAnimeClient().process_anime_results(data, submode, page, mode, category)
 
     @staticmethod
     def handle_tmdb_search(params):
@@ -282,9 +283,7 @@ class TmdbClient(BaseTmdbClient):
         query = params.get("query")
         if not query:
             query = (
-                show_keyboard(id=30241)
-                if page == 1
-                else PickleDatabase().get_key("search_query")
+                show_keyboard(id=30241) if page == 1 else PickleDatabase().get_key("search_query")
             )
         if not query:
             end_of_directory(cache=False)
@@ -295,6 +294,7 @@ class TmdbClient(BaseTmdbClient):
         if page == 1:
             PickleDatabase().set_key("search_query", query)
             from datetime import timedelta
+
             from lib.db.cached import cache
             from lib.utils.kodi.settings import get_cache_expiration
 
@@ -323,7 +323,12 @@ class TmdbClient(BaseTmdbClient):
                     continue
 
                 metadata = TmdbClient._get_cached_tmdb_item_metadata(item, media_type)
-                title = metadata.get("title") or metadata.get("name") or item.get("title", "") or item.get("name", "")
+                title = (
+                    metadata.get("title")
+                    or metadata.get("name")
+                    or item.get("title", "")
+                    or item.get("name", "")
+                )
 
                 if media_type == "movie":
                     label_title = f"[B]{translation(90008)} -[/B] {title}"
@@ -346,7 +351,7 @@ class TmdbClient(BaseTmdbClient):
             add_next_button("handle_tmdb_search", page=page + 1, mode=mode)
             end_of_directory()
             _apply_tmdb_view("main")
-        
+
         close_busy_dialog()
 
     @staticmethod
@@ -469,9 +474,7 @@ class TmdbClient(BaseTmdbClient):
                 )
                 directory_items.append(item_tuple)
             add_directory_items_batch(directory_items)
-            add_next_button(
-                "search_tmdb_year", page=page, mode=mode, submode=submode, year=year
-            )
+            add_next_button("search_tmdb_year", page=page, mode=mode, submode=submode, year=year)
             end_of_directory()
             _apply_tmdb_view(display_mode)
 
@@ -514,7 +517,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -548,7 +556,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -561,9 +574,7 @@ class TmdbClient(BaseTmdbClient):
             )
             directory_items.append(item_tuple)
         add_directory_items_batch(directory_items)
-        add_next_button(
-            "handle_tmdb_query", query="tmdb_trending", page=page, mode=mode
-        )
+        add_next_button("handle_tmdb_query", query="tmdb_trending", page=page, mode=mode)
         end_of_directory()
         _apply_tmdb_view("movies")
 
@@ -650,7 +661,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -706,9 +722,7 @@ class TmdbClient(BaseTmdbClient):
             )
             directory_items.append(item_tuple)
         add_directory_items_batch(directory_items)
-        add_next_button(
-            "handle_tmdb_query", query="tmdb_airing_today", page=page, mode=mode
-        )
+        add_next_button("handle_tmdb_query", query="tmdb_airing_today", page=page, mode=mode)
         end_of_directory()
         _apply_tmdb_view(mode)
 
@@ -773,7 +787,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -832,9 +851,7 @@ class TmdbClient(BaseTmdbClient):
         from lib.clients.tmdb.utils.utils import NETWORKS
 
         network_id = int(params.get("id"))
-        network_name = next(
-            (net["name"] for net in NETWORKS if net["id"] == network_id), ""
-        )
+        network_name = next((net["name"] for net in NETWORKS if net["id"] == network_id), "")
         set_pluging_category(network_name)
 
         mode = params.get("mode")
@@ -870,7 +887,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -897,7 +919,7 @@ class TmdbClient(BaseTmdbClient):
     def show_calendar_items(query, page, mode):
         set_pluging_category(translation(90021))
         trending_data = tmdb_get("tv_week", page)
-        if not trending_data or getattr(trending_data, "total_results") == 0:
+        if not trending_data or trending_data.total_results == 0:
             notification(translation(90394))
             end_of_directory()
             return
@@ -917,9 +939,7 @@ class TmdbClient(BaseTmdbClient):
 
         trending_results = getattr(trending_data, "results", [])
         trending_results = filter_excluded_languages(trending_results)
-        execute_thread_pool(
-            trending_results, fetch_episodes_for_trending_show
-        )
+        execute_thread_pool(trending_results, fetch_episodes_for_trending_show)
 
         directory_items = []
 
@@ -928,9 +948,7 @@ class TmdbClient(BaseTmdbClient):
         date_item = make_list_item(
             label=f"[UPPERCASE][COLOR=orange]Today: {current_date}[/COLOR][/UPPERCASE]"
         )
-        date_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")}
-        )
+        date_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "history.png")})
         item = add_kodi_dir_item(date_item, "", is_folder=False, batch=True)
         directory_items.append(item)
 
@@ -939,9 +957,9 @@ class TmdbClient(BaseTmdbClient):
         results_today = [r for r in results if r[2].get("air_date") == today_str]
         results_other = [r for r in results if r[2].get("air_date") != today_str]
 
-        results = sorted(
-            results_today, key=lambda x: x[2].get("air_date", "")
-        ) + sorted(results_other, key=lambda x: x[2].get("air_date", ""))
+        results = sorted(results_today, key=lambda x: x[2].get("air_date", "")) + sorted(
+            results_other, key=lambda x: x[2].get("air_date", "")
+        )
 
         for title, show, ep, details in results:
             tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
@@ -952,20 +970,16 @@ class TmdbClient(BaseTmdbClient):
 
             # Mark if episode is released today
             is_today = ep["air_date"] == today_str
-            mark = (
-                f"[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]"
-                if is_today
-                else ""
-            )
+            mark = "[UPPERCASE][COLOR=orange]TODAY- [/COLOR][/UPPERCASE]" if is_today else ""
 
             ep_title = f"{mark}{weekday_name_translated} - ({ep['air_date']}) - {title} - S{ep['season']:02}E{ep['number']:02}"
 
-            tmdb_id = getattr(show, "id")
+            tmdb_id = show.id
             if details is None:
                 kodilog(f"Show details not found for TMDB ID: {tmdb_id}")
                 continue
 
-            external_ids = getattr(details, "external_ids")
+            external_ids = details.external_ids
             imdb_id = external_ids.get("imdb_id", "")
             tvdb_id = external_ids.get("tvdb_id", "")
 
@@ -1119,9 +1133,7 @@ class TmdbClient(BaseTmdbClient):
         )  # Using movies content type ensures better poster rendering in many skins
 
         def fetch_movies():
-            return tmdb_get(
-                "discover_movie", {"with_keywords": keyword_id, "page": page}
-            )
+            return tmdb_get("discover_movie", {"with_keywords": keyword_id, "page": page})
 
         def fetch_tv():
             return tmdb_get("discover_tv", {"with_keywords": keyword_id, "page": page})
@@ -1139,7 +1151,7 @@ class TmdbClient(BaseTmdbClient):
                     if isinstance(item, dict):
                         item["media_type"] = "movie"
                     else:
-                        setattr(item, "media_type", "movie")
+                        item.media_type = "movie"
                 results.extend(movie_data.results)
                 total_pages = max(total_pages, getattr(movie_data, "total_pages", 0))
 
@@ -1149,7 +1161,7 @@ class TmdbClient(BaseTmdbClient):
                     if isinstance(item, dict):
                         item["media_type"] = "tv"
                     else:
-                        setattr(item, "media_type", "tv")
+                        item.media_type = "tv"
                 results.extend(tv_data.results)
                 total_pages = max(total_pages, getattr(tv_data, "total_pages", 0))
 
@@ -1171,11 +1183,7 @@ class TmdbClient(BaseTmdbClient):
         results = filter_excluded_languages(results)
         directory_items = []
         for res in results:
-            tmdb_id = (
-                getattr(res, "id", "")
-                if not isinstance(res, dict)
-                else res.get("id", "")
-            )
+            tmdb_id = getattr(res, "id", "") if not isinstance(res, dict) else res.get("id", "")
             title = (
                 getattr(res, "title", "") or getattr(res, "name", "")
                 if not isinstance(res, dict)
@@ -1254,7 +1262,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -1326,7 +1339,12 @@ class TmdbClient(BaseTmdbClient):
             tmdb_id = getattr(res, "id", "")
             result_media_type = getattr(res, "media_type", "") or ""
             metadata = TmdbClient._get_cached_tmdb_item_metadata(res, mode)
-            title = metadata.get("title") or metadata.get("name") or getattr(res, "title", "") or getattr(res, "name", "")
+            title = (
+                metadata.get("title")
+                or metadata.get("name")
+                or getattr(res, "title", "")
+                or getattr(res, "name", "")
+            )
             list_item = make_list_item(label=title)
             set_media_infoTag(list_item, data=metadata, mode=mode)
             item_tuple = BaseTmdbClient.add_media_directory_item(
@@ -1576,9 +1594,7 @@ class TmdbClient(BaseTmdbClient):
             return
 
         episode_default = str(tv_data.get("episode", ""))
-        episode_input = xbmcgui.Dialog().numeric(
-            0, translation(90738), episode_default
-        )
+        episode_input = xbmcgui.Dialog().numeric(0, translation(90738), episode_default)
         if not episode_input:
             return
         episode_input = str(episode_input).strip()

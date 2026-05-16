@@ -3,8 +3,7 @@ from threading import Thread
 import xbmc
 import xbmcgui
 
-from lib.utils.kodi.utils import ADDON_PATH, kodilog
-
+from lib.utils.kodi.utils import kodilog
 
 ACTION_PREVIOUS_MENU = 10
 ACTION_PLAYER_STOP = 13

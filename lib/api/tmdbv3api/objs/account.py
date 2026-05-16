@@ -1,7 +1,7 @@
 import os
+
 from lib.api.tmdbv3api.exceptions import TMDbException
 from lib.api.tmdbv3api.tmdb import TMDb
-
 
 
 class Account(TMDb):
@@ -31,8 +31,7 @@ class Account(TMDb):
         :return:
         """
         return self._request_obj(
-            self._urls["details"],
-            params="session_id=%s" % self.session_id
+            self._urls["details"], params="session_id={}".format(self.session_id)
         )
 
     def created_lists(self, page=1):
@@ -43,19 +42,15 @@ class Account(TMDb):
         """
         return self._request_obj(
             self._urls["created_lists"] % self.account_id,
-            params="session_id=%s&page=%s" % (self.session_id, page),
-            key="results"
+            params="session_id={}&page={}".format(self.session_id, page),
+            key="results",
         )
 
     def _get_list(self, url, asc_sort=True, page=1):
-        params = "session_id=%s&page=%s" % (self.session_id, page)
+        params = "session_id={}&page={}".format(self.session_id, page)
         if asc_sort is False:
             params += "&sort_by=created_at.desc"
-        return self._request_obj(
-            self._urls[url] % self.account_id,
-            params=params,
-            key="results"
-        )
+        return self._request_obj(self._urls[url] % self.account_id, params=params, key="results")
 
     def favorite_movies(self, asc_sort=True, page=1):
         """
@@ -86,13 +81,13 @@ class Account(TMDb):
             raise TMDbException("Media Type should be tv or movie.")
         self._request_obj(
             self._urls["favorite"] % self.account_id,
-            params="session_id=%s" % self.session_id,
+            params="session_id={}".format(self.session_id),
             method="POST",
             json={
                 "media_type": media_type,
                 "media_id": media_id,
                 "favorite": favorite,
-            }
+            },
         )
 
     def unmark_as_favorite(self, media_id, media_type):
@@ -159,13 +154,13 @@ class Account(TMDb):
             raise TMDbException("Media Type should be tv or movie.")
         self._request_obj(
             self._urls["watchlist"] % self.account_id,
-            "session_id=%s" % self.session_id,
+            "session_id={}".format(self.session_id),
             method="POST",
             json={
                 "media_type": media_type,
                 "media_id": media_id,
                 "watchlist": watchlist,
-            }
+            },
         )
 
     def remove_from_watchlist(self, media_id, media_type):

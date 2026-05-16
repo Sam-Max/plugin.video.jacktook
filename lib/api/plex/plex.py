@@ -1,14 +1,15 @@
-from http import HTTPStatus
 import json
+from http import HTTPStatus
 from time import sleep, time
-import requests
 
-from lib.api.plex.settings import settings
+import requests
+import xbmcgui
+
 from lib.api.plex.models.plex_models import AuthPin, PlexUser
+from lib.api.plex.settings import settings
 from lib.api.plex.utils import HTTPException, PlexUnauthorizedError
 from lib.utils.kodi.utils import copy2clip, dialog_ok, kodilog, set_setting
 
-import xbmcgui
 
 class PlexApi:
     def __init__(self) -> None:
@@ -21,9 +22,9 @@ class PlexApi:
     def login(self):
         auth_pin = self.create_auth_pin()
         copy2clip(auth_pin.code)
-        content = "%s[CR]%s" % (
-            f"Navigate to: [B]https://www.plex.tv/link[/B]",
-            f"and enter the code: [COLOR seagreen][B]{auth_pin.code}[/B][/COLOR] "
+        content = "{}[CR]{}".format(
+            "Navigate to: [B]https://www.plex.tv/link[/B]",
+            f"and enter the code: [COLOR seagreen][B]{auth_pin.code}[/B][/COLOR] ",
         )
         progressDialog = xbmcgui.DialogProgress()
         progressDialog.create("Plex Auth")
@@ -124,4 +125,3 @@ class PlexApi:
         set_setting("plex_streaming_url", "")
         set_setting("plex_token", "")
         set_setting("plex_server_token", "")
-

@@ -1,15 +1,20 @@
-from typing import Optional, Dict, Any, cast
 from datetime import timedelta
+from typing import Any, Dict, Optional, cast
 
 from lib.clients.subtitle.submanager import SubtitleManager
 from lib.db.cached import cache
+from lib.domain.torrent import TorrentStream
 from lib.gui.base_window import BaseWindow
 from lib.gui.source_pack_select import SourcePackSelect
 from lib.player import JacktookPLayer
 from lib.utils.debrid.debrid_utils import get_pack_info
-from lib.utils.kodi.utils import get_setting, kodilog
-from lib.utils.kodi.utils import ADDON_PATH, notification, set_property
-from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.utils import (
+    ADDON_PATH,
+    get_setting,
+    kodilog,
+    notification,
+    set_property,
+)
 
 
 class ResolverWindow(BaseWindow):
@@ -147,17 +152,12 @@ class ResolverWindow(BaseWindow):
             key = ""
             if "ids" in playback_info:
                 ids = cast(Dict[str, Any], playback_info["ids"] or {})
-                key = str(
-                    ids.get("original_id")
-                    or ids.get("imdb_id")
-                    or ids.get("tmdb_id")
-                    or ""
-                )
+                key = str(ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id") or "")
 
             if key:
                 tv_data = cast(Dict[str, Any], playback_info.get("tv_data", {}) or {})
                 if tv_data and "season" in tv_data and "episode" in tv_data:
-                    key += f'_{tv_data["season"]}_{tv_data["episode"]}'
+                    key += f"_{tv_data['season']}_{tv_data['episode']}"
 
             if key:
                 cache.set(key, playback_info, timedelta(days=30))
@@ -186,9 +186,7 @@ class ResolverWindow(BaseWindow):
 
 
 class SourceException(Exception):
-    def __init__(
-        self, message: str, status_code: Optional[int] = None, error_content: Any = None
-    ):
+    def __init__(self, message: str, status_code: Optional[int] = None, error_content: Any = None):
         self.message = message
         self.status_code = status_code
         self.error_content = error_content

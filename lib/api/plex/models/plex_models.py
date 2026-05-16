@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from enum import Enum
 from urllib import parse
+
 from lib.utils.kodi_utils import get_setting
 from lib.utils.utils import Indexer
 
@@ -48,27 +49,27 @@ class PlexMediaMeta:
         self.type = kwargs.get("type")
         self.title = kwargs.get("title")
         self.added_at = kwargs.get("addedAt")
-        self.rating_key = kwargs.get("ratingKey", None)
-        self.key = kwargs.get("key", None)
-        self.studio = kwargs.get("studio", None)
-        self.title_sort = kwargs.get("titleSort", None)
-        self.library_section_title = kwargs.get("librarySectionTitle", None)
-        self.library_sectionID = kwargs.get("librarySectionID", None)
-        self.library_section_key = kwargs.get("librarySectionKey", None)
-        self.content_rating = kwargs.get("contentRating", None)
+        self.rating_key = kwargs.get("ratingKey")
+        self.key = kwargs.get("key")
+        self.studio = kwargs.get("studio")
+        self.title_sort = kwargs.get("titleSort")
+        self.library_section_title = kwargs.get("librarySectionTitle")
+        self.library_sectionID = kwargs.get("librarySectionID")
+        self.library_section_key = kwargs.get("librarySectionKey")
+        self.content_rating = kwargs.get("contentRating")
         self.summary = kwargs.get("summary", "")
-        self.rating = kwargs.get("rating", None)
-        self.audience_rating = kwargs.get("audienceRating", None)
-        self.year = kwargs.get("year", None)
-        self.tagline = kwargs.get("tagline", None)
-        self.thumb = kwargs.get("thumb", None)
-        self.art = kwargs.get("art", None)
-        self.duration = kwargs.get("duration", None)
-        self.originally_available_at = kwargs.get("originallyAvailableAt", None)
-        self.updated_at = kwargs.get("updatedAt", None)
-        self.audience_rating_image = kwargs.get("audienceRatingImage", None)
-        self.has_premium_primary_extra = kwargs.get("hasPremiumPrimaryExtra", None)
-        self.rating_image = kwargs.get("ratingImage", None)
+        self.rating = kwargs.get("rating")
+        self.audience_rating = kwargs.get("audienceRating")
+        self.year = kwargs.get("year")
+        self.tagline = kwargs.get("tagline")
+        self.thumb = kwargs.get("thumb")
+        self.art = kwargs.get("art")
+        self.duration = kwargs.get("duration")
+        self.originally_available_at = kwargs.get("originallyAvailableAt")
+        self.updated_at = kwargs.get("updatedAt")
+        self.audience_rating_image = kwargs.get("audienceRatingImage")
+        self.has_premium_primary_extra = kwargs.get("hasPremiumPrimaryExtra")
+        self.rating_image = kwargs.get("ratingImage")
         self.media = kwargs.get("Media")
         self.genre = kwargs.get("Genre")
         self.country = kwargs.get("Country")
@@ -98,10 +99,10 @@ class PlexMediaMeta:
 
             description_template = (
                 f"{filename}\n"
-                f'{"/".join(sorted(audio_languages))} '
-                f'({"/".join(sorted(subtitles_languages))})'
+                f"{'/'.join(sorted(audio_languages))} "
+                f"({'/'.join(sorted(subtitles_languages))})"
             )
-            
+
             encoded_params = parse.urlencode(
                 {
                     "X-Plex-Token": get_setting("plex_server_token"),
@@ -111,7 +112,7 @@ class PlexMediaMeta:
                 {
                     "title": f"Direct Play - {name} - {description_template}",
                     "indexer": Indexer.PLEX,
-                    "quality_description": f'Direct Play {media["videoResolution"]}',
+                    "quality_description": f"Direct Play {media['videoResolution']}",
                     "url": f"{get_setting('plex_streaming_url')}/{media['Part'][0]['key'][1:]}?{encoded_params}",
                 }
             )
@@ -133,7 +134,7 @@ class PlexMediaMeta:
                 {
                     "title": f"Transcode - {name} - {description_template}",
                     "indexer": Indexer.PLEX,
-                    "quality_description": f'Transcode {media["videoResolution"]} (original)',
+                    "quality_description": f"Transcode {media['videoResolution']} (original)",
                     "url": f"{get_setting('plex_streaming_url')}/video/:/transcode/universal/start.m3u8?{encoded_params}",
                 }
             )

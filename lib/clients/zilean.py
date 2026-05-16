@@ -1,11 +1,13 @@
 import json
 import logging
 from types import SimpleNamespace
+from typing import Any, Callable, Dict, List, Optional
+
 from requests import ConnectTimeout, ReadTimeout
 from requests.exceptions import RequestException
+
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import USER_AGENT_HEADER, info_hash_to_magnet
-from typing import List, Optional, Dict, Any, Callable
 from lib.utils.kodi.utils import notification
 
 
@@ -78,9 +80,7 @@ class Zilean(BaseClient):
             )
         if res.status_code != 200:
             return
-        response = json.loads(
-            res.content, object_hook=lambda item: SimpleNamespace(**item)
-        )
+        response = json.loads(res.content, object_hook=lambda item: SimpleNamespace(**item))
         torrents = []
         for result in response:
             torrents.append(

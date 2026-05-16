@@ -1,5 +1,4 @@
 import errno
-import functools
 import hashlib
 import itertools
 import math
@@ -19,7 +18,6 @@ class TorrentFileStream:
     closed when no longer needed.
 
     Example:
-
     >>> torrent = torf.Torrent(...)
     >>> with TorrentFileStream(torrent) as tfs:
     >>>     # Get the 29th piece of the concatenated file stream
@@ -43,9 +41,9 @@ class TorrentFileStream:
         elif none_ok:
             content_path = None
         else:
-            raise ValueError('Missing content_path argument and torrent has no path specified')
+            raise ValueError("Missing content_path argument and torrent has no path specified")
 
-        if self._torrent.mode == 'singlefile':
+        if self._torrent.mode == "singlefile":
             # Torrent contains no directory, just a file
             return content_path or file
 
@@ -102,7 +100,7 @@ class TorrentFileStream:
         try:
             file_index = self._torrent.files.index(file)
         except ValueError:
-            raise ValueError(f'File not specified: {file}')
+            raise ValueError(f"File not specified: {file}")
         else:
             stream_pos = sum(f.size for f in self._torrent.files[:file_index])
             return stream_pos
@@ -127,7 +125,7 @@ class TorrentFileStream:
                 else:
                     pos += 1
 
-        raise ValueError(f'position is out of bounds (0 - {self._torrent.size - 1}): {position}')
+        raise ValueError(f"position is out of bounds (0 - {self._torrent.size - 1}): {position}")
 
     def get_piece_indexes_of_file(self, file, exclusive=False):
         """
@@ -176,11 +174,16 @@ class TorrentFileStream:
             file_last_byte_index = pos + file.size - 1
             if (
                 # Is first byte of file inside of range?
-                first_byte_index <= file_first_byte_index <= last_byte_index or
+                first_byte_index <= file_first_byte_index <= last_byte_index
+                or
                 # Is last byte of file inside of range?
-                first_byte_index <= file_last_byte_index <= last_byte_index or
+                first_byte_index <= file_last_byte_index <= last_byte_index
+                or
                 # Are all bytes of file inside of range?
-                (first_byte_index >= file_first_byte_index and last_byte_index <= file_last_byte_index)
+                (
+                    first_byte_index >= file_first_byte_index
+                    and last_byte_index <= file_last_byte_index
+                )
             ):
                 content_file_path = self._get_content_path(content_path, none_ok=True, file=file)
                 files.append(content_file_path)
@@ -217,7 +220,9 @@ class TorrentFileStream:
             if files:
                 return files
 
-        raise ValueError(f'piece_index is out of bounds (0 - {self.max_piece_index}): {piece_index}')
+        raise ValueError(
+            f"piece_index is out of bounds (0 - {self.max_piece_index}): {piece_index}"
+        )
 
     def get_absolute_piece_indexes(self, file, relative_piece_indexes):
         """
@@ -229,7 +234,6 @@ class TorrentFileStream:
             -1, -2]
 
         Example:
-
         >>> # Assume `file` starts in the 50th piece in the stream of
         >>> # concatenated files and is 100 pieces long. `1000` and `-1000` are
         >>> # ignored because they are out of bounds.
@@ -269,7 +273,6 @@ class TorrentFileStream:
             -1, -2]
 
         Example:
-
         >>> # Assume `file` starts in the 50th piece in the stream of
         >>> # concatenated files and is 100 pieces long. `1000` and `-1000` are
         >>> # ignored because they are out of bounds.
@@ -307,8 +310,7 @@ class TorrentFileStream:
         max_piece_index = math.floor((torrent_size - 1) / piece_size)
         if not min_piece_index <= piece_index <= max_piece_index:
             raise ValueError(
-                'piece_index must be in range '
-                f'{min_piece_index} - {max_piece_index}: {piece_index}'
+                f"piece_index must be in range {min_piece_index} - {max_piece_index}: {piece_index}"
             )
 
         # Find out which files we need to read from
@@ -321,7 +323,7 @@ class TorrentFileStream:
             first_byte_index_of_piece,
             last_byte_index_of_piece,
             # Ensure we get the torrent path, not the file system path
-            content_path='',
+            content_path="",
         )
 
         # Find out where to start reading in the first relevant file
@@ -331,7 +333,7 @@ class TorrentFileStream:
             seek_to = first_byte_index_of_piece - file_pos
         else:
             # Our piece is spread over multiple files
-            file = self.get_file_at_position(first_byte_index_of_piece, content_path='')
+            file = self.get_file_at_position(first_byte_index_of_piece, content_path="")
             file_pos = self.get_file_position(file)
             seek_to = file.size - ((file_pos + file.size) % piece_size)
 
@@ -389,7 +391,7 @@ class TorrentFileStream:
                 del self._open_files[old_filepath]
 
             try:
-                self._open_files[filepath] = open(filepath, 'rb')
+                self._open_files[filepath] = open(filepath, "rb")
             except OSError as e:
                 raise error.ReadError(e.errno, filepath)
 
@@ -435,7 +437,7 @@ class TorrentFileStream:
         :raise ReadError: if file exists but is not readable
         :raise VerifyFileSizeError: if file has unexpected size
         """
-        trailing_bytes = b''
+        trailing_bytes = b""
         missing_pieces = _MissingPieces(torrent=self._torrent, stream=self)
         skip_bytes = 0
 
@@ -467,7 +469,7 @@ class TorrentFileStream:
                     skip_bytes=skip_bytes,
                     oom_callback=oom_callback,
                 )
-                trailing_bytes = b''
+                trailing_bytes = b""
                 piece_size = self._torrent.piece_size
                 for piece in pieces:
                     if len(piece) == piece_size:
@@ -478,7 +480,7 @@ class TorrentFileStream:
             else:
                 # _debug(f'{file}: Faking {filepath}')
                 # We can't complete the current piece
-                trailing_bytes = b''
+                trailing_bytes = b""
                 # Opening file failed
                 items, skip_bytes = missing_pieces(file, content_path, reason=exception)
                 for item in items:
@@ -502,15 +504,15 @@ class TorrentFileStream:
 
         def iter_pieces(fh, prepend):
             piece_size = self._torrent.piece_size
-            piece = b''
+            piece = b""
 
             # Iterate over pieces in `prepend`ed bytes, store incomplete piece
             # in `piece`
             for pos in range(0, len(prepend), piece_size):
-                piece = prepend[pos:pos + piece_size]
+                piece = prepend[pos : pos + piece_size]
                 if len(piece) == piece_size:
                     yield piece
-                    piece = b''
+                    piece = b""
 
             try:
                 # Fill incomplete piece with first bytes from `fh`
@@ -543,8 +545,10 @@ class TorrentFileStream:
         while True:
             try:
                 return fh.read(size)
-            except MemoryError as e:
-                e = error.MemoryError(f'Out of memory while reading from {fh.name} at position {fh.tell()}')
+            except MemoryError:
+                e = error.MemoryError(
+                    f"Out of memory while reading from {fh.name} at position {fh.tell()}"
+                )
                 if oom_callback is None:
                     raise e
                 else:
@@ -597,7 +601,9 @@ class TorrentFileStream:
         try:
             stored_piece_hash = self._torrent.hashes[piece_index]
         except IndexError:
-            raise ValueError(f'piece_index must be in range 0 - {self.max_piece_index}: {piece_index}')
+            raise ValueError(
+                f"piece_index must be in range 0 - {self.max_piece_index}: {piece_index}"
+            )
 
         generated_piece_hash = self.get_piece_hash(piece_index, content_path=content_path)
         if generated_piece_hash is not None:
@@ -624,7 +630,7 @@ class _MissingPieces:
 
         # Figure out which subsequent files are affected by the missing last
         # piece of `file`
-        affected_files = self._stream.get_files_at_piece_index(piece_indexes[-1], content_path='')
+        affected_files = self._stream.get_files_at_piece_index(piece_indexes[-1], content_path="")
         affected_files.remove(file)
         # _debug(f'{affected_files=}')
 
@@ -647,8 +653,7 @@ class _MissingPieces:
 
             # Stream index of the last byte of the last missing piece of `file`
             next_piece_boundary_index = (
-                (piece_indexes[-1] * self._torrent.piece_size)
-                + self._torrent.piece_size - 1
+                (piece_indexes[-1] * self._torrent.piece_size) + self._torrent.piece_size - 1
             )
 
             if next_file_end > next_piece_boundary_index:
@@ -725,7 +730,9 @@ class _MissingPieces:
                 # No such file
                 exceptions.append(error.ReadError(errno.ENOENT, bc_filepath))
             elif bc_filepath.size != actual_size:
-                exceptions.append(error.VerifyFileSizeError(bc_filepath, actual_size, bc_filepath.size))
+                exceptions.append(
+                    error.VerifyFileSizeError(bc_filepath, actual_size, bc_filepath.size)
+                )
         # if exceptions:
         #     _debug(f'bycatch: {exceptions[-1]!r}')
         return exceptions

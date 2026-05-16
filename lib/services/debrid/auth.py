@@ -9,8 +9,10 @@ from lib.utils.kodi.utils import (
     dialog_ok,
     progressDialog,
     set_setting,
-    sleep as ksleep,
     translation,
+)
+from lib.utils.kodi.utils import (
+    sleep as ksleep,
 )
 
 
@@ -136,7 +138,7 @@ def run_premiumize_auth(client):
     response = client.get_device_code()
     user_code = response["user_code"]
     copy2clip(user_code)
-    content = "%s[CR]%s[CR]%s" % (
+    content = "{}[CR]{}[CR]{}".format(
         translation(90540),
         translation(90541) % response.get("verification_uri"),
         translation(90542) % user_code,

@@ -2,9 +2,7 @@ from lib.api.tmdbv3api.tmdb import TMDb
 
 
 class Group(TMDb):
-    _urls = {
-        "details": "/tv/episode_group/%s"
-    }
+    _urls = {"details": "/tv/episode_group/%s"}
 
     def details(self, group_id):
         """

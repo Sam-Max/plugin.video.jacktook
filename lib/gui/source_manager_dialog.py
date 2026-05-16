@@ -8,7 +8,6 @@ from lib.db.cached import cache
 from lib.utils.kodi.settings import get_setting
 from lib.utils.kodi.utils import ADDON_PATH, kodilog, translation
 
-
 BUILTIN_SOURCE_SETTINGS = [
     ("jackett_enabled", "Jackett"),
     ("prowlarr_enabled", "Prowlarr"),
@@ -85,9 +84,7 @@ def open_source_manager_dialog():
     else:
         try:
             current_selection = (
-                json.loads(raw_selection)
-                if isinstance(raw_selection, str)
-                else list(raw_selection)
+                json.loads(raw_selection) if isinstance(raw_selection, str) else list(raw_selection)
             )
         except (ValueError, TypeError):
             current_selection = []

@@ -1,5 +1,6 @@
 from lib.api.tmdbv3api.tmdb import TMDb
 
+
 class List(TMDb):
     _urls = {
         "details": "/list/%s",
@@ -26,7 +27,9 @@ class List(TMDb):
         :param movie_id: int
         :return:
         """
-        return self._request_obj(self._urls["check_status"] % list_id, params="movie_id=%s" % movie_id)["item_present"]
+        return self._request_obj(
+            self._urls["check_status"] % list_id, params="movie_id={}".format(movie_id)
+        )["item_present"]
 
     def create_list(self, name, description):
         """
@@ -37,13 +40,9 @@ class List(TMDb):
         """
         return self._request_obj(
             self._urls["create"],
-            params="session_id=%s" % self.session_id,
+            params="session_id={}".format(self.session_id),
             method="POST",
-            json={
-                "name": name,
-                "description": description,
-                "language": self.language
-            }
+            json={"name": name, "description": description, "language": self.language},
         ).list_id
 
     def add_movie(self, list_id, movie_id):
@@ -54,9 +53,9 @@ class List(TMDb):
         """
         self._request_obj(
             self._urls["add_movie"] % list_id,
-            params="session_id=%s" % self.session_id,
+            params="session_id={}".format(self.session_id),
             method="POST",
-            json={"media_id": movie_id}
+            json={"media_id": movie_id},
         )
 
     def remove_movie(self, list_id, movie_id):
@@ -67,9 +66,9 @@ class List(TMDb):
         """
         self._request_obj(
             self._urls["remove_movie"] % list_id,
-            params="session_id=%s" % self.session_id,
+            params="session_id={}".format(self.session_id),
             method="POST",
-            json={"media_id": movie_id}
+            json={"media_id": movie_id},
         )
 
     def clear_list(self, list_id):
@@ -79,8 +78,8 @@ class List(TMDb):
         """
         self._request_obj(
             self._urls["clear_list"] % list_id,
-            params="session_id=%s&confirm=true" % self.session_id,
-            method="POST"
+            params="session_id={}&confirm=true".format(self.session_id),
+            method="POST",
         )
 
     def delete_list(self, list_id):
@@ -90,6 +89,6 @@ class List(TMDb):
         """
         self._request_obj(
             self._urls["delete_list"] % list_id,
-            params="session_id=%s" % self.session_id,
-            method="DELETE"
+            params="session_id={}".format(self.session_id),
+            method="DELETE",
         )

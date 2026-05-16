@@ -1,8 +1,20 @@
+from json import dumps as json_dumps
+from json import loads
 from threading import Thread
+
+import xbmc
+from xbmc import getCondVisibility as get_visibility
+from xbmcgui import Dialog, ListItem
+from xbmcplugin import setResolvedUrl
+
+from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
 from lib.clients.tmdb.utils.utils import get_movie_keywords, tmdb_get
-from lib.api.trakt.trakt import TraktAPI, TraktLists
+from lib.utils.general.utils import (
+    make_listing,
+    set_watched_file,
+)
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     PLAYLIST,
@@ -19,21 +31,9 @@ from lib.utils.kodi.utils import (
     sleep,
     translation,
 )
-from lib.utils.general.utils import (
-    make_listing,
-    set_watched_file,
-)
 from lib.utils.player.utils import (
     autoscrape_next_episode,
-    get_autoscrape_cache_key,
 )
-
-import xbmc
-from xbmc import getCondVisibility as get_visibility
-from xbmcgui import ListItem, Dialog
-from xbmcplugin import setResolvedUrl
-
-from json import dumps as json_dumps, loads
 
 total_time_errors = ("0.0", "", 0.0, None)
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
@@ -95,9 +95,7 @@ class JacktookPLayer(xbmc.Player):
 
     def _check_volume(self):
         try:
-            if not get_setting("volume_check_enabled") or get_visibility(
-                "Player.Muted"
-            ):
+            if not get_setting("volume_check_enabled") or get_visibility("Player.Muted"):
                 return True
 
             threshold = int(get_setting("volume_check_threshold", 50))
@@ -126,14 +124,8 @@ class JacktookPLayer(xbmc.Player):
             return True
 
     def _handle_trakt_scrobble(self, list_item):
-        if (
-            is_trakt_auth()
-            and get_setting("trakt_scrobbling_enabled")
-            and self.data.get("ids")
-        ):
-            last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(
-                self.data
-            )
+        if is_trakt_auth() and get_setting("trakt_scrobbling_enabled") and self.data.get("ids"):
+            last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
             if last_position > 0:
                 list_item.setProperty("StartPercent", str(last_position))
             TraktAPI().scrobble.trakt_start_scrobble(self.data)
@@ -207,7 +199,7 @@ class JacktookPLayer(xbmc.Player):
 
             self.handle_playback_stop()
 
-        except Exception as e:
+        except Exception:
             self.kill_dialog()
         finally:
             self._cleanup_playback_session()
@@ -250,7 +242,7 @@ class JacktookPLayer(xbmc.Player):
         auto_select_enabled = get_setting("auto_subtitle_selection")
         stremio_subtitle_enabled = get_setting("stremio_subtitle_enabled")
         search_subtitles = get_setting("search_subtitles")
-        
+
         if self.subtitles_found or stremio_subtitle_enabled or search_subtitles:
             self.showSubtitles(True)
             if self.subtitles_found:
@@ -262,10 +254,7 @@ class JacktookPLayer(xbmc.Player):
             _, _, subtitles = self.get_player_streams()
             kodilog(f"Available subtitles: {subtitles}", level=xbmc.LOGDEBUG)
             for sub in subtitles:
-                if (
-                    self.lang_code == sub.get("language")
-                    and sub.get("isforced") is False
-                ):
+                if self.lang_code == sub.get("language") and sub.get("isforced") is False:
                     self.setSubtitleStream(sub["index"])
                     self.showSubtitles(True)
                     break
@@ -280,11 +269,7 @@ class JacktookPLayer(xbmc.Player):
         """
         auto_audio_enabled = get_setting("auto_audio")
         auto_audio_language = str(get_setting("auto_audio_language"))
-        if (
-            auto_audio_enabled
-            and auto_audio_language
-            and auto_audio_language.lower() != "none"
-        ):
+        if auto_audio_enabled and auto_audio_language and auto_audio_language.lower() != "none":
             sleep(500)
             audio_streams = self.getAvailableAudioStreams()
             if audio_streams or len(audio_streams) > 0:
@@ -315,9 +300,7 @@ class JacktookPLayer(xbmc.Player):
             self.total_time = self.getTotalTime()
             self.current_time = self.getTime()
             if self.total_time and self.total_time > 0:
-                self.watched_percentage = round(
-                    float(self.current_time / self.total_time * 100), 1
-                )
+                self.watched_percentage = round(float(self.current_time / self.total_time * 100), 1)
                 self.data["progress"] = self.watched_percentage
                 self.data["current_time"] = self.current_time
                 self.data["total_time"] = self.total_time
@@ -330,7 +313,7 @@ class JacktookPLayer(xbmc.Player):
                 return
             if not getattr(self, "current_time", None):
                 return
-            if not getattr(self, "autoscrape_started", False) is False:
+            if getattr(self, "autoscrape_started", False) is not False:
                 return
             if not get_setting("autoscrape_next_episode", False):
                 return
@@ -377,9 +360,7 @@ class JacktookPLayer(xbmc.Player):
 
             time_left = int(self.total_time) - int(self.current_time)
             if self.next_dialog and time_left <= self.playing_next_time:
-                xbmc.executebuiltin(
-                    action_url_run(name="run_next_dialog", item_info=self.data)
-                )
+                xbmc.executebuiltin(action_url_run(name="run_next_dialog", item_info=self.data))
                 self.next_dialog = False
         except Exception as e:
             kodilog(f"Error in check_next_dialog: {e}")
@@ -419,7 +400,7 @@ class JacktookPLayer(xbmc.Player):
         if not season_details or not hasattr(season_details, "episodes"):
             return
 
-        for e in getattr(season_details, "episodes"):
+        for e in season_details.episodes:
             episode_name = getattr(e, "name", "")
             episode_number = getattr(e, "episode_number", 0)
 
@@ -549,9 +530,7 @@ class JacktookPLayer(xbmc.Player):
                     if self.skip_intro_auto:
                         self.seekTime(end_sec)
                     else:
-                        label = (
-                            "Skip Intro" if segment_type == "intro" else "Skip Recap"
-                        )
+                        label = "Skip Intro" if segment_type == "intro" else "Skip Recap"
                         xbmc.executebuiltin(
                             action_url_run(
                                 name="run_skip_intro_dialog",
@@ -626,9 +605,7 @@ class JacktookPLayer(xbmc.Player):
             set_property("script.trakt.ids", json_dumps(trakt_ids))
 
     def get_player_streams(self):
-        activePlayers = (
-            '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
-        )
+        activePlayers = '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
         json_query = xbmc.executeJSONRPC(activePlayers)
         json_response = loads(json_query)
         if not json_response.get("result"):

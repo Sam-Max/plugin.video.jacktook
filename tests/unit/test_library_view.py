@@ -1,7 +1,7 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from lib.utils.views import library
 from lib.utils.general.utils import add_to_library, remove_from_library
+from lib.utils.views import library
 
 
 def test_get_library_entries_uses_cached_materialized_list():

@@ -2,49 +2,47 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Optional
 
+import xbmc
+from xbmcgui import Dialog
+
+from lib.clients.stremio.addon_client import StremioAddonClient
+from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
     get_selected_stream_addons,
 )
-from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
-from lib.clients.stremio.addon_client import StremioAddonClient
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_dialogs import source_select
+from lib.gui.search_status_window import SearchStatusWindow, SearchTaskManager
 from lib.player import JacktookPLayer
 from lib.utils.clients.utils import get_client, update_dialog
+from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.general.utils import (
     DialogListener,
     Indexer,
     SearchVariant,
-    cache_results,
-    get_cached_results,
-    pre_process,
-    post_process,
     build_media_metadata,
+    cache_results,
+    clean_auto_play_undesired,
+    get_cached_results,
+    normalize_tv_data,
+    post_process,
+    pre_process,
+    safe_json_loads,
     set_content_type,
     set_watched_title,
-    clean_auto_play_undesired,
-    normalize_tv_data,
-    safe_json_loads,
 )
-from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.kodi.settings import auto_play_enabled, get_setting
-from lib.utils.player.utils import resolve_playback_url
 from lib.utils.kodi.utils import (
-    notification,
-    cancel_playback,
-    kodilog,
-    translation,
-    close_busy_dialog,
     ADDON_PATH,
+    cancel_playback,
+    close_busy_dialog,
+    kodilog,
+    notification,
+    translation,
 )
-
-from lib.gui.search_status_window import SearchTaskManager, SearchStatusWindow
-
-import xbmc
-from xbmcgui import Dialog
-
+from lib.utils.player.utils import resolve_playback_url
 
 TITLE_LANGUAGE_LOCALIZED_FIRST = "localized_first"
 TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
@@ -265,9 +263,7 @@ def _build_title_fallback_queries(
         return _unique_title_candidates(candidates)
 
     english_title = _extract_english_tmdb_title(details, mode)
-    original_title = getattr(details, "original_title", "") or getattr(
-        details, "original_name", ""
-    )
+    original_title = getattr(details, "original_title", "") or getattr(details, "original_name", "")
 
     english_candidate = ""
     original_candidate = ""
@@ -280,16 +276,7 @@ def _build_title_fallback_queries(
         if original_title:
             original_candidate = f"{original_title} {cleaned_year}"
 
-    if variant == SearchVariant.DEFAULT:
-        if title_language_mode == TITLE_LANGUAGE_ENGLISH_ONLY:
-            candidates = [english_candidate, original_candidate]
-            if not any(candidates) and localized_candidate:
-                candidates.append(localized_candidate)
-        elif title_language_mode == TITLE_LANGUAGE_ENGLISH_FIRST:
-            candidates = [english_candidate, original_candidate, localized_candidate]
-        else:
-            candidates = [localized_candidate, english_candidate, original_candidate]
-    elif variant == SearchVariant.TITLE_YEAR:
+    if variant == SearchVariant.DEFAULT or variant == SearchVariant.TITLE_YEAR:
         if title_language_mode == TITLE_LANGUAGE_ENGLISH_ONLY:
             candidates = [english_candidate, original_candidate]
             if not any(candidates) and localized_candidate:
@@ -347,7 +334,14 @@ def _perform_search_with_title_fallback(
             )
 
         results = _perform_search(
-            indexer_key, dialog, candidate, mode, *args, variant=variant, year=year, **kwargs
+            indexer_key,
+            dialog,
+            candidate,
+            mode,
+            *args,
+            variant=variant,
+            year=year,
+            **kwargs,
         )
         if results:
             return results
@@ -366,7 +360,7 @@ def _handle_super_quick_play(params: dict) -> bool:
     if key:
         tv_data = safe_json_loads(params.get("tv_data") or "{}")
         if tv_data and "season" in tv_data and "episode" in tv_data:
-            key += f'_{tv_data["season"]}_{tv_data["episode"]}'
+            key += f"_{tv_data['season']}_{tv_data['episode']}"
 
     if not key:
         kodilog("Super quick play: No valid key found from ids")
@@ -432,16 +426,8 @@ def _process_search_results(
             legacy_name = (result.addonName or result.indexer or "").lower()
             return any(addon == legacy_name for addon in bypass_addons)
 
-        bypassed_streams = [
-            res
-            for res in results
-            if is_bypassed(res)
-        ]
-        other_results = [
-            res
-            for res in results
-            if not is_bypassed(res)
-        ]
+        bypassed_streams = [res for res in results if is_bypassed(res)]
+        other_results = [res for res in results if not is_bypassed(res)]
 
     pre_results = []
     if other_results:
@@ -456,9 +442,7 @@ def _process_search_results(
 
     post_results = []
     if pre_results:
-        post_results = process_results(
-            pre_results, query, mode, media_type, rescrape, episode
-        )
+        post_results = process_results(pre_results, query, mode, media_type, rescrape, episode)
 
     # Combine results, prioritizing bypassed streams exact native sorting
     return bypassed_streams + post_results
@@ -606,9 +590,9 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
 
             # Try TMDB ID for addons that declare tmdb: prefix
             if not video_id and ids_dict.get("tmdb_id"):
-                if addon.isSupported("stream", media_kind, "tmdb:"):
-                    video_id = f"tmdb:{ids_dict['tmdb_id']}"
-                elif addon.isSupported("stream", media_kind, "tmdb"):
+                if addon.isSupported("stream", media_kind, "tmdb:") or addon.isSupported(
+                    "stream", media_kind, "tmdb"
+                ):
                     video_id = f"tmdb:{ids_dict['tmdb_id']}"
 
             if video_id:
@@ -670,13 +654,13 @@ def _submit_search_tasks(
 
     if scoped_addon_url:
         addon = get_addon_by_base_url(scoped_addon_url)
-        if addon and (
-            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
-        ) and _is_source_enabled(Indexer.STREMIO, addon.key()):
+        if (
+            addon
+            and (ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id"))
+            and _is_source_enabled(Indexer.STREMIO, addon.key())
+        ):
             tasks.append(
-                submit_performer(
-                    Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
-                )
+                submit_performer(Indexer.STREMIO, dialog, ids, mode, media_type, season, episode)
             )
     else:
         if _is_source_enabled(Indexer.EASYNEWS):
@@ -793,13 +777,13 @@ def _submit_search_tasks(
                 year=str(year) if year else "",
                 aliases=title_aliases,
             )
-        if get_setting("stremio_enabled") and (
-            ids.get("imdb_id") or ids.get("original_id")
-        ) and _is_source_enabled(Indexer.STREMIO):
+        if (
+            get_setting("stremio_enabled")
+            and (ids.get("imdb_id") or ids.get("original_id"))
+            and _is_source_enabled(Indexer.STREMIO)
+        ):
             tasks.append(
-                submit_performer(
-                    Indexer.STREMIO, dialog, ids, mode, media_type, season, episode
-                )
+                submit_performer(Indexer.STREMIO, dialog, ids, mode, media_type, season, episode)
             )
 
 
@@ -813,9 +797,7 @@ def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]
             completed_tasks += 1
             if show_dialog and total_tasks > 0:
                 percent = int(completed_tasks / total_tasks * 100)
-                update_dialog(
-                    "Searching", f"Searching... {percent}%", listener.dialog, percent
-                )
+                update_dialog("Searching", f"Searching... {percent}%", listener.dialog, percent)
 
             results = future.result()
             kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
@@ -825,9 +807,7 @@ def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]
             import traceback
 
             error_details = traceback.format_exc()
-            kodilog(
-                f"Error resolving future result in thread pool: {e}\n{error_details}"
-            )
+            kodilog(f"Error resolving future result in thread pool: {e}\n{error_details}")
 
     return total_results
 
@@ -870,9 +850,11 @@ def _submit_search_tasks_managed(
 
     if scoped_addon_url:
         addon = get_addon_by_base_url(scoped_addon_url)
-        if addon and (
-            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
-        ) and _is_source_enabled(Indexer.STREMIO, addon.key()):
+        if (
+            addon
+            and (ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id"))
+            and _is_source_enabled(Indexer.STREMIO, addon.key())
+        ):
             submit_performer_managed(
                 addon.manifest.name,
                 Indexer.STREMIO,
@@ -995,9 +977,7 @@ def _submit_search_tasks_managed(
                 year=str(year) if year else "",
                 aliases=title_aliases,
             )
-        if get_setting("stremio_enabled") and (
-            ids.get("imdb_id") or ids.get("original_id")
-        ):
+        if get_setting("stremio_enabled") and (ids.get("imdb_id") or ids.get("original_id")):
             stremio_addons = get_selected_stream_addons()
             filtered_addons = [
                 addon
@@ -1104,9 +1084,7 @@ def search_client(
             if show_dialog:
                 listener.dialog.create("")
 
-            with ThreadPoolExecutor(
-                max_workers=int(get_setting("thread_number", 6))
-            ) as executor:
+            with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
                 _submit_search_tasks(
                     executor,
                     tasks,
@@ -1196,9 +1174,7 @@ def show_source_select(
         f"show_source_select context: query={query}, mode={mode}, media_type={media_type}, year={item_info.get('year')}, ids={ids}"
     )
 
-    xml_file_string = (
-        "source_select_direct.xml" if mode == "direct" else "source_select.xml"
-    )
+    xml_file_string = "source_select_direct.xml" if mode == "direct" else "source_select.xml"
 
     return source_select(item_info, xml_file=xml_file_string, sources=results)
 
@@ -1230,9 +1206,7 @@ def auto_play(
 
     selected_result = quality_matches[0]
     if preferred_group:
-        group_matches = [
-            r for r in quality_matches if preferred_group.lower() in r.title.lower()
-        ]
+        group_matches = [r for r in quality_matches if preferred_group.lower() in r.title.lower()]
         if group_matches:
             selected_result = group_matches[0]
 
@@ -1272,9 +1246,7 @@ def add_task_if_enabled(
 ):
     """Add a search task to the task list if the corresponding setting is enabled."""
     if get_setting(setting_key):
-        tasks.append(
-            executor.submit(perform_search, indexer_key, dialog, *args, **kwargs)
-        )
+        tasks.append(executor.submit(perform_search, indexer_key, dialog, *args, **kwargs))
 
 
 def add_task_if_enabled_managed(
@@ -1283,6 +1255,4 @@ def add_task_if_enabled_managed(
     """Add a managed search task if the corresponding setting is enabled."""
     if get_setting(setting_key):
         name = str(indexer_key).title()
-        manager.submit_task(
-            name, indexer_key, perform_search, indexer_key, dialog, *args, **kwargs
-        )
+        manager.submit_task(name, indexer_key, perform_search, indexer_key, dialog, *args, **kwargs)

@@ -1,4 +1,7 @@
 from urllib.parse import quote
+
+from xbmcplugin import addDirectoryItem
+
 from lib.clients.tmdb.utils.utils import mdblist_get, tmdb_get
 from lib.utils.general.utils import (
     build_list_item,
@@ -14,8 +17,6 @@ from lib.utils.kodi.utils import (
     show_keyboard,
     translation,
 )
-
-from xbmcplugin import addDirectoryItem
 
 
 def search_mdbd_lists(params):

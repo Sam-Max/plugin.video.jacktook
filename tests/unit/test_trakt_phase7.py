@@ -7,9 +7,9 @@ from lib.clients.trakt.trakt import TraktPresentation
 def test_create_list_calls_trakt_and_clears_my_lists_cache():
     trakt_lists = TraktLists()
 
-    with patch.object(trakt_lists, "call_trakt", return_value={"ids": {"trakt": 1}}) as call_trakt, patch(
-        "lib.api.trakt.trakt.clear_trakt_list_data"
-    ) as clear_list_data, patch(
+    with patch.object(
+        trakt_lists, "call_trakt", return_value={"ids": {"trakt": 1}}
+    ) as call_trakt, patch("lib.api.trakt.trakt.clear_trakt_list_data") as clear_list_data, patch(
         "lib.api.trakt.trakt.clear_trakt_list_contents_data"
     ) as clear_list_contents:
         trakt_lists.create_list("My List", "Description")

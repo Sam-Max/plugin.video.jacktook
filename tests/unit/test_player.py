@@ -1,13 +1,14 @@
-from pathlib import Path
 import re
-
+from pathlib import Path
 
 PLAYER_PATH = Path(__file__).resolve().parents[2] / "lib" / "player.py"
 
 
 def test_monitor_finally_uses_non_destructive_cleanup():
     source = PLAYER_PATH.read_text()
-    monitor_match = re.search(r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S)
+    monitor_match = re.search(
+        r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S
+    )
 
     assert monitor_match is not None
 

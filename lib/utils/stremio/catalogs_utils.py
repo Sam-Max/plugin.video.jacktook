@@ -1,8 +1,9 @@
 from datetime import timedelta
+
 from lib.clients.stremio.addon_client import StremioAddonCatalogsClient
 from lib.db.cached import cache
-from lib.utils.kodi.utils import kodilog
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
+from lib.utils.kodi.utils import kodilog
 
 
 def catalogs_get_cache(path, params, *args, **kwargs):
@@ -12,22 +13,14 @@ def catalogs_get_cache(path, params, *args, **kwargs):
         return data
 
     handlers = {
-        "search_catalog": lambda query: StremioAddonCatalogsClient(
-            params
-        ).search_catalog(query),
-        "list_catalog": lambda **kwargs: StremioAddonCatalogsClient(
-            params
-        ).get_catalog_info(**kwargs),
-        "list_stremio_seasons": lambda: StremioAddonCatalogsClient(
-            params
-        ).get_meta_info(),
-        "list_stremio_episodes": lambda: StremioAddonCatalogsClient(
-            params
-        ).get_meta_info(),
+        "search_catalog": lambda query: StremioAddonCatalogsClient(params).search_catalog(query),
+        "list_catalog": lambda **kwargs: StremioAddonCatalogsClient(params).get_catalog_info(
+            **kwargs
+        ),
+        "list_stremio_seasons": lambda: StremioAddonCatalogsClient(params).get_meta_info(),
+        "list_stremio_episodes": lambda: StremioAddonCatalogsClient(params).get_meta_info(),
         "list_stremio_tv": lambda: StremioAddonCatalogsClient(params).get_stream_info(),
-        "list_stremio_movie": lambda: StremioAddonCatalogsClient(
-            params
-        ).get_stream_info(),
+        "list_stremio_movie": lambda: StremioAddonCatalogsClient(params).get_stream_info(),
     }
 
     try:

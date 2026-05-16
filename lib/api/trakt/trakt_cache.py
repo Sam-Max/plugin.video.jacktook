@@ -1,6 +1,5 @@
 from lib.api.trakt.base_cache import connect_database
 
-
 SELECT = "SELECT id FROM trakt_data"
 DELETE = "DELETE FROM trakt_data WHERE id=?"
 DELETE_LIKE = 'DELETE FROM trakt_data WHERE id LIKE "%s"'
@@ -121,9 +120,7 @@ class TraktWatched:
         try:
             dbcon = connect_database("trakt_db")
             if db_type == "movie":
-                command = (
-                    "SELECT resume_point FROM progress WHERE db_type=? AND media_id=?"
-                )
+                command = "SELECT resume_point FROM progress WHERE db_type=? AND media_id=?"
                 args = (db_type, media_id)
             else:
                 command = "SELECT resume_point FROM progress WHERE db_type=? AND media_id=? AND season=? AND episode=?"
@@ -166,7 +163,7 @@ def reset_activity(latest_activities):
 
 
 def clear_trakt_hidden_data(list_type):
-    string = "trakt_hidden_items_%s" % list_type
+    string = "trakt_hidden_items_{}".format(list_type)
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))
@@ -179,7 +176,7 @@ def clear_trakt_collection_watchlist_data(list_type, media_type):
         media_type = "movie"
     if media_type in ("tvshows", "shows"):
         media_type = "tvshow"
-    string = "trakt_%s_%s" % (list_type, media_type)
+    string = "trakt_{}_{}".format(list_type, media_type)
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))
@@ -197,7 +194,7 @@ def clear_trakt_list_contents_data(list_type):
 
 
 def clear_trakt_list_data(list_type):
-    string = "trakt_%s" % list_type
+    string = "trakt_{}".format(list_type)
     try:
         dbcon = connect_database("trakt_db")
         dbcon.execute(DELETE, (string,))

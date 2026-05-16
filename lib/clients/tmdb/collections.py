@@ -1,8 +1,13 @@
+from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.collections_utils import (
     POPULAR_COLLECTIONS,
     TOP_RATED_COLLECTIONS,
 )
-from lib.clients.tmdb.base import BaseTmdbClient
+from lib.clients.tmdb.utils.utils import (
+    add_kodi_dir_item,
+    get_tmdb_movie_details,
+    tmdb_get,
+)
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     add_next_button,
@@ -10,24 +15,16 @@ from lib.utils.general.utils import (
     set_media_infoTag,
     set_pluging_category,
 )
-
 from lib.utils.kodi.utils import (
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
     make_list_item,
-    show_keyboard,
     notification,
+    show_keyboard,
     translation,
 )
-from lib.clients.tmdb.utils.utils import (
-    tmdb_get,
-    add_kodi_dir_item,
-    get_tmdb_movie_details,
-)
-
-
 
 
 class TmdbCollections(BaseTmdbClient):
@@ -51,7 +48,7 @@ class TmdbCollections(BaseTmdbClient):
             imdb_id = ""
             details = get_tmdb_movie_details(tmdb_id)
             if details:
-                imdb_id = getattr(details, "external_ids").get("imdb_id", "")
+                imdb_id = details.external_ids.get("imdb_id", "")
 
             add_kodi_dir_item(
                 list_item=movie_item,
@@ -110,15 +107,11 @@ class TmdbCollections(BaseTmdbClient):
             end_of_directory()
             return
 
-        execute_thread_pool(
-            current_page_collections, TmdbCollections.fetch_and_add_collection
-        )
+        execute_thread_pool(current_page_collections, TmdbCollections.fetch_and_add_collection)
 
         # Add "Next" button
         if end_index < len(POPULAR_COLLECTIONS):
-            add_next_button(
-                "handle_collection_query", submode="popular", page=page + 1, mode=mode
-            )
+            add_next_button("handle_collection_query", submode="popular", page=page + 1, mode=mode)
 
         end_of_directory()
         apply_section_view("view.movies", content_type="movies")
@@ -137,9 +130,7 @@ class TmdbCollections(BaseTmdbClient):
             end_of_directory()
             return
 
-        execute_thread_pool(
-            current_page_collections, TmdbCollections.fetch_and_add_collection
-        )
+        execute_thread_pool(current_page_collections, TmdbCollections.fetch_and_add_collection)
 
         # Add "Next" button
         if end_index < len(TOP_RATED_COLLECTIONS):
@@ -162,7 +153,7 @@ class TmdbCollections(BaseTmdbClient):
             return
 
         if page == 1:
-             PickleDatabase().set_key("collection_search_query", query)
+            PickleDatabase().set_key("collection_search_query", query)
 
         results = tmdb_get("search_collections", params={"query": query, "page": page})
         if not results or getattr(results, "total_results", 0) == 0:
@@ -170,9 +161,7 @@ class TmdbCollections(BaseTmdbClient):
             end_of_directory()
             return
 
-        execute_thread_pool(
-            getattr(results, "results"), TmdbCollections._add_collection_item
-        )
+        execute_thread_pool(results.results, TmdbCollections._add_collection_item)
 
         add_next_button(
             "handle_collection_query",
@@ -192,6 +181,6 @@ class TmdbCollections(BaseTmdbClient):
         Helper function to extract collection ID from movie details.
         Designed to be used with execute_thread_pool.
         """
-        movie_details = get_tmdb_movie_details(getattr(movie, "id"))
-        if movie_details and getattr(movie_details, "belongs_to_collection"):
+        movie_details = get_tmdb_movie_details(movie.id)
+        if movie_details and movie_details.belongs_to_collection:
             collection_ids_set.add(movie_details.get("belongs_to_collection").get("id"))

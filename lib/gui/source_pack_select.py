@@ -1,7 +1,8 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
+from lib.domain.torrent import TorrentStream
 from lib.gui.source_pack_window import SourcePackWindow
 from lib.utils.general.utils import DebridType
-from lib.domain.torrent import TorrentStream
 from lib.utils.player.utils import resolve_playback_url
 
 
@@ -14,9 +15,7 @@ class SourcePackSelect(SourcePackWindow):
         pack_info: Optional[Dict[str, Any]] = None,
         item_information: Optional[Dict[str, Any]] = None,
     ) -> None:
-        super().__init__(
-            xml_file, location, pack_info=pack_info, item_information=item_information
-        )
+        super().__init__(xml_file, location, pack_info=pack_info, item_information=item_information)
         self.source: Optional[TorrentStream] = source
         self.pack_info: Optional[Dict[str, Any]] = pack_info
         self.position: int = -1

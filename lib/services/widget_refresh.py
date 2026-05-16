@@ -1,4 +1,5 @@
 from time import time
+
 import xbmc
 
 from lib.utils.kodi.utils import (
@@ -30,7 +31,10 @@ class WidgetRefreshService:
                 if self.condition_check(player):
                     continue
                 if self.next_refresh < time():
-                    kodilog("WidgetRefresh Service - Refreshing widgets...", level=xbmc.LOGINFO)
+                    kodilog(
+                        "WidgetRefresh Service - Refreshing widgets...",
+                        level=xbmc.LOGINFO,
+                    )
                     self.refresh_widgets()
                     self.set_next_refresh(time())
             except Exception as e:

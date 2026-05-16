@@ -17,6 +17,7 @@ import os
 
 class TorfError(Exception):
     """Base exception for all exceptions raised by torf"""
+
     def __init__(self, msg, *posargs, **kwargs):
         super().__init__(msg)
         self.posargs = posargs
@@ -25,9 +26,10 @@ class TorfError(Exception):
 
 class URLError(TorfError):
     """Invalid URL"""
+
     def __init__(self, url):
         self._url = url
-        super().__init__(f'{url}: Invalid URL', url)
+        super().__init__(f"{url}: Invalid URL", url)
 
     @property
     def url(self):
@@ -37,16 +39,20 @@ class URLError(TorfError):
 
 class PieceSizeError(TorfError):
     """Invalid piece size"""
+
     def __init__(self, size, min=None, max=None):
         self._size = size
         self._min = min
         self._max = max
         if min is not None and max is not None:
-            super().__init__(f'Piece size must be between {min} and {max}: {size}',
-                             size, min=min, max=max)
+            super().__init__(
+                f"Piece size must be between {min} and {max}: {size}",
+                size,
+                min=min,
+                max=max,
+            )
         else:
-            super().__init__(f'Piece size must be divisible by 16 KiB: {size}',
-                             size)
+            super().__init__(f"Piece size must be divisible by 16 KiB: {size}", size)
 
     @property
     def size(self):
@@ -66,18 +72,20 @@ class PieceSizeError(TorfError):
 
 class MetainfoError(TorfError):
     """Invalid torrent metainfo"""
+
     def __init__(self, msg):
-        super().__init__(f'Invalid metainfo: {msg}', msg)
+        super().__init__(f"Invalid metainfo: {msg}", msg)
 
 
 class BdecodeError(TorfError):
     """Failed to decode bencoded byte sequence"""
+
     def __init__(self, filepath=None):
         self._filepath = filepath
         if filepath is None:
-            super().__init__('Invalid metainfo format')
+            super().__init__("Invalid metainfo format")
         else:
-            super().__init__(f'{filepath}: Invalid torrent file format', filepath)
+            super().__init__(f"{filepath}: Invalid torrent file format", filepath)
 
     @property
     def filepath(self):
@@ -87,13 +95,14 @@ class BdecodeError(TorfError):
 
 class MagnetError(TorfError):
     """Invalid magnet URI or value"""
+
     def __init__(self, uri, reason=None):
         self._uri = uri
         self._reason = reason
         if reason is not None:
-            super().__init__(f'{uri}: {reason}', uri, reason=reason)
+            super().__init__(f"{uri}: {reason}", uri, reason=reason)
         else:
-            super().__init__(f'{uri}: Invalid magnet URI', uri)
+            super().__init__(f"{uri}: Invalid magnet URI", uri)
 
     @property
     def uri(self):
@@ -108,9 +117,10 @@ class MagnetError(TorfError):
 
 class PathError(TorfError):
     """General invalid or unexpected path"""
+
     def __init__(self, path, msg):
         self._path = path
-        super().__init__(f'{path}: {msg}', path, msg)
+        super().__init__(f"{path}: {msg}", path, msg)
 
     @property
     def path(self):
@@ -120,10 +130,11 @@ class PathError(TorfError):
 
 class CommonPathError(TorfError):
     """Files don't share parent directory"""
+
     def __init__(self, filepaths):
         self._filepaths = filepaths
-        filepaths_str = ', '.join(str(fp) for fp in filepaths)
-        super().__init__(f'No common parent path: {filepaths_str}', filepaths)
+        filepaths_str = ", ".join(str(fp) for fp in filepaths)
+        super().__init__(f"No common parent path: {filepaths_str}", filepaths)
 
     @property
     def filepaths(self):
@@ -133,9 +144,10 @@ class CommonPathError(TorfError):
 
 class VerifyIsDirectoryError(TorfError):
     """Expected file but found directory"""
+
     def __init__(self, path):
         self._path = path
-        super().__init__(f'{path}: Is a directory', path)
+        super().__init__(f"{path}: Is a directory", path)
 
     @property
     def path(self):
@@ -145,9 +157,10 @@ class VerifyIsDirectoryError(TorfError):
 
 class VerifyNotDirectoryError(TorfError):
     """Expected (link to) directory, but found something else"""
+
     def __init__(self, path):
         self._path = path
-        super().__init__(f'{path}: Not a directory', path)
+        super().__init__(f"{path}: Not a directory", path)
 
     @property
     def path(self):
@@ -157,18 +170,29 @@ class VerifyNotDirectoryError(TorfError):
 
 class VerifyFileSizeError(TorfError):
     """Unexpected file size"""
+
     def __init__(self, filepath, actual_size, expected_size):
         self._filepath = filepath
         self._actual_size = actual_size
         self._expected_size = expected_size
         if actual_size > expected_size:
-            super().__init__(f'{filepath}: Too big: {actual_size} instead of {expected_size} bytes',
-                             filepath, actual_size=actual_size, expected_size=expected_size)
+            super().__init__(
+                f"{filepath}: Too big: {actual_size} instead of {expected_size} bytes",
+                filepath,
+                actual_size=actual_size,
+                expected_size=expected_size,
+            )
         elif actual_size < expected_size:
-            super().__init__(f'{filepath}: Too small: {actual_size} instead of {expected_size} bytes',
-                             filepath, actual_size=actual_size, expected_size=expected_size)
+            super().__init__(
+                f"{filepath}: Too small: {actual_size} instead of {expected_size} bytes",
+                filepath,
+                actual_size=actual_size,
+                expected_size=expected_size,
+            )
         else:
-            raise RuntimeError(f'Unjustified: actual_size={actual_size} == expected_size={expected_size}')
+            raise RuntimeError(
+                f"Unjustified: actual_size={actual_size} == expected_size={expected_size}"
+            )
 
     @property
     def filepath(self):
@@ -188,14 +212,15 @@ class VerifyFileSizeError(TorfError):
 
 class VerifyContentError(TorfError):
     """On-disk data does not match hashes in metainfo"""
+
     def __init__(self, filepath, piece_index, piece_size, file_sizes):
         self._filepath = filepath
         self._piece_index = piece_index
         self._piece_size = piece_size
-        msg = f'Corruption in piece {piece_index+1}'
+        msg = f"Corruption in piece {piece_index + 1}"
 
         if len(file_sizes) < 1:
-            raise RuntimeError('file_sizes argument is empty: {file_sizes!r}')
+            raise RuntimeError("file_sizes argument is empty: {file_sizes!r}")
         elif len(file_sizes) == 1:
             corrupt_files = (file_sizes[0][0],)
         else:
@@ -208,7 +233,7 @@ class VerifyContentError(TorfError):
 
             # Find the files that are covered by the corrupt piece
             cur_pos = 0
-            for filepath,filesize in file_sizes:
+            for filepath, filesize in file_sizes:
                 # `file` is possibly corrupt if:
                 # 1. The corrupt piece STARTS between the beginning and the end
                 #    of the file in the stream.
@@ -218,17 +243,20 @@ class VerifyContentError(TorfError):
                 #    and end of the corrupt piece (i.e. file fits in one piece).
                 file_i_beg = cur_pos
                 file_i_end = file_i_beg + filesize
-                if (file_i_beg <= err_i_beg < file_i_end or
-                    file_i_beg < err_i_end <= file_i_end or
-                    (file_i_beg >= err_i_beg and file_i_end < err_i_end)):
+                if (
+                    file_i_beg <= err_i_beg < file_i_end
+                    or file_i_beg < err_i_end <= file_i_end
+                    or (file_i_beg >= err_i_beg and file_i_end < err_i_end)
+                ):
                     corrupt_files.append(filepath)
                 cur_pos += filesize
 
             if len(corrupt_files) == 1:
-                msg += f' in {corrupt_files[0]}'
+                msg += f" in {corrupt_files[0]}"
             else:
-                msg += (', at least one of these files is corrupt: ' +
-                        ', '.join(str(f) for f in corrupt_files))
+                msg += ", at least one of these files is corrupt: " + ", ".join(
+                    str(f) for f in corrupt_files
+                )
 
         self._files = tuple(corrupt_files)
         super().__init__(msg, filepath, piece_index, piece_size, file_sizes)
@@ -256,14 +284,15 @@ class VerifyContentError(TorfError):
 
 class ReadError(TorfError):
     """Unreadable file or stream"""
+
     def __init__(self, errno, path=None):
         self._errno = errno
         self._path = path
-        msg = os.strerror(errno) if errno else 'Unable to read'
+        msg = os.strerror(errno) if errno else "Unable to read"
         if path is None:
-            super().__init__(f'{msg}', errno)
+            super().__init__(f"{msg}", errno)
         else:
-            super().__init__(f'{path}: {msg}', errno, path)
+            super().__init__(f"{path}: {msg}", errno, path)
 
     @property
     def path(self):
@@ -286,14 +315,15 @@ class MemoryError(TorfError, MemoryError):
 
 class WriteError(TorfError):
     """Unwritable file or stream"""
+
     def __init__(self, errno, path=None):
         self._errno = errno
         self._path = path
-        msg = os.strerror(errno) if errno else 'Unable to write'
+        msg = os.strerror(errno) if errno else "Unable to write"
         if path is None:
-            super().__init__(f'{msg}', path)
+            super().__init__(f"{msg}", path)
         else:
-            super().__init__(f'{path}: {msg}', errno, path)
+            super().__init__(f"{path}: {msg}", errno, path)
 
     @property
     def path(self):
@@ -308,10 +338,11 @@ class WriteError(TorfError):
 
 class ConnectionError(TorfError):
     """Unwritable file or stream"""
-    def __init__(self, url, msg='Failed'):
+
+    def __init__(self, url, msg="Failed"):
         self._url = url
         self._msg = str(msg)
-        super().__init__(f'{url}: {msg}', url, msg)
+        super().__init__(f"{url}: {msg}", url, msg)
 
     @property
     def url(self):

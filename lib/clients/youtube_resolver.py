@@ -8,7 +8,6 @@ import requests
 from lib.clients.tmdb.trailers import resolve_tmdb_trailer
 from lib.utils.kodi.utils import kodilog
 
-
 WATCH_URL = "https://www.youtube.com/watch"
 PLAYER_URL = "https://www.youtube.com/youtubei/v1/player"
 CACHE_TTL_SECONDS = 300
@@ -188,9 +187,8 @@ def _choose_better_video_format(best_fmt: Dict[str, object], candidate_fmt: Dict
 
     best_container_rank = _container_rank(best_fmt.get("mimeType"))
     candidate_container_rank = _container_rank(candidate_fmt.get("mimeType"))
-    if (
-        candidate_container_rank != best_container_rank
-        and _video_bitrate_near_tie(candidate_bitrate, best_bitrate)
+    if candidate_container_rank != best_container_rank and _video_bitrate_near_tie(
+        candidate_bitrate, best_bitrate
     ):
         return candidate_fmt if candidate_container_rank < best_container_rank else best_fmt
 
@@ -203,7 +201,9 @@ def _choose_better_video_format(best_fmt: Dict[str, object], candidate_fmt: Dict
     return candidate_fmt if _video_rank(candidate_fmt) > _video_rank(best_fmt) else best_fmt
 
 
-def _select_best_video_format(formats: List[Dict[str, object]]) -> Optional[Dict[str, object]]:
+def _select_best_video_format(
+    formats: List[Dict[str, object]],
+) -> Optional[Dict[str, object]]:
     if not formats:
         return None
 
@@ -300,9 +300,7 @@ def resolve_trailer_playback(
 
     watch_config = parse_watch_config(watch_response.text)
     if not watch_config:
-        kodilog(
-            f"Trailer/YouTube: missing watch config video_id={normalized_video_id!r}"
-        )
+        kodilog(f"Trailer/YouTube: missing watch config video_id={normalized_video_id!r}")
         return None
 
     for client in YOUTUBE_CLIENTS:

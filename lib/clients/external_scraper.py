@@ -8,7 +8,6 @@ from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import Indexer
 from lib.utils.kodi.utils import kodilog
 
-
 _BYTES_PER_GB = 1073741824
 
 
@@ -60,9 +59,7 @@ class ExternalScraperClient(BaseClient):
 
         lib_path = os.path.join(addon_path, "lib")
         if not os.path.isdir(lib_path):
-            kodilog(
-                f"ExternalScraper ({self.module_id}): lib dir not found at {lib_path}"
-            )
+            kodilog(f"ExternalScraper ({self.module_id}): lib dir not found at {lib_path}")
             return False
 
         if lib_path not in sys.path:
@@ -74,21 +71,17 @@ class ExternalScraperClient(BaseClient):
             self._sources_func = module.sources
             self._providers = self._sources_func(specified_folders=["torrents"])
             provider_count = len(self._providers) if self._providers else 0
-            kodilog(
-                f"ExternalScraper ({self.module_id}): loaded {provider_count} providers"
-            )
+            kodilog(f"ExternalScraper ({self.module_id}): loaded {provider_count} providers")
             return bool(self._providers)
         except Exception as exc:
-            kodilog(
-                f"ExternalScraper ({self.module_id}): failed to import providers: {exc}"
-            )
+            kodilog(f"ExternalScraper ({self.module_id}): failed to import providers: {exc}")
             return False
 
     def _resolve_addon_path(self) -> Optional[str]:
         """Locate the addon path via xbmcaddon or JSON-RPC."""
         # 1) xbmcaddon (fastest)
         try:
-            import xbmcaddon  # noqa: WPS433
+            import xbmcaddon
 
             addon = xbmcaddon.Addon(self.module_id)
             return addon.getAddonInfo("path")
@@ -97,7 +90,7 @@ class ExternalScraperClient(BaseClient):
 
         # 2) JSON-RPC fallback
         try:
-            import xbmc  # noqa: WPS433
+            import xbmc
 
             response = xbmc.executeJSONRPC(
                 json.dumps(
@@ -115,9 +108,7 @@ class ExternalScraperClient(BaseClient):
             data = json.loads(response)
             return data.get("result", {}).get("addon", {}).get("path")
         except Exception as exc:
-            kodilog(
-                f"ExternalScraper ({self.module_id}): JSON-RPC fallback failed: {exc}"
-            )
+            kodilog(f"ExternalScraper ({self.module_id}): JSON-RPC fallback failed: {exc}")
             return None
 
     # ------------------------------------------------------------------
@@ -143,9 +134,7 @@ class ExternalScraperClient(BaseClient):
             f"providers={len(self._providers) if self._providers else 0}"
         )
         if not self.initialized or not self._providers:
-            kodilog(
-                f"[ExternalScraper ({self.module_id})] not initialised, returning empty"
-            )
+            kodilog(f"[ExternalScraper ({self.module_id})] not initialised, returning empty")
             return []
 
         is_tv = mode == "tv" or media_type == "tv"
@@ -197,13 +186,10 @@ class ExternalScraperClient(BaseClient):
                         )
             except Exception as exc:
                 kodilog(
-                    f"ExternalScraper ({self.module_id}): "
-                    f"provider '{provider_name}' error: {exc}"
+                    f"ExternalScraper ({self.module_id}): provider '{provider_name}' error: {exc}"
                 )
 
-        kodilog(
-            f"[ExternalScraper ({self.module_id})] returning {len(all_results)} results"
-        )
+        kodilog(f"[ExternalScraper ({self.module_id})] returning {len(all_results)} results")
         return all_results
 
     # ------------------------------------------------------------------

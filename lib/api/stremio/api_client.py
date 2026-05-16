@@ -1,9 +1,11 @@
 from json import JSONDecodeError
-from requests.exceptions import RequestException, Timeout, TooManyRedirects
+
 from requests import Session
+from requests.exceptions import RequestException, Timeout, TooManyRedirects
+
 from lib.utils.general.utils import USER_AGENT_HEADER
-from lib.utils.kodi.utils import kodilog
 from lib.utils.kodi.settings import get_int_setting
+from lib.utils.kodi.utils import kodilog
 
 
 class Stremio:
@@ -17,9 +19,7 @@ class Stremio:
             if method == "GET":
                 resp = self.session.get(url, timeout=get_int_setting("stremio_timeout"))
             elif method == "POST":
-                resp = self.session.post(
-                    url, json=data, timeout=get_int_setting("stremio_timeout")
-                )
+                resp = self.session.post(url, json=data, timeout=get_int_setting("stremio_timeout"))
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 
@@ -32,9 +32,7 @@ class Stremio:
             try:
                 return resp.json()
             except JSONDecodeError:
-                kodilog(
-                    f"Failed to decode JSON response for URL: {url}. Response: {resp.text}"
-                )
+                kodilog(f"Failed to decode JSON response for URL: {url}. Response: {resp.text}")
                 raise
         except Timeout:
             kodilog(f"Request timed out for URL: {url}")
@@ -54,7 +52,6 @@ class Stremio:
 
     def login(self, email, password):
         """Login to Stremio account."""
-
         data = {
             "authKey": self.authKey,
             "email": email,
@@ -71,9 +68,7 @@ class Stremio:
         res = self._post("https://api.strem.io/api/dataExport", data)
         exportId = res.get("result", {}).get("exportId", None)
 
-        dataExport = self._get(
-            f"https://api.strem.io/data-export/{exportId}/export.json"
-        )
+        dataExport = self._get(f"https://api.strem.io/data-export/{exportId}/export.json")
         return dataExport
 
     def get_my_addons(self):

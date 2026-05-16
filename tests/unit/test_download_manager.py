@@ -1,10 +1,7 @@
 import threading
-import time
 from unittest.mock import MagicMock
 
-import pytest
-
-from lib.download_manager import DownloadManager, DownloadEntry
+from lib.download_manager import DownloadManager
 
 
 class TestDownloadManager:
@@ -114,8 +111,12 @@ class TestDownloadManager:
 
     def test_list_entries_returns_all(self):
         manager = DownloadManager()
-        manager.register(name="a.mp4", dest_path="/downloads/a.mp4", url="https://example.com/a.mp4")
-        manager.register(name="b.mp4", dest_path="/downloads/b.mp4", url="https://example.com/b.mp4")
+        manager.register(
+            name="a.mp4", dest_path="/downloads/a.mp4", url="https://example.com/a.mp4"
+        )
+        manager.register(
+            name="b.mp4", dest_path="/downloads/b.mp4", url="https://example.com/b.mp4"
+        )
 
         entries = manager.list_entries()
         assert len(entries) == 2
@@ -156,7 +157,9 @@ class TestDownloadManager:
 
     def test_clear_removes_all_entries(self):
         manager = DownloadManager()
-        manager.register(name="a.mp4", dest_path="/downloads/a.mp4", url="https://example.com/a.mp4")
+        manager.register(
+            name="a.mp4", dest_path="/downloads/a.mp4", url="https://example.com/a.mp4"
+        )
         manager.clear()
         assert manager.list_entries() == []
 

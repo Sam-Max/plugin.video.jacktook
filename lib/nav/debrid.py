@@ -1,6 +1,6 @@
+from datetime import timedelta
 from threading import Thread
 from typing import Any, Dict, List
-from datetime import timedelta
 
 from xbmcplugin import addDirectoryItem
 
@@ -13,6 +13,7 @@ from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.clients.debrid.torbox import TorboxHelper
+from lib.db.cached import cache
 from lib.services.debrid.auth import (
     run_alldebrid_auth,
     run_debrider_auth,
@@ -21,7 +22,6 @@ from lib.services.debrid.auth import (
     run_torbox_auth,
 )
 from lib.services.debrid.download import run_realdebrid_download
-from lib.db.cached import cache
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -37,7 +37,6 @@ from lib.utils.kodi.utils import (
     apply_section_view,
     build_url,
     end_of_directory,
-    execute_builtin,
     finish_action,
     get_setting,
     notification,
@@ -120,17 +119,13 @@ def cloud_details(params):
 
 def cloud(params):
     set_pluging_category(translation(90014))
-    activated_debrids = [
-        debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)
-    ]
+    activated_debrids = [debrid for debrid in DebridType.values() if check_debrid_enabled(debrid)]
     for debrid in activated_debrids:
         torrent_li = build_list_item(debrid, "download.png")
         actions = DEBRID_CLOUD_ACTIONS.get(debrid, {})
         info_action = actions.get("info")
         if info_action:
-            torrent_li.addContextMenuItems(
-                [("Account Info", action_url_run(info_action))]
-            )
+            torrent_li.addContextMenuItems([("Account Info", action_url_run(info_action))])
         addDirectoryItem(
             ADDON_HANDLE,
             build_url("cloud_details", debrid_name=debrid),
@@ -192,18 +187,14 @@ def get_rd_downloads(params):
         rd_client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
         raw_downloads = rd_client.get_user_downloads_list(page=page)
         cache.set(cache_key, raw_downloads, DEBRID_CLOUD_CACHE_EXPIRY)
-    downloads: List[Dict[str, Any]] = [
-        item for item in raw_downloads if isinstance(item, dict)
-    ]
+    downloads: List[Dict[str, Any]] = [item for item in raw_downloads if isinstance(item, dict)]
 
     sorted_downloads = sorted(
         downloads, key=lambda item: str(item.get("filename", "")), reverse=False
     )
     for download in sorted_downloads:
         filename = download.get("filename", "")
-        torrent_li = build_list_item(
-            f"{formatted_type} - {filename}", "download.png"
-        )
+        torrent_li = build_list_item(f"{formatted_type} - {filename}", "download.png")
         torrent_li.setProperty("IsPlayable", "true")
         direct_url = download.get("download", "")
         context_menu = [
@@ -253,9 +244,7 @@ def get_tb_downloads(params):
     if raw_downloads is None:
         raw_downloads = TorboxHelper().get_cloud_downloads()
         cache.set(cache_key, raw_downloads, DEBRID_CLOUD_CACHE_EXPIRY)
-    downloads: List[Dict[str, Any]] = [
-        item for item in raw_downloads if isinstance(item, dict)
-    ]
+    downloads: List[Dict[str, Any]] = [item for item in raw_downloads if isinstance(item, dict)]
 
     def _torbox_sort_key(item: Dict[str, Any]):
         return (
@@ -270,14 +259,14 @@ def get_tb_downloads(params):
     )
 
     notification(
-        f"Torbox Cloud: {len(sorted_downloads)} playable items found", time=2500, sound=False
+        f"Torbox Cloud: {len(sorted_downloads)} playable items found",
+        time=2500,
+        sound=False,
     ) if params.get("debug") else None
 
     for download in sorted_downloads:
         name = download.get("name", "")
-        torrent_li = build_list_item(
-            f"{formatted_type} - {name}", "download.png"
-        )
+        torrent_li = build_list_item(f"{formatted_type} - {name}", "download.png")
         torrent_li.setProperty("IsPlayable", "true")
         context_menu = [
             (

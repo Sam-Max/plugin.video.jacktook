@@ -1,6 +1,7 @@
 from lib.gui.base_window import BaseWindow
 from lib.utils.kodi.utils import translation
 
+
 class ResumeDialog(BaseWindow):
     def __init__(self, xml_file, xml_location, **kwargs):
         super().__init__(xml_file, xml_location)

@@ -1,20 +1,31 @@
-# -*- coding: utf-8 -*-
 import os
 
-from xbmcgui import ListItem
-from xbmcplugin import addDirectoryItem, setContent
+from xbmcplugin import setContent
 
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
-from lib.jacktook.utils import kodilog
-from lib.utils.general.utils import remove_from_library, set_media_infoTag, set_pluging_category
-from lib.utils.kodi.utils import ADDON_HANDLE, ADDON_PATH, add_directory_items_batch, apply_section_view, build_url, end_of_directory, make_list_item, notification, translation
+from lib.utils.general.utils import (
+    remove_from_library,
+    set_media_infoTag,
+    set_pluging_category,
+)
+from lib.utils.kodi.utils import (
+    ADDON_HANDLE,
+    ADDON_PATH,
+    add_directory_items_batch,
+    apply_section_view,
+    build_url,
+    end_of_directory,
+    make_list_item,
+    notification,
+    translation,
+)
 from lib.utils.views.last_titles import parse_time
 
 
 def _library_cache_key(mode):
-    return "library_view|{}".format(mode)
+    return f"library_view|{mode}"
 
 
 def _is_stremio_library_item(data):
@@ -166,9 +177,7 @@ def show_library_items(mode="tv"):
         list_item.addContextMenuItems(_build_library_context_menu(title))
 
         # Keep a simple local fallback icon for entries without artwork.
-        list_item.setArt(
-            {"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")}
-        )
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "trending.png")})
 
         item_url = _get_library_item_url(entry, mode)
         is_folder = mode == "tv"

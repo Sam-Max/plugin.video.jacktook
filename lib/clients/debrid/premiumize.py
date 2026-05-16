@@ -1,11 +1,12 @@
 import copy
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from lib.api.debrid.premiumize import Premiumize
 from lib.clients.debrid.common import (
     ensure_direct_playable_file_for_provider,
     get_file_name,
 )
-from lib.utils.kodi.utils import get_setting, kodilog, notification
+from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
     IndexerType,
@@ -16,7 +17,7 @@ from lib.utils.general.utils import (
     set_cached,
     supported_video_extensions,
 )
-from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.utils import get_setting, kodilog, notification
 
 
 class PremiumizeHelper:
@@ -59,9 +60,15 @@ class PremiumizeHelper:
             error_msg = response_data.get("message", "Unknown error")
             kodilog(f"Failed to get link from Premiumize: {error_msg}")
             if "not premium" in error_msg.lower():
-                notification("Premiumize: Account does not have an active premium subscription", "Premiumize Error")
+                notification(
+                    "Premiumize: Account does not have an active premium subscription",
+                    "Premiumize Error",
+                )
             elif "not logged in" in error_msg.lower():
-                notification("Premiumize: Not logged in. Please authorize the addon.", "Premiumize Error")
+                notification(
+                    "Premiumize: Not logged in. Please authorize the addon.",
+                    "Premiumize Error",
+                )
             else:
                 notification(f"Premiumize: {error_msg}", "Premiumize Error")
             return None
@@ -71,9 +78,7 @@ class PremiumizeHelper:
             if data["tv_data"]:
                 season = data["tv_data"].get("season", "")
                 episode = data["tv_data"].get("episode", "")
-                content = filter_debrid_episode(
-                    content, episode_num=episode, season_num=season
-                )
+                content = filter_debrid_episode(content, episode_num=episode, season_num=season)
                 if not content:
                     return
                 data["url"] = content[0].get("stream_link")
@@ -82,9 +87,7 @@ class PremiumizeHelper:
                 data["is_pack"] = True
                 return data
         else:
-            ensure_direct_playable_file_for_provider(
-                get_file_name(content[0]), "Premiumize"
-            )
+            ensure_direct_playable_file_for_provider(get_file_name(content[0]), "Premiumize")
             data["url"] = content[0].get("stream_link")
             return data
 
@@ -102,9 +105,15 @@ class PremiumizeHelper:
             error_msg = response_data.get("message", "Unknown error")
             kodilog(f"Failed to get pack info from Premiumize: {error_msg}")
             if "not premium" in error_msg.lower():
-                notification("Premiumize: Account does not have an active premium subscription", "Premiumize Error")
+                notification(
+                    "Premiumize: Account does not have an active premium subscription",
+                    "Premiumize Error",
+                )
             elif "not logged in" in error_msg.lower():
-                notification("Premiumize: Not logged in. Please authorize the addon.", "Premiumize Error")
+                notification(
+                    "Premiumize: Not logged in. Please authorize the addon.",
+                    "Premiumize Error",
+                )
             else:
                 notification(f"Premiumize: {error_msg}", "Premiumize Error")
             return None

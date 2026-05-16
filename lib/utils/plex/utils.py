@@ -1,12 +1,13 @@
+from xbmcgui import Dialog
+
 from lib.api.plex.media_server import check_server_connection, get_servers
 from lib.api.plex.plex import PlexApi
 from lib.utils.kodi.utils import get_setting, kodilog, set_setting
-from xbmcgui import Dialog
-
 
 plex = PlexApi()
 
 server_config = {"discoveryUrl": [], "streamingUrl": []}
+
 
 def plex_login():
     success = plex.login()
@@ -14,7 +15,7 @@ def plex_login():
         user = plex.get_plex_user()
         if user:
             set_setting("plex_user", user.username)
-        
+
 
 def validate_server():
     servers = get_servers("https://plex.tv/api/v2", get_setting("plex_token"))
@@ -54,6 +55,7 @@ def streaming_test(urls, access_token):
         if success:
             set_setting("plex_streaming_url", url)
             break
+
 
 def plex_logout():
     plex.logout()

@@ -1,6 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock
-from datetime import timedelta
+from unittest.mock import MagicMock, patch
 
 
 class TestTmdbEnglishFallback:
@@ -28,7 +26,9 @@ class TestTmdbEnglishFallback:
         assert metadata["title"] == "Titlu Românesc"
         assert metadata["overview"] == "Descriere în română"
         # Should NOT call details endpoint for fallback
-        detail_calls = [c for c in mock_tmdb_get.call_args_list if c[0][0] in ("movie_details", "tv_details")]
+        detail_calls = [
+            c for c in mock_tmdb_get.call_args_list if c[0][0] in ("movie_details", "tv_details")
+        ]
         assert len(detail_calls) == 0
 
     @patch("lib.clients.tmdb.tmdb.TMDb")

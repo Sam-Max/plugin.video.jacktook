@@ -1,4 +1,10 @@
+import datetime
+
+import requests
+from requests.adapters import HTTPAdapter
+
 from lib.api.debrid.base import DebridClient, ProviderException
+from lib.services.debrid.auth import run_torbox_auth
 from lib.utils.kodi.utils import (
     dialog_ok,
     kodilog,
@@ -6,10 +12,6 @@ from lib.utils.kodi.utils import (
     set_setting,
     translation,
 )
-import datetime
-import requests
-from requests.adapters import HTTPAdapter
-from lib.services.debrid.auth import run_torbox_auth
 
 
 class Torbox(DebridClient):
@@ -108,7 +110,11 @@ class Torbox(DebridClient):
         response = self.session.request(
             method="POST",
             url=f"{self.BASE_URL}/torrents/createtorrent",
-            data={"seed": 3, "allow_zip": "false", "name": torrent_name or "torrent.torrent"},
+            data={
+                "seed": 3,
+                "allow_zip": "false",
+                "name": torrent_name or "torrent.torrent",
+            },
             files={
                 "file": (
                     torrent_name or "torrent.torrent",

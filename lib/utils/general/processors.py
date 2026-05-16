@@ -1,10 +1,10 @@
-from enum import Enum
 import re
-from typing import List, Dict, Optional
+from enum import Enum
+from typing import Dict, List, Optional
 
+from lib.clients.base import TorrentStream
 from lib.utils.kodi.utils import get_setting, kodilog
 from lib.utils.parsers.title_parser import extract_codec_hdr
-from lib.clients.base import TorrentStream
 
 
 class Quality(Enum):
@@ -167,11 +167,7 @@ class PreProcessBuilder(BaseProcessBuilder):
 
     def filter_season_packs(self, season_num: int) -> List[TorrentStream]:
         season_patterns = self.get_season_pack_patterns(season_num)
-        return [
-            res
-            for res in self.results
-            if re.search("|".join(season_patterns), res.title)
-        ]
+        return [res for res in self.results if re.search("|".join(season_patterns), res.title)]
 
     def filter_sources(
         self, episode_name: str, episode_num: int, season_num: int
@@ -199,17 +195,13 @@ class PreProcessBuilder(BaseProcessBuilder):
             patterns.append(re.escape(episode_name))
 
         episode_results = [
-            res
-            for res in self.results
-            if re.search("|".join(patterns), res.title, re.IGNORECASE)
+            res for res in self.results if re.search("|".join(patterns), res.title, re.IGNORECASE)
         ]
         self.results = season_pack_results + episode_results
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":
-        quality_buckets: Dict[Quality, List[TorrentStream]] = {
-            quality: [] for quality in Quality
-        }
+        quality_buckets: Dict[Quality, List[TorrentStream]] = {quality: [] for quality in Quality}
         for res in self.results:
             title = res.title
             matched_quality = False

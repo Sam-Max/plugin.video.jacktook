@@ -1,9 +1,10 @@
 from datetime import timedelta
+
+import xbmcgui
+
 from lib.db.cached import cache
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import translation
-import xbmcgui
-
 
 items = [
     "YTS",
@@ -54,9 +55,7 @@ def providers_selection(identifier="torrentio_providers"):
             providers,
             timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
         )
-        xbmcgui.Dialog().ok(
-            translation(90573), translation(90574) % ",".join(providers)
-        )
+        xbmcgui.Dialog().ok(translation(90573), translation(90574) % ",".join(providers))
     else:
         xbmcgui.Dialog().notification(
             translation(90575), translation(90576), xbmcgui.NOTIFICATION_INFO

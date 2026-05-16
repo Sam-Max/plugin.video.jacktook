@@ -1,6 +1,5 @@
 from lib.api.trakt.base_cache import BaseCache, get_timestamp
 
-
 GET_ALL = "SELECT id FROM maincache"
 DELETE_ALL = "DELETE FROM maincache"
 LIKE_SELECT = "SELECT id from maincache where id LIKE %s"
@@ -26,8 +25,7 @@ class MainCache(BaseCache):
     def delete_all_folderscrapers(self):
         dbcon = self.manual_connect("maincache_db")
         remove_list = [
-            str(i[0])
-            for i in dbcon.execute(LIKE_SELECT % "'FOLDERSCRAPER_%'").fetchall()
+            str(i[0]) for i in dbcon.execute(LIKE_SELECT % "'FOLDERSCRAPER_%'").fetchall()
         ]
         if not remove_list:
             return True

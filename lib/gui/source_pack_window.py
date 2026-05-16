@@ -1,12 +1,14 @@
 import abc
+
 import xbmcgui
+
 from lib.gui.base_window import BaseWindow
 
 
 class SourcePackWindow(BaseWindow):
     def __init__(self, xml_file, location, source=None, pack_info=None, item_information=None):
         super().__init__(xml_file, location, item_information=item_information)
-        self.pack_info = pack_info or {"files": []}  
+        self.pack_info = pack_info or {"files": []}
         self.source = source or type("EmptySource", (), {"type": "", "quality": ""})()
         self.display_list = None
 

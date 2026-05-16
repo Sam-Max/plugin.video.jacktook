@@ -1,15 +1,16 @@
 import re
-from typing import List, Dict, Any, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
+
+from requests.utils import urlparse
 
 from lib.clients.base import BaseClient, TorrentStream
-from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, translation
 from lib.utils.general.utils import (
     MEDIA_FUSION_DEFAULT_KEY,
     USER_AGENT_HEADER,
     get_cached,
     set_cached,
 )
-from requests.utils import urlparse
+from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, translation
 
 
 class MediaFusion(BaseClient):
@@ -31,9 +32,7 @@ class MediaFusion(BaseClient):
             }
             path = self.session.post(self.encryption_url, json=config_json, timeout=4.0)
             path = path.json()["encrypted_str"]
-            api_key = (
-                path.replace(self.host, "").replace("manifest.json", "").strip("/")
-            )
+            api_key = path.replace(self.host, "").replace("manifest.json", "").strip("/")
             set_cached(data=api_key, path="md.rd.key")
             return api_key
         else:
@@ -69,13 +68,13 @@ class MediaFusion(BaseClient):
             else:
                 self.handle_exception(translation(30233))
                 return None
-            
+
             res = self.session.get(url, headers=USER_AGENT_HEADER, timeout=10)
             if res.status_code != 200:
                 return
             return self.parse_response(res.json())
         except Exception as e:
-            self.handle_exception(f"{translation(30233)}: {str(e)}")
+            self.handle_exception(f"{translation(30233)}: {e!s}")
 
     def parse_response(self, res: Dict[str, Any]) -> List[TorrentStream]:
         results = []

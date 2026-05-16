@@ -1,5 +1,6 @@
 import os
 import pickle
+
 import xbmcvfs
 
 from lib.jacktook.utils import kodilog
@@ -15,9 +16,7 @@ class PickleDatabase:
             "jt:lib": {},
         }
 
-        data_dir = xbmcvfs.translatePath(
-            os.path.join("special://profile/addon_data/", ADDON_ID)
-        )
+        data_dir = xbmcvfs.translatePath(os.path.join("special://profile/addon_data/", ADDON_ID))
         self._database_path = os.path.join(data_dir, "database.pickle")
         xbmcvfs.mkdirs(data_dir)
 

@@ -1,5 +1,6 @@
 from lib.api.tmdbv3api.tmdb import TMDb
 
+
 class Authentication(TMDb):
     _urls = {
         "create_request_token": "/authentication/token/new",
@@ -32,7 +33,7 @@ class Authentication(TMDb):
         response = self._request_obj(
             self._urls["create_session"],
             method="POST",
-            json={"request_token": self.request_token}
+            json={"request_token": self.request_token},
         )
         self.session_id = response.session_id
 
@@ -47,7 +48,7 @@ class Authentication(TMDb):
                 "username": self.username,
                 "password": self.password,
                 "request_token": self.request_token,
-            }
+            },
         )
 
     def delete_session(self):
@@ -58,6 +59,6 @@ class Authentication(TMDb):
             self._request_obj(
                 self._urls["delete_session"],
                 method="DELETE",
-                json={"session_id": self.session_id}
+                json={"session_id": self.session_id},
             )
             self.session_id = ""

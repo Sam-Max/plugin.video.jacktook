@@ -1,4 +1,5 @@
 import re
+
 from lib.clients.base import BaseClient
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import translation
@@ -20,7 +21,7 @@ class Peerflix(BaseClient):
                 return
             return self.parse_response(res)
         except Exception as e:
-            self.handle_exception(f"{translation(30234)}: {str(e)}")
+            self.handle_exception(f"{translation(30234)}: {e!s}")
 
     def parse_response(self, res):
         res = res.json()
@@ -33,7 +34,7 @@ class Peerflix(BaseClient):
                     "indexer": "Peerflix",
                     "guid": item["infoHash"],
                     "infoHash": item["infoHash"],
-                    "size":item["sizebytes"] or 0,
+                    "size": item["sizebytes"] or 0,
                     "seeders": item.get("seed", 0) or 0,
                     "languages": [item["language"]],
                     "fullLanguages": [item["language"]],

@@ -1,16 +1,20 @@
 import abc
-from copy import deepcopy
 import hashlib
 import json
+from copy import deepcopy
 from typing import Any, Dict, Tuple
+
+import xbmcgui
+
 from lib.domain.torrent import TorrentStream
-from lib.utils.debrid.debrid_utils import get_magnet_from_uri, _is_torrent_ready_in_debrid
-from lib.utils.player.utils import resolve_playback_url
+from lib.utils.debrid.debrid_utils import (
+    _is_torrent_ready_in_debrid,
+    get_magnet_from_uri,
+)
 from lib.utils.general.utils import Indexer, IndexerType, truncate_text
 from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import ADDON, kodilog, translation
-import xbmcgui
-
+from lib.utils.player.utils import resolve_playback_url
 
 ACTION_PREVIOUS_MENU = 10
 ACTION_PLAYER_STOP = 13
@@ -65,9 +69,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         cache_hash = hashlib.sha1(cache_key.encode("utf-8")).hexdigest()
         return f"jacktook.focus.{cache_hash}"
 
-    def set_default_focus(
-        self, control_list=None, control_id=None, control_list_reset=False
-    ):
+    def set_default_focus(self, control_list=None, control_id=None, control_list_reset=False):
         try:
             # Retrieve cached focus if available
             control_id, item_id = self.get_cached_focus()
@@ -100,9 +102,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             raise ValueError(f"Control with Id {control_id} does not exist")
 
         if not isinstance(control, xbmcgui.ControlList):
-            raise AttributeError(
-                f"Control with Id {control_id} should be of type ControlList"
-            )
+            raise AttributeError(f"Control with Id {control_id} should be of type ControlList")
         return control
 
     def add_item_information_to_window(self, item_information):
@@ -119,9 +119,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
     def getControlProgress(self, control_id):
         control = self.getControl(control_id)
         if not isinstance(control, xbmcgui.ControlProgress):
-            raise AttributeError(
-                f"Control with Id {control_id} should be of type ControlProgress"
-            )
+            raise AttributeError(f"Control with Id {control_id} should be of type ControlProgress")
 
         return control
 
@@ -140,26 +138,23 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
 
     def _ensure_playback_info(self, source: TorrentStream):
         url, magnet, is_torrent = self._extract_source_details(source)
-        
+
         if source.addedToDebrid and source.debridType and source.infoHash:
             is_ready = _is_torrent_ready_in_debrid(source.debridType, source.infoHash)
             if not is_ready:
                 dialog = xbmcgui.Dialog()
-                message = (
-                    f"{translation(90696) % source.debridType}\n\n"
-                    f"{translation(90697)}"
-                )
+                message = f"{translation(90696) % source.debridType}\n\n{translation(90697)}"
                 choice = dialog.yesno(
                     translation(90695),
                     message,
                     yeslabel=translation(90698),
-                    nolabel=translation(90699)
+                    nolabel=translation(90699),
                 )
                 if not choice:
                     return {}
                 source.addedToDebrid = False
                 source.debridType = ""
-        
+
         source_data = self.prepare_source_data(
             source=source,
             url=url,
@@ -193,22 +188,19 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         if guid.startswith("magnet:?"):
             magnet = guid
         # Handle Burst indexer
-        elif indexer == Indexer.BURST:
-            url = guid
-        # Prefer .torrent in guid or url
-        elif guid.endswith(".torrent"):
+        elif indexer == Indexer.BURST or guid.endswith(".torrent"):
             url = guid
         elif url.endswith(".torrent"):
             pass
 
-        # Try to extract magnet from url 
+        # Try to extract magnet from url
         if url.startswith("http") and not url.endswith(".torrent"):
             magnet_candidate, _, torrent_url = get_magnet_from_uri(url)
             if torrent_url:
                 url = torrent_url
             elif magnet_candidate:
                 magnet = magnet_candidate
-                
+
         # Try to extract magnet from guid if it's a details page
         elif not magnet and guid.startswith("http"):
             magnet_candidate, _, torrent_url = get_magnet_from_uri(guid)
@@ -231,12 +223,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             used_infohash_fallback = True
 
         kodilog(
-            "Source extraction output: url={!r}, magnet={!r}, is_torrent={}, used_infohash_fallback={}".format(
-                summarize_locator_for_log(url),
-                summarize_locator_for_log(magnet),
-                is_torrent,
-                used_infohash_fallback,
-            )
+            f"Source extraction output: url={summarize_locator_for_log(url)!r}, magnet={summarize_locator_for_log(magnet)!r}, is_torrent={is_torrent}, used_infohash_fallback={used_infohash_fallback}"
         )
 
         return url, magnet, is_torrent
@@ -257,7 +244,9 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "url": url,
             "magnet": magnet,
             "info_hash": source.infoHash,
-            "title": self.item_information.get("title") or self.item_information.get("query") or source.title,
+            "title": self.item_information.get("title")
+            or self.item_information.get("query")
+            or source.title,
             "is_torrent": is_torrent,
             "is_pack": pack_select,
             "mode": self.item_information.get("mode"),

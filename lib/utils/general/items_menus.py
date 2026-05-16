@@ -1,52 +1,243 @@
-from lib.utils.kodi.utils import translation, get_setting
+from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
 
-
 trakt_tv_library_items = [
-    {"name": translation(90035), "mode": "tv", "api": "trakt", "query": "trakt_watchlist", "icon": "trakt.png"},
-    {"name": translation(90294), "mode": "tv", "api": "trakt", "query": "trakt_collection", "icon": "trakt.png"},
-    {"name": translation(90295), "mode": "tv", "api": "trakt", "query": "trakt_favorites", "icon": "trakt.png"},
-    {"name": translation(90296), "mode": "tv", "api": "trakt", "query": "trakt_up_next", "icon": "trakt.png"},
-    {"name": translation(90034), "mode": "tv", "api": "trakt", "query": "trakt_watched_history", "icon": "trakt.png"},
-    {"name": translation(90297), "mode": "tv", "api": "trakt", "query": "trakt_my_lists", "icon": "trakt.png"},
-    {"name": translation(90298), "mode": "tv", "api": "trakt", "query": "trakt_liked_lists", "icon": "trakt.png"},
-    {"name": translation(90076), "mode": "tv", "api": "trakt", "query": "trakt_search_lists", "icon": "trakt.png"},
-    {"name": translation(30916), "mode": "tv", "api": "trakt", "query": "trakt_account_info", "icon": "trakt.png"},
+    {
+        "name": translation(90035),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_watchlist",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90294),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_collection",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90295),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_favorites",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90296),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_up_next",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90034),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_watched_history",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90297),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_my_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90298),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_liked_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90076),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_search_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(30916),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_account_info",
+        "icon": "trakt.png",
+    },
 ]
 
 
 trakt_tv_discovery_items = [
-    {"name": translation(90028), "mode": "tv", "api": "trakt", "query": "trakt_trending", "icon": "trakt.png"},
-    {"name": translation(90029), "mode": "tv", "api": "trakt", "query": "trakt_watched", "icon": "trakt.png"},
-    {"name": translation(90030), "mode": "tv", "api": "trakt", "query": "trakt_favorited", "icon": "trakt.png"},
-    {"name": translation(90033), "mode": "tv", "api": "trakt", "query": "trakt_recommendations", "icon": "trakt.png"},
-    {"name": translation(90032), "mode": "tv", "api": "trakt", "query": "trakt_trending_lists", "icon": "trakt.png"},
-    {"name": translation(90031), "mode": "tv", "api": "trakt", "query": "trakt_popular_lists", "icon": "trakt.png"},
-    {"name": translation(30896), "mode": "tv", "api": "trakt", "query": "trakt_calendar", "icon": "trakt.png"},
+    {
+        "name": translation(90028),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_trending",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90029),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_watched",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90030),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_favorited",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90033),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_recommendations",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90032),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_trending_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90031),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_popular_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(30896),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_calendar",
+        "icon": "trakt.png",
+    },
 ]
 
 
 trakt_movie_library_items = [
-    {"name": translation(90035), "mode": "movies", "api": "trakt", "query": "trakt_watchlist", "icon": "trakt.png"},
-    {"name": translation(90294), "mode": "movies", "api": "trakt", "query": "trakt_collection", "icon": "trakt.png"},
-    {"name": translation(90295), "mode": "movies", "api": "trakt", "query": "trakt_favorites", "icon": "trakt.png"},
-    {"name": translation(90200), "mode": "movies", "api": "trakt", "query": "trakt_movies_progress", "icon": "trakt.png"},
-    {"name": translation(90034), "mode": "movies", "api": "trakt", "query": "trakt_watched_history", "icon": "trakt.png"},
-    {"name": translation(90297), "mode": "movies", "api": "trakt", "query": "trakt_my_lists", "icon": "trakt.png"},
-    {"name": translation(90298), "mode": "movies", "api": "trakt", "query": "trakt_liked_lists", "icon": "trakt.png"},
-    {"name": translation(90076), "mode": "movies", "api": "trakt", "query": "trakt_search_lists", "icon": "trakt.png"},
-    {"name": translation(30916), "mode": "movies", "api": "trakt", "query": "trakt_account_info", "icon": "trakt.png"},
+    {
+        "name": translation(90035),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_watchlist",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90294),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_collection",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90295),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_favorites",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90200),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_movies_progress",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90034),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_watched_history",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90297),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_my_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90298),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_liked_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90076),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_search_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(30916),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_account_info",
+        "icon": "trakt.png",
+    },
 ]
 
 
 trakt_movie_discovery_items = [
-    {"name": translation(90028), "mode": "movies", "api": "trakt", "query": "trakt_trending", "icon": "trakt.png"},
-    {"name": translation(90036), "mode": "movies", "api": "trakt", "query": "trakt_top10", "icon": "trakt.png"},
-    {"name": translation(90029), "mode": "movies", "api": "trakt", "query": "trakt_watched", "icon": "trakt.png"},
-    {"name": translation(90030), "mode": "movies", "api": "trakt", "query": "trakt_favorited", "icon": "trakt.png"},
-    {"name": translation(90033), "mode": "movies", "api": "trakt", "query": "trakt_recommendations", "icon": "trakt.png"},
-    {"name": translation(90032), "mode": "movies", "api": "trakt", "query": "trakt_trending_lists", "icon": "trakt.png"},
-    {"name": translation(90031), "mode": "movies", "api": "trakt", "query": "trakt_popular_lists", "icon": "trakt.png"},
+    {
+        "name": translation(90028),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_trending",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90036),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_top10",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90029),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_watched",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90030),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_favorited",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90033),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_recommendations",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90032),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_trending_lists",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(90031),
+        "mode": "movies",
+        "api": "trakt",
+        "query": "trakt_popular_lists",
+        "icon": "trakt.png",
+    },
 ]
 
 
@@ -344,17 +535,13 @@ library_menu_items = [
         "name": 90202,
         "icon": "tv.png",
         "action": "library_shows",
-        "context_menu": [
-            {"label": 90690, "action": "library_shows", "params": {"clear": 1}}
-        ],
+        "context_menu": [{"label": 90690, "action": "library_shows", "params": {"clear": 1}}],
     },  # My Shows
     {
         "name": 90203,
         "icon": "movies.png",
         "action": "library_movies",
-        "context_menu": [
-            {"label": 90690, "action": "library_movies", "params": {"clear": 1}}
-        ],
+        "context_menu": [{"label": 90690, "action": "library_movies", "params": {"clear": 1}}],
     },  # My Movies
     {
         "name": 90021,
