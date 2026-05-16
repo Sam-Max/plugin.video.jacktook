@@ -22,6 +22,7 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     finish_action,
     kodi_play_media,
+    kodilog,
     make_list_item,
     notification,
     show_keyboard,

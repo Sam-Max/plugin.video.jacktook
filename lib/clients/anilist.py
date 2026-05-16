@@ -1,5 +1,7 @@
 import requests
 
+from lib.utils.kodi.utils import get_setting
+
 
 class AniList:
     def __init__(self, client_id, client_secret):

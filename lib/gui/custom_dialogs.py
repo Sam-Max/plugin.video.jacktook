@@ -149,69 +149,69 @@ def run_next_dialog(params):
             if window is not None:
                 del window
 
-            if action == "next_episode":
-                xbmc.log(
-                    "[JACKTOOK] Next Episode triggered from dialog.",
-                    xbmc.LOGINFO,
-                )
-                player = xbmc.Player()
-                if not player.isPlaying():
+        if action == "next_episode":
+            xbmc.log(
+                "[JACKTOOK] Next Episode triggered from dialog.",
+                xbmc.LOGINFO,
+            )
+            player = xbmc.Player()
+            if not player.isPlaying():
+                return
+
+            # Wait for window animation
+            xbmc.sleep(600)
+
+            if not player.isPlaying():
+                return
+
+            # Extract episode info and build next episode URL
+            item_info = json.loads(params["item_info"])
+            tv_data = item_info.get("tv_data", {})
+            current_episode = tv_data.get("episode")
+            season = tv_data.get("season")
+
+            if current_episode is None or season is None:
+                return
+
+            next_episode = current_episode + 1
+
+            # Check autoscrape cache for fast path
+            ids = item_info.get("ids", {})
+            id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
+            if id_value is not None:
+                from lib.utils.player.utils import get_autoscrape_cache_key
+
+                cache_key = get_autoscrape_cache_key(id_value, season, next_episode)
+                cached_data = cache.get(cache_key)
+                if cached_data:
+                    PLAYLIST.clear()
+                    jack_player = JacktookPLayer()
+                    jack_player.run(data=cached_data)
+                    del jack_player
                     return
 
-                # Wait for window animation
-                xbmc.sleep(600)
+            next_tv_data = {
+                "episode": next_episode,
+                "season": season,
+            }
 
-                if not player.isPlaying():
-                    return
+            next_url = build_url(
+                "search",
+                mode=item_info.get("mode"),
+                query=item_info.get("title"),
+                ids=ids,
+                tv_data=next_tv_data,
+                rescrape=True,
+            )
 
-                # Extract episode info and build next episode URL
-                item_info = json.loads(params["item_info"])
-                tv_data = item_info.get("tv_data", {})
-                current_episode = tv_data.get("episode")
-                season = tv_data.get("season")
+            # Clear playlist to prevent "out of range" crash when video ends
+            PLAYLIST.clear()
 
-                if current_episode is None or season is None:
-                    return
+            # Play directly
+            from xbmcgui import ListItem
 
-                next_episode = current_episode + 1
-
-                # Check autoscrape cache for fast path
-                ids = item_info.get("ids", {})
-                id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
-                if id_value is not None:
-                    from lib.utils.player.utils import get_autoscrape_cache_key
-
-                    cache_key = get_autoscrape_cache_key(id_value, season, next_episode)
-                    cached_data = cache.get(cache_key)
-                    if cached_data:
-                        PLAYLIST.clear()
-                        jack_player = JacktookPLayer()
-                        jack_player.run(data=cached_data)
-                        del jack_player
-                        return
-
-                next_tv_data = {
-                    "episode": next_episode,
-                    "season": season,
-                }
-
-                next_url = build_url(
-                    "search",
-                    mode=item_info.get("mode"),
-                    query=item_info.get("title"),
-                    ids=ids,
-                    tv_data=next_tv_data,
-                    rescrape=True,
-                )
-
-                # Clear playlist to prevent "out of range" crash when video ends
-                PLAYLIST.clear()
-
-                # Play directly
-                from xbmcgui import ListItem
-
-                list_item = ListItem(path=next_url)
-                player.play(next_url, list_item)
+            list_item = ListItem(path=next_url)
+            player.play(next_url, list_item)
 
 
 def run_resume_dialog(params):
