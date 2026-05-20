@@ -519,17 +519,18 @@ def bytes_to_human_readable(size: int, unit: str = "B") -> str:
 
 def convert_size_to_bytes(size_str: str) -> int:
     """Convert size string to bytes."""
-    match = re.match(r"(\d+(?:\.\d+)?)\s*(GB|MB|KB|B)", size_str, re.IGNORECASE)
+    size_str = size_str.replace(",", ".")
+    match = re.match(r"(\d+(?:\.\d+)?)\s*(GB|MB|KB|B|Go|Mo|Ko)", size_str, re.IGNORECASE)
 
     if match:
         size, unit = match.groups()
         size = float(size)
         unit = unit.upper()
-        if unit == "GB":
+        if unit in ("GB", "GO"):
             return int(size * 1024**3)
-        if unit == "MB":
+        if unit in ("MB", "MO"):
             return int(size * 1024**2)
-        if unit == "KB":
+        if unit in ("KB", "KO"):
             return int(size * 1024)
         return int(size)
     return 0
