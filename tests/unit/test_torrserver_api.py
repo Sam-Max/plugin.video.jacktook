@@ -182,8 +182,14 @@ class TestGetTorrentInfo:
         assert result == expected
 
     def test_torrents_list(self, torrserver):
-        """torrents() handles list response (defensive)."""
-        expected_inner = {"hash": "abc123"}
-        torrserver._session.request.return_value = _make_response([expected_inner])
+        """torrents() returns raw list from the list endpoint."""
+        expected = [{"hash": "abc123"}]
+        torrserver._session.request.return_value = _make_response(expected)
         result = torrserver.torrents()
-        assert result == expected_inner
+        assert result == expected
+
+    def test_torrents_empty_list(self, torrserver):
+        """torrents() handles empty list gracefully (no TorrServerError)."""
+        torrserver._session.request.return_value = _make_response([])
+        result = torrserver.torrents()
+        assert result == []

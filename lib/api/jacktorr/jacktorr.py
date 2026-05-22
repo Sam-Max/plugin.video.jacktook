@@ -89,10 +89,12 @@ class TorrServer:
         )
 
     def torrents(self):
-        """Read info about all torrents (doesn't fill file_stats info)"""
-        return self._normalize_json_response(
-            self._post("/torrents", data=dumps({"action": "list"})).json()
-        )
+        """Read info about all torrents (doesn't fill file_stats info)
+
+        Returns the raw list from TorrServer. Unlike single-object endpoints,
+        /torrents list returns a proper JSON array — pass it through as-is.
+        """
+        return self._post("/torrents", data=dumps({"action": "list"})).json()
 
     def get_torrent_info_by_hash(self, hash):
         """Not extended info"""
