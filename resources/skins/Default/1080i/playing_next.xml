@@ -1,103 +1,193 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <window>
-	<onload>Dialog.Close(fullscreeninfo,true)</onload>
+    <onload>Dialog.Close(fullscreeninfo,true)</onload>
     <onload>Dialog.Close(videoosd,true)</onload>
 
-	<defaultcontrol always="true">3001</defaultcontrol>
+    <defaultcontrol always="true">3001</defaultcontrol>
 
-	<controls>
-		<control type="group">
-			<right>20</right>
-			<bottom>150</bottom>
-			<width>520</width>
-			<height>120</height>
+    <controls>
+        <control type="group">
+            <right>40</right>
+            <bottom>70</bottom>
+            <width>800</width>
+            <height>290</height>
 
             <animation type="WindowOpen" reversible="false">
-                <effect type="fade" start="0" end="100" time="300" tween="cubic" easing="in"/>
-                <effect type="slide" start="400%,0" end="0,0" time="400" tween="cubic" easing="in"/>
+                <effect type="fade" start="0" end="100" time="250" tween="cubic" easing="out"/>
+                <effect type="slide" start="120,40" end="0,0" time="360" tween="cubic" easing="out"/>
             </animation>
 
             <animation type="WindowClose" reversible="false">
-                <effect type="slide" start="0,0" end="400%,0" time="400" tween="cubic" easing="in"/>
+                <effect type="fade" start="100" end="0" time="180" tween="cubic" easing="in"/>
+                <effect type="slide" start="0,0" end="120,40" time="220" tween="cubic" easing="in"/>
             </animation>
 
-			<!-- Card with Rounded Corners -->
-			<control type="image">
-				<right>-6</right>
-				<bottom>-6</bottom>
-				<texture border="30">circle.png</texture>
-				<colordiffuse>00000000</colordiffuse>
-			</control>
+            <!-- Soft shadow -->
+            <control type="image">
+                <left>10</left>
+                <top>10</top>
+                <width>790</width>
+                <height>280</height>
+                <texture border="35" colordiffuse="99000000">circle.png</texture>
+            </control>
 
-			<!-- Progress Bar -->
-			<control type="progress" id="3014">
-				<reveal>true</reveal>
-				<righttexture></righttexture>
-				<overlaytexture></overlaytexture>
-				<lefttexture></lefttexture>
-				<texturebg border="30"colordiffuse="33FFFFFF">circle.png</texturebg>
-				<midtexture border="30" colordiffuse="FFFFFFFF">circle.png</midtexture>
-			</control>
+            <!-- Fanart layer, dimmed under the glass card. Empty image is safe. -->
+            <control type="image">
+                <left>0</left>
+                <top>0</top>
+                <width>800</width>
+                <height>290</height>
+                <aspectratio>scale</aspectratio>
+                <texture background="true" colordiffuse="55FFFFFF">$INFO[Window.Property(next.fanart)]</texture>
+            </control>
 
-			<!-- Shadow -->
-			<control type="image">
-				<texture colordiffuse="99000000" border="30">circle.png</texture>
-			</control>
+            <!-- Dark translucent card -->
+            <control type="image">
+                <left>0</left>
+                <top>0</top>
+                <width>800</width>
+                <height>290</height>
+                <texture border="35" colordiffuse="DD05070B">circle.png</texture>
+            </control>
 
-			<!-- Time -->
-			<control type="label">
-                <top>25</top>
-				<font>font12</font>
-				<align>center</align>
-				<textcolor>ffffffff</textcolor>
-				<label>Playing in $INFO[Window.Property(timer)] seconds</label>
-			</control>
+            <!-- Poster fallback plate when no image is provided -->
+            <control type="image">
+                <left>26</left>
+                <top>28</top>
+                <width>142</width>
+                <height>213</height>
+                <texture border="20" colordiffuse="44000000">circle.png</texture>
+            </control>
 
+            <!-- Poster -->
+            <control type="image">
+                <left>26</left>
+                <top>28</top>
+                <width>142</width>
+                <height>213</height>
+                <aspectratio>scale</aspectratio>
+                <texture background="true">$INFO[Window.Property(next.poster)]</texture>
+            </control>
+
+            <!-- Text stack -->
+            <control type="group">
+                <left>195</left>
+                <top>26</top>
+                <width>570</width>
+                <height>190</height>
+
+                <control type="label">
+                    <top>0</top>
+                    <width>570</width>
+                    <height>24</height>
+                    <font>font12</font>
+                    <textcolor>FFE4B14A</textcolor>
+                    <label>NEXT EPISODE</label>
+                </control>
+
+                <control type="image">
+                    <top>32</top>
+                    <width>270</width>
+                    <height>66</height>
+                    <aspectratio>keep</aspectratio>
+                    <texture background="true">$INFO[Window.Property(next.clearlogo)]</texture>
+                    <visible>!String.IsEmpty(Window.Property(next.clearlogo))</visible>
+                </control>
+
+                <control type="label">
+                    <top>36</top>
+                    <width>570</width>
+                    <height>58</height>
+                    <font>font16</font>
+                    <textcolor>FFFFFFFF</textcolor>
+                    <shadowcolor>AA000000</shadowcolor>
+                    <label>$INFO[Window.Property(next.title)]</label>
+                    <visible>String.IsEmpty(Window.Property(next.clearlogo))</visible>
+                </control>
+
+                <control type="label">
+                    <top>106</top>
+                    <width>570</width>
+                    <height>30</height>
+                    <font>font12</font>
+                    <textcolor>EEFFFFFF</textcolor>
+                    <label>$INFO[Window.Property(next.episode_label)]  $INFO[Window.Property(next.episode_name)]</label>
+                </control>
+
+                <control type="textbox">
+                    <top>138</top>
+                    <width>550</width>
+                    <height>52</height>
+                    <font>font10</font>
+                    <textcolor>BBFFFFFF</textcolor>
+                    <label>$INFO[Window.Property(next.plot)]</label>
+                </control>
+            </control>
+
+            <control type="label">
+                <left>195</left>
+                <top>227</top>
+                <width>230</width>
+                <height>34</height>
+                <font>font12</font>
+                <textcolor>FFFFFFFF</textcolor>
+                <label>$INFO[Window.Property(timer_label)]</label>
+            </control>
+
+            <!-- Buttons -->
+            <control type="grouplist">
+                <left>432</left>
+                <top>220</top>
+                <width>333</width>
+                <height>46</height>
+                <orientation>horizontal</orientation>
+                <itemgap>12</itemgap>
+                <align>right</align>
+
+                <control type="button" id="3002">
+                    <label>Keep Watching</label>
+                    <width>168</width>
+                    <height>46</height>
+                    <font>font12</font>
+                    <textoffsetx>14</textoffsetx>
+                    <align>center</align>
+                    <textcolor>DDFFFFFF</textcolor>
+                    <focusedcolor>FFFFFFFF</focusedcolor>
+                    <selectedcolor>DDFFFFFF</selectedcolor>
+                    <texturefocus border="24" colordiffuse="88999999">circle.png</texturefocus>
+                    <texturenofocus border="24" colordiffuse="66000000">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+
+                <control type="button" id="3001">
+                    <label>Play Next</label>
+                    <width>153</width>
+                    <height>46</height>
+                    <font>font12</font>
+                    <textoffsetx>14</textoffsetx>
+                    <align>center</align>
+                    <textcolor>FF111111</textcolor>
+                    <focusedcolor>FF000000</focusedcolor>
+                    <selectedcolor>FF111111</selectedcolor>
+                    <texturefocus border="24" colordiffuse="FFFFD36A">circle.png</texturefocus>
+                    <texturenofocus border="24" colordiffuse="FFE4B14A">circle.png</texturenofocus>
+                    <pulseonselect>no</pulseonselect>
+                </control>
+            </control>
+
+            <!-- Progress strip: keep id 3014 for PlayWindow.background_tasks(). -->
+            <control type="progress" id="3014">
+                <left>22</left>
+                <bottom>12</bottom>
+                <width>756</width>
+                <height>4</height>
+                <reveal>true</reveal>
+                <righttexture></righttexture>
+                <overlaytexture></overlaytexture>
+                <lefttexture></lefttexture>
+                <texturebg border="2" colordiffuse="22FFFFFF">circle.png</texturebg>
+                <midtexture border="2" colordiffuse="FFE4B14A">circle.png</midtexture>
+            </control>
         </control>
-
-		<!-- BUTTONS -->
-		<control type="group">
-			<right>20</right>
-			<bottom>50</bottom>
-			<width>520</width>
-			<height>120</height>
-
-			<control type="grouplist">
-				<orientation>horizontal</orientation>
-				<height>56</height>
-				<itemgap>20</itemgap>
-				<align>center</align>
-
-				<!-- Continue Watching -->
-				<control type="button" id="3002">
-					<label>Continue Watching</label>
-					<width>auto</width>
-					<font>font12</font>
-					<textoffsetx>20</textoffsetx>
-					<textcolor>ddffffff</textcolor>
-					<focusedcolor>eeffffff</focusedcolor>
-					<selectedcolor>ddffffff</selectedcolor>
-					<align>center</align>
-					<texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-					<texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
-					<pulseonselect>no</pulseonselect>
-				</control>
-
-				<!-- Next Episode -->
-				<control type="button" id="3001">
-					<label>Next Episode</label>
-					<width>auto</width>
-					<font>font12</font>
-					<textoffsetx>20</textoffsetx>
-					<textcolor>DDFFFFFF</textcolor>
-					<focusedcolor>EEFFFFFF</focusedcolor>
-					<selectedcolor>DDFFFFFF</selectedcolor>
-					<align>center</align>
-					<texturefocus border="25" colordiffuse="FF999999">circle.png</texturefocus>
-					<texturenofocus border="25" colordiffuse="99000000">circle.png</texturenofocus>
-					<pulseonselect>no</pulseonselect>
-				</control>
-			</control>
-		</control>
     </controls>
 </window>

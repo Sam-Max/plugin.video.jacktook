@@ -51,8 +51,10 @@ class PlayWindow(BaseWindow):
     def background_tasks(self):
         try:
             try:
-                progress_bar = self.getControlProgress(3014)
-            except RuntimeError:
+                progress_bar = self.getControl(3014)
+                if not hasattr(progress_bar, "setPercent"):
+                    progress_bar = None
+            except (RuntimeError, AttributeError):
                 progress_bar = None
 
             while (
@@ -85,6 +87,7 @@ class PlayWindow(BaseWindow):
 
         :return:
         """
+
     def close(self):
 
         self.closed = True

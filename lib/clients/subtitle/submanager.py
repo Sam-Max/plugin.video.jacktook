@@ -19,7 +19,6 @@ class KodiJsonRpcClient:
     def json_rpc(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Send a JSON-RPC request to Kodi."""
         request_data = {
-
             "jsonrpc": "2.0",
             "method": method,
             "id": 1,
@@ -51,7 +50,6 @@ class SubtitleManager(KodiJsonRpcClient):
         Returns the language in ISO format if iso_format is True.
         """
         subtitle_language = self.json_rpc(
-
             "Settings.GetSettingValue", {"setting": "locale.subtitlelanguage"}
         )
 
@@ -100,7 +98,8 @@ class SubtitleManager(KodiJsonRpcClient):
 
         subtitle_files = self.get_downloaded_subtitle_paths(folder_path)
         if subtitle_files:
-            if auto_select:
+            # Skip "use existing?" dialog when auto-download or auto-select is enabled
+            if auto_select or get_setting("auto_subtitle_download"):
                 return subtitle_files
 
             dialog = xbmcgui.Dialog()
@@ -113,7 +112,9 @@ class SubtitleManager(KodiJsonRpcClient):
             if use_existing:
                 return subtitle_files
 
-        subtitles = self.opensub_client.get_subtitles(mode, imdb_id, season, episode)
+        subtitles = self.opensub_client.get_subtitles(
+            mode, imdb_id, season, episode, auto_select=auto_select
+        )
         if subtitles is None:
             self.last_fetch_status = "not_found"
             self.notification(translation(90252))
@@ -134,6 +135,12 @@ class SubtitleManager(KodiJsonRpcClient):
         )
 
         if get_setting("deepl_enabled"):
+            if auto_select:
+                translated_subtitles_paths = self.translator.translate_multiple_subtitles(
+                    subtitle_paths, imdb_id, season, episode
+                )
+                return translated_subtitles_paths or subtitle_paths
+
             dialog = xbmcgui.Dialog()
             yes = dialog.yesno(
                 translation(90254),
@@ -143,6 +150,6 @@ class SubtitleManager(KodiJsonRpcClient):
                 translated_subtitles_paths = self.translator.translate_multiple_subtitles(
                     subtitle_paths, imdb_id, season, episode
                 )
-                return translated_subtitles_paths
+                return translated_subtitles_paths or subtitle_paths
 
         return subtitle_paths

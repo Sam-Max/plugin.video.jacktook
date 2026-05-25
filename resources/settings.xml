@@ -1011,7 +1011,7 @@
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="playnext_time" type="integer" label="30720" help="30829"> 
+                <setting id="playnext_time" type="integer" label="30720" help="30829">
                     <default>50</default>
                     <constraints>
                         <minimum>5</minimum>
@@ -1021,6 +1021,71 @@
                     <control type="slider" format="integer">
                         <popup>false</popup>
                     </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="playnext_use_percentage">false</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="playnext_use_percentage" type="boolean" label="30940" help="30942">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="playnext_dialog_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="playnext_percentage" type="integer" label="30941" help="30943">
+                    <default>95</default>
+                    <constraints>
+                        <minimum>75</minimum>
+                        <maximum>99</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <and>
+                                <condition operator="is" setting="playnext_dialog_enabled">true</condition>
+                                <condition operator="is" setting="playnext_use_percentage">true</condition>
+                            </and>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="playnext_threshold" type="integer" label="30735" help="30773">
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>10</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="playnext_dialog_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="playnext_auto_timeout" type="integer" label="30944" help="30945">
+                    <default>10</default>
+                    <constraints>
+                        <minimum>5</minimum>
+                        <maximum>30</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="playnext_dialog_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="volume_check_enabled" type="boolean" label="90216" help="90217"> 
                     <default>false</default>

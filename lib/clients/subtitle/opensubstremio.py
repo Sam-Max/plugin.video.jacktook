@@ -57,6 +57,7 @@ class OpenSubtitleStremioClient:
         imdb_id: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
+        auto_select: bool = False,
     ) -> Optional[List[Dict[str, Any]]]:
         subtitles = self._fetch_subtitles_data(mode, imdb_id, season, episode)
         if not subtitles:
@@ -68,6 +69,7 @@ class OpenSubtitleStremioClient:
             filtered = [s for s in subtitles if s.get("lang") == get_language_code(sub_language)]
             if filtered:
                 return filtered
+            return []
 
         items = [
             xbmcgui.ListItem(label=translation(90665) % i, label2=language_code_to_name(s["lang"]))

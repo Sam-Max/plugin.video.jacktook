@@ -5,7 +5,6 @@ import xbmcgui
 from xbmcgui import ListItem
 from xbmcplugin import (
     addDirectoryItem,
-    setResolvedUrl,
 )
 
 import lib.nav.debrid as debrid_navigation
@@ -875,10 +874,12 @@ def play_media(params):
 
 
 def play_autoscraped(params):
-    from lib.utils.player.utils import get_autoscrape_cache_key
+    from lib.utils.kodi.settings import auto_play_enabled
+    from lib.utils.player.utils import get_autoscrape_cache_key, get_autoscrape_results_cache_key
 
     ids = json.loads(params.get("ids", "{}"))
     tv_data = json.loads(params.get("tv_data", "{}"))
+    autoplay_context = params.get("autoplay_context")
 
     id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
     season = tv_data.get("season")
@@ -888,10 +889,40 @@ def play_autoscraped(params):
         cache_key = get_autoscrape_cache_key(id_value, season, episode)
         cached_data = cache.get(cache_key)
         if cached_data:
-            player = JacktookPLayer()
-            player.run(data=cached_data)
-            del player
-            return
+            if auto_play_enabled():
+                play_data = dict(cached_data)
+                if autoplay_context:
+                    play_data["autoplay"] = True
+                    play_data["playnext_context"] = True
+                    play_data["direct_play"] = True
+                player = JacktookPLayer()
+                player.run(data=play_data)
+                del player
+                return
+            # Autoplay disabled: show source select with cached raw results
+            results_cache_key = get_autoscrape_results_cache_key(id_value, season, episode)
+            cached_results = cache.get(results_cache_key)
+            if cached_results:
+                mode = params.get("mode", "tv")
+                kodilog(
+                    "PlayAutoscraped: showing source select with"
+                    f" {len(cached_results)} cached results (mode={mode})"
+                )
+                from lib.search import show_source_select
+
+                show_source_select(
+                    cached_results,
+                    mode=mode,
+                    ids=ids,
+                    tv_data=tv_data,
+                    query=params.get("query", ""),
+                    media_type=params.get("media_type", ""),
+                    rescrape=False,
+                    direct=False,
+                    autoplay_context=autoplay_context,
+                )
+                return
+            kodilog("PlayAutoscraped: no cached results, falling back to search")
 
     from lib.search import run_search_entry
 
@@ -900,9 +931,11 @@ def play_autoscraped(params):
 
 def play_url(params):
     url = params.get("url")
+    from xbmc import Player
     list_item = ListItem(label=params.get("name"), path=url)
     list_item.setPath(url)
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    list_item.setProperty("IsPlayable", "true")
+    Player().play(url, list_item)
 
 
 def play_trailer(params):
@@ -958,7 +991,8 @@ def play_trailer(params):
     list_item.setProperty("IsPlayable", "true")
     if playback.get("source_type") == "adaptive" and playback.get("audio_url"):
         list_item.setProperty("inputstream.adaptive.manifest_type", "mpd")
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    from xbmc import Player
+    Player().play(video_url, list_item)
 
 
 def play_from_pack(params):
@@ -966,8 +1000,10 @@ def play_from_pack(params):
     data = resolve_playback_url(data)
     if not data:
         return
-    list_item = make_listing(data)
-    setResolvedUrl(ADDON_HANDLE, True, list_item)
+    from lib.player import JacktookPLayer
+    player = JacktookPLayer()
+    player.run(data=data)
+    del player
 
 
 def people_menu(mode):

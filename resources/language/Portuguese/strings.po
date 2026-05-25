@@ -431,6 +431,30 @@ msgctxt "#30939"
 msgid "Auto-resume from last position without asking"
 msgstr "Retomar automaticamente da última posição sem perguntar"
 
+msgctxt "#30940"
+msgid "Use Percentage Trigger"
+msgstr "Usar acionamento por percentagem"
+
+msgctxt "#30941"
+msgid "Show Dialog at Playback Percentage"
+msgstr "Mostrar diálogo na percentagem de reprodução"
+
+msgctxt "#30942"
+msgid "Trigger the next-episode dialog based on percentage of video played instead of seconds remaining."
+msgstr "Acionar o diálogo do próximo episódio com base na percentagem do vídeo reproduzida em vez dos segundos restantes."
+
+msgctxt "#30943"
+msgid "The percentage at which the next-episode dialog appears (e.g. 95 means 95% of the video)."
+msgstr "A percentagem em que o diálogo do próximo episódio aparece (por exemplo, 95 significa 95% do vídeo)."
+
+msgctxt "#30944"
+msgid "Auto-Play Timeout"
+msgstr "Tempo limite da reprodução automática"
+
+msgctxt "#30945"
+msgid "Seconds before auto-playing next episode. 0 = disabled, dialog waits for user input."
+msgstr "Segundos antes de reproduzir automaticamente o próximo episódio. 0 = desativado, o diálogo aguarda a entrada do utilizador."
+
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Sementes"
@@ -458,6 +482,10 @@ msgstr "Torrentio Configuração"
 msgctxt "#30734"
 msgid "Enable"
 msgstr "Ativar"
+
+msgctxt "#30735"
+msgid "Still Watching? Threshold"
+msgstr "Limite de Ainda a ver?"
 
 msgctxt "#30736"
 msgid "Subtitle Language"
@@ -606,6 +634,10 @@ msgstr "Zilean Configuração"
 msgctxt "#30772"
 msgid "Zilean Host"
 msgstr "Host Zilean"
+
+msgctxt "#30773"
+msgid "Number of consecutive auto-played episodes before asking 'Still Watching?'. Set to 0 to disable."
+msgstr "Número de episódios reproduzidos automaticamente em sequência antes de perguntar 'Ainda a ver?'. Defina como 0 para desativar."
 
 msgctxt "#30774"
 msgid "Zilean Timeout"
@@ -1990,10 +2022,6 @@ msgstr "Deseja reproduzir o último visto?"
 msgctxt "#90144"
 msgid "Could not resolve playback URL"
 msgstr "Não foi possível resolver o URL de reprodução"
-
-msgctxt "#90145"
-msgid "Precaching Enabled"
-msgstr "Pré-carregamento Ativado"
 
 msgctxt "#90171"
 msgid "Autoscrape Next Episode"
@@ -4011,3 +4039,379 @@ msgstr "Abrir Definições do Scraper Externo"
 msgctxt "#90307"
 msgid "Open the settings for the selected external scraper module."
 msgstr "Abrir as definições do módulo scraper externo selecionado."
+
+msgctxt "#90382"
+msgid "Please set a valid Trakt Client ID Key"
+msgstr "Defina uma chave de ID de cliente do Trakt válida"
+
+msgctxt "#90383"
+msgid "Please set a valid Trakt Client Secret Key"
+msgstr "Defina uma chave secreta de cliente do Trakt válida"
+
+msgctxt "#90384"
+msgid "Trakt Error Authorizing"
+msgstr "Erro ao autorizar o Trakt"
+
+msgctxt "#90385"
+msgid "Trakt Account Authorized"
+msgstr "Conta do Trakt autorizada"
+
+msgctxt "#90386"
+msgid "You are now logged out from Trakt.tv"
+msgstr "Terminou sessão no Trakt.tv"
+
+msgctxt "#90387"
+msgid "Failed to mark as watched"
+msgstr "Falha ao marcar como visto"
+
+msgctxt "#90388"
+msgid "Marked as watched"
+msgstr "Marcado como visto"
+
+msgctxt "#90389"
+msgid "No results found"
+msgstr "Nenhum resultado encontrado"
+
+msgctxt "#90390"
+msgid "Invalid mode"
+msgstr "Modo inválido"
+
+msgctxt "#90391"
+msgid "No recommendations found"
+msgstr "Nenhuma recomendação encontrada"
+
+msgctxt "#90392"
+msgid "No similar items found"
+msgstr "Nenhum item semelhante encontrado"
+
+msgctxt "#90393"
+msgid "TMDB metadata not found"
+msgstr "Metadados do TMDB não encontrados"
+
+msgctxt "#90394"
+msgid "No TV shows found"
+msgstr "Nenhuma série encontrada"
+
+msgctxt "#90395"
+msgid "No shows airing today"
+msgstr "Nenhuma série em exibição hoje"
+
+msgctxt "#90396"
+msgid "Invalid collection query"
+msgstr "Consulta de coleção inválida"
+
+msgctxt "#90397"
+msgid "No keywords found"
+msgstr "Nenhuma palavra-chave encontrada"
+
+msgctxt "#90398"
+msgid "No keyword ID provided"
+msgstr "Nenhum ID de palavra-chave fornecido"
+
+msgctxt "#90399"
+msgid "No results found for this keyword"
+msgstr "Nenhum resultado encontrado para esta palavra-chave"
+
+msgctxt "#90400"
+msgid "No TMDB ID found"
+msgstr "Nenhum ID do TMDB encontrado"
+
+msgctxt "#90401"
+msgid "Unsupported media type or missing external_ids"
+msgstr "Tipo de media não suportado ou external_ids em falta"
+
+msgctxt "#90402"
+msgid "Refreshed Metadata"
+msgstr "Metadados atualizados"
+
+msgctxt "#90403"
+msgid "No Stremio addons selected"
+msgstr "Nenhum addon do Stremio selecionado"
+
+msgctxt "#90404"
+msgid "No suitable source found for auto play."
+msgstr "Nenhuma fonte adequada encontrada para reprodução automática."
+
+msgctxt "#90405"
+msgid "No sources found with the preferred quality."
+msgstr "Nenhuma fonte encontrada com a qualidade preferida."
+
+msgctxt "#90406"
+msgid "No languages found"
+msgstr "Nenhum idioma encontrado"
+
+msgctxt "#90407"
+msgid "Failed to resolve playback source"
+msgstr "Falha ao resolver a fonte de reprodução"
+
+msgctxt "#90408"
+msgid "Trakt not authorized. Please authenticate."
+msgstr "Trakt não autorizado. Autentique-se."
+
+msgctxt "#90409"
+msgid "Added to Trakt Watchlist"
+msgstr "Adicionado à lista de acompanhamento do Trakt"
+
+msgctxt "#90428"
+msgid "Database read error. File may be corrupted."
+msgstr "Erro ao ler a base de dados. O ficheiro pode estar corrompido."
+
+msgctxt "#90429"
+msgid "Failed to delete data. Database error."
+msgstr "Falha ao eliminar dados. Erro da base de dados."
+
+msgctxt "#90430"
+msgid "Failed to clear cache. Database in use."
+msgstr "Falha ao limpar a cache. Base de dados em uso."
+
+msgctxt "#90458"
+msgid "OpenSubtitles Stremio: No results found."
+msgstr "OpenSubtitles Stremio: nenhum resultado encontrado."
+
+msgctxt "#90460"
+msgid "Subtitle Manager: No subtitles available for this video."
+msgstr "Gestor de legendas: não há legendas disponíveis para este vídeo."
+
+msgctxt "#90468"
+msgid "Search menu"
+msgstr "Menu de pesquisa"
+
+msgctxt "#90469"
+msgid "Continue watching menu"
+msgstr "Menu Continuar a ver"
+
+msgctxt "#90470"
+msgid "TV Shows Items"
+msgstr "Itens de séries"
+
+msgctxt "#90471"
+msgid "Movies Items"
+msgstr "Itens de filmes"
+
+msgctxt "#90472"
+msgid "Anime menu"
+msgstr "Menu de anime"
+
+msgctxt "#90473"
+msgid "TV Menu"
+msgstr "Menu de TV"
+
+msgctxt "#90474"
+msgid "Library menu"
+msgstr "Menu da biblioteca"
+
+msgctxt "#90475"
+msgid "Torrents Management"
+msgstr "Gestão de torrents"
+
+msgctxt "#90476"
+msgid "Telegram menu"
+msgstr "Menu do Telegram"
+
+msgctxt "#90477"
+msgid "Cloud Storage"
+msgstr "Armazenamento na nuvem"
+
+msgctxt "#90478"
+msgid "Downloads Management"
+msgstr "Gestão de transferências"
+
+msgctxt "#90479"
+msgid "Settings Management"
+msgstr "Gestão de definições"
+
+msgctxt "#90480"
+msgid "History Menu"
+msgstr "Menu de histórico"
+
+msgctxt "#90481"
+msgid "Files History"
+msgstr "Histórico de ficheiros"
+
+msgctxt "#90482"
+msgid "Titles History"
+msgstr "Histórico de títulos"
+
+msgctxt "#90483"
+msgid "Titles Calendar"
+msgstr "Calendário de títulos"
+
+msgctxt "#90484"
+msgid "My Shows"
+msgstr "As minhas séries"
+
+msgctxt "#90485"
+msgid "My Movies"
+msgstr "Os meus filmes"
+
+msgctxt "#90486"
+msgid "Upcoming Episodes"
+msgstr "Próximos episódios"
+
+msgctxt "#90487"
+msgid "Discovery List"
+msgstr "Lista de descoberta"
+
+msgctxt "#90488"
+msgid "Library List"
+msgstr "Lista da biblioteca"
+
+msgctxt "#90489"
+msgid "Trakt Recommendations"
+msgstr "Recomendações do Trakt"
+
+msgctxt "#90490"
+msgid "Trending Lists"
+msgstr "Listas em tendência"
+
+msgctxt "#90491"
+msgid "Popular Lists"
+msgstr "Listas populares"
+
+msgctxt "#90492"
+msgid "Search Lists"
+msgstr "Pesquisar listas"
+
+msgctxt "#90493"
+msgid "Recent Activity"
+msgstr "Atividade recente"
+
+msgctxt "#90494"
+msgid "Downloads List"
+msgstr "Lista de transferências"
+
+msgctxt "#90495"
+msgid "Download New"
+msgstr "Nova transferência"
+
+msgctxt "#90496"
+msgid "Cartoons Popular"
+msgstr "Desenhos animados populares"
+
+msgctxt "#90497"
+msgid "Animation Popular"
+msgstr "Animação popular"
+
+msgctxt "#90500"
+msgid "Translating subtitle..."
+msgstr "A traduzir legenda..."
+
+msgctxt "#90501"
+msgid "Translation done."
+msgstr "Tradução concluída."
+
+msgctxt "#90502"
+msgid "Searching subtitles..."
+msgstr "A pesquisar legendas..."
+
+msgctxt "#90503"
+msgid "No subtitles found"
+msgstr "Nenhuma legenda encontrada"
+
+msgctxt "#90504"
+msgid "Failed to authenticate with DeepL. Please check your API key."
+msgstr "Falha ao autenticar com o DeepL. Verifique a sua chave API."
+
+msgctxt "#90505"
+msgid "DeepL API key is missing or invalid."
+msgstr "A chave API do DeepL está em falta ou é inválida."
+
+msgctxt "#90712"
+msgid "Views"
+msgstr "Vistas"
+
+msgctxt "#90713"
+msgid "Set Main View"
+msgstr "Definir vista principal"
+
+msgctxt "#90714"
+msgid "Set Movies View"
+msgstr "Definir vista de filmes"
+
+msgctxt "#90715"
+msgid "Set TV Shows View"
+msgstr "Definir vista de séries"
+
+msgctxt "#90716"
+msgid "Set Seasons View"
+msgstr "Definir vista de temporadas"
+
+msgctxt "#90717"
+msgid "Set Episodes View"
+msgstr "Definir vista de episódios"
+
+msgctxt "#90718"
+msgid "Set Library View"
+msgstr "Definir vista da biblioteca"
+
+msgctxt "#90719"
+msgid "Set History View"
+msgstr "Definir vista do histórico"
+
+msgctxt "#90720"
+msgid "Set Downloads View"
+msgstr "Definir vista de transferências"
+
+msgctxt "#90721"
+msgid "Save Current View"
+msgstr "Guardar vista atual"
+
+msgctxt "#90722"
+msgid "View saved"
+msgstr "Vista guardada"
+
+msgctxt "#90723"
+msgid "Could not detect the current view"
+msgstr "Não foi possível detetar a vista atual"
+
+msgctxt "#90724"
+msgid "Saved views reset"
+msgstr "Vistas guardadas repostas"
+
+msgctxt "#90725"
+msgid "Reset Saved Views"
+msgstr "Repor vistas guardadas"
+
+msgctxt "#90726"
+msgid "Open this screen, change the Kodi view manually, then select Save Current View."
+msgstr "Abra este ecrã, altere manualmente a vista do Kodi e depois selecione Guardar vista atual."
+
+msgctxt "#90730"
+msgid "Search with title + year"
+msgstr "Pesquisar com título + ano"
+
+msgctxt "#90731"
+msgid "Search with original title"
+msgstr "Pesquisar com título original"
+
+msgctxt "#90732"
+msgid "Search with original title + year"
+msgstr "Pesquisar com título original + ano"
+
+msgctxt "#90733"
+msgid "Search modes"
+msgstr "Modos de pesquisa"
+
+msgctxt "#90734"
+msgid "Enter year"
+msgstr "Introduza o ano"
+
+msgctxt "#90735"
+msgid "Invalid year"
+msgstr "Ano inválido"
+
+msgctxt "#90736"
+msgid "Edit title"
+msgstr "Editar título"
+
+msgctxt "#90737"
+msgid "Invalid season"
+msgstr "Temporada inválida"
+
+msgctxt "#90738"
+msgid "Episode"
+msgstr "Episódio"
+
+msgctxt "#90739"
+msgid "Invalid episode"
+msgstr "Episódio inválido"

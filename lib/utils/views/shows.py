@@ -18,6 +18,7 @@ from lib.utils.kodi.utils import (
     build_url,
     end_of_directory,
     get_setting,
+    kodilog,
     make_list_item,
 )
 
@@ -113,17 +114,35 @@ def show_episodes_details(params):
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
 
-    show_episode_info(tv_name, season, ids, mode, media_type)
+    kodilog(
+        f"[EPISODES] show_episodes_details: tv_name={tv_name!r}, season={season}, "
+        f"mode={mode!r}, media_type={media_type!r}, ids={ids}"
+    )
+    item_count = show_episode_info(tv_name, season, ids, mode, media_type)
+    kodilog(f"[EPISODES] show_episodes_details: added item_count={item_count}")
     end_of_directory()
+    kodilog("[EPISODES] show_episodes_details: end_of_directory called")
     apply_section_view("view.episodes", content_type="episodes")
 
 
 def show_episode_info(tv_name, season, ids, mode, media_type):
     season_details = tmdb_get("season_details", {"id": ids.get("tmdb_id"), "season": season})
+    if not season_details:
+        kodilog(
+            f"[EPISODES] show_episode_info: no season_details for "
+            f"tmdb_id={ids.get('tmdb_id')}, season={season}"
+        )
+        return 0
+
+    episodes = getattr(season_details, "episodes", []) or []
+    kodilog(
+        f"[EPISODES] show_episode_info: fetched episodes_count={len(episodes)} "
+        f"for tmdb_id={ids.get('tmdb_id')}, season={season}"
+    )
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
     results = execute_thread_pool_collection(
-        season_details.episodes,
+        episodes,
         _process_episode,
         tv_name,
         season,
@@ -135,10 +154,16 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
 
     # Sort by episode number
     results.sort(key=lambda x: x[0])
+    item_count = len([list_item for _, _, list_item in results if list_item is not None])
+    kodilog(
+        f"[EPISODES] show_episode_info: processed results_count={len(results)}, "
+        f"item_count={item_count}"
+    )
 
     add_directory_items_batch(
         [(url, list_item, False) for _, url, list_item in results if list_item is not None]
     )
+    return item_count
 
 
 def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details):

@@ -59,10 +59,43 @@ JACKTORR_ADDON = _get_jacktorr_addon()
 
 
 ADDON = xbmcaddon.Addon()
-try:
-    ADDON_HANDLE = int(sys.argv[1])
-except IndexError:
-    ADDON_HANDLE = 0
+
+
+class _AddonHandle:
+    """Dynamically resolves the Kodi plugin handle at call time.
+
+    With ``reuselanguageinvoker=true`` the Python interpreter is reused
+    across plugin invocations, so ``sys.argv[1]`` (set once at module
+    import) becomes stale.  This class resolves ``int(sys.argv[1])``
+    *every time* ``__index__`` is called — Kodi's C extension calls
+    ``__index__`` when it receives this object where an ``int`` is
+    expected (e.g. ``addDirectoryItems``, ``endOfDirectory``).
+
+    Example
+    -------
+    >>> from lib.utils.kodi.utils import ADDON_HANDLE
+    >>> addDirectoryItems(ADDON_HANDLE, items)   # resolves correctly
+    """
+
+    @staticmethod
+    def _resolve():
+        try:
+            return int(sys.argv[1])
+        except (IndexError, ValueError):
+            return 0
+
+    def __index__(self):
+        return self._resolve()
+
+    def __int__(self):
+        return self._resolve()
+
+    def __eq__(self, other):
+        return self._resolve() == int(other)
+
+
+ADDON_HANDLE = _AddonHandle()
+
 
 ADDON_PATH = ADDON.getAddonInfo("path")
 ADDON_PROFILE_PATH = translate_path(ADDON.getAddonInfo("profile"))
@@ -228,6 +261,7 @@ def set_property(prop: str, value: Any):
 
 
 def clear_property(prop):
+    cache.delete(prop)
     return Window(10000).clearProperty(prop)
 
 
@@ -289,7 +323,6 @@ def enable_addon(addon_id: str):
     Returns True if successful, False otherwise.
     """
     request = {
-
         "jsonrpc": "2.0",
         "method": "Addons.SetAddonEnabled",
         "params": {"addonid": addon_id, "enabled": True},
@@ -742,7 +775,9 @@ def cancel_playback():
     close_all_dialog()
     with contextlib.suppress(Exception):
         xbmc.Player().stop()
-    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+    # Gracefully handle the "no handle" case (background/monitor contexts)
+    with contextlib.suppress(RuntimeError, SystemExit):
+        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
 
 
 def finish_action():

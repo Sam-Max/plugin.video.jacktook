@@ -73,10 +73,17 @@ def test_autoscrape_next_episode_resolves_and_caches():
 
         mock_search.assert_called_once()
         mock_resolve.assert_called_once()
-        mock_cache.set.assert_called_once()
-        call_args = mock_cache.set.call_args
-        assert call_args[0][0] == "as:tt123_1_2"
-        assert call_args[0][1] == resolved_data
+        assert mock_cache.set.call_count == 2, (
+            f"Expected 2 cache.set calls, got {mock_cache.set.call_count}"
+        )
+        # First call: raw results cache
+        raw_call_args = mock_cache.set.call_args_list[0]
+        assert raw_call_args[0][0] == "as_results:tt123_1_2"
+        assert raw_call_args[0][1] == [fake_result]
+        # Second call: resolved playback data cache
+        resolve_call_args = mock_cache.set.call_args_list[1]
+        assert resolve_call_args[0][0] == "as:tt123_1_2"
+        assert resolve_call_args[0][1] == resolved_data
 
 
 def test_autoscrape_next_episode_no_results_does_not_cache():
@@ -131,7 +138,9 @@ def test_play_autoscraped_cache_hit_plays_directly():
 
     with patch("lib.navigation.cache") as mock_cache, patch(
         "lib.navigation.JacktookPLayer"
-    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry:
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry, patch(
+        "lib.utils.kodi.settings.auto_play_enabled", return_value=True
+    ):
         mock_cache.get.return_value = cached_data
 
         params = {
@@ -145,6 +154,135 @@ def test_play_autoscraped_cache_hit_plays_directly():
 
         mock_player_cls.return_value.run.assert_called_once_with(data=cached_data)
         mock_search_entry.assert_not_called()
+
+
+def test_play_autoscraped_cache_hit_playnext_context_plays_directly():
+    from lib.navigation import play_autoscraped
+
+    cached_data = {"url": "http://cached", "title": "Cached Episode"}
+
+    with patch("lib.navigation.cache") as mock_cache, patch(
+        "lib.navigation.JacktookPLayer"
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry, patch(
+        "lib.utils.kodi.settings.auto_play_enabled", return_value=True
+    ):
+        mock_cache.get.return_value = cached_data
+
+        params = {
+            "mode": "tv",
+            "query": "Show",
+            "ids": json.dumps({"tmdb_id": "123"}),
+            "tv_data": json.dumps({"season": 1, "episode": 2}),
+            "autoplay_context": "1",
+        }
+
+        play_autoscraped(params)
+
+        mock_player_cls.return_value.run.assert_called_once_with(
+            data={
+                "url": "http://cached",
+                "title": "Cached Episode",
+                "autoplay": True,
+                "playnext_context": True,
+                "direct_play": True,
+            }
+        )
+        mock_search_entry.assert_not_called()
+
+
+def test_play_autoscraped_autoplay_disabled_cached_results_shows_source_select():
+    """Task 3.2: Autoplay disabled with cached results shows source select."""
+    from lib.navigation import play_autoscraped
+
+    cached_data = {"url": "http://cached", "title": "Cached Episode"}
+    cached_results = [MagicMock()]
+
+    with patch("lib.navigation.cache") as mock_cache, patch(
+        "lib.navigation.JacktookPLayer"
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry, patch(
+        "lib.search.show_source_select"
+    ) as mock_show_source_select, patch(
+        "lib.utils.kodi.settings.auto_play_enabled", return_value=False
+    ):
+        # First cache.get returns cached_data (autoscrape hit)
+        # Second cache.get returns cached_results (results hit)
+        mock_cache.get.side_effect = [cached_data, cached_results]
+
+        params = {
+            "mode": "tv",
+            "query": "Show",
+            "ids": json.dumps({"tmdb_id": "123"}),
+            "tv_data": json.dumps({"season": 1, "episode": 2}),
+        }
+
+        play_autoscraped(params)
+
+        mock_player_cls.return_value.run.assert_not_called()
+        mock_search_entry.assert_not_called()
+        mock_show_source_select.assert_called_once()
+        assert mock_show_source_select.call_args.kwargs["autoplay_context"] is None
+
+
+def test_play_autoscraped_cached_source_select_preserves_playnext_context():
+    from lib.navigation import play_autoscraped
+
+    cached_data = {"url": "http://cached", "title": "Cached Episode"}
+    cached_results = [MagicMock()]
+
+    with patch("lib.navigation.cache") as mock_cache, patch(
+        "lib.navigation.JacktookPLayer"
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry, patch(
+        "lib.search.show_source_select"
+    ) as mock_show_source_select, patch(
+        "lib.utils.kodi.settings.auto_play_enabled", return_value=False
+    ):
+        mock_cache.get.side_effect = [cached_data, cached_results]
+
+        params = {
+            "mode": "tv",
+            "query": "Show",
+            "ids": json.dumps({"tmdb_id": "123"}),
+            "tv_data": json.dumps({"season": 1, "episode": 2}),
+            "autoplay_context": "1",
+        }
+
+        play_autoscraped(params)
+
+        mock_player_cls.return_value.run.assert_not_called()
+        mock_search_entry.assert_not_called()
+        mock_show_source_select.assert_called_once()
+        assert mock_show_source_select.call_args.kwargs["autoplay_context"] == "1"
+
+
+def test_play_autoscraped_autoplay_disabled_no_cached_results_falls_back():
+    """Task 3.2: Autoplay disabled with no cached results falls back to search."""
+    from lib.navigation import play_autoscraped
+
+    cached_data = {"url": "http://cached", "title": "Cached Episode"}
+
+    with patch("lib.navigation.cache") as mock_cache, patch(
+        "lib.navigation.JacktookPLayer"
+    ) as mock_player_cls, patch("lib.search.run_search_entry") as mock_search_entry, patch(
+        "lib.search.show_source_select"
+    ) as mock_show_source_select, patch(
+        "lib.utils.kodi.settings.auto_play_enabled", return_value=False
+    ):
+        # First cache.get returns cached_data (autoscrape hit)
+        # Second cache.get returns None (no cached results)
+        mock_cache.get.side_effect = [cached_data, None]
+
+        params = {
+            "mode": "tv",
+            "query": "Show",
+            "ids": json.dumps({"tmdb_id": "123"}),
+            "tv_data": json.dumps({"season": 1, "episode": 2}),
+        }
+
+        play_autoscraped(params)
+
+        mock_player_cls.return_value.run.assert_not_called()
+        mock_show_source_select.assert_not_called()
+        mock_search_entry.assert_called_once_with(params)
 
 
 def test_play_autoscraped_cache_miss_falls_back():
@@ -226,27 +364,22 @@ def test_monitor_autoscrape_threshold_spawns_thread_once():
     assert "self.check_autoscrape_threshold()" in monitor_match.group("body")
 
 
-def test_run_next_dialog_fast_path_from_cache():
+def test_run_next_dialog_sets_pending_action_without_direct_playback():
     from lib.gui.custom_dialogs import run_next_dialog
 
-    cached_data = {"url": "http://cached", "title": "Cached"}
-
     with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
-        "lib.gui.custom_dialogs.cache"
-    ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch("xbmcgui.ListItem"), patch(
-        "lib.gui.custom_dialogs.build_url"
-    ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
+    ) as mock_window_cls, patch("lib.gui.custom_dialogs.set_property") as mock_set_property, patch(
+        "lib.gui.custom_dialogs.clear_property"
+    ) as mock_clear_property, patch("xbmc.Player") as mock_xbmc_player:
         mock_playlist.size.return_value = 2
         mock_playlist.getposition.return_value = 0
+        mock_next_item = MagicMock()
+        mock_next_item.getLabel.return_value = "1x2. Next Episode"
+        mock_playlist.__getitem__.return_value = mock_next_item
         mock_window = MagicMock()
         mock_window.action = "next_episode"
         mock_window_cls.return_value = mock_window
-        mock_cache.get.return_value = cached_data
-        mock_player = MagicMock()
-        mock_player.isPlaying.return_value = True
-        mock_xbmc.Player.return_value = mock_player
 
         params = {
             "item_info": json.dumps(
@@ -261,31 +394,26 @@ def test_run_next_dialog_fast_path_from_cache():
 
         run_next_dialog(params)
 
-        # On cache hit, it should play directly via JacktookPLayer.run
-        mock_player_cls.return_value.run.assert_called_once_with(data=cached_data)
-        mock_build_url.assert_not_called()
+        mock_set_property.assert_called_once_with("jacktook_next_dialog_action", "next_episode")
+        mock_clear_property.assert_not_called()
+        mock_xbmc_player.assert_not_called()
+        created_item_info = mock_window_cls.call_args.kwargs["item_information"]
+        assert created_item_info["next_label"] == "1x2. Next Episode"
 
 
-def test_run_next_dialog_fallback_on_cache_miss():
+def test_run_next_dialog_clears_pending_action_when_dialog_not_accepted():
     from lib.gui.custom_dialogs import run_next_dialog
 
     with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
-        "lib.gui.custom_dialogs.cache"
-    ) as mock_cache, patch("lib.gui.custom_dialogs.xbmc") as mock_xbmc, patch(
         "lib.gui.custom_dialogs.PlayNext"
-    ) as mock_window_cls, patch("xbmcgui.ListItem"), patch(
-        "lib.gui.custom_dialogs.build_url"
-    ) as mock_build_url, patch("lib.gui.custom_dialogs.JacktookPLayer") as mock_player_cls:
+    ) as mock_window_cls, patch("lib.gui.custom_dialogs.set_property") as mock_set_property, patch(
+        "lib.gui.custom_dialogs.clear_property"
+    ) as mock_clear_property:
         mock_playlist.size.return_value = 2
         mock_playlist.getposition.return_value = 0
         mock_window = MagicMock()
-        mock_window.action = "next_episode"
+        mock_window.action = "close"
         mock_window_cls.return_value = mock_window
-        mock_cache.get.return_value = None
-        mock_player = MagicMock()
-        mock_player.isPlaying.return_value = True
-        mock_xbmc.Player.return_value = mock_player
-        mock_build_url.return_value = "plugin://test"
 
         params = {
             "item_info": json.dumps(
@@ -300,6 +428,28 @@ def test_run_next_dialog_fallback_on_cache_miss():
 
         run_next_dialog(params)
 
-        # On cache miss, it should build search URL and fall back to existing flow
-        mock_build_url.assert_called()
-        mock_player_cls.return_value.run.assert_not_called()
+        mock_set_property.assert_not_called()
+        mock_clear_property.assert_called_once_with("jacktook_next_dialog_action")
+
+
+def test_run_next_dialog_shows_without_next_playlist_item():
+    from lib.gui.custom_dialogs import run_next_dialog
+
+    with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
+        "lib.gui.custom_dialogs.PlayNext"
+    ) as mock_window_cls, patch("lib.gui.custom_dialogs.set_property") as mock_set_property, patch(
+        "lib.gui.custom_dialogs.clear_property"
+    ) as mock_clear_property:
+        mock_playlist.size.return_value = 1
+        mock_playlist.getposition.return_value = 0
+        mock_window = MagicMock()
+        mock_window.action = "next_episode"
+        mock_window_cls.return_value = mock_window
+
+        run_next_dialog({"item_info": "{}"})
+
+        mock_window_cls.assert_called_once()
+        created_item_info = mock_window_cls.call_args.kwargs["item_information"]
+        assert "next_label" not in created_item_info
+        mock_set_property.assert_called_once_with("jacktook_next_dialog_action", "next_episode")
+        mock_clear_property.assert_not_called()

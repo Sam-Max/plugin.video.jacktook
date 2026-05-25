@@ -431,6 +431,30 @@ msgctxt "#30939"
 msgid "Auto-resume from last position without asking"
 msgstr "Автоматически возобновлять с последней позиции без вопросов"
 
+msgctxt "#30940"
+msgid "Use Percentage Trigger"
+msgstr "Использовать срабатывание по проценту"
+
+msgctxt "#30941"
+msgid "Show Dialog at Playback Percentage"
+msgstr "Показывать диалог при проценте воспроизведения"
+
+msgctxt "#30942"
+msgid "Trigger the next-episode dialog based on percentage of video played instead of seconds remaining."
+msgstr "Показывать диалог следующего эпизода на основе процента просмотренного видео, а не оставшихся секунд."
+
+msgctxt "#30943"
+msgid "The percentage at which the next-episode dialog appears (e.g. 95 means 95% of the video)."
+msgstr "Процент, при котором появляется диалог следующего эпизода (например, 95 означает 95% видео)."
+
+msgctxt "#30944"
+msgid "Auto-Play Timeout"
+msgstr "Тайм-аут автовоспроизведения"
+
+msgctxt "#30945"
+msgid "Seconds before auto-playing next episode. 0 = disabled, dialog waits for user input."
+msgstr "Секунды до автоматического воспроизведения следующего эпизода. 0 = отключено, диалог ждёт ввода пользователя."
+
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Сиды"
@@ -458,6 +482,10 @@ msgstr "Настройка Torrentio"
 msgctxt "#30734"
 msgid "Enable"
 msgstr "Включить"
+
+msgctxt "#30735"
+msgid "Still Watching? Threshold"
+msgstr "Порог 'Ещё смотрите?'"
 
 msgctxt "#30736"
 msgid "Subtitle Language"
@@ -606,6 +634,10 @@ msgstr "Настройка Zilean"
 msgctxt "#30772"
 msgid "Zilean Host"
 msgstr "Хост Zilean"
+
+msgctxt "#30773"
+msgid "Number of consecutive auto-played episodes before asking 'Still Watching?'. Set to 0 to disable."
+msgstr "Количество подряд автоматически воспроизведённых эпизодов перед вопросом 'Ещё смотрите?'. Установите 0, чтобы отключить."
 
 msgctxt "#30774"
 msgid "Zilean Timeout"
@@ -1990,10 +2022,6 @@ msgstr "Вы хотите воспроизвести последнее прос
 msgctxt "#90144"
 msgid "Could not resolve playback URL"
 msgstr "Не удалось разрешить URL воспроизведения"
-
-msgctxt "#90145"
-msgid "Precaching Enabled"
-msgstr "Предкэширование включено"
 
 msgctxt "#90171"
 msgid "Autoscrape Next Episode"
@@ -4010,3 +4038,379 @@ msgstr "Открыть настройки внешнего scraper"
 msgctxt "#90307"
 msgid "Open the settings for the selected external scraper module."
 msgstr "Открыть настройки выбранного внешнего модуля scraper."
+
+msgctxt "#90382"
+msgid "Please set a valid Trakt Client ID Key"
+msgstr "Укажите действительный ключ Client ID Trakt"
+
+msgctxt "#90383"
+msgid "Please set a valid Trakt Client Secret Key"
+msgstr "Укажите действительный секретный ключ Client Secret Trakt"
+
+msgctxt "#90384"
+msgid "Trakt Error Authorizing"
+msgstr "Ошибка авторизации Trakt"
+
+msgctxt "#90385"
+msgid "Trakt Account Authorized"
+msgstr "Аккаунт Trakt авторизован"
+
+msgctxt "#90386"
+msgid "You are now logged out from Trakt.tv"
+msgstr "Вы вышли из Trakt.tv"
+
+msgctxt "#90387"
+msgid "Failed to mark as watched"
+msgstr "Не удалось отметить как просмотренное"
+
+msgctxt "#90388"
+msgid "Marked as watched"
+msgstr "Отмечено как просмотренное"
+
+msgctxt "#90389"
+msgid "No results found"
+msgstr "Результаты не найдены"
+
+msgctxt "#90390"
+msgid "Invalid mode"
+msgstr "Недопустимый режим"
+
+msgctxt "#90391"
+msgid "No recommendations found"
+msgstr "Рекомендации не найдены"
+
+msgctxt "#90392"
+msgid "No similar items found"
+msgstr "Похожие элементы не найдены"
+
+msgctxt "#90393"
+msgid "TMDB metadata not found"
+msgstr "Метаданные TMDB не найдены"
+
+msgctxt "#90394"
+msgid "No TV shows found"
+msgstr "Сериалы не найдены"
+
+msgctxt "#90395"
+msgid "No shows airing today"
+msgstr "Сегодня нет выходящих серий"
+
+msgctxt "#90396"
+msgid "Invalid collection query"
+msgstr "Недопустимый запрос коллекции"
+
+msgctxt "#90397"
+msgid "No keywords found"
+msgstr "Ключевые слова не найдены"
+
+msgctxt "#90398"
+msgid "No keyword ID provided"
+msgstr "ID ключевого слова не указан"
+
+msgctxt "#90399"
+msgid "No results found for this keyword"
+msgstr "Для этого ключевого слова результаты не найдены"
+
+msgctxt "#90400"
+msgid "No TMDB ID found"
+msgstr "ID TMDB не найден"
+
+msgctxt "#90401"
+msgid "Unsupported media type or missing external_ids"
+msgstr "Неподдерживаемый тип медиа или отсутствуют external_ids"
+
+msgctxt "#90402"
+msgid "Refreshed Metadata"
+msgstr "Метаданные обновлены"
+
+msgctxt "#90403"
+msgid "No Stremio addons selected"
+msgstr "Аддоны Stremio не выбраны"
+
+msgctxt "#90404"
+msgid "No suitable source found for auto play."
+msgstr "Подходящий источник для автовоспроизведения не найден."
+
+msgctxt "#90405"
+msgid "No sources found with the preferred quality."
+msgstr "Источники с предпочитаемым качеством не найдены."
+
+msgctxt "#90406"
+msgid "No languages found"
+msgstr "Языки не найдены"
+
+msgctxt "#90407"
+msgid "Failed to resolve playback source"
+msgstr "Не удалось определить источник воспроизведения"
+
+msgctxt "#90408"
+msgid "Trakt not authorized. Please authenticate."
+msgstr "Trakt не авторизован. Выполните аутентификацию."
+
+msgctxt "#90409"
+msgid "Added to Trakt Watchlist"
+msgstr "Добавлено в список просмотра Trakt"
+
+msgctxt "#90428"
+msgid "Database read error. File may be corrupted."
+msgstr "Ошибка чтения базы данных. Файл может быть повреждён."
+
+msgctxt "#90429"
+msgid "Failed to delete data. Database error."
+msgstr "Не удалось удалить данные. Ошибка базы данных."
+
+msgctxt "#90430"
+msgid "Failed to clear cache. Database in use."
+msgstr "Не удалось очистить кэш. База данных используется."
+
+msgctxt "#90458"
+msgid "OpenSubtitles Stremio: No results found."
+msgstr "OpenSubtitles Stremio: результаты не найдены."
+
+msgctxt "#90460"
+msgid "Subtitle Manager: No subtitles available for this video."
+msgstr "Менеджер субтитров: для этого видео субтитры недоступны."
+
+msgctxt "#90468"
+msgid "Search menu"
+msgstr "Меню поиска"
+
+msgctxt "#90469"
+msgid "Continue watching menu"
+msgstr "Меню продолжения просмотра"
+
+msgctxt "#90470"
+msgid "TV Shows Items"
+msgstr "Элементы сериалов"
+
+msgctxt "#90471"
+msgid "Movies Items"
+msgstr "Элементы фильмов"
+
+msgctxt "#90472"
+msgid "Anime menu"
+msgstr "Меню аниме"
+
+msgctxt "#90473"
+msgid "TV Menu"
+msgstr "Меню ТВ"
+
+msgctxt "#90474"
+msgid "Library menu"
+msgstr "Меню библиотеки"
+
+msgctxt "#90475"
+msgid "Torrents Management"
+msgstr "Управление торрентами"
+
+msgctxt "#90476"
+msgid "Telegram menu"
+msgstr "Меню Telegram"
+
+msgctxt "#90477"
+msgid "Cloud Storage"
+msgstr "Облачное хранилище"
+
+msgctxt "#90478"
+msgid "Downloads Management"
+msgstr "Управление загрузками"
+
+msgctxt "#90479"
+msgid "Settings Management"
+msgstr "Управление настройками"
+
+msgctxt "#90480"
+msgid "History Menu"
+msgstr "Меню истории"
+
+msgctxt "#90481"
+msgid "Files History"
+msgstr "История файлов"
+
+msgctxt "#90482"
+msgid "Titles History"
+msgstr "История названий"
+
+msgctxt "#90483"
+msgid "Titles Calendar"
+msgstr "Календарь названий"
+
+msgctxt "#90484"
+msgid "My Shows"
+msgstr "Мои сериалы"
+
+msgctxt "#90485"
+msgid "My Movies"
+msgstr "Мои фильмы"
+
+msgctxt "#90486"
+msgid "Upcoming Episodes"
+msgstr "Предстоящие эпизоды"
+
+msgctxt "#90487"
+msgid "Discovery List"
+msgstr "Список открытий"
+
+msgctxt "#90488"
+msgid "Library List"
+msgstr "Список библиотеки"
+
+msgctxt "#90489"
+msgid "Trakt Recommendations"
+msgstr "Рекомендации Trakt"
+
+msgctxt "#90490"
+msgid "Trending Lists"
+msgstr "Популярные сейчас списки"
+
+msgctxt "#90491"
+msgid "Popular Lists"
+msgstr "Популярные списки"
+
+msgctxt "#90492"
+msgid "Search Lists"
+msgstr "Поиск списков"
+
+msgctxt "#90493"
+msgid "Recent Activity"
+msgstr "Недавняя активность"
+
+msgctxt "#90494"
+msgid "Downloads List"
+msgstr "Список загрузок"
+
+msgctxt "#90495"
+msgid "Download New"
+msgstr "Новая загрузка"
+
+msgctxt "#90496"
+msgid "Cartoons Popular"
+msgstr "Популярные мультфильмы"
+
+msgctxt "#90497"
+msgid "Animation Popular"
+msgstr "Популярная анимация"
+
+msgctxt "#90500"
+msgid "Translating subtitle..."
+msgstr "Перевод субтитров..."
+
+msgctxt "#90501"
+msgid "Translation done."
+msgstr "Перевод завершён."
+
+msgctxt "#90502"
+msgid "Searching subtitles..."
+msgstr "Поиск субтитров..."
+
+msgctxt "#90503"
+msgid "No subtitles found"
+msgstr "Субтитры не найдены"
+
+msgctxt "#90504"
+msgid "Failed to authenticate with DeepL. Please check your API key."
+msgstr "Не удалось пройти аутентификацию в DeepL. Проверьте ключ API."
+
+msgctxt "#90505"
+msgid "DeepL API key is missing or invalid."
+msgstr "Ключ API DeepL отсутствует или недействителен."
+
+msgctxt "#90712"
+msgid "Views"
+msgstr "Виды"
+
+msgctxt "#90713"
+msgid "Set Main View"
+msgstr "Задать основной вид"
+
+msgctxt "#90714"
+msgid "Set Movies View"
+msgstr "Задать вид фильмов"
+
+msgctxt "#90715"
+msgid "Set TV Shows View"
+msgstr "Задать вид сериалов"
+
+msgctxt "#90716"
+msgid "Set Seasons View"
+msgstr "Задать вид сезонов"
+
+msgctxt "#90717"
+msgid "Set Episodes View"
+msgstr "Задать вид эпизодов"
+
+msgctxt "#90718"
+msgid "Set Library View"
+msgstr "Задать вид библиотеки"
+
+msgctxt "#90719"
+msgid "Set History View"
+msgstr "Задать вид истории"
+
+msgctxt "#90720"
+msgid "Set Downloads View"
+msgstr "Задать вид загрузок"
+
+msgctxt "#90721"
+msgid "Save Current View"
+msgstr "Сохранить текущий вид"
+
+msgctxt "#90722"
+msgid "View saved"
+msgstr "Вид сохранён"
+
+msgctxt "#90723"
+msgid "Could not detect the current view"
+msgstr "Не удалось определить текущий вид"
+
+msgctxt "#90724"
+msgid "Saved views reset"
+msgstr "Сохранённые виды сброшены"
+
+msgctxt "#90725"
+msgid "Reset Saved Views"
+msgstr "Сбросить сохранённые виды"
+
+msgctxt "#90726"
+msgid "Open this screen, change the Kodi view manually, then select Save Current View."
+msgstr "Откройте этот экран, вручную измените вид Kodi, затем выберите Сохранить текущий вид."
+
+msgctxt "#90730"
+msgid "Search with title + year"
+msgstr "Искать по названию + году"
+
+msgctxt "#90731"
+msgid "Search with original title"
+msgstr "Искать по оригинальному названию"
+
+msgctxt "#90732"
+msgid "Search with original title + year"
+msgstr "Искать по оригинальному названию + году"
+
+msgctxt "#90733"
+msgid "Search modes"
+msgstr "Режимы поиска"
+
+msgctxt "#90734"
+msgid "Enter year"
+msgstr "Введите год"
+
+msgctxt "#90735"
+msgid "Invalid year"
+msgstr "Недопустимый год"
+
+msgctxt "#90736"
+msgid "Edit title"
+msgstr "Редактировать название"
+
+msgctxt "#90737"
+msgid "Invalid season"
+msgstr "Недопустимый сезон"
+
+msgctxt "#90738"
+msgid "Episode"
+msgstr "Эпизод"
+
+msgctxt "#90739"
+msgid "Invalid episode"
+msgstr "Недопустимый эпизод"

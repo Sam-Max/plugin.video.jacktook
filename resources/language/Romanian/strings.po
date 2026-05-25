@@ -431,6 +431,30 @@ msgctxt "#30939"
 msgid "Auto-resume from last position without asking"
 msgstr "Reia automat de la ultima poziție fără confirmare"
 
+msgctxt "#30940"
+msgid "Use Percentage Trigger"
+msgstr "Folosește declanșare procentuală"
+
+msgctxt "#30941"
+msgid "Show Dialog at Playback Percentage"
+msgstr "Afișează dialogul la procentul de redare"
+
+msgctxt "#30942"
+msgid "Trigger the next-episode dialog based on percentage of video played instead of seconds remaining."
+msgstr "Declanșează dialogul episodului următor pe baza procentului redat din video, în locul secundelor rămase."
+
+msgctxt "#30943"
+msgid "The percentage at which the next-episode dialog appears (e.g. 95 means 95% of the video)."
+msgstr "Procentul la care apare dialogul episodului următor (de ex. 95 înseamnă 95% din video)."
+
+msgctxt "#30944"
+msgid "Auto-Play Timeout"
+msgstr "Timeout redare automată"
+
+msgctxt "#30945"
+msgid "Seconds before auto-playing next episode. 0 = disabled, dialog waits for user input."
+msgstr "Secunde înainte de redarea automată a episodului următor. 0 = dezactivat, dialogul așteaptă intervenția utilizatorului."
+
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Seederi"
@@ -458,6 +482,10 @@ msgstr "Configurează Torrentio"
 msgctxt "#30734"
 msgid "Enable"
 msgstr "Activează"
+
+msgctxt "#30735"
+msgid "Still Watching? Threshold"
+msgstr "Prag Încă vizionezi?"
 
 msgctxt "#30736"
 msgid "Subtitle Language"
@@ -606,6 +634,10 @@ msgstr "Configurează Zilean"
 msgctxt "#30772"
 msgid "Zilean Host"
 msgstr "Host Zilean"
+
+msgctxt "#30773"
+msgid "Number of consecutive auto-played episodes before asking 'Still Watching?'. Set to 0 to disable."
+msgstr "Numărul de episoade redate automat consecutiv înainte de întrebarea 'Încă vizionezi?'. Setează la 0 pentru dezactivare."
 
 msgctxt "#30774"
 msgid "Zilean Timeout"

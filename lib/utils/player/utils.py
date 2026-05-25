@@ -1,11 +1,12 @@
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
 from xbmc import LOGDEBUG
 from xbmcgui import Dialog
 
 from lib.db.cached import cache
+from lib.domain.torrent import TorrentStream
 from lib.jacktook.utils import kodilog
 from lib.utils.debrid.debrid_utils import (
     get_debrid_direct_url,
@@ -278,6 +279,11 @@ def get_autoscrape_cache_key(id_value: Any, season: Any, episode: Any) -> str:
     return f"as:{id_value}_{season}_{episode}"
 
 
+def get_autoscrape_results_cache_key(id_value: Any, season: Any, episode: Any) -> str:
+    """Build autoscrape results cache key using as_results:{id}_{season}_{episode} format."""
+    return f"as_results:{id_value}_{season}_{episode}"
+
+
 def cache_autoscrape_result(
     key: str, data: Dict[str, Any], ttl_hours: Optional[int] = None
 ) -> None:
@@ -285,6 +291,30 @@ def cache_autoscrape_result(
     if ttl_hours is None:
         ttl_hours = int(get_setting("autoscrape_ttl", 4) or 4)
     cache.set(key, data, expires=timedelta(hours=ttl_hours))
+
+
+# Quality pattern -> label mapping, matching PreProcessBuilder.filter_by_quality().
+# Keep in priority order: more specific patterns first.
+_QUALITY_PATTERNS: List[tuple[str, str]] = [
+    ("2160", "[B][COLOR yellow]4k[/COLOR][/B]"),
+    ("1080p", "[B][COLOR blue]1080p[/COLOR][/B]"),
+    ("720p", "[B][COLOR orange]720p[/COLOR][/B]"),
+    ("480p", "[B][COLOR orange]480p[/COLOR][/B]"),
+]
+_UNKNOWN_QUALITY_LABEL = "[B][COLOR yellow]N/A[/COLOR][/B]"
+
+
+def _extract_quality_from_titles(results: List[TorrentStream]) -> None:
+    """Mutate each result's quality field by matching patterns in the title."""
+    for res in results:
+        matched = False
+        for pattern, label in _QUALITY_PATTERNS:
+            if pattern in res.title:
+                res.quality = label
+                matched = True
+                break
+        if not matched:
+            res.quality = _UNKNOWN_QUALITY_LABEL
 
 
 def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, Any]) -> None:
@@ -306,6 +336,7 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
         return
 
     cache_key = get_autoscrape_cache_key(id_value, season, episode)
+    results_cache_key = get_autoscrape_results_cache_key(id_value, season, episode)
 
     try:
         from lib.search import search_client
@@ -324,6 +355,16 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
         if not results:
             kodilog("Autoscrape: no results found")
             return
+
+        # Populate quality from title for each result (search_client
+        # returns raw TorrentStream objects with quality="N/A"). This
+        # matches what PreProcessBuilder.filter_by_quality() does without
+        # importing Kodi-dependent modules in this background thread.
+        _extract_quality_from_titles(results)
+
+        # Cache results for source select (when autoplay is disabled)
+        cache_autoscrape_result(results_cache_key, results)
+        kodilog(f"Autoscrape: cached results {results_cache_key} ({len(results)} sources)")
 
         # Apply auto_play heuristics to select best source
         preferred_quality = str(get_setting("auto_play_quality", "1080p"))

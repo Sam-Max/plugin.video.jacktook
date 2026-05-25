@@ -3,11 +3,9 @@ import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, List
 
-import xbmc
 import xbmcgui
 from xbmcgui import WindowXML, WindowXMLDialog
 
-from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.custom_progress import CustomProgressDialog
 from lib.gui.play_next_window import PlayNext
@@ -15,8 +13,14 @@ from lib.gui.resolver_window import ResolverWindow
 from lib.gui.resume_window import ResumeDialog
 from lib.gui.search_status_window import SearchStatusWindow, SearchTaskManager
 from lib.gui.source_select import SourceSelect
-from lib.player import JacktookPLayer
-from lib.utils.kodi.utils import ADDON_PATH, PLAYLIST, build_url, kodilog, translation
+from lib.utils.kodi.utils import (
+    ADDON_PATH,
+    PLAYLIST,
+    clear_property,
+    kodilog,
+    set_property,
+    translation,
+)
 
 
 class CustomWindow(WindowXML):
@@ -135,83 +139,35 @@ def run_next_dialog(params):
         kodilog(f"Error accessing playlist in run_next_dialog: {e}")
         return
 
-    if playlist_size > 0 and playlist_pos != (playlist_size - 1):
-        window = None
-        try:
-            window = PlayNext(
-                "playing_next.xml",
-                ADDON_PATH,
-                item_information=json.loads(params["item_info"]),
-            )
-            window.doModal()
-        finally:
-            action = window.action if window else None
-            if window is not None:
-                del window
+    window = None
+    try:
+        item_information = json.loads(params["item_info"])
+        if playlist_size > 0 and playlist_pos >= 0 and playlist_pos < playlist_size - 1:
+            try:
+                next_item = PLAYLIST[playlist_pos + 1]
+                next_label = next_item.getLabel()
+                if next_label:
+                    item_information["next_label"] = next_label
+            except Exception as e:
+                kodilog(f"Unable to read next playlist item label: {e}")
+        else:
+            kodilog("No next playlist item label available for PlayNext dialog")
+
+        window = PlayNext(
+            "playing_next.xml",
+            ADDON_PATH,
+            item_information=item_information,
+        )
+        window.doModal()
+    finally:
+        action = window.action if window else None
+        if window is not None:
+            del window
 
         if action == "next_episode":
-            xbmc.log(
-                "[JACKTOOK] Next Episode triggered from dialog.",
-                xbmc.LOGINFO,
-            )
-            player = xbmc.Player()
-            if not player.isPlaying():
-                return
-
-            # Wait for window animation
-            xbmc.sleep(600)
-
-            if not player.isPlaying():
-                return
-
-            # Extract episode info and build next episode URL
-            item_info = json.loads(params["item_info"])
-            tv_data = item_info.get("tv_data", {})
-            current_episode = tv_data.get("episode")
-            season = tv_data.get("season")
-
-            if current_episode is None or season is None:
-                return
-
-            next_episode = current_episode + 1
-
-            # Check autoscrape cache for fast path
-            ids = item_info.get("ids", {})
-            id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
-            if id_value is not None:
-                from lib.utils.player.utils import get_autoscrape_cache_key
-
-                cache_key = get_autoscrape_cache_key(id_value, season, next_episode)
-                cached_data = cache.get(cache_key)
-                if cached_data:
-                    PLAYLIST.clear()
-                    jack_player = JacktookPLayer()
-                    jack_player.run(data=cached_data)
-                    del jack_player
-                    return
-
-            next_tv_data = {
-                "episode": next_episode,
-                "season": season,
-            }
-
-            next_url = build_url(
-                "search",
-                mode=item_info.get("mode"),
-                query=item_info.get("title"),
-                ids=ids,
-                tv_data=next_tv_data,
-                rescrape=True,
-            )
-
-            # Clear playlist to prevent "out of range" crash when video ends
-            PLAYLIST.clear()
-
-            # Play directly
-            from xbmcgui import ListItem
-
-            list_item = ListItem(path=next_url)
-            player.play(next_url, list_item)
+            set_property("jacktook_next_dialog_action", "next_episode")
+        else:
+            clear_property("jacktook_next_dialog_action")
 
 
 def run_resume_dialog(params):

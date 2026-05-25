@@ -1,5 +1,5 @@
 import json
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import List, Optional
 
 import xbmc
@@ -456,6 +456,7 @@ def run_search_entry(params: dict):
     tv_data = normalize_tv_data(safe_json_loads(params.get("tv_data")))
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
+    skip_cancel = params.get("skip_cancel_on_back", False)
 
     variant = _normalize_search_variant(params.get("search_variant", SearchVariant.DEFAULT))
     title_language_mode = _normalize_title_language_mode(
@@ -472,8 +473,11 @@ def run_search_entry(params: dict):
             year = None
 
     kodilog(
-        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, variant={variant}, title_language_mode={title_language_mode}, year={year}, rescrape={rescrape}, force_select={params.get('force_select', False)}"
+        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, "
+        f"variant={variant}, title_language_mode={title_language_mode}, year={year}, "
+        f"rescrape={rescrape}, force_select={params.get('force_select', False)}"
     )
+    kodilog(f"[PLAYNEXT] run_search_entry: tv_data from params={tv_data}, ids={ids}")
 
     library_data = None
     if params.get("stremio_addon_url") and params.get("stremio_catalog_type"):
@@ -508,7 +512,8 @@ def run_search_entry(params: dict):
     )
     if not results:
         notification("No results found")
-        cancel_playback()
+        if not skip_cancel:
+            cancel_playback()
         return
 
     final_results = _process_search_results(
@@ -525,14 +530,23 @@ def run_search_entry(params: dict):
 
     if not final_results:
         notification(translation(90358))
-        cancel_playback()
+        if not skip_cancel:
+            cancel_playback()
         return
 
     preferred_group = params.get("preferred_group")
     force_select = params.get("force_select", False)
+    autoplay_context = params.get("autoplay_context")
 
     if auto_play_enabled() and not force_select:
-        if not auto_play(final_results, ids, tv_data, mode, preferred_group):
+        if not auto_play(
+            final_results,
+            ids,
+            tv_data,
+            mode,
+            preferred_group,
+            autoplay_context=autoplay_context,
+        ) and not skip_cancel:
             cancel_playback()
         return
 
@@ -545,7 +559,8 @@ def run_search_entry(params: dict):
         media_type,
         rescrape,
         direct,
-    ):
+        autoplay_context=autoplay_context,
+    ) and not skip_cancel:
         cancel_playback()
 
 
@@ -995,6 +1010,125 @@ def _submit_search_tasks_managed(
                 )
 
 
+def _check_search_caches(
+    query: str,
+    ids: dict,
+    mode: str,
+    media_type: str,
+    episode: int,
+    season: int,
+    cache_scope: str,
+) -> Optional[List[TorrentStream]]:
+    """Check standard cache then autoscrape fallback cache.
+
+    Returns cached results if found (even an empty list), or None if
+    no cache entry exists (caller should perform a fresh search).
+    """
+    cached = get_cached_results(query, mode, media_type, episode, cache_scope=cache_scope)
+    if cached is not None:
+        return cached
+
+    # Fallback: autoscrape cache (PlayNext background scrape) under
+    # ``as_results:{id}_{season}_{episode}``.
+    if mode != "tv" and media_type != "tv":
+        return None
+    id_value = (
+        (ids or {}).get("original_id")
+        or (ids or {}).get("imdb_id")
+        or (ids or {}).get("tmdb_id")
+    )
+    if id_value is None or season is None or episode is None:
+        return None
+
+    from lib.db.cached import cache as _cache
+    from lib.utils.player.utils import get_autoscrape_results_cache_key
+
+    as_key = get_autoscrape_results_cache_key(id_value, season, episode)
+    as_results = _cache.get(as_key)
+    if as_results is None:
+        return None
+
+    kodilog(f"[CACHE] Autoscrape cache HIT for {as_key}, reusing {len(as_results)} results")
+    cache_results(as_results, query, mode, media_type, episode, cache_scope=cache_scope)
+    return as_results
+
+
+def _run_detailed_search(
+    query: str,
+    ids: dict,
+    mode: str,
+    media_type: str,
+    season: int,
+    episode: int,
+    scoped_addon_url: str,
+    tmdb_id: Optional[int],
+    imdb_id: Optional[str],
+    variant: str,
+    title_language_mode: str,
+    year: Optional[int],
+    title_aliases: List[str],
+) -> List[TorrentStream]:
+    """Search with SearchStatusWindow (``search_dialog_style=1``)."""
+    executor = ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6)))
+    manager = SearchTaskManager(executor)
+    _submit_search_tasks_managed(
+        manager, None, query, mode, media_type, season, episode, ids,
+        scoped_addon_url, tmdb_id, imdb_id,
+        variant=variant, title_language_mode=title_language_mode,
+        year=year, title_aliases=title_aliases,
+    )
+
+    item_info = {"ids": ids, "mode": mode}
+    if ids:
+        item_info.update(build_media_metadata(ids, mode))
+
+    window = SearchStatusWindow(
+        "search_status.xml", ADDON_PATH,
+        task_manager=manager, item_information=item_info,
+    )
+    window.doModal()
+    del window
+
+    total_results = manager.collect_results()
+    executor.shutdown(wait=False)
+    return total_results
+
+
+def _run_simple_search(
+    query: str,
+    ids: dict,
+    mode: str,
+    media_type: str,
+    season: int,
+    episode: int,
+    scoped_addon_url: str,
+    tmdb_id: Optional[int],
+    imdb_id: Optional[str],
+    show_dialog: bool,
+    variant: str,
+    title_language_mode: str,
+    year: Optional[int],
+    title_aliases: List[str],
+) -> List[TorrentStream]:
+    """Search with a simple progress dialog (``search_dialog_style=0``)."""
+    tasks: List[Future] = []
+    with DialogListener() as listener:
+        if show_dialog:
+            listener.dialog.create("")
+
+        with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
+            _submit_search_tasks(
+                executor, tasks, listener.dialog,
+                query, mode, media_type, season, episode, ids,
+                scoped_addon_url, tmdb_id, imdb_id, show_dialog,
+                variant=variant, title_language_mode=title_language_mode,
+                year=year, title_aliases=title_aliases,
+            )
+            total_results = _collect_search_results(tasks, listener, show_dialog)
+
+    return total_results
+
+
 def search_client(
     query: str,
     ids: dict,
@@ -1014,104 +1148,31 @@ def search_client(
         year = _infer_tmdb_year(ids, mode)
 
     title_aliases = _build_title_fallback_queries(
-        query,
-        ids,
-        mode,
-        SearchVariant.DEFAULT,
-        year,
+        query, ids, mode, SearchVariant.DEFAULT, year,
         title_language_mode=title_language_mode,
     )
     cache_scope = _build_search_cache_scope(scoped_addon_url)
 
     if not rescrape:
-        cached_results = get_cached_results(
-            query, mode, media_type, episode, cache_scope=cache_scope
-        )
-        if cached_results:
-            return cached_results
+        cached = _check_search_caches(query, ids, mode, media_type, episode, season, cache_scope)
+        if cached is not None:
+            return cached
 
     tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
-    total_results = []
-    tasks = []
 
-    use_detailed_status = show_dialog and get_setting("search_dialog_style", "0") == "1"
-
-    if use_detailed_status:
-        executor = ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6)))
-        manager = SearchTaskManager(executor)
-        _submit_search_tasks_managed(
-            manager,
-            None,
-            query,
-            mode,
-            media_type,
-            season,
-            episode,
-            ids,
-            scoped_addon_url,
-            tmdb_id,
-            imdb_id,
-            variant=variant,
-            title_language_mode=title_language_mode,
-            year=year,
-            title_aliases=title_aliases,
+    if show_dialog and get_setting("search_dialog_style", "0") == "1":
+        total_results = _run_detailed_search(
+            query, ids, mode, media_type, season, episode, scoped_addon_url,
+            tmdb_id, imdb_id, variant, title_language_mode, year, title_aliases,
         )
-
-        item_info = {"ids": ids, "mode": mode}
-        if ids:
-            item_info.update(build_media_metadata(ids, mode))
-
-        window = SearchStatusWindow(
-            "search_status.xml",
-            ADDON_PATH,
-            task_manager=manager,
-            item_information=item_info,
-        )
-        window.doModal()
-        del window
-
-        total_results = manager.collect_results()
-
-        if manager.is_cancelled:
-            executor.shutdown(wait=False)
-        else:
-            executor.shutdown(wait=False)
     else:
-        with DialogListener() as listener:
-            if show_dialog:
-                listener.dialog.create("")
+        total_results = _run_simple_search(
+            query, ids, mode, media_type, season, episode, scoped_addon_url,
+            tmdb_id, imdb_id, show_dialog, variant, title_language_mode, year,
+            title_aliases,
+        )
 
-            with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
-                _submit_search_tasks(
-                    executor,
-                    tasks,
-                    listener.dialog,
-                    query,
-                    mode,
-                    media_type,
-                    season,
-                    episode,
-                    ids,
-                    scoped_addon_url,
-                    tmdb_id,
-                    imdb_id,
-                    show_dialog,
-                    variant=variant,
-                    title_language_mode=title_language_mode,
-                    year=year,
-                    title_aliases=title_aliases,
-                )
-
-                total_results = _collect_search_results(tasks, listener, show_dialog)
-
-    cache_results(
-        total_results,
-        query,
-        mode,
-        media_type,
-        episode,
-        cache_scope=cache_scope,
-    )
+    cache_results(total_results, query, mode, media_type, episode, cache_scope=cache_scope)
     return total_results
 
 
@@ -1154,6 +1215,7 @@ def show_source_select(
     media_type: str,
     rescrape: bool,
     direct: bool = False,
+    autoplay_context: Optional[str] = None,
 ) -> bool:
     item_info = {
         "tv_data": tv_data,
@@ -1163,12 +1225,17 @@ def show_source_select(
         "media_type": media_type,
         "rescrape": rescrape,
     }
+    if autoplay_context:
+        item_info["playnext_context"] = True
+        item_info["direct_play"] = True
 
     if not direct and ids:
         item_info.update(build_media_metadata(ids, mode))
 
     kodilog(
-        f"show_source_select context: query={query}, mode={mode}, media_type={media_type}, year={item_info.get('year')}, ids={ids}"
+        "show_source_select context: "
+        f"query={query}, mode={mode}, media_type={media_type}, "
+        f"year={item_info.get('year')}, ids={ids}"
     )
 
     xml_file_string = "source_select_direct.xml" if mode == "direct" else "source_select.xml"
@@ -1183,6 +1250,7 @@ def auto_play(
     mode,
     preferred_group=None,
     force_select=False,
+    autoplay_context: Optional[str] = None,
 ) -> bool:
     if force_select:
         return False
@@ -1224,6 +1292,11 @@ def auto_play(
 
     if not playback_info:
         return False
+
+    playback_info["autoplay"] = True
+    if autoplay_context:
+        playback_info["playnext_context"] = True
+        playback_info["direct_play"] = True
 
     player = JacktookPLayer()
     player.run(data=playback_info)
