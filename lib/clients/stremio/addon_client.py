@@ -220,14 +220,14 @@ class StremioAddonClient(BaseClient):
                 "languages": [],
             }
         # Extract size
-        size_pattern = r"💾 ([\d.]+ (?:GB|MB))"
-        size_match = re.search(size_pattern, desc)
+        size_pattern = r"💾 ([\d.,]+ (?:GB|MB|Go|Mo))"
+        size_match = re.search(size_pattern, desc, re.IGNORECASE)
         size = size_match.group(1) if size_match else None
         if size:
             size = convert_size_to_bytes(size)
 
         # Extract seeders
-        seeders_pattern = r"👤 (\d+)"
+        seeders_pattern = r"[👥👤] (\d+)"
         seeders_match = re.search(seeders_pattern, desc)
         seeders = int(seeders_match.group(1)) if seeders_match else None
 

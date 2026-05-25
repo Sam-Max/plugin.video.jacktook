@@ -551,18 +551,28 @@ def bytes_to_human_readable(size: int, unit: str = "B") -> str:
 
 
 def convert_size_to_bytes(size_str: str) -> int:
-    """Convert size string to bytes."""
-    match = re.match(r"(\d+(?:\.\d+)?)\s*(GB|MB|KB|B)", size_str, re.IGNORECASE)
+    """Convert size string to bytes.
+
+    Supports:
+      - Standard units: GB, MB, KB, B
+      - European units: Go, Mo, Ko (Gigaoctet, Megaoctet, Kilooctet)
+      - European decimal comma: 1,5 GB → treated as 1.5 GB
+    """
+    # Normalize European decimal comma (only between digits, not a thousands separator)
+    size_str = re.sub(r"(\d),(\d)", r"\1.\2", size_str)
+    match = re.match(
+        r"(\d+(?:\.\d+)?)\s*(GB|MB|KB|B|Go|Mo|Ko)", size_str, re.IGNORECASE
+    )
 
     if match:
         size, unit = match.groups()
         size = float(size)
         unit = unit.upper()
-        if unit == "GB":
+        if unit in ("GB", "GO"):
             return int(size * 1024**3)
-        if unit == "MB":
+        if unit in ("MB", "MO"):
             return int(size * 1024**2)
-        if unit == "KB":
+        if unit in ("KB", "KO"):
             return int(size * 1024)
         return int(size)
     return 0
