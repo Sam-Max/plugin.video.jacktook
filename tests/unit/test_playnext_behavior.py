@@ -1,4 +1,5 @@
 import sys
+from types import ModuleType
 from unittest.mock import MagicMock, call
 
 import pytest
@@ -102,6 +103,40 @@ def test_check_next_dialog_time_mode_triggers_at_time_left_threshold(monkeypatch
 
     execute_builtin.assert_called_once_with("RunPlugin(test)")
     assert player.next_dialog is False
+
+
+def test_check_next_dialog_passes_authoritative_next_tv_data(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    player.data["tv_data"] = {"season": 1, "episode": 3}
+    player.total_time = 600
+    player.current_time = 550
+    player.watched_percentage = 91.7
+    player.playback_started_properly = True
+    player.next_dialog = True
+    player.playing_next_time = 50
+    next_tv_data = {"season": 1, "episode": 4, "name": "Immediate Next"}
+    captured = {}
+
+    monkeypatch.setattr(player, "_get_next_episode_data", MagicMock(return_value=next_tv_data))
+    monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: False)
+
+    def fake_action_url_run(**kwargs):
+        captured.update(kwargs)
+        return "RunPlugin(test)"
+
+    execute_builtin = MagicMock()
+    monkeypatch.setattr("lib.player.action_url_run", fake_action_url_run)
+    monkeypatch.setattr("lib.player.xbmc.executebuiltin", execute_builtin)
+
+    JacktookPLayer.check_next_dialog(player)
+
+    execute_builtin.assert_called_once_with("RunPlugin(test)")
+    assert captured["name"] == "run_next_dialog"
+    assert captured["item_info"]["next_tv_data"] == next_tv_data
+    assert player.data["next_tv_data"] == next_tv_data
+    player._get_next_episode_data.assert_called_once_with()
 
 
 def test_check_next_dialog_percentage_mode_triggers_at_percentage_threshold(monkeypatch):
@@ -234,6 +269,118 @@ def test_build_next_episode_properties_handles_invalid_episode_data():
     assert properties["next.episode"] == ""
     assert properties["next.episode_label"] == ""
     assert properties["next.episode_name"] == ""
+
+
+def test_handle_next_dialog_action_reuses_authoritative_next_tv_data(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    player.data["tv_data"] = {"season": 1, "episode": 3}
+    player.data["next_tv_data"] = {"season": 1, "episode": 4, "name": "Immediate Next"}
+    recalculator = MagicMock(return_value={"season": 1, "episode": 8, "name": "Wrong Drift"})
+    cache_handler = MagicMock(return_value=True)
+
+    monkeypatch.setattr(player, "_get_next_episode_data", recalculator)
+    monkeypatch.setattr(player, "_queue_from_autoscrape_cache", cache_handler)
+    monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 0)
+    monkeypatch.setattr("lib.player.get_property", lambda key: "")
+
+    JacktookPLayer._handle_next_dialog_action(player)
+
+    recalculator.assert_not_called()
+    cache_handler.assert_called_once_with(
+        {"season": 1, "episode": 4, "name": "Immediate Next"},
+        {"tmdb_id": "123"},
+    )
+
+
+def test_handle_next_dialog_action_falls_back_when_authoritative_missing(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    fallback_next = {"season": 1, "episode": 2, "name": "Fallback Next"}
+    recalculator = MagicMock(return_value=fallback_next)
+    cache_handler = MagicMock(return_value=True)
+
+    monkeypatch.setattr(player, "_get_next_episode_data", recalculator)
+    monkeypatch.setattr(player, "_queue_from_autoscrape_cache", cache_handler)
+    monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 0)
+    monkeypatch.setattr("lib.player.get_property", lambda key: "")
+
+    JacktookPLayer._handle_next_dialog_action(player)
+
+    recalculator.assert_called_once_with()
+    cache_handler.assert_called_once_with(fallback_next, {"tmdb_id": "123"})
+
+
+def test_handle_next_dialog_action_falls_back_when_authoritative_invalid(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    player.data["next_tv_data"] = {"season": "bad", "episode": 4, "name": "Invalid"}
+    fallback_next = {"season": 1, "episode": 2, "name": "Fallback Next"}
+    recalculator = MagicMock(return_value=fallback_next)
+    cache_handler = MagicMock(return_value=True)
+
+    monkeypatch.setattr(player, "_get_next_episode_data", recalculator)
+    monkeypatch.setattr(player, "_queue_from_autoscrape_cache", cache_handler)
+    monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 0)
+    monkeypatch.setattr("lib.player.get_property", lambda key: "")
+
+    JacktookPLayer._handle_next_dialog_action(player)
+
+    recalculator.assert_called_once_with()
+    cache_handler.assert_called_once_with(fallback_next, {"tmdb_id": "123"})
+
+
+def test_drain_nextep_queue_source_select_cancel_does_not_force_container_update(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    JacktookPLayer._nextep_queue.clear()
+    JacktookPLayer._nextep_queue.append(
+        {
+            "data": {
+                "mode": "tv",
+                "ids": {"tmdb_id": "123"},
+                "tv_data": {"season": 1, "episode": 4},
+                "query": "Show",
+                "media_type": "tv",
+            },
+            "results": [{"name": "Source 1"}],
+        }
+    )
+    show_source_select = MagicMock(return_value=False)
+    fake_search = ModuleType("lib.search")
+    fake_search.show_source_select = show_source_select
+    execute_builtin = MagicMock()
+    close_busy_dialog = MagicMock()
+    close_all_dialog = MagicMock()
+    clear_property = MagicMock()
+
+    monkeypatch.setitem(sys.modules, "lib.search", fake_search)
+    monkeypatch.setattr("lib.utils.kodi.settings.auto_play_enabled", lambda: False)
+    monkeypatch.setattr("lib.player.xbmc.executebuiltin", execute_builtin)
+    monkeypatch.setattr("lib.player.close_busy_dialog", close_busy_dialog)
+    monkeypatch.setattr("lib.player.close_all_dialog", close_all_dialog)
+    monkeypatch.setattr("lib.player.clear_property", clear_property)
+
+    try:
+        assert JacktookPLayer._drain_nextep_queue(player) is True
+    finally:
+        JacktookPLayer._nextep_queue.clear()
+
+    show_source_select.assert_called_once()
+    assert not any(
+        call_args.args
+        and isinstance(call_args.args[0], str)
+        and "Container.Update" in call_args.args[0]
+        for call_args in execute_builtin.call_args_list
+    )
+    close_busy_dialog.assert_called_once_with()
+    close_all_dialog.assert_called_once_with()
+    clear_property.assert_called_once_with("jacktook_next_dialog_action")
+    player.PLAYLIST.clear.assert_called_once_with()
 
 
 def _make_play_next(monkeypatch, auto_timeout=10):

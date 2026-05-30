@@ -677,7 +677,6 @@ def test_handle_next_dialog_action_fallback_uses_season_boundary_episode(monkeyp
 
     test_player._handle_next_dialog_action()
 
-    # New POV-style: no PLAYLIST.clear(), fires _background_search_and_queue
     assert len(threads) == 1
     target, args = threads[0].target, threads[0].args
     assert target == test_player._background_search_and_queue

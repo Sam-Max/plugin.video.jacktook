@@ -97,15 +97,7 @@ class JacktookPLayer(xbmc.Player):
         kodilog(f"[PLAYER] run() completed")
 
     def _drain_nextep_queue(self) -> bool:
-        """Process queued next episodes after current video has stopped (POV-style).
-
-        Runs AFTER play_video() returns, when the current video is fully stopped.
-        Each entry in the queue is either:
-        - A fully resolved data dict (autoplay) → play via JacktookPLayer.run()
-        - A data dict + cached results (manual) → show source_select with video stopped
-
-        Returns True if any queue entries were processed (caller may want to
-        clean up Kodi state after PlayNext interaction)"""
+        """Process queued next episodes after current video has stopped"""
         from lib.utils.kodi.settings import auto_play_enabled as _auto_play_enabled
 
         if not JacktookPLayer._nextep_queue:
@@ -143,33 +135,14 @@ class JacktookPLayer(xbmc.Player):
                 )
                 kodilog(f"[PLAYNEXT] source_select returned resolved={resolved}")
                 if not resolved:
-                    # Source select was cancelled via Back.  The video has
-                    # already stopped and the source select modal has closed,
-                    # but MyVideoNav may still show a blank container because
-                    # Kodi's window transition (fullscreenvideo -> MyVideoNav)
-                    # doesn't automatically reload the episode directory.
-                    #
-                    # Use Container.Update to replace the current container
-                    # with fresh episode items.  ADDON_HANDLE is now a
-                    # dynamic resolver (see lib/utils/kodi/utils.py) that
-                    # returns the correct handle at call time even when
-                    # reuselanguageinvoker=true creates a new invocation.
-                    return_tv_data = data.get("return_tv_data") or data.get("tv_data", {})
-                    return_url = build_url(
-                        "show_episodes_details",
-                        tv_name=data.get("query", ""),
-                        ids=data.get("ids", {}),
-                        mode=data.get("mode", "tv"),
-                        media_type=data.get("media_type", ""),
-                        season=return_tv_data.get("season") or data.get("tv_data", {}).get("season"),
-                    )
-                    kodilog(
-                        f"[PLAYNEXT] source_select cancelled, Container.Update to {return_url}"
-                    )
-                    sleep(1000)
-                    xbmc.executebuiltin(
-                        f"Container.Update({return_url},replace)"
-                    )
+                    kodilog("[PLAYNEXT] source_select cancelled; cleanup only")
+                    close_busy_dialog()
+                    close_all_dialog()
+                    clear_property("jacktook_next_dialog_action")
+                    try:
+                        self.PLAYLIST.clear()
+                    except Exception as e:
+                        kodilog(f"[PLAYNEXT] failed clearing playlist after cancel: {e}")
 
         return True
 
@@ -497,15 +470,61 @@ class JacktookPLayer(xbmc.Player):
             if use_percentage:
                 percentage = int(get_setting("playnext_percentage", 95))
                 if self.next_dialog and self.watched_percentage >= percentage:
-                    xbmc.executebuiltin(action_url_run(name="run_next_dialog", item_info=self.data))
-                    self.next_dialog = False
+                    self._open_next_dialog()
             else:
                 time_left = int(self.total_time) - int(self.current_time)
                 if self.next_dialog and time_left <= self.playing_next_time:
-                    xbmc.executebuiltin(action_url_run(name="run_next_dialog", item_info=self.data))
-                    self.next_dialog = False
+                    self._open_next_dialog()
         except Exception as e:
             kodilog(f"Error in check_next_dialog: {e}")
+
+    def _open_next_dialog(self):
+        """Open PlayNext with one resolved next episode payload."""
+        try:
+            next_tv_data = self._get_next_episode_data()
+        except Exception as e:
+            kodilog(f"[PLAYNEXT] Failed resolving next_tv_data for dialog: {e}")
+            next_tv_data = None
+        item_info = dict(self.data)
+        if self._is_valid_next_tv_data(next_tv_data):
+            self.data["next_tv_data"] = next_tv_data
+            item_info["next_tv_data"] = next_tv_data
+        xbmc.executebuiltin(action_url_run(name="run_next_dialog", item_info=item_info))
+        self.next_dialog = False
+
+    def _is_valid_next_tv_data(self, next_tv_data) -> bool:
+        """Return True when next_tv_data identifies a positive non-current episode."""
+        if not isinstance(next_tv_data, dict):
+            return False
+        try:
+            season = int(next_tv_data.get("season"))
+            episode = int(next_tv_data.get("episode"))
+        except (TypeError, ValueError):
+            return False
+        if season <= 0 or episode <= 0:
+            return False
+
+        current_tv_data = self.data.get("tv_data") or {}
+        try:
+            current_season = int(current_tv_data.get("season"))
+            current_episode = int(current_tv_data.get("episode"))
+        except (TypeError, ValueError):
+            return True
+        return (season, episode) != (current_season, current_episode)
+
+    def _authoritative_next_tv_data(self):
+        """Prefer dialog/player next_tv_data, falling back to recalculation."""
+        next_tv_data = self.data.get("next_tv_data")
+        if self._is_valid_next_tv_data(next_tv_data):
+            kodilog(f"[PLAYNEXT] Using authoritative next_tv_data {next_tv_data}")
+            return next_tv_data
+
+        next_tv_data = self._get_next_episode_data()
+        kodilog(f"[PLAYNEXT] _get_next_episode_data returned {next_tv_data}")
+        if self._is_valid_next_tv_data(next_tv_data):
+            self.data["next_tv_data"] = next_tv_data
+            return next_tv_data
+        return None
 
     def _check_still_watching_threshold(self) -> bool:
         """Check consecutive autoplay count and prompt 'Still Watching?' dialog.
@@ -572,14 +591,7 @@ class JacktookPLayer(xbmc.Player):
                 return False
 
     def _queue_from_autoscrape_cache(self, next_tv_data: dict, ids: dict) -> bool:
-        """Check autoscrape cache and if hit, queue next episode + STOP player.
-
-        POV-style: queues the next episode data, then calls self.stop() to
-        exit the monitor loop. run() will process the queue AFTER the video
-        stops (via _drain_nextep_queue).
-
-        Returns True if cache was handled (player will stop), False to fallback.
-        """
+        """Check autoscrape cache and if hit, queue next episode + STOP player."""
         id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
         if id_value is None:
             return False
@@ -634,12 +646,8 @@ class JacktookPLayer(xbmc.Player):
         return True
 
     def _handle_next_dialog_action(self):
-        """Handle next-episode playback (POV-style).
+        """Handle next-episode playback"""
 
-        POV model: queue next episode data, STOP current video, then let
-        _drain_nextep_queue() process the next episode AFTER the video stops.
-        This avoids opening source_select dialogs while a video is playing.
-        """
         from json import dumps as json_dumps
 
         kodilog(
@@ -651,8 +659,7 @@ class JacktookPLayer(xbmc.Player):
         if self._check_still_watching_threshold():
             return
 
-        next_tv_data = self._get_next_episode_data()
-        kodilog(f"[PLAYNEXT] _get_next_episode_data returned {next_tv_data}")
+        next_tv_data = self._authoritative_next_tv_data()
         if not next_tv_data:
             clear_property("jacktook_next_dialog_action")
             return
@@ -675,13 +682,7 @@ class JacktookPLayer(xbmc.Player):
         clear_property("jacktook_next_dialog_action")
 
     def _background_search_and_queue(self, item_data: dict, next_tv_data: dict) -> None:
-        """Search silently in background, queue result, then stop player.
-
-        POV-style: the search runs silently (no dialogs). If cache is
-        populated after the search, the result is queued and the player
-        is stopped. run() / _drain_nextep_queue() handles playback AFTER
-        the stop.
-        """
+        """Search silently in background, queue result, then stop player"""
         from lib.utils.player.utils import autoscrape_next_episode
 
         try:
