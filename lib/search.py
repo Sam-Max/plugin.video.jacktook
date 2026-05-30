@@ -1071,27 +1071,34 @@ def _run_detailed_search(
     """Search with SearchStatusWindow (``search_dialog_style=1``)."""
     executor = ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6)))
     manager = SearchTaskManager(executor)
-    _submit_search_tasks_managed(
-        manager, None, query, mode, media_type, season, episode, ids,
-        scoped_addon_url, tmdb_id, imdb_id,
-        variant=variant, title_language_mode=title_language_mode,
-        year=year, title_aliases=title_aliases,
-    )
+    try:
+        _submit_search_tasks_managed(
+            manager, None, query, mode, media_type, season, episode, ids,
+            scoped_addon_url, tmdb_id, imdb_id,
+            variant=variant, title_language_mode=title_language_mode,
+            year=year, title_aliases=title_aliases,
+        )
 
-    item_info = {"ids": ids, "mode": mode}
-    if ids:
-        item_info.update(build_media_metadata(ids, mode))
+        item_info = {"ids": ids, "mode": mode}
+        if ids:
+            item_info.update(build_media_metadata(ids, mode))
 
-    window = SearchStatusWindow(
-        "search_status.xml", ADDON_PATH,
-        task_manager=manager, item_information=item_info,
-    )
-    window.doModal()
-    del window
+        window = SearchStatusWindow(
+            "search_status.xml", ADDON_PATH,
+            task_manager=manager, item_information=item_info,
+        )
+        try:
+            window.show()
+            window.run_until_complete()
+        finally:
+            del window
 
-    total_results = manager.collect_results()
-    executor.shutdown(wait=False)
-    return total_results
+        return manager.collect_results()
+    except Exception:
+        manager.cancel_pending()
+        raise
+    finally:
+        executor.shutdown(wait=False)
 
 
 def _run_simple_search(
@@ -1161,10 +1168,18 @@ def search_client(
     tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)
 
     if show_dialog and get_setting("search_dialog_style", "0") == "1":
-        total_results = _run_detailed_search(
-            query, ids, mode, media_type, season, episode, scoped_addon_url,
-            tmdb_id, imdb_id, variant, title_language_mode, year, title_aliases,
-        )
+        try:
+            total_results = _run_detailed_search(
+                query, ids, mode, media_type, season, episode, scoped_addon_url,
+                tmdb_id, imdb_id, variant, title_language_mode, year, title_aliases,
+            )
+        except Exception as e:
+            kodilog(f"Detailed search status failed, falling back to simple search: {e}")
+            total_results = _run_simple_search(
+                query, ids, mode, media_type, season, episode, scoped_addon_url,
+                tmdb_id, imdb_id, True, variant, title_language_mode, year,
+                title_aliases,
+            )
     else:
         total_results = _run_simple_search(
             query, ids, mode, media_type, season, episode, scoped_addon_url,

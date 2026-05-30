@@ -510,6 +510,28 @@ class TestSearchClient:
         mock_simple.assert_called_once()
         mock_detailed.assert_not_called()
 
+    def test_detailed_search_failure_falls_back_to_simple_search(self):
+        """Detailed XML UI failure → search continues through simple progress."""
+        expected = [MagicMock()]
+        with (
+            patch("lib.search.close_busy_dialog"),
+            patch("lib.search._infer_tmdb_year", return_value=2020),
+            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search._build_search_cache_scope", return_value="scope"),
+            patch("lib.search._check_search_caches", return_value=None),
+            patch("lib.search.get_setting", return_value="1"),
+            patch("lib.search._run_detailed_search", side_effect=RuntimeError("xml failed")) as mock_detailed,
+            patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
+            patch("lib.search.cache_results") as mock_cache,
+        ):
+            result = search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0)
+
+        assert result == expected
+        mock_detailed.assert_called_once()
+        mock_simple.assert_called_once()
+        assert mock_simple.call_args[0][9] is True
+        mock_cache.assert_called_once_with(expected, "q", "movies", "movie", 0, cache_scope="scope")
+
     def test_passes_year_to_infer_when_none(self):
         """year=None → _infer_tmdb_year is called."""
         with (
