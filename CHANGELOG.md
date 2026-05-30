@@ -1,3 +1,17 @@
+## 1.14.0
+- PlayNext: Add and stabilize the built-in Next Episode dialog with localized labels and safer playback transitions.
+- Search: Stabilize the detailed search status window on Windows/Kodi and reduce unsafe GUI threading during search startup.
+- Search: Fix episode-title searches containing ampersands and improve Stremio source-size parsing for European number formats.
+- TorrServer/TorBox: Handle empty/list torrent responses and queued TorBox torrents more safely during playback resolution.
+- Maintenance: Add developer tooling configuration and harden lint/type-cleanup issues for safer future changes.
+
+Spanish:
+- PlayNext: Añadido y estabilizado el diálogo integrado de Siguiente Episodio con etiquetas localizadas y transiciones de reproducción más seguras.
+- Búsqueda: Estabilizada la ventana detallada de estado de búsqueda en Windows/Kodi y reducidos riesgos de threading GUI al iniciar búsquedas.
+- Búsqueda: Corregidas búsquedas de episodios con ampersands y mejorado el parseo de tamaños de fuentes Stremio con formatos numéricos europeos.
+- TorrServer/TorBox: Manejo más seguro de respuestas vacías/lista de torrents y torrents en cola de TorBox durante la resolución de reproducción.
+- Mantenimiento: Añadida configuración de herramientas de desarrollo y limpieza de lint/tipos para cambios futuros más seguros.
+
 ## 1.13.0
 - Downloads: Add a downloads manager for managing downloaded files inside Jacktook.
 - External Scraper: Add generic external scraper module support for addons like Magneto, CocoScrapers, etc, with settings and configuration dialog.
