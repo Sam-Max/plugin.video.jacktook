@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🚀 Jacktook
+# Jacktook
 
 *An advanced meta-scraper and streaming Kodi addon for enthusiasts.*
 
@@ -67,7 +67,7 @@ The recommended installation method is via the official repository to ensure you
 
 ## ⚙️ Configuration & Usage
 
-### 🚀 Stremio Integration
+### Stremio Integration
 Jacktook can import configurations and Debrid services directly from your Stremio account.
 - Enable Stremio in settings.
 - Login to your Stremio account to sync your installed addons and Debrid tokens.
