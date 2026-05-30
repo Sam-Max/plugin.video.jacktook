@@ -86,8 +86,6 @@ class JacktookPLayer(xbmc.Player):
         try:
             self.list_item = make_listing(data)
             self.PLAYLIST.add(self.url, self.list_item)
-            if self.data["mode"] == "tv":
-                self.build_playlist()
             self.play_video(self.list_item)
         except Exception as e:
             self.run_error(e)
@@ -561,35 +559,6 @@ class JacktookPLayer(xbmc.Player):
         set_property("jacktook_consecutive_autoplays", str(count))
         return False
 
-    def _try_playlist_advance(self) -> bool:
-        """Try advancing to the next item in the playlist.
-
-        Returns True if playlist was advanced (caller should return), False to continue.
-        """
-        playlist_size = self.PLAYLIST.size()
-        playlist_pos = self.PLAYLIST.getposition() if playlist_size > 0 else -1
-        kodilog(f"[PLAYNEXT] PLAYLIST size={playlist_size}, pos={playlist_pos}")
-
-        if not (playlist_size > 0 and playlist_pos >= 0 and playlist_pos < playlist_size - 1):
-            return False
-
-        kodilog("[PLAYNEXT] Path: playlist advance")
-        try:
-            self.playnext()
-            clear_property("jacktook_next_dialog_action")
-            return True
-        except AttributeError:
-            try:
-                next_item = self.PLAYLIST[playlist_pos + 1]
-                next_path = next_item.getPath()
-                kodilog(f"[PLAYNEXT] Path: playlist advance fallback, next_path={next_path}")
-                self.play(next_path, next_item)
-                clear_property("jacktook_next_dialog_action")
-                return True
-            except Exception as e:
-                kodilog(f"Playlist advance failed, falling back to manual build: {e}")
-                return False
-
     def _queue_from_autoscrape_cache(self, next_tv_data: dict, ids: dict) -> bool:
         """Check autoscrape cache and if hit, queue next episode + STOP player."""
         id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
@@ -646,7 +615,13 @@ class JacktookPLayer(xbmc.Player):
         return True
 
     def _handle_next_dialog_action(self):
-        """Handle next-episode playback"""
+        """Handle PlayNext using the dialog's logical next episode as authority.
+
+        Kodi's PLAYLIST may still exist for playback mechanics, but it must not
+        decide the PlayNext target here: a stale playlist item can drift from
+        the `next_tv_data` shown by the dialog. Resolve the logical next episode
+        first, then queue it from cache or via the silent background search.
+        """
 
         from json import dumps as json_dumps
 
@@ -666,11 +641,12 @@ class JacktookPLayer(xbmc.Player):
 
         ids = self.data.get("ids", {})
 
-        # 1. Try autoscrape cache first
+        # Prefer the logical PlayNext queue paths over Kodi PLAYLIST advance.
+        # PLAYLIST fallback is intentionally not consulted before next_tv_data.
         if self._queue_from_autoscrape_cache(next_tv_data, ids):
             return  # Cache hit → queued → player.stop() called
 
-        # 2. No cache: fire silent background search thread
+        # No cache: fire silent background search thread for the same target.
         kodilog("[PLAYNEXT] No cache, firing silent background search")
         item_data = {
             "ids": ids,

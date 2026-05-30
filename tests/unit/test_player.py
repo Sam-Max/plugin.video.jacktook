@@ -62,6 +62,16 @@ def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
     test_player.monitor.assert_called_once_with()
 
 
+def test_run_does_not_add_next_episode_to_kodi_playlist():
+    source = PLAYER_PATH.read_text()
+    run_match = re.search(r"def run\(self, data=None\):(?P<body>.*?)def _drain_nextep_queue", source, re.S)
+
+    assert run_match is not None
+
+    run_body = run_match.group("body")
+    assert "self.build_playlist()" not in run_body
+
+
 def _episode(number, name="Episode", air_date="2020-01-01"):
     return SimpleNamespace(episode_number=number, name=name, air_date=air_date)
 

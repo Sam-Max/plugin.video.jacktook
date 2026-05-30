@@ -277,6 +277,8 @@ def test_handle_next_dialog_action_reuses_authoritative_next_tv_data(monkeypatch
     player = _player_instance()
     player.data["tv_data"] = {"season": 1, "episode": 3}
     player.data["next_tv_data"] = {"season": 1, "episode": 4, "name": "Immediate Next"}
+    player.PLAYLIST.size.return_value = 2
+    player.PLAYLIST.getposition.return_value = 0
     recalculator = MagicMock(return_value={"season": 1, "episode": 8, "name": "Wrong Drift"})
     cache_handler = MagicMock(return_value=True)
 
@@ -287,6 +289,7 @@ def test_handle_next_dialog_action_reuses_authoritative_next_tv_data(monkeypatch
 
     JacktookPLayer._handle_next_dialog_action(player)
 
+    player.playnext.assert_not_called()
     recalculator.assert_not_called()
     cache_handler.assert_called_once_with(
         {"season": 1, "episode": 4, "name": "Immediate Next"},
