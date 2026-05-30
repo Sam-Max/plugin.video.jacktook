@@ -2,6 +2,7 @@ import json
 import os
 from dataclasses import asdict
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 from xbmcplugin import addDirectoryItem, setContent
 
@@ -752,7 +753,7 @@ def list_stremio_episodes(params):
         title = video.title or getattr(video, "name", "") or meta_data.name
 
         tv_data = {
-            "name": title,
+            "name": quote(title),
             "episode": episode,
             "season": season,
         }

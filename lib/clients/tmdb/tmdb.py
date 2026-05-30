@@ -2,6 +2,7 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from urllib.parse import quote
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.api.tmdbv3api.objs.anime import TmdbAnime
@@ -962,7 +963,7 @@ class TmdbClient(BaseTmdbClient):
         )
 
         for title, show, ep, details in results:
-            tv_data = {"name": title, "episode": ep["number"], "season": ep["season"]}
+            tv_data = {"name": quote(title), "episode": ep["number"], "season": ep["season"]}
 
             air_date_obj = parse_date_str(ep["air_date"])
             weekday_name = air_date_obj.strftime("%A")

@@ -1770,6 +1770,11 @@ def normalize_tv_data(tv_data):
 
     normalized = dict(tv_data)
 
+    # URL-decode the name to handle & in episode titles (issue #198)
+    name = normalized.get("name", "")
+    if name and isinstance(name, str):
+        normalized["name"] = unquote(name)
+
     for key in ("season", "episode"):
         value = _coerce_int(normalized.get(key))
         if value is None:

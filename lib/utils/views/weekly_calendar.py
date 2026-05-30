@@ -2,6 +2,7 @@ import os
 import re
 from copy import copy
 from datetime import date, datetime, timedelta
+from urllib.parse import quote
 
 from lib.clients.tmdb.utils.utils import tmdb_get
 from lib.db.pickle_db import PickleDatabase
@@ -127,7 +128,7 @@ def show_weekly_calendar(library=False):
                 ids["tvdb_id"] = external_ids.get("tvdb_id")
 
         tv_data = {
-            "name": ep_name or title,
+            "name": quote(ep_name or title),
             "episode": ep["number"],
             "season": ep["season"],
         }

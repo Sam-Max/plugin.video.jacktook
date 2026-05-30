@@ -1,4 +1,5 @@
 import json
+from urllib.parse import quote
 
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils.utils import (
@@ -170,7 +171,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
     ep_name = episode.name
     episode_number = episode.episode_number
 
-    tv_data = {"name": ep_name, "episode": episode_number, "season": season}
+    tv_data = {"name": quote(ep_name), "episode": episode_number, "season": season}
 
     list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")

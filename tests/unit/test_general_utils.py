@@ -15,6 +15,7 @@ from lib.utils.general.utils import (
     is_magnet_link,
     is_url,
     is_video,
+    normalize_tv_data,
     set_listitem_artwork,
     supported_video_extensions,
     unicode_flag_to_country_code,
@@ -101,6 +102,30 @@ def test_get_random_color():
 )
 def test_format_season_episode(season, episode, expected):
     assert format_season_episode(season, episode) == expected
+
+
+def test_normalize_tv_data_decodes_episode_name_and_preserves_number_coercion():
+    tv_data = {
+        "name": "The%20Scales%20%26%20the%20Sword",
+        "season": "2",
+        "episode": "3",
+    }
+
+    normalized = normalize_tv_data(tv_data)
+
+    assert normalized["name"] == "The Scales & the Sword"
+    assert normalized["season"] == 2
+    assert normalized["episode"] == 3
+
+
+def test_normalize_tv_data_keeps_decoded_episode_name_stable():
+    normalized = normalize_tv_data(
+        {"name": "The Scales & the Sword", "season": 2, "episode": 3}
+    )
+
+    assert normalized["name"] == "The Scales & the Sword"
+    assert normalized["season"] == 2
+    assert normalized["episode"] == 3
 
 
 class TestGetImageSize:

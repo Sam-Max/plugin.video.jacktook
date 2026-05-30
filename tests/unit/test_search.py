@@ -179,6 +179,39 @@ def test_run_search_entry_source_select_cancel_on_back_when_not_skipped():
     cancel_mock.assert_called_once_with()
 
 
+def test_run_search_entry_passes_decoded_episode_name_to_result_processing():
+    params = {
+        "query": "Show",
+        "mode": "tv",
+        "media_type": "tv",
+        "ids": json.dumps({"tmdb_id": "123"}),
+        "tv_data": json.dumps(
+            {
+                "name": "The%20Scales%20%26%20the%20Sword",
+                "season": "2",
+                "episode": "3",
+            }
+        ),
+        "skip_cancel_on_back": True,
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[object()]
+    ), patch(
+        "lib.search._process_search_results", return_value=[object()]
+    ) as process_results_mock, patch("lib.search.set_content_type"), patch(
+        "lib.search.set_watched_title"
+    ), patch("lib.search.auto_play_enabled", return_value=False), patch(
+        "lib.search.show_source_select", return_value=False
+    ):
+        run_search_entry(params)
+
+    process_args = process_results_mock.call_args[0]
+    assert process_args[2] == "The Scales & the Sword"
+    assert process_args[3] == 3
+    assert process_args[4] == 2
+
+
 def test_is_source_enabled_returns_true_when_cache_empty():
     with patch("lib.search.cache") as mock_cache:
         mock_cache.get.return_value = None
