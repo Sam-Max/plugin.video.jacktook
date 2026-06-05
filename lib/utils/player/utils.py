@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 from xbmc import LOGDEBUG
@@ -295,7 +295,7 @@ def cache_autoscrape_result(
 
 # Quality pattern -> label mapping, matching PreProcessBuilder.filter_by_quality().
 # Keep in priority order: more specific patterns first.
-_QUALITY_PATTERNS: List[tuple[str, str]] = [
+_QUALITY_PATTERNS: List[Tuple[str, str]] = [
     ("2160", "[B][COLOR yellow]4k[/COLOR][/B]"),
     ("1080p", "[B][COLOR blue]1080p[/COLOR][/B]"),
     ("720p", "[B][COLOR orange]720p[/COLOR][/B]"),
