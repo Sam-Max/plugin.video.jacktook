@@ -1,3 +1,11 @@
+## 1.14.1
+- Startup: Fix a Kodi startup crash caused by a Python runtime-incompatible `tuple[str, str]` type annotation.
+- Maintenance: Harden the Python 3.7 compatibility checker to catch similar runtime-incompatible typing patterns before release.
+
+Spanish:
+- Inicio: Corregido un crash al iniciar Kodi causado por una anotación de tipo `tuple[str, str]` incompatible con el runtime de Python.
+- Mantenimiento: Reforzado el verificador de compatibilidad con Python 3.7 para detectar patrones de typing incompatibles antes de publicar.
+
 ## 1.14.0
 - PlayNext: Add and stabilize the built-in Next Episode dialog with localized labels and safer playback transitions.
 - Search: Stabilize the detailed search status window on Windows/Kodi and reduce unsafe GUI threading during search startup.
