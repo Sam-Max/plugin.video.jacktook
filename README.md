@@ -14,13 +14,13 @@
 
 </div>
 
-## 🌟 Overview
+## Overview
 
 **Jacktook** is a Kodi addon designed to aggregate streaming sources and metadata from a wide range of providers. Whether you prefer P2P streaming, Stremio addons, or Debrid services, Jacktook offers a unified and streamlined interface for seamless media discovery and playback.
 
 ---
 
-## ✨ Features
+## Features
 
 ### 🔍 Search & Scraping
 - **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Usenet, Debrid Services.
@@ -102,7 +102,7 @@ If you are not using Debrid services, you can use these engines for P2P streamin
 
 ---
 
-## 📸 Screenshots
+## Screenshots
 
 | Home Screen | TV Shows |
 | :---: | :---: |
@@ -112,7 +112,7 @@ If you are not using Debrid services, you can use these engines for P2P streamin
 
 ---
 
-## ☕ Support
+## Support
 
 If you enjoy using **Jacktook** and want to support its development, you can buy me a coffee! Your support helps keep the project active and enables future improvements.
 
@@ -120,7 +120,7 @@ If you enjoy using **Jacktook** and want to support its development, you can buy
 
 ---
 
-## ⚖️ Disclaimer
+## Disclaimer
 
 This addon is a meta-search tool. It does not host or scrape torrent websites directly. Users are responsible for the content they access and should comply with local copyright laws.
 
