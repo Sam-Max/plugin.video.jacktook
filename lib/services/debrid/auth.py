@@ -251,6 +251,86 @@ def run_torbox_auth(client):
             return
 
 
+def run_offcloud_auth(client):
+    response = client.get_device_code()
+    if not response:
+        return
+
+    sleep_interval = int(response.get("interval", 5))
+    expires_in = int(response.get("expires_in", 600))
+    device_code = response.get("device_code")
+    user_code = response.get("user_code")
+    auth_url = response.get("verification_uri")
+    qr_url = response.get("verification_uri_complete") or auth_url
+    if not device_code or not user_code or not auth_url:
+        return
+
+    qr_code = make_qrcode(qr_url)
+    copy2clip(qr_url)
+
+    progress_dialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
+    progress_dialog.setup(
+        translation(90604) % DebridType.OC,
+        qr_code,
+        auth_url,
+        user_code,
+        DebridType.OC,
+    )
+    progress_dialog.show_dialog()
+
+    start_time = time()
+    while time() - start_time < expires_in:
+        ksleep(1000 * sleep_interval)
+        if progress_dialog.iscanceled:
+            progress_dialog.close_dialog()
+            return
+
+        auth_response = client.authorize(device_code)
+        error_code = auth_response.get("error") if isinstance(auth_response, dict) else None
+        if error_code == "authorization_pending":
+            elapsed = time() - start_time
+            progress_dialog.update_progress(int((elapsed / expires_in) * 100))
+            continue
+        if error_code == "slow_down":
+            sleep_interval += 5
+            elapsed = time() - start_time
+            progress_dialog.update_progress(int((elapsed / expires_in) * 100))
+            continue
+        if error_code in ("expired_token", "access_denied"):
+            progress_dialog.close_dialog()
+            dialog_ok(translation(90548), auth_response.get("error_description", error_code))
+            return
+
+        try:
+            access_token = auth_response.get("access_token")
+            if access_token:
+                client.token = str(access_token)
+                set_setting("offcloud_token", client.token)
+                set_setting("offcloud_authorized", "true")
+                client.initialize_headers()
+
+                with contextlib.suppress(Exception):
+                    account_info = client.get_account_info()
+                    user = account_info.get("email") or account_info.get("user_id")
+                    if user:
+                        set_setting("offcloud_user", str(user))
+
+                progress_dialog.update_progress(100, translation(90545))
+                progress_dialog.close_dialog()
+                dialog_ok(translation(90544), translation(90545))
+                return
+
+            elapsed = time() - start_time
+            progress_dialog.update_progress(int((elapsed / expires_in) * 100))
+        except Exception as error:
+            progress_dialog.close_dialog()
+            dialog_ok(translation(90548), translation(90547) % error)
+            return
+
+    with contextlib.suppress(Exception):
+        progress_dialog.close_dialog()
+
+
 def run_debrider_auth(client):
     response = client.get_device_code()
     if not response:

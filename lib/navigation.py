@@ -776,6 +776,10 @@ def get_tb_downloads(params):
     return debrid_navigation.get_tb_downloads(params)
 
 
+def get_oc_downloads(params):
+    return debrid_navigation.get_oc_downloads(params)
+
+
 def torrents(params):
     if not JACKTORR_ADDON:
         notification(translation(30253))
@@ -1348,8 +1352,20 @@ def tb_remove_auth(params):
     return debrid_navigation.tb_remove_auth(params)
 
 
+def oc_auth(params):
+    return debrid_navigation.oc_auth(params)
+
+
+def oc_remove_auth(params):
+    return debrid_navigation.oc_remove_auth(params)
+
+
 def torbox_info(params):
     return debrid_navigation.torbox_info(params)
+
+
+def offcloud_info(params):
+    return debrid_navigation.offcloud_info(params)
 
 
 def open_burst_config(params):

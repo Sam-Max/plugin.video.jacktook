@@ -129,6 +129,11 @@ def test_choose_debrid_for_transfer_prompts_when_multiple_supported_services_ena
     dialog.select.assert_called_once()
 
 
+def test_offcloud_is_supported_for_pack_direct_and_cloud_transfer():
+    assert DebridType.OC in debrid_utils.PACK_DIRECT_DEBRID_TYPES
+    assert DebridType.OC in debrid_utils.SUPPORTED_CLOUD_TRANSFER_DEBRIDS
+
+
 def test_torbox_helper_get_cloud_downloads_returns_playable_items():
     helper = TorboxHelper()
     helper.client = MagicMock()

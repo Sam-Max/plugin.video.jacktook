@@ -455,6 +455,34 @@ msgctxt "#30945"
 msgid "Seconds before auto-playing next episode. 0 = disabled, dialog waits for user input."
 msgstr "Segundos antes de reproduzir automaticamente o próximo episódio. 0 = desativado, o diálogo aguarda a entrada do usuário."
 
+
+msgctxt "#30946"
+msgid "Offcloud Configuration"
+msgstr "Configuração do Offcloud"
+
+msgctxt "#30947"
+msgid "Enable Offcloud cached torrent and cloud transfer support."
+msgstr "Ativar suporte a torrents em cache e transferências em nuvem do Offcloud."
+
+msgctxt "#30948"
+msgid "Your Offcloud account username/email."
+msgstr "Seu nome de usuário ou email do Offcloud."
+
+msgctxt "#30949"
+msgid "Offcloud API key from Account API Key settings."
+msgstr "Chave API do Offcloud nas configurações da Conta → Chave API."
+
+msgctxt "#30950"
+msgid "View Offcloud account information."
+msgstr "Ver informações da conta Offcloud."
+
+msgctxt "#30951"
+msgid "Authorize add-on to access Offcloud account."
+msgstr "Autorizar o addon a acessar a conta Offcloud."
+
+msgctxt "#30952"
+msgid "Revoke Offcloud account access."
+msgstr "Revogar o acesso da conta Offcloud."
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Sementes"

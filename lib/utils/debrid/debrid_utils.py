@@ -14,6 +14,7 @@ from lib.api.debrid.base import ProviderException
 from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.easydebrid import EasyDebridHelper
+from lib.clients.debrid.offcloud import OffcloudHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.clients.debrid.torbox import TorboxHelper
@@ -31,6 +32,7 @@ from lib.utils.general.utils import (
     is_ad_enabled,
     is_debrider_enabled,
     is_ed_enabled,
+    is_oc_enabled,
     is_pm_enabled,
     is_rd_enabled,
     is_tb_enabled,
@@ -45,6 +47,7 @@ DEBRID_HELPERS = {
     DebridType.RD: RealDebridHelper,
     DebridType.PM: PremiumizeHelper,
     DebridType.TB: TorboxHelper,
+    DebridType.OC: OffcloudHelper,
     DebridType.DB: DebriderHelper,
     DebridType.AD: AllDebridHelper,
     DebridType.ED: EasyDebridHelper,
@@ -53,17 +56,19 @@ DEBRID_HELPERS = {
 DEBRID_CHECKS = {
     DebridType.RD: is_rd_enabled,
     DebridType.TB: is_tb_enabled,
+    DebridType.OC: is_oc_enabled,
     DebridType.PM: is_pm_enabled,
     DebridType.DB: is_debrider_enabled,
     DebridType.AD: is_ad_enabled,
 }
 
-PACK_DIRECT_DEBRID_TYPES = {DebridType.RD, DebridType.TB, DebridType.AD}
+PACK_DIRECT_DEBRID_TYPES = {DebridType.RD, DebridType.TB, DebridType.OC, DebridType.AD}
 
 SUPPORTED_CLOUD_TRANSFER_DEBRIDS = (
     DebridType.RD,
     DebridType.AD,
     DebridType.TB,
+    DebridType.OC,
     DebridType.DB,
 )
 
@@ -75,6 +80,7 @@ def _build_debrid_cache_scope() -> str:
         "rd": bool(get_setting("real_debrid_enabled")),
         "ad": bool(get_setting("alldebrid_enabled")),
         "tb": bool(get_setting("torbox_enabled")),
+        "oc": bool(get_setting("offcloud_enabled")),
         "pm": bool(get_setting("premiumize_enabled")),
         "db": bool(get_setting("debrider_enabled")),
         "ed": bool(get_setting("easydebrid_enabled")),
@@ -147,6 +153,12 @@ def _is_torrent_ready_in_debrid(debrid_type: str, info_hash: str) -> bool:
                 and torrent_info.get("download_present")
             ):
                 return True
+        elif debrid_type == DebridType.OC:
+            response = OffcloudHelper().client.get_cache_info(
+                [info_hash_to_magnet(info_hash)], include_files=False
+            )
+            if isinstance(response, list) and response and response[0].get("cached"):
+                return True
         elif debrid_type == DebridType.DB:
             info = DebriderHelper().get_info(info_hash)
             if info and info.get("files"):
@@ -190,6 +202,14 @@ def _add_to_torbox(info_hash: str, torrent_data: bytes, torrent_name: str):
     return None
 
 
+def _add_to_offcloud(info_hash: str, torrent_data: bytes, torrent_name: str):
+    if info_hash:
+        kodilog("Debrid transfer path: sending magnet/info_hash to OC")
+        return OffcloudHelper().add_cloud_download(info_hash)
+    notification(translation(90361))
+    return None
+
+
 def _add_to_debrider(info_hash: str):
     if not info_hash:
         notification(translation(90361))
@@ -202,6 +222,7 @@ _DEBRID_ADDERS = {
     DebridType.RD: _add_to_realdebrid,
     DebridType.AD: _add_to_alldebrid,
     DebridType.TB: _add_to_torbox,
+    DebridType.OC: _add_to_offcloud,
     DebridType.DB: _add_to_debrider,
 }
 
@@ -339,7 +360,7 @@ def execute_debrid_checks(
 
 
 def should_include_uncached() -> bool:
-    return any([is_tb_enabled(), is_pm_enabled(), is_ed_enabled()]) and bool(
+    return any([is_tb_enabled(), is_oc_enabled(), is_pm_enabled(), is_ed_enabled()]) and bool(
         get_setting("show_uncached")
     )
 

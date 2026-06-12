@@ -15,6 +15,8 @@ def test_get_route_handler_returns_debrid_dispatcher():
     router = _load_router_module()
 
     assert router._get_route_handler("rd_auth") is router._route_debrid
+    assert router._get_route_handler("get_oc_downloads") is router._route_debrid
+    assert router._get_route_handler("offcloud_info") is router._route_debrid
 
 
 def test_get_route_handler_returns_cache_dispatcher():

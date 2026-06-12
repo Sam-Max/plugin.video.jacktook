@@ -204,6 +204,7 @@ class DebridType(Enum):
     RD = "RealDebrid"
     PM = "Premiumize"
     TB = "Torbox"
+    OC = "Offcloud"
     ED = "EasyDebrid"
     DB = "Debrider"
     AD = "AllDebrid"
@@ -317,6 +318,7 @@ def is_debrid_activated():
         get_setting_fresh("real_debrid_enabled")
         or get_setting_fresh("premiumize_enabled")
         or get_setting_fresh("torbox_enabled")
+        or get_setting_fresh("offcloud_enabled")
         or get_setting_fresh("debrider_enabled")
         or get_setting_fresh("alldebrid_enabled")
     )
@@ -329,6 +331,8 @@ def check_debrid_enabled(debrid_type):
         return is_pm_enabled()
     elif debrid_type == DebridType.TB:
         return is_tb_enabled()
+    elif debrid_type == DebridType.OC:
+        return is_oc_enabled()
     elif debrid_type == DebridType.DB:
         return is_debrider_enabled()
     elif debrid_type == DebridType.AD:
@@ -355,6 +359,10 @@ def is_debrider_enabled():
 
 def is_tb_enabled():
     return get_setting_fresh("torbox_enabled")
+
+
+def is_oc_enabled():
+    return get_setting_fresh("offcloud_enabled")
 
 
 def is_ed_enabled():

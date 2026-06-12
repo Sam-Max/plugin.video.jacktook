@@ -364,6 +364,79 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="offcloud" label="30946">
+                <setting id="offcloud_enabled" type="boolean" label="30734" help="30947">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="offcloud_authorized" type="boolean" label="" help="">
+                    <visible>false</visible>
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="offcloud_user" type="string" label="30782" help="30948">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="offcloud_token" type="string" label="30787" help="30949">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="oc_auth" type="action" label="30783" help="30951">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=oc_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="oc_remove_auth" type="action" label="30784" help="30952">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=oc_remove_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="offcloud_info" type="action" label="30916" help="30950">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=offcloud_info)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="offcloud_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="premiumize" label="30785">
                 <setting id="premiumize_enabled" type="boolean" label="30734" help="30824">
                     <default>false</default>

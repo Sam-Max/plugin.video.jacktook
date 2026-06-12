@@ -142,7 +142,7 @@ def get_torrent_client_selection(magnet: str, url: str, mode: str, ids: Any) -> 
 def get_debrid_url(
     data: Dict[str, Any], debrid_type: str, is_pack: bool
 ) -> Optional[Dict[str, Any]]:
-    if is_pack and debrid_type in [DebridType.RD, DebridType.TB, DebridType.AD]:
+    if is_pack and debrid_type in [DebridType.RD, DebridType.TB, DebridType.OC, DebridType.AD]:
         return get_debrid_pack_direct_url(debrid_type, data)
     else:
         return get_debrid_direct_url(debrid_type, data)

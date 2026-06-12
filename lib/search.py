@@ -50,6 +50,27 @@ TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
 TITLE_LANGUAGE_ENGLISH_ONLY = "english_only"
 
 
+class SearchCancelled(Exception):
+    """Raised when the user cancels an interactive search flow."""
+
+    def __init__(self, results: Optional[List[TorrentStream]] = None):
+        super().__init__("Search cancelled")
+        self.results = results or []
+
+
+class SilentProgressDialog:
+    """No-op progress dialog for flows that should not show Kodi progress UI."""
+
+    def create(self, *args, **kwargs):
+        pass
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def close(self):
+        pass
+
+
 def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     flags = {
         "torrent": bool(get_setting("torrent_enable")),
@@ -58,6 +79,7 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "rd": bool(get_setting("real_debrid_enabled")),
         "ad": bool(get_setting("alldebrid_enabled")),
         "tb": bool(get_setting("torbox_enabled")),
+        "oc": bool(get_setting("offcloud_enabled")),
         "pm": bool(get_setting("premiumize_enabled")),
         "db": bool(get_setting("debrider_enabled")),
         "ed": bool(get_setting("easydebrid_enabled")),
@@ -413,6 +435,7 @@ def _process_search_results(
     query,
     media_type,
     rescrape,
+    suppress_debrid_dialog=False,
 ):
     bypassed_streams = []
     other_results = results
@@ -444,7 +467,15 @@ def _process_search_results(
 
     post_results = []
     if pre_results:
-        post_results = process_results(pre_results, query, mode, media_type, rescrape, episode)
+        post_results = process_results(
+            pre_results,
+            query,
+            mode,
+            media_type,
+            rescrape,
+            episode,
+            suppress_dialog=suppress_debrid_dialog,
+        )
 
     # Combine results, prioritizing bypassed streams exact native sorting
     return bypassed_streams + post_results
@@ -502,19 +533,26 @@ def run_search_entry(params: dict):
 
     scoped_addon_url = params.get("scoped_addon_url", "")
 
-    results = search_client(
-        query,
-        ids,
-        mode,
-        media_type,
-        rescrape,
-        season,
-        episode,
-        scoped_addon_url=scoped_addon_url,
-        variant=variant,
-        title_language_mode=title_language_mode,
-        year=year,
-    )
+    suppress_debrid_dialog = False
+    try:
+        results = search_client(
+            query,
+            ids,
+            mode,
+            media_type,
+            rescrape,
+            season,
+            episode,
+            scoped_addon_url=scoped_addon_url,
+            variant=variant,
+            title_language_mode=title_language_mode,
+            year=year,
+        )
+    except SearchCancelled as exc:
+        kodilog("Search cancelled from detailed status window")
+        results = exc.results
+        suppress_debrid_dialog = True
+
     if not results:
         notification("No results found")
         if not skip_cancel:
@@ -531,6 +569,7 @@ def run_search_entry(params: dict):
         query,
         media_type,
         rescrape,
+        suppress_debrid_dialog=suppress_debrid_dialog,
     )
 
     if not final_results:
@@ -1098,6 +1137,10 @@ def _run_detailed_search(
         finally:
             del window
 
+        if manager.is_cancelled:
+            manager.cancel_pending()
+            raise SearchCancelled(manager.collect_results())
+
         return manager.collect_results()
     except Exception:
         manager.cancel_pending()
@@ -1178,6 +1221,8 @@ def search_client(
                 query, ids, mode, media_type, season, episode, scoped_addon_url,
                 tmdb_id, imdb_id, variant, title_language_mode, year, title_aliases,
             )
+        except SearchCancelled:
+            raise
         except Exception as e:
             kodilog(f"Detailed search status failed, falling back to simple search: {e}")
             total_results = _run_simple_search(
@@ -1214,15 +1259,21 @@ def process_results(
     media_type: str,
     rescrape: bool,
     episode: int,
+    suppress_dialog: bool = False,
 ) -> List[TorrentStream]:
     torrent_results = []
     if get_setting("torrent_enable"):
         torrent_results = post_process(pre_results)
     close_busy_dialog()
-    with DialogListener() as listener:
+    if suppress_dialog:
         debrid_results = check_debrid_cached(
-            query, pre_results, mode, media_type, listener.dialog, rescrape, episode
+            query, pre_results, mode, media_type, SilentProgressDialog(), rescrape, episode
         )
+    else:
+        with DialogListener() as listener:
+            debrid_results = check_debrid_cached(
+                query, pre_results, mode, media_type, listener.dialog, rescrape, episode
+            )
     return debrid_results + torrent_results
 
 

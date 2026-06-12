@@ -59,6 +59,7 @@ SENSITIVE_SETTING_IDS = {
     "alldebrid_token",
     "debrider_token",
     "torbox_token",
+    "offcloud_token",
     "premiumize_token",
     "easynews_password",
     "stremio_pass",
@@ -80,6 +81,7 @@ IDENTITY_SETTING_IDS = {
     "real_debrid_user",
     "alldebrid_user",
     "torbox_user",
+    "offcloud_user",
     "trakt_user",
 }
 
