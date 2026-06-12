@@ -4415,3 +4415,35 @@ msgstr "Episódio"
 msgctxt "#90739"
 msgid "Invalid episode"
 msgstr "Episódio inválido"
+
+msgctxt "#90819"
+msgid "Rename Stremio add-on"
+msgstr "Renomear add-on do Stremio"
+
+msgctxt "#90824"
+msgid "Rename Stremio catalog"
+msgstr "Renomear catálogo do Stremio"
+
+msgctxt "#90827"
+msgid "Set a Kodi-only display alias for a Stremio add-on."
+msgstr "Definir um alias de apresentação apenas no Kodi para um add-on do Stremio."
+
+msgctxt "#90828"
+msgid "Set a Kodi-only display alias for a Stremio catalog."
+msgstr "Definir um alias de apresentação apenas no Kodi para um catálogo do Stremio."
+
+msgctxt "#90832"
+msgid "Stremio: Addons Management"
+msgstr "Stremio: Gestão de complementos"
+
+msgctxt "#90833"
+msgid "Stremio: Catalogs & Visibility"
+msgstr "Stremio: Catálogos e visibilidade"
+
+msgctxt "#90834"
+msgid "Stremio: Rename & Customization"
+msgstr "Stremio: Renomear e personalização"
+
+msgctxt "#90835"
+msgid "Stremio: Search & Behavior"
+msgstr "Stremio: Pesquisa e comportamento"

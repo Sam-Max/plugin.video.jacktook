@@ -8,6 +8,8 @@ from xbmcplugin import addDirectoryItem, setContent
 
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
+    get_addon_display_name,
+    get_catalog_display_name,
     get_selected_catalogs_addons,
     get_selected_tv_addons,
 )
@@ -228,14 +230,14 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     directory_items = []
 
     for addon in selected_addons:
-        addon_name = addon.manifest.name
+        addon_name = get_addon_display_name(addon)
         addon_types = addon.manifest.types
 
         if menu_type not in addon_types:
             continue
 
         for catalog in addon.manifest.catalogs:
-            catalog_name = catalog.name
+            catalog_name = get_catalog_display_name(addon, catalog)
             catalog_id = catalog.id
             catalog_type = catalog.type
 
@@ -274,8 +276,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 )
 
             if catalog_name or catalog_id:
-                addon_name = addon.manifest.name
-                if addon_name == "Cinemeta":
+                if addon.manifest.name == "Cinemeta":
                     label = f"{addon_name} - {catalog_name or catalog_id}"
                 else:
                     label = catalog_name or catalog_id

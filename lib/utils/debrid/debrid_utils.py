@@ -17,7 +17,7 @@ from lib.clients.debrid.easydebrid import EasyDebridHelper
 from lib.clients.debrid.premiumize import PremiumizeHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.clients.debrid.torbox import TorboxHelper
-from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
+from lib.clients.stremio.constants import STREMIO_ADDON_ALIASES_KEY, STREMIO_ADDONS_KEY
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
@@ -80,9 +80,13 @@ def _build_debrid_cache_scope() -> str:
         "ed": bool(get_setting("easydebrid_enabled")),
     }
     selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
-    return "{}|{}".format(
+    stremio_addon_aliases = json.dumps(
+        cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True
+    )
+    return "{}|{}|{}".format(
         "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
         selected_stream_addons,
+        stremio_addon_aliases,
     )
 
 

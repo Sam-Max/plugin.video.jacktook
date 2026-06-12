@@ -5,6 +5,8 @@ from typing import Dict, List, Optional
 import xbmc
 import xbmcgui
 
+from lib.clients.stremio.constants import STREMIO_ADDON_ALIASES_KEY
+from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.gui.base_window import BaseWindow
 from lib.gui.filter_items_window import FilterWindow
@@ -51,6 +53,15 @@ THEMES = {
     "3": {"card_bg": "FF1B261B", "card_focus": "992D402D", "card_accent": "FF7CFC00"},
     "4": {"card_bg": "FF141414", "card_focus": "992B2510", "card_accent": "FFD4AF37"},
 }
+
+
+def _get_source_indexer_label(source: TorrentStream, aliases: Dict) -> str:
+    current_alias = aliases.get(source.addonKey) if isinstance(aliases, dict) else ""
+    if current_alias:
+        if source.addonInstanceLabel and source.addonName:
+            return source.addonInstanceLabel.replace(source.addonName, current_alias, 1)
+        return current_alias
+    return source.addonInstanceLabel or source.indexer
 
 
 class SourceSelect(BaseWindow):
@@ -303,6 +314,9 @@ class SourceSelect(BaseWindow):
             if self.filter_applied and self.filtered_sources is not None
             else self.sources
         )
+        aliases = {}
+        with contextlib.suppress(Exception):
+            aliases = cache.get(STREMIO_ADDON_ALIASES_KEY) or {}
 
         for source in self.list_sources:
             info = parse_title_info(source.title)
@@ -332,7 +346,7 @@ class SourceSelect(BaseWindow):
                 provider_name = source.indexer or source.type
             else:
                 provider_name = source.debridType or source.type
-            indexer_label = source.addonInstanceLabel or source.indexer
+            indexer_label = _get_source_indexer_label(source, aliases)
             menu_item.setProperty("type", get_provider_color(provider_name))
             menu_item.setProperty("indexer", get_random_color(indexer_label))
             menu_item.setProperty("guid", source.guid)

@@ -27,6 +27,8 @@ def decode_selected_ids(raw):
 
 STREMIO_ADDONS_KEY = "stremio_addons"
 STREMIO_ADDONS_CATALOGS_KEY = "stremio_catalog_addons"
+STREMIO_ADDON_ALIASES_KEY = "stremio_addon_aliases"
+STREMIO_CATALOG_ALIASES_KEY = "stremio_catalog_aliases"
 STREMIO_TV_ADDONS_KEY = "stremio_tv_addons"
 STREMIO_USER_ADDONS = "stremio_user_addons"
 TORRENTIO_PROVIDERS_KEY = "torrentio.providers"

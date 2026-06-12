@@ -158,6 +158,87 @@ def test_populate_sources_list_shows_debrid_type_for_stremio_debrid_sources():
     assert source_select.display_list.items[0].properties["type"] == DebridType.TB
 
 
+def test_populate_sources_list_uses_current_stremio_alias_for_cached_source():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+
+    class _FakeListItem:
+        def __init__(self, label=""):
+            self.label = label
+            self.properties = {}
+
+        def setProperty(self, key, value):
+            self.properties[key] = value
+
+    class _FakeDisplayList:
+        def __init__(self):
+            self.items = []
+
+        def reset(self):
+            self.items = []
+
+        def addItem(self, item):
+            self.items.append(item)
+
+    addon_key = "org.example.addon|https://example.com"
+    source_select.display_list = _FakeDisplayList()
+    source_select.filter_applied = False
+    source_select.filtered_sources = None
+    source_select.sources = [
+        TorrentStream(
+            title="Example.Source.1080p",
+            type=IndexerType.STREMIO_DEBRID,
+            addonKey=addon_key,
+            addonName="Old Alias",
+            addonInstanceLabel="Old Alias (example.com, custom)",
+            indexer="Original",
+            size=1024,
+            quality="1080p",
+        ),
+        TorrentStream(
+            title="Another.Source.1080p",
+            type=IndexerType.STREMIO_DEBRID,
+            addonKey="org.example.other|https://example.com",
+            addonInstanceLabel="Other Addon",
+            indexer="Original Other",
+            size=2048,
+            quality="1080p",
+        ),
+    ]
+
+    with patch.object(source_select_module.xbmcgui, "ListItem", _FakeListItem), patch.object(
+        source_select_module,
+        "parse_title_info",
+        return_value={
+            "clean_title": "Example Source",
+            "codec": "",
+            "audio": "",
+            "badges": "",
+            "release_group": "",
+        },
+    ), patch.object(
+        source_select_module, "bytes_to_human_readable", return_value="1 KB"
+    ), patch.object(
+        source_select_module, "get_provider_color", side_effect=lambda value: value
+    ), patch.object(
+        source_select_module, "get_random_color", side_effect=lambda value: value
+    ), patch.object(source_select_module, "get_colored_languages", return_value=""), patch.object(
+        source_select_module, "extract_publish_date", return_value=""
+    ), patch.object(source_select_module, "get_source_status", return_value="[B]Cached[/B]"), patch.object(
+        source_select_module.cache,
+        "get",
+        return_value={addon_key: "New Alias"},
+    ) as cache_get:
+        source_select.populate_sources_list()
+
+    cache_get.assert_called_once_with(source_select_module.STREMIO_ADDON_ALIASES_KEY)
+    assert (
+        source_select.display_list.items[0].properties["indexer"]
+        == "New Alias (example.com, custom)"
+    )
+    assert source_select.display_list.items[1].properties["indexer"] == "Other Addon"
+
+
 def test_torrent_context_menu_does_not_include_download_video():
     source_select_module = _load_source_select_module()
     source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)

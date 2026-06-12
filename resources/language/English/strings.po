@@ -4395,6 +4395,74 @@ msgctxt "#90818"
 msgid "Jacktook was updated with new improvements. Donations are optional, but they help keep development active. Would you like to see the support link?"
 msgstr ""
 
+msgctxt "#90819"
+msgid "Rename Stremio add-on"
+msgstr ""
+
+msgctxt "#90820"
+msgid "Enter add-on alias."
+msgstr ""
+
+msgctxt "#90821"
+msgid "Stremio alias"
+msgstr ""
+
+msgctxt "#90822"
+msgid "Alias saved."
+msgstr ""
+
+msgctxt "#90823"
+msgid "Alias cleared."
+msgstr ""
+
+msgctxt "#90824"
+msgid "Rename Stremio catalog"
+msgstr ""
+
+msgctxt "#90825"
+msgid "Select catalog"
+msgstr ""
+
+msgctxt "#90826"
+msgid "Enter catalog alias."
+msgstr ""
+
+msgctxt "#90827"
+msgid "Set a Kodi-only display alias for a Stremio add-on."
+msgstr ""
+
+msgctxt "#90828"
+msgid "Set a Kodi-only display alias for a Stremio catalog."
+msgstr ""
+
+msgctxt "#90829"
+msgid "Edit"
+msgstr ""
+
+msgctxt "#90830"
+msgid "Clear"
+msgstr ""
+
+msgctxt "#90831"
+msgid "This item already has an alias. Do you want to clear it?"
+msgstr ""
+
+msgctxt "#90832"
+msgid "Stremio: Addons Management"
+msgstr ""
+
+msgctxt "#90833"
+msgid "Stremio: Catalogs & Visibility"
+msgstr ""
+
+msgctxt "#90834"
+msgid "Stremio: Rename & Customization"
+msgstr ""
+
+msgctxt "#90835"
+msgid "Stremio: Search & Behavior"
+msgstr ""
+
 msgctxt "#90300"
 msgid "External Scraper"
 msgstr ""

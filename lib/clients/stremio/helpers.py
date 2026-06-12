@@ -1,4 +1,5 @@
 import concurrent.futures
+from datetime import timedelta
 from typing import Callable, List, Optional
 
 import requests
@@ -10,8 +11,10 @@ from lib.api.stremio.addon_manager import (
 )
 from lib.api.stremio.api_client import Stremio
 from lib.clients.stremio.constants import (
+    STREMIO_ADDON_ALIASES_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
     STREMIO_ADDONS_KEY,
+    STREMIO_CATALOG_ALIASES_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
     decode_selected_ids,
@@ -22,6 +25,71 @@ from lib.utils.kodi.utils import get_setting, kodilog
 
 def get_addon_merge_key(addon):
     return build_addon_instance_key(addon)
+
+
+def _get_addon_alias_key(addon):
+    if hasattr(addon, "key"):
+        return addon.key()
+    return get_addon_merge_key(addon)
+
+
+def _get_aliases(cache_key):
+    aliases = cache.get(cache_key) or {}
+    if not isinstance(aliases, dict):
+        return {}
+    return aliases
+
+
+def _set_alias(cache_key, alias_key, alias):
+    aliases = _get_aliases(cache_key)
+    clean_alias = (alias or "").strip()
+    if clean_alias:
+        aliases[alias_key] = clean_alias
+    else:
+        aliases.pop(alias_key, None)
+    cache.set(cache_key, aliases, timedelta(days=365 * 20))
+
+
+def get_catalog_alias_key(addon, catalog):
+    return f"{_get_addon_alias_key(addon)}|{catalog.type}|{catalog.id}"
+
+
+def get_addon_display_name(addon):
+    alias = _get_aliases(STREMIO_ADDON_ALIASES_KEY).get(_get_addon_alias_key(addon))
+    return alias or addon.manifest.name
+
+
+def get_catalog_display_name(addon, catalog):
+    alias = _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(
+        get_catalog_alias_key(addon, catalog)
+    )
+    return alias or catalog.name or catalog.id
+
+
+def set_addon_alias(addon, alias):
+    _set_alias(STREMIO_ADDON_ALIASES_KEY, _get_addon_alias_key(addon), alias)
+
+
+def clear_addon_alias(addon):
+    set_addon_alias(addon, "")
+
+
+def get_addon_alias(addon):
+    return _get_aliases(STREMIO_ADDON_ALIASES_KEY).get(_get_addon_alias_key(addon), "")
+
+
+def set_catalog_alias(addon, catalog, alias):
+    _set_alias(STREMIO_CATALOG_ALIASES_KEY, get_catalog_alias_key(addon, catalog), alias)
+
+
+def clear_catalog_alias(addon, catalog):
+    set_catalog_alias(addon, catalog, "")
+
+
+def get_catalog_alias(addon, catalog):
+    return _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(
+        get_catalog_alias_key(addon, catalog), ""
+    )
 
 
 def merge_addons_lists(*lists):

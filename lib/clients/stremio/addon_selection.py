@@ -6,15 +6,29 @@ import xbmcgui
 
 from lib.api.stremio.addon_manager import build_addon_instance_key
 from lib.clients.stremio.constants import (
+    STREMIO_ADDON_ALIASES_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
     STREMIO_ADDONS_KEY,
+    STREMIO_CATALOG_ALIASES_KEY,
     STREMIO_TV_ADDONS_KEY,
     STREMIO_USER_ADDONS,
     decode_selected_ids,
     encode_selected_ids,
     excluded_addons,
 )
-from lib.clients.stremio.helpers import get_addon_merge_key, get_addons, ping_addons
+from lib.clients.stremio.helpers import (
+    clear_addon_alias,
+    clear_catalog_alias,
+    get_addon_alias,
+    get_addon_display_name,
+    get_addon_merge_key,
+    get_addons,
+    get_catalog_alias,
+    get_catalog_display_name,
+    ping_addons,
+    set_addon_alias,
+    set_catalog_alias,
+)
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.settings import get_int_setting
@@ -56,13 +70,13 @@ def _ping_addons_with_progress(addons):
 
 def _build_addon_options(addons):
     """Build list items for addon multiselect with deduplication."""
-    name_counts = Counter(addon.manifest.name for addon in addons)
+    name_counts = Counter(get_addon_display_name(addon) for addon in addons)
     options = []
 
     for addon in addons:
-        name = addon.manifest.name
+        name = get_addon_display_name(addon)
         if name_counts[name] > 1:
-            label = addon.label()
+            label = addon.label().replace(addon.manifest.name, name, 1)
         else:
             label = name
 
@@ -76,6 +90,50 @@ def _build_addon_options(addons):
         options.append(option)
 
     return options
+
+
+def _select_addon(title, addons):
+    if not addons:
+        _show_no_addons_dialog()
+        return None
+
+    options = _build_addon_options(addons)
+    selected = xbmcgui.Dialog().select(title, options, useDetails=True)
+    if selected < 0:
+        return None
+    return addons[selected]
+
+
+def _get_aliasable_addons():
+    addon_manager = get_addons()
+    return _deduplicate_addons(
+        [addon for addon in addon_manager.addons if addon.manifest.id != "org.stremio.local"]
+    )
+
+
+def _clear_aliases_for_addon_keys(addon_keys):
+    addon_aliases = cache.get(STREMIO_ADDON_ALIASES_KEY) or {}
+    if isinstance(addon_aliases, dict):
+        addon_aliases = {k: v for k, v in addon_aliases.items() if k not in addon_keys}
+        cache.set(STREMIO_ADDON_ALIASES_KEY, addon_aliases, timedelta(days=365 * 20))
+
+    catalog_aliases = cache.get(STREMIO_CATALOG_ALIASES_KEY) or {}
+    if isinstance(catalog_aliases, dict):
+        catalog_aliases = {
+            k: v
+            for k, v in catalog_aliases.items()
+            if not any(k == addon_key or k.startswith(f"{addon_key}|") for addon_key in addon_keys)
+        }
+        cache.set(STREMIO_CATALOG_ALIASES_KEY, catalog_aliases, timedelta(days=365 * 20))
+
+
+def _should_clear_existing_alias():
+    return xbmcgui.Dialog().yesno(
+        translation(90821),
+        translation(90831),
+        nolabel=translation(90829),
+        yeslabel=translation(90830),
+    )
 
 
 def _show_addon_multiselect(title, addons, selected_ids):
@@ -262,10 +320,11 @@ def stremio_toggle_tv_addons(params, check_availability=False):
                 ):
                     addons.append(addon)
                     break
-            elif resource.name == "stream":
-                if "tv" in resource.types or "channel" in resource.types:
-                    addons.append(addon)
-                    break
+            elif resource.name == "stream" and (
+                "tv" in resource.types or "channel" in resource.types
+            ):
+                addons.append(addon)
+                break
 
     addons = _deduplicate_addons(addons)
     addons = _filter_excluded_addons(addons)
@@ -349,9 +408,10 @@ def add_custom_stremio_addon(params):
                     is_catalog = True
             elif isinstance(res, str):
                 if res == "stream":
-                    # For string resource, rely on top-elevel types
+                    # For string resource, rely on top-level types.
                     if "movie" in types or "series" in types:
-                        is_stream = True  # Assumption for now, though checking for 'tt' prefix is safer properly but here we just have string
+                        # Checking for 'tt' prefix would be safer, but strings do not expose it.
+                        is_stream = True
                     if "tv" in types or "channel" in types:
                         is_tv_stream = True
                 if res == "catalog":
@@ -455,6 +515,7 @@ def remove_custom_stremio_addon(params=None):
     # Remove from user_addons
     new_user_addons = [a for a in user_addons if build_addon_instance_key(a) not in to_remove_keys]
     cache.set(STREMIO_USER_ADDONS, new_user_addons, timedelta(days=365 * 20))
+    _clear_aliases_for_addon_keys(to_remove_keys)
 
     # Remove from selected stream/catalogs/tv if present
     for cache_key in [
@@ -468,6 +529,60 @@ def remove_custom_stremio_addon(params=None):
             cache.set(cache_key, encode_selected_ids(selected_keys), timedelta(days=365 * 20))
 
     xbmcgui.Dialog().ok(translation(90531), translation(90534))
+
+
+def rename_stremio_addon(params=None):
+    addons = _get_aliasable_addons()
+    addon = _select_addon(translation(90819), addons)
+    if not addon:
+        return
+
+    current_alias = get_addon_alias(addon)
+    if current_alias and _should_clear_existing_alias():
+        clear_addon_alias(addon)
+        xbmcgui.Dialog().ok(translation(90821), translation(90823))
+        return
+
+    new_alias = xbmcgui.Dialog().input(
+        translation(90820), defaultt=current_alias, type=xbmcgui.INPUT_ALPHANUM
+    )
+    if (new_alias or "").strip():
+        set_addon_alias(addon, new_alias)
+        xbmcgui.Dialog().ok(translation(90821), translation(90822))
+
+
+def rename_stremio_catalog(params=None):
+    addons = [addon for addon in _get_aliasable_addons() if addon.manifest.catalogs]
+    addon = _select_addon(translation(90824), addons)
+    if not addon:
+        return
+
+    catalog_options = []
+    for catalog in addon.manifest.catalogs:
+        item = xbmcgui.ListItem(
+            label=get_catalog_display_name(addon, catalog),
+            label2=f"{get_addon_display_name(addon)} - {catalog.type}/{catalog.id}",
+        )
+        item.setArt({"icon": addon.manifest.logo or "DefaultAddon.png"})
+        catalog_options.append(item)
+
+    selected = xbmcgui.Dialog().select(translation(90825), catalog_options, useDetails=True)
+    if selected < 0:
+        return
+
+    catalog = addon.manifest.catalogs[selected]
+    current_alias = get_catalog_alias(addon, catalog)
+    if current_alias and _should_clear_existing_alias():
+        clear_catalog_alias(addon, catalog)
+        xbmcgui.Dialog().ok(translation(90821), translation(90823))
+        return
+
+    new_alias = xbmcgui.Dialog().input(
+        translation(90826), defaultt=current_alias, type=xbmcgui.INPUT_ALPHANUM
+    )
+    if (new_alias or "").strip():
+        set_catalog_alias(addon, catalog, new_alias)
+        xbmcgui.Dialog().ok(translation(90821), translation(90822))
 
 
 def stremio_bypass_addons_select(params=None):

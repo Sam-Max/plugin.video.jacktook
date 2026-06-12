@@ -4,9 +4,14 @@ from unittest.mock import MagicMock
 from lib import search
 from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Meta, MetaPreview
-from lib.clients.stremio import catalog_menus, helpers
+from lib.clients.stremio import addon_client, addon_selection, catalog_menus, helpers
 from lib.clients.stremio.catalog_menus import CATALOG_PAGE_SIZE
+from lib.clients.stremio.constants import (
+    STREMIO_ADDON_ALIASES_KEY,
+    STREMIO_CATALOG_ALIASES_KEY,
+)
 from lib.domain.torrent import TorrentStream
+from lib.utils.debrid import debrid_utils
 
 
 def test_merge_addons_lists_keeps_same_manifest_id_with_different_urls():
@@ -110,6 +115,56 @@ def test_process_search_results_bypasses_exact_addon_instance(monkeypatch):
     assert processed_batches == [[native_result]]
 
 
+def test_process_search_results_legacy_bypass_uses_source_name_with_alias(monkeypatch):
+    bypass_result = TorrentStream(
+        title="Bypassed",
+        indexer="Original",
+        addonKey="org.example.addon|https://example.com/one",
+        addonName="Kodi Alias",
+        addonSourceName="Original Name",
+        addonInstanceLabel="Kodi Alias (example.com, custom)",
+    )
+    native_result = TorrentStream(
+        title="Native",
+        indexer="Other",
+        addonKey="org.other.addon|https://example.com/two",
+        addonName="Other Alias",
+        addonSourceName="Other Name",
+    )
+
+    processed_batches = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda key, default=None: {
+            "stremio_bypass_addons": True,
+            "stremio_bypass_addon_list": "original name",
+        }.get(key, default),
+    )
+    monkeypatch.setattr(search, "pre_process_results", lambda results, *args, **kwargs: results)
+    monkeypatch.setattr(
+        search,
+        "process_results",
+        lambda results, *args, **kwargs: processed_batches.append(results) or results,
+    )
+
+    results = search._process_search_results(
+        [native_result, bypass_result],
+        "movies",
+        "",
+        1,
+        1,
+        "",
+        "query",
+        "movies",
+        False,
+    )
+
+    assert results == [bypass_result, native_result]
+    assert processed_batches == [[native_result]]
+
+
 def test_get_addons_uses_cached_account_addons_before_settings_refresh(monkeypatch):
     custom_addon = {
         "manifest": {"id": "custom.one", "name": "Custom One"},
@@ -132,6 +187,269 @@ def test_get_addons_uses_cached_account_addons_before_settings_refresh(monkeypat
     addon_ids = [addon.manifest.id for addon in addon_manager.addons]
 
     assert addon_ids == ["custom.one", "account.one"]
+
+
+def test_stremio_addon_aliases_are_stored_separately_from_manifest(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Original Name",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    addon = addon_manager.addons[0]
+    stored = {}
+
+    fake_cache = MagicMock()
+    fake_cache.get.side_effect = lambda key: stored.get(key)
+    fake_cache.set.side_effect = lambda key, value, *_args: stored.__setitem__(key, value)
+    monkeypatch.setattr(helpers, "cache", fake_cache)
+
+    helpers.set_addon_alias(addon, "Kodi Alias")
+
+    assert helpers.get_addon_display_name(addon) == "Kodi Alias"
+    assert addon.manifest.name == "Original Name"
+    assert stored[STREMIO_ADDON_ALIASES_KEY] == {addon.key(): "Kodi Alias"}
+
+    helpers.clear_addon_alias(addon)
+
+    assert helpers.get_addon_display_name(addon) == "Original Name"
+    assert stored[STREMIO_ADDON_ALIASES_KEY] == {}
+
+
+def test_managed_search_status_uses_stremio_addon_alias(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Original Name",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    addon = addon_manager.addons[0]
+    submitted = []
+
+    class RecordingManager:
+        def submit_task(self, *args, **kwargs):
+            submitted.append((args, kwargs))
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda key, default=None: {"stremio_enabled": True}.get(key, default),
+    )
+    monkeypatch.setattr(search, "_is_source_enabled", lambda indexer, *_args: indexer == search.Indexer.STREMIO)
+    monkeypatch.setattr(search, "get_selected_stream_addons", lambda: [addon])
+    monkeypatch.setattr(search, "get_addon_display_name", lambda _addon: "Kodi Alias")
+
+    search._submit_search_tasks_managed(
+        RecordingManager(),
+        None,
+        "query",
+        "movies",
+        "movies",
+        None,
+        None,
+        {"imdb_id": "tt1234567"},
+        "",
+        None,
+        "tt1234567",
+    )
+
+    assert submitted[0][0][0] == "Kodi Alias"
+    assert submitted[0][0][1] == search.Indexer.STREMIO
+    assert addon.manifest.name == "Original Name"
+
+
+def test_stremio_catalog_alias_uses_addon_type_and_catalog_id(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Addon",
+                    "catalogs": [
+                        {"type": "movie", "id": "popular", "name": "Popular"},
+                        {"type": "series", "id": "popular", "name": "Popular Shows"},
+                    ],
+                    "resources": [],
+                    "types": ["movie", "series"],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    addon = addon_manager.addons[0]
+    movie_catalog = addon.manifest.catalogs[0]
+    series_catalog = addon.manifest.catalogs[1]
+    stored = {}
+
+    fake_cache = MagicMock()
+    fake_cache.get.side_effect = lambda key: stored.get(key)
+    fake_cache.set.side_effect = lambda key, value, *_args: stored.__setitem__(key, value)
+    monkeypatch.setattr(helpers, "cache", fake_cache)
+
+    helpers.set_catalog_alias(addon, movie_catalog, "Movies Alias")
+
+    assert helpers.get_catalog_display_name(addon, movie_catalog) == "Movies Alias"
+    assert helpers.get_catalog_display_name(addon, series_catalog) == "Popular Shows"
+    assert stored[STREMIO_CATALOG_ALIASES_KEY] == {
+        f"{addon.key()}|movie|popular": "Movies Alias"
+    }
+
+
+def test_rename_stremio_addon_empty_input_keeps_alias_and_clear_is_explicit(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Original Name",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    addon = addon_manager.addons[0]
+    stored = {STREMIO_ADDON_ALIASES_KEY: {addon.key(): "Kodi Alias"}}
+
+    fake_cache = MagicMock()
+    fake_cache.get.side_effect = lambda key: stored.get(key)
+    fake_cache.set.side_effect = lambda key, value, *_args: stored.__setitem__(key, value)
+    monkeypatch.setattr(helpers, "cache", fake_cache)
+    monkeypatch.setattr(addon_selection, "cache", fake_cache)
+    monkeypatch.setattr(addon_selection, "get_addons", lambda: addon_manager)
+
+    class _Dialog:
+        clear_alias = False
+
+        def select(self, *args, **kwargs):
+            return 0
+
+        def yesno(self, *args, **kwargs):
+            return self.clear_alias
+
+        def input(self, *args, **kwargs):
+            return ""
+
+        def ok(self, *args, **kwargs):
+            return True
+
+    monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", _Dialog)
+
+    addon_selection.rename_stremio_addon()
+
+    assert stored[STREMIO_ADDON_ALIASES_KEY] == {addon.key(): "Kodi Alias"}
+
+    _Dialog.clear_alias = True
+    addon_selection.rename_stremio_addon()
+
+    assert stored[STREMIO_ADDON_ALIASES_KEY] == {}
+
+
+def test_rename_stremio_catalog_empty_input_keeps_alias_and_clear_is_explicit(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Addon",
+                    "catalogs": [{"type": "movie", "id": "popular", "name": "Popular"}],
+                    "resources": [],
+                    "types": ["movie"],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    addon = addon_manager.addons[0]
+    catalog = addon.manifest.catalogs[0]
+    alias_key = f"{addon.key()}|movie|popular"
+    stored = {STREMIO_CATALOG_ALIASES_KEY: {alias_key: "Movies Alias"}}
+
+    fake_cache = MagicMock()
+    fake_cache.get.side_effect = lambda key: stored.get(key)
+    fake_cache.set.side_effect = lambda key, value, *_args: stored.__setitem__(key, value)
+    monkeypatch.setattr(helpers, "cache", fake_cache)
+    monkeypatch.setattr(addon_selection, "cache", fake_cache)
+    monkeypatch.setattr(addon_selection, "get_addons", lambda: addon_manager)
+
+    class _Dialog:
+        clear_alias = False
+
+        def select(self, *args, **kwargs):
+            return 0
+
+        def yesno(self, *args, **kwargs):
+            return self.clear_alias
+
+        def input(self, *args, **kwargs):
+            return ""
+
+        def ok(self, *args, **kwargs):
+            return True
+
+    monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", _Dialog)
+
+    addon_selection.rename_stremio_catalog()
+
+    assert helpers.get_catalog_alias(addon, catalog) == "Movies Alias"
+
+    _Dialog.clear_alias = True
+    addon_selection.rename_stremio_catalog()
+
+    assert stored[STREMIO_CATALOG_ALIASES_KEY] == {}
+
+
+def test_remove_custom_stremio_addon_clears_alias_cache(monkeypatch):
+    custom_addon = {
+        "manifest": {"id": "org.example.addon", "name": "Example", "catalogs": []},
+        "transportUrl": "https://example.com/manifest.json",
+        "transportName": "custom",
+    }
+    addon_key = "org.example.addon|https://example.com"
+    stored = {
+        "stremio_user_addons": [custom_addon],
+        STREMIO_ADDON_ALIASES_KEY: {addon_key: "Alias"},
+        STREMIO_CATALOG_ALIASES_KEY: {f"{addon_key}|movie|popular": "Catalog Alias"},
+    }
+
+    fake_cache = MagicMock()
+    fake_cache.get.side_effect = lambda key: stored.get(key)
+    fake_cache.set.side_effect = lambda key, value, *_args: stored.__setitem__(key, value)
+    monkeypatch.setattr(addon_selection, "cache", fake_cache)
+
+    class _Dialog:
+        def multiselect(self, *args, **kwargs):
+            return [0]
+
+        def ok(self, *args, **kwargs):
+            return True
+
+    monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", _Dialog)
+
+    addon_selection.remove_custom_stremio_addon()
+
+    assert stored[STREMIO_ADDON_ALIASES_KEY] == {}
+    assert stored[STREMIO_CATALOG_ALIASES_KEY] == {}
 
 
 def test_list_catalog_locally_paginates_when_catalog_has_no_skip(monkeypatch):
@@ -349,6 +667,12 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
 
     monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
     monkeypatch.setattr(
+        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
+    )
+    monkeypatch.setattr(
+        catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name or catalog.id
+    )
+    monkeypatch.setattr(
         catalog_menus,
         "translation",
         lambda value: {90006: "Search"}.get(value, str(value)),
@@ -385,6 +709,114 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
     assert len(added_batches[0]) == 3
     labels = [item[1].label for item in added_batches[0]]
     assert labels == ["Search Trending", "Trending", "Popular"]
+
+
+def test_list_stremio_catalogs_uses_catalog_alias(monkeypatch):
+    added_batches = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    class _Catalog:
+        name = "Popular"
+        id = "popular"
+        type = "series"
+        extra = []
+
+    class _Manifest:
+        name = "Addon One"
+        logo = "logo.png"
+        types = ["series"]
+        catalogs = [_Catalog()]
+
+    class _Addon:
+        manifest = _Manifest()
+
+        def key(self):
+            return "addon-key"
+
+        def url(self):
+            return "https://example.com/addon"
+
+    monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
+    monkeypatch.setattr(
+        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
+    )
+    monkeypatch.setattr(catalog_menus, "get_catalog_display_name", lambda *_args: "Renamed")
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action=None, **kwargs: action)
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+
+    catalog_menus.list_stremio_catalogs(menu_type="series", sub_menu_type="series")
+
+    labels = [item[1].label for item in added_batches[0]]
+    assert labels == ["Renamed"]
+
+
+def test_stremio_addon_client_uses_addon_alias_for_result_labels(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Original Name",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    monkeypatch.setattr(addon_client, "get_addon_display_name", lambda addon: "Kodi Alias")
+    monkeypatch.setattr(addon_client, "find_languages_in_string", lambda desc: [])
+
+    client = addon_client.StremioAddonClient(addon_manager.addons[0])
+    response = MagicMock()
+    response.json.return_value = {"streams": [{"title": "Movie 1080p", "infoHash": "a" * 40}]}
+
+    results = client.parse_response(response)
+
+    assert results[0].indexer == "Original"
+    assert results[0].addonName == "Kodi Alias"
+    assert results[0].addonInstanceLabel == "Kodi Alias (example.com, custom)"
+    assert addon_manager.addons[0].manifest.name == "Original Name"
+
+
+def test_stremio_addon_aliases_are_part_of_result_cache_scopes(monkeypatch):
+    stored = {
+        STREMIO_ADDON_ALIASES_KEY: {"org.example.addon|https://example.com": "Alias One"},
+    }
+
+    monkeypatch.setattr(search.cache, "get", lambda key: stored.get(key))
+    monkeypatch.setattr(search, "get_setting", lambda *_args: False)
+
+    first_scope = search._build_search_cache_scope()
+    stored[STREMIO_ADDON_ALIASES_KEY] = {
+        "org.example.addon|https://example.com": "Alias Two"
+    }
+
+    assert search._build_search_cache_scope() != first_scope
+
+
+def test_stremio_addon_aliases_are_part_of_debrid_cache_scope(monkeypatch):
+    stored = {
+        STREMIO_ADDON_ALIASES_KEY: {"org.example.addon|https://example.com": "Alias One"},
+    }
+
+    monkeypatch.setattr(debrid_utils.cache, "get", lambda key: stored.get(key))
+    monkeypatch.setattr(debrid_utils, "get_setting", lambda *_args: False)
+
+    first_scope = debrid_utils._build_debrid_cache_scope()
+    stored[STREMIO_ADDON_ALIASES_KEY] = {
+        "org.example.addon|https://example.com": "Alias Two"
+    }
+
+    assert debrid_utils._build_debrid_cache_scope() != first_scope
 
 
 def test_run_search_entry_preserves_stremio_route_in_library_payload(monkeypatch):

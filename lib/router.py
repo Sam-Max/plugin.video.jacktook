@@ -112,6 +112,8 @@ def _is_stremio_action(action):
         "search_catalog",
         "add_custom_stremio_addon",
         "remove_custom_stremio_addon",
+        "rename_stremio_addon",
+        "rename_stremio_catalog",
         "torrentio_toggle_providers",
         "stremio_bypass_addons_select",
     }
@@ -221,11 +223,15 @@ def _route_stremio(action, params):
         "stremio_filtered_selection",
         "add_custom_stremio_addon",
         "remove_custom_stremio_addon",
+        "rename_stremio_addon",
+        "rename_stremio_catalog",
         "stremio_bypass_addons_select",
     ):
         from lib.clients.stremio.addon_selection import (
             add_custom_stremio_addon,
             remove_custom_stremio_addon,
+            rename_stremio_addon,
+            rename_stremio_catalog,
             stremio_bypass_addons_select,
             stremio_filtered_selection,
             stremio_toggle_addons,
@@ -240,6 +246,8 @@ def _route_stremio(action, params):
             "stremio_filtered_selection": stremio_filtered_selection,
             "add_custom_stremio_addon": add_custom_stremio_addon,
             "remove_custom_stremio_addon": remove_custom_stremio_addon,
+            "rename_stremio_addon": rename_stremio_addon,
+            "rename_stremio_catalog": rename_stremio_catalog,
             "stremio_bypass_addons_select": stremio_bypass_addons_select,
         }
         actions[action](params)

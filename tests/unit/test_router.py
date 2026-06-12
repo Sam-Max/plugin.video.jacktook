@@ -2,6 +2,8 @@ import importlib
 import sys
 from unittest.mock import patch
 
+import pytest
+
 
 def _load_router_module():
     if "lib.router" in sys.modules:
@@ -25,6 +27,16 @@ def test_get_route_handler_returns_download_dispatcher_for_handle_download_file(
     router = _load_router_module()
 
     assert router._get_route_handler("handle_download_file") is router._route_downloads
+
+
+@pytest.mark.parametrize(
+    "action",
+    ["rename_stremio_addon", "rename_stremio_catalog"],
+)
+def test_get_route_handler_returns_stremio_dispatcher_for_rename_actions(action):
+    router = _load_router_module()
+
+    assert router._get_route_handler(action) is router._route_stremio
 
 
 def test_get_route_handler_falls_back_to_core_dispatcher():

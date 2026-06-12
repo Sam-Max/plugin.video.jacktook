@@ -292,13 +292,16 @@ def test_submit_search_tasks_skips_disabled_sources(
 @patch("lib.search.get_setting")
 @patch("lib.search.cache")
 @patch("lib.search.get_selected_stream_addons")
+@patch("lib.search.get_addon_display_name")
 def test_submit_search_tasks_managed_filters_stremio_addons(
+    mock_get_display_name,
     mock_get_addons,
     mock_cache,
     mock_get_setting,
 ):
     mock_get_setting.return_value = True
     mock_cache.get.return_value = json.dumps(["Stremio:addon1|url1"])
+    mock_get_display_name.side_effect = lambda addon: addon.manifest.name
 
     addon1 = MagicMock()
     addon1.key.return_value = "addon1|url1"

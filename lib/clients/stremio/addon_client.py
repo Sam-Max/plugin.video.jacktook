@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
+from lib.clients.stremio.helpers import get_addon_display_name
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.settings import get_int_setting
@@ -105,7 +106,15 @@ class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon) -> None:
         super().__init__(None, None)
         self.addon = addon
-        self.instance_label = build_addon_instance_label(addon)
+        self.display_name = get_addon_display_name(addon)
+        self.instance_label = build_addon_instance_label(
+            {
+                "manifest": {"id": addon.manifest.id, "name": self.display_name},
+                "transportUrl": addon.transport_url,
+                "transportName": addon.transport_name,
+            }
+        )
+        self.indexer_name = (addon.manifest.name or addon.manifest.id).split(" ")[0]
 
     def search(
         self,
@@ -143,10 +152,10 @@ class StremioAddonClient(BaseClient):
             if res.status_code != 200:
                 return []
             response = self.parse_response(res)
-            kodilog(f"Stremio addon {self.addon.manifest.name} returned {len(response)} results")
+            kodilog(f"Stremio addon {self.display_name} returned {len(response)} results")
             return response
         except Exception as e:
-            self.handle_exception(f"Error in {self.addon.manifest.name}: {e!s}")
+            self.handle_exception(f"Error in {self.display_name}: {e!s}")
             return []
 
     def parse_response(self, res: Any, is_external_cache: bool = False) -> List[TorrentStream]:
@@ -191,10 +200,11 @@ class StremioAddonClient(BaseClient):
                 TorrentStream(
                     title=stream.get_parsed_title(),
                     type=stream_type,
-                    indexer=self.addon.manifest.name.split(" ")[0],
+                    indexer=self.indexer_name,
                     subindexer=stream_subindexer,
                     addonKey=self.addon.key(),
-                    addonName=self.addon.manifest.name,
+                    addonName=self.display_name,
+                    addonSourceName=self.addon.manifest.name or self.addon.manifest.id,
                     addonInstanceLabel=self.instance_label,
                     guid=info_hash_to_magnet(info_hash) if info_hash else "",
                     infoHash=info_hash if info_hash else "",

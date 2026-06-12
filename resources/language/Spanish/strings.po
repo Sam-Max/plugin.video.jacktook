@@ -4419,3 +4419,35 @@ msgstr "Restablecer vistas guardadas"
 msgctxt "#90726"
 msgid "Open this screen, change the Kodi view manually, then select Save Current View."
 msgstr "Abre esta pantalla, cambia manualmente la vista de Kodi y luego selecciona Guardar vista actual."
+
+msgctxt "#90819"
+msgid "Rename Stremio add-on"
+msgstr "Renombrar complemento de Stremio"
+
+msgctxt "#90824"
+msgid "Rename Stremio catalog"
+msgstr "Renombrar catálogo de Stremio"
+
+msgctxt "#90827"
+msgid "Set a Kodi-only display alias for a Stremio add-on."
+msgstr "Definir un alias de visualización solo en Kodi para un complemento de Stremio."
+
+msgctxt "#90828"
+msgid "Set a Kodi-only display alias for a Stremio catalog."
+msgstr "Definir un alias de visualización solo en Kodi para un catálogo de Stremio."
+
+msgctxt "#90832"
+msgid "Stremio: Addons Management"
+msgstr "Stremio: Gestión de complementos"
+
+msgctxt "#90833"
+msgid "Stremio: Catalogs & Visibility"
+msgstr "Stremio: Catálogos y visibilidad"
+
+msgctxt "#90834"
+msgid "Stremio: Rename & Customization"
+msgstr "Stremio: Renombrado y personalización"
+
+msgctxt "#90835"
+msgid "Stremio: Search & Behavior"
+msgstr "Stremio: Búsqueda y comportamiento"

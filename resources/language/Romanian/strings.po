@@ -4395,6 +4395,38 @@ msgctxt "#90818"
 msgid "Jacktook was updated with new improvements. Donations are optional, but they help keep development active. Would you like to see the support link?"
 msgstr "Jacktook a fost actualizat cu îmbunătățiri noi. Donațiile sunt opționale, dar ajută la menținerea dezvoltării active. Vrei să vezi linkul de susținere?"
 
+msgctxt "#90819"
+msgid "Rename Stremio add-on"
+msgstr "Redenumește addonul Stremio"
+
+msgctxt "#90824"
+msgid "Rename Stremio catalog"
+msgstr "Redenumește catalogul Stremio"
+
+msgctxt "#90827"
+msgid "Set a Kodi-only display alias for a Stremio add-on."
+msgstr "Setează un alias de afișare doar în Kodi pentru un addon Stremio."
+
+msgctxt "#90828"
+msgid "Set a Kodi-only display alias for a Stremio catalog."
+msgstr "Setează un alias de afișare doar în Kodi pentru un catalog Stremio."
+
+msgctxt "#90832"
+msgid "Stremio: Addons Management"
+msgstr "Stremio: Gestionarea addonurilor"
+
+msgctxt "#90833"
+msgid "Stremio: Catalogs & Visibility"
+msgstr "Stremio: Cataloage și vizibilitate"
+
+msgctxt "#90834"
+msgid "Stremio: Rename & Customization"
+msgstr "Stremio: Redenumire și personalizare"
+
+msgctxt "#90835"
+msgid "Stremio: Search & Behavior"
+msgstr "Stremio: Căutare și comportament"
+
 msgctxt "#90300"
 msgid "External Scraper"
 msgstr "Magneto"

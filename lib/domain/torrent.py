@@ -12,6 +12,7 @@ class TorrentStream:
     subindexer: str = ""
     addonKey: str = ""
     addonName: str = ""
+    addonSourceName: str = ""
     addonInstanceLabel: str = ""
     guid: str = ""
     infoHash: str = ""

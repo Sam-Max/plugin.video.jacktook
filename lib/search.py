@@ -6,9 +6,10 @@ import xbmc
 from xbmcgui import Dialog
 
 from lib.clients.stremio.addon_client import StremioAddonClient
-from lib.clients.stremio.constants import STREMIO_ADDONS_KEY
+from lib.clients.stremio.constants import STREMIO_ADDON_ALIASES_KEY, STREMIO_ADDONS_KEY
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
+    get_addon_display_name,
     get_selected_stream_addons,
 )
 from lib.db.cached import cache
@@ -62,12 +63,16 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "ed": bool(get_setting("easydebrid_enabled")),
     }
     selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
+    stremio_addon_aliases = json.dumps(
+        cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True
+    )
     source_manager_selection = str(cache.get("source_manager_selection") or "")
     external_scraper_module = str(get_setting("external_scraper_module") or "")
     normalized_scoped_url = str(scoped_addon_url or "")
-    return "{}|{}|{}|{}|{}".format(
+    return "{}|{}|{}|{}|{}|{}".format(
         "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
         selected_stream_addons,
+        stremio_addon_aliases,
         source_manager_selection,
         external_scraper_module,
         normalized_scoped_url,
@@ -420,7 +425,7 @@ def _process_search_results(
             if result.addonKey and result.addonKey in bypass_addons:
                 return True
 
-            legacy_name = (result.addonName or result.indexer or "").lower()
+            legacy_name = (result.addonSourceName or result.indexer or "").lower()
             return any(addon == legacy_name for addon in bypass_addons)
 
         bypassed_streams = [res for res in results if is_bypassed(res)]
@@ -868,7 +873,7 @@ def _submit_search_tasks_managed(
             and _is_source_enabled(Indexer.STREMIO, addon.key())
         ):
             submit_performer_managed(
-                addon.manifest.name,
+                get_addon_display_name(addon),
                 Indexer.STREMIO,
                 dialog,
                 ids,
@@ -998,7 +1003,7 @@ def _submit_search_tasks_managed(
             ]
             for addon in filtered_addons:
                 submit_performer_managed(
-                    addon.manifest.name,
+                    get_addon_display_name(addon),
                     Indexer.STREMIO,
                     dialog,
                     ids,
