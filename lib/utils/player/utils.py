@@ -148,7 +148,12 @@ def get_debrid_url(
         return get_debrid_direct_url(debrid_type, data)
 
 
-def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[str]:
+def get_elementum_url(
+    magnet: str,
+    url: str,
+    mode: str,
+    ids: Any,
+) -> Optional[str]:
     if not is_elementum_addon():
         if Dialog().yesno(
             translation(30252),
@@ -163,8 +168,10 @@ def get_elementum_url(magnet: str, url: str, mode: str, ids: Any) -> Optional[st
 
     tmdb_id = ids.get("tmdb_id", "") if isinstance(ids, dict) else ""
 
-    if magnet or url:
-        return f"plugin://plugin.video.elementum/play?uri={quote(magnet or url)}&type={mode}&tmdb={tmdb_id}"
+    uri = url or magnet
+
+    if uri:
+        return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
     else:
         raise TorrentException("No magnet or url found for Elementum playback")
 
