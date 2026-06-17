@@ -139,21 +139,16 @@ def _is_source_enabled(indexer_key, stremio_addon_key=None):
     if stremio_addon_key:
         return f"Stremio:{stremio_addon_key}" in selected
 
-    # External scraper has its own stale-cache guard via settings
+    # External scraper uses its configured module name as the cache key.
+    # The fallback literal "External Scraper" supports older caches.
     if indexer_key == Indexer.EXTERNAL_SCRAPER:
-        if get_setting("external_scraper_enabled") and get_setting("external_scraper_module"):
-            return True
-        return "External Scraper" in selected
+        if not get_setting("external_scraper_enabled"):
+            return False
+        module_name = get_setting("external_scraper_module_name") or "External Scraper"
+        return module_name in selected or "External Scraper" in selected
 
-    cache_key = str(indexer_key)
-
-    # Explicitly listed in the source manager → enabled
-    if cache_key in selected:
-        return True
-
-    # Not listed but enabled in settings → enabled (handles stale caches)
-    setting_key = BUILTIN_INDEXER_SETTINGS.get(indexer_key)
-    return bool(setting_key and get_setting(setting_key))
+    # Managed builtin sources are enabled only when explicitly selected.
+    return str(indexer_key) in selected
 
 
 def _clean_title_candidate(value) -> str:

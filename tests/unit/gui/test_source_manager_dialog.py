@@ -128,7 +128,12 @@ class TestOpenSourceManagerDialog:
     def test_selection_saved_to_cache(
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
-        mock_get_setting.return_value = True
+        def setting_side_effect(key):
+            if key == "external_scraper_module_name":
+                return None
+            return True
+
+        mock_get_setting.side_effect = setting_side_effect
         mock_cache.get.return_value = None
         mock_dialog = MagicMock()
         # User selects first and third items
@@ -139,14 +144,21 @@ class TestOpenSourceManagerDialog:
 
         open_source_manager_dialog()
 
-        # cache.set is called twice:
-        # 1) to initialize default "all enabled" selection when cache is empty
-        # 2) to persist the user's final selection
-        assert mock_cache.set.call_count == 2
-        saved_key = mock_cache.set.call_args[0][0]
-        saved_value = mock_cache.set.call_args[0][1]
-        assert saved_key == "source_manager_selection"
-        assert json.loads(saved_value) == ["Jackett", "Burst"]
+        # cache.set is called twice to initialize defaults and twice to
+        # persist the user's final selection (selection + known keys).
+        assert mock_cache.set.call_count == 4
+        saved_calls = {
+            call.args[0]: json.loads(call.args[1]) for call in mock_cache.set.call_args_list[-2:]
+        }
+        assert saved_calls["source_manager_selection"] == ["Jackett", "Burst"]
+        assert saved_calls["source_manager_known_keys"] == [
+            "Jackett",
+            "Prowlarr",
+            "Burst",
+            "Jackgram",
+            "Easynews",
+            "External Scraper",
+        ]
 
     @patch("lib.gui.source_manager_dialog.get_setting")
     @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
@@ -253,11 +265,11 @@ class TestOpenSourceManagerDialog:
         preselect = mock_dialog.multiselect.call_args[1]["preselect"]
         # Both Jackett (index 0) and Prowlarr (index 1) should be preselected
         assert preselect == [0, 1]
-        # Default selection should be saved to cache
-        mock_cache.set.assert_called_once()
-        saved = json.loads(mock_cache.set.call_args[0][1])
-        assert "Jackett" in saved
-        assert "Prowlarr" in saved
+        # Default selection and known keys should be saved to cache
+        assert mock_cache.set.call_count == 2
+        saved_keys = {call.args[0] for call in mock_cache.set.call_args_list}
+        assert "source_manager_selection" in saved_keys
+        assert "source_manager_known_keys" in saved_keys
 
     @patch("lib.gui.source_manager_dialog.get_setting")
     @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
@@ -266,14 +278,21 @@ class TestOpenSourceManagerDialog:
     def test_newly_enabled_source_is_auto_selected(
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
-        """A source enabled in settings but missing from cache should be auto-selected."""
+        """A source enabled in settings but missing from known keys should be auto-selected."""
 
         def setting_side_effect(key):
             return key in ("jackett_enabled", "prowlarr_enabled")
 
         mock_get_setting.side_effect = setting_side_effect
-        # Cache only has Jackett — Prowlarr was enabled after cache was created
-        mock_cache.get.return_value = json.dumps(["Jackett"])
+
+        def cache_get_side_effect(key):
+            if key == "source_manager_selection":
+                return json.dumps(["Jackett"])
+            if key == "source_manager_known_keys":
+                return json.dumps(["Jackett"])
+            return None
+
+        mock_cache.get.side_effect = cache_get_side_effect
         mock_dialog = MagicMock()
         mock_dialog.multiselect.return_value = None
         mock_dialog_cls.return_value = mock_dialog
@@ -285,8 +304,48 @@ class TestOpenSourceManagerDialog:
         preselect = mock_dialog.multiselect.call_args[1]["preselect"]
         # Jackett (index 0) and Prowlarr (index 1) should both be preselected
         assert preselect == [0, 1]
-        # Updated selection should be saved to cache
-        mock_cache.set.assert_called_once()
-        saved = json.loads(mock_cache.set.call_args[0][1])
-        assert "Jackett" in saved
-        assert "Prowlarr" in saved
+        # Updated selection and known keys should be saved to cache
+        assert mock_cache.set.call_count == 2
+        saved_calls = {
+            call.args[0]: json.loads(call.args[1]) for call in mock_cache.set.call_args_list
+        }
+        assert "Jackett" in saved_calls["source_manager_selection"]
+        assert "Prowlarr" in saved_calls["source_manager_selection"]
+
+    @patch("lib.gui.source_manager_dialog.get_setting")
+    @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
+    @patch("lib.gui.source_manager_dialog.xbmcgui.ListItem")
+    @patch("lib.gui.source_manager_dialog.cache")
+    def test_deselected_source_stays_deselected(
+        self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
+    ):
+        """A source deliberately deselected by the user must not be re-selected on reopen."""
+
+        def setting_side_effect(key):
+            return key in ("jackett_enabled", "prowlarr_enabled")
+
+        mock_get_setting.side_effect = setting_side_effect
+
+        def cache_get_side_effect(key):
+            if key == "source_manager_selection":
+                # User previously deselected Prowlarr
+                return json.dumps(["Jackett"])
+            if key == "source_manager_known_keys":
+                # Prowlarr was already known at the time of the last save
+                return json.dumps(["Jackett", "Prowlarr"])
+            return None
+
+        mock_cache.get.side_effect = cache_get_side_effect
+        mock_dialog = MagicMock()
+        mock_dialog.multiselect.return_value = None
+        mock_dialog_cls.return_value = mock_dialog
+
+        from lib.gui.source_manager_dialog import open_source_manager_dialog
+
+        open_source_manager_dialog()
+
+        preselect = mock_dialog.multiselect.call_args[1]["preselect"]
+        # Only Jackett (index 0) should be preselected
+        assert preselect == [0]
+        # Cache must not be modified because nothing newly enabled appeared
+        mock_cache.set.assert_not_called()

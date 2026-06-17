@@ -246,6 +246,49 @@ def test_is_source_enabled_checks_stremio_addon_key():
 
 
 @patch("lib.search.get_setting")
+def test_is_source_enabled_strict_whitelist_ignores_settings(mock_get_setting):
+    """A source enabled in settings but deselected in Manage Sources must not search."""
+
+    def setting_side_effect(key):
+        return key in ("jackett_enabled", "prowlarr_enabled")
+
+    mock_get_setting.side_effect = setting_side_effect
+    with patch("lib.search.cache") as mock_cache:
+        mock_cache.get.return_value = json.dumps(["Jackett"])
+        assert _is_source_enabled(Indexer.JACKETT) is True
+        # Prowlarr is enabled in settings but was deselected in Manage Sources
+        assert _is_source_enabled(Indexer.PROWLARR) is False
+        # Burst is not enabled in settings and not selected
+        assert _is_source_enabled(Indexer.BURST) is False
+
+
+@patch("lib.search.get_setting")
+def test_is_source_enabled_external_scraper_respects_selection(mock_get_setting):
+    """External scraper must respect Manage Sources selection by module name."""
+
+    def setting_side_effect(key):
+        if key == "external_scraper_enabled":
+            return True
+        if key == "external_scraper_module_name":
+            return "cocoscrapers"
+        return False
+
+    mock_get_setting.side_effect = setting_side_effect
+    with patch("lib.search.cache") as mock_cache:
+        mock_cache.get.return_value = json.dumps(["Jackett"])
+        assert _is_source_enabled(Indexer.EXTERNAL_SCRAPER) is False
+
+    with patch("lib.search.cache") as mock_cache:
+        mock_cache.get.return_value = json.dumps(["cocoscrapers"])
+        assert _is_source_enabled(Indexer.EXTERNAL_SCRAPER) is True
+
+    # Fallback literal supports older caches
+    with patch("lib.search.cache") as mock_cache:
+        mock_cache.get.return_value = json.dumps(["External Scraper"])
+        assert _is_source_enabled(Indexer.EXTERNAL_SCRAPER) is True
+
+
+@patch("lib.search.get_setting")
 @patch("lib.search.cache")
 @patch("lib.search._perform_search_with_title_fallback")
 @patch("lib.search._perform_search")
