@@ -24,9 +24,10 @@
 
 ### 🔍 Search & Scraping
 - **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Usenet, Debrid Services.
-- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, and Torbox.
+- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, OffCloud and Torbox.
 - **Torrent Scraping**: Integration with Jackett and Prowlarr for torrent sources.
 - **Usenet Scraping**: EasyNews integration for Usenet sources.
+- **External Scrapers**: Support for external scrapers like Magneto and CocoScrapers.
 - **Telegram Scraping**: Jackgram integration for streaming from Telegram channels.
 - **Rich Metadata**: Integration with TMDB, MDBList, Trakt, Fanart.tv, and Stremio catalogs.
 - **Smart Filtering**: Advanced results filtering by quality, size, and source.
