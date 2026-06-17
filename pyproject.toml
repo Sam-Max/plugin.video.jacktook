@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugin.video.jacktook"
-version = "1.14.1"
+version = "1.15.0"
 description = "Kodi addon for searching and streaming torrents via debrid services"
 requires-python = ">=3.7"
 

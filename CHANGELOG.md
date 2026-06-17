@@ -1,3 +1,17 @@
+## 1.15.0
+- Debrid: Add Offcloud provider with OAuth device-flow authentication.
+- Stremio: Add rename aliases support and reorganize related settings.
+- Sources: Make Manage Sources a strict whitelist so deselected providers are actually skipped.
+- Sources: Fix External Scraper and Easynews crashes caused by unexpected `variant`/`year` search arguments.
+- Playback: Prefer torrent URLs when resolving sources for Elementum.
+
+Spanish:
+- Debrid: Añadido proveedor Offcloud con autenticación OAuth por flujo de dispositivo.
+- Stremio: Añadido soporte de alias renombrados y reorganizados ajustes relacionados.
+- Fuentes: Manage Sources ahora es una lista blanca estricta; los proveedores deseleccionados se omiten realmente.
+- Fuentes: Corregidos crashes del External Scraper y Easynews causados por argumentos inesperados `variant`/`year` en búsquedas.
+- Reproducción: Preferencia por URLs de torrent al resolver fuentes para Elementum.
+
 ## 1.14.1
 - Startup: Fix a Kodi startup crash caused by a Python runtime-incompatible `tuple[str, str]` type annotation.
 - Maintenance: Harden the Python 3.7 compatibility checker to catch similar runtime-incompatible typing patterns before release.
