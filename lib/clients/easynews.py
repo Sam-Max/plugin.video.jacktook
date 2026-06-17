@@ -46,6 +46,7 @@ class Easynews(BaseClient):
         media_type: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
+        **kwargs: Any,
     ) -> List[TorrentStream]:
         search_query = query
         if mode == "tv" and season:

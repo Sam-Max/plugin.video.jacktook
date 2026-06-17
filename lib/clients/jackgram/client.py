@@ -19,6 +19,7 @@ class Jackgram(BaseClient):
         media_type: str,
         season: Optional[int],
         episode: Optional[int],
+        **kwargs: Any,
     ) -> Optional[List[TorrentStream]]:
         try:
             if mode == "tv" or media_type == "tv":

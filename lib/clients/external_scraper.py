@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
 from lib.clients.base import BaseClient
 from lib.domain.torrent import TorrentStream
@@ -127,6 +127,7 @@ class ExternalScraperClient(BaseClient):
         tvdb_id: str = "",
         year: str = "",
         aliases: Optional[List[str]] = None,
+        **kwargs: Any,
     ) -> List[TorrentStream]:
         kodilog(
             f"[ExternalScraper ({self.module_id})] search() called: "

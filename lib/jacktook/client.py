@@ -23,6 +23,7 @@ class Burst(BaseClient):
         season: Optional[int],
         episode: Optional[int],
         silent: bool = False,
+        **kwargs: Any,
     ) -> Optional[List[TorrentStream]]:
         try:
             if mode == "tv" or media_type == "tv":
