@@ -86,7 +86,7 @@ def torrent_files(params):
         serve_url = get_torrserver_api().get_stream_url(
             link=info_hash, path=f.get("path"), file_id=id
         )
-        file_li = build_list_item(name, "download.png")
+        file_li = build_list_item(name, "download.png", poster_path=info.get("poster") or "")
         file_li.setPath(serve_url)
 
         context_menu_items = []

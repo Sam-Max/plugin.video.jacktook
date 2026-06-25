@@ -98,6 +98,35 @@ class TestTorrentsContextMenu:
             assert meta["title"] == "Fallback Title"
             assert meta["ids"]["imdb_id"] is None
 
+    def test_forwards_torrent_poster_to_list_item(self):
+        nav = _load_navigation_module()
+
+        poster = "http://image.tmdb.org/t/p/w780/abc.jpg"
+        mock_torrent = {
+            "hash": "abc123",
+            "title": "Test Movie",
+            "stat": 1,
+            "poster": poster,
+        }
+
+        with patch.object(nav, "get_torrserver_api") as mock_api, patch.object(
+            nav, "JACKTORR_ADDON", True
+        ), patch.object(nav, "end_of_directory"), patch.object(
+            nav, "apply_section_view"
+        ), patch.object(nav, "set_pluging_category"), patch.object(
+            nav, "action_url_run"
+        ), patch.object(nav, "addDirectoryItem"), patch.object(
+            nav, "build_list_item"
+        ) as mock_build, patch(
+            "lib.utils.torrent.torrserver_utils.get_torrent_meta", return_value={}
+        ):
+            mock_api.return_value.torrents.return_value = [mock_torrent]
+
+            nav.torrents({})
+
+            mock_build.assert_called_once()
+            assert mock_build.call_args.kwargs["poster_path"] == poster
+
 
 class TestTorrentFilesContextMenu:
     def test_adds_download_subtitles_for_video_files(self):
@@ -196,3 +225,35 @@ class TestTorrentFilesContextMenu:
             assert meta["title"] == "Fallback Title"
             assert meta["ids"]["imdb_id"] is None
             mock_video_tag.setTitle.assert_called_once_with("Fallback Title")
+
+    def test_forwards_torrent_poster_to_file_list_item(self):
+        utils = _load_torrserver_utils()
+
+        poster = "http://image.tmdb.org/t/p/w780/abc.jpg"
+        mock_list_item = MagicMock()
+        mock_video_tag = MagicMock()
+        mock_list_item.getVideoInfoTag.return_value = mock_video_tag
+
+        with patch.object(utils, "get_torrserver_api") as mock_api, patch.object(
+            utils, "is_video", return_value=True
+        ), patch.object(utils, "is_picture", return_value=False), patch.object(
+            utils, "is_text", return_value=False
+        ), patch.object(utils, "is_music", return_value=False), patch.object(
+            utils, "set_pluging_category"
+        ), patch.object(utils, "end_of_directory"), patch.object(
+            utils, "action_url_run"
+        ), patch.object(utils, "addDirectoryItem"), patch.object(
+            utils, "build_list_item", return_value=mock_list_item
+        ) as mock_build, patch.object(utils, "get_torrent_meta", return_value={}):
+            mock_api.return_value.get_torrent_info.return_value = {
+                "title": "Test Movie",
+                "hash": "abc123",
+                "poster": poster,
+                "file_stats": [{"path": "movie.mkv", "id": "1"}],
+            }
+            mock_api.return_value.get_stream_url.return_value = "http://serve/url"
+
+            utils.torrent_files({"info_hash": "abc123"})
+
+            mock_build.assert_called_once()
+            assert mock_build.call_args.kwargs["poster_path"] == poster

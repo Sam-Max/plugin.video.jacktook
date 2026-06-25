@@ -854,7 +854,9 @@ def torrents(params):
             ]
         )
 
-        torrent_li = build_list_item(torrent.get("title", ""), "magnet.png")
+        torrent_li = build_list_item(
+            torrent.get("title", ""), "magnet.png", poster_path=torrent.get("poster") or ""
+        )
         torrent_li.addContextMenuItems(context_menu_items)
         addDirectoryItem(
             ADDON_HANDLE,
