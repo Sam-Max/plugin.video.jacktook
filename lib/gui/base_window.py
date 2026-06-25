@@ -252,6 +252,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "mode": self.item_information.get("mode"),
             "ids": self.item_information.get("ids"),
             "tv_data": self.item_information.get("tv_data"),
+            "poster": self.item_information.get("poster"),
         }
 
     @abc.abstractmethod

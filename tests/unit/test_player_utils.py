@@ -103,3 +103,67 @@ def test_jacktorr_playback_deduplicates_matching_infohash_and_magnet_hash():
 
     mock_save.assert_called_once()
     assert mock_save.call_args.args[0] == "SAMEHASH"
+
+
+def test_jacktorr_url_includes_poster_param_when_poster_in_data():
+    from lib.utils.player import utils
+
+    poster = "http://image.tmdb.org/t/p/w780/abc.jpg"
+    data = {
+        "title": "FROM",
+        "mode": "tv",
+        "ids": {"imdb_id": "tt9813792"},
+        "tv_data": {"season": 4, "episode": 2},
+        "info_hash": "SOURCEHASH",
+        "poster": poster,
+    }
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
+        url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
+
+    assert url.startswith("plugin://plugin.video.jacktorr/play_magnet")
+    assert f"poster={quote(poster)}" in url
+
+
+def test_jacktorr_url_omits_poster_param_when_poster_absent_from_data():
+    from lib.utils.player import utils
+
+    data = {
+        "title": "FROM",
+        "mode": "tv",
+        "ids": {"imdb_id": "tt9813792"},
+        "tv_data": {"season": 4, "episode": 2},
+        "info_hash": "SOURCEHASH",
+    }
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
+        url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
+
+    assert url.startswith("plugin://plugin.video.jacktorr/play_magnet")
+    assert "poster=" not in url
+
+
+def test_jacktorr_url_includes_poster_param_on_play_url_variant():
+    from lib.utils.player import utils
+
+    poster = "http://image.tmdb.org/t/p/w780/abc.jpg"
+    data = {
+        "title": "FROM",
+        "mode": "tv",
+        "ids": {"imdb_id": "tt9813792"},
+        "tv_data": {"season": 4, "episode": 2},
+        "info_hash": "SOURCEHASH",
+        "poster": poster,
+    }
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
+        url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data=data)
+
+    assert url.startswith("plugin://plugin.video.jacktorr/play_url")
+    assert f"poster={quote(poster)}" in url

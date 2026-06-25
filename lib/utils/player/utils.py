@@ -194,11 +194,12 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
             return None
 
     _save_jacktorr_playback_metadata(magnet, data or {})
-
+    poster = (data or {}).get("poster") or ""
+    poster_param = f"&poster={quote(poster)}" if poster else ""
     if magnet:
-        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}"
+        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}{poster_param}"
     elif url:
-        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}"
+        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}{poster_param}"
     else:
         kodilog("Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG)
         raise TorrentException("No magnet or url found for Jacktorr playback")
@@ -392,6 +393,7 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
                 "info_hash": selected_result.infoHash,
                 "url": selected_result.url,
                 "tv_data": next_tv_data,
+                "poster": item_data.get("poster"),
                 "is_torrent": False,
             },
         )
