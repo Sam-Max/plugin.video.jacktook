@@ -257,3 +257,49 @@ class TestTorrentFilesContextMenu:
 
             mock_build.assert_called_once()
             assert mock_build.call_args.kwargs["poster_path"] == poster
+
+    def test_strips_common_folder_prefix_from_display_name(self):
+        utils = _load_torrserver_utils()
+
+        mock_list_item = MagicMock()
+        mock_video_tag = MagicMock()
+        mock_list_item.getVideoInfoTag.return_value = mock_video_tag
+
+        full_path = "Show.Name.720p/Season.1/ep01.mkv"
+
+        with patch.object(utils, "get_torrserver_api") as mock_api, patch.object(
+            utils, "is_video", return_value=True
+        ), patch.object(utils, "is_picture", return_value=False), patch.object(
+            utils, "is_text", return_value=False
+        ), patch.object(utils, "is_music", return_value=False), patch.object(
+            utils, "set_pluging_category"
+        ), patch.object(utils, "end_of_directory"), patch.object(
+            utils, "action_url_run"
+        ), patch.object(utils, "addDirectoryItem"), patch.object(
+            utils, "build_list_item", return_value=mock_list_item
+        ) as mock_build, patch.object(utils, "get_torrent_meta", return_value={}):
+            mock_api.return_value.get_torrent_info.return_value = {
+                "title": "Test Show",
+                "hash": "abc123",
+                "file_stats": [
+                    {"path": "Show.Name.720p/Season.1/ep01.mkv", "id": "1"},
+                    {"path": "Show.Name.720p/Season.1/ep02.mkv", "id": "2"},
+                ],
+            }
+            mock_api.return_value.get_stream_url.return_value = "http://serve/url"
+
+            utils.torrent_files({"info_hash": "abc123"})
+
+            # build_list_item should receive the stripped display name (label arg)
+            labels = [call.args[0] for call in mock_build.call_args_list]
+            assert labels == ["ep01.mkv", "ep02.mkv"]
+
+            # _buffer_and_play_url should have received the FULL path (in setPath)
+            # setPath is called twice: once with serve_url, once with jacktorr_url
+            jacktorr_calls = [
+                call
+                for call in mock_list_item.setPath.call_args_list
+                if "buffer_and_play" in str(call)
+            ]
+            assert len(jacktorr_calls) == 2
+            assert f"path={full_path}" in str(jacktorr_calls[0])

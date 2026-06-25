@@ -20,7 +20,13 @@ from lib.utils.general.utils import (
     get_info_hash_from_magnet,
     set_pluging_category,
 )
-from lib.utils.kodi.kodi_formats import is_music, is_picture, is_text, is_video
+from lib.utils.kodi.kodi_formats import (
+    is_music,
+    is_picture,
+    is_text,
+    is_video,
+    strip_common_folder_prefix,
+)
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PROFILE_PATH,
@@ -77,16 +83,17 @@ def torrent_files(params):
 
     info = get_torrserver_api().get_torrent_info(link=info_hash)
     file_stats = info.get("file_stats")
+    display_names = strip_common_folder_prefix(file_stats)
 
     set_pluging_category(info.get("title", ""))
 
-    for f in file_stats:
+    for f, display_name in zip(file_stats, display_names):
         name = f.get("path")
         id = f.get("id")
         serve_url = get_torrserver_api().get_stream_url(
             link=info_hash, path=f.get("path"), file_id=id
         )
-        file_li = build_list_item(name, "download.png", poster_path=info.get("poster") or "")
+        file_li = build_list_item(display_name, "download.png", poster_path=info.get("poster") or "")
         file_li.setPath(serve_url)
 
         context_menu_items = []

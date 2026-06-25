@@ -505,3 +505,38 @@ def is_subtitle(s):
 
 def is_text(s):
     return _contains_extension(s, text_extensions)
+
+
+def strip_common_folder_prefix(file_stats):
+    """Return display names with the common leading folder prefix removed.
+
+    For TV shows and torrents where every file lives under the same root
+    folder, the full path (e.g. 'Show.Name.720p/Season.1/ep01.mkv') is
+    visually noisy. This strips the shared folder prefix so the listing
+    shows just the distinguishing part ('Season.1/ep01.mkv' or 'ep01.mkv').
+
+    The original path is still used for stream URLs and API calls; only the
+    ListItem label changes.
+    """
+    if not file_stats:
+        return []
+
+    paths = [f.get("path", "") for f in file_stats]
+    normalized = [p.replace("\\", "/") for p in paths]
+    folder_parts = [p.split("/")[:-1] for p in normalized]
+
+    if any(not parts for parts in folder_parts):
+        return normalized
+
+    common = []
+    for zipped in zip(*folder_parts):
+        if len(set(zipped)) == 1:
+            common.append(zipped[0])
+        else:
+            break
+
+    if not common:
+        return normalized
+
+    prefix = "/".join(common) + "/"
+    return [p[len(prefix):] if p.startswith(prefix) else p for p in normalized]
