@@ -1,11 +1,15 @@
-"""Tests for strip_common_folder_prefix — issue #10.
+"""Tests for strip_common_folder_prefix and is_displayable.
 
-When a torrent has all files under the same root folder, the listing
-should show only the distinguishing part of the path, not the repeated
-prefix on every row.
+strip_common_folder_prefix (issue #10): when a torrent has all files
+under the same root folder, the listing should show only the
+distinguishing part of the path, not the repeated prefix on every row.
+
+is_displayable (issue #11): only show files that can be played or
+viewed — video, music, picture, text. Padding files and other junk
+are hidden from the listing.
 """
 
-from lib.utils.kodi.kodi_formats import strip_common_folder_prefix
+from lib.utils.kodi.kodi_formats import is_displayable, strip_common_folder_prefix
 
 
 def _file_stats(paths):
@@ -75,3 +79,39 @@ class TestStripCommonFolderPrefix:
             "Season 2/ep01.mkv",
             "Extras/interview.mkv",
         ]
+
+
+class TestIsDisplayable:
+    def test_video_files_are_displayable(self):
+        assert is_displayable("movie.mkv")
+        assert is_displayable("Show/Season.1/ep01.mp4")
+        assert is_displayable("video.avi")
+
+    def test_music_files_are_displayable(self):
+        assert is_displayable("song.mp3")
+        assert is_displayable("track.flac")
+
+    def test_picture_files_are_displayable(self):
+        assert is_displayable("poster.jpg")
+        assert is_displayable("cover.png")
+
+    def test_text_files_are_displayable(self):
+        assert is_displayable("readme.txt")
+        assert is_displayable("info.nfo")
+
+    def test_pad_files_are_not_displayable(self):
+        assert not is_displayable(".pad/79716223")
+        assert not is_displayable(".pad/51356901")
+
+    def test_files_without_extension_are_not_displayable(self):
+        assert not is_displayable("somefile")
+        assert not is_displayable("folder/randomfile")
+
+    def test_non_media_files_are_not_displayable(self):
+        assert not is_displayable("setup.exe")
+        assert not is_displayable("library.dll")
+        assert not is_displayable("data.db")
+
+    def test_pad_with_path_prefix(self):
+        assert not is_displayable("Show.Name/.pad/12345")
+        assert not is_displayable(".pad/0")

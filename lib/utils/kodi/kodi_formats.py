@@ -507,6 +507,16 @@ def is_text(s):
     return _contains_extension(s, text_extensions)
 
 
+def is_displayable(name):
+    """Check if a file is a common media type that can be played or viewed.
+
+    Returns True for video, music, picture, and text files. Everything
+    else (padding files, files without extension, executables, etc.)
+    is hidden from the torrent file listing.
+    """
+    return is_video(name) or is_music(name) or is_picture(name) or is_text(name)
+
+
 def strip_common_folder_prefix(file_stats):
     """Return display names with the common leading folder prefix removed.
 

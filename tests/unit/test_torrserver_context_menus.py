@@ -303,3 +303,40 @@ class TestTorrentFilesContextMenu:
             ]
             assert len(jacktorr_calls) == 2
             assert f"path={full_path}" in str(jacktorr_calls[0])
+
+    def test_filters_out_pad_files_from_listing(self):
+        utils = _load_torrserver_utils()
+
+        mock_list_item = MagicMock()
+        mock_video_tag = MagicMock()
+        mock_list_item.getVideoInfoTag.return_value = mock_video_tag
+
+        with patch.object(utils, "get_torrserver_api") as mock_api, patch.object(
+            utils, "is_video", return_value=True
+        ), patch.object(utils, "is_picture", return_value=False), patch.object(
+            utils, "is_text", return_value=False
+        ), patch.object(utils, "is_music", return_value=False), patch.object(
+            utils, "set_pluging_category"
+        ), patch.object(utils, "end_of_directory"), patch.object(
+            utils, "action_url_run"
+        ), patch.object(utils, "addDirectoryItem"), patch.object(
+            utils, "build_list_item", return_value=mock_list_item
+        ) as mock_build, patch.object(utils, "get_torrent_meta", return_value={}):
+            mock_api.return_value.get_torrent_info.return_value = {
+                "title": "Mega Pack",
+                "hash": "abc123",
+                "file_stats": [
+                    {"path": "10 Lives.mkv", "id": "0"},
+                    {"path": ".pad/79716223", "id": "1"},
+                    {"path": "100% Wolf.mkv", "id": "2"},
+                    {"path": ".pad/51356901", "id": "3"},
+                ],
+            }
+            mock_api.return_value.get_stream_url.return_value = "http://serve/url"
+
+            utils.torrent_files({"info_hash": "abc123"})
+
+            # Only the 2 .mkv files should produce list items, not the .pad files
+            assert mock_build.call_count == 2
+            labels = [call.args[0] for call in mock_build.call_args_list]
+            assert labels == ["10 Lives.mkv", "100% Wolf.mkv"]

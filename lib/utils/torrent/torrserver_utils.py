@@ -21,6 +21,7 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.kodi_formats import (
+    is_displayable,
     is_music,
     is_picture,
     is_text,
@@ -83,6 +84,7 @@ def torrent_files(params):
 
     info = get_torrserver_api().get_torrent_info(link=info_hash)
     file_stats = info.get("file_stats")
+    file_stats = [f for f in file_stats if is_displayable(f.get("path", ""))]
     display_names = strip_common_folder_prefix(file_stats)
 
     set_pluging_category(info.get("title", ""))
