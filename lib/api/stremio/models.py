@@ -22,7 +22,7 @@ class StreamBehaviorHints:
     countryWhitelist: List[str] = field(default_factory=list)
     notWebReady: bool = False
     bingeGroup: Optional[str] = None
-    proxyHeaders: Dict[str, str] = field(default_factory=dict)
+    proxyHeaders: Dict[str, Any] = field(default_factory=dict)
     videoHash: Optional[str] = None
     videoSize: Optional[int] = None
     filename: Optional[str] = None
@@ -79,6 +79,8 @@ class Stream:
     tarUrls: List[str] = field(default_factory=list)
 
     meta: Dict[str, Any] = field(default_factory=dict)
+    sources: List[str] = field(default_factory=list)
+    trackers: List[str] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Stream":
@@ -103,6 +105,8 @@ class Stream:
             tgzUrls=data.get("tgzUrls", []),
             tarUrls=data.get("tarUrls", []),
             meta=data.get("meta", {}),
+            sources=data.get("sources", []),
+            trackers=data.get("trackers", []),
         )
 
     def get_parsed_title(self) -> str:

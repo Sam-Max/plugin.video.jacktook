@@ -43,3 +43,7 @@ class TorrentStream:
     # Codec & HDR
     codec: str = ""
     hdr: str = ""
+
+    # Optional Stremio metadata.  Keep this last so old positional callers and
+    # cached objects remain compatible.
+    stremioMetadata: Dict[str, Any] = field(default_factory=dict)
