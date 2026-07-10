@@ -317,3 +317,19 @@ class AddonManager:
             if addon.transport_url == url:
                 return addon
         return None
+
+    def get_addon_by_key(self, key: str) -> Optional[Addon]:
+        """Resolve an Addon object from its instance key (manifest.id|transport_url).
+
+        Symmetric with :meth:`get_addon_by_url`. Returns the first matching addon
+        or ``None`` if no installed addon has the given instance key.
+        """
+        if not key:
+            return None
+        for addon in self.addons:
+            try:
+                if addon.key() == key:
+                    return addon
+            except Exception:
+                continue
+        return None

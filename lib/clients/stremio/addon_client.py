@@ -1,6 +1,8 @@
 import re
 from typing import Any, Dict, List, Optional
 
+import xbmc
+
 from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
@@ -195,6 +197,18 @@ class StremioAddonClient(BaseClient):
             stream_subindexer = stream.get_sub_indexer(self.addon)
             stream_size = stream.get_parsed_size() or item.get("sizebytes") or parsed["size"]
             stream_seeders = item.get("seed", 0) or parsed["seeders"]
+            stream_subtitles = [s.__dict__ for s in stream.subtitles if s.url]
+            if stream_subtitles:
+                kodilog(
+                    f"[StremioSubs] {self.display_name}: stream "
+                    f"'{(stream.title or stream.name or '')[:40]}' has "
+                    f"{len(stream_subtitles)} embedded subtitle(s)",
+                    level=xbmc.LOGINFO,
+                )
+                kodilog(
+                    f"[StremioSubs] embedded subs detail: {stream_subtitles}",
+                    level=xbmc.LOGDEBUG,
+                )
 
             results.append(
                 TorrentStream(
@@ -216,8 +230,23 @@ class StremioAddonClient(BaseClient):
                     publishDate="",
                     peers=0,
                     url=url if url else "",
+                    streamSubtitles=stream_subtitles,
                     isCached=is_cached,
                 )
+            )
+
+        streams_with_subs = sum(1 for r in results if r.streamSubtitles)
+        if streams_with_subs:
+            kodilog(
+                f"[StremioSubs] {self.display_name}: {streams_with_subs}/{len(results)} "
+                f"streams carry embedded subtitles",
+                level=xbmc.LOGINFO,
+            )
+        else:
+            kodilog(
+                f"[StremioSubs] {self.display_name}: no embedded subtitles in any of "
+                f"{len(results)} streams",
+                level=xbmc.LOGINFO,
             )
         return results
 

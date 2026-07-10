@@ -41,6 +41,21 @@ class StreamBehaviorHints:
 
 
 @dataclass
+class StreamSubtitle:
+    id: Optional[str] = None
+    url: Optional[str] = None
+    lang: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "StreamSubtitle":
+        return cls(
+            id=data.get("id"),
+            url=data.get("url"),
+            lang=data.get("lang"),
+        )
+
+
+@dataclass
 class Stream:
     url: Optional[str] = None
     ytId: Optional[str] = None
@@ -51,6 +66,7 @@ class Stream:
     title: Optional[str] = None
     description: Optional[str] = None
     behaviorHints: Optional[StreamBehaviorHints] = None
+    subtitles: List[StreamSubtitle] = field(default_factory=list)
 
     # Custom/Extended fields
     fileMustInclude: Optional[List[str]] = None
@@ -77,6 +93,7 @@ class Stream:
             title=data.get("title"),
             description=data.get("description"),
             behaviorHints=StreamBehaviorHints.from_dict(hints) if hints else None,
+            subtitles=[StreamSubtitle.from_dict(s) for s in data.get("subtitles") or []],
             fileMustInclude=data.get("fileMustInclude"),
             nzbUrl=data.get("nzbUrl"),
             servers=data.get("servers", []),

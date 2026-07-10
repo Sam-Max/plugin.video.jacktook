@@ -35,6 +35,7 @@ from lib.utils.kodi.settings import get_int_setting
 from lib.utils.kodi.utils import (
     ADDON,
     get_setting,
+    get_setting_fresh,
     kodilog,
     set_setting,
     translation,
@@ -608,3 +609,42 @@ def stremio_bypass_addons_select(params=None):
         return
 
     set_setting("stremio_bypass_addon_list", ",".join(selected_addon_keys))
+
+
+def stremio_subtitle_addons_select(params=None):
+    """Let the user pick which Stremio addons Jacktook queries for subtitles.
+
+    Mirrors :func:`stremio_bypass_addons_select` but targets the
+    ``subtitles`` resource (no id-prefix filter) and stores the result in the
+    ``stremio_subtitle_addons`` hidden setting as a CSV of addon instance
+    keys (one key per addon, e.g. ``"<manifest_id>|<transport_url>"``).
+    """
+    addon_manager = get_addons()
+    addons = addon_manager.get_addons_with_resource("subtitles")
+    addons = _deduplicate_addons(addons)
+    addons = _filter_excluded_addons(addons)
+    addons = list(reversed(addons))
+
+    if not addons:
+        xbmcgui.Dialog().ok(
+            translation(30953),
+            translation(30955),
+        )
+        return
+
+    selected_list_str = str(get_setting_fresh("stremio_subtitle_addons", "") or "").strip()
+    selected_values = [value.strip() for value in selected_list_str.split(",") if value.strip()]
+
+    selected_ids = [
+        addon.key()
+        for addon in addons
+        if addon.key() in selected_values or addon.manifest.name.lower() in selected_values
+    ]
+
+    title = translation(30953)
+    selected_addon_keys = _show_addon_multiselect(title, addons, selected_ids)
+
+    if selected_addon_keys is None:
+        return
+
+    set_setting("stremio_subtitle_addons", ",".join(selected_addon_keys))
