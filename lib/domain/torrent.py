@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import Any, Dict, List
 
 
 @dataclass
@@ -33,6 +33,7 @@ class TorrentStream:
     # Quality and URLs
     quality: str = "N/A"
     url: str = ""
+    streamSubtitles: List[Dict[str, Any]] = field(default_factory=list)
 
     # Flags
     isPack: bool = False

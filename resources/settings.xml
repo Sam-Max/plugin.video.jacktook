@@ -1393,13 +1393,24 @@
         </category>
         <category id="subtitle_category" label="30886">
             <group id="general_settings" label="30884">
-                <setting id="auto_subtitle_selection" type="boolean" label="30878" help=""> 
+                <setting id="subtitle_automation" type="boolean" label="30878" help="">
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="auto_subtitle_download" type="boolean" label="90122" help=""> 
+                <setting id="auto_subtitle_selection" type="boolean">
                     <default>false</default>
                     <control type="toggle" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="auto_subtitle_download" type="boolean">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="subtitle_automation_migrated" type="boolean">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <visible>false</visible>
                 </setting>
             </group>   
             <group id="stremio_subtitle" label="30893">
@@ -1418,6 +1429,30 @@
                         </dependency>
                     </dependencies>
                     <control type="edit" format="string" />
+                </setting>
+                <setting id="stremio_subtitle_addons" type="string">
+                    <default></default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_subtitle_addons_migrated" type="boolean">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_subtitle_addons_select" type="action" label="30953" help="30954">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_subtitle_addons_select)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
                 </setting>
                 <setting id="subtitle_language" type="string" label="30736" help="30873">
                     <default>None</default>

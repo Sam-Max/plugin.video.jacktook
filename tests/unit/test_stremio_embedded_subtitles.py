@@ -1,0 +1,451 @@
+from pathlib import Path
+
+from lib.clients.subtitle import opensubstremio, submanager
+from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+from lib.domain.torrent import TorrentStream
+from lib.gui.base_window import BaseWindow
+from lib.utils.general.utils import IndexerType
+
+
+class _DummyWindow(BaseWindow):
+    def handle_action(self, action_id, control_id=None):
+        return None
+
+
+def test_prepare_source_data_includes_stream_subtitles():
+    window = _DummyWindow("dummy.xml", "")
+    source = TorrentStream(
+        type=IndexerType.STREMIO_DEBRID,
+        url="https://example.com/video.mp4",
+        streamSubtitles=[{"url": "https://example.com/sub.en.vtt", "lang": "eng"}],
+    )
+
+    source_data = window.prepare_source_data(source, source.url, "", False)
+
+    assert source_data["stream_subtitles"] == [
+        {"url": "https://example.com/sub.en.vtt", "lang": "eng"}
+    ]
+
+
+def test_embedded_subtitle_download_preserves_supported_extension(monkeypatch, tmp_path):
+    class _Response:
+        status_code = 200
+
+        def iter_content(self, chunk_size=8192):
+            yield b"WEBVTT\n"
+
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "")
+    monkeypatch.setattr(opensubstremio.requests, "get", lambda *args, **kwargs: _Response())
+
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    path = client.download_subtitle(
+        {"url": "https://example.com/subtitles/movie.en.vtt?token=1", "lang": "eng"},
+        0,
+        "tt123",
+        "Movie Title",
+        folder_path=str(tmp_path),
+    )
+
+    assert path.endswith(".vtt")
+    assert Path(path).read_bytes() == b"WEBVTT\n"
+
+
+def test_subtitle_manager_tries_embedded_subtitles_before_endpoint(monkeypatch, tmp_path):
+    calls = []
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    def _select(subtitles, auto_select=False):
+        calls.append("embedded")
+        return subtitles
+
+    def _endpoint(*args, **kwargs):
+        calls.append("endpoint")
+        return [{"url": "https://example.com/endpoint.srt", "lang": "eng"}]
+
+    monkeypatch.setattr(manager.opensub_client, "select_subtitles", _select)
+    monkeypatch.setattr(manager.opensub_client, "get_subtitles", _endpoint)
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "download_subtitles_batch",
+        lambda *args, **kwargs: [str(tmp_path / "embedded.srt")],
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [str(tmp_path / "embedded.srt")]
+    assert calls == ["embedded"]
+
+
+def test_unified_automation_reuses_cached_subtitles_without_prompt(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+    }
+    cached_subtitle = tmp_path / "cached.srt"
+    cached_subtitle.write_text("subtitle")
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    monkeypatch.setattr(submanager, "subtitle_automation_enabled", lambda: True)
+    monkeypatch.setattr(
+        submanager.xbmcgui.Dialog,
+        "yesno",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must not prompt")),
+    )
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [str(cached_subtitle)]
+
+
+def test_disabled_automation_prompts_before_reusing_cached_subtitles(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+    }
+    cached_subtitle = tmp_path / "cached.srt"
+    cached_subtitle.write_text("subtitle")
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+    prompts = []
+
+    monkeypatch.setattr(submanager, "subtitle_automation_enabled", lambda: False)
+    monkeypatch.setattr(
+        submanager.xbmcgui.Dialog,
+        "yesno",
+        lambda *_args, **_kwargs: prompts.append(True) or True,
+    )
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [str(cached_subtitle)]
+    assert prompts == [True]
+
+
+def test_unified_automation_filters_embedded_subtitles_without_a_dialog(monkeypatch):
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    subtitles = [
+        {"url": "https://example.com/sub.en.srt", "lang": "eng"},
+        {"url": "https://example.com/sub.es.srt", "lang": "spa"},
+    ]
+
+    monkeypatch.setattr(opensubstremio, "subtitle_automation_enabled", lambda: True)
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "English")
+    monkeypatch.setattr(
+        opensubstremio.xbmcgui.Dialog,
+        "multiselect",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("must not prompt")),
+    )
+
+    assert client.select_subtitles(subtitles) == [subtitles[0]]
+
+
+def test_disabled_automation_keeps_embedded_subtitle_selection_manual(monkeypatch):
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    subtitles = [
+        {"url": "https://example.com/sub.en.srt", "lang": "eng"},
+        {"url": "https://example.com/sub.es.srt", "lang": "spa"},
+    ]
+
+    monkeypatch.setattr(opensubstremio, "subtitle_automation_enabled", lambda: False)
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "English")
+    monkeypatch.setattr(opensubstremio.xbmcgui.Dialog, "multiselect", lambda *_args, **_kwargs: [1])
+
+    assert client.select_subtitles(subtitles) == [subtitles[1]]
+
+
+def test_subtitle_manager_falls_back_when_no_embedded_subtitle_selected(monkeypatch, tmp_path):
+    calls = []
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "select_subtitles",
+        lambda *args, **kwargs: calls.append("embedded") or [],
+    )
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "get_subtitles",
+        lambda *args, **kwargs: (
+            calls.append("endpoint") or [{"url": "https://example.com/endpoint.srt", "lang": "eng"}]
+        ),
+    )
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "download_subtitles_batch",
+        lambda *args, **kwargs: [str(tmp_path / "endpoint.srt")],
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [str(tmp_path / "endpoint.srt")]
+    assert calls == ["embedded", "endpoint"]
+
+
+def test_auto_select_embedded_no_language_match_does_not_open_endpoint_dialog(
+    monkeypatch, tmp_path
+):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.es.srt", "lang": "spa"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    # New contract: get_subtitles is the public surface; the test asserts that
+    # when the endpoint returns subs but no language match under auto_select,
+    # the manager reports not_selected without opening a manual dialog.
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "get_subtitles",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "English")
+
+    def _fail_dialog(*args, **kwargs):
+        raise AssertionError("Manual subtitle dialog must not open during auto-select")
+
+    monkeypatch.setattr(opensubstremio.xbmcgui.Dialog, "multiselect", _fail_dialog)
+
+    assert manager.fetch_subtitles(auto_select=True, folder_path=str(tmp_path)) is None
+    assert manager.last_fetch_status == "not_selected"
+
+
+def test_embedded_download_failure_falls_back_to_endpoint(monkeypatch, tmp_path):
+    calls = []
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    monkeypatch.setattr(
+        manager.opensub_client, "select_subtitles", lambda *args, **kwargs: data["stream_subtitles"]
+    )
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "get_subtitles",
+        lambda *args, **kwargs: (
+            calls.append("endpoint") or [{"url": "https://example.com/endpoint.srt", "lang": "eng"}]
+        ),
+    )
+
+    def _download(subtitles, *args, **kwargs):
+        calls.append(subtitles[0]["url"])
+        if "endpoint" in subtitles[0]["url"]:
+            return [str(tmp_path / "endpoint.srt")]
+        return []
+
+    monkeypatch.setattr(manager.opensub_client, "download_subtitles_batch", _download)
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [str(tmp_path / "endpoint.srt")]
+    assert calls == [
+        "https://example.com/sub.en.srt",
+        "endpoint",
+        "https://example.com/endpoint.srt",
+    ]
+
+
+def test_endpoint_subtitle_fetch_uses_timeout(monkeypatch):
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"subtitles": []}
+
+    captured = {}
+
+    def _get(url, **kwargs):
+        captured["url"] = url
+        captured["timeout"] = kwargs.get("timeout")
+        return _Response()
+
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "https://example.com/")
+    monkeypatch.setattr(opensubstremio, "get_int_setting", lambda key: 7)
+    monkeypatch.setattr(opensubstremio.requests, "get", _get)
+
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    assert (
+        client._fetch_subtitles_data_for_source("https://example.com", "movie", "tt123", timeout=7)
+        == []
+    )
+
+    assert captured == {
+        "url": "https://example.com/subtitles/movie/tt123.json",
+        "timeout": 7,
+    }
+
+
+def test_auto_select_endpoint_subtitle_fetch_caps_timeout(monkeypatch):
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"subtitles": []}
+
+    captured = {}
+
+    def _get(url, **kwargs):
+        captured["timeout"] = kwargs.get("timeout")
+        return _Response()
+
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "https://example.com/")
+    monkeypatch.setattr(opensubstremio, "get_int_setting", lambda key: 120)
+    monkeypatch.setattr(opensubstremio.requests, "get", _get)
+
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    # Per-call timeout is supplied by the caller (get_subtitles) under
+    # auto_select; this test exercises the per-source method with a capped
+    # timeout arg, mirroring the new contract.
+    assert (
+        client._fetch_subtitles_data_for_source(
+            "https://example.com",
+            "movie",
+            "tt123",
+            timeout=opensubstremio.AUTO_SELECT_ENDPOINT_TIMEOUT,
+        )
+        == []
+    )
+
+    assert captured["timeout"] == opensubstremio.AUTO_SELECT_ENDPOINT_TIMEOUT
+
+
+def test_auto_select_download_uses_startup_safe_timeout(monkeypatch, tmp_path):
+    class _Response:
+        status_code = 200
+
+        def iter_content(self, chunk_size=8192):
+            yield b"subtitle"
+
+    captured = {}
+
+    def _get(url, **kwargs):
+        captured["timeout"] = kwargs.get("timeout")
+        return _Response()
+
+    monkeypatch.setattr(opensubstremio, "get_setting", lambda key: "")
+    monkeypatch.setattr(opensubstremio.requests, "get", _get)
+
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+    paths = client.download_subtitles_batch(
+        [{"url": "https://example.com/sub.srt", "lang": "eng"}],
+        "tt123",
+        title="Movie Title",
+        folder_path=str(tmp_path),
+        auto_select=True,
+    )
+
+    assert paths == [str(tmp_path / "Subtitle No.0.Movie Title.English.srt")]
+    assert captured["timeout"] == opensubstremio.AUTO_SELECT_DOWNLOAD_TIMEOUT
+
+
+def test_embedded_download_failure_endpoint_empty_sets_not_selected(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    monkeypatch.setattr(
+        manager.opensub_client, "select_subtitles", lambda *args, **kwargs: data["stream_subtitles"]
+    )
+    monkeypatch.setattr(manager.opensub_client, "get_subtitles", lambda *args, **kwargs: [])
+    monkeypatch.setattr(
+        manager.opensub_client, "download_subtitles_batch", lambda *args, **kwargs: []
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+
+    assert manager.fetch_subtitles(auto_select=True, folder_path=str(tmp_path)) is None
+    assert manager.last_fetch_status == "not_selected"
+
+
+def test_embedded_download_failure_endpoint_none_sets_not_found(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+
+    monkeypatch.setattr(
+        manager.opensub_client, "select_subtitles", lambda *args, **kwargs: data["stream_subtitles"]
+    )
+    monkeypatch.setattr(manager.opensub_client, "get_subtitles", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        manager.opensub_client, "download_subtitles_batch", lambda *args, **kwargs: []
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: False)
+
+    assert manager.fetch_subtitles(auto_select=True, folder_path=str(tmp_path)) is None
+    assert manager.last_fetch_status == "not_found"
+
+
+def test_auto_select_does_not_call_deepl_translation(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+    subtitle_path = str(tmp_path / "embedded.srt")
+
+    monkeypatch.setattr(
+        manager.opensub_client, "select_subtitles", lambda *args, **kwargs: data["stream_subtitles"]
+    )
+    monkeypatch.setattr(
+        manager.opensub_client, "download_subtitles_batch", lambda *args, **kwargs: [subtitle_path]
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: key == "deepl_enabled")
+
+    def _fail_translation(*args, **kwargs):
+        raise AssertionError("DeepL translation must not run during auto-select")
+
+    monkeypatch.setattr(manager.translator, "translate_multiple_subtitles", _fail_translation)
+
+    assert manager.fetch_subtitles(auto_select=True, folder_path=str(tmp_path)) == [subtitle_path]
+
+
+def test_manual_subtitle_flow_can_still_translate(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "stream_subtitles": [{"url": "https://example.com/sub.en.srt", "lang": "eng"}],
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+    subtitle_path = str(tmp_path / "embedded.srt")
+    translated_path = str(tmp_path / "translated.srt")
+    translated_calls = []
+
+    monkeypatch.setattr(
+        manager.opensub_client, "select_subtitles", lambda *args, **kwargs: data["stream_subtitles"]
+    )
+    monkeypatch.setattr(
+        manager.opensub_client, "download_subtitles_batch", lambda *args, **kwargs: [subtitle_path]
+    )
+    monkeypatch.setattr(submanager, "get_setting", lambda key: key == "deepl_enabled")
+    monkeypatch.setattr(submanager.xbmcgui.Dialog, "yesno", lambda *args, **kwargs: True)
+
+    def _translate(paths, imdb_id, season, episode):
+        translated_calls.append((paths, imdb_id, season, episode))
+        return [translated_path]
+
+    monkeypatch.setattr(manager.translator, "translate_multiple_subtitles", _translate)
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) == [translated_path]
+    assert translated_calls == [([subtitle_path], "tt123", None, None)]

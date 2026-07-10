@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 from lib import search
 from lib.api.stremio.addon_manager import AddonManager
-from lib.api.stremio.models import Meta, MetaPreview
+from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.stremio import addon_client, addon_selection, catalog_menus, helpers
 from lib.clients.stremio.catalog_menus import CATALOG_PAGE_SIZE
 from lib.clients.stremio.constants import (
@@ -12,6 +12,55 @@ from lib.clients.stremio.constants import (
 )
 from lib.domain.torrent import TorrentStream
 from lib.utils.debrid import debrid_utils
+
+
+def test_subtitle_addon_selector_preselects_persisted_instance_key(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.first",
+                    "name": "First",
+                    "resources": ["subtitles"],
+                },
+                "transportUrl": "https://example.com/first/manifest.json",
+                "transportName": "custom",
+            },
+            {
+                "manifest": {
+                    "id": "org.example.second",
+                    "name": "Second",
+                    "resources": ["subtitles"],
+                },
+                "transportUrl": "https://example.com/second/manifest.json",
+                "transportName": "custom",
+            },
+        ]
+    )
+    selected_key = addon_manager.addons[0].key()
+    multiselect_calls = []
+
+    class _Dialog:
+        def multiselect(self, *args, **kwargs):
+            multiselect_calls.append(kwargs)
+            return None
+
+    monkeypatch.setattr(addon_selection, "get_addons", lambda: addon_manager)
+    monkeypatch.setattr(
+        addon_selection, "get_addon_display_name", lambda addon: addon.manifest.name
+    )
+    monkeypatch.setattr(
+        addon_selection,
+        "get_setting_fresh",
+        lambda setting_id, default=None: selected_key
+        if setting_id == "stremio_subtitle_addons"
+        else default,
+    )
+    monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", _Dialog)
+
+    addon_selection.stremio_subtitle_addons_select()
+
+    assert multiselect_calls == [{"preselect": [1], "useDetails": True}]
 
 
 def test_merge_addons_lists_keeps_same_manifest_id_with_different_urls():
@@ -785,6 +834,63 @@ def test_stremio_addon_client_uses_addon_alias_for_result_labels(monkeypatch):
     assert results[0].addonName == "Kodi Alias"
     assert results[0].addonInstanceLabel == "Kodi Alias (example.com, custom)"
     assert addon_manager.addons[0].manifest.name == "Original Name"
+
+
+def test_stremio_stream_parses_embedded_subtitles_tolerating_missing_fields():
+    stream = Stream.from_dict(
+        {
+            "title": "Movie 1080p",
+            "subtitles": [
+                {"id": "sub-1", "url": "https://example.com/sub.en.vtt", "lang": "eng"},
+                {"id": "sub-2", "lang": "spa"},
+            ],
+        }
+    )
+
+    assert stream.subtitles[0].id == "sub-1"
+    assert stream.subtitles[0].url == "https://example.com/sub.en.vtt"
+    assert stream.subtitles[0].lang == "eng"
+    assert stream.subtitles[1].url is None
+
+
+def test_stremio_addon_client_propagates_usable_embedded_subtitles(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Original Name",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    monkeypatch.setattr(addon_client, "get_addon_display_name", lambda addon: "Original Name")
+    monkeypatch.setattr(addon_client, "find_languages_in_string", lambda desc: [])
+
+    client = addon_client.StremioAddonClient(addon_manager.addons[0])
+    response = MagicMock()
+    response.json.return_value = {
+        "streams": [
+            {
+                "title": "Movie 1080p",
+                "infoHash": "a" * 40,
+                "subtitles": [
+                    {"id": "sub-1", "url": "https://example.com/sub.en.srt", "lang": "eng"},
+                    {"id": "sub-2", "lang": "spa"},
+                ],
+            }
+        ]
+    }
+
+    results = client.parse_response(response)
+
+    assert results[0].streamSubtitles == [
+        {"id": "sub-1", "url": "https://example.com/sub.en.srt", "lang": "eng"}
+    ]
 
 
 def test_stremio_addon_aliases_are_part_of_result_cache_scopes(monkeypatch):

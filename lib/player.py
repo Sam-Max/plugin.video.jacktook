@@ -18,6 +18,7 @@ from lib.utils.general.utils import (
     make_listing,
     set_watched_file,
 )
+from lib.utils.kodi.settings import subtitle_automation_enabled
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     PLAYLIST,
@@ -299,8 +300,8 @@ class JacktookPLayer(xbmc.Player):
         kodilog("[PLAYER] monitor: exiting")
 
     def handle_subtitles(self, list_item):
-        # Skip subtitle handling during autoplay (Play Next) — no dialogs
-        if self.data.get("autoplay"):
+        # Skip subtitle handling during autoplay unless subtitles can be handled without dialogs.
+        if self.data.get("autoplay") and not self.data.get("stream_subtitles"):
             kodilog("Autoplay mode: skipping subtitle handling")
             return
 
@@ -314,7 +315,7 @@ class JacktookPLayer(xbmc.Player):
             try:
                 from lib.clients.subtitle.submanager import SubtitleManager
 
-                auto_select = get_setting("auto_subtitle_selection", False)
+                auto_select = self.data.get("autoplay") or subtitle_automation_enabled()
                 subtitle_manager = SubtitleManager(self.data, self.notification)
                 subs_paths = subtitle_manager.fetch_subtitles(auto_select=auto_select)
                 if not subs_paths:
@@ -327,7 +328,7 @@ class JacktookPLayer(xbmc.Player):
             except Exception as e:
                 kodilog(f"Error loading subtitles: {e}")
                 self.subtitles_found = False
-        elif get_setting("auto_subtitle_selection"):
+        elif subtitle_automation_enabled():
             sub_language = str(get_setting("subtitle_language"))
             if sub_language and sub_language.lower() != "None":
                 self.lang_code = get_language_code(sub_language)
@@ -338,7 +339,7 @@ class JacktookPLayer(xbmc.Player):
         """
         Handles subtitle activation and selection logic after playback starts.
         """
-        auto_select_enabled = get_setting("auto_subtitle_selection")
+        auto_select_enabled = subtitle_automation_enabled()
         stremio_subtitle_enabled = get_setting("stremio_subtitle_enabled")
         search_subtitles = get_property("search_subtitles")
         if self.subtitles_found or stremio_subtitle_enabled or search_subtitles:
@@ -1043,9 +1044,12 @@ class JacktookPLayer(xbmc.Player):
         activePlayers = '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
         json_query = xbmc.executeJSONRPC(activePlayers)
         json_response = loads(json_query)
-        if not json_response.get("result"):
+        result = json_response.get("result")
+        if not result or not isinstance(result, list) or not result:
             return None, {}, []
-        playerid = json_response["result"][0]["playerid"]
+        playerid = result[0].get("playerid")
+        if playerid is None:
+            return None, {}, []
         details_query = {
             "jsonrpc": "2.0",
             "method": "Player.GetProperties",

@@ -1,6 +1,6 @@
 import xbmc
 
-from .utils import ADDON_ID, get_setting
+from .utils import ADDON_ID, get_setting, set_setting
 
 EMPTY_USER = "unknown_user"
 
@@ -11,6 +11,26 @@ def addon_settings():
 
 def auto_play_enabled():
     return get_setting("auto_play")
+
+
+def subtitle_automation_enabled() -> bool:
+    """Return the unified subtitle automation preference.
+
+    Profiles created before the unified setting used either of two independent
+    switches. On first use, preserve their effective behavior by migrating the
+    logical OR of the existing unified value and those switches into the new
+    setting, then use only the new setting thereafter.
+    """
+    if not get_setting("subtitle_automation_migrated", False):
+        enabled = bool(
+            get_setting("subtitle_automation", False)
+            or get_setting("auto_subtitle_selection", False)
+            or get_setting("auto_subtitle_download", False)
+        )
+        set_setting("subtitle_automation", "true" if enabled else "false")
+        set_setting("subtitle_automation_migrated", "true")
+        return enabled
+    return bool(get_setting("subtitle_automation", False))
 
 
 def get_int_setting(setting):

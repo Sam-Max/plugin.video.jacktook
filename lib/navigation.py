@@ -64,7 +64,7 @@ from lib.utils.general.utils import (
 from lib.utils.general.utils import (
     clear_tmdb_cache as utils_clear_tmdb_cache,
 )
-from lib.utils.kodi.settings import addon_settings
+from lib.utils.kodi.settings import addon_settings, subtitle_automation_enabled
 from lib.utils.kodi.settings_backup import (
     export_settings_backup as kodi_export_settings_backup,
 )
@@ -1233,6 +1233,7 @@ def donate(params):
 
 def settings(params):
     finish_action()
+    subtitle_automation_enabled()
     addon_settings()
     clear_cached_settings()
 

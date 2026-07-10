@@ -30,6 +30,7 @@ def resolve_for_pack_selection(params):
         fullLanguages=data.get("fullLanguages", []),
         publishDate=data.get("publishDate", ""),
         seeders=data.get("seeders", 0),
+        streamSubtitles=data.get("streamSubtitles") or data.get("stream_subtitles", []),
     )
 
     item_information = {
@@ -74,6 +75,7 @@ def resolve_for_subtitles(params):
         fullLanguages=data.get("fullLanguages"),
         publishDate=data.get("publishDate"),
         seeders=data.get("seeders"),
+        streamSubtitles=data.get("streamSubtitles") or data.get("stream_subtitles", []),
     )
 
     item_information = {

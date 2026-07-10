@@ -44,6 +44,7 @@ class SourcePackSelect(SourcePackWindow):
                 "mode": self.item_information.get("mode"),
                 "ids": self.item_information.get("ids"),
                 "tv_data": self.item_information.get("tv_data"),
+                "stream_subtitles": self.source.streamSubtitles,
             }
             if self.source.debridType in [DebridType.RD, DebridType.TB]:
                 file_id, title = self.pack_info["files"][self.position]

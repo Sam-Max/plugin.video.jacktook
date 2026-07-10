@@ -253,6 +253,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "ids": self.item_information.get("ids"),
             "tv_data": self.item_information.get("tv_data"),
             "poster": self.item_information.get("poster"),
+            "stream_subtitles": source.streamSubtitles,
         }
 
     @abc.abstractmethod

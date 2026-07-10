@@ -1468,7 +1468,7 @@ msgid "Enable Trakt.tv Scrobbling"
 msgstr ""
 
 msgctxt "#30878"
-msgid "Auto select subtitle when playing"
+msgid "Automatically find and load subtitles"
 msgstr ""
 
 msgctxt "#30879"
@@ -4521,4 +4521,16 @@ msgstr ""
 
 msgctxt "#90307"
 msgid "Open the settings for the selected external scraper module."
+msgstr ""
+
+msgctxt "#30953"
+msgid "Select subtitle addons"
+msgstr ""
+
+msgctxt "#30954"
+msgid "Choose which installed Stremio addons to query for subtitles."
+msgstr ""
+
+msgctxt "#30955"
+msgid "No subtitle-capable addons found."
 msgstr ""

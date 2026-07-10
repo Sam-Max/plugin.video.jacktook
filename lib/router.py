@@ -120,6 +120,7 @@ def _is_stremio_action(action):
         "rename_stremio_catalog",
         "torrentio_toggle_providers",
         "stremio_bypass_addons_select",
+        "stremio_subtitle_addons_select",
     }
 
 
@@ -230,6 +231,7 @@ def _route_stremio(action, params):
         "rename_stremio_addon",
         "rename_stremio_catalog",
         "stremio_bypass_addons_select",
+        "stremio_subtitle_addons_select",
     ):
         from lib.clients.stremio.addon_selection import (
             add_custom_stremio_addon,
@@ -238,6 +240,7 @@ def _route_stremio(action, params):
             rename_stremio_catalog,
             stremio_bypass_addons_select,
             stremio_filtered_selection,
+            stremio_subtitle_addons_select,
             stremio_toggle_addons,
             stremio_toggle_catalogs,
             stremio_toggle_tv_addons,
@@ -253,6 +256,7 @@ def _route_stremio(action, params):
             "rename_stremio_addon": rename_stremio_addon,
             "rename_stremio_catalog": rename_stremio_catalog,
             "stremio_bypass_addons_select": stremio_bypass_addons_select,
+            "stremio_subtitle_addons_select": stremio_subtitle_addons_select,
         }
         actions[action](params)
     elif action == "stremio_manage_phone":
@@ -435,9 +439,9 @@ def _route_debrid(action, params):
         get_oc_downloads,
         get_rd_downloads,
         get_tb_downloads,
-        offcloud_info,
         oc_auth,
         oc_remove_auth,
+        offcloud_info,
         pm_auth,
         pm_remove_auth,
         rd_auth,

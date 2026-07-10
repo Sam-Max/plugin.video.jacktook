@@ -6,6 +6,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call
 
+import pytest
+
 PLAYER_PATH = Path(__file__).resolve().parents[2] / "lib" / "player.py"
 
 
@@ -64,7 +66,9 @@ def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
 
 def test_run_does_not_add_next_episode_to_kodi_playlist():
     source = PLAYER_PATH.read_text()
-    run_match = re.search(r"def run\(self, data=None\):(?P<body>.*?)def _drain_nextep_queue", source, re.S)
+    run_match = re.search(
+        r"def run\(self, data=None\):(?P<body>.*?)def _drain_nextep_queue", source, re.S
+    )
 
     assert run_match is not None
 
@@ -561,6 +565,165 @@ def test_handle_subtitles_skips_on_autoplay(monkeypatch):
     test_player.handle_subtitles(list_item)
 
     test_player.showSubtitles.assert_not_called()
+
+
+def test_handle_subtitles_autoplay_stream_subtitles_attach_returned_subtitles(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    from lib.clients.subtitle import submanager
+
+    test_player = _player_for_episode(player_module)
+    test_player.data["autoplay"] = True
+    test_player.data["stream_subtitles"] = [
+        {"url": "https://example.com/sub.en.srt", "lang": "eng"}
+    ]
+    test_player.notification = MagicMock()
+    test_player.setSubtitleStream = MagicMock()
+
+    class FakeSubtitleManager:
+        def __init__(self, data, notification):
+            assert data is test_player.data
+            assert notification is test_player.notification
+
+        def fetch_subtitles(self, auto_select=False):
+            assert auto_select is True
+            return ["/path/to/embedded.srt"]
+
+    monkeypatch.setattr(submanager, "SubtitleManager", FakeSubtitleManager)
+    monkeypatch.setattr(
+        player_module,
+        "get_setting",
+        lambda key, default=None: True if key == "stremio_subtitle_enabled" else default,
+    )
+    monkeypatch.setattr(player_module, "get_property", lambda key: "")
+
+    list_item = MagicMock()
+    test_player.handle_subtitles(list_item)
+
+    list_item.setSubtitles.assert_called_once_with(["/path/to/embedded.srt"])
+    test_player.setSubtitleStream.assert_called_once_with(0)
+    assert test_player.subtitles_found is True
+
+
+def test_handle_subtitles_uses_unified_automation_setting(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    from lib.clients.subtitle import submanager
+
+    test_player = _player_for_episode(player_module)
+    test_player.notification = MagicMock()
+    test_player.setSubtitleStream = MagicMock()
+
+    class FakeSubtitleManager:
+        def __init__(self, *_args):
+            pass
+
+        def fetch_subtitles(self, auto_select=False):
+            assert auto_select is True
+            return ["/path/to/automatic.srt"]
+
+    monkeypatch.setattr(submanager, "SubtitleManager", FakeSubtitleManager)
+    monkeypatch.setattr(player_module, "subtitle_automation_enabled", lambda: True)
+    monkeypatch.setattr(
+        player_module,
+        "get_setting",
+        lambda key, default=None: True if key == "stremio_subtitle_enabled" else default,
+    )
+    monkeypatch.setattr(player_module, "get_property", lambda _key: "")
+
+    list_item = MagicMock()
+    test_player.handle_subtitles(list_item)
+
+    list_item.setSubtitles.assert_called_once_with(["/path/to/automatic.srt"])
+    test_player.setSubtitleStream.assert_called_once_with(0)
+
+
+def test_handle_subtitles_preserves_manual_selection_when_automation_disabled(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    from lib.clients.subtitle import submanager
+
+    test_player = _player_for_episode(player_module)
+    test_player.notification = MagicMock()
+    test_player.setSubtitleStream = MagicMock()
+
+    class FakeSubtitleManager:
+        def __init__(self, *_args):
+            pass
+
+        def fetch_subtitles(self, auto_select=False):
+            assert auto_select is False
+            return ["/path/to/manual.srt"]
+
+    monkeypatch.setattr(submanager, "SubtitleManager", FakeSubtitleManager)
+    monkeypatch.setattr(player_module, "subtitle_automation_enabled", lambda: False)
+    monkeypatch.setattr(
+        player_module,
+        "get_setting",
+        lambda key, default=None: True if key == "stremio_subtitle_enabled" else default,
+    )
+    monkeypatch.setattr(player_module, "get_property", lambda _key: "")
+
+    list_item = MagicMock()
+    test_player.handle_subtitles(list_item)
+
+    list_item.setSubtitles.assert_called_once_with(["/path/to/manual.srt"])
+    test_player.setSubtitleStream.assert_called_once_with(0)
+
+
+@pytest.mark.parametrize(
+    ("unified_enabled", "expected_auto_select"),
+    [(True, True), (False, False)],
+)
+def test_handle_subtitles_migrates_with_kodi_strings_before_subtitle_lookup(
+    monkeypatch, unified_enabled, expected_auto_select
+):
+    player_module = _player_module(monkeypatch)
+    from lib.clients.subtitle import submanager
+    from lib.utils.kodi import settings
+
+    test_player = _player_for_episode(player_module)
+    test_player.notification = MagicMock()
+    test_player.setSubtitleStream = MagicMock()
+    values = {
+        "subtitle_automation_migrated": False,
+        "subtitle_automation": unified_enabled,
+        "auto_subtitle_selection": False,
+        "auto_subtitle_download": False,
+    }
+    writes = []
+
+    def kodi_set_setting(key, value):
+        assert isinstance(value, str)
+        writes.append((key, value))
+        values[key] = value
+
+    class FakeSubtitleManager:
+        def __init__(self, *_args):
+            pass
+
+        def fetch_subtitles(self, auto_select=False):
+            assert auto_select is expected_auto_select
+            return ["/path/to/subtitle.srt"]
+
+    monkeypatch.setattr(settings, "get_setting", lambda key, default=None: values.get(key, default))
+    monkeypatch.setattr(settings, "set_setting", kodi_set_setting)
+    monkeypatch.setattr(
+        player_module, "subtitle_automation_enabled", settings.subtitle_automation_enabled
+    )
+    monkeypatch.setattr(submanager, "SubtitleManager", FakeSubtitleManager)
+    monkeypatch.setattr(
+        player_module,
+        "get_setting",
+        lambda key, default=None: True if key == "stremio_subtitle_enabled" else default,
+    )
+    monkeypatch.setattr(player_module, "get_property", lambda _key: "")
+
+    list_item = MagicMock()
+    test_player.handle_subtitles(list_item)
+
+    assert writes == [
+        ("subtitle_automation", "true" if unified_enabled else "false"),
+        ("subtitle_automation_migrated", "true"),
+    ]
+    list_item.setSubtitles.assert_called_once_with(["/path/to/subtitle.srt"])
 
 
 def test_advance_across_season_boundary_series_end(monkeypatch):
