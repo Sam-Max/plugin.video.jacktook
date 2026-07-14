@@ -1,6 +1,9 @@
 import pytest
 
+from lib import search
+from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Stream
+from lib.clients.stremio import addon_client
 from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
@@ -14,6 +17,51 @@ from lib.domain.torrent import TorrentStream
 INFO_HASH = "0123456789abcdef0123456789abcdef01234567"
 TRACKER_A = "https://tracker-a.example/announce"
 TRACKER_B = "https://tracker-b.example/announce"
+
+
+def _stremio_addon_client(monkeypatch):
+    addon_manager = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "org.example.addon",
+                    "name": "Example Addon",
+                    "resources": [],
+                    "types": [],
+                },
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    )
+    monkeypatch.setattr(addon_client, "get_addon_display_name", lambda addon: addon.manifest.name)
+    monkeypatch.setattr(addon_client, "find_languages_in_string", lambda _description: [])
+    return addon_client.StremioAddonClient(addon_manager.addons[0])
+
+
+def _stremio_stream_data(**overrides):
+    stream = {
+        "url": "https://media.example/movie.mkv",
+        "infoHash": INFO_HASH,
+        "fileIdx": 2,
+        "title": "Movie 1080p",
+        "name": "Torrentio Example",
+        "sources": [TRACKER_B],
+        "trackers": [TRACKER_A],
+        "subtitles": [{"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}],
+        "behaviorHints": {
+            "filename": "Movie.1080p.mkv",
+            "videoSize": 123456,
+            "videoHash": "video-hash",
+            "proxyHeaders": {"request": {"Referer": "https://media.example"}},
+        },
+    }
+    stream.update(overrides)
+    return stream
+
+
+def _stremio_response(data):
+    return type("Response", (), {"json": lambda self: data})()
 
 
 def _supported_hash_payload(**overrides):
@@ -122,6 +170,105 @@ def test_classify_supported_source_families(payload, source_class):
     assert decision.supported is True
 
 
+@pytest.mark.parametrize("field", ["title", "name", "filename"])
+def test_pipe_in_display_metadata_survives_classification_resolution_and_search(
+    monkeypatch, field
+):
+    value = "Release | 1080p"
+    payload = {"url": "https://media.example/movie.mkv", field: value}
+    candidate = normalize_stream(payload)
+
+    decision = classify(candidate)
+    resolved = resolve(candidate)
+
+    assert decision.source_class == "direct_http"
+    assert decision.supported is True
+    assert resolved["url"] == payload["url"]
+    assert getattr(candidate, field) == value
+
+    source = TorrentStream(
+        addonKey="org.example.addon|https://example.com",
+        url=payload["url"],
+        stremioMetadata={field: value},
+    )
+    notifications = []
+    monkeypatch.setattr(search, "_stremio_capabilities", lambda: {})
+    monkeypatch.setattr(search, "notification", notifications.append)
+
+    prepared = search._prepare_stremio_results([source])
+
+    assert prepared == [source]
+    assert notifications == []
+    prepared_candidate = candidate_from_payload(payload_from_torrent(prepared[0]))
+    assert getattr(prepared_candidate, field) == value
+
+
+@pytest.mark.parametrize("separator", ["\n", "\r", "\t"], ids=["lf", "cr", "tab"])
+@pytest.mark.parametrize("field", ["title", "name", "filename"])
+def test_display_separators_in_display_metadata_are_accepted(field, separator):
+    value = f"Release{separator}1080p"
+    candidate = normalize_stream(
+        {"url": "https://media.example/movie.mkv", field: value}
+    )
+
+    decision = classify(candidate)
+    resolved = resolve(candidate)
+
+    assert decision.source_class == "direct_http"
+    assert decision.supported is True
+    assert resolved["url"] == "https://media.example/movie.mkv"
+    assert getattr(candidate, field) == value
+
+
+@pytest.mark.parametrize("control_character", ["\x00", "\x0b", "\x7f"], ids=["nul", "vertical_tab", "del"])
+@pytest.mark.parametrize("field", ["title", "name", "filename"])
+def test_unsafe_control_characters_in_display_metadata_remain_rejected(
+    field, control_character
+):
+    candidate = normalize_stream(
+        {"url": "https://media.example/movie.mkv", field: f"Release{control_character}name"}
+    )
+
+    decision = classify(candidate)
+
+    assert decision.source_class == "unsupported"
+    assert decision.code == "unsafe_metadata"
+    with pytest.raises(StremioPlaybackError) as error:
+        resolve(candidate)
+    assert error.value.code == "unsafe_metadata"
+
+
+def test_stremio_rejection_log_redacts_unsafe_metadata(monkeypatch):
+    source = TorrentStream(
+        addonKey="org.example.addon|https://example.com",
+        url="https://media.example/movie.mkv",
+        stremioMetadata={"title": "Secret title\x0bTOP-SECRET"},
+    )
+    logs = []
+    notifications = []
+
+    monkeypatch.setattr(search, "_stremio_capabilities", lambda: {})
+    monkeypatch.setattr(search, "kodilog", lambda message, *_args: logs.append(message))
+    monkeypatch.setattr(search, "notification", notifications.append)
+
+    assert search._prepare_stremio_results([source]) == []
+    assert logs == ["stremio_result index=0 decision=unsafe_metadata title=U+000B"]
+    assert "TOP-SECRET" not in logs[0]
+    assert notifications == ["The stream metadata contains unsafe characters."]
+
+
+def test_pipe_in_direct_locator_remains_rejected():
+    candidate = normalize_stream({"url": "https://media.example/movie.mkv|X-Test=value"})
+
+    decision = classify(candidate)
+
+    assert decision.source_class == "unsupported"
+    assert decision.code == "unsafe_locator"
+    with pytest.raises(StremioPlaybackError) as error:
+        resolve(candidate)
+    assert error.value.code == "unsafe_locator"
+
+
 @pytest.mark.parametrize(
     "payload",
     [
@@ -160,6 +307,68 @@ def test_hash_resolution_deterministically_combines_sources_and_legacy_trackers(
         "&tr=https%3A%2F%2Ftracker-c.example%2Fannounce"
     )
     assert resolved["info_hash"] == INFO_HASH
+
+
+@pytest.mark.parametrize(
+    ("metadata", "expected_is_torrent"),
+    [
+        (_supported_hash_payload(), True),
+        ({"url": "https://media.example/movie.mkv"}, False),
+    ],
+    ids=["torrent_hash", "direct_http"],
+)
+def test_stremio_resolution_derives_legacy_torrent_context_from_source_class(
+    monkeypatch, metadata, expected_is_torrent
+):
+    contexts = []
+    legacy_contexts = []
+    real_resolve = search.resolve
+
+    def resolve_spy(candidate, context=None, legacy_resolver=None):
+        contexts.append(dict(context or {}))
+        return real_resolve(candidate, context, legacy_resolver=legacy_resolver)
+
+    def legacy_resolver_spy(data):
+        legacy_contexts.append(data["is_torrent"])
+        return data
+
+    monkeypatch.setattr(search, "resolve", resolve_spy)
+    monkeypatch.setattr(search, "resolve_playback_url", legacy_resolver_spy)
+
+    resolved = search._resolve_stremio_source(
+        {
+            "addonKey": "org.example.addon|https://example.com",
+            "stremioMetadata": metadata,
+        },
+        {"is_torrent": False},
+    )
+
+    assert contexts[0]["is_torrent"] is expected_is_torrent
+    assert legacy_contexts == ([True] if expected_is_torrent else [])
+    if not expected_is_torrent:
+        assert resolved["is_torrent"] is False
+
+
+def test_stremio_unverified_file_index_remains_rejected_before_legacy_resolution(
+    monkeypatch,
+):
+    legacy_calls = []
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+
+    monkeypatch.setattr(
+        search,
+        "resolve_playback_url",
+        lambda data: legacy_calls.append(data) or data,
+    )
+
+    with pytest.raises(StremioPlaybackError) as error:
+        search._resolve_stremio_source(source, {"is_torrent": False})
+
+    assert error.value.code == "file_index_unsupported"
+    assert legacy_calls == []
 
 
 def test_direct_resolution_encodes_valid_request_headers_only():
@@ -278,3 +487,252 @@ def test_empty_url_never_becomes_a_playable_output():
         resolve(candidate)
 
     assert error.value.code == "unsupported_source"
+
+
+def test_parse_response_stores_the_normalized_metadata_contract(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+
+    results = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))
+
+    assert len(results) == 1
+    source = results[0]
+    payload = payload_from_torrent(source)
+
+    assert payload["url"] == "https://media.example/movie.mkv"
+    assert payload["info_hash"] == INFO_HASH
+    assert payload["file_idx"] == 2
+    assert payload["sources"] == [TRACKER_B]
+    assert payload["trackers"] == [TRACKER_A]
+    assert payload["headers"] == {"Referer": "https://media.example"}
+    assert payload["filename"] == "Movie.1080p.mkv"
+    assert payload["size"] == 123456
+    assert payload["stream_subtitles"] == [
+        {"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}
+    ]
+    assert payload["videoHash"] == "video-hash"
+
+
+def test_parse_response_keeps_youtube_metadata_and_drops_unsupported_sources(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+
+    results = client.parse_response(
+        _stremio_response(
+            {
+                "streams": [
+                    {
+                        "ytId": "youtube-video-id",
+                        "title": "Trailer",
+                        "subtitles": [
+                            {
+                                "id": "sub-en",
+                                "url": "https://sub.example/trailer.vtt",
+                                "lang": "eng",
+                            }
+                        ],
+                    },
+                    {"externalUrl": "https://external.example/watch", "title": "External page"},
+                ]
+            }
+        )
+    )
+
+    assert len(results) == 1
+    payload = payload_from_torrent(results[0])
+    assert payload["ytId"] == "youtube-video-id"
+    assert payload["stream_subtitles"] == [
+        {"id": "sub-en", "url": "https://sub.example/trailer.vtt", "lang": "eng"}
+    ]
+
+
+def test_run_search_entry_preserves_stremio_metadata_for_source_selection(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+    source = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))[0]
+    captured = {}
+
+    monkeypatch.setattr(search, "_handle_super_quick_play", lambda _params: False)
+    monkeypatch.setattr(search, "set_content_type", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "set_watched_title", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "search_client", lambda *_args, **_kwargs: [source])
+    monkeypatch.setattr(search, "_process_search_results", lambda results, *_args, **_kwargs: results)
+    monkeypatch.setattr(search, "auto_play_enabled", lambda: False)
+    monkeypatch.setattr(
+        search,
+        "show_source_select",
+        lambda results, *_args, **_kwargs: captured.setdefault("results", results) or True,
+    )
+
+    search.run_search_entry(
+        {
+            "query": "Movie",
+            "mode": "movies",
+            "media_type": "movies",
+            "ids": '{"imdb_id": "tt123"}',
+        }
+    )
+
+    assert payload_from_torrent(captured["results"][0])["stream_subtitles"] == source.streamSubtitles
+    assert payload_from_torrent(captured["results"][0])["file_idx"] == 2
+    assert payload_from_torrent(captured["results"][0])["headers"] == {
+        "Referer": "https://media.example"
+    }
+
+
+def test_run_search_entry_autoplay_resolves_the_canonical_stremio_payload(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+    source = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))[0]
+    source.quality = "1080p"
+    played = []
+
+    class FakePlayer:
+        def run(self, data):
+            played.append(data)
+
+    monkeypatch.setattr(search, "_handle_super_quick_play", lambda _params: False)
+    monkeypatch.setattr(search, "set_content_type", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "set_watched_title", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "search_client", lambda *_args, **_kwargs: [source])
+    monkeypatch.setattr(search, "_process_search_results", lambda results, *_args, **_kwargs: results)
+    monkeypatch.setattr(search, "auto_play_enabled", lambda: True)
+    monkeypatch.setattr(search, "clean_auto_play_undesired", lambda results: results)
+    monkeypatch.setattr(search, "get_setting", lambda key, default=None: "1080p" if key == "auto_play_quality" else default)
+    monkeypatch.setattr(search, "JacktookPLayer", FakePlayer)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False, raising=False)
+
+    search.run_search_entry(
+        {
+            "query": "Movie",
+            "mode": "movies",
+            "media_type": "movies",
+            "ids": '{"imdb_id": "tt123"}',
+        }
+    )
+
+    assert len(played) == 1
+    assert played[0]["url"].startswith("https://media.example/movie.mkv|")
+    assert played[0]["stream_subtitles"] == source.streamSubtitles
+    assert played[0]["file_idx"] == 2
+    assert played[0]["headers"] == {"Referer": "https://media.example"}
+
+
+def test_show_source_select_preserves_the_canonical_stremio_payload(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+    source = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))[0]
+    shown = []
+
+    monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(
+        search,
+        "source_select",
+        lambda _item_info, xml_file, sources: shown.extend(sources) or bool(xml_file),
+    )
+
+    assert search.show_source_select(
+        [source], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
+    ) is True
+    assert len(shown) == 1
+    payload = payload_from_torrent(shown[0])
+    assert payload["stream_subtitles"] == source.streamSubtitles
+    assert payload["file_idx"] == 2
+    assert payload["headers"] == {"Referer": "https://media.example"}
+
+
+def test_parse_response_returns_no_sources_for_a_malformed_legacy_cache(monkeypatch):
+    client = _stremio_addon_client(monkeypatch)
+    malformed_response = _stremio_response({"streams": [object()]})
+
+    assert client.parse_response(malformed_response, is_external_cache=True) == []
+
+
+def test_super_quick_play_preserves_metadata_from_a_legacy_stremio_cache(monkeypatch):
+    source = TorrentStream(
+        title="Cached movie",
+        type="direct",
+        addonKey="org.example.addon|https://example.com",
+        url="https://media.example/movie.mkv",
+        streamSubtitles=[{"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}],
+        stremioMetadata={
+            "url": "https://media.example/movie.mkv",
+            "fileIdx": 2,
+            "sources": [TRACKER_B],
+            "trackers": [TRACKER_A],
+            "subtitles": [
+                {"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}
+            ],
+            "behaviorHints": {
+                "filename": "Movie.1080p.mkv",
+                "videoSize": 123456,
+                "proxyHeaders": {"request": {"Referer": "https://media.example"}},
+            },
+        },
+    )
+    played = []
+
+    class FakePlayer:
+        def run(self, data):
+            played.append(data)
+
+    monkeypatch.setattr(search, "get_setting", lambda key, default=None: {
+        "super_quick_play": True,
+        "silent_resume": True,
+    }.get(key, default))
+    monkeypatch.setattr(search.cache, "get", lambda _key: source)
+    monkeypatch.setattr(search, "JacktookPLayer", FakePlayer)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False, raising=False)
+
+    assert search._handle_super_quick_play({"ids": '{"imdb_id": "tt123"}'}) is True
+    assert played[0]["stream_subtitles"] == source.streamSubtitles
+    assert played[0]["file_idx"] == 2
+    assert played[0]["headers"] == {"Referer": "https://media.example"}
+
+
+def test_super_quick_play_reports_legacy_cache_failure_before_player(monkeypatch):
+    notifications = []
+    source = {
+        "title": "Unsupported cached source",
+        "type": "direct",
+        "addonKey": "org.example.addon|https://example.com",
+        "externalUrl": "https://external.example/watch",
+        "streamSubtitles": [{"url": "https://sub.example/en.vtt", "lang": "eng"}],
+    }
+
+    class UnexpectedPlayer:
+        def __init__(self):
+            raise AssertionError("unsupported cached source reached the player")
+
+    monkeypatch.setattr(search, "get_setting", lambda key, default=None: {
+        "super_quick_play": True,
+        "silent_resume": True,
+    }.get(key, default))
+    monkeypatch.setattr(search.cache, "get", lambda _key: source)
+    monkeypatch.setattr(search, "notification", lambda message: notifications.append(message))
+    monkeypatch.setattr(search, "JacktookPLayer", UnexpectedPlayer)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False, raising=False)
+
+    assert search._handle_super_quick_play({"ids": '{"imdb_id": "tt123"}'}) is True
+    assert notifications == ["External web pages are not playable sources."]
+
+
+def test_show_source_select_rejects_unsupported_stremio_sources_before_dialog(monkeypatch):
+    shown = []
+    source = TorrentStream(
+        title="Unsupported source",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"externalUrl": "https://external.example/watch"},
+    )
+    notifications = []
+
+    monkeypatch.setattr(search, "notification", lambda message: notifications.append(message))
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False, raising=False)
+    monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        search,
+        "source_select",
+        lambda *_args, **_kwargs: shown.append(True) or True,
+    )
+
+    assert search.show_source_select(
+        [source], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
+    ) is False
+    assert shown == []
+    assert notifications == ["External web pages are not playable sources."]

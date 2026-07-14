@@ -1,6 +1,6 @@
 import json
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
-from typing import List, Optional
+from typing import Any, List, Mapping, Optional
 
 import xbmc
 from xbmcgui import Dialog
@@ -11,6 +11,13 @@ from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
     get_addon_display_name,
     get_selected_stream_addons,
+)
+from lib.clients.stremio.playback import (
+    StremioPlaybackError,
+    candidate_from_payload,
+    classify,
+    payload_from_torrent,
+    resolve,
 )
 from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
@@ -39,6 +46,7 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     cancel_playback,
     close_busy_dialog,
+    is_youtube_addon_enabled,
     kodilog,
     notification,
     translation,
@@ -368,6 +376,111 @@ def _perform_search_with_title_fallback(
     return []
 
 
+def _source_values(source: Any) -> Mapping[str, Any]:
+    if isinstance(source, Mapping):
+        return source
+    try:
+        return vars(source)
+    except TypeError:
+        return {}
+
+
+def _is_stremio_source(source: Any) -> bool:
+    values = _source_values(source)
+    return bool(
+        values.get("stremioMetadata")
+        or values.get("stremio_metadata")
+        or values.get("addonKey")
+        or values.get("addon_key")
+    )
+
+
+def _stremio_capabilities() -> dict:
+    return {"youtube_available": is_youtube_addon_enabled()}
+
+
+def _stremio_metadata_diagnostics(candidate: Any) -> str:
+    fields = []
+    for field in ("title", "name", "filename"):
+        value = getattr(candidate, field, None)
+        if not isinstance(value, str):
+            continue
+        code_points = sorted(
+            {
+                f"U+{ord(character):04X}"
+                for character in value
+                if (
+                    ord(character) < 0x20
+                    and ord(character) not in {0x09, 0x0A, 0x0D}
+                )
+                or ord(character) == 0x7F
+            }
+        )
+        if code_points:
+            fields.append(f"{field}={','.join(code_points)}")
+    return " ".join(fields)
+
+
+def _prepare_stremio_results(results: List[TorrentStream]) -> List[TorrentStream]:
+    prepared = []
+    for source_index, result in enumerate(results):
+        if not _is_stremio_source(result):
+            prepared.append(result)
+            continue
+
+        payload = payload_from_torrent(result)
+        candidate = candidate_from_payload(payload)
+        decision = classify(candidate, _stremio_capabilities())
+        if decision.supported:
+            prepared.append(result)
+        else:
+            diagnostics = f"stremio_result index={source_index} decision={decision.code}"
+            if decision.code == "unsafe_metadata":
+                metadata_diagnostics = _stremio_metadata_diagnostics(candidate)
+                if metadata_diagnostics:
+                    diagnostics += f" {metadata_diagnostics}"
+            kodilog(diagnostics, xbmc.LOGWARNING)
+            notification(decision.reason)
+    return prepared
+
+
+def _resolve_stremio_source(source: Any, context: Optional[Mapping[str, Any]] = None):
+    payload = payload_from_torrent(source)
+    candidate = candidate_from_payload(payload)
+    playback_context = dict(context or {})
+    playback_context.update(_stremio_capabilities())
+    decision = classify(candidate, playback_context)
+    playback_context["is_torrent"] = decision.source_class == "torrent_hash"
+
+    def legacy_resolver(resolved_payload, _context=None):
+        resolved_payload.update(dict(context or {}))
+        resolved_payload["is_torrent"] = playback_context["is_torrent"]
+        return resolve_playback_url(resolved_payload)
+
+    resolved = resolve(candidate, playback_context, legacy_resolver=legacy_resolver)
+    resolved.update(dict(context or {}))
+    for key in ("type", "debrid_type", "indexer", "is_pack"):
+        if key in payload:
+            resolved.setdefault(key, payload[key])
+    return resolved
+
+
+def _resolve_cached_source(source: Any, params: Mapping[str, Any]):
+    if _is_stremio_source(source):
+        return _resolve_stremio_source(
+            source,
+            {
+                "mode": params.get("mode", ""),
+                "ids": safe_json_loads(params.get("ids")),
+                "tv_data": safe_json_loads(params.get("tv_data") or "{}"),
+                "is_torrent": False,
+            },
+        )
+
+    legacy_source = source if isinstance(source, Mapping) else payload_from_torrent(source)
+    return resolve_playback_url(legacy_source)
+
+
 def _handle_super_quick_play(params: dict) -> bool:
     if not get_setting("super_quick_play", False):
         kodilog("Super quick play disabled")
@@ -390,10 +503,20 @@ def _handle_super_quick_play(params: dict) -> bool:
         kodilog("No cached media found")
         return False
 
-    kodilog(f"Found cached media: {cached_torrent['title']}")
+    def play_cached_source() -> bool:
+        try:
+            playback_info = _resolve_cached_source(cached_torrent, params)
+        except StremioPlaybackError as error:
+            kodilog(
+                f"stremio_playback_error phase=super_quick_play code={error.code}",
+                xbmc.LOGWARNING,
+            )
+            notification(error.user_message)
+            return True
+        except Exception:
+            notification(translation(90144))
+            return True
 
-    if get_setting("silent_resume", False):
-        playback_info = resolve_playback_url(cached_torrent)
         if not playback_info:
             notification(translation(90144))
             return True
@@ -401,20 +524,16 @@ def _handle_super_quick_play(params: dict) -> bool:
         player = JacktookPLayer()
         player.run(data=playback_info)
         return True
+
+    if get_setting("silent_resume", False):
+        return play_cached_source()
 
     dialog = Dialog()
     if dialog.yesno(
         translation(90142),
         translation(90143),
     ):
-        playback_info = resolve_playback_url(cached_torrent)
-        if not playback_info:
-            notification(translation(90144))
-            return True
-
-        player = JacktookPLayer()
-        player.run(data=playback_info)
-        return True
+        return play_cached_source()
 
     kodilog("User chose not to play cached torrent")
     return False
@@ -1283,6 +1402,10 @@ def show_source_select(
     direct: bool = False,
     autoplay_context: Optional[str] = None,
 ) -> bool:
+    results = _prepare_stremio_results(results)
+    if not results:
+        return False
+
     item_info = {
         "tv_data": tv_data,
         "ids": ids,
@@ -1321,7 +1444,7 @@ def auto_play(
     if force_select:
         return False
 
-    filtered_results = clean_auto_play_undesired(results)
+    filtered_results = clean_auto_play_undesired(_prepare_stremio_results(results))
     if not filtered_results:
         notification("No suitable source found for auto play.")
         return False
@@ -1341,20 +1464,39 @@ def auto_play(
         if group_matches:
             selected_result = group_matches[0]
 
-    playback_info = resolve_playback_url(
-        data={
-            "title": selected_result.title,
-            "mode": mode,
-            "indexer": selected_result.indexer,
-            "type": selected_result.type,
-            "debrid_type": selected_result.debridType,
-            "ids": ids,
-            "info_hash": selected_result.infoHash,
-            "url": selected_result.url,
-            "tv_data": tv_data,
-            "is_torrent": False,
-        },
-    )
+    if _is_stremio_source(selected_result):
+        try:
+            playback_info = _resolve_stremio_source(
+                selected_result,
+                {
+                    "mode": mode,
+                    "ids": ids,
+                    "tv_data": tv_data,
+                    "is_torrent": False,
+                },
+            )
+        except StremioPlaybackError as error:
+            kodilog(
+                f"stremio_playback_error phase=auto_play code={error.code}",
+                xbmc.LOGWARNING,
+            )
+            notification(error.user_message)
+            return False
+    else:
+        playback_info = resolve_playback_url(
+            data={
+                "title": selected_result.title,
+                "mode": mode,
+                "indexer": selected_result.indexer,
+                "type": selected_result.type,
+                "debrid_type": selected_result.debridType,
+                "ids": ids,
+                "info_hash": selected_result.infoHash,
+                "url": selected_result.url,
+                "tv_data": tv_data,
+                "is_torrent": False,
+            },
+        )
 
     if not playback_info:
         return False

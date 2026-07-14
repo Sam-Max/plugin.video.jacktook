@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, quote, unquote, urlparse
 
 _HASH_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 _CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
+_DISPLAY_METADATA_CONTROL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 _YOUTUBE_ADDON_ID = "plugin.video.youtube"
 
@@ -390,7 +391,7 @@ def _header_mapping(value: Any) -> Dict[str, Any]:
 
 def _metadata_problem(candidate: StremioPlaybackCandidate) -> Optional[Tuple[str, str]]:
     for value in (candidate.filename, candidate.title, candidate.name):
-        if value and (_CONTROL_RE.search(value) or "|" in value):
+        if value and _DISPLAY_METADATA_CONTROL_RE.search(value):
             return "unsafe_metadata", "The stream metadata contains unsafe characters."
     for subtitle in candidate.subtitles:
         for value in subtitle.values():

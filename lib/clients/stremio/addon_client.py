@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 import xbmc
 
@@ -7,6 +7,7 @@ from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.clients.stremio.helpers import get_addon_display_name
+from lib.clients.stremio.playback import classify, normalize_stream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.settings import get_int_setting
@@ -14,6 +15,62 @@ from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
 
 EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
+
+
+def _candidate_metadata(candidate, url_override=None, info_hash_override=None):
+    metadata = dict(candidate.metadata)
+    metadata.update(
+        {
+            "url": candidate.url if url_override is None else url_override,
+            "ytId": candidate.ytId,
+            "infoHash": candidate.infoHash
+            if info_hash_override is None
+            else info_hash_override,
+            "fileIdx": candidate.fileIdx,
+            "externalUrl": candidate.externalUrl,
+            "title": candidate.title,
+            "name": candidate.name,
+            "description": candidate.description,
+            "filename": candidate.filename,
+            "size": candidate.size,
+            "videoHash": candidate.videoHash,
+            "subtitles": list(candidate.subtitles),
+            "sources": list(candidate.sources),
+            "trackers": list(candidate.trackers),
+            "fileMustInclude": candidate.fileMustInclude,
+            "nzbUrl": candidate.nzbUrl,
+        }
+    )
+
+    behavior_hints = {}
+    if candidate.filename is not None:
+        behavior_hints["filename"] = candidate.filename
+    if candidate.size is not None:
+        behavior_hints["videoSize"] = candidate.size
+    if candidate.videoHash is not None:
+        behavior_hints["videoHash"] = candidate.videoHash
+    if candidate.headers or candidate.responseHeaders:
+        behavior_hints["proxyHeaders"] = {
+            "request": dict(candidate.headers),
+            "response": dict(candidate.responseHeaders),
+        }
+    if behavior_hints:
+        metadata["behaviorHints"] = behavior_hints
+
+    return metadata
+
+
+def _response_data(response):
+    try:
+        if hasattr(response, "json"):
+            data = response.json()
+        elif isinstance(response, Mapping):
+            data = response
+        else:
+            return {}
+    except Exception:
+        return {}
+    return data if isinstance(data, Mapping) else {}
 
 
 class StremioAddonCatalogsClient(BaseClient):
@@ -156,63 +213,78 @@ class StremioAddonClient(BaseClient):
             response = self.parse_response(res)
             kodilog(f"Stremio addon {self.display_name} returned {len(response)} results")
             return response
-        except Exception as e:
-            self.handle_exception(f"Error in {self.display_name}: {e!s}")
+        except Exception:
+            self.handle_exception(f"Error in {self.display_name}")
             return []
 
     def parse_response(self, res: Any, is_external_cache: bool = False) -> List[TorrentStream]:
-        if not is_external_cache:
-            res_json = res.json()
-            streams = res_json.get("streams", [])
-        else:
-            pass
-
-        if hasattr(res, "json"):
-            data = res.json()
-        elif isinstance(res, dict):
-            data = res
-        else:
-            data = {}
-
+        data = _response_data(res)
+        streams = data.get("streams", [])
+        if not isinstance(streams, (list, tuple)):
+            return []
         results = []
 
-        streams = data.get("streams", [])
-
         for item in streams:
-            stream = Stream.from_dict(item)
-            parsed = self.parse_torrent_description(stream.description or stream.title or "")
+            try:
+                candidate = normalize_stream(
+                    item, origin="external_cache" if is_external_cache else "search"
+                )
+            except (TypeError, ValueError):
+                continue
+
+            item_values = dict(item) if isinstance(item, Mapping) else {}
+            parsed = self.parse_torrent_description(
+                candidate.description or candidate.title or ""
+            )
 
             if is_external_cache:
-                match = re.search(r"\b\w{40}\b", stream.url or "")
-                info_hash = match.group() if match else item.get("infoHash")
+                match = re.search(r"\b[0-9a-fA-F]{40}\b", candidate.url or "")
+                info_hash = (
+                    candidate.infoHash
+                    or (match.group() if match else None)
+                    or item_values.get("infoHash")
+                )
                 url = ""
                 is_cached = True
             else:
-                info_hash = stream.infoHash
-                url = stream.url
+                info_hash = candidate.infoHash
+                url = candidate.url or ""
                 is_cached = bool(url)
 
+            decision = classify(candidate)
+            if decision.code in {
+                "external_source",
+                "unsupported_archive",
+                "malformed_locator",
+                "unsafe_locator",
+                "response_headers_unsupported",
+                "unsafe_headers",
+                "unsupported_source",
+            }:
+                continue
+
             stream_type = IndexerType.STREMIO_DEBRID if url else IndexerType.TORRENT
-            stream_provider = stream.get_provider() or parsed["provider"]
-            stream_subindexer = stream.get_sub_indexer(self.addon)
-            stream_size = stream.get_parsed_size() or item.get("sizebytes") or parsed["size"]
-            stream_seeders = item.get("seed", 0) or parsed["seeders"]
-            stream_subtitles = [s.__dict__ for s in stream.subtitles if s.url]
+            raw_meta = candidate.metadata.get("meta", {})
+            stream_provider = (
+                raw_meta.get("indexer", "") if isinstance(raw_meta, Mapping) else ""
+            ) or parsed["provider"]
+            name_parts = (candidate.name or "").split()
+            stream_subindexer = name_parts[1] if len(name_parts) > 1 else ""
+            stream_size = candidate.size or item_values.get("sizebytes") or parsed["size"]
+            stream_seeders = item_values.get("seed", 0) or parsed["seeders"]
+            stream_subtitles = [subtitle for subtitle in candidate.subtitles if subtitle.get("url")]
             if stream_subtitles:
                 kodilog(
                     f"[StremioSubs] {self.display_name}: stream "
-                    f"'{(stream.title or stream.name or '')[:40]}' has "
+                    f"'{(candidate.title or candidate.name or '')[:40]}' has "
                     f"{len(stream_subtitles)} embedded subtitle(s)",
                     level=xbmc.LOGINFO,
                 )
-                kodilog(
-                    f"[StremioSubs] embedded subs detail: {stream_subtitles}",
-                    level=xbmc.LOGDEBUG,
-                )
 
+            title = candidate.filename or candidate.description or candidate.title or ""
             results.append(
                 TorrentStream(
-                    title=stream.get_parsed_title(),
+                    title=title.splitlines()[0] if title else "",
                     type=stream_type,
                     indexer=self.indexer_name,
                     subindexer=stream_subindexer,
@@ -232,6 +304,11 @@ class StremioAddonClient(BaseClient):
                     url=url if url else "",
                     streamSubtitles=stream_subtitles,
                     isCached=is_cached,
+                    stremioMetadata=_candidate_metadata(
+                        candidate,
+                        url_override=url if is_external_cache else None,
+                        info_hash_override=info_hash if is_external_cache else None,
+                    ),
                 )
             )
 
