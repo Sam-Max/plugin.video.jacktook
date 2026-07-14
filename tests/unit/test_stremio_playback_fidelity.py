@@ -1,9 +1,12 @@
+import json
+from unittest.mock import MagicMock
+
 import pytest
 
 from lib import search
 from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Stream
-from lib.clients.stremio import addon_client
+from lib.clients.stremio import addon_client, catalog_menus
 from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
@@ -736,3 +739,194 @@ def test_show_source_select_rejects_unsupported_stremio_sources_before_dialog(mo
     ) is False
     assert shown == []
     assert notifications == ["External web pages are not playable sources."]
+
+
+def _catalog_params(**overrides):
+    params = {
+        "addon_url": "https://example.com/addon",
+        "catalog_type": "movie",
+        "meta_id": "custom:movie",
+        "ids": json.dumps({"imdb_id": "tt123"}),
+        "poster": "poster.jpg",
+        "fanart": "fanart.jpg",
+        "genres": json.dumps(["Drama"]),
+        "overview": "Catalog overview",
+    }
+    params.update(overrides)
+    return params
+
+
+def _capture_catalog_builder(monkeypatch, builder, response, params):
+    captured = []
+    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args, **kwargs: response)
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="": MagicMock())
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_directory_items_batch",
+        lambda items: captured.extend(json.loads(item[0].split("data=", 1)[1]) for item in items),
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: f"{action}?data={kwargs['data']}",
+    )
+
+    builder(params)
+    return captured
+
+
+def test_catalog_movie_preserves_canonical_fields_and_skips_unsupported(monkeypatch):
+    stream = Stream.from_dict(
+        {
+            "url": "https://media.example/movie.mkv",
+            "infoHash": INFO_HASH,
+            "fileIdx": 2,
+            "title": "Movie 1080p",
+            "description": "Stream plot",
+            "sources": [TRACKER_B],
+            "trackers": [TRACKER_A],
+            "subtitles": [{"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}],
+            "behaviorHints": {
+                "filename": "Movie.1080p.mkv",
+                "videoSize": 123456,
+                "videoHash": "video-hash",
+                "proxyHeaders": {"request": {"Referer": "https://media.example"}},
+            },
+        }
+    )
+    stream.stremio_metadata = {"provider": "canonical"}
+    response = {
+        "streams": [
+            stream,
+            {"url": "javascript:alert(1)", "title": "Malformed"},
+            {"externalUrl": "https://external.example/watch", "title": "External"},
+        ]
+    }
+
+    captured = _capture_catalog_builder(
+        monkeypatch, catalog_menus.list_stremio_movie, response, _catalog_params()
+    )
+
+    assert len(captured) == 1
+    assert captured[0]["url"] == "https://media.example/movie.mkv"
+    assert captured[0]["type"] == catalog_menus.IndexerType.DIRECT
+    assert captured[0]["info_hash"] == INFO_HASH
+    assert captured[0]["file_idx"] == 2
+    assert captured[0]["sources"] == [TRACKER_B]
+    assert captured[0]["trackers"] == [TRACKER_A]
+    assert captured[0]["headers"] == {"Referer": "https://media.example"}
+    assert captured[0]["filename"] == "Movie.1080p.mkv"
+    assert captured[0]["size"] == 123456
+    assert captured[0]["videoHash"] == "video-hash"
+    assert captured[0]["stream_subtitles"] == [
+        {"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}
+    ]
+    assert captured[0]["stremio_metadata"]["provider"] == "canonical"
+
+
+def test_catalog_youtube_handoff_uses_safe_plugin_url_and_addon_gate(monkeypatch):
+    monkeypatch.setattr(catalog_menus, "is_youtube_addon_enabled", lambda: True)
+    captured = _capture_catalog_builder(
+        monkeypatch,
+        catalog_menus.list_stremio_movie,
+        {"streams": [{"ytId": "video/id", "title": "YouTube trailer"}]},
+        _catalog_params(),
+    )
+    assert captured[0]["ytId"] == "video/id"
+    assert captured[0]["url"] == "plugin://plugin.video.youtube/play/?video_id=video%2Fid"
+
+    monkeypatch.setattr(catalog_menus, "is_youtube_addon_enabled", lambda: False)
+    assert catalog_menus._stremio_catalog_playback_data(
+        {"ytId": "video/id"}, _catalog_params()
+    ) is None
+
+
+def test_catalog_skips_incomplete_object_without_aborting_valid_candidates(monkeypatch):
+    class IncompleteStream:
+        @property
+        def url(self):
+            raise RuntimeError
+
+    captured = _capture_catalog_builder(
+        monkeypatch,
+        catalog_menus.list_stremio_movie,
+        {"streams": [IncompleteStream(), {"url": "https://media.example/ok.mkv"}]},
+        _catalog_params(),
+    )
+
+    assert len(captured) == 1
+    assert captured[0]["url"] == "https://media.example/ok.mkv"
+
+def test_catalog_tv_preserves_hash_payload_and_accepts_dict_streams(monkeypatch):
+    response = {
+        "streams": [
+            {
+                "infoHash": INFO_HASH,
+                "title": "Episode torrent",
+                "description": "Episode plot",
+                "sources": [TRACKER_A],
+                "trackers": [TRACKER_B],
+                "subtitles": [{"url": "https://sub.example/episode.vtt", "lang": "eng"}],
+            },
+            {"externalUrl": "https://external.example/watch", "title": "Unsupported"},
+        ]
+    }
+
+    captured = _capture_catalog_builder(
+        monkeypatch, catalog_menus.list_stremio_tv, response, _catalog_params(catalog_type="series")
+    )
+
+    assert len(captured) == 1
+    assert captured[0]["info_hash"] == INFO_HASH
+    assert captured[0]["magnet"] == f"magnet:?xt=urn:btih:{INFO_HASH}"
+    assert captured[0]["is_torrent"] is True
+    assert captured[0]["sources"] == [TRACKER_A]
+    assert captured[0]["trackers"] == [TRACKER_B]
+    assert captured[0]["subtitles"] == [
+        {"url": "https://sub.example/episode.vtt", "lang": "eng"}
+    ]
+
+
+def test_catalog_tv_streams_handles_dicts_and_malformed_candidates(monkeypatch):
+    magnet = f"magnet:?xt=urn:btih:{INFO_HASH}&tr={TRACKER_A}"
+    captured = []
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="": MagicMock())
+    monkeypatch.setattr(
+        catalog_menus,
+        "add_directory_items_batch",
+        lambda items: captured.extend(items),
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: f"{action}?data={kwargs['data']}",
+    )
+
+    catalog_menus.list_stremio_tv_streams(
+        _catalog_params(
+            streams=json.dumps(
+                [
+                    {
+                        "url": magnet,
+                        "name": "Episode magnet",
+                        "sources": [TRACKER_B],
+                        "subtitles": [{"url": "https://sub.example/episode.vtt", "lang": "eng"}],
+                    },
+                    {"url": "not-a-playable-url", "name": "Malformed"},
+                    {"name": "Missing locator"},
+                ]
+            )
+        )
+    )
+
+    assert len(captured) == 1
+    data = json.loads(captured[0][0].split("data=", 1)[1])
+    assert data["url"] == magnet
+    assert data["magnet"] == magnet
+    assert data["sources"] == [TRACKER_B]
+    assert data["stream_subtitles"] == [
+        {"url": "https://sub.example/episode.vtt", "lang": "eng"}
+    ]

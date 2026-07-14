@@ -1,5 +1,6 @@
 import json
 import os
+from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from urllib.parse import quote
@@ -13,6 +14,7 @@ from lib.clients.stremio.helpers import (
     get_selected_catalogs_addons,
     get_selected_tv_addons,
 )
+from lib.clients.stremio.playback import classify, normalize_stream, payload_from_torrent
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_movie_context_menu,
@@ -35,6 +37,7 @@ from lib.utils.kodi.utils import (
     build_url,
     container_update,
     end_of_directory,
+    is_youtube_addon_enabled,
     kodi_play_media,
     kodilog,
     make_list_item,
@@ -866,55 +869,171 @@ def list_stremio_episodes(params):
     end_of_directory()
 
 
+def _stremio_catalog_streams(response):
+    if isinstance(response, Mapping):
+        streams = response.get("streams", [])
+    else:
+        streams = getattr(response, "streams", [])
+    return streams if isinstance(streams, (list, tuple)) else []
+
+
+def _stremio_catalog_param(params, key, default):
+    value = params.get(key, default)
+    if isinstance(value, type(default)):
+        return value
+    if not isinstance(value, str):
+        return default
+    try:
+        parsed = json.loads(value or "")
+    except (TypeError, ValueError):
+        return default
+    return parsed if isinstance(parsed, type(default)) else default
+
+
+def _stremio_catalog_source(stream):
+    if isinstance(stream, Mapping):
+        return stream
+    try:
+        if vars(stream):
+            return stream
+    except (TypeError, ValueError):
+        pass
+
+    fields = (
+        "url",
+        "ytId",
+        "infoHash",
+        "fileIdx",
+        "externalUrl",
+        "name",
+        "title",
+        "description",
+        "behaviorHints",
+        "subtitles",
+        "fileMustInclude",
+        "nzbUrl",
+        "rarUrls",
+        "zipUrls",
+        "sevenZipUrls",
+        "tgzUrls",
+        "tarUrls",
+        "meta",
+        "sources",
+        "trackers",
+        "stremioMetadata",
+        "stremio_metadata",
+    )
+    source = {}
+    for field in fields:
+        try:
+            value = getattr(stream, field, None)
+        except Exception:
+            continue
+        if value is not None:
+            source[field] = value
+    return source
+
+
+def _stremio_catalog_playback_data(stream, params):
+    try:
+        source = _stremio_catalog_source(stream)
+        candidate = normalize_stream(source, origin="catalog")
+        decision = classify(candidate)
+        if not decision.supported:
+            return None
+        payload = payload_from_torrent(source)
+    except (TypeError, ValueError):
+        return None
+
+    playback_data = {
+        "mode": "movie",
+        "source": "stremio_catalog",
+        "title": candidate.title or candidate.name or candidate.filename or params.get("title", ""),
+        "overview": candidate.description or params.get("overview", ""),
+        "poster": params.get("poster", ""),
+        "fanart": params.get("fanart", params.get("poster", "")),
+        "genres": _stremio_catalog_param(params, "genres", []),
+        "ids": _stremio_catalog_param(params, "ids", {}),
+        "addon_url": params.get("addon_url", ""),
+        "catalog_type": params.get("catalog_type", ""),
+        "meta_id": params.get("meta_id", ""),
+    }
+
+    for key in ("type", "debrid_type", "indexer", "is_pack"):
+        value = payload.get(key)
+        if value not in (None, "", False, [], {}):
+            playback_data[key] = value
+
+    candidate_values = {
+        "url": candidate.url,
+        "info_hash": candidate.infoHash,
+        "file_idx": candidate.fileIdx,
+        "sources": list(candidate.sources),
+        "trackers": list(candidate.trackers),
+        "headers": dict(candidate.headers),
+        "filename": candidate.filename,
+        "size": candidate.size,
+        "videoHash": candidate.videoHash,
+        "ytId": candidate.ytId,
+        "externalUrl": candidate.externalUrl,
+        "stream_subtitles": list(candidate.subtitles),
+        "subtitles": list(candidate.subtitles),
+    }
+    for key, value in candidate_values.items():
+        if value is not None and value not in ("", [], {}):
+            playback_data[key] = value
+
+    canonical_metadata = payload.get("stremio_metadata")
+    if isinstance(canonical_metadata, Mapping) and any(canonical_metadata.values()):
+        playback_data["stremio_metadata"] = dict(canonical_metadata)
+
+    if decision.source_class == "youtube":
+        if not is_youtube_addon_enabled():
+            return None
+        playback_data["url"] = (
+            "plugin://plugin.video.youtube/play/?video_id="
+            f"{quote(candidate.ytId or '', safe='')}"
+        )
+
+    if decision.source_class == "direct_http":
+        playback_data["type"] = IndexerType.DIRECT
+    elif decision.source_class == "torrent_hash":
+        playback_data["is_torrent"] = True
+        playback_data["magnet"] = (
+            candidate.url
+            if candidate.url and candidate.url.lower().startswith("magnet:")
+            else info_hash_to_magnet(candidate.infoHash or "")
+        )
+
+    return playback_data, candidate
+
+
 def list_stremio_movie(params):
     response = catalogs_get_cache("list_stremio_movie", params)
     if not response:
         return
 
-    streams = response.get("streams", [])
+    streams = _stremio_catalog_streams(response)
     if not streams:
         notification(translation(90514))
         return
 
     items = []
     for stream in streams:
-        playback_data = {
-            "mode": "movie",
-            "source": "stremio_catalog",
-            "title": stream.title,
-            "overview": stream.description or params.get("overview", ""),
-            "poster": params.get("poster", ""),
-            "fanart": params.get("fanart", params.get("poster", "")),
-            "genres": json.loads(params.get("genres", "[]") or "[]"),
-            "ids": json.loads(params.get("ids", "{}") or "{}"),
-            "addon_url": params.get("addon_url", ""),
-            "catalog_type": params.get("catalog_type", ""),
-            "meta_id": params.get("meta_id", ""),
-        }
-
-        if stream.url:
-            if stream.url.startswith("magnet:"):
-                playback_data["magnet"] = stream.url
-                playback_data["is_torrent"] = True
-            else:
-                playback_data["url"] = stream.url
-                playback_data["type"] = IndexerType.DIRECT
-        elif stream.infoHash:
-            playback_data["magnet"] = info_hash_to_magnet(stream.infoHash)
-            playback_data["info_hash"] = stream.infoHash
-            playback_data["is_torrent"] = True
-        else:
+        prepared = _stremio_catalog_playback_data(stream, params)
+        if not prepared:
             continue
+        playback_data, candidate = prepared
 
         url = build_url(
             "play_media",
             data=json.dumps(playback_data),
         )
 
-        list_item = make_list_item(label=stream.title)
+        list_item = make_list_item(label=playback_data["title"])
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(truncate_text(stream.description or ""))
+        info_tag.setPlot(truncate_text(candidate.description or ""))
 
         items.append((url, list_item, False))
     add_directory_items_batch(items)
@@ -926,37 +1045,26 @@ def list_stremio_tv(params):
     if not response:
         return
 
-    streams = response.get("streams", [])
+    streams = _stremio_catalog_streams(response)
     if not streams:
         notification(translation(90514))
         return
 
     items = []
     for stream in streams:
-        playback_data = {
-            "mode": "movie",
-            "url": stream.url,
-            "type": IndexerType.DIRECT,
-            "source": "stremio_catalog",
-            "title": stream.title,
-            "overview": stream.description or params.get("overview", ""),
-            "poster": params.get("poster", ""),
-            "fanart": params.get("fanart", params.get("poster", "")),
-            "genres": json.loads(params.get("genres", "[]") or "[]"),
-            "ids": json.loads(params.get("ids", "{}") or "{}"),
-            "addon_url": params.get("addon_url", ""),
-            "catalog_type": params.get("catalog_type", ""),
-            "meta_id": params.get("meta_id", ""),
-        }
+        prepared = _stremio_catalog_playback_data(stream, params)
+        if not prepared:
+            continue
+        playback_data, candidate = prepared
         url = build_url(
             "play_media",
             data=json.dumps(playback_data),
         )
 
-        list_item = make_list_item(label=stream.title)
+        list_item = make_list_item(label=playback_data["title"])
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(truncate_text(stream.description or ""))
+        info_tag.setPlot(truncate_text(candidate.description or ""))
 
         items.append((url, list_item, False))
     add_directory_items_batch(items)
@@ -964,33 +1072,28 @@ def list_stremio_tv(params):
 
 
 def list_stremio_tv_streams(params):
-    streams = json.loads(params.get("streams", {}))
+    raw_streams = params.get("streams", [])
+    if isinstance(raw_streams, str):
+        try:
+            raw_streams = json.loads(raw_streams or "[]")
+        except (TypeError, ValueError):
+            raw_streams = []
+    streams = raw_streams if isinstance(raw_streams, (list, tuple)) else []
     items = []
     for stream in streams:
-        playback_data = {
-            "mode": "movie",
-            "url": stream["url"],
-            "type": IndexerType.DIRECT,
-            "source": "stremio_catalog",
-            "title": stream["name"],
-            "overview": stream.get("description", "") or params.get("overview", ""),
-            "poster": params.get("poster", ""),
-            "fanart": params.get("fanart", params.get("poster", "")),
-            "genres": json.loads(params.get("genres", "[]") or "[]"),
-            "ids": json.loads(params.get("ids", "{}") or "{}"),
-            "addon_url": params.get("addon_url", ""),
-            "catalog_type": params.get("catalog_type", ""),
-            "meta_id": params.get("meta_id", ""),
-        }
+        prepared = _stremio_catalog_playback_data(stream, params)
+        if not prepared:
+            continue
+        playback_data, candidate = prepared
         url = build_url(
             "play_media",
             data=json.dumps(playback_data),
         )
 
-        list_item = make_list_item(label=stream["name"])
+        list_item = make_list_item(label=playback_data["title"])
         list_item.setProperty("IsPlayable", "true")
         info_tag = list_item.getVideoInfoTag()
-        info_tag.setPlot(truncate_text(stream.get("description", "")))
+        info_tag.setPlot(truncate_text(candidate.description or ""))
 
         items.append((url, list_item, False))
 
