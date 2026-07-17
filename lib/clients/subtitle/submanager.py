@@ -144,6 +144,11 @@ class SubtitleManager(KodiJsonRpcClient):
                 return subtitle_files
 
         stream_subtitles = self.data.get("stream_subtitles") or []
+        subtitle_extra_args = {
+            "videoHash": self.data.get("videoHash"),
+            "videoSize": self.data.get("size"),
+            "filename": self.data.get("filename"),
+        }
         kodilog(
             f"[StremioSubs] fetch_subtitles received {len(stream_subtitles)} embedded "
             f"subtitle(s) from playback data (auto_select={auto_select})",
@@ -171,6 +176,7 @@ class SubtitleManager(KodiJsonRpcClient):
                 episode,
                 auto_select=auto_select,
                 addon_manager=self._resolve_addon_manager(),
+                extra_args=subtitle_extra_args,
             )
         if subtitles is None:
             self.last_fetch_status = "not_found"
@@ -212,6 +218,7 @@ class SubtitleManager(KodiJsonRpcClient):
                 episode,
                 auto_select=auto_select,
                 addon_manager=self._resolve_addon_manager(),
+                extra_args=subtitle_extra_args,
             )
             if subtitles is None:
                 self.last_fetch_status = "not_found"

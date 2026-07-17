@@ -1,5 +1,6 @@
 import re
 from typing import Any, Dict, List, Mapping, Optional
+from urllib.parse import quote
 
 import xbmc
 
@@ -97,10 +98,11 @@ class StremioAddonCatalogsClient(BaseClient):
         return self.get_catalog_info(search=query)
 
     def get_catalog_info(self, **kwargs) -> Optional[Dict[str, Any]]:
-        extra_path = ""
-        for key, value in kwargs.items():
-            if value:
-                extra_path += f"/{key}={value}"
+        extra_path = "".join(
+            f"/{key}={quote(str(value), safe='')}"
+            for key, value in kwargs.items()
+            if value is not None and value != ""
+        )
 
         if not extra_path:
             path_suffix = ".json"

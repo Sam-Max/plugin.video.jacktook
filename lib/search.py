@@ -16,6 +16,7 @@ from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
     classify,
+    normalize_stream,
     payload_from_torrent,
     resolve,
 )
@@ -395,6 +396,33 @@ def _is_stremio_source(source: Any) -> bool:
     )
 
 
+def _preferred_stremio_results(raw_streams: Any) -> List[TorrentStream]:
+    if not isinstance(raw_streams, (list, tuple)):
+        return []
+
+    results = []
+    for stream in raw_streams:
+        try:
+            candidate = normalize_stream(stream, origin="video")
+            if not classify(candidate, _stremio_capabilities()).supported:
+                continue
+        except (TypeError, ValueError):
+            continue
+        results.append(
+            TorrentStream(
+                title=candidate.title or candidate.name or candidate.filename or "",
+                type="direct" if candidate.url else "torrent",
+                addonKey="stremio_video",
+                url=candidate.url or "",
+                infoHash=candidate.infoHash or "",
+                size=candidate.size or 0,
+                streamSubtitles=list(candidate.subtitles),
+                stremioMetadata=dict(stream) if isinstance(stream, Mapping) else {},
+            )
+        )
+    return results
+
+
 def _stremio_capabilities() -> dict:
     return {"youtube_available": is_youtube_addon_enabled()}
 
@@ -646,6 +674,8 @@ def run_search_entry(params: dict):
     season = tv_data.get("season", 1)
 
     scoped_addon_url = params.get("scoped_addon_url", "")
+    preferred_stremio_streams = safe_json_loads(params.get("preferred_stremio_streams") or "[]")
+    preferred_results = _preferred_stremio_results(preferred_stremio_streams)
 
     suppress_debrid_dialog = False
     try:
@@ -667,13 +697,13 @@ def run_search_entry(params: dict):
         results = exc.results
         suppress_debrid_dialog = True
 
-    if not results:
+    if not results and not preferred_results:
         notification("No results found")
         if not skip_cancel:
             cancel_playback()
         return
 
-    final_results = _process_search_results(
+    final_results = _prepare_stremio_results(preferred_results) + _process_search_results(
         results,
         mode,
         ep_name,

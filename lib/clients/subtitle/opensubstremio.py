@@ -303,6 +303,7 @@ class OpenSubtitleStremioClient:
         season: Optional[int],
         episode: Optional[int],
         auto_select: bool,
+        extra_args: Optional[Dict[str, Any]] = None,
     ) -> Optional[Tuple[List[Dict[str, Any]], List[str]]]:
         """Query sources concurrently, then merge their responses in source order."""
         per_call_timeout = get_int_setting("stremio_timeout") or DEFAULT_ENDPOINT_TIMEOUT
@@ -337,6 +338,7 @@ class OpenSubtitleStremioClient:
                         episode,
                         per_call_timeout,
                         **retry_options,
+                        extra_args=extra_args,
                     )
                 except Exception as error:
                     failed += 1
@@ -482,6 +484,7 @@ class OpenSubtitleStremioClient:
         episode: Optional[int] = None,
         auto_select: bool = False,
         addon_manager: Optional[Any] = None,
+        extra_args: Optional[Dict[str, Any]] = None,
     ) -> Optional[List[Dict[str, Any]]]:
         """Resolve subtitles from all selected Stremio addons (multi-source).
 
@@ -513,7 +516,7 @@ class OpenSubtitleStremioClient:
             )
             return None
         merged = self._query_and_merge_subtitle_sources(
-            resolved, mode, imdb_id, season, episode, auto_select
+            resolved, mode, imdb_id, season, episode, auto_select, extra_args
         )
         if merged is None:
             return None

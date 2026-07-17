@@ -237,7 +237,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         pack_select: bool = False,
     ) -> Dict[str, Any]:
         """Prepare the source data dictionary for resolving playback."""
-        return {
+        playback_data = {
             "type": source.type,
             "debrid_type": source.debridType,
             "indexer": source.indexer,
@@ -255,6 +255,17 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "poster": self.item_information.get("poster"),
             "stream_subtitles": source.streamSubtitles,
         }
+        metadata = source.stremioMetadata if isinstance(source.stremioMetadata, dict) else {}
+        behavior_hints = metadata.get("behaviorHints") or {}
+        for source_key, target_key in (
+            ("videoHash", "videoHash"),
+            ("videoSize", "size"),
+            ("filename", "filename"),
+        ):
+            value = metadata.get(source_key, behavior_hints.get(source_key))
+            if value is not None:
+                playback_data[target_key] = value
+        return playback_data
 
     @abc.abstractmethod
     def handle_action(self, action_id, control_id=None):

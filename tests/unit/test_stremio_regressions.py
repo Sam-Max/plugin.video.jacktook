@@ -575,6 +575,34 @@ def test_list_catalog_uses_server_skip_when_manifest_supports_it(monkeypatch):
     assert captured_kwargs == {"skip": 50}
 
 
+def test_list_catalog_forwards_manifest_declared_extra_args(monkeypatch):
+    captured_kwargs = {}
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda path, params, **kwargs: captured_kwargs.update(kwargs) or {"metas": []},
+    )
+    monkeypatch.setattr(catalog_menus, "_catalog_extra_names", lambda *args: {"sort"})
+    monkeypatch.setattr(catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+
+    catalog_menus.list_catalog(
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "movie",
+            "catalog_type": "movie",
+            "catalog_id": "popular",
+            "genre": "Drama",
+            "sort": "top rated",
+        }
+    )
+
+    assert captured_kwargs == {"genre": "Drama", "sort": "top rated"}
+
+
 def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
     added_items = []
 

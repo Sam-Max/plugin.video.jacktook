@@ -18,6 +18,13 @@ def test_prepare_source_data_includes_stream_subtitles():
         type=IndexerType.STREMIO_DEBRID,
         url="https://example.com/video.mp4",
         streamSubtitles=[{"url": "https://example.com/sub.en.vtt", "lang": "eng"}],
+        stremioMetadata={
+            "behaviorHints": {
+                "videoHash": "video-hash",
+                "videoSize": 123,
+                "filename": "Movie.mkv",
+            }
+        },
     )
 
     source_data = window.prepare_source_data(source, source.url, "", False)
@@ -25,6 +32,9 @@ def test_prepare_source_data_includes_stream_subtitles():
     assert source_data["stream_subtitles"] == [
         {"url": "https://example.com/sub.en.vtt", "lang": "eng"}
     ]
+    assert source_data["videoHash"] == "video-hash"
+    assert source_data["size"] == 123
+    assert source_data["filename"] == "Movie.mkv"
 
 
 def test_embedded_subtitle_download_preserves_supported_extension(monkeypatch, tmp_path):
@@ -423,6 +433,68 @@ def test_endpoint_subtitle_fetch_uses_timeout(monkeypatch):
     assert captured == {
         "url": "https://example.com/subtitles/movie/tt123.json",
         "timeout": 7,
+    }
+
+
+def test_subtitle_endpoint_encodes_stream_extra_args_without_logging_them(monkeypatch):
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"subtitles": []}
+
+    captured = {}
+    logs = []
+
+    def _get(url, **kwargs):
+        captured["url"] = url
+        return _Response()
+
+    monkeypatch.setattr(opensubstremio.requests, "get", _get)
+    monkeypatch.setattr(opensubstremio, "kodilog", lambda message, **_kwargs: logs.append(message))
+
+    assert OpenSubtitleStremioClient(lambda *_args: None)._fetch_subtitles_data_for_source(
+        "https://example.com",
+        "movie",
+        "tt123",
+        extra_args={
+            "videoHash": "hash/with space",
+            "videoSize": 123,
+            "filename": "Movie & Episode.mkv",
+        },
+    ) == []
+
+    assert captured["url"] == (
+        "https://example.com/subtitles/movie/tt123/videoHash=hash%2Fwith%20space"
+        "/videoSize=123/filename=Movie%20%26%20Episode.mkv.json"
+    )
+    assert all("hash/with space" not in message for message in logs)
+
+
+def test_subtitle_manager_passes_selected_stream_file_context_to_endpoint(monkeypatch, tmp_path):
+    data = {
+        "title": "Movie Title",
+        "mode": "movies",
+        "ids": {"imdb_id": "tt123"},
+        "videoHash": "hash-value",
+        "size": 987,
+        "filename": "Movie.mkv",
+    }
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+    captured = {}
+
+    monkeypatch.setattr(manager.opensub_client, "select_subtitles", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        manager.opensub_client,
+        "get_subtitles",
+        lambda *args, **kwargs: captured.update(kwargs) or None,
+    )
+
+    assert manager.fetch_subtitles(folder_path=str(tmp_path)) is None
+    assert captured["extra_args"] == {
+        "videoHash": "hash-value",
+        "videoSize": 987,
+        "filename": "Movie.mkv",
     }
 
 

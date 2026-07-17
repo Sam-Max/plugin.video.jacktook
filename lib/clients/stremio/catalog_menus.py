@@ -325,17 +325,30 @@ def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name):
     return any(extra.get("name") == extra_name for extra in (catalog.extra or []))
 
 
+def _catalog_extra_names(addon_url, catalog_type, catalog_id):
+    try:
+        catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id)
+    except Exception:
+        return set()
+    if not catalog:
+        return set()
+    return {extra.get("name") for extra in catalog.extra if extra.get("name")}
+
+
 def list_catalog(params):
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
     skip = int(params.get("skip", 0))
 
-    extras = {}
-    # Common Stremio extra params
-    for key in ["genre", "search"]:
-        if key in params:
-            extras[key] = params[key]
+    declared_extras = _catalog_extra_names(
+        params["addon_url"], params["catalog_type"], params["catalog_id"]
+    )
+    extras = {
+        key: params[key]
+        for key in declared_extras.union({"genre", "search"})
+        if params.get(key) not in (None, "")
+    }
 
     supports_skip = _catalog_supports_extra(
         params["addon_url"], params["catalog_type"], params["catalog_id"], "skip"
@@ -741,6 +754,10 @@ def list_stremio_episodes(params):
             imdb_id = details.external_ids.get("imdb_id", "")
             kodilog(f"Resolved IMDB ID: {imdb_id} from TMDB ID: {tmdb_id}")
 
+    default_video_id = getattr(getattr(meta_data, "behaviorHints", None), "defaultVideoId", None)
+    if default_video_id:
+        videos = sorted(videos, key=lambda video: video.id != default_video_id)
+
     addon = get_addon_by_base_url(params["addon_url"])
     has_stream_resource = addon_has_stream(params["addon_url"], params["catalog_type"], addon=addon)
     items = []
@@ -769,7 +786,10 @@ def list_stremio_episodes(params):
             "original_id": original_id,
         }
 
-        scoped_addon_url = params["addon_url"] if has_stream_resource else ""
+        preferred_stremio_streams = [asdict(stream) for stream in video.streams]
+        scoped_addon_url = "" if preferred_stremio_streams else (
+            params["addon_url"] if has_stream_resource else ""
+        )
 
         url = build_url(
             "search",
@@ -778,6 +798,7 @@ def list_stremio_episodes(params):
             query=meta_data.name,
             ids=ids,
             tv_data=tv_data,
+            preferred_stremio_streams=json.dumps(preferred_stremio_streams),
             scoped_addon_url=scoped_addon_url,
             stremio_addon_url=params["addon_url"],
             stremio_catalog_type=params["catalog_type"],
@@ -842,6 +863,7 @@ def list_stremio_episodes(params):
                         query=meta_data.name,
                         ids=ids,
                         tv_data=tv_data,
+                        preferred_stremio_streams=json.dumps(preferred_stremio_streams),
                         scoped_addon_url=scoped_addon_url,
                         stremio_addon_url=params["addon_url"],
                         stremio_catalog_type=params["catalog_type"],

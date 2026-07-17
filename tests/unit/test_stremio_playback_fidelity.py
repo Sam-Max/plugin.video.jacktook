@@ -5,7 +5,7 @@ import pytest
 
 from lib import search
 from lib.api.stremio.addon_manager import AddonManager
-from lib.api.stremio.models import Stream
+from lib.api.stremio.models import Meta, MetaBehaviorHints, Stream, Video
 from lib.clients.stremio import addon_client, catalog_menus
 from lib.clients.stremio.playback import (
     StremioPlaybackError,
@@ -941,3 +941,114 @@ def test_catalog_tv_streams_handles_dicts_and_malformed_candidates(monkeypatch):
     assert data["stream_subtitles"] == [
         {"url": "https://sub.example/episode.vtt", "lang": "eng"}
     ]
+
+
+def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
+    client = addon_client.StremioAddonCatalogsClient(
+        {"addon_url": "https://example.com/addon", "catalog_type": "movie", "catalog_id": "popular"}
+    )
+    captured = {}
+
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"metas": []}
+
+    monkeypatch.setattr(
+        client.session,
+        "get",
+        lambda url, **kwargs: captured.update(url=url) or _Response(),
+    )
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+
+    assert client.get_catalog_info(search="Spider & Friends", sort="top/rated") == {"metas": []}
+    assert captured["url"] == (
+        "https://example.com/addon/catalog/movie/popular/search=Spider%20%26%20Friends"
+        "/sort=top%2Frated.json"
+    )
+
+
+def test_preferred_video_streams_precede_normal_search_without_replacing_it(monkeypatch):
+    preferred = {
+        "url": "https://media.example/episode.mkv",
+        "behaviorHints": {"filename": "Episode.mkv", "videoHash": "video-hash", "videoSize": 123},
+    }
+    normal = TorrentStream(title="Jackett result", url="magnet:?xt=urn:btih:" + INFO_HASH)
+    captured = {}
+
+    monkeypatch.setattr(search, "_handle_super_quick_play", lambda _params: False)
+    monkeypatch.setattr(search, "set_content_type", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "set_watched_title", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(search, "search_client", lambda *args, **kwargs: [normal])
+    monkeypatch.setattr(search, "_process_search_results", lambda results, *_args, **_kwargs: results)
+    monkeypatch.setattr(search, "auto_play_enabled", lambda: False)
+    monkeypatch.setattr(
+        search,
+        "show_source_select",
+        lambda results, *_args, **_kwargs: captured.setdefault("results", results) or True,
+    )
+
+    search.run_search_entry(
+        {
+            "query": "Show",
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": '{"imdb_id": "tt123"}',
+            "preferred_stremio_streams": json.dumps([preferred]),
+        }
+    )
+
+    assert [source.title for source in captured["results"]] == ["Episode.mkv", "Jackett result"]
+    assert captured["results"][0].stremioMetadata == preferred
+
+
+def test_episode_navigation_orders_default_video_and_passes_its_streams(monkeypatch):
+    first = Video(id="first", title="First", released="", season=1, episode=1)
+    second = Video(
+        id="second",
+        title="Second",
+        released="",
+        season=1,
+        episode=2,
+        streams=[Stream.from_dict({"url": "https://media.example/default.mkv"})],
+    )
+    meta = Meta(
+        id="custom:show",
+        type="series",
+        name="",
+        videos=[first, second],
+        behaviorHints=MetaBehaviorHints(defaultVideoId="second"),
+    )
+    urls = []
+
+    class _ListItem:
+        def getVideoInfoTag(self):
+            return self
+
+        def __getattr__(self, _name):
+            return lambda *args, **kwargs: None
+
+    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args: {"meta": meta})
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *_args: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda *args, **kwargs: _ListItem())
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda *_args: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda: None)
+    monkeypatch.setattr(catalog_menus, "_append_context_menu_items", lambda *_args: None)
+    monkeypatch.setattr(catalog_menus, "kodi_play_media", lambda **_kwargs: "search")
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: urls.append((action, kwargs)) or action,
+    )
+
+    catalog_menus.list_stremio_episodes(
+        {"addon_url": "https://addon.example", "catalog_type": "series", "meta_id": "custom:show", "season": 1}
+    )
+
+    assert [json.loads(kwargs["preferred_stremio_streams"]) for _, kwargs in urls] == [
+        [{"url": "https://media.example/default.mkv", "ytId": None, "infoHash": None, "fileIdx": None, "externalUrl": None, "name": None, "title": None, "description": None, "behaviorHints": None, "subtitles": [], "fileMustInclude": None, "nzbUrl": None, "servers": [], "rarUrls": [], "zipUrls": [], "sevenZipUrls": [], "tgzUrls": [], "tarUrls": [], "meta": {}, "sources": [], "trackers": []}],
+        [],
+    ]
+    assert [kwargs["scoped_addon_url"] for _, kwargs in urls] == ["", "https://addon.example"]
