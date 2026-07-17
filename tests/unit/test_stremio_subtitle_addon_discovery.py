@@ -10,6 +10,7 @@ Covers:
 """
 
 import json
+import threading
 
 import pytest
 
@@ -72,11 +73,7 @@ def patch_opensubstremio_settings(monkeypatch, settings_store):
             return value if value is not None else default
         return default
 
-    def _set(key, value):
-        settings_store[key] = value
-
     monkeypatch.setattr(opensubstremio, "get_setting", _get)
-    monkeypatch.setattr(opensubstremio, "set_setting", _set)
     monkeypatch.setattr(opensubstremio, "subtitle_automation_enabled", lambda: False)
     return settings_store
 
@@ -198,28 +195,200 @@ def test_csv_roundtrip(patch_opensubstremio_settings):
 
 
 # ---------------------------------------------------------------------------
-# T8 - F3: empty selection => no HTTP
+# Integrated default source
 # ---------------------------------------------------------------------------
 
 
-def test_empty_selection_no_http(monkeypatch, patch_opensubstremio_settings):
-    """F3: with empty selection AND no legacy host, the external lookup is
-    skipped entirely; no HTTP request is made.
-    """
-    from lib.clients.subtitle import opensubstremio
+def test_empty_selection_queries_integrated_default(monkeypatch, patch_opensubstremio_settings):
+    """The integrated default does not require an addon-manager entry or selection."""
     from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
 
     patch_opensubstremio_settings["stremio_subtitle_addons"] = ""
     patch_opensubstremio_settings["stremio_sub_addon_host"] = ""
+    fetch_calls = []
 
-    def _fail_get(*args, **kwargs):
-        raise AssertionError("HTTP must NOT be called on empty selection")
-
-    monkeypatch.setattr(opensubstremio.requests, "get", _fail_get)
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
 
     client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
     result = client.get_subtitles("movie", "tt0111161", auto_select=True)
     assert result is None
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
+
+
+# ---------------------------------------------------------------------------
+# Default OpenSubtitles source injection
+# ---------------------------------------------------------------------------
+
+
+def test_default_and_selected_custom_sources_keep_default_first(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """The installed canonical default runs before explicitly selected custom sources."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps(
+            [
+                _addon_item("default", "https://opensubtitles-v3.strem.io/manifest.json"),
+                _addon_item("custom", "https://custom.example/manifest.json"),
+            ]
+        )
+    )
+    custom_key = manager.addons[1].key()
+    patch_opensubstremio_settings["stremio_subtitle_addons"] = custom_key
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+
+    assert sorted(fetch_calls) == ["https://custom.example", "https://opensubtitles-v3.strem.io"]
+    assert patch_opensubstremio_settings["stremio_subtitle_addons"] == custom_key
+
+
+def test_installed_default_is_queried_when_unselected(monkeypatch, patch_opensubstremio_settings):
+    """An empty selection still queries the canonical installed default."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps([_addon_item("renamed", "https://opensubtitles-v3.strem.io/manifest.json")])
+    )
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
+
+
+def test_selected_custom_source_works_without_installed_default(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """A missing manager default still queries the integrated endpoint first."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps([_addon_item("custom", "https://custom.example/manifest.json")])
+    )
+    patch_opensubstremio_settings["stremio_subtitle_addons"] = manager.addons[0].key()
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert sorted(fetch_calls) == ["https://custom.example", "https://opensubtitles-v3.strem.io"]
+
+
+def test_token_path_opensubtitles_instance_is_opt_in(monkeypatch, patch_opensubstremio_settings):
+    """A configured OpenSubtitles path is not confused with the canonical default."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps(
+            [
+                _addon_item(
+                    "configured",
+                    "https://opensubtitles-v3.strem.io/token/manifest.json",
+                )
+            ]
+        )
+    )
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
+
+    patch_opensubstremio_settings["stremio_subtitle_addons"] = manager.addons[0].key()
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert fetch_calls[0] == "https://opensubtitles-v3.strem.io"
+    assert sorted(fetch_calls[1:]) == [
+        "https://opensubtitles-v3.strem.io",
+        "https://opensubtitles-v3.strem.io/token",
+    ]
+
+
+def test_default_selected_twice_is_queried_once(monkeypatch, patch_opensubstremio_settings):
+    """Duplicate persisted default keys do not issue duplicate default requests."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps([_addon_item("default", "https://opensubtitles-v3.strem.io/manifest.json")])
+    )
+    default_key = manager.addons[0].key()
+    patch_opensubstremio_settings["stremio_subtitle_addons"] = f"{default_key},{default_key}"
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
+
+
+def test_integrated_default_skips_legacy_host_fallback(monkeypatch, patch_opensubstremio_settings):
+    """The obsolete legacy host is never queried alongside the integrated source."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps([_addon_item("default", "https://opensubtitles-v3.strem.io/manifest.json")])
+    )
+    patch_opensubstremio_settings["stremio_sub_addon_host"] = "https://legacy.example/subtitles"
+    fetch_calls = []
+    monkeypatch.setattr(
+        OpenSubtitleStremioClient,
+        "_fetch_subtitles_data_for_source",
+        lambda _self, base_url, *_args, **_kwargs: fetch_calls.append(base_url) or [],
+    )
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    assert (
+        client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager) is None
+    )
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
+    assert patch_opensubstremio_settings["stremio_subtitle_addons_migrated"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -295,13 +464,17 @@ def test_manual_external_subtitles_show_their_addon_labels(
     monkeypatch.setattr(
         OpenSubtitleStremioClient,
         "_fetch_subtitles_data_for_source",
-        lambda _self, base_url, *_args, **_kwargs: [
-            {
-                "id": base_url,
-                "url": f"{base_url}/subtitle.srt",
-                "lang": "eng",
-            }
-        ],
+        lambda _self, base_url, *_args, **_kwargs: (
+            []
+            if base_url == "https://opensubtitles-v3.strem.io"
+            else [
+                {
+                    "id": base_url,
+                    "url": f"{base_url}/subtitle.srt",
+                    "lang": "eng",
+                }
+            ]
+        ),
     )
     created_items = []
 
@@ -408,8 +581,11 @@ def test_idsupported_prefix_skip(monkeypatch, patch_opensubstremio_settings):
     ]
     manager = AddonManager(json.dumps(src))
 
+    fetch_calls = []
+
     def _fetch(self, base_url, *args, **kwargs):
-        raise AssertionError("Kitsy video must not trigger HTTP on tt-only addon")
+        fetch_calls.append(base_url)
+        return []
 
     keys = [a.key() for a in manager.addons]
     patch_opensubstremio_settings["stremio_subtitle_addons"] = ",".join(keys)
@@ -421,20 +597,20 @@ def test_idsupported_prefix_skip(monkeypatch, patch_opensubstremio_settings):
 
     client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
     result = client.get_subtitles("movie", "kitsu:1", auto_select=True, addon_manager=manager)
-    # No resolved sources -> result is None (silent skip).
+    # The direct default is queried; the unsupported selected addon is skipped.
     assert result is None
+    assert fetch_calls == ["https://opensubtitles-v3.strem.io"]
 
 
 # ---------------------------------------------------------------------------
-# T8 - F5: legacy migration runs once
+# Legacy host fallback remains disabled
 # ---------------------------------------------------------------------------
 
 
-def test_legacy_migration_once(monkeypatch, patch_opensubstremio_settings):
-    """F5: first call with empty selection + legacy host queries the legacy
-    host exactly once and writes the memento. The second call must NOT
-    re-query the legacy host.
-    """
+def test_legacy_host_is_not_queried_with_integrated_default(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """The obsolete host cannot replace or run alongside the integrated source."""
     from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
 
     store = patch_opensubstremio_settings
@@ -446,7 +622,7 @@ def test_legacy_migration_once(monkeypatch, patch_opensubstremio_settings):
 
     def _fetch(self, base_url, *args, **kwargs):
         fetch_calls.append(base_url)
-        return [{"id": "L1", "url": "https://cdn/legacy.srt", "lang": "eng"}]
+        return []
 
     monkeypatch.setattr(
         OpenSubtitleStremioClient,
@@ -456,18 +632,11 @@ def test_legacy_migration_once(monkeypatch, patch_opensubstremio_settings):
 
     client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
 
-    # First call: legacy queried, memento set.
     first = client.get_subtitles("movie", "tt0111161", auto_select=True)
-    assert first is not None
+    assert first is None
     assert len(fetch_calls) == 1
-    assert fetch_calls[0] == "https://legacy.example/subtitles"
-    assert store["stremio_subtitle_addons_migrated"] is True
-
-    # Second call: legacy NOT queried.
-    fetch_calls.clear()
-    second = client.get_subtitles("movie", "tt0111161", auto_select=True)
-    assert second is None
-    assert fetch_calls == []
+    assert fetch_calls[0] == "https://opensubtitles-v3.strem.io"
+    assert store["stremio_subtitle_addons_migrated"] is False
 
 
 # ---------------------------------------------------------------------------
@@ -475,43 +644,31 @@ def test_legacy_migration_once(monkeypatch, patch_opensubstremio_settings):
 # ---------------------------------------------------------------------------
 
 
-def test_autoplay_timeout_cap(monkeypatch, patch_opensubstremio_settings):
-    """F6: with auto_select=True and elapsed time exceeding AUTO_SELECT_ENDPOINT_TIMEOUT,
-    the loop aborts via the cap break so remaining addons are NOT queried.
-    Deterministically forces elapsed time past the cap via a fake time.monotonic
-    so the behavior is pinned (removing the break in opensubstremio must fail
-    this test).
-    """
-    import lib.clients.subtitle.opensubstremio as obs_mod
+def test_auto_select_dispatches_all_sources_before_a_blocking_source_completes(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """Every source is submitted even while the integrated source is blocked."""
     from lib.api.stremio.addon_manager import AddonManager
     from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
 
-    # Fake clock: each call advances 3 simulated seconds. Sequence produced:
-    #   start = monotonic() -> 0  (start anchor recorded)
-    #   iter 1 cap check: monotonic() -> 3 (elapsed 3 < cap 5 -> proceed)
-    #   iter 1 fetch (returns subs), queried=1
-    #   iter 2 cap check: monotonic() -> 6 (elapsed 6 >= cap 5 -> BREAK)
-    # Hence only the first addon is queried; remaining 2 are skipped.
-    clock = {"t": 0.0}
-
-    def fake_monotonic():
-        clock["t"] += 3.0
-        return clock["t"]
-
-    monkeypatch.setattr(obs_mod.time, "monotonic", fake_monotonic)
-
     src = [
-        _addon_item("slow1", "https://slow1.example/manifest.json", name="Slow1"),
-        _addon_item("slow2", "https://slow2.example/manifest.json", name="Slow2"),
-        _addon_item("slow3", "https://slow3.example/manifest.json", name="Slow3"),
+        _addon_item("custom", "https://custom.example/manifest.json", name="Custom"),
     ]
     manager = AddonManager(json.dumps(src))
-
-    fetch_calls = []
+    default_started = threading.Event()
+    custom_started = threading.Event()
+    release_default = threading.Event()
 
     def _fetch(self, base_url, *args, **kwargs):
-        fetch_calls.append(base_url)
-        return [{"id": "x", "url": f"https://cdn/{base_url}.srt", "lang": "eng"}]
+        if base_url == "https://opensubtitles-v3.strem.io":
+            default_started.set()
+            assert custom_started.wait(1)
+            assert not release_default.is_set()
+            release_default.set()
+            return []
+        custom_started.set()
+        assert default_started.wait(1)
+        return [{"id": "custom", "url": "https://cdn/custom.srt", "lang": "eng"}]
 
     keys = [a.key() for a in manager.addons]
     patch_opensubstremio_settings["stremio_subtitle_addons"] = ",".join(keys)
@@ -524,13 +681,36 @@ def test_autoplay_timeout_cap(monkeypatch, patch_opensubstremio_settings):
     client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
     result = client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager)
 
-    # A result is returned (whatever was collected before the cap fired).
     assert result is not None
-    # THE cap must fire: only the first addon is queried, the other two are
-    # skipped. If this assertion fails, someone broke the break+cap logic.
-    assert len(fetch_calls) == 1, (
-        f"cap should abort after the first addon; got fetch_calls={fetch_calls}"
+    assert [subtitle["id"] for subtitle in result] == ["custom"]
+
+
+def test_parallel_lookup_merges_in_source_order_despite_reverse_completion(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """Completion order must not change source order, labels, or dedup precedence."""
+    from lib.api.stremio.addon_manager import AddonManager
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    manager = AddonManager(
+        json.dumps([_addon_item("custom", "https://custom.example/manifest.json", name="Custom")])
     )
+    patch_opensubstremio_settings["stremio_subtitle_addons"] = manager.addons[0].key()
+    custom_completed = threading.Event()
+
+    def _fetch(self, base_url, *args, **kwargs):
+        if base_url == "https://opensubtitles-v3.strem.io":
+            assert custom_completed.wait(1)
+            return [{"id": "default", "url": "https://cdn/default.srt", "lang": "eng"}]
+        custom_completed.set()
+        return [{"id": "custom", "url": "https://cdn/custom.srt", "lang": "eng"}]
+
+    monkeypatch.setattr(OpenSubtitleStremioClient, "_fetch_subtitles_data_for_source", _fetch)
+
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+    result = client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager)
+
+    assert [subtitle["id"] for subtitle in result] == ["default", "custom"]
 
 
 def test_autoplay_timeout_cap_generous_path(monkeypatch, patch_opensubstremio_settings):
@@ -538,8 +718,6 @@ def test_autoplay_timeout_cap_generous_path(monkeypatch, patch_opensubstremio_se
     addons are queried and the result aggregates across all sources. Ensures
     the cap path does not over-aggressively bail when there is headroom.
     """
-    import time as _time
-
     from lib.api.stremio.addon_manager import AddonManager
     from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
 
@@ -569,8 +747,8 @@ def test_autoplay_timeout_cap_generous_path(monkeypatch, patch_opensubstremio_se
     result = client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager)
 
     assert result is not None
-    assert len(fetch_calls) == 3, (
-        f"generous cap should allow all 3 addons; got fetch_calls={fetch_calls}"
+    assert len(fetch_calls) == 4, (
+        f"generous cap should allow the default and all 3 addons; got fetch_calls={fetch_calls}"
     )
 
 
@@ -592,9 +770,14 @@ def test_independent_failure_isolation(monkeypatch, patch_opensubstremio_setting
     ]
     manager = AddonManager(json.dumps(src))
 
+    successful_source_completed = threading.Event()
+
     def _fetch(self, base_url, *args, **kwargs):
         if "k1.example" in base_url:
-            return None  # failure path: HTTP 500 / network error
+            assert successful_source_completed.wait(1)
+            raise RuntimeError("unavailable")
+        if "k2.example" in base_url:
+            successful_source_completed.set()
         return [{"id": "ok1", "url": "https://cdn/ok1.srt", "lang": "eng"}]
 
     keys = [a.key() for a in manager.addons]
@@ -609,6 +792,53 @@ def test_independent_failure_isolation(monkeypatch, patch_opensubstremio_setting
     result = client.get_subtitles("movie", "tt0111161", auto_select=True, addon_manager=manager)
     assert result is not None
     assert [s["id"] for s in result] == ["ok1"]
+
+
+def test_executor_failure_returns_no_subtitles_without_opening_ui(
+    monkeypatch, patch_opensubstremio_settings
+):
+    """Executor construction failures leave manual lookup as a graceful no-result."""
+    from lib.clients.subtitle import opensubstremio
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    class BrokenExecutor:
+        def __init__(self, *args, **kwargs):
+            raise RuntimeError("no threads")
+
+    monkeypatch.setattr(opensubstremio, "ThreadPoolExecutor", BrokenExecutor)
+    client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
+
+    assert client.get_subtitles("movie", "tt0111161") is None
+
+
+def test_auto_select_source_fetch_disables_retries_and_retry_sleep(monkeypatch):
+    from lib.clients.subtitle import opensubstremio
+    from lib.clients.subtitle.opensubstremio import OpenSubtitleStremioClient
+
+    calls = []
+    delays = []
+    original_fetch = OpenSubtitleStremioClient._fetch_subtitles_data_for_source
+
+    def _fetch(self, *args, **kwargs):
+        calls.append(kwargs)
+        return original_fetch(self, *args, **kwargs)
+
+    def _fail_request(*_args, **_kwargs):
+        raise RuntimeError("unavailable")
+
+    monkeypatch.setattr(OpenSubtitleStremioClient, "_fetch_subtitles_data_for_source", _fetch)
+    monkeypatch.setattr(opensubstremio.requests, "get", _fail_request)
+    monkeypatch.setattr(opensubstremio.time, "sleep", delays.append)
+
+    result = OpenSubtitleStremioClient(
+        lambda *_args, **_kwargs: None
+    )._query_and_merge_subtitle_sources(
+        [("source", "https://example.com", "Source")], "movie", "tt123", None, None, True
+    )
+
+    assert result is None
+    assert calls == [{"max_retries": 0}]
+    assert delays == []
 
 
 # ---------------------------------------------------------------------------
@@ -778,6 +1008,8 @@ def test_summary_log_lines_emitted(monkeypatch, patch_opensubstremio_settings):
     monkeypatch.setattr(opensubstremio, "kodilog", _fake_log)
 
     def _fetch(self, base_url, *args, **kwargs):
+        if base_url == "https://opensubtitles-v3.strem.io":
+            return []
         return [{"id": "x1", "url": "https://cdn/x1.srt", "lang": "eng"}]
 
     keys = [a.key() for a in manager.addons]
@@ -793,6 +1025,6 @@ def test_summary_log_lines_emitted(monkeypatch, patch_opensubstremio_settings):
 
     summary = [m for m in captured_logs if "external lookup: queried" in m]
     assert summary, f"expected summary log line, got {captured_logs!r}"
-    assert "1 addon(s)" in summary[0]
+    assert "2 addon(s)" in summary[0]
     assert "1 returned 1 subs total" in summary[0]
     assert "0 failed" in summary[0]

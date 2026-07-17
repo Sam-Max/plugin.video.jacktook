@@ -2,6 +2,7 @@ import contextlib
 import os
 import re
 import time
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
@@ -20,7 +21,6 @@ from lib.utils.kodi.utils import (
     ADDON_PROFILE_PATH,
     get_setting,
     kodilog,
-    set_setting,
     translation,
 )
 
@@ -30,6 +30,7 @@ AUTO_SELECT_ENDPOINT_TIMEOUT = 5
 DEFAULT_DOWNLOAD_TIMEOUT = 15
 AUTO_SELECT_DOWNLOAD_TIMEOUT = 5
 MAX_RETRY_DELAY = 5.0
+DEFAULT_STREMIO_SUBTITLE_ADDON_URL = "https://opensubtitles-v3.strem.io/"
 
 
 def safe_subtitle_path_component(value: Any) -> str:
@@ -187,130 +188,82 @@ class OpenSubtitleStremioClient:
         stripped = head.rstrip("0123456789")
         return stripped or head
 
-    def _resolve_legacy_migration(self, selected_keys: List[str]) -> Optional[Tuple[str, str]]:
-        """One-time legacy host migration (T6 / F5).
-
-        Returns a ``(pseudo_key, base_url)`` tuple if the legacy
-        ``stremio_sub_addon_host`` should be queried as a pseudo-source
-        for this lookup, otherwise ``None``. Writes the
-        ``stremio_subtitle_addons_migrated`` memento on first use so
-        subsequent calls return ``None``.
-        """
+    @staticmethod
+    def _canonical_subtitle_addon_keys(addon_manager: Any) -> set:
+        """Return keys for manager entries that point to the integrated source."""
         try:
             from lib.api.stremio.addon_manager import normalize_transport_url
-        except Exception:
-            normalize_transport_url = None  # type: ignore[assignment]
 
-        try:
-            migrated = bool(get_setting("stremio_subtitle_addons_migrated", False))
+            canonical_url = normalize_transport_url(DEFAULT_STREMIO_SUBTITLE_ADDON_URL)
         except Exception:
-            migrated = False
+            return set()
 
-        if migrated:
-            return None
-        if selected_keys:
-            # Selection present (even if only legacy->new keys were migrated);
-            # do not auto-inject legacy.
-            return None
-        try:
-            legacy_raw = str(get_setting("stremio_sub_addon_host", "") or "").strip()
-        except Exception:
-            legacy_raw = ""
-        if not legacy_raw:
-            return None
-        if normalize_transport_url is not None:
+        keys = set()
+        for addon in getattr(addon_manager, "addons", []) or []:
             try:
-                legacy_host = normalize_transport_url(legacy_raw)
+                if normalize_transport_url(addon.url()) == canonical_url:
+                    keys.add(addon.key())
             except Exception:
-                legacy_host = legacy_raw
-        else:
-            legacy_host = legacy_raw
-        if not legacy_host:
-            return None
-        with contextlib.suppress(Exception):
-            set_setting("stremio_subtitle_addons_migrated", True)
-        kodilog(
-            "[StremioSubs] legacy host migrated (one-time)",
-            level=xbmc.LOGINFO,
-        )
-        return (f"legacy|{legacy_host}", legacy_host)
+                continue
+        return keys
 
-    def get_subtitles(
-        self,
-        mode: str,
-        imdb_id: str,
-        season: Optional[int] = None,
-        episode: Optional[int] = None,
-        auto_select: bool = False,
-        addon_manager: Optional[Any] = None,
-    ) -> Optional[List[Dict[str, Any]]]:
-        """Resolve subtitles from all selected Stremio addons (multi-source).
-
-        Flow:
-            1. Read ``stremio_subtitle_addons`` (CSV of addon instance keys).
-            2. Run one-time legacy migration (T6) if applicable.
-            3. Resolve each key -> live ``Addon`` via ``AddonManager``.
-            4. Filter by ``addon.isSupported("subtitles", type, id_prefix)``.
-            5. Sequential query each accepted addon's ``addon.url()`` in
-               selection order; cap by elapsed time under auto_select (F6).
-            6. Merge + dedup by ``url`` else ``"{sub_id}|{lang}"`` (F4/EC5).
-            7. Apply language filter (F8).
-        """
-        # 1. Read selection (CSV of addon instance keys).
+    @staticmethod
+    def _read_selected_subtitle_addon_keys() -> List[str]:
+        """Read the persisted subtitle-addon selection without changing it."""
         try:
             raw_selection = str(get_setting("stremio_subtitle_addons", "") or "").strip()
         except Exception:
             raw_selection = ""
-        selected_keys: List[str] = [k.strip() for k in raw_selection.split(",") if k.strip()]
+        return [key.strip() for key in raw_selection.split(",") if key.strip()]
 
-        # 2. One-time legacy migration (T6 / F5).
-        legacy = self._resolve_legacy_migration(selected_keys)
-        if legacy is not None:
-            legacy_key, legacy_base = legacy
-            # Prepend legacy to selection for this lookup only; selected_keys
-            # intentionally NOT mutated so future reads see only user picks.
-            ordered_sources: List[Tuple[str, str]] = [(legacy_key, legacy_base)]
-            for k in selected_keys:
-                ordered_sources.append((k, ""))
-        else:
-            ordered_sources = [(k, "") for k in selected_keys]
+    def _resolve_runtime_subtitle_sources(
+        self,
+        selected_keys: List[str],
+        addon_manager: Optional[Any],
+    ) -> Tuple[Optional[Any], List[Tuple[str, str]]]:
+        """Resolve the integrated default and selected custom subtitle sources."""
+        live_manager = addon_manager
+        if live_manager is None:
+            try:
+                from lib.clients.stremio.helpers import get_addons
 
-        # EC4: no source at all -> silent skip, caller treats as no result.
-        if not ordered_sources:
-            return None
+                live_manager = get_addons()
+            except Exception:
+                live_manager = None
 
-        # 3. Resolve addons. Defer get_addons() until we actually need it,
-        # so legacy-only lookups don't trigger the live catalog fetch.
-        resolved: List[Tuple[str, str, str]] = []  # (source_key, base_url, display_label)
+        canonical_keys = self._canonical_subtitle_addon_keys(live_manager)
+        ordered_sources = [("integrated-default", DEFAULT_STREMIO_SUBTITLE_ADDON_URL.rstrip("/"))]
+        seen_keys = set()
+        for key in selected_keys:
+            if key in canonical_keys or key in seen_keys:
+                continue
+            seen_keys.add(key)
+            ordered_sources.append((key, ""))
+        return live_manager, ordered_sources
+
+    def _resolve_compatible_subtitle_sources(
+        self,
+        ordered_sources: List[Tuple[str, str]],
+        addon_manager: Optional[Any],
+        mode: str,
+        imdb_id: str,
+    ) -> List[Tuple[str, str, str]]:
+        """Resolve selected sources and discard unavailable or incompatible addons."""
+        resolved: List[Tuple[str, str, str]] = []
         id_prefix = self._id_prefix(imdb_id)
         video_type = "series" if mode == "tv" else "movie"
-        live_manager: Optional[Any] = addon_manager
         for source_key, base_url_hint in ordered_sources:
             if base_url_hint:
-                # Legacy pseudo-source: no resolution needed.
-                resolved.append((source_key, base_url_hint, "Legacy subtitle addon"))
+                resolved.append((source_key, base_url_hint, "OpenSubtitles"))
                 continue
-            if live_manager is None:
-                try:
-                    from lib.clients.stremio.helpers import get_addons
-
-                    live_manager = get_addons()
-                except Exception as e:
-                    kodilog(
-                        f"[StremioSubs] external lookup skipped: no addons "
-                        f"resolved and none selected ({e})",
-                        level=xbmc.LOGDEBUG,
-                    )
-                    break
-                if live_manager is None or not getattr(live_manager, "addons", None):
-                    kodilog(
-                        "[StremioSubs] external lookup skipped: no addons "
-                        "resolved and none selected",
-                        level=xbmc.LOGDEBUG,
-                    )
-                    break
+            if addon_manager is None:
+                kodilog(
+                    "[StremioSubs] external lookup skipped: no addons resolved and none selected",
+                    level=xbmc.LOGDEBUG,
+                )
+                break
             try:
-                addon = live_manager.get_addon_by_key(source_key)
+                addon = addon_manager.get_addon_by_key(source_key)
             except Exception:
                 addon = None
             if addon is None:
@@ -340,15 +293,18 @@ class OpenSubtitleStremioClient:
             except Exception:
                 source_label = getattr(getattr(addon, "manifest", None), "name", "") or source_key
             resolved.append((source_key, base_url, source_label))
+        return resolved
 
-        if not resolved:
-            kodilog(
-                "[StremioSubs] external lookup skipped: no addons resolved and none selected",
-                level=xbmc.LOGDEBUG,
-            )
-            return None
-
-        # 4-5. Sequential per-source query, respecting auto-select cap.
+    def _query_and_merge_subtitle_sources(
+        self,
+        sources: List[Tuple[str, str, str]],
+        mode: str,
+        imdb_id: str,
+        season: Optional[int],
+        episode: Optional[int],
+        auto_select: bool,
+    ) -> Optional[Tuple[List[Dict[str, Any]], List[str]]]:
+        """Query sources concurrently, then merge their responses in source order."""
         per_call_timeout = get_int_setting("stremio_timeout") or DEFAULT_ENDPOINT_TIMEOUT
         if auto_select:
             per_call_timeout = min(per_call_timeout, AUTO_SELECT_ENDPOINT_TIMEOUT)
@@ -362,22 +318,76 @@ class OpenSubtitleStremioClient:
         sources_with_subs = 0
         dup_count = 0
         dup_key_kind = "url"
-        cap_broken = False
-        for source_key, base_url, source_label in resolved:
-            if cap_seconds is not None and (time.monotonic() - start) >= cap_seconds:
-                remaining = len(resolved) - queried
-                kodilog(
-                    f"[StremioSubs] autoplay timeout cap reached after "
-                    f"{round(time.monotonic() - start, 2)}s, skipping remaining "
-                    f"{remaining} addon(s)",
-                    level=xbmc.LOGINFO,
-                )
-                cap_broken = True
-                break
-            queried += 1
-            result = self._fetch_subtitles_data_for_source(
-                base_url, mode, imdb_id, season, episode, timeout=per_call_timeout
+        results: Dict[Future, Optional[List[Dict[str, Any]]]] = {}
+        futures: List[Tuple[str, str, str, Future]] = []
+        executor: Optional[ThreadPoolExecutor] = None
+        timed_out = False
+
+        try:
+            executor = ThreadPoolExecutor(max_workers=len(sources))
+            for source_key, base_url, source_label in sources:
+                try:
+                    retry_options = {"max_retries": 0} if auto_select else {}
+                    future = executor.submit(
+                        self._fetch_subtitles_data_for_source,
+                        base_url,
+                        mode,
+                        imdb_id,
+                        season,
+                        episode,
+                        per_call_timeout,
+                        **retry_options,
+                    )
+                except Exception as error:
+                    failed += 1
+                    kodilog(
+                        f"[StremioSubs] addon {source_key} dispatch failed: {type(error).__name__}",
+                        level=xbmc.LOGWARNING,
+                    )
+                    continue
+                futures.append((source_key, base_url, source_label, future))
+
+            queried = len(futures)
+            pending = [future for _, _, _, future in futures]
+            if cap_seconds is None:
+                done, _ = wait(pending)
+            else:
+                remaining = max(0.0, cap_seconds - (time.monotonic() - start))
+                done, not_done = wait(pending, timeout=remaining)
+                timed_out = bool(not_done)
+                for future in not_done:
+                    future.cancel()
+
+            for future in done:
+                try:
+                    results[future] = future.result()
+                except Exception as error:
+                    results[future] = None
+                    kodilog(
+                        f"[StremioSubs] addon worker failed: {type(error).__name__}",
+                        level=xbmc.LOGWARNING,
+                    )
+        except Exception as error:
+            kodilog(
+                f"[StremioSubs] external lookup dispatch failed: {type(error).__name__}",
+                level=xbmc.LOGWARNING,
             )
+        finally:
+            if executor is not None:
+                # Auto-select must return at its shared deadline rather than wait for retries.
+                executor.shutdown(wait=not auto_select)
+
+        if timed_out:
+            kodilog(
+                f"[StremioSubs] autoplay timeout cap reached after "
+                f"{round(time.monotonic() - start, 2)}s; using completed responses",
+                level=xbmc.LOGINFO,
+            )
+
+        for source_key, _base_url, source_label, future in futures:
+            if future not in results:
+                continue
+            result = results[future]
             if result is None:
                 failed += 1
                 continue
@@ -401,8 +411,6 @@ class OpenSubtitleStremioClient:
                     key = f"{sub_id}|{sub_lang}"
                     kind = "sub_id|lang"
                 else:
-                    # No usable key - keep but mark with a synthetic unique key
-                    # so we still preserve the entry without collapsing siblings.
                     key = f"_anon|{id(sub)}"
                     kind = "anon"
                 if key in seen_keys:
@@ -413,26 +421,28 @@ class OpenSubtitleStremioClient:
                 merged.append(sub)
                 merged_source_labels.append(source_label)
 
-        # 6. Dedup summary.
         if dup_count:
             kodilog(
                 f"[StremioSubs] dedup: {dup_count} duplicate(s) removed (key={dup_key_kind})",
                 level=xbmc.LOGDEBUG,
             )
-
         kodilog(
             f"[StremioSubs] external lookup: queried {queried} addon(s), "
             f"{sources_with_subs} returned {len(merged)} subs total, "
             f"{failed} failed",
             level=xbmc.LOGINFO,
         )
-
-        if cap_broken and not merged:
-            return None
         if not merged:
             return None
+        return merged, merged_source_labels
 
-        # 7. Language filter (F8) - applies AFTER merge+dedup.
+    @staticmethod
+    def _apply_subtitle_language_or_manual_selection(
+        subtitles: List[Dict[str, Any]],
+        source_labels: List[str],
+        auto_select: bool,
+    ) -> List[Dict[str, Any]]:
+        """Apply the existing automatic language filter or manual multiselect."""
         try:
             sub_language = get_setting("subtitle_language")
             subtitle_automation = subtitle_automation_enabled()
@@ -441,28 +451,76 @@ class OpenSubtitleStremioClient:
             subtitle_automation = False
         if auto_select or subtitle_automation:
             target_lang = get_language_code(sub_language) if sub_language else ""
-            filtered = [s for s in merged if s.get("lang") == target_lang]
+            filtered = [subtitle for subtitle in subtitles if subtitle.get("lang") == target_lang]
             if filtered:
                 return filtered
             return []
 
-        # 8. Manual multiselect.
         items = [
             xbmcgui.ListItem(
-                label=(f"{translation(90665) % i} — {source_label or 'Stremio subtitle addon'}"),
-                label2=language_code_to_name(s.get("lang") or ""),
+                label=(
+                    f"{translation(90665) % index} — {source_label or 'Stremio subtitle addon'}"
+                ),
+                label2=language_code_to_name(subtitle.get("lang") or ""),
             )
-            for i, (s, source_label) in enumerate(zip(merged, merged_source_labels))
+            for index, (subtitle, source_label) in enumerate(zip(subtitles, source_labels))
         ]
-        dialog = xbmcgui.Dialog()
-        selected_indices = dialog.multiselect(
+        selected_indices = xbmcgui.Dialog().multiselect(
             translation(90256),
             items,
             useDetails=True,
         )
         if selected_indices is None:
             return []
-        return [merged[i] for i in selected_indices]
+        return [subtitles[index] for index in selected_indices]
+
+    def get_subtitles(
+        self,
+        mode: str,
+        imdb_id: str,
+        season: Optional[int] = None,
+        episode: Optional[int] = None,
+        auto_select: bool = False,
+        addon_manager: Optional[Any] = None,
+    ) -> Optional[List[Dict[str, Any]]]:
+        """Resolve subtitles from all selected Stremio addons (multi-source).
+
+        Flow:
+            1. Read ``stremio_subtitle_addons`` (CSV of addon instance keys).
+            2. Prepend the canonical OpenSubtitles endpoint at runtime.
+            3. Resolve each selected custom key -> live ``Addon`` via ``AddonManager``.
+            4. Filter custom addons by ``addon.isSupported("subtitles", type, id_prefix)``.
+            5. Query each accepted addon's ``addon.url()`` concurrently; merge
+               completed responses in selection order and cap auto-select elapsed time.
+            6. Merge + dedup by ``url`` else ``"{sub_id}|{lang}"`` (F4/EC5).
+            7. Apply language filter (F8).
+        """
+        selected_keys = self._read_selected_subtitle_addon_keys()
+        live_manager, ordered_sources = self._resolve_runtime_subtitle_sources(
+            selected_keys, addon_manager
+        )
+        if not ordered_sources:
+            return None
+
+        resolved = self._resolve_compatible_subtitle_sources(
+            ordered_sources, live_manager, mode, imdb_id
+        )
+
+        if not resolved:
+            kodilog(
+                "[StremioSubs] external lookup skipped: no addons resolved and none selected",
+                level=xbmc.LOGDEBUG,
+            )
+            return None
+        merged = self._query_and_merge_subtitle_sources(
+            resolved, mode, imdb_id, season, episode, auto_select
+        )
+        if merged is None:
+            return None
+        subtitles, source_labels = merged
+        return self._apply_subtitle_language_or_manual_selection(
+            subtitles, source_labels, auto_select
+        )
 
     def select_subtitles(
         self,
