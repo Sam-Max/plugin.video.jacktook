@@ -278,6 +278,7 @@ def test_pipe_in_direct_locator_remains_rejected():
         {"externalUrl": "https://external.example/watch"},
         {"rarUrls": ["https://archive.example/movie.rar"]},
         {"zipUrls": ["https://archive.example/movie.zip"]},
+        {"7zipUrls": ["https://archive.example/movie.7z"]},
         {"nzbUrl": "https://usenet.example/movie.nzb"},
         {"url": "magnet:?xt=urn:btih:" + INFO_HASH},
         {"url": "javascript:alert(1)"},
@@ -291,6 +292,16 @@ def test_classify_rejects_unsupported_or_malformed_locators(payload):
     assert decision.source_class == "unsupported"
     assert decision.supported is False
     assert decision.reason
+
+
+def test_normalize_stream_treats_raw_7zip_urls_as_known_archive_urls():
+    archive_url = "https://archive.example/movie.7z"
+
+    candidate = normalize_stream({"7zipUrls": [archive_url]})
+
+    assert candidate.archiveUrls == [archive_url]
+    assert "7zipUrls" not in candidate.metadata
+    assert classify(candidate).source_class == "unsupported"
 
 
 def test_hash_resolution_deterministically_combines_sources_and_legacy_trackers():

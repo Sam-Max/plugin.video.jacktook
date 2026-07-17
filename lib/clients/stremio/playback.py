@@ -118,7 +118,7 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
     sources = _string_list(_mapping_value(merged, "sources"))
     trackers = _string_list(_mapping_value(merged, "trackers"))
     archive_urls = []
-    for key in ("rarUrls", "zipUrls", "sevenZipUrls", "tgzUrls", "tarUrls"):
+    for key in ("rarUrls", "zipUrls", "sevenZipUrls", "7zipUrls", "tgzUrls", "tarUrls"):
         archive_urls.extend(_string_list(_mapping_value(merged, key)))
 
     known_fields = {
@@ -127,7 +127,8 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
         "videoSize", "videoHash", "video_hash", "subtitles", "streamSubtitles",
         "stream_subtitles", "sources", "trackers", "proxyHeaders", "proxy_headers", "headers",
         "stremioMetadata", "stremio_metadata", "behaviorHints", "behavior_hints",
-        "fileMustInclude", "nzbUrl", "rarUrls", "zipUrls", "sevenZipUrls", "tgzUrls", "tarUrls",
+        "fileMustInclude", "nzbUrl", "rarUrls", "zipUrls", "sevenZipUrls", "7zipUrls", "tgzUrls",
+        "tarUrls",
     }
     extra_metadata = dict(metadata) if isinstance(metadata, Mapping) else {}
     extra_metadata.update({key: value for key, value in values.items() if key not in known_fields})

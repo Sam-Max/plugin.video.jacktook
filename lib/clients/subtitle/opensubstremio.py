@@ -1,5 +1,6 @@
 import contextlib
 import os
+import re
 import time
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
@@ -28,6 +29,35 @@ DEFAULT_ENDPOINT_TIMEOUT = 10
 AUTO_SELECT_ENDPOINT_TIMEOUT = 5
 DEFAULT_DOWNLOAD_TIMEOUT = 15
 AUTO_SELECT_DOWNLOAD_TIMEOUT = 5
+MAX_RETRY_DELAY = 5.0
+
+
+def safe_subtitle_path_component(value: Any) -> str:
+    """Return a filesystem-safe, single component for addon-provided identifiers."""
+    component = re.sub(r"[^A-Za-z0-9._-]", "_", str(value or ""))
+    return component if component not in ("", ".", "..") else "unknown"
+
+
+def _redact_subtitle_url(url: Any) -> str:
+    """Keep hosts useful for diagnostics without exposing signed URL details."""
+    parsed = urlparse(str(url or ""))
+    if parsed.scheme and parsed.hostname:
+        return f"{parsed.scheme}://{parsed.hostname}/<redacted>"
+    return "<redacted URL>"
+
+
+def _retry_delay(response: Any, attempt: int, retry_delay: float = 1.0) -> float:
+    """Return a bounded Retry-After delay, falling back to exponential backoff."""
+    retry_after = str((getattr(response, "headers", {}) or {}).get("Retry-After", ""))
+    try:
+        return min(MAX_RETRY_DELAY, max(0.0, float(retry_after)))
+    except (TypeError, ValueError):
+        fallback = retry_delay * float(2**attempt)
+        return float(min(MAX_RETRY_DELAY, fallback))
+
+
+def _is_obvious_html_response(content: bytes) -> bool:
+    return content.lstrip().lower().startswith((b"<!doctype html", b"<html", b"<head", b"<body"))
 
 
 class OpenSubtitleStremioClient:
@@ -72,38 +102,54 @@ class OpenSubtitleStremioClient:
             - ``None`` on non-200, network error, or non-JSON response
         """
         url = self._build_url(base_url, mode, imdb_id, season, episode)
+        safe_base_url = _redact_subtitle_url(base_url)
         for attempt in range(max_retries + 1):
             try:
                 response = requests.get(url, timeout=timeout)
             except Exception as e:
                 if attempt < max_retries:
                     kodilog(
-                        f"[StremioSubs] addon {base_url} failed (attempt {attempt + 1}/{max_retries + 1}), retrying: {e}",  # noqa: E501
+                        f"[StremioSubs] addon {safe_base_url} failed "
+                        f"(attempt {attempt + 1}/{max_retries + 1}), retrying: "
+                        f"{type(e).__name__}",
                         level=xbmc.LOGWARNING,
                     )
                     time.sleep(retry_delay)
                     continue
                 kodilog(
-                    f"[StremioSubs] addon {base_url} failed after {max_retries + 1} attempts: {e}",
+                    f"[StremioSubs] addon {safe_base_url} failed after "
+                    f"{max_retries + 1} attempts: {type(e).__name__}",
                     level=xbmc.LOGWARNING,
                 )
                 return None
             if response.status_code != 200:
+                if response.status_code == 429 and attempt < max_retries:
+                    delay = _retry_delay(response, attempt, retry_delay)
+                    kodilog(
+                        f"[StremioSubs] addon {safe_base_url} rate limited "
+                        f"(attempt {attempt + 1}/{max_retries + 1}), retrying in {delay}s",
+                        level=xbmc.LOGWARNING,
+                    )
+                    time.sleep(delay)
+                    continue
                 if 400 <= response.status_code < 500:
                     kodilog(
-                        f"[StremioSubs] addon {base_url} failed: HTTP {response.status_code}",
+                        f"[StremioSubs] addon {safe_base_url} failed: HTTP {response.status_code}",
                         level=xbmc.LOGWARNING,
                     )
                     return None
                 if attempt < max_retries:
                     kodilog(
-                        f"[StremioSubs] addon {base_url} failed (attempt {attempt + 1}/{max_retries + 1}), retrying: HTTP {response.status_code}",  # noqa: E501
+                        f"[StremioSubs] addon {safe_base_url} failed "
+                        f"(attempt {attempt + 1}/{max_retries + 1}), retrying: "
+                        f"HTTP {response.status_code}",
                         level=xbmc.LOGWARNING,
                     )
                     time.sleep(retry_delay)
                     continue
                 kodilog(
-                    f"[StremioSubs] addon {base_url} failed after {max_retries + 1} attempts: HTTP {response.status_code}",  # noqa: E501
+                    f"[StremioSubs] addon {safe_base_url} failed after "
+                    f"{max_retries + 1} attempts: HTTP {response.status_code}",
                     level=xbmc.LOGWARNING,
                 )
                 return None
@@ -111,12 +157,14 @@ class OpenSubtitleStremioClient:
                 data = response.json()
             except Exception as e:
                 kodilog(
-                    f"[StremioSubs] addon {base_url} failed: invalid JSON ({e})",
+                    f"[StremioSubs] addon {safe_base_url} failed: invalid JSON "
+                    f"({type(e).__name__})",
                     level=xbmc.LOGWARNING,
                 )
                 return None
             kodilog(
-                f"[StremioSubs] subtitles response: {data}",
+                f"[StremioSubs] subtitles response received: "
+                f"{len(data.get('subtitles') or []) if isinstance(data, dict) else 0} subtitle(s)",
                 level=xbmc.LOGDEBUG,
             )
             if not isinstance(data, dict):
@@ -512,7 +560,8 @@ class OpenSubtitleStremioClient:
             try:
                 kodilog(
                     f"[StremioSubs] downloading embedded subtitle #{idx} "
-                    f"lang={subtitle.get('lang') or '?'} url={subtitle.get('url', '')[:80]}",
+                    f"lang={subtitle.get('lang') or '?'} url="
+                    f"{_redact_subtitle_url(subtitle.get('url'))}",
                     level=xbmc.LOGDEBUG,
                 )
                 file_path = self.download_subtitle(
@@ -524,7 +573,9 @@ class OpenSubtitleStremioClient:
                     failed += 1
             except Exception as e:
                 failed += 1
-                kodilog(f"[StremioSubs] failed to download embedded subtitle #{idx}: {e}")
+                kodilog(
+                    f"[StremioSubs] failed to download embedded subtitle #{idx}: {type(e).__name__}"
+                )
                 continue
         kodilog(
             f"[StremioSubs] download_subtitles_batch done: {len(file_paths)} ok, "
@@ -556,7 +607,9 @@ class OpenSubtitleStremioClient:
             filename = f"Subtitle No.{index}.{title}.{lang_name}{extension}"
             file_path = os.path.join(folder_path, filename)
         else:
-            base_path = os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
+            base_path = os.path.join(
+                ADDON_PROFILE_PATH, "Subtitles", safe_subtitle_path_component(imdb_id)
+            )
             if season and episode:
                 file_path = os.path.join(
                     base_path,
@@ -574,8 +627,10 @@ class OpenSubtitleStremioClient:
                 filename = f"Subtitle No.{index}.{title}.{lang_name}{extension}"
                 file_path = os.path.join(base_path, filename)
 
+        temporary_path = file_path + ".part"
         try:
-            response = None
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            response: Any = None
             for attempt in range(3):  # 1 initial + 2 retries
                 try:
                     response = requests.get(
@@ -589,16 +644,28 @@ class OpenSubtitleStremioClient:
                 if response.status_code == 200:
                     break
                 if attempt < 2:
-                    time.sleep(1.0)
+                    time.sleep(_retry_delay(response, attempt))
                     continue
-                self.notification(f"Failed to download {url}, status code {response.status_code}")
+                self.notification(f"Failed to download subtitle: HTTP {response.status_code}")
                 raise Exception(f"HTTP {response.status_code}")
-            with open(file_path, "wb") as file:
+            bytes_written = 0
+            first_content = b""
+            with open(temporary_path, "wb") as file:
                 for chunk in response.iter_content(chunk_size=8192):
                     if chunk:
+                        if len(first_content) < 512:
+                            first_content += chunk[: 512 - len(first_content)]
                         file.write(chunk)
+                        bytes_written += len(chunk)
+            if not bytes_written:
+                raise ValueError("empty subtitle response")
+            if _is_obvious_html_response(first_content):
+                raise ValueError("HTML subtitle response")
+            os.replace(temporary_path, file_path)
             return file_path
         except Exception as e:
-            kodilog(f"Subtitle download error for {url}: {e}")
-            self.notification(f"Subtitle download error for {url}: {e}")
+            with contextlib.suppress(OSError):
+                os.remove(temporary_path)
+            kodilog(f"Subtitle download error: {type(e).__name__}")
+            self.notification(f"Subtitle download error: {type(e).__name__}")
             raise

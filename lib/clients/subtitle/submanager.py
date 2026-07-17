@@ -9,6 +9,7 @@ from lib.clients.subtitle.deepl import DeepLTranslator
 from lib.clients.subtitle.opensubstremio import (
     SUBTITLE_EXTENSIONS,
     OpenSubtitleStremioClient,
+    safe_subtitle_path_component,
 )
 from lib.utils.kodi.settings import subtitle_automation_enabled
 from lib.utils.kodi.utils import (
@@ -116,17 +117,19 @@ class SubtitleManager(KodiJsonRpcClient):
             return None
 
         if folder_path is None:
+            safe_imdb_id = safe_subtitle_path_component(imdb_id)
             folder_path = (
-                os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id, str(season), str(episode))
+                os.path.join(
+                    ADDON_PROFILE_PATH, "Subtitles", safe_imdb_id, str(season), str(episode)
+                )
                 if mode == "tv"
-                else os.path.join(ADDON_PROFILE_PATH, "Subtitles", imdb_id)
+                else os.path.join(ADDON_PROFILE_PATH, "Subtitles", safe_imdb_id)
             )
 
         os.makedirs(folder_path, exist_ok=True)
 
         subtitle_files = self.get_downloaded_subtitle_paths(folder_path)
         if subtitle_files:
-            # Skip "use existing?" dialog when unified automation is enabled.
             if auto_select or subtitle_automation_enabled():
                 return subtitle_files
 

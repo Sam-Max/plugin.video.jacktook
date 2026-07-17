@@ -50,6 +50,145 @@ def test_embedded_subtitle_download_preserves_supported_extension(monkeypatch, t
     assert Path(path).read_bytes() == b"WEBVTT\n"
 
 
+def test_subtitle_paths_sanitize_addon_controlled_imdb_ids(monkeypatch, tmp_path):
+    class _Response:
+        status_code = 200
+
+        def iter_content(self, chunk_size=8192):
+            yield b"subtitle"
+
+    monkeypatch.setattr(opensubstremio, "ADDON_PROFILE_PATH", str(tmp_path))
+    monkeypatch.setattr(opensubstremio.requests, "get", lambda *args, **kwargs: _Response())
+
+    path = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None).download_subtitle(
+        {"url": "https://example.com/subtitle.srt", "lang": "eng"},
+        0,
+        "../../outside",
+        "Movie Title",
+    )
+
+    relative_path = Path(path).relative_to(tmp_path / "Subtitles")
+    assert relative_path.parts[0] == ".._.._outside"
+
+
+def test_subtitle_manager_preserves_normal_imdb_directory_name(monkeypatch, tmp_path):
+    data = {"title": "Movie Title", "mode": "movies", "ids": {"imdb_id": "tt1234567"}}
+    manager = submanager.SubtitleManager(data, lambda *_args, **_kwargs: None)
+    captured = {}
+
+    monkeypatch.setattr(submanager, "ADDON_PROFILE_PATH", str(tmp_path))
+
+    def _get_downloaded_subtitle_paths(path):
+        captured["path"] = path
+        return []
+
+    monkeypatch.setattr(manager, "get_downloaded_subtitle_paths", _get_downloaded_subtitle_paths)
+    monkeypatch.setattr(manager.opensub_client, "select_subtitles", lambda *args, **kwargs: [])
+    monkeypatch.setattr(manager.opensub_client, "get_subtitles", lambda *args, **kwargs: None)
+
+    assert manager.fetch_subtitles() is None
+    assert captured["path"] == str(tmp_path / "Subtitles" / "tt1234567")
+
+
+def test_subtitle_manager_sanitizes_addon_controlled_imdb_directory_name(monkeypatch, tmp_path):
+    manager = submanager.SubtitleManager(
+        {"title": "Movie Title", "mode": "movies", "ids": {"imdb_id": "../../outside"}},
+        lambda *_args, **_kwargs: None,
+    )
+    captured = {}
+
+    monkeypatch.setattr(submanager, "ADDON_PROFILE_PATH", str(tmp_path))
+
+    def _get_downloaded_subtitle_paths(path):
+        captured["path"] = path
+        return []
+
+    monkeypatch.setattr(manager, "get_downloaded_subtitle_paths", _get_downloaded_subtitle_paths)
+    monkeypatch.setattr(manager.opensub_client, "select_subtitles", lambda *args, **kwargs: [])
+    monkeypatch.setattr(manager.opensub_client, "get_subtitles", lambda *args, **kwargs: None)
+
+    assert manager.fetch_subtitles() is None
+    assert captured["path"] == str(tmp_path / "Subtitles" / ".._.._outside")
+
+
+def test_subtitle_download_rejects_empty_or_html_bodies_without_persisting(monkeypatch, tmp_path):
+    class _Response:
+        status_code = 200
+
+        def __init__(self, content):
+            self.content = content
+
+        def iter_content(self, chunk_size=8192):
+            yield self.content
+
+    responses = iter([_Response(b""), _Response(b"<!doctype html><title>Error</title>")])
+    monkeypatch.setattr(opensubstremio.requests, "get", lambda *args, **kwargs: next(responses))
+    client = OpenSubtitleStremioClient(lambda *_args, **_kwargs: None)
+
+    for index in range(2):
+        try:
+            client.download_subtitle(
+                {"url": "https://example.com/subtitle.srt?token=secret", "lang": "eng"},
+                index,
+                "tt123",
+                "Movie Title",
+                folder_path=str(tmp_path),
+            )
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid subtitle response must fail")
+
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_subtitle_download_redacts_urls_from_notifications_and_logs(monkeypatch, tmp_path):
+    class _Response:
+        status_code = 500
+        headers = {}
+
+    messages = []
+    logs = []
+    url = "https://example.com/subtitle.srt?token=secret"
+    monkeypatch.setattr(opensubstremio.requests, "get", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr(opensubstremio.time, "sleep", lambda *_args: None)
+    monkeypatch.setattr(opensubstremio, "kodilog", lambda message, **_kwargs: logs.append(message))
+    client = OpenSubtitleStremioClient(messages.append)
+
+    try:
+        client.download_subtitle(
+            {"url": url, "lang": "eng"}, 0, "tt123", "Movie", folder_path=str(tmp_path)
+        )
+    except Exception:
+        pass
+    else:
+        raise AssertionError("download must fail")
+
+    assert all(url not in message and "token=secret" not in message for message in logs + messages)
+
+
+def test_subtitle_endpoint_retries_rate_limits_with_bounded_retry_after(monkeypatch):
+    class _Response:
+        def __init__(self, status_code, headers=None):
+            self.status_code = status_code
+            self.headers = headers or {}
+
+        def json(self):
+            return {"subtitles": []}
+
+    responses = iter([_Response(429, {"Retry-After": "999"}), _Response(200)])
+    delays = []
+    monkeypatch.setattr(opensubstremio.requests, "get", lambda *args, **kwargs: next(responses))
+    monkeypatch.setattr(opensubstremio.time, "sleep", delays.append)
+
+    result = OpenSubtitleStremioClient(
+        lambda *_args, **_kwargs: None
+    )._fetch_subtitles_data_for_source("https://example.com", "movie", "tt123", max_retries=2)
+
+    assert result == []
+    assert delays == [opensubstremio.MAX_RETRY_DELAY]
+
+
 def test_subtitle_manager_tries_embedded_subtitles_before_endpoint(monkeypatch, tmp_path):
     calls = []
     data = {
