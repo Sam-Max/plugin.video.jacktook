@@ -25,6 +25,17 @@ def test_addon_capabilities_accepts_tmdb_stream_prefixes():
     assert capabilities == {"stream": True, "catalog": False, "tv": False}
 
 
+def test_addon_capabilities_accepts_wildcard_stream_prefixes():
+    manifest = {
+        "types": ["movie", "series"],
+        "resources": [{"name": "stream", "types": ["movie", "series"]}],
+    }
+
+    capabilities = _addon_capabilities(manifest)
+
+    assert capabilities == {"stream": True, "catalog": False, "tv": False}
+
+
 def test_addon_capabilities_keeps_tv_streams_without_movie_prefixes():
     manifest = {
         "types": ["tv"],

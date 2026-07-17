@@ -64,7 +64,7 @@ def _addon_capabilities(manifest):
 
     def supports_searchable_stream(prefixes):
         normalized = {str(prefix).rstrip(":") for prefix in (prefixes or []) if prefix}
-        return bool(normalized.intersection({"tt", "tmdb"}))
+        return not normalized or bool(normalized.intersection({"tt", "tmdb"}))
 
     resources = manifest.get("resources", [])
     types = manifest.get("types", [])
@@ -81,10 +81,9 @@ def _addon_capabilities(manifest):
 
             if res_name == "stream":
                 # Stremio addon providing streams
-                if (
-                    any(t in res_types for t in ("movie", "series", "anime"))
-                    and supports_searchable_stream(res_prefixes)
-                ) or supports_searchable_stream(res_prefixes):
+                if any(t in res_types for t in ("movie", "series", "anime")) and supports_searchable_stream(
+                    res_prefixes
+                ):
                     is_stream = True
 
                 if any(t in res_types for t in ("tv", "channel")):

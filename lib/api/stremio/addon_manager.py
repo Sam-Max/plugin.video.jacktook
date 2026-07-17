@@ -202,6 +202,8 @@ class Addon:
         norm_prefix = id_prefix.rstrip(":")
         for resource in self.manifest.resources:
             if resource.name == resource_name and type in resource.types:
+                if not resource.id_prefixes:
+                    return True
                 for rp in resource.id_prefixes:
                     if rp.rstrip(":") == norm_prefix:
                         return True
@@ -298,16 +300,15 @@ class AddonManager:
         self, resource_name: str, id_prefix: str
     ) -> List[Addon]:
         result = []
+        normalized_prefix = id_prefix.rstrip(":")
         for addon in self.addons:
             if addon.manifest.id == "org.stremio.local":
                 continue
             for resource in addon.manifest.resources:
-                if isinstance(resource, str):
-                    if resource == resource_name and id_prefix in addon.manifest.id_prefixes:
-                        result.append(addon)
-                        break
-
-                if resource.name == resource_name and id_prefix in resource.id_prefixes:
+                if resource.name == resource_name and (
+                    not resource.id_prefixes
+                    or any(prefix.rstrip(":") == normalized_prefix for prefix in resource.id_prefixes)
+                ):
                     result.append(addon)
                     break
         return result

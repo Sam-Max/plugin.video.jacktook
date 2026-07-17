@@ -205,7 +205,12 @@ def _filter_stream_addons_by_id_prefix(addons, allowed_prefixes):
             resource_prefixes = {
                 str(p).rstrip(":") for p in (resource.id_prefixes or []) if p is not None
             }
-            if resource_prefixes.intersection(normalized_allowed):
+            supports_video_type = set(resource.types or []).intersection(
+                {"movie", "series", "anime"}
+            )
+            if supports_video_type and (
+                not resource_prefixes or resource_prefixes.intersection(normalized_allowed)
+            ):
                 filtered.append(addon)
                 break
 
@@ -399,8 +404,17 @@ def add_custom_stremio_addon(params):
             if isinstance(res, dict):
                 res_types = res.get("types", types)
                 if res.get("name") == "stream":
-                    id_prefixes = res.get("idPrefixes", [])
-                    if "tt" in id_prefixes:
+                    id_prefixes = res.get("idPrefixes", manifest.get("idPrefixes", []))
+                    normalized_prefixes = {
+                        str(prefix).rstrip(":") for prefix in id_prefixes if prefix is not None
+                    }
+                    supports_video_type = set(res_types or []).intersection(
+                        {"movie", "series", "anime"}
+                    )
+                    if supports_video_type and (
+                        not normalized_prefixes
+                        or normalized_prefixes.intersection({"tt", "tmdb"})
+                    ):
                         is_stream = True
                     if "tv" in res_types or "channel" in res_types:
                         is_tv_stream = True
