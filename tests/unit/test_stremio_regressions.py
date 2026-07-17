@@ -834,6 +834,132 @@ def test_list_stremio_catalogs_uses_catalog_alias(monkeypatch):
     assert labels == ["Renamed"]
 
 
+def test_channel_catalog_is_listed_and_navigates_to_tv_streams(monkeypatch):
+    added_batches = []
+    added_items = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+        def setProperty(self, *args, **kwargs):
+            pass
+
+        def addContextMenuItems(self, *args, **kwargs):
+            pass
+
+        def getVideoInfoTag(self):
+            return MagicMock()
+
+    class _Catalog:
+        name = "News"
+        id = "news"
+        type = "channel"
+        extra = []
+
+    class _Manifest:
+        name = "Channels"
+        logo = "logo.png"
+        types = ["channel"]
+        catalogs = [_Catalog()]
+
+    class _Addon:
+        manifest = _Manifest()
+
+        def url(self):
+            return "https://example.com/addon"
+
+    monkeypatch.setattr(catalog_menus, "get_selected_tv_addons", lambda: [_Addon()])
+    monkeypatch.setattr(
+        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
+    )
+    monkeypatch.setattr(
+        catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name
+    )
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder: added_items.append((url, isFolder)),
+    )
+
+    catalog_menus.list_stremio_catalogs(menu_type="tv")
+    catalog_menus.add_meta_items(
+        [
+            MetaPreview(
+                id=None,
+                type="channel",
+                name="News Live",
+                poster="",
+                streams=[Stream.from_dict({"url": "https://example.com/news.m3u8"})],
+            )
+        ],
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "tv",
+            "catalog_type": "channel",
+        },
+    )
+
+    assert added_batches[0][0][0][0] == "list_catalog"
+    assert added_batches[0][0][0][1]["catalog_type"] == "channel"
+    assert len(added_items) == 1
+    assert added_items[0][0][0] == "list_stremio_tv_streams"
+    assert added_items[0][1] is True
+
+
+def test_channel_without_embedded_streams_navigates_to_channel_stream_endpoint(monkeypatch):
+    added_items = []
+
+    class _ListItem:
+        def getVideoInfoTag(self):
+            return MagicMock()
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+        def setProperty(self, *args, **kwargs):
+            pass
+
+        def addContextMenuItems(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "addon_has_stream", lambda *args, **kwargs: False)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda *args, **kwargs: _ListItem())
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
+    monkeypatch.setattr(
+        catalog_menus,
+        "addDirectoryItem",
+        lambda handle, url, listitem, isFolder: added_items.append((url, isFolder)),
+    )
+
+    catalog_menus.add_meta_items(
+        [MetaPreview(id="channel:news", type="channel", name="News Live", poster="")],
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "tv",
+            "catalog_type": "channel",
+        },
+    )
+
+    assert len(added_items) == 1
+    assert added_items[0][0][0] == "list_stremio_tv"
+    assert added_items[0][1] is True
+    assert added_items[0][0][1]["catalog_type"] == "channel"
+
+
 def test_stremio_addon_client_uses_addon_alias_for_result_labels(monkeypatch):
     addon_manager = AddonManager(
         [

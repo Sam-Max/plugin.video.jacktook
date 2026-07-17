@@ -943,6 +943,29 @@ def test_catalog_tv_streams_handles_dicts_and_malformed_candidates(monkeypatch):
     ]
 
 
+def test_channel_streams_reuse_tv_playback_and_close_on_incomplete_data(monkeypatch):
+    captured = []
+    closed = []
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="": MagicMock())
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args: closed.append(True))
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: kwargs["data"])
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", captured.extend)
+    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args: {"streams": []})
+
+    catalog_menus.list_stremio_tv(_catalog_params(catalog_type="channel"))
+    catalog_menus.list_stremio_tv_streams(
+        _catalog_params(
+            catalog_type="channel",
+            streams=json.dumps([{"url": "https://example.com/news.m3u8"}, {"name": "Missing"}]),
+        )
+    )
+
+    assert closed == [True, True]
+    assert json.loads(captured[0][0])["url"] == "https://example.com/news.m3u8"
+    assert json.loads(captured[0][0])["type"] == catalog_menus.IndexerType.DIRECT
+
+
 def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
     client = addon_client.StremioAddonCatalogsClient(
         {"addon_url": "https://example.com/addon", "catalog_type": "movie", "catalog_id": "popular"}

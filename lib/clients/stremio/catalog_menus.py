@@ -236,7 +236,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
         addon_name = get_addon_display_name(addon)
         addon_types = addon.manifest.types
 
-        if menu_type not in addon_types:
+        if menu_type not in addon_types and not (menu_type == "tv" and "channel" in addon_types):
             continue
 
         for catalog in addon.manifest.catalogs:
@@ -250,6 +250,9 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             allowed_types = [target_type]
             if menu_type == "anime" and target_type == "series":
                 allowed_types.append("anime")
+
+            if target_type == "tv":
+                allowed_types.append("channel")
 
             if target_type in ["movie", "series", "tv"] and catalog_type not in allowed_types:
                 continue
@@ -473,7 +476,7 @@ def add_meta_items(metas, params):
         if menu_type in ["anime", "series"] and sub_menu_type == "series":
             return meta_type in ["series", "anime"]
         if menu_type == "tv":
-            return meta_type == "tv"
+            return meta_type in ["tv", "channel"]
         return True
 
     metas = [m for m in metas if should_include(m)]
@@ -491,11 +494,11 @@ def add_meta_items(metas, params):
         has_stream_resource = addon_has_stream(addon_url, catalog_type, addon=addon)
 
     for meta in metas:
-        name = meta.name
-        meta_type = meta.type
-        meta_id = meta.id
-        tmdb_id = meta.moviedb_id
-        imdb_id = meta.imdb_id
+        name = meta.name or ""
+        meta_type = meta.type or ""
+        meta_id = meta.id or ""
+        tmdb_id = meta.moviedb_id or ""
+        imdb_id = meta.imdb_id or ""
 
         if "tmdb" in meta_id:
             tmdb_id = meta_id.split(":")[1]
@@ -570,7 +573,7 @@ def add_meta_items(metas, params):
                     fanart=background,
                     genres=json.dumps(meta.genres or []),
                 )
-        elif meta_type == "tv":
+        elif meta_type in ["tv", "channel"]:
             if meta.streams:
                 streams_data = [asdict(s) for s in meta.streams]
                 url = build_url(
@@ -1065,11 +1068,13 @@ def list_stremio_movie(params):
 def list_stremio_tv(params):
     response = catalogs_get_cache("list_stremio_tv", params)
     if not response:
+        end_of_directory()
         return
 
     streams = _stremio_catalog_streams(response)
     if not streams:
         notification(translation(90514))
+        end_of_directory()
         return
 
     items = []
