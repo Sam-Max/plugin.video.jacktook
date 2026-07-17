@@ -4,7 +4,7 @@ import re
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import requests
 import xbmc
@@ -72,6 +72,7 @@ class OpenSubtitleStremioClient:
         imdb_id: str,
         season: Optional[int] = None,
         episode: Optional[int] = None,
+        extra_args: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Build a subtitles endpoint URL from a (possibly trailing-slashed) base.
 
@@ -81,9 +82,14 @@ class OpenSubtitleStremioClient:
         the trailing slash) or :func:`normalize_transport_url`.
         """
         base = (base_url or "").rstrip("/") + "/"
-        if mode == "tv":
-            return f"{base}subtitles/series/{imdb_id}:{season}:{episode}.json"
-        return f"{base}subtitles/movie/{imdb_id}.json"
+        resource_id = f"{imdb_id}:{season}:{episode}" if mode == "tv" else imdb_id
+        extra_path = "".join(
+            f"/{key}={quote(str(value), safe='')}"
+            for key, value in (extra_args or {}).items()
+            if value is not None and value != ""
+        )
+        resource_type = "series" if mode == "tv" else "movie"
+        return f"{base}subtitles/{resource_type}/{resource_id}{extra_path}.json"
 
     def _fetch_subtitles_data_for_source(
         self,
@@ -95,6 +101,7 @@ class OpenSubtitleStremioClient:
         timeout: int = DEFAULT_ENDPOINT_TIMEOUT,
         max_retries: int = 2,
         retry_delay: float = 1.0,
+        extra_args: Optional[Dict[str, Any]] = None,
     ) -> Optional[List[Dict[str, Any]]]:
         """Fetch subtitles from a single addon's base URL.
 
@@ -102,7 +109,7 @@ class OpenSubtitleStremioClient:
             - list (possibly empty) on HTTP 200 with a valid JSON body
             - ``None`` on non-200, network error, or non-JSON response
         """
-        url = self._build_url(base_url, mode, imdb_id, season, episode)
+        url = self._build_url(base_url, mode, imdb_id, season, episode, extra_args)
         safe_base_url = _redact_subtitle_url(base_url)
         for attempt in range(max_retries + 1):
             try:
@@ -329,6 +336,8 @@ class OpenSubtitleStremioClient:
             for source_key, base_url, source_label in sources:
                 try:
                     retry_options = {"max_retries": 0} if auto_select else {}
+                    if extra_args:
+                        retry_options["extra_args"] = extra_args
                     future = executor.submit(
                         self._fetch_subtitles_data_for_source,
                         base_url,
@@ -338,7 +347,6 @@ class OpenSubtitleStremioClient:
                         episode,
                         per_call_timeout,
                         **retry_options,
-                        extra_args=extra_args,
                     )
                 except Exception as error:
                     failed += 1
