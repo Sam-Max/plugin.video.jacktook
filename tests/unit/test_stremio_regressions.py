@@ -603,6 +603,49 @@ def test_list_catalog_forwards_manifest_declared_extra_args(monkeypatch):
     assert captured_kwargs == {"genre": "Drama", "sort": "top rated"}
 
 
+def test_list_catalog_next_page_preserves_genre(monkeypatch):
+    next_page_params = []
+    metas = [
+        MetaPreview(id=f"id-{i}", type="movie", name=f"Movie {i}", poster="")
+        for i in range(CATALOG_PAGE_SIZE)
+    ]
+
+    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args, **kwargs: {"metas": metas})
+    monkeypatch.setattr(catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: True)
+    monkeypatch.setattr(catalog_menus, "add_meta_items", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: next_page_params.append(kwargs) or "plugin://next-page",
+    )
+    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
+
+    catalog_menus.list_catalog(
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "movie",
+            "catalog_type": "movie",
+            "catalog_id": "popular",
+            "genre": "Drama",
+        }
+    )
+
+    assert next_page_params == [
+        {
+            "addon_url": "https://example.com/addon",
+            "menu_type": "movie",
+            "sub_menu_type": "",
+            "catalog_type": "movie",
+            "catalog_id": "popular",
+            "skip": CATALOG_PAGE_SIZE,
+            "genre": "Drama",
+        }
+    ]
+
+
 def test_search_catalog_cancel_shows_previous_search_terms(monkeypatch):
     added_items = []
 
@@ -786,6 +829,95 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
     assert len(added_batches[0]) == 3
     labels = [item[1].label for item in added_batches[0]]
     assert labels == ["Search Trending", "Trending", "Popular"]
+
+
+def test_list_stremio_catalogs_adds_genre_entries_from_declared_options(monkeypatch):
+    added_batches = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    class _Catalog:
+        name = "Popular"
+        id = "popular"
+        type = "movie"
+        extra = [{"name": "genre", "options": ["Action", "Drama"]}]
+
+    class _Manifest:
+        name = "Addon One"
+        logo = "logo.png"
+        types = ["movie"]
+        catalogs = [_Catalog()]
+
+    class _Addon:
+        manifest = _Manifest()
+
+        def url(self):
+            return "https://example.com/addon"
+
+    monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
+    monkeypatch.setattr(catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name)
+    monkeypatch.setattr(
+        catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name
+    )
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+
+    catalog_menus.list_stremio_catalogs(menu_type="movie")
+
+    items = added_batches[0]
+    assert [item[1].label for item in items] == ["Action", "Drama", "Popular"]
+    assert [item[0][1].get("genre") for item in items] == ["Action", "Drama", None]
+    assert all(item[0][1]["addon_url"] == "https://example.com/addon" for item in items)
+    assert all(item[0][1]["catalog_type"] == "movie" for item in items)
+    assert all(item[0][1]["catalog_id"] == "popular" for item in items)
+
+
+def test_list_stremio_catalogs_omits_genre_entries_without_declared_genre(monkeypatch):
+    added_batches = []
+
+    class _ListItem:
+        def __init__(self, label=""):
+            self.label = label
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    class _Catalog:
+        name = "Popular"
+        id = "popular"
+        type = "movie"
+        extra = [{"name": "sort", "options": ["top"]}]
+
+    class _Manifest:
+        name = "Addon One"
+        logo = "logo.png"
+        types = ["movie"]
+        catalogs = [_Catalog()]
+
+    class _Addon:
+        manifest = _Manifest()
+
+        def url(self):
+            return "https://example.com/addon"
+
+    monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
+    monkeypatch.setattr(catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name)
+    monkeypatch.setattr(
+        catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name
+    )
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+
+    catalog_menus.list_stremio_catalogs(menu_type="movie")
+
+    assert [item[1].label for item in added_batches[0]] == ["Popular"]
 
 
 def test_list_stremio_catalogs_uses_catalog_alias(monkeypatch):

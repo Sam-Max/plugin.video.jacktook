@@ -281,6 +281,35 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                     )
                 )
 
+            genre_extra = next(
+                (
+                    extra
+                    for extra in catalog.extra
+                    if extra.get("name") == "genre" and extra.get("options")
+                ),
+                None,
+            )
+            if genre_extra:
+                for genre in genre_extra["options"]:
+                    listitem = make_list_item(label=genre)
+                    listitem.setArt({"icon": addon.manifest.logo})
+
+                    directory_items.append(
+                        (
+                            build_url(
+                                action="list_catalog",
+                                addon_url=addon.url(),
+                                menu_type=menu_type,
+                                sub_menu_type=sub_menu_type,
+                                catalog_type=catalog.type,
+                                catalog_id=catalog.id,
+                                genre=genre,
+                            ),
+                            listitem,
+                            True,
+                        )
+                    )
+
             if catalog_name or catalog_id:
                 if addon.manifest.name == "Cinemeta":
                     label = f"{addon_name} - {catalog_name or catalog_id}"
@@ -386,15 +415,17 @@ def list_catalog(params):
         has_next_page = total_metas > skip + len(metas)
 
     if has_next_page:
-        next_url = build_url(
-            "list_catalog",
-            addon_url=params["addon_url"],
-            menu_type=params["menu_type"],
-            sub_menu_type=params.get("sub_menu_type", ""),
-            catalog_type=params["catalog_type"],
-            catalog_id=params["catalog_id"],
-            skip=skip + len(metas),
-        )
+        next_page_params = {
+            "addon_url": params["addon_url"],
+            "menu_type": params["menu_type"],
+            "sub_menu_type": params.get("sub_menu_type", ""),
+            "catalog_type": params["catalog_type"],
+            "catalog_id": params["catalog_id"],
+            "skip": skip + len(metas),
+        }
+        if params.get("genre") not in (None, ""):
+            next_page_params["genre"] = params["genre"]
+        next_url = build_url("list_catalog", **next_page_params)
         list_item = make_list_item(label=translation(90515))
         addDirectoryItem(handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True)
 
