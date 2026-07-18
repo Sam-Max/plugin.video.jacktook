@@ -220,7 +220,7 @@ def _param_truthy(value):
     return str(value).lower() in ("1", "true", "yes")
 
 
-def list_stremio_catalogs(menu_type="", sub_menu_type=""):
+def _get_stremio_catalogs(menu_type="", sub_menu_type=""):
     if menu_type == "tv":
         selected_addons = get_selected_tv_addons()
     else:
@@ -228,22 +228,18 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
 
     if not selected_addons:
         kodilog(f"No addons found for menu_type={menu_type}")
-        return
+        return []
 
-    directory_items = []
+    catalogs = []
 
     for addon in selected_addons:
-        addon_name = get_addon_display_name(addon)
         addon_types = addon.manifest.types
 
         if menu_type not in addon_types and not (menu_type == "tv" and "channel" in addon_types):
             continue
 
         for catalog in addon.manifest.catalogs:
-            catalog_name = get_catalog_display_name(addon, catalog)
-            catalog_id = catalog.id
             catalog_type = catalog.type
-
             target_type = sub_menu_type if sub_menu_type else menu_type
 
             # Allow 'anime' catalogs when target is 'series' and we are in 'anime' menu
@@ -257,73 +253,88 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
             if target_type in ["movie", "series", "tv"] and catalog_type not in allowed_types:
                 continue
 
-            search_capabilities = any(extra.get("name") == "search" for extra in catalog.extra)
+            catalogs.append((addon, catalog))
 
-            if search_capabilities:
-                listitem = make_list_item(label=f"{translation(90006)} {catalog_name}")
-                listitem.setArt({"icon": addon.manifest.logo})
+    return catalogs
 
-                directory_items.append(
-                    (
-                        build_url(
-                            "search_catalog",
-                            page=1,
-                            addon_url=addon.url(),
-                            catalog_type=catalog.type,
-                            catalog_id=catalog_id,
-                            menu_type=menu_type,
-                            sub_menu_type=sub_menu_type,
-                            has_meta_resource=_addon_has_resource(addon, "meta", catalog_type),
-                            has_stream_resource=_addon_has_resource(addon, "stream", catalog_type),
-                        ),
-                        listitem,
-                        True,
-                    )
+
+def list_stremio_catalogs(menu_type="", sub_menu_type=""):
+    catalogs = _get_stremio_catalogs(menu_type, sub_menu_type)
+    search_items = []
+    catalog_items = []
+
+    genre_addon = next((addon for addon, catalog in catalogs if _catalog_genres(catalog)), None)
+    if genre_addon:
+        listitem = make_list_item(label="Genres")
+        listitem.setArt({"icon": genre_addon.manifest.logo})
+        genre_item = (
+            build_url(
+                action="list_catalog_genres",
+                menu_type=menu_type,
+                sub_menu_type=sub_menu_type,
+            ),
+            listitem,
+            True,
+        )
+
+    for addon, catalog in catalogs:
+        addon_name = get_addon_display_name(addon)
+        catalog_name = get_catalog_display_name(addon, catalog)
+        catalog_id = catalog.id
+        catalog_type = catalog.type
+
+        search_capabilities = any(extra.get("name") == "search" for extra in catalog.extra)
+
+        if search_capabilities:
+            listitem = make_list_item(label=f"{translation(90006)} {catalog_name}")
+            listitem.setArt({"icon": addon.manifest.logo})
+
+            search_items.append(
+                (
+                    build_url(
+                        "search_catalog",
+                        page=1,
+                        addon_url=addon.url(),
+                        catalog_type=catalog.type,
+                        catalog_id=catalog_id,
+                        menu_type=menu_type,
+                        sub_menu_type=sub_menu_type,
+                        has_meta_resource=_addon_has_resource(addon, "meta", catalog_type),
+                        has_stream_resource=_addon_has_resource(addon, "stream", catalog_type),
+                    ),
+                    listitem,
+                    True,
                 )
+            )
 
-            if _catalog_genres(catalog):
-                listitem = make_list_item(label="Genres")
-                listitem.setArt({"icon": addon.manifest.logo})
+        if catalog_name or catalog_id:
+            if addon.manifest.name == "Cinemeta":
+                label = f"{addon_name} - {catalog_name or catalog_id}"
+            else:
+                label = catalog_name or catalog_id
 
-                directory_items.append(
-                    (
-                        build_url(
-                            action="list_catalog_genres",
-                            addon_url=addon.url(),
-                            menu_type=menu_type,
-                            sub_menu_type=sub_menu_type,
-                            catalog_type=catalog.type,
-                            catalog_id=catalog.id,
-                        ),
-                        listitem,
-                        True,
-                    )
+            listitem = make_list_item(label=label)
+            listitem.setArt({"icon": addon.manifest.logo})
+
+            catalog_items.append(
+                (
+                    build_url(
+                        action="list_catalog",
+                        addon_url=addon.url(),
+                        menu_type=menu_type,
+                        sub_menu_type=sub_menu_type,
+                        catalog_type=catalog.type,
+                        catalog_id=catalog.id,
+                    ),
+                    listitem,
+                    True,
                 )
+            )
 
-            if catalog_name or catalog_id:
-                if addon.manifest.name == "Cinemeta":
-                    label = f"{addon_name} - {catalog_name or catalog_id}"
-                else:
-                    label = catalog_name or catalog_id
-
-                listitem = make_list_item(label=label)
-                listitem.setArt({"icon": addon.manifest.logo})
-
-                directory_items.append(
-                    (
-                        build_url(
-                            action="list_catalog",
-                            addon_url=addon.url(),
-                            menu_type=menu_type,
-                            sub_menu_type=sub_menu_type,
-                            catalog_type=catalog.type,
-                            catalog_id=catalog.id,
-                        ),
-                        listitem,
-                        True,
-                    )
-                )
-
+    directory_items = search_items
+    if genre_addon:
+        directory_items.append(genre_item)
+    directory_items.extend(catalog_items)
     add_directory_items_batch(directory_items)
 
 
@@ -347,33 +358,34 @@ def _catalog_genres(catalog):
 
 
 def list_catalog_genres(params):
-    catalog = _get_manifest_catalog(
-        params["addon_url"], params["catalog_type"], params["catalog_id"]
-    )
-    addon = get_addon_by_base_url(params["addon_url"])
-    if not catalog or not addon:
-        end_of_directory()
-        return
-
     directory_items = []
-    for genre in _catalog_genres(catalog):
-        listitem = make_list_item(label=genre)
-        listitem.setArt({"icon": addon.manifest.logo})
-        directory_items.append(
-            (
-                build_url(
-                    action="list_catalog",
-                    addon_url=params["addon_url"],
-                    menu_type=params["menu_type"],
-                    sub_menu_type=params.get("sub_menu_type", ""),
-                    catalog_type=params["catalog_type"],
-                    catalog_id=params["catalog_id"],
-                    genre=genre,
-                ),
-                listitem,
-                True,
+    seen_genres = set()
+    for addon, catalog in _get_stremio_catalogs(
+        params["menu_type"], params.get("sub_menu_type", "")
+    ):
+        for genre in _catalog_genres(catalog):
+            genre_key = genre.casefold()
+            if genre_key in seen_genres:
+                continue
+            seen_genres.add(genre_key)
+
+            listitem = make_list_item(label=genre)
+            listitem.setArt({"icon": addon.manifest.logo})
+            directory_items.append(
+                (
+                    build_url(
+                        action="list_catalog",
+                        addon_url=addon.url(),
+                        menu_type=params["menu_type"],
+                        sub_menu_type=params.get("sub_menu_type", ""),
+                        catalog_type=catalog.type,
+                        catalog_id=catalog.id,
+                        genre=genre,
+                    ),
+                    listitem,
+                    True,
+                )
             )
-        )
 
     add_directory_items_batch(directory_items)
     end_of_directory()

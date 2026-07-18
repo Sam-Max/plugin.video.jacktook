@@ -831,7 +831,7 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
     assert labels == ["Search Trending", "Trending", "Popular"]
 
 
-def test_list_stremio_catalogs_adds_single_genres_folder_from_declared_options(monkeypatch):
+def test_list_stremio_catalogs_adds_one_global_genres_folder(monkeypatch):
     added_batches = []
 
     class _ListItem:
@@ -842,16 +842,20 @@ def test_list_stremio_catalogs_adds_single_genres_folder_from_declared_options(m
             pass
 
     class _Catalog:
-        name = "Popular"
-        id = "popular"
-        type = "movie"
-        extra = [{"name": "genre", "options": ["Action", "Drama"]}]
+        def __init__(self, name, catalog_id, extra):
+            self.name = name
+            self.id = catalog_id
+            self.type = "movie"
+            self.extra = extra
 
     class _Manifest:
         name = "Addon One"
         logo = "logo.png"
         types = ["movie"]
-        catalogs = [_Catalog()]
+        catalogs = [
+            _Catalog("Popular", "popular", [{"name": "genre", "options": ["Action"]}]),
+            _Catalog("Recent", "recent", [{"name": "genre", "options": ["Drama"]}]),
+        ]
 
     class _Addon:
         manifest = _Manifest()
@@ -871,16 +875,15 @@ def test_list_stremio_catalogs_adds_single_genres_folder_from_declared_options(m
     catalog_menus.list_stremio_catalogs(menu_type="movie")
 
     items = added_batches[0]
-    assert [item[1].label for item in items] == ["Genres", "Popular"]
+    assert [item[1].label for item in items] == ["Genres", "Popular", "Recent"]
     assert items[0][0][0] == "list_catalog_genres"
-    assert all(item[0][1]["addon_url"] == "https://example.com/addon" for item in items)
-    assert all(item[0][1]["catalog_type"] == "movie" for item in items)
-    assert all(item[0][1]["catalog_id"] == "popular" for item in items)
+    assert items[0][0][1] == {"menu_type": "movie", "sub_menu_type": ""}
     assert "genre" not in items[0][0][1]
     assert items[1][0][0] == "list_catalog"
+    assert items[2][0][0] == "list_catalog"
 
 
-def test_list_catalog_genres_lists_only_declared_options(monkeypatch):
+def test_list_catalog_genres_combines_declared_options_using_first_catalog(monkeypatch):
     added_batches = []
 
     class _ListItem:
@@ -891,19 +894,44 @@ def test_list_catalog_genres_lists_only_declared_options(monkeypatch):
             pass
 
     class _Catalog:
-        extra = [
-            {"name": "genre", "options": ["Action", "Drama"]},
-            {"name": "sort", "options": ["top"]},
-        ]
+        def __init__(self, catalog_id, extra):
+            self.id = catalog_id
+            self.type = "movie"
+            self.extra = extra
 
     class _Manifest:
         logo = "logo.png"
+        types = ["movie"]
+        catalogs = [
+            _Catalog(
+                "popular",
+                [
+                    {"name": "genre", "options": ["Action", "Drama"]},
+                    {"name": "sort", "options": ["top"]},
+                ],
+            ),
+        ]
 
     class _Addon:
         manifest = _Manifest()
 
-    monkeypatch.setattr(catalog_menus, "_get_manifest_catalog", lambda *args: _Catalog())
-    monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args: _Addon())
+        def url(self):
+            return "https://example.com/addon"
+
+    class _SecondManifest:
+        logo = "second-logo.png"
+        types = ["movie"]
+        catalogs = [_Catalog("recent", [{"name": "genre", "options": ["action", "Comedy"]}])]
+
+    class _SecondAddon:
+        manifest = _SecondManifest()
+
+        def url(self):
+            return "https://example.com/second-addon"
+
+    monkeypatch.setattr(
+        catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon(), _SecondAddon()]
+    )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
     monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
@@ -911,20 +939,21 @@ def test_list_catalog_genres_lists_only_declared_options(monkeypatch):
 
     catalog_menus.list_catalog_genres(
         {
-            "addon_url": "https://example.com/addon",
             "menu_type": "movie",
-            "catalog_type": "movie",
-            "catalog_id": "popular",
         }
     )
 
     items = added_batches[0]
-    assert [item[1].label for item in items] == ["Action", "Drama"]
-    assert [item[0][0] for item in items] == ["list_catalog", "list_catalog"]
-    assert [item[0][1]["genre"] for item in items] == ["Action", "Drama"]
-    assert all(item[0][1]["addon_url"] == "https://example.com/addon" for item in items)
+    assert [item[1].label for item in items] == ["Action", "Drama", "Comedy"]
+    assert [item[0][0] for item in items] == ["list_catalog"] * 3
+    assert [item[0][1]["genre"] for item in items] == ["Action", "Drama", "Comedy"]
+    assert [item[0][1]["addon_url"] for item in items] == [
+        "https://example.com/addon",
+        "https://example.com/addon",
+        "https://example.com/second-addon",
+    ]
     assert all(item[0][1]["catalog_type"] == "movie" for item in items)
-    assert all(item[0][1]["catalog_id"] == "popular" for item in items)
+    assert [item[0][1]["catalog_id"] for item in items] == ["popular", "popular", "recent"]
 
 
 def test_list_stremio_catalogs_omits_genre_entries_without_declared_genre(monkeypatch):
