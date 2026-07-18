@@ -115,6 +115,7 @@ def _is_stremio_action(action):
         "list_catalog",
         "search_catalog",
         "add_custom_stremio_addon",
+        "configure_stremio_addon",
         "remove_custom_stremio_addon",
         "rename_stremio_addon",
         "rename_stremio_catalog",
@@ -227,6 +228,7 @@ def _route_stremio(action, params):
         "stremio_toggle_tv_addons",
         "stremio_filtered_selection",
         "add_custom_stremio_addon",
+        "configure_stremio_addon",
         "remove_custom_stremio_addon",
         "rename_stremio_addon",
         "rename_stremio_catalog",
@@ -235,6 +237,7 @@ def _route_stremio(action, params):
     ):
         from lib.clients.stremio.addon_selection import (
             add_custom_stremio_addon,
+            configure_stremio_addon,
             remove_custom_stremio_addon,
             rename_stremio_addon,
             rename_stremio_catalog,
@@ -252,6 +255,7 @@ def _route_stremio(action, params):
             "stremio_toggle_tv_addons": stremio_toggle_tv_addons,
             "stremio_filtered_selection": stremio_filtered_selection,
             "add_custom_stremio_addon": add_custom_stremio_addon,
+            "configure_stremio_addon": configure_stremio_addon,
             "remove_custom_stremio_addon": remove_custom_stremio_addon,
             "rename_stremio_addon": rename_stremio_addon,
             "rename_stremio_catalog": rename_stremio_catalog,

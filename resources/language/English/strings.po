@@ -3427,6 +3427,30 @@ msgctxt "#90534"
 msgid "Selected addon(s) removed."
 msgstr "Selected addon(s) removed."
 
+msgctxt "#90836"
+msgid "Configure Stremio Addon"
+msgstr "Configure Stremio Addon"
+
+msgctxt "#90837"
+msgid "This addon does not expose a standard configuration URL."
+msgstr "This addon does not expose a standard configuration URL."
+
+msgctxt "#90838"
+msgid "Unable to import the configured manifest. Check the HTTPS manifest URL and try again."
+msgstr "Unable to import the configured manifest. Check the HTTPS manifest URL and try again."
+
+msgctxt "#90839"
+msgid "Unable to save the configured addon."
+msgstr "Unable to save the configured addon."
+
+msgctxt "#90840"
+msgid "Unable to open the external configurator."
+msgstr "Unable to open the external configurator."
+
+msgctxt "#90841"
+msgid "Open the official addon configurator, then import its configured manifest URL as a custom addon."
+msgstr "Open the official addon configurator, then import its configured manifest URL as a custom addon."
+
 msgctxt "#90535"
 msgid "Untitled List"
 msgstr "Untitled List"

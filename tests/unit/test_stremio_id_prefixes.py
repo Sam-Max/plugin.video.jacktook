@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock, patch
 
 from lib.api.stremio.addon_manager import AddonManager
@@ -69,7 +70,8 @@ def test_add_custom_stremio_addon_only_auto_adds_video_stream_wildcards():
         dialog = MagicMock()
         dialog.input.return_value = "https://{}.example/manifest.json".format(manifest["id"])
         response = MagicMock(url=dialog.input.return_value)
-        response.json.return_value = manifest
+        response.headers = {}
+        response.iter_content.return_value = [json.dumps(manifest).encode("utf-8")]
         cache = MagicMock()
         cache.get.return_value = None
 

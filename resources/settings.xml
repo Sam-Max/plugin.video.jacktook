@@ -666,6 +666,12 @@
                         <close>false</close>
                     </control>
                 </setting>
+                <setting id="stremio_configure_addon" type="action" label="90836" help="90841">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=configure_stremio_addon)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                </setting>
                 <setting id="stremio_remove_custom_addon" type="action" label="90138" help="90340">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=remove_custom_stremio_addon)</data>
                     <control type="button" format="action">

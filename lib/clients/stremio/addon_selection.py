@@ -1,5 +1,8 @@
+import json
+import webbrowser
 from collections import Counter
 from datetime import timedelta
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 import xbmcgui
@@ -40,6 +43,84 @@ from lib.utils.kodi.utils import (
     set_setting,
     translation,
 )
+
+
+MAX_MANIFEST_BYTES = 512 * 1024
+
+
+def _redact_url(url):
+    """Keep configured paths and query parameters out of diagnostics."""
+    parts = urlsplit(str(url or ""))
+    if parts.scheme and parts.hostname:
+        return "{}://{}/<redacted>".format(parts.scheme, parts.hostname)
+    return "<redacted URL>"
+
+
+def _safe_manifest_url(url):
+    """Return a safe configured manifest endpoint, or an empty string."""
+    normalized = str(url or "").strip()
+    if normalized.startswith("stremio://"):
+        normalized = normalized.replace("stremio://", "https://", 1)
+
+    parts = urlsplit(normalized)
+    if (
+        parts.scheme.lower() != "https"
+        or not parts.hostname
+        or parts.username
+        or parts.password
+        or parts.fragment
+        or not parts.path.rstrip("/").endswith("/manifest.json")
+    ):
+        return ""
+    return urlunsplit(("https", parts.netloc, parts.path, parts.query, ""))
+
+
+def _configuration_url(addon):
+    """Derive only the documented Stremio SDK configuration endpoint."""
+    manifest_url = _safe_manifest_url(addon.transport_url)
+    if not manifest_url:
+        return ""
+
+    parts = urlsplit(manifest_url)
+    if parts.query:
+        return ""
+    base_path = parts.path.rstrip("/")[: -len("/manifest.json")]
+    return urlunsplit(("https", parts.netloc, base_path + "/configure", "", ""))
+
+
+def _fetch_manifest(url):
+    """Fetch a small JSON manifest without exposing a configured URL."""
+    manifest_url = _safe_manifest_url(url)
+    if not manifest_url:
+        raise ValueError("invalid manifest URL")
+
+    response = requests.get(
+        manifest_url,
+        headers=USER_AGENT_HEADER,
+        timeout=get_int_setting("stremio_timeout"),
+        stream=True,
+    )
+    response.raise_for_status()
+    final_url = _safe_manifest_url(response.url)
+    if not final_url:
+        raise ValueError("unsafe redirect")
+
+    content_length = response.headers.get("Content-Length")
+    if content_length and int(content_length) > MAX_MANIFEST_BYTES:
+        raise ValueError("manifest too large")
+
+    content = bytearray()
+    for chunk in response.iter_content(chunk_size=8192):
+        content.extend(chunk)
+        if len(content) > MAX_MANIFEST_BYTES:
+            raise ValueError("manifest too large")
+
+    manifest = json.loads(content.decode("utf-8"))
+    if not isinstance(manifest, dict) or not (manifest.get("id") or manifest.get("name")):
+        raise ValueError("invalid manifest")
+    if not isinstance(manifest.get("resources", []), (list, dict, str)):
+        raise ValueError("invalid manifest resources")
+    return manifest, final_url
 
 
 def _ping_addons_with_progress(addons):
@@ -180,13 +261,8 @@ def _deduplicate_addons(addons):
 
 
 def _filter_excluded_addons(addons):
-    """Filter out excluded addons and those requiring configuration."""
-    return [
-        addon
-        for addon in addons
-        if addon.manifest.id not in excluded_addons
-        and (not addon.manifest.isConfigurationRequired() or addon.transport_name == "custom")
-    ]
+    """Filter only explicitly excluded addons, including configurable ones."""
+    return [addon for addon in addons if addon.manifest.id not in excluded_addons]
 
 
 def _filter_stream_addons_by_id_prefix(addons, allowed_prefixes):
@@ -367,19 +443,15 @@ def add_custom_stremio_addon(params):
         dialog.ok(translation(90522), translation(90524))
         return
 
-    if url.startswith("stremio://"):
-        url = url.replace("stremio://", "https://")
-
-    # Try to fetch the manifest from the URL
     try:
-        response = requests.get(
-            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
-        )
-        response.raise_for_status()
-        manifest = response.json()
+        manifest, transport_url = _fetch_manifest(url)
     except Exception as e:
-        kodilog(f"Failed to fetch custom addon manifest: {e}")
-        dialog.ok(translation(90522), translation(90525) % e)
+        kodilog(
+            "Custom addon manifest import failed for {}: {}".format(
+                _redact_url(url), type(e).__name__
+            )
+        )
+        dialog.ok(translation(90522), translation(90838))
         return
 
     try:
@@ -387,7 +459,7 @@ def add_custom_stremio_addon(params):
         if not id_:
             dialog.ok(translation(90522), translation(90526))
             return
-        addon_key = build_addon_instance_key({"manifest": manifest, "transportUrl": response.url})
+        addon_key = build_addon_instance_key({"manifest": manifest, "transportUrl": transport_url})
 
         resources = manifest.get("resources", [])
         # Normalize resources to list of dicts or strings
@@ -470,7 +542,7 @@ def add_custom_stremio_addon(params):
 
         custom_addon = {
             "manifest": manifest,
-            "transportUrl": response.url,
+            "transportUrl": transport_url,
             "transportName": "custom",
         }
         custom_merge_key = get_addon_merge_key(custom_addon)
@@ -485,7 +557,37 @@ def add_custom_stremio_addon(params):
         else:
             dialog.ok(translation(90522), translation(90529))
     except Exception as e:
-        dialog.ok(translation(90522), translation(90530) % e)
+        kodilog("Custom addon persistence failed: {}".format(type(e).__name__))
+        dialog.ok(translation(90522), translation(90839))
+
+
+def configure_stremio_addon(params=None):
+    """Open a standard SDK configurator without handling its form data."""
+    addons = [
+        addon
+        for addon in _deduplicate_addons(get_addons().addons)
+        if (addon.manifest.isConfigurationRequired() or addon.manifest.isConfigurable())
+        and addon.transport_name != "custom"
+    ]
+    addon = _select_addon(translation(90836), addons)
+    if not addon:
+        return
+
+    configure_url = _configuration_url(addon)
+    if not configure_url:
+        xbmcgui.Dialog().ok(translation(90836), translation(90837))
+        return
+
+    try:
+        if not webbrowser.open(configure_url, new=2):
+            raise RuntimeError("browser did not open")
+    except Exception:
+        kodilog(
+            "Could not open Stremio addon configurator for {}".format(
+                _redact_url(addon.transport_url)
+            )
+        )
+        xbmcgui.Dialog().ok(translation(90836), translation(90840))
 
 
 def remove_custom_stremio_addon(params=None):
@@ -498,7 +600,7 @@ def remove_custom_stremio_addon(params=None):
     options = []
     for addon in removable_addons:
         manifest = addon.get("manifest", {})
-        name = manifest.get("name") or manifest.get("id") or addon.get("transportUrl", "Unknown")
+        name = manifest.get("name") or manifest.get("id") or _redact_url(addon.get("transportUrl"))
         desc = manifest.get("description", "")
         item = xbmcgui.ListItem(label=name, label2=desc)
 
