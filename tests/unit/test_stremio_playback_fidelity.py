@@ -992,6 +992,108 @@ def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
     )
 
 
+def _catalog_client():
+    return addon_client.StremioAddonCatalogsClient(
+        {
+            "addon_url": "https://private.addon.example/token",
+            "catalog_type": "movie",
+            "catalog_id": "secret-catalog-id",
+        }
+    )
+
+
+def _assert_safe_catalog_logs(logs):
+    log_output = "\n".join(call.args[0] for call in logs.call_args_list)
+    assert "private.addon.example" not in log_output
+    assert "token" not in log_output
+    assert "secret-catalog-id" not in log_output
+    assert "Sensitive Search" not in log_output
+    assert "Private Genre" not in log_output
+    return log_output
+
+
+def test_catalog_telemetry_logs_safe_success_details(monkeypatch):
+    client = _catalog_client()
+    kodilog = MagicMock()
+
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            return {"metas": [{"id": "private-meta-id"}, {"id": "another-private-id"}]}
+
+    monkeypatch.setattr(client.session, "get", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+    monkeypatch.setattr(addon_client, "kodilog", kodilog)
+
+    client.get_catalog_info(search="Sensitive Search", genre="Private Genre")
+
+    log_output = _assert_safe_catalog_logs(kodilog)
+    assert "catalog_type=movie" in log_output
+    assert "extra_keys=['genre', 'search']" in log_output
+    assert "http_status=200" in log_output
+    assert "metas=2" in log_output
+
+
+def test_catalog_telemetry_logs_safe_http_error(monkeypatch):
+    client = _catalog_client()
+    kodilog = MagicMock()
+
+    class _Response:
+        status_code = 503
+
+    monkeypatch.setattr(client.session, "get", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+    monkeypatch.setattr(addon_client, "kodilog", kodilog)
+
+    assert client.get_catalog_info(search="Sensitive Search") is None
+
+    log_output = _assert_safe_catalog_logs(kodilog)
+    assert "http_status=503" in log_output
+    assert "failure=http_error" in log_output
+
+
+def test_catalog_telemetry_logs_safe_invalid_json(monkeypatch):
+    client = _catalog_client()
+    kodilog = MagicMock()
+
+    class _Response:
+        status_code = 200
+
+        def json(self):
+            raise ValueError("https://private.addon.example/token")
+
+    monkeypatch.setattr(client.session, "get", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+    monkeypatch.setattr(addon_client, "kodilog", kodilog)
+
+    with pytest.raises(ValueError):
+        client.get_catalog_info(search="Sensitive Search")
+
+    log_output = _assert_safe_catalog_logs(kodilog)
+    assert "http_status=200" in log_output
+    assert "failure=invalid_json" in log_output
+
+
+def test_catalog_telemetry_logs_safe_request_error(monkeypatch):
+    client = _catalog_client()
+    kodilog = MagicMock()
+
+    def _raise_request_error(*args, **kwargs):
+        raise RuntimeError("https://private.addon.example/token")
+
+    monkeypatch.setattr(client.session, "get", _raise_request_error)
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+    monkeypatch.setattr(addon_client, "kodilog", kodilog)
+
+    with pytest.raises(RuntimeError):
+        client.get_catalog_info(search="Sensitive Search")
+
+    log_output = _assert_safe_catalog_logs(kodilog)
+    assert "http_status=unavailable" in log_output
+    assert "failure=request_error" in log_output
+
+
 def test_preferred_video_streams_precede_normal_search_without_replacing_it(monkeypatch):
     preferred = {
         "url": "https://media.example/episode.mkv",

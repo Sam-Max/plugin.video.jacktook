@@ -112,18 +112,44 @@ class StremioAddonCatalogsClient(BaseClient):
         catalog_type = self.params.get("catalog_type")
         catalog_id = self.params.get("catalog_id")
         url = f"{self.base_url}/catalog/{catalog_type}/{catalog_id}{path_suffix}"
-
-        kodilog(f"Using Stremio addon catalog URL: {url}")
-
-        res = self.session.get(
-            url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+        extra_keys = sorted(
+            str(key) for key, value in kwargs.items() if value is not None and value != ""
         )
+        log_context = f"catalog_type={catalog_type} extra_keys={extra_keys}"
+
+        kodilog(f"Stremio catalog request: {log_context}")
+
+        try:
+            res = self.session.get(
+                url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
+            )
+        except Exception:
+            kodilog(
+                f"Stremio catalog request failed: {log_context} "
+                "http_status=unavailable failure=request_error"
+            )
+            raise
         if res.status_code != 200:
+            kodilog(
+                f"Stremio catalog response failed: {log_context} "
+                f"http_status={res.status_code} failure=http_error"
+            )
             return
 
-        data = res.json()
+        try:
+            data = res.json()
+        except Exception:
+            kodilog(
+                f"Stremio catalog response failed: {log_context} "
+                "http_status=200 failure=invalid_json"
+            )
+            raise
         if "metas" in data:
+            metas_count = len(data["metas"]) if isinstance(data["metas"], (list, tuple)) else "unknown"
             data["metas"] = [MetaPreview.from_dict(m) for m in data["metas"]]
+        else:
+            metas_count = 0
+        kodilog(f"Stremio catalog response: {log_context} http_status=200 metas={metas_count}")
         return data
 
     def get_meta_info(self) -> Optional[Dict[str, Any]]:
