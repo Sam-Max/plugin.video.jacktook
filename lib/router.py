@@ -113,6 +113,7 @@ def _is_stremio_action(action):
     return action.startswith(("stremio_", "list_stremio")) or action in {
         "clear_stremio_search_history",
         "list_catalog",
+        "list_catalog_genres",
         "search_catalog",
         "add_custom_stremio_addon",
         "configure_stremio_addon",
@@ -288,6 +289,7 @@ def _route_stremio(action, params):
         from lib.clients.stremio.catalog_menus import (
             clear_stremio_search_history,
             list_catalog,
+            list_catalog_genres,
             list_stremio_episodes,
             list_stremio_movie,
             list_stremio_seasons,
@@ -299,6 +301,7 @@ def _route_stremio(action, params):
         actions = {
             "clear_stremio_search_history": clear_stremio_search_history,
             "list_catalog": list_catalog,
+            "list_catalog_genres": list_catalog_genres,
             "list_stremio_seasons": list_stremio_seasons,
             "list_stremio_episodes": list_stremio_episodes,
             "list_stremio_movie": list_stremio_movie,

@@ -281,34 +281,24 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                     )
                 )
 
-            genre_extra = next(
-                (
-                    extra
-                    for extra in catalog.extra
-                    if extra.get("name") == "genre" and extra.get("options")
-                ),
-                None,
-            )
-            if genre_extra:
-                for genre in genre_extra["options"]:
-                    listitem = make_list_item(label=genre)
-                    listitem.setArt({"icon": addon.manifest.logo})
+            if _catalog_genres(catalog):
+                listitem = make_list_item(label="Genres")
+                listitem.setArt({"icon": addon.manifest.logo})
 
-                    directory_items.append(
-                        (
-                            build_url(
-                                action="list_catalog",
-                                addon_url=addon.url(),
-                                menu_type=menu_type,
-                                sub_menu_type=sub_menu_type,
-                                catalog_type=catalog.type,
-                                catalog_id=catalog.id,
-                                genre=genre,
-                            ),
-                            listitem,
-                            True,
-                        )
+                directory_items.append(
+                    (
+                        build_url(
+                            action="list_catalog_genres",
+                            addon_url=addon.url(),
+                            menu_type=menu_type,
+                            sub_menu_type=sub_menu_type,
+                            catalog_type=catalog.type,
+                            catalog_id=catalog.id,
+                        ),
+                        listitem,
+                        True,
                     )
+                )
 
             if catalog_name or catalog_id:
                 if addon.manifest.name == "Cinemeta":
@@ -347,6 +337,46 @@ def _get_manifest_catalog(addon_url, catalog_type, catalog_id):
             return catalog
 
     return None
+
+
+def _catalog_genres(catalog):
+    for extra in catalog.extra:
+        if extra.get("name") == "genre" and extra.get("options"):
+            return extra["options"]
+    return []
+
+
+def list_catalog_genres(params):
+    catalog = _get_manifest_catalog(
+        params["addon_url"], params["catalog_type"], params["catalog_id"]
+    )
+    addon = get_addon_by_base_url(params["addon_url"])
+    if not catalog or not addon:
+        end_of_directory()
+        return
+
+    directory_items = []
+    for genre in _catalog_genres(catalog):
+        listitem = make_list_item(label=genre)
+        listitem.setArt({"icon": addon.manifest.logo})
+        directory_items.append(
+            (
+                build_url(
+                    action="list_catalog",
+                    addon_url=params["addon_url"],
+                    menu_type=params["menu_type"],
+                    sub_menu_type=params.get("sub_menu_type", ""),
+                    catalog_type=params["catalog_type"],
+                    catalog_id=params["catalog_id"],
+                    genre=genre,
+                ),
+                listitem,
+                True,
+            )
+        )
+
+    add_directory_items_batch(directory_items)
+    end_of_directory()
 
 
 def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name):
