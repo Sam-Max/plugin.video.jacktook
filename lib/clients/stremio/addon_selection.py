@@ -567,7 +567,6 @@ def configure_stremio_addon(params=None):
         addon
         for addon in _deduplicate_addons(get_addons().addons)
         if (addon.manifest.isConfigurationRequired() or addon.manifest.isConfigurable())
-        and addon.transport_name != "custom"
     ]
     addon = _select_addon(translation(90836), addons)
     if not addon:

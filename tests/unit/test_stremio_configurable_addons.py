@@ -61,12 +61,13 @@ def test_configuration_url_only_uses_standard_https_manifest_endpoint():
     assert addon_selection._configuration_url(manager.addons[0]) == ""
 
 
-def test_configure_addon_opens_derived_url(monkeypatch):
+def test_configure_custom_addon_opens_derived_url(monkeypatch):
     manager = AddonManager(
         [
             {
                 "manifest": dict(_manifest(), behaviorHints={"configurable": True}),
                 "transportUrl": "https://addon.example/manifest.json",
+                "transportName": "custom",
             }
         ]
     )
@@ -85,7 +86,35 @@ def test_configure_addon_opens_derived_url(monkeypatch):
 
     addon_selection.configure_stremio_addon()
 
+    dialog.select.assert_called_once()
     assert dialog.ok.call_count == 0
+
+
+def test_configure_custom_addon_with_query_shows_safe_warning(monkeypatch):
+    manager = AddonManager(
+        [
+            {
+                "manifest": dict(_manifest(), behaviorHints={"configurationRequired": True}),
+                "transportUrl": "https://addon.example/manifest.json?token=secret",
+                "transportName": "custom",
+            }
+        ]
+    )
+    dialog = MagicMock()
+    dialog.select.return_value = 0
+    browser_open = MagicMock()
+    monkeypatch.setattr(addon_selection, "get_addons", lambda: manager)
+    monkeypatch.setattr(
+        addon_selection, "get_addon_display_name", lambda addon: addon.manifest.name
+    )
+    monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", lambda: dialog)
+    monkeypatch.setattr(addon_selection.webbrowser, "open", browser_open)
+
+    addon_selection.configure_stremio_addon()
+
+    dialog.select.assert_called_once()
+    dialog.ok.assert_called_once_with(addon_selection.translation(90836), addon_selection.translation(90837))
+    browser_open.assert_not_called()
 
 
 def test_custom_import_rejects_insecure_url_without_exposing_token(monkeypatch):
