@@ -1,6 +1,35 @@
 import re
 
 
+VIDEO_EXTENSIONS = (
+    "avi",
+    "m2ts",
+    "m4v",
+    "mkv",
+    "mov",
+    "mp4",
+    "mpeg",
+    "mpg",
+    "ts",
+    "webm",
+    "wmv",
+)
+TECHNICAL_RELEASE_GROUP = re.compile(
+    r"^(?:"
+    r"(?:2160|1080|720|480)p|4k|8k|[0-9]+bit|"
+    r"x26[45]|h\.?26[45]|hevc|av1|avc|"
+    r"hdr(?:10\+?)?|dv|dolby-vision|"
+    r"web(?:-dl)?|webrip|bluray|bdrip|brrip|remux|"
+    r"proper|repack|real|complete|internal|"
+    r"multi|dual|latino|castellano|english|spanish|german|french|italian|"
+    r"japanese|korean|russian|"
+    r"dts(?:-hd|-x)?|truehd|atmos|aac|ac3|e-?ac3|ddp?[0-9]*|flac|opus|mp3|"
+    r"[0-9]+ch|dl|[0-9]{3,4}x[0-9]{3,4}|s[0-9]+e[0-9]+"
+    r")$",
+    re.IGNORECASE,
+)
+
+
 def get_color_tag(label, text, color):
     # Standardized format [B]LABEL: VALUE[/B]
     clean_color = color.replace("FF", "CC")
@@ -122,6 +151,34 @@ def extract_codec_hdr(title):
         hdr = "HDR"
 
     return codec, hdr
+
+
+def _extract_release_group(title):
+    title_without_extension = re.sub(
+        rf"\.({'|'.join(VIDEO_EXTENSIONS)})$", "", title.strip(), flags=re.IGNORECASE
+    )
+    candidates = []
+    remaining_title = title_without_extension
+
+    while True:
+        match = re.match(r"^\s*\[([a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)\]\s*", remaining_title)
+        if not match:
+            break
+        candidate = match.group(1)
+        if not TECHNICAL_RELEASE_GROUP.fullmatch(candidate):
+            candidates.append(candidate)
+        remaining_title = remaining_title[match.end() :]
+
+    match = re.search(r"-([a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*)$", title_without_extension)
+    if match and not TECHNICAL_RELEASE_GROUP.fullmatch(match.group(1)):
+        candidates.append(match.group(1))
+
+    unique_candidates = {}
+    for candidate in candidates:
+        unique_candidates.setdefault(candidate.casefold(), candidate)
+    if len(unique_candidates) != 1:
+        return ""
+    return next(iter(unique_candidates.values()))
 
 
 def parse_title_info(title):
@@ -281,9 +338,6 @@ def parse_title_info(title):
     bullet = "[COLOR 80FFFFFF] • [/COLOR]"
     info["badges"] = f"  {bullet}  ".join(badges_list)
 
-    # Release Group
-    match = re.search(r"-([a-zA-Z0-9]+)$", title)
-    if match:
-        info["release_group"] = match.group(1)
+    info["release_group"] = _extract_release_group(title)
 
     return info

@@ -2159,6 +2159,10 @@ msgctxt "#32303"
 msgid "Filter by Language"
 msgstr "Filtrar por Idioma"
 
+msgctxt "#32307"
+msgid "Filter by Release Group"
+msgstr "Filtrar por Grupo de Lanzamiento"
+
 msgctxt "#32304"
 msgid "Filter by Torrents"
 msgstr "Filtrar por Torrents"

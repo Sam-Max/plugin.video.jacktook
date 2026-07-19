@@ -2167,6 +2167,10 @@ msgctxt "#32303"
 msgid "Filter by Language"
 msgstr "Filtrează după limbă"
 
+msgctxt "#32307"
+msgid "Filter by Release Group"
+msgstr "Filtrează după grupul de lansare"
+
 msgctxt "#32304"
 msgid "Filter by Torrents"
 msgstr "Filtrează după torrente"

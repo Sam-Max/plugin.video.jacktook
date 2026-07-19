@@ -151,6 +151,17 @@ class SourceSelect(BaseWindow):
         def get_unique(attr):
             return sorted(set(getattr(s, attr) for s in self.sources if getattr(s, attr)))
 
+        def get_release_groups():
+            groups = {}
+            for source in self.sources:
+                release_group = parse_title_info(source.title)["release_group"]
+                if release_group:
+                    groups.setdefault(release_group.casefold(), set()).add(release_group)
+            return [
+                sorted(groups[key], key=lambda group: (group.isupper(), group.islower(), group))[0]
+                for key in sorted(groups)
+            ]
+
         filter_map = {
             "quality": {
                 "items": lambda: get_unique("quality"),
@@ -174,6 +185,14 @@ class SourceSelect(BaseWindow):
                     s
                     for s in self.sources
                     if val in getattr(s, "languages", []) or val in getattr(s, "fullLanguages", [])
+                ],
+            },
+            "release_group": {
+                "items": get_release_groups,
+                "filter": lambda val: [
+                    s
+                    for s in self.sources
+                    if parse_title_info(s.title)["release_group"].casefold() == val.casefold()
                 ],
             },
         }

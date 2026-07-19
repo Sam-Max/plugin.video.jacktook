@@ -1,5 +1,6 @@
 import importlib
 import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from lib.domain.torrent import TorrentStream
@@ -237,6 +238,68 @@ def test_populate_sources_list_uses_current_stremio_alias_for_cached_source():
         == "New Alias (example.com, custom)"
     )
     assert source_select.display_list.items[1].properties["indexer"] == "Other Addon"
+
+
+def test_release_group_filter_is_case_insensitive_and_uses_stable_labels():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.sources = [
+        SimpleNamespace(title="[Judas] Show - 01", provider="First"),
+        SimpleNamespace(title="Show.S01E02-Erai-Raws.mkv", provider="Second"),
+        SimpleNamespace(title="Show.S01E03-JUDAS.mkv", provider="Third"),
+    ]
+    source_select.filtered_sources = None
+    source_select.filter_applied = False
+    source_select.display_list = MagicMock()
+    source_select.populate_sources_list = MagicMock()
+    source_select.set_default_focus = MagicMock()
+
+    filter_type_popup = MagicMock(selected_type="release_group")
+    filter_popup = MagicMock(selected_filter="judas")
+    with patch.object(
+        source_select_module, "FilterTypeWindow", return_value=filter_type_popup
+    ), patch.object(
+        source_select_module, "FilterWindow", return_value=filter_popup
+    ) as filter_window:
+        source_select._handle_filter_action()
+
+    assert filter_popup.doModal.called
+    assert filter_window.call_args.kwargs["filter"] == ["Erai-Raws", "Judas"]
+    assert source_select.filtered_sources == [source_select.sources[0], source_select.sources[2]]
+    assert source_select.filter_applied is True
+
+
+def test_existing_provider_filter_and_release_group_cancel_are_preserved():
+    source_select_module = _load_source_select_module()
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.sources = [
+        SimpleNamespace(title="[Judas] Show - 01", provider="First"),
+        SimpleNamespace(title="Show.S01E02-Erai-Raws.mkv", provider="Second"),
+    ]
+    source_select.filtered_sources = [source_select.sources[0]]
+    source_select.filter_applied = True
+    source_select.display_list = MagicMock()
+    source_select.populate_sources_list = MagicMock()
+    source_select.set_default_focus = MagicMock()
+
+    filter_type_popup = MagicMock(selected_type="provider")
+    filter_popup = MagicMock(selected_filter="Second")
+    with patch.object(
+        source_select_module, "FilterTypeWindow", return_value=filter_type_popup
+    ), patch.object(source_select_module, "FilterWindow", return_value=filter_popup):
+        source_select._handle_filter_action()
+
+    assert source_select.filtered_sources == [source_select.sources[1]]
+
+    filter_type_popup.selected_type = "release_group"
+    filter_popup.selected_filter = None
+    with patch.object(
+        source_select_module, "FilterTypeWindow", return_value=filter_type_popup
+    ), patch.object(source_select_module, "FilterWindow", return_value=filter_popup):
+        source_select._handle_filter_action()
+
+    assert source_select.filtered_sources is None
+    assert source_select.filter_applied is False
 
 
 def test_torrent_context_menu_does_not_include_download_video():

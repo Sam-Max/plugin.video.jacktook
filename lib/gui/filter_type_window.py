@@ -29,6 +29,10 @@ class FilterTypeWindow(BaseWindow):
         language_item.setProperty("type", "language")
         self.list_control.addItem(language_item)
 
+        release_group_item = xbmcgui.ListItem(label=translation(32307))
+        release_group_item.setProperty("type", "release_group")
+        self.list_control.addItem(release_group_item)
+
         torrents_item = xbmcgui.ListItem(label=translation(32304))
         torrents_item.setProperty("type", "only_torrents")
         self.list_control.addItem(torrents_item)
