@@ -966,6 +966,30 @@ def test_channel_streams_reuse_tv_playback_and_close_on_incomplete_data(monkeypa
     assert json.loads(captured[0][0])["type"] == catalog_menus.IndexerType.DIRECT
 
 
+def test_channel_streams_mark_fetched_and_embedded_payloads_as_live_tv(monkeypatch):
+    fetched = _capture_catalog_builder(
+        monkeypatch,
+        catalog_menus.list_stremio_tv,
+        {"streams": [{"url": "https://example.com/fetched-news.m3u8"}]},
+        _catalog_params(catalog_type="channel"),
+    )
+    captured = []
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="": MagicMock())
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", captured.extend)
+    monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: kwargs["data"])
+
+    catalog_menus.list_stremio_tv_streams(
+        _catalog_params(
+            catalog_type="channel",
+            streams=json.dumps([{"url": "https://example.com/embedded-news.m3u8"}]),
+        )
+    )
+
+    assert fetched[0]["is_live_tv"] is True
+    assert json.loads(captured[0][0])["is_live_tv"] is True
+
+
 def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
     client = addon_client.StremioAddonCatalogsClient(
         {"addon_url": "https://example.com/addon", "catalog_type": "movie", "catalog_id": "popular"}

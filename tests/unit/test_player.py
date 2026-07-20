@@ -64,6 +64,50 @@ def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
     test_player.monitor.assert_called_once_with()
 
 
+def test_live_tv_skips_authenticated_trakt_scrobbling_and_resume(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["is_live_tv"] = True
+    test_player._is_trakt_scrobble_active = False
+    trakt_api = MagicMock()
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "set_property", MagicMock())
+
+    test_player._handle_trakt_scrobble(MagicMock())
+    test_player.add_external_trakt_scrolling()
+    test_player.mark_watched(test_player.data)
+    test_player.handle_playback_stop()
+
+    trakt_api.assert_not_called()
+    player_module.set_property.assert_not_called()
+    player_module.set_watched_file.assert_not_called()
+    assert test_player._is_trakt_scrobble_active is False
+
+
+def test_non_live_tv_keeps_authenticated_trakt_scrobbling(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player._is_trakt_scrobble_active = False
+    trakt_api = MagicMock()
+    trakt_api.return_value.scrobble.trakt_get_last_tracked_position.return_value = 25
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+    list_item = MagicMock()
+
+    test_player._handle_trakt_scrobble(list_item)
+
+    trakt_api.return_value.scrobble.trakt_get_last_tracked_position.assert_called_once_with(
+        test_player.data
+    )
+    trakt_api.return_value.scrobble.trakt_start_scrobble.assert_called_once_with(test_player.data)
+    list_item.setProperty.assert_called_once_with("StartPercent", "25")
+    assert test_player._is_trakt_scrobble_active is True
+
+
 def test_run_does_not_add_next_episode_to_kodi_playlist():
     source = PLAYER_PATH.read_text()
     run_match = re.search(

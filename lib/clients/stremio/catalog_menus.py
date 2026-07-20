@@ -1056,6 +1056,8 @@ def _stremio_catalog_playback_data(stream, params):
         "catalog_type": params.get("catalog_type", ""),
         "meta_id": params.get("meta_id", ""),
     }
+    if params.get("catalog_type") == "channel":
+        playback_data["is_live_tv"] = True
 
     for key in ("type", "debrid_type", "indexer", "is_pack"):
         value = payload.get(key)

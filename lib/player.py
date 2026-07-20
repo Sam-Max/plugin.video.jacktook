@@ -75,7 +75,8 @@ class JacktookPLayer(xbmc.Player):
             data = {}
         self.set_constants(data)
         self.clear_playback_properties()
-        self.add_external_trakt_scrolling()
+        if not self._is_live_tv():
+            self.add_external_trakt_scrolling()
         self.mark_watched(data)
 
         close_busy_dialog()
@@ -208,6 +209,8 @@ class JacktookPLayer(xbmc.Player):
             return True
 
     def _handle_trakt_scrobble(self, list_item):
+        if self._is_live_tv():
+            return
         if is_trakt_auth() and get_setting("trakt_scrobbling_enabled") and self.data.get("ids"):
             last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
             if last_position > 0:
@@ -217,7 +220,7 @@ class JacktookPLayer(xbmc.Player):
 
     def _is_trakt_scrobble_enabled(self):
         return (
-            self._is_trakt_scrobble_active
+            not self._is_live_tv() and self._is_trakt_scrobble_active
             and is_trakt_auth()
             and get_setting("trakt_scrobbling_enabled")
             and self.data.get("ids")
@@ -829,8 +832,8 @@ class JacktookPLayer(xbmc.Player):
             TraktAPI().scrobble.trakt_stop_scrobble(self.data)
             self._is_trakt_scrobble_active = False
 
-        # Persist playback progress
-        set_watched_file(self.data)
+        if not self._is_live_tv():
+            set_watched_file(self.data)
 
         close_busy_dialog()
         clear_property("jacktook_next_dialog_action")
@@ -1026,6 +1029,8 @@ class JacktookPLayer(xbmc.Player):
         clear_property("script.trakt.ids")
 
     def add_external_trakt_scrolling(self):
+        if self._is_live_tv():
+            return
         ids = self.data.get("ids", {})
         mode = self.data.get("mode")
         title = self.data.get("title", "")
@@ -1086,7 +1091,12 @@ class JacktookPLayer(xbmc.Player):
             notification("Playback Cancelled", time=2000)
 
     def mark_watched(self, data):
+        if self._is_live_tv():
+            return
         set_watched_file(data)
+
+    def _is_live_tv(self):
+        return bool(self.data.get("is_live_tv"))
 
     def cancel_playback(self):
         kodilog("[PLAYER] cancel_playback called")
