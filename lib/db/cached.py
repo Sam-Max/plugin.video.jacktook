@@ -6,7 +6,7 @@ import sys
 import threading
 import traceback
 from base64 import b64decode, b64encode
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 
 import xbmc
@@ -37,6 +37,11 @@ SQLITE_SETTINGS = {
     "mmap_size": 64 * 1024 * 1024,
     "synchronous": "normal",
 }
+
+
+def utc_now():
+    """Return the current UTC time in the cache's legacy naive format."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def pickle_hash(obj):
@@ -125,7 +130,7 @@ class MemoryCache(_BaseCache):
                 if isinstance(decoded_data, tuple) and len(decoded_data) == 2:
                     val, expires = decoded_data
                     if isinstance(expires, datetime):
-                        if expires > datetime.utcnow():
+                        if expires > utc_now():
                             return val
                         else:
                             self.delete(key)
@@ -138,7 +143,7 @@ class MemoryCache(_BaseCache):
         self._add_key_to_index(key)
         try:
             # Wrap data with expiry
-            expiry_dt = datetime.utcnow() + expires
+            expiry_dt = utc_now() + expires
             val_to_store = (data, expiry_dt)
 
             blob = self._dump_func(val_to_store)
@@ -288,7 +293,7 @@ class SQLiteCache(_BaseCache):
         for k, v in SQLITE_SETTINGS.items():
             self._conn.execute(f"PRAGMA {k}={v}")
         self._cleanup_interval = cleanup_interval
-        self._last_cleanup = datetime.utcnow()
+        self._last_cleanup = utc_now()
         self.clean_up()
         self._object_store = {}  # store raw objects that can't be pickled
         self._lock = threading.Lock()
@@ -330,7 +335,7 @@ class SQLiteCache(_BaseCache):
         with self._lock:
             if key in self._object_store:
                 data, expires = self._object_store[key]
-                if expires > datetime.utcnow():
+                if expires > utc_now():
                     return data
                 else:
                     del self._object_store[key]
@@ -346,7 +351,7 @@ class SQLiteCache(_BaseCache):
                 return None
             if result:
                 data, expires = result
-                if expires > datetime.utcnow():
+                if expires > utc_now():
                     return self._process(data)
             return None
 
@@ -359,7 +364,7 @@ class SQLiteCache(_BaseCache):
                     (
                         key,
                         sqlite3.Binary(self._prepare(data)),
-                        datetime.utcnow() + expires,
+                        utc_now() + expires,
                     ),
                 )
                 kodilog(
@@ -379,7 +384,7 @@ class SQLiteCache(_BaseCache):
         self.set(
             key,
             self._prepare([]),
-            datetime.utcnow(),  # Set an immediate expiry to clear the list
+            utc_now(),  # Set an immediate expiry to clear the list
         )
 
     def delete(self, key):
@@ -399,13 +404,13 @@ class SQLiteCache(_BaseCache):
 
     @property
     def needs_cleanup(self):
-        return self._last_cleanup + self._cleanup_interval < datetime.utcnow()
+        return self._last_cleanup + self._cleanup_interval < utc_now()
 
     def clean_up(self):
         self._conn.execute(
             "DELETE FROM `cached` WHERE expires <= STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')"
         )
-        self._last_cleanup = datetime.utcnow()
+        self._last_cleanup = utc_now()
 
     def clean_all(self):
         self._conn.execute("DELETE FROM cached")
