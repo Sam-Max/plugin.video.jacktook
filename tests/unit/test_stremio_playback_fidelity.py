@@ -752,6 +752,56 @@ def test_show_source_select_rejects_unsupported_stremio_sources_before_dialog(mo
     assert notifications == ["External web pages are not playable sources."]
 
 
+def test_show_source_select_silently_filters_unverified_file_index_with_valid_source(monkeypatch):
+    shown = []
+    notifications = []
+    rejected = TorrentStream(
+        title="Indexed torrent",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata=_supported_hash_payload(fileIdx=3),
+    )
+    valid = TorrentStream(
+        title="Direct stream",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"url": "https://media.example/movie.mkv"},
+    )
+
+    monkeypatch.setattr(search, "notification", notifications.append)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        search,
+        "source_select",
+        lambda *_args, **kwargs: shown.extend(kwargs["sources"]) or True,
+    )
+
+    assert search.show_source_select(
+        [rejected, valid], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
+    ) is True
+    assert shown == [valid]
+    assert notifications == []
+
+
+def test_show_source_select_notifies_once_when_all_file_indexes_are_unverified(monkeypatch):
+    shown = []
+    notifications = []
+    rejected = TorrentStream(
+        title="Indexed torrent",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata=_supported_hash_payload(fileIdx=3),
+    )
+
+    monkeypatch.setattr(search, "notification", notifications.append)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "source_select", lambda *_args, **_kwargs: shown.append(True) or True)
+
+    assert search.show_source_select(
+        [rejected, rejected], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
+    ) is False
+    assert shown == []
+    assert notifications == ["This torrent client cannot verify the requested file index."]
+
+
 def _catalog_params(**overrides):
     params = {
         "addon_url": "https://example.com/addon",

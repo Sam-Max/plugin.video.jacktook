@@ -449,7 +449,11 @@ def _stremio_metadata_diagnostics(candidate: Any) -> str:
     return " ".join(fields)
 
 
-def _prepare_stremio_results(results: List[TorrentStream]) -> List[TorrentStream]:
+def _prepare_stremio_results(
+    results: List[TorrentStream],
+    notify_rejections: bool = True,
+    rejection_reasons: Optional[List[str]] = None,
+) -> List[TorrentStream]:
     prepared = []
     for source_index, result in enumerate(results):
         if not _is_stremio_source(result):
@@ -468,7 +472,10 @@ def _prepare_stremio_results(results: List[TorrentStream]) -> List[TorrentStream
                 if metadata_diagnostics:
                     diagnostics += f" {metadata_diagnostics}"
             kodilog(diagnostics, xbmc.LOGWARNING)
-            notification(decision.reason)
+            if rejection_reasons is not None:
+                rejection_reasons.append(decision.reason)
+            if notify_rejections:
+                notification(decision.reason)
     return prepared
 
 
@@ -1432,8 +1439,15 @@ def show_source_select(
     direct: bool = False,
     autoplay_context: Optional[str] = None,
 ) -> bool:
-    results = _prepare_stremio_results(results)
+    rejection_reasons = []
+    results = _prepare_stremio_results(
+        results,
+        notify_rejections=False,
+        rejection_reasons=rejection_reasons,
+    )
     if not results:
+        if rejection_reasons:
+            notification(rejection_reasons[0])
         return False
 
     item_info = {
