@@ -243,13 +243,11 @@ def classify(
             return _unsupported(*magnet_error)
         if candidate.infoHash and candidate.infoHash.lower() != info_hash:
             return _unsupported("malformed_locator", "The torrent locator is malformed.")
-        trackers, tracker_error = _normalized_trackers(
+        _trackers, tracker_error = _normalized_trackers(
             list(candidate.sources) + list(candidate.trackers) + magnet_trackers
         )
         if tracker_error:
             return _unsupported(*tracker_error)
-        if not trackers:
-            return _unsupported("dht_only", "DHT-only torrent sources are not supported.")
         return _torrent_decision(candidate, capabilities)
 
     if candidate.url:
@@ -262,13 +260,11 @@ def classify(
     if candidate.infoHash:
         if not _HASH_RE.fullmatch(candidate.infoHash):
             return _unsupported("malformed_locator", "The torrent hash is malformed.")
-        trackers, tracker_error = _normalized_trackers(
+        _trackers, tracker_error = _normalized_trackers(
             list(candidate.sources) + list(candidate.trackers)
         )
         if tracker_error:
             return _unsupported(*tracker_error)
-        if not trackers:
-            return _unsupported("dht_only", "DHT-only torrent sources are not supported.")
         return _torrent_decision(candidate, capabilities)
 
     return _unsupported("unsupported_source", "The source cannot be played by Kodi.")

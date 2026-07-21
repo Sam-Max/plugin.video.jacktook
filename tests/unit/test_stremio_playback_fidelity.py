@@ -16,6 +16,8 @@ from lib.clients.stremio.playback import (
     resolve,
 )
 from lib.domain.torrent import TorrentStream
+from lib.utils.general.utils import IndexerType
+from lib.utils.player import utils as player_utils
 
 INFO_HASH = "0123456789abcdef0123456789abcdef01234567"
 TRACKER_A = "https://tracker-a.example/announce"
@@ -280,7 +282,6 @@ def test_pipe_in_direct_locator_remains_rejected():
         {"zipUrls": ["https://archive.example/movie.zip"]},
         {"7zipUrls": ["https://archive.example/movie.7z"]},
         {"nzbUrl": "https://usenet.example/movie.nzb"},
-        {"url": "magnet:?xt=urn:btih:" + INFO_HASH},
         {"url": "javascript:alert(1)"},
         {"url": "https://"},
         {},
@@ -321,6 +322,55 @@ def test_hash_resolution_deterministically_combines_sources_and_legacy_trackers(
         "&tr=https%3A%2F%2Ftracker-c.example%2Fannounce"
     )
     assert resolved["info_hash"] == INFO_HASH
+
+
+def test_trackerless_info_hash_reaches_external_torrent_client(monkeypatch):
+    captured = {}
+
+    def resolve_with_client(magnet, url, mode, ids, client="", data=None):
+        captured.update(
+            magnet=magnet,
+            url=url,
+            mode=mode,
+            ids=ids,
+            client=client,
+            data=data,
+        )
+        return "plugin://torrent-client/play"
+
+    preferred = {"infoHash": INFO_HASH, "title": "Trackerless torrent"}
+    source = search._preferred_stremio_results([preferred])[0]
+    payload = resolve(candidate_from_payload(payload_from_torrent(source)))
+
+    monkeypatch.setattr(player_utils, "get_setting", lambda key: key == "torrent_enable")
+    monkeypatch.setattr(player_utils, "get_torrent_url_for_client", resolve_with_client)
+
+    assert source.type == IndexerType.TORRENT
+    assert player_utils.resolve_playback_url(payload)["url"] == "plugin://torrent-client/play"
+    assert captured["magnet"] == f"magnet:?xt=urn:btih:{INFO_HASH}"
+    assert captured["url"] == f"magnet:?xt=urn:btih:{INFO_HASH}"
+
+
+def test_malformed_info_hash_remains_rejected():
+    decision = classify(normalize_stream({"infoHash": "not-a-valid-hash"}))
+
+    assert decision.supported is False
+    assert decision.code == "malformed_locator"
+
+
+@pytest.mark.parametrize(
+    ("tracker", "expected_code"),
+    [
+        ("not-a-tracker-url", "malformed_tracker"),
+        ("https://user:password@tracker.example/announce", "unsafe_locator"),
+        ("https://tracker.example/announce|unsafe", "unsafe_locator"),
+    ],
+)
+def test_trackerless_torrents_reject_malformed_or_unsafe_trackers(tracker, expected_code):
+    decision = classify(normalize_stream({"infoHash": INFO_HASH, "trackers": [tracker]}))
+
+    assert decision.supported is False
+    assert decision.code == expected_code
 
 
 @pytest.mark.parametrize(
@@ -780,6 +830,47 @@ def test_show_source_select_silently_filters_unverified_file_index_with_valid_so
     ) is True
     assert shown == [valid]
     assert notifications == []
+
+
+def test_show_source_select_preserves_trackerless_torrents_without_notification(monkeypatch):
+    shown = []
+    notifications = []
+    trackerless = TorrentStream(
+        title="Trackerless torrent",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"infoHash": INFO_HASH},
+    )
+    valid = TorrentStream(
+        title="Direct stream",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"url": "https://media.example/movie.mkv"},
+    )
+
+    monkeypatch.setattr(search, "notification", notifications.append)
+    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
+    monkeypatch.setattr(
+        search,
+        "source_select",
+        lambda *_args, **kwargs: shown.extend(kwargs["sources"]) or True,
+    )
+
+    assert search.show_source_select(
+        [trackerless, valid], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
+    ) is True
+    assert shown == [trackerless, valid]
+    assert notifications == []
+
+
+def test_preferred_trackerless_stream_uses_external_torrent_client_contract():
+    preferred = {"infoHash": INFO_HASH, "title": "Trackerless torrent"}
+
+    results = search._preferred_stremio_results([preferred])
+
+    assert len(results) == 1
+    assert results[0].type == IndexerType.TORRENT
+    assert results[0].infoHash == INFO_HASH
+    assert results[0].url == f"magnet:?xt=urn:btih:{INFO_HASH}"
 
 
 def test_show_source_select_notifies_once_when_all_file_indexes_are_unverified(monkeypatch):

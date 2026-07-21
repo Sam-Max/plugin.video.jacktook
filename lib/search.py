@@ -30,11 +30,13 @@ from lib.utils.debrid.debrid_utils import check_debrid_cached
 from lib.utils.general.utils import (
     DialogListener,
     Indexer,
+    IndexerType,
     SearchVariant,
     build_media_metadata,
     cache_results,
     clean_auto_play_undesired,
     get_cached_results,
+    info_hash_to_magnet,
     normalize_tv_data,
     post_process,
     pre_process,
@@ -404,16 +406,19 @@ def _preferred_stremio_results(raw_streams: Any) -> List[TorrentStream]:
     for stream in raw_streams:
         try:
             candidate = normalize_stream(stream, origin="video")
-            if not classify(candidate, _stremio_capabilities()).supported:
+            decision = classify(candidate, _stremio_capabilities())
+            if not decision.supported:
                 continue
         except (TypeError, ValueError):
             continue
+        is_torrent = decision.source_class == "torrent_hash"
         results.append(
             TorrentStream(
                 title=candidate.title or candidate.name or candidate.filename or "",
-                type="direct" if candidate.url else "torrent",
+                type=IndexerType.TORRENT if is_torrent else "direct",
                 addonKey="stremio_video",
-                url=candidate.url or "",
+                indexer=Indexer.STREMIO,
+                url=info_hash_to_magnet(candidate.infoHash) if is_torrent else candidate.url or "",
                 infoHash=candidate.infoHash or "",
                 size=candidate.size or 0,
                 streamSubtitles=list(candidate.subtitles),
