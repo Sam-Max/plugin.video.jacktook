@@ -64,10 +64,99 @@ def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
     test_player.monitor.assert_called_once_with()
 
 
+def test_failed_trakt_scrobble_keeps_direct_playback(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.url = "http://stream"
+    test_player.play = MagicMock()
+    test_player.monitor = MagicMock()
+    test_player.cancel_playback = MagicMock()
+    test_player._check_volume = MagicMock(return_value=True)
+    test_player.handle_subtitles = MagicMock()
+    trakt_api = MagicMock()
+    trakt_api.return_value.scrobble.trakt_get_last_tracked_position.return_value = 0
+    trakt_api.return_value.scrobble.trakt_start_scrobble.side_effect = RuntimeError("network down")
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+    monkeypatch.setattr(player_module, "kodilog", MagicMock())
+    list_item = MagicMock()
+
+    test_player.play_video(list_item)
+
+    test_player.play.assert_called_once_with("http://stream", list_item)
+    test_player.monitor.assert_called_once_with()
+    test_player.cancel_playback.assert_not_called()
+    assert any("start scrobble failed; continuing playback" in str(call) for call in player_module.kodilog.call_args_list)
+
+
+def test_failed_trakt_metadata_setup_does_not_abort_tracking_setup(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    trakt_lists = MagicMock()
+    trakt_lists.return_value.make_trakt_slug.side_effect = RuntimeError("network down")
+    monkeypatch.setattr(player_module, "TraktLists", trakt_lists)
+    monkeypatch.setattr(player_module, "kodilog", MagicMock())
+    monkeypatch.setattr(player_module, "set_property", MagicMock())
+
+    test_player.add_external_trakt_scrolling()
+
+    player_module.set_property.assert_not_called()
+    assert any("metadata setup failed; continuing playback" in str(call) for call in player_module.kodilog.call_args_list)
+
+
 def test_live_tv_skips_authenticated_trakt_scrobbling_and_resume(monkeypatch):
     player_module = _player_module(monkeypatch)
     test_player = _player_for_episode(player_module)
     test_player.data["is_live_tv"] = True
+    test_player._is_trakt_scrobble_active = False
+    trakt_api = MagicMock()
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "set_property", MagicMock())
+
+    test_player._handle_trakt_scrobble(MagicMock())
+    test_player.add_external_trakt_scrolling()
+    test_player.mark_watched(test_player.data)
+    test_player.handle_playback_stop()
+
+    trakt_api.assert_not_called()
+    player_module.set_property.assert_not_called()
+    player_module.set_watched_file.assert_not_called()
+    assert test_player._is_trakt_scrobble_active is False
+
+
+@pytest.mark.parametrize(
+    "ids",
+    (
+        {"tmdb_id": "", "original_id": "ustv-1234"},
+        {"tmdb_id": "ustv-1234"},
+        {"original_id": "opaque-addon-id"},
+        None,
+    ),
+)
+def test_opaque_or_blank_ids_skip_trakt_tracking_without_live_tv_inference(monkeypatch, ids):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["ids"] = ids
+    trakt_api = MagicMock()
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+
+    test_player._handle_trakt_scrobble(MagicMock())
+
+    assert test_player._is_live_tv() is False
+    assert test_player._is_trakt_tracking_excluded() is True
+    trakt_api.assert_not_called()
+
+
+def test_informational_placeholder_skips_trakt_scrobbling_resume_and_history(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["is_informational_placeholder"] = True
     test_player._is_trakt_scrobble_active = False
     trakt_api = MagicMock()
     monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
@@ -105,6 +194,25 @@ def test_non_live_tv_keeps_authenticated_trakt_scrobbling(monkeypatch):
     )
     trakt_api.return_value.scrobble.trakt_start_scrobble.assert_called_once_with(test_player.data)
     list_item.setProperty.assert_called_once_with("StartPercent", "25")
+    assert test_player._is_trakt_scrobble_active is True
+
+
+def test_valid_movie_keeps_authenticated_trakt_scrobbling(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data = {"mode": "movies", "ids": {"tmdb_id": "123"}}
+    trakt_api = MagicMock()
+    trakt_api.return_value.scrobble.trakt_get_last_tracked_position.return_value = 0
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+
+    test_player._handle_trakt_scrobble(MagicMock())
+
+    trakt_api.return_value.scrobble.trakt_get_last_tracked_position.assert_called_once_with(
+        test_player.data
+    )
+    trakt_api.return_value.scrobble.trakt_start_scrobble.assert_called_once_with(test_player.data)
     assert test_player._is_trakt_scrobble_active is True
 
 

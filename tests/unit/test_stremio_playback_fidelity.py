@@ -990,6 +990,20 @@ def test_channel_streams_mark_fetched_and_embedded_payloads_as_live_tv(monkeypat
     assert json.loads(captured[0][0])["is_live_tv"] is True
 
 
+def test_catalog_no_stream_placeholder_marks_payload_as_informational():
+    playback_data, _candidate = catalog_menus._stremio_catalog_playback_data(
+        {"url": "https://streamvix.example/nostream.mp4", "title": "Nessuno Stream"},
+        _catalog_params(
+            catalog_type="tv",
+            meta_id="tv:placeholder-movies",
+            ids=json.dumps({"original_id": "tv:placeholder-movies"}),
+        ),
+    )
+
+    assert playback_data["is_informational_placeholder"] is True
+    assert "is_live_tv" not in playback_data
+
+
 def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
     client = addon_client.StremioAddonCatalogsClient(
         {"addon_url": "https://example.com/addon", "catalog_type": "movie", "catalog_id": "popular"}

@@ -75,7 +75,7 @@ class JacktookPLayer(xbmc.Player):
             data = {}
         self.set_constants(data)
         self.clear_playback_properties()
-        if not self._is_live_tv():
+        if not self._is_trakt_tracking_excluded():
             self.add_external_trakt_scrolling()
         self.mark_watched(data)
 
@@ -209,21 +209,28 @@ class JacktookPLayer(xbmc.Player):
             return True
 
     def _handle_trakt_scrobble(self, list_item):
-        if self._is_live_tv():
+        if self._is_trakt_tracking_excluded():
             return
         if is_trakt_auth() and get_setting("trakt_scrobbling_enabled") and self.data.get("ids"):
-            last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
+            try:
+                last_position = TraktAPI().scrobble.trakt_get_last_tracked_position(self.data)
+            except Exception as e:
+                self._log_trakt_playback_failure("resume lookup", e)
+                last_position = 0
             if last_position > 0:
                 list_item.setProperty("StartPercent", str(last_position))
-            TraktAPI().scrobble.trakt_start_scrobble(self.data)
-            self._is_trakt_scrobble_active = True
+            try:
+                TraktAPI().scrobble.trakt_start_scrobble(self.data)
+                self._is_trakt_scrobble_active = True
+            except Exception as e:
+                self._log_trakt_playback_failure("start scrobble", e)
 
     def _is_trakt_scrobble_enabled(self):
         return (
-            not self._is_live_tv() and self._is_trakt_scrobble_active
+            not self._is_trakt_tracking_excluded()
+            and self._is_trakt_scrobble_active
             and is_trakt_auth()
             and get_setting("trakt_scrobbling_enabled")
-            and self.data.get("ids")
         )
 
     def handle_trakt_pause_resume(self):
@@ -234,9 +241,15 @@ class JacktookPLayer(xbmc.Player):
             return
 
         if is_paused and not self._playback_was_paused:
-            TraktAPI().scrobble.trakt_pause_scrobble(self.data)
+            try:
+                TraktAPI().scrobble.trakt_pause_scrobble(self.data)
+            except Exception as e:
+                self._log_trakt_playback_failure("pause scrobble", e)
         elif self._playback_was_paused and not is_paused:
-            TraktAPI().scrobble.trakt_start_scrobble(self.data)
+            try:
+                TraktAPI().scrobble.trakt_start_scrobble(self.data)
+            except Exception as e:
+                self._log_trakt_playback_failure("resume scrobble", e)
 
         self._playback_was_paused = is_paused
 
@@ -829,10 +842,13 @@ class JacktookPLayer(xbmc.Player):
     def handle_playback_stop(self):
         kodilog("[PLAYER] handle_playback_stop entered")
         if self._is_trakt_scrobble_enabled():
-            TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+            try:
+                TraktAPI().scrobble.trakt_stop_scrobble(self.data)
+            except Exception as e:
+                self._log_trakt_playback_failure("stop scrobble", e)
             self._is_trakt_scrobble_active = False
 
-        if not self._is_live_tv():
+        if not self._is_trakt_tracking_excluded():
             set_watched_file(self.data)
 
         close_busy_dialog()
@@ -1029,13 +1045,13 @@ class JacktookPLayer(xbmc.Player):
         clear_property("script.trakt.ids")
 
     def add_external_trakt_scrolling(self):
-        if self._is_live_tv():
+        if self._is_trakt_tracking_excluded():
             return
-        ids = self.data.get("ids", {})
-        mode = self.data.get("mode")
-        title = self.data.get("title", "")
+        try:
+            ids = self.data.get("ids", {})
+            mode = self.data.get("mode")
+            title = self.data.get("title", "")
 
-        if ids:
             trakt_ids = {
                 "tmdb": ids.get("tmdb_id"),
                 "imdb": ids.get("imdb_id"),
@@ -1044,6 +1060,8 @@ class JacktookPLayer(xbmc.Player):
             if mode == "tv":
                 trakt_ids["tvdb"] = ids.get("tvdb_id")
             set_property("script.trakt.ids", json_dumps(trakt_ids))
+        except Exception as e:
+            self._log_trakt_playback_failure("metadata setup", e)
 
     def get_player_streams(self):
         activePlayers = '{"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}'
@@ -1091,12 +1109,50 @@ class JacktookPLayer(xbmc.Player):
             notification("Playback Cancelled", time=2000)
 
     def mark_watched(self, data):
-        if self._is_live_tv():
+        if self._is_trakt_tracking_excluded():
             return
         set_watched_file(data)
 
     def _is_live_tv(self):
         return bool(self.data.get("is_live_tv"))
+
+    def _is_trakt_tracking_excluded(self):
+        return (
+            self._is_live_tv()
+            or bool(self.data.get("is_informational_placeholder"))
+            or not self._has_trakt_tracking_identity()
+        )
+
+    def _has_trakt_tracking_identity(self):
+        ids = self.data.get("ids")
+        if not isinstance(ids, dict) or not self._is_positive_integer(ids.get("tmdb_id")):
+            return False
+
+        mode = self.data.get("mode")
+        if mode == "movies":
+            return True
+        if mode != "tv":
+            return False
+
+        tv_data = self.data.get("tv_data")
+        return isinstance(tv_data, dict) and all(
+            self._is_positive_integer(tv_data.get(key)) for key in ("season", "episode")
+        )
+
+    @staticmethod
+    def _is_positive_integer(value):
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return value > 0
+        return isinstance(value, str) and value.strip().isdigit() and int(value.strip()) > 0
+
+    def _log_trakt_playback_failure(self, action, error):
+        ids = self.data.get("ids") or {}
+        kodilog(
+            f"[TRAKT] {action} failed; continuing playback "
+            f"(mode={self.data.get('mode')!r}, tmdb_id={ids.get('tmdb_id')!r}): {error}"
+        )
 
     def cancel_playback(self):
         kodilog("[PLAYER] cancel_playback called")
