@@ -2168,7 +2168,7 @@ msgid "Filter by Language"
 msgstr ""
 
 msgctxt "#32307"
-msgid "Filter by Release Group"
+msgid "Filter by Group"
 msgstr ""
 
 msgctxt "#32304"

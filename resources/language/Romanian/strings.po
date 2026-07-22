@@ -2168,7 +2168,7 @@ msgid "Filter by Language"
 msgstr "Filtrează după limbă"
 
 msgctxt "#32307"
-msgid "Filter by Release Group"
+msgid "Filter by Group"
 msgstr "Filtrează după grupul de lansare"
 
 msgctxt "#32304"
