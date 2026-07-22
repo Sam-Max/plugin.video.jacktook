@@ -170,6 +170,7 @@ Follow existing codebase conventions first; avoid style-only churn.
 
 - 4-space indentation, no tabs.
 - Keep functions focused; extract helpers for repeated routing/action maps.
+- Prefer clear, straightforward code over clever or unnecessarily complex implementations.
 - Preserve readability over strict line-length refactors (project has mixed line widths).
 - Avoid large reformat-only diffs.
 
