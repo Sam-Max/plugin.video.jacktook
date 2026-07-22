@@ -388,11 +388,11 @@ def get_source_status(res: TorrentStream) -> str:
 
     if res.isPack:
         if is_cached:
-            label = "[B]Cached-[Pack][/B]"
+            label = "[B]Cached[/B]"
         elif res.addedToDebrid:
-            label = f"[B]{added_label}-[Pack][/B]"
+            label = f"[B]{added_label}[/B]"
         else:
-            label = "[B]Download-[Pack][/B]"
+            label = "[B]Download[/B]"
     else:
         if is_cached:
             label = "[B]Cached[/B]"

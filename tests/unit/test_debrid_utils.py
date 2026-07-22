@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
-from lib.utils.debrid.debrid_utils import get_magnet_from_uri
+from lib.domain.torrent import TorrentStream
+from lib.utils.debrid.debrid_utils import get_magnet_from_uri, get_source_status
 
 
 def test_get_magnet_from_uri_follows_redirect_to_magnet():
@@ -62,3 +63,14 @@ def test_get_magnet_from_uri_preserves_torrent_url_for_playback():
     assert info_hash == "aaaabbbbccccddddeeeeffff0000111122223333"
     assert torrent_url == "https://jackett.local/dl/test"
     mock_get.assert_called_once()
+
+
+def test_get_source_status_uses_compact_labels_for_pack_sources():
+    assert get_source_status(TorrentStream(isPack=True, isCached=True)) == "[B]Cached[/B]"
+    assert get_source_status(TorrentStream(isPack=True)) == "[B]Download[/B]"
+
+
+def test_get_source_status_preserves_added_to_debrid_label_for_pack_sources():
+    source = TorrentStream(isPack=True, addedToDebrid=True, debridType="RealDebrid")
+
+    assert get_source_status(source) == "[B]RealDebrid Added[/B]"

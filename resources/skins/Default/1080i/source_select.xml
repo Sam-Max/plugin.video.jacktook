@@ -231,16 +231,34 @@
 						</control>
 						<control type="label">
 							<left>550</left>
-							<width>380</width>
+							<width>220</width>
 							<height>20</height>
 							<font>font12</font>
 							<textcolor>CCFFFFFF</textcolor>
 							<label>[B][UPPERCASE][COLOR CCFFFFFF]S: [/COLOR][/UPPERCASE][/B]$INFO[ListItem.Property(seeders)]</label>
 							<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
 						</control>
+						<control type="image">
+							<left>780</left>
+							<width>65</width>
+							<height>20</height>
+							<texture>white.png</texture>
+							<colordiffuse>66FFFFFF</colordiffuse>
+							<visible>String.IsEqual(ListItem.Property(isPack),True)</visible>
+						</control>
 						<control type="label">
-							<left>950</left>
-							<width>350</width>
+							<left>780</left>
+							<width>65</width>
+							<height>20</height>
+							<font>font10</font>
+							<textcolor>CCFFFFFF</textcolor>
+							<align>center</align>
+							<label>[B]PACK[/B]</label>
+							<visible>String.IsEqual(ListItem.Property(isPack),True)</visible>
+						</control>
+						<control type="label">
+							<left>860</left>
+							<width>390</width>
 							<height>20</height>
 							<font>font12</font>
 							<textcolor>CCFFFFFF</textcolor>
@@ -366,16 +384,34 @@
 						</control>
 						<control type="label">
 							<left>550</left>
-							<width>380</width>
+							<width>220</width>
 							<height>20</height>
 							<font>font12</font>
 							<textcolor>FFFFFFFF</textcolor>
 							<label>[B][UPPERCASE][COLOR FFFFFFFF]S: [/COLOR][/UPPERCASE][/B]$INFO[ListItem.Property(seeders)]</label>
 							<visible>!String.IsEmpty(ListItem.Property(seeders))</visible>
 						</control>
+						<control type="image">
+							<left>780</left>
+							<width>65</width>
+							<height>20</height>
+							<texture>white.png</texture>
+							<colordiffuse>66FFFFFF</colordiffuse>
+							<visible>String.IsEqual(ListItem.Property(isPack),True)</visible>
+						</control>
 						<control type="label">
-							<left>950</left>
-							<width>350</width>
+							<left>780</left>
+							<width>65</width>
+							<height>20</height>
+							<font>font10</font>
+							<textcolor>FFFFFFFF</textcolor>
+							<align>center</align>
+							<label>[B]PACK[/B]</label>
+							<visible>String.IsEqual(ListItem.Property(isPack),True)</visible>
+						</control>
+						<control type="label">
+							<left>860</left>
+							<width>390</width>
 							<height>20</height>
 							<font>font12</font>
 							<textcolor>FFFFFFFF</textcolor>
