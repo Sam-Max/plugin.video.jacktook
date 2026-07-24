@@ -14,6 +14,27 @@ from lib.domain.torrent import TorrentStream
 from lib.utils.debrid import debrid_utils
 
 
+def test_add_task_if_enabled_managed_submits_enabled_task(monkeypatch):
+    submitted = []
+
+    class RecordingManager:
+        def submit_task(self, *args, **kwargs):
+            submitted.append((args, kwargs))
+
+    def perform_search(*_args, **_kwargs):
+        return []
+
+    monkeypatch.setattr(search, "get_setting", lambda _setting: True)
+
+    search.add_task_if_enabled_managed(
+        RecordingManager(), "stremio_enabled", "stremio", perform_search, "dialog", "query"
+    )
+
+    assert submitted == [
+        (("Stremio", "stremio", perform_search, "stremio", "dialog", "query"), {})
+    ]
+
+
 def test_subtitle_addon_selector_preselects_persisted_instance_key(monkeypatch):
     addon_manager = AddonManager(
         [
@@ -273,7 +294,7 @@ def test_stremio_addon_aliases_are_stored_separately_from_manifest(monkeypatch):
     assert stored[STREMIO_ADDON_ALIASES_KEY] == {}
 
 
-def test_managed_search_status_uses_stremio_addon_alias(monkeypatch):
+def test_managed_search_submits_and_executes_enabled_stremio_task(monkeypatch):
     addon_manager = AddonManager(
         [
             {
@@ -290,10 +311,16 @@ def test_managed_search_status_uses_stremio_addon_alias(monkeypatch):
     )
     addon = addon_manager.addons[0]
     submitted = []
+    executed = []
 
     class RecordingManager:
         def submit_task(self, *args, **kwargs):
             submitted.append((args, kwargs))
+            return args[2](*args[3:], **kwargs)
+
+    def perform_search(*args, **kwargs):
+        executed.append((args, kwargs))
+        return []
 
     monkeypatch.setattr(
         search,
@@ -303,6 +330,7 @@ def test_managed_search_status_uses_stremio_addon_alias(monkeypatch):
     monkeypatch.setattr(search, "_is_source_enabled", lambda indexer, *_args: indexer == search.Indexer.STREMIO)
     monkeypatch.setattr(search, "get_selected_stream_addons", lambda: [addon])
     monkeypatch.setattr(search, "get_addon_display_name", lambda _addon: "Kodi Alias")
+    monkeypatch.setattr(search, "_perform_search", perform_search)
 
     search._submit_search_tasks_managed(
         RecordingManager(),
@@ -320,6 +348,26 @@ def test_managed_search_status_uses_stremio_addon_alias(monkeypatch):
 
     assert submitted[0][0][0] == "Kodi Alias"
     assert submitted[0][0][1] == search.Indexer.STREMIO
+    assert executed == [
+        (
+            (
+                search.Indexer.STREMIO,
+                None,
+                {"imdb_id": "tt1234567"},
+                "movies",
+                "movies",
+                None,
+                None,
+            ),
+            {
+                "show_dialog": False,
+                "scoped_addon_url": addon.url(),
+                "variant": search.SearchVariant.DEFAULT,
+                "title_language_mode": search.TITLE_LANGUAGE_LOCALIZED_FIRST,
+                "year": None,
+            },
+        )
+    ]
     assert addon.manifest.name == "Original Name"
 
 

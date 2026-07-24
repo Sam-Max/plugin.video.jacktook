@@ -78,7 +78,7 @@ def get_easynews_url(data: Dict[str, Any]) -> Optional[str]:
         return None
 
 
-def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
+def get_torrent_url(data: Dict[str, Any], client: str = "") -> Optional[str]:
     magnet: str = data.get("magnet", "")
     url: str = data.get("url", "")
     mode: str = data.get("mode", "")
@@ -90,16 +90,8 @@ def get_torrent_url(data: Dict[str, Any]) -> Optional[str]:
 
         magnet = info_hash_to_magnet(info_hash)
 
-    kodilog(
-        "Torrent playback resolution: indexer={!r}, client={!r}, magnet={!r}, url={!r}, infohash={!r}, is_torrent={}".format(
-            data.get("indexer", ""),
-            str(get_setting("torrent_client")),
-            summarize_locator_for_log(magnet),
-            summarize_locator_for_log(url),
-            str(info_hash).lower()[:12],
-            data.get("is_torrent", False),
-        )
-    )
+    if client:
+        return get_torrent_url_for_client(magnet, url, mode, ids, client, data=data)
 
     if get_setting("torrent_enable"):
         return get_torrent_url_for_client(magnet, url, mode, ids, data=data)
@@ -127,7 +119,10 @@ def get_torrent_url_for_client(
     elif torrent_client in [Players.ELEMENTUM]:
         return get_elementum_url(magnet, url, mode, ids)
     elif torrent_client in [Players.JACKTORR]:
-        return get_jacktorr_url(magnet, url, data=data)
+        jacktorr_data = dict(data or {})
+        jacktorr_data.pop("file_idx", None)
+        jacktorr_data.pop("fileIdx", None)
+        return get_jacktorr_url(magnet, url, data=jacktorr_data)
     else:
         raise TorrentException(f"Unknown torrent client selected: {torrent_client}")
 

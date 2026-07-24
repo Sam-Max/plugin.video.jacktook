@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 from lib.domain.torrent import TorrentStream
 from lib.gui.source_pack_window import SourcePackWindow
 from lib.utils.general.utils import DebridType
-from lib.utils.player.utils import resolve_playback_url
+from lib.clients.stremio.playback import resolve_stremio_playback_url
 
 
 class SourcePackSelect(SourcePackWindow):
@@ -46,6 +46,8 @@ class SourcePackSelect(SourcePackWindow):
                 "tv_data": self.item_information.get("tv_data"),
                 "stream_subtitles": self.source.streamSubtitles,
             }
+            if self.source.stremioMetadata is not None:
+                common_data["stremio_metadata"] = self.source.stremioMetadata
             if self.source.debridType in [DebridType.RD, DebridType.TB]:
                 file_id, title = self.pack_info["files"][self.position]
                 data = {
@@ -67,7 +69,7 @@ class SourcePackSelect(SourcePackWindow):
                         "url": url,
                     },
                 }
-            self.playback_info = resolve_playback_url(data)
+            self.playback_info = resolve_stremio_playback_url(data)
 
         if not self.playback_info:
             self.setProperty("resolving", "false")

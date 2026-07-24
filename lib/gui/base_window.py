@@ -14,7 +14,7 @@ from lib.utils.debrid.debrid_utils import (
 from lib.utils.general.utils import Indexer, IndexerType, truncate_text
 from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import ADDON, kodilog, translation
-from lib.utils.player.utils import resolve_playback_url
+from lib.clients.stremio.playback import resolve_stremio_playback_url
 
 ACTION_PREVIOUS_MENU = 10
 ACTION_PLAYER_STOP = 13
@@ -161,7 +161,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             magnet=magnet,
             is_torrent=is_torrent,
         )
-        return resolve_playback_url(source_data) or {}
+        return resolve_stremio_playback_url(source_data) or {}
 
     def _extract_source_details(self, source: TorrentStream) -> Tuple[str, str, bool]:
         url = source.url or ""
@@ -239,7 +239,6 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         """Prepare the source data dictionary for resolving playback."""
         playback_data = {
             "type": source.type,
-            "debrid_type": source.debridType,
             "indexer": source.indexer,
             "url": url,
             "magnet": magnet,
@@ -255,7 +254,15 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "poster": self.item_information.get("poster"),
             "stream_subtitles": source.streamSubtitles,
         }
-        metadata = source.stremioMetadata if isinstance(source.stremioMetadata, dict) else {}
+        metadata = source.stremioMetadata
+        if metadata is None:
+            metadata = {}
+        elif not isinstance(metadata, dict):
+            metadata = {"_invalid_stremio_metadata": True}
+        if source.debridType:
+            playback_data["debrid_type"] = source.debridType
+        if metadata:
+            playback_data["stremio_metadata"] = dict(metadata)
         behavior_hints = metadata.get("behaviorHints") or {}
         for source_key, target_key in (
             ("videoHash", "videoHash"),

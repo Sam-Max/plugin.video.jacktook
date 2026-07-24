@@ -14,7 +14,13 @@ from lib.clients.stremio.helpers import (
     get_selected_catalogs_addons,
     get_selected_tv_addons,
 )
-from lib.clients.stremio.playback import classify, normalize_stream, payload_from_torrent
+from lib.clients.stremio.playback import (
+    canonicalize_stremio_playback_payload,
+    classify,
+    current_stremio_playback_capabilities,
+    normalize_stream,
+    payload_from_torrent,
+)
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
     add_tmdb_movie_context_menu,
@@ -1034,12 +1040,15 @@ def _stremio_catalog_source(stream):
 
 def _stremio_catalog_playback_data(stream, params):
     try:
-        source = _stremio_catalog_source(stream)
+        source = canonicalize_stremio_playback_payload(_stremio_catalog_source(stream))
         candidate = normalize_stream(source, origin="catalog")
-        decision = classify(candidate)
+        payload = payload_from_torrent(source)
+        decision = classify(
+            candidate,
+            current_stremio_playback_capabilities(),
+        )
         if not decision.supported:
             return None
-        payload = payload_from_torrent(source)
     except (TypeError, ValueError):
         return None
 

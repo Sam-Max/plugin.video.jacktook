@@ -3,10 +3,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from lib import search
+from lib import navigation, search
 from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Meta, MetaBehaviorHints, Stream, Video
 from lib.clients.stremio import addon_client, catalog_menus
+from lib.clients.stremio import playback as stremio_playback
 from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
@@ -16,7 +17,9 @@ from lib.clients.stremio.playback import (
     resolve,
 )
 from lib.domain.torrent import TorrentStream
-from lib.utils.general.utils import IndexerType
+from lib.gui import source_pack_select
+from lib.gui import source_select as source_select_module
+from lib.utils.general.utils import DebridType, IndexerType, Players
 from lib.utils.player import utils as player_utils
 
 INFO_HASH = "0123456789abcdef0123456789abcdef01234567"
@@ -78,6 +81,144 @@ def _supported_hash_payload(**overrides):
     }
     payload.update(overrides)
     return payload
+
+
+def _assert_stremio_runtime_rejected_before_resolution(monkeypatch, data):
+    resolvers = [MagicMock() for _ in range(5)]
+    debrid_resolver, jacktorr_resolver, torrest_resolver, elementum_resolver, picker = resolvers
+    monkeypatch.setattr(player_utils, "get_debrid_url", debrid_resolver)
+    monkeypatch.setattr(player_utils, "get_jacktorr_url", jacktorr_resolver)
+    monkeypatch.setattr(player_utils, "get_torrest_url", torrest_resolver)
+    monkeypatch.setattr(player_utils, "get_elementum_url", elementum_resolver)
+    monkeypatch.setattr(player_utils, "get_torrent_client_selection", picker)
+
+    assert stremio_playback.resolve_stremio_playback_url(data) is None
+    for resolver in resolvers:
+        resolver.assert_not_called()
+
+
+def test_source_select_preserves_indexed_stremio_metadata_for_runtime_revalidation(monkeypatch):
+    source = TorrentStream(
+        type=IndexerType.TORRENT,
+        indexer="Stremio",
+        infoHash=INFO_HASH,
+        url=f"magnet:?xt=urn:btih:{INFO_HASH}",
+        stremioMetadata={"fileIdx": 3},
+    )
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.item_information = {}
+    prepared = source_select.prepare_source_data(source, source.url, source.url, True)
+
+    assert prepared["stremio_metadata"] == {"fileIdx": 3}
+    monkeypatch.setattr(player_utils, "resolve_playback_url", lambda data: data)
+    assert stremio_playback.resolve_stremio_playback_url(prepared)["file_idx"] == 3
+    assert source_select._ensure_playback_info(source)["file_idx"] == 3
+
+
+def test_prepare_source_data_preserves_stremio_security_markers():
+    source = TorrentStream(
+        debridType=DebridType.RD,
+        stremioMetadata={"fileIdx": "invalid", "_invalid_stremio_metadata": True},
+    )
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.item_information = {}
+
+    prepared = source_select.prepare_source_data(source, "", "", False)
+
+    assert prepared["debrid_type"] == DebridType.RD
+    assert prepared["stremio_metadata"] == source.stremioMetadata
+
+
+def test_base_window_marks_invalid_stremio_metadata_for_runtime_revalidation(monkeypatch):
+    source = TorrentStream(stremioMetadata="malformed")
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.item_information = {}
+    resolver_calls = []
+
+    prepared = source_select.prepare_source_data(source, "", "", False)
+    monkeypatch.setattr(
+        player_utils, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    assert prepared["stremio_metadata"] == {"_invalid_stremio_metadata": True}
+    assert stremio_playback.resolve_stremio_playback_url(prepared) is None
+    assert resolver_calls == []
+
+
+def test_base_window_treats_absent_stremio_metadata_as_clean(monkeypatch):
+    source = TorrentStream(stremioMetadata=None)
+    source_select = source_select_module.SourceSelect.__new__(source_select_module.SourceSelect)
+    source_select.item_information = {}
+    resolver_calls = []
+
+    prepared = source_select.prepare_source_data(source, "", "", False)
+    monkeypatch.setattr(
+        player_utils, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    assert "stremio_metadata" not in prepared
+    assert stremio_playback.resolve_stremio_playback_url(prepared) == prepared
+    assert resolver_calls == [prepared]
+
+
+def test_pack_selection_treats_absent_stremio_metadata_as_clean(monkeypatch):
+    source = TorrentStream(type=IndexerType.TORRENT, stremioMetadata=None)
+    selector = source_pack_select.SourcePackSelect.__new__(source_pack_select.SourcePackSelect)
+    selector.source = source
+    selector.pack_info = {"files": [("https://media.example/episode.mkv", "Episode 1")]}
+    selector.item_information = {}
+    selector.position = 0
+    selector.playback_info = None
+    selector.setProperty = lambda *_args: None
+    selector.close = lambda: None
+    resolver_calls = []
+    monkeypatch.setattr(
+        player_utils, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    selector._resolve_item()
+
+    assert selector.playback_info["pack_info"]["url"] == "https://media.example/episode.mkv"
+    assert "stremio_metadata" not in resolver_calls[0]
+
+
+@pytest.mark.parametrize(
+    ("debrid_type", "settings"),
+    [
+        ("", {"torrent_enable": False, "torrent_client": Players.JACKTORR}),
+        (DebridType.RD, {"torrent_enable": True, "torrent_client": Players.JACKTORR}),
+    ],
+    ids=["configuration_changed", "debrid_intent"],
+)
+def test_pack_selection_revalidates_stremio_metadata_before_legacy_resolution(
+    monkeypatch, debrid_type, settings
+):
+    source = TorrentStream(
+        type=IndexerType.TORRENT,
+        debridType=debrid_type,
+        stremioMetadata={"fileIdx": 3},
+    )
+    selector = source_pack_select.SourcePackSelect.__new__(source_pack_select.SourcePackSelect)
+    selector.source = source
+    selector.pack_info = {
+        "files": [("file-id", "Episode 1")],
+        "torrent_id": "torrent-id",
+    }
+    selector.item_information = {}
+    selector.position = 0
+    selector.playback_info = None
+    selector.setProperty = lambda *_args: None
+    selector.close = lambda: None
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        player_utils, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    selector._resolve_item()
+
+    assert selector.playback_info is None
+    assert resolver_calls == []
 
 
 def test_normalize_stream_preserves_source_metadata_and_subtitles():
@@ -197,7 +338,7 @@ def test_pipe_in_display_metadata_survives_classification_resolution_and_search(
         stremioMetadata={field: value},
     )
     notifications = []
-    monkeypatch.setattr(search, "_stremio_capabilities", lambda: {})
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(search, "notification", notifications.append)
 
     prepared = search._prepare_stremio_results([source])
@@ -252,7 +393,7 @@ def test_stremio_rejection_log_redacts_unsafe_metadata(monkeypatch):
     logs = []
     notifications = []
 
-    monkeypatch.setattr(search, "_stremio_capabilities", lambda: {})
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(search, "kodilog", lambda message, *_args: logs.append(message))
     monkeypatch.setattr(search, "notification", notifications.append)
 
@@ -413,9 +554,7 @@ def test_stremio_resolution_derives_legacy_torrent_context_from_source_class(
         assert resolved["is_torrent"] is False
 
 
-def test_stremio_unverified_file_index_remains_rejected_before_legacy_resolution(
-    monkeypatch,
-):
+def test_stremio_indexed_torrent_reaches_legacy_resolution(monkeypatch):
     legacy_calls = []
     source = {
         "addonKey": "org.example.addon|https://example.com",
@@ -428,11 +567,61 @@ def test_stremio_unverified_file_index_remains_rejected_before_legacy_resolution
         lambda data: legacy_calls.append(data) or data,
     )
 
-    with pytest.raises(StremioPlaybackError) as error:
-        search._resolve_stremio_source(source, {"is_torrent": False})
+    search._resolve_stremio_source(source, {"is_torrent": False})
 
-    assert error.value.code == "file_index_unsupported"
-    assert legacy_calls == []
+    assert legacy_calls
+    assert legacy_calls[0]["file_idx"] == 3
+
+
+def test_stremio_indexed_debrid_torrent_reaches_legacy_resolution(
+    monkeypatch,
+):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "info_hash": INFO_HASH,
+        "magnet": f"magnet:?xt=urn:btih:{INFO_HASH}",
+        "stremioMetadata": {"title": "Benign metadata"},
+        "stremio_metadata": {"fileIdx": 3, "debridType": DebridType.RD},
+    }
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        search, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert resolver_calls
+    assert resolver_calls[0]["debrid_type"] == DebridType.RD
+
+
+@pytest.mark.parametrize("metadata_key", ["stremio_metadata", "stremioMetadata"])
+def test_malformed_nested_metadata_with_top_level_file_index_rejects_before_resolution(
+    monkeypatch, metadata_key
+):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "info_hash": INFO_HASH,
+        "magnet": f"magnet:?xt=urn:btih:{INFO_HASH}",
+        "file_idx": 3,
+        metadata_key: "malformed",
+    }
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        search, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    with pytest.raises(StremioPlaybackError) as error:
+        search._resolve_stremio_source(source)
+
+    assert error.value.code == "unsafe_metadata"
+    assert resolver_calls == []
 
 
 def test_direct_resolution_encodes_valid_request_headers_only():
@@ -501,26 +690,280 @@ def test_errors_redact_locator_credentials_and_sensitive_header_values():
     assert "Authorization" not in message
 
 
-def test_unverified_file_index_is_rejected_before_resolution():
+def test_valid_file_index_does_not_reject_torrent_resolution():
     candidate = normalize_stream(_supported_hash_payload(fileIdx=3))
 
     decision = classify(candidate, {"client": "torrest"})
+    assert decision.source_class == "torrent_hash"
+    assert decision.supported
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"url": "https://media.example/movie.mkv", "fileIdx": 3, "debridType": DebridType.RD},
+        {"ytId": "youtube-video-id", "file_idx": 3, "debrid_type": DebridType.RD},
+    ],
+    ids=["direct_http", "youtube"],
+)
+def test_indexed_direct_sources_with_debrid_intent_are_rejected(payload):
+    decision = classify(normalize_stream(payload))
+
     assert decision.source_class == "unsupported"
     assert decision.code == "file_index_unsupported"
 
+
+@pytest.mark.parametrize(
+    "payload, context",
+    [
+        (
+            {
+                "url": "https://media.example/movie.mkv",
+                "fileIdx": 3,
+                "debridType": "",
+                "_stremio_debrid_intent": True,
+            },
+            {},
+        ),
+        (
+            {
+                "ytId": "youtube-video-id",
+                "file_idx": 3,
+                "debrid_type": "unknown",
+                "_stremio_debrid_intent": True,
+            },
+            {"available_addons": {"plugin.video.youtube"}},
+        ),
+    ],
+    ids=["direct_http_empty", "youtube_invalid"],
+)
+def test_indexed_direct_sources_with_malformed_debrid_intent_do_not_resolve(
+    monkeypatch, payload, context
+):
+    resolver_calls = []
+    monkeypatch.setattr(
+        stremio_playback,
+        "_payload_from_candidate",
+        lambda candidate: resolver_calls.append(candidate) or {},
+    )
+
     with pytest.raises(StremioPlaybackError) as error:
-        resolve(candidate, {"client": "torrest"})
+        resolve(normalize_stream(payload), context)
+
     assert error.value.code == "file_index_unsupported"
+    assert resolver_calls == []
 
 
-def test_verified_file_index_is_preserved_for_a_capable_client():
-    candidate = normalize_stream(_supported_hash_payload(fileIdx=3))
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"info_hash": INFO_HASH, "fileIdx": 1, "file_idx": 2},
+        {
+            "info_hash": INFO_HASH,
+            "stremio_metadata": {"fileIdx": 1, "file_idx": 2},
+        },
+    ],
+    ids=["top_level", "nested_metadata"],
+)
+def test_conflicting_file_index_aliases_do_not_invoke_torrent_resolver(monkeypatch, payload):
+    resolver_calls = []
+    decision = classify(normalize_stream(payload))
+    monkeypatch.setattr(
+        player_utils, "get_torrent_url", lambda *args, **kwargs: resolver_calls.append(args)
+    )
 
-    decision = classify(candidate, {"client": "torrest", "supports_file_idx": True})
-    resolved = resolve(candidate, {"client": "torrest", "supports_file_idx": True})
+    assert decision.code == "malformed_locator"
+    assert stremio_playback.resolve_stremio_playback_url(payload) is None
+    assert resolver_calls == []
 
-    assert decision.source_class == "torrent_hash"
-    assert resolved["file_idx"] == 3
+
+def test_stale_jacktorr_settings_do_not_block_indexed_torrent(monkeypatch):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        search, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert resolver_calls
+
+
+def test_jacktorr_configured_and_enabled_routes_indexed_torrent_to_its_selector(monkeypatch):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+    captured = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        player_utils,
+        "get_jacktorr_url",
+        lambda magnet, url, data=None: captured.append((magnet, url, data)) or "plugin://jacktorr/selector",
+    )
+    monkeypatch.setattr(player_utils, "get_setting", search.get_setting)
+
+    resolved = search._resolve_stremio_source(source)
+
+    assert resolved["url"] == "plugin://jacktorr/selector"
+    assert "file_idx" not in captured[0][2]
+    assert "fileIdx" not in captured[0][2]
+
+
+def test_unavailable_jacktorr_does_not_preempt_normal_resolution(monkeypatch):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        search,
+        "resolve_playback_url",
+        lambda data: resolver_calls.append(data) or data,
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert resolver_calls
+
+
+@pytest.mark.parametrize(
+    ("settings", "addon_enabled"),
+    [
+        ({"torrent_enable": False, "torrent_client": Players.JACKTORR}, True),
+        ({"torrent_enable": True, "torrent_client": Players.TORREST}, True),
+        ({"torrent_enable": True, "torrent_client": Players.ELEMENTUM}, True),
+        ({"torrent_enable": True, "torrent_client": Players.JACKGRAM}, True),
+        ({"torrent_enable": True, "torrent_client": Players.JACKTORR}, False),
+    ],
+    ids=["torrent_disabled", "torrest", "elementum", "jackgram", "jacktorr_unavailable"],
+)
+def test_indexed_torrent_reaches_normal_resolution_regardless_of_client(
+    monkeypatch, settings, addon_enabled
+):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+    resolver_calls = []
+
+    monkeypatch.setattr(search, "get_setting", lambda setting: settings.get(setting))
+    monkeypatch.setattr(
+        search, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert resolver_calls
+
+
+@pytest.mark.parametrize("debrid_type", DebridType.values())
+def test_indexed_torrent_debrid_route_reaches_debrid_resolution(
+    monkeypatch, debrid_type
+):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3, debridType=debrid_type),
+    }
+    debrid_calls = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        search,
+        "resolve_playback_url",
+        lambda data: debrid_calls.append(data) or data,
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert debrid_calls
+    assert debrid_calls[0]["debrid_type"] == debrid_type
+
+
+@pytest.mark.parametrize(
+    ("metadata_key", "debrid_key"),
+    [
+        (None, "debrid_type"),
+        (None, "debridType"),
+        ("stremioMetadata", "debrid_type"),
+        ("stremioMetadata", "debridType"),
+        ("stremio_metadata", "debrid_type"),
+        ("stremio_metadata", "debridType"),
+    ],
+    ids=[
+        "top_level_snake_case",
+        "top_level_camel_case",
+        "camel_metadata_snake_case",
+        "camel_metadata_camel_case",
+        "snake_metadata_snake_case",
+        "snake_metadata_camel_case",
+    ],
+)
+@pytest.mark.parametrize(
+    "debrid_value",
+    ["", 0, False, [], {}, None],
+    ids=["empty_string", "zero", "false", "list", "mapping", "none"],
+)
+def test_indexed_torrent_with_debrid_metadata_reaches_existing_resolution(
+    monkeypatch, metadata_key, debrid_key, debrid_value
+):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3),
+    }
+    if metadata_key:
+        source[metadata_key] = _supported_hash_payload(fileIdx=3)
+        source[metadata_key][debrid_key] = debrid_value
+    else:
+        source[debrid_key] = debrid_value
+    resolver_calls = []
+
+    monkeypatch.setattr(
+        search,
+        "get_setting",
+        lambda setting: {"torrent_enable": True, "torrent_client": Players.JACKTORR}.get(setting),
+    )
+    monkeypatch.setattr(
+        search, "resolve_playback_url", lambda data: resolver_calls.append(data) or data
+    )
+
+    search._resolve_stremio_source(source)
+
+    assert resolver_calls
+
+
+@pytest.mark.parametrize("file_idx", [-1, True, "3"])
+def test_malformed_file_index_remains_rejected(file_idx):
+    candidate = normalize_stream(_supported_hash_payload(fileIdx=file_idx))
+
+    decision = classify(candidate)
+
+    assert decision.source_class == "unsupported"
+    assert decision.code == "malformed_locator"
 
 
 def test_unsupported_client_is_rejected_before_a_playable_output_is_created():
@@ -643,7 +1086,9 @@ def test_run_search_entry_preserves_stremio_metadata_for_source_selection(monkey
 
 def test_run_search_entry_autoplay_resolves_the_canonical_stremio_payload(monkeypatch):
     client = _stremio_addon_client(monkeypatch)
-    source = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))[0]
+    source = client.parse_response(
+        _stremio_response({"streams": [_stremio_stream_data(fileIdx=None)]})
+    )[0]
     source.quality = "1080p"
     played = []
 
@@ -674,17 +1119,19 @@ def test_run_search_entry_autoplay_resolves_the_canonical_stremio_payload(monkey
     assert len(played) == 1
     assert played[0]["url"].startswith("https://media.example/movie.mkv|")
     assert played[0]["stream_subtitles"] == source.streamSubtitles
-    assert played[0]["file_idx"] == 2
+    assert played[0]["file_idx"] is None
     assert played[0]["headers"] == {"Referer": "https://media.example"}
 
 
 def test_show_source_select_preserves_the_canonical_stremio_payload(monkeypatch):
     client = _stremio_addon_client(monkeypatch)
-    source = client.parse_response(_stremio_response({"streams": [_stremio_stream_data()]}))[0]
+    source = client.parse_response(
+        _stremio_response({"streams": [_stremio_stream_data(fileIdx=None)]})
+    )[0]
     shown = []
 
     monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
-    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(
         search,
         "source_select",
@@ -697,7 +1144,7 @@ def test_show_source_select_preserves_the_canonical_stremio_payload(monkeypatch)
     assert len(shown) == 1
     payload = payload_from_torrent(shown[0])
     assert payload["stream_subtitles"] == source.streamSubtitles
-    assert payload["file_idx"] == 2
+    assert payload["file_idx"] is None
     assert payload["headers"] == {"Referer": "https://media.example"}
 
 
@@ -717,7 +1164,6 @@ def test_super_quick_play_preserves_metadata_from_a_legacy_stremio_cache(monkeyp
         streamSubtitles=[{"id": "sub-en", "url": "https://sub.example/en.vtt", "lang": "eng"}],
         stremioMetadata={
             "url": "https://media.example/movie.mkv",
-            "fileIdx": 2,
             "sources": [TRACKER_B],
             "trackers": [TRACKER_A],
             "subtitles": [
@@ -746,7 +1192,7 @@ def test_super_quick_play_preserves_metadata_from_a_legacy_stremio_cache(monkeyp
 
     assert search._handle_super_quick_play({"ids": '{"imdb_id": "tt123"}'}) is True
     assert played[0]["stream_subtitles"] == source.streamSubtitles
-    assert played[0]["file_idx"] == 2
+    assert played[0]["file_idx"] is None
     assert played[0]["headers"] == {"Referer": "https://media.example"}
 
 
@@ -802,7 +1248,7 @@ def test_show_source_select_rejects_unsupported_stremio_sources_before_dialog(mo
     assert notifications == ["External web pages are not playable sources."]
 
 
-def test_show_source_select_silently_filters_unverified_file_index_with_valid_source(monkeypatch):
+def test_show_source_select_preserves_valid_indexed_torrents(monkeypatch):
     shown = []
     notifications = []
     rejected = TorrentStream(
@@ -817,7 +1263,7 @@ def test_show_source_select_silently_filters_unverified_file_index_with_valid_so
     )
 
     monkeypatch.setattr(search, "notification", notifications.append)
-    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(
         search,
@@ -828,7 +1274,7 @@ def test_show_source_select_silently_filters_unverified_file_index_with_valid_so
     assert search.show_source_select(
         [rejected, valid], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
     ) is True
-    assert shown == [valid]
+    assert shown == [rejected, valid]
     assert notifications == []
 
 
@@ -847,7 +1293,7 @@ def test_show_source_select_preserves_trackerless_torrents_without_notification(
     )
 
     monkeypatch.setattr(search, "notification", notifications.append)
-    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
     monkeypatch.setattr(
         search,
@@ -873,7 +1319,7 @@ def test_preferred_trackerless_stream_uses_external_torrent_client_contract():
     assert results[0].url == f"magnet:?xt=urn:btih:{INFO_HASH}"
 
 
-def test_show_source_select_notifies_once_when_all_file_indexes_are_unverified(monkeypatch):
+def test_show_source_select_preserves_all_valid_indexed_torrents(monkeypatch):
     shown = []
     notifications = []
     rejected = TorrentStream(
@@ -883,14 +1329,16 @@ def test_show_source_select_notifies_once_when_all_file_indexes_are_unverified(m
     )
 
     monkeypatch.setattr(search, "notification", notifications.append)
-    monkeypatch.setattr(search, "is_youtube_addon_enabled", lambda: False)
+    monkeypatch.setattr(search, "current_stremio_playback_capabilities", lambda: {})
     monkeypatch.setattr(search, "source_select", lambda *_args, **_kwargs: shown.append(True) or True)
+
+    monkeypatch.setattr(search, "build_media_metadata", lambda *_args, **_kwargs: {})
 
     assert search.show_source_select(
         [rejected, rejected], "movies", {"imdb_id": "tt123"}, {}, "Movie", "movies", False
-    ) is False
-    assert shown == []
-    assert notifications == ["This torrent client cannot verify the requested file index."]
+    ) is True
+    assert shown == [True]
+    assert notifications == []
 
 
 def _catalog_params(**overrides):
@@ -934,7 +1382,6 @@ def test_catalog_movie_preserves_canonical_fields_and_skips_unsupported(monkeypa
         {
             "url": "https://media.example/movie.mkv",
             "infoHash": INFO_HASH,
-            "fileIdx": 2,
             "title": "Movie 1080p",
             "description": "Stream plot",
             "sources": [TRACKER_B],
@@ -965,7 +1412,7 @@ def test_catalog_movie_preserves_canonical_fields_and_skips_unsupported(monkeypa
     assert captured[0]["url"] == "https://media.example/movie.mkv"
     assert captured[0]["type"] == catalog_menus.IndexerType.DIRECT
     assert captured[0]["info_hash"] == INFO_HASH
-    assert captured[0]["file_idx"] == 2
+    assert "file_idx" not in captured[0]
     assert captured[0]["sources"] == [TRACKER_B]
     assert captured[0]["trackers"] == [TRACKER_A]
     assert captured[0]["headers"] == {"Referer": "https://media.example"}
@@ -993,6 +1440,272 @@ def test_catalog_youtube_handoff_uses_safe_plugin_url_and_addon_gate(monkeypatch
     assert catalog_menus._stremio_catalog_playback_data(
         {"ytId": "video/id"}, _catalog_params()
     ) is None
+
+
+def test_catalog_admits_indexed_torrent(monkeypatch):
+    monkeypatch.setattr(
+        catalog_menus, "current_stremio_playback_capabilities", lambda: {"youtube_available": True}
+    )
+
+    playback_data, candidate = catalog_menus._stremio_catalog_playback_data(
+        _supported_hash_payload(fileIdx=3), _catalog_params()
+    )
+
+    assert candidate.fileIdx == 3
+    assert playback_data["file_idx"] == 3
+    assert playback_data["is_torrent"] is True
+
+
+@pytest.mark.parametrize(
+    ("metadata_key", "metadata", "admitted"),
+    [
+        pytest.param("stremio_metadata", json.dumps({"fileIdx": 3}), True, id="snake_valid_index"),
+        pytest.param("stremioMetadata", json.dumps({"fileIdx": 3}), True, id="camel_valid_index"),
+        pytest.param("stremio_metadata", '{"fileIdx": 3', False, id="snake_malformed"),
+        pytest.param("stremioMetadata", '{"fileIdx": 3', False, id="camel_malformed"),
+        pytest.param(
+            "stremio_metadata",
+            json.dumps({"fileIdx": 3, "debridType": DebridType.RD}),
+            True,
+            id="snake_debrid_intent",
+        ),
+        pytest.param(
+            "stremioMetadata",
+            json.dumps({"fileIdx": 3, "debridType": DebridType.RD}),
+            True,
+            id="camel_debrid_intent",
+        ),
+    ],
+)
+def test_catalog_normalizes_serialized_stremio_metadata_before_admission(
+    monkeypatch, metadata_key, metadata, admitted
+):
+    monkeypatch.setattr(
+        catalog_menus, "current_stremio_playback_capabilities", lambda: {"youtube_available": True}
+    )
+
+    prepared = catalog_menus._stremio_catalog_playback_data(
+        _supported_hash_payload(**{metadata_key: metadata}), _catalog_params()
+    )
+
+    assert (prepared is not None) is admitted
+    if admitted:
+        assert prepared[0]["file_idx"] == 3
+
+
+@pytest.mark.parametrize(
+    "stream",
+    [
+        pytest.param({"url": "https://media.example/movie.mkv", "fileIdx": 3}, id="direct"),
+        pytest.param({"ytId": "dQw4w9WgXcQ", "fileIdx": 3}, id="youtube"),
+    ],
+)
+def test_catalog_rejects_bare_indexed_non_torrent_sources_without_jacktorr(monkeypatch, stream):
+    monkeypatch.setattr(
+        catalog_menus,
+        "current_stremio_playback_capabilities",
+        lambda: {"youtube_available": True},
+    )
+
+    assert catalog_menus._stremio_catalog_playback_data(stream, _catalog_params()) is None
+
+
+def test_catalog_admits_hidden_debrid_intent_in_second_metadata_alias(monkeypatch):
+    monkeypatch.setattr(
+        catalog_menus,
+        "current_stremio_playback_capabilities",
+        lambda: {"youtube_available": True},
+    )
+    stream = _supported_hash_payload(
+        fileIdx=3,
+        stremioMetadata={"title": "Benign metadata"},
+        stremio_metadata={"debridType": DebridType.RD},
+    )
+
+    assert catalog_menus._stremio_catalog_playback_data(stream, _catalog_params()) is not None
+
+
+@pytest.mark.parametrize("debrid_type", DebridType.values())
+def test_catalog_admits_indexed_torrent_debrid_routes(monkeypatch, debrid_type):
+    monkeypatch.setattr(
+        catalog_menus, "current_stremio_playback_capabilities", lambda: {"youtube_available": True}
+    )
+
+    prepared = catalog_menus._stremio_catalog_playback_data(
+        _supported_hash_payload(fileIdx=3, debrid_type=debrid_type), _catalog_params()
+    )
+
+    assert prepared is not None
+
+
+def test_catalog_serialized_indexed_torrent_uses_normal_playback_resolution(monkeypatch):
+    monkeypatch.setattr(
+        catalog_menus,
+        "current_stremio_playback_capabilities",
+        lambda: {"youtube_available": True},
+    )
+    playback_data, _candidate = catalog_menus._stremio_catalog_playback_data(
+        _supported_hash_payload(fileIdx=3), _catalog_params()
+    )
+    player = MagicMock()
+    notifications = []
+
+    monkeypatch.setattr(
+        player_utils,
+        "resolve_playback_url",
+        lambda data: {**data, "url": "plugin://normal/play"},
+    )
+    monkeypatch.setattr(navigation, "JacktookPLayer", lambda: player)
+    monkeypatch.setattr(navigation, "notification", notifications.append)
+
+    navigation.play_media({"data": json.dumps(playback_data)})
+
+    player.run.assert_called_once()
+    assert notifications == []
+
+
+def test_catalog_serialized_indexed_torrent_does_not_pass_index_to_jacktorr(monkeypatch):
+    settings = {"torrent_enable": True, "torrent_client": Players.JACKTORR}
+    monkeypatch.setattr(
+        catalog_menus, "current_stremio_playback_capabilities", lambda: {"youtube_available": True}
+    )
+    playback_data, _candidate = catalog_menus._stremio_catalog_playback_data(
+        _supported_hash_payload(fileIdx=0), _catalog_params()
+    )
+    player = MagicMock()
+    selector_calls = []
+
+    monkeypatch.setattr(player_utils, "get_setting", lambda setting: settings.get(setting))
+    monkeypatch.setattr(
+        player_utils,
+        "get_jacktorr_url",
+        lambda magnet, url, data=None: selector_calls.append((magnet, url, data))
+        or "plugin://plugin.video.jacktorr/play_magnet",
+    )
+    monkeypatch.setattr(navigation, "JacktookPLayer", lambda: player)
+
+    navigation.play_media({"data": json.dumps(playback_data)})
+
+    assert "file_idx" not in selector_calls[0][2]
+    assert "fileIdx" not in selector_calls[0][2]
+    player.run.assert_called_once_with(
+        data={**playback_data, "url": "plugin://plugin.video.jacktorr/play_magnet"}
+    )
+
+
+@pytest.mark.parametrize("entry_point", [navigation.play_media, navigation.play_from_pack])
+def test_runtime_routes_delegate_clean_unindexed_payloads_to_legacy_resolution(monkeypatch, entry_point):
+    payload = {"url": "https://media.example/movie.mkv", "title": "Clean stream"}
+    player = MagicMock()
+    legacy_calls = []
+
+    monkeypatch.setattr(
+        player_utils,
+        "resolve_playback_url",
+        lambda data: legacy_calls.append(data) or {**data, "url": "plugin://legacy/play"},
+    )
+    monkeypatch.setattr(navigation, "JacktookPLayer", lambda: player)
+
+    entry_point({"data": json.dumps(payload)})
+
+    assert legacy_calls == [payload]
+
+
+def test_file_index_zero_reaches_legacy_resolution(monkeypatch):
+    payload = _supported_hash_payload(fileIdx=0)
+    selector_calls = []
+    legacy_calls = []
+
+    monkeypatch.setattr(
+        player_utils,
+        "get_torrent_url",
+        lambda data, client: selector_calls.append((data, client)) or "plugin://jacktorr/selector",
+    )
+    monkeypatch.setattr(
+        player_utils, "resolve_playback_url", lambda data: legacy_calls.append(data) or data
+    )
+
+    resolved = stremio_playback.resolve_stremio_playback_url(payload)
+
+    assert resolved["file_idx"] == 0
+    assert selector_calls == []
+    assert legacy_calls[0]["file_idx"] == 0
+
+
+@pytest.mark.parametrize("destination", ["debrid", "torrest", "elementum"])
+def test_serialized_file_index_uses_existing_route_without_index_handoff(monkeypatch, destination):
+    data = {
+        "info_hash": INFO_HASH,
+        "magnet": f"magnet:?xt=urn:btih:{INFO_HASH}",
+        "stremio_metadata": json.dumps({"file_idx": 3}),
+    }
+    resolver_calls = []
+    if destination == "debrid":
+        data["debrid_type"] = DebridType.RD
+        monkeypatch.setattr(
+            player_utils,
+            "get_debrid_url",
+            lambda payload, debrid_type, is_pack: resolver_calls.append(
+                (payload, debrid_type, is_pack)
+            )
+            or "https://media.example/debrid",
+        )
+    elif destination == "torrest":
+        monkeypatch.setattr(player_utils, "get_setting", lambda setting: True if setting == "torrent_enable" else Players.TORREST)
+        monkeypatch.setattr(
+            player_utils,
+            "get_torrest_url",
+            lambda magnet, url: resolver_calls.append((magnet, url)) or "plugin://torrest/play",
+        )
+    else:
+        monkeypatch.setattr(player_utils, "get_setting", lambda setting: True if setting == "torrent_enable" else Players.ELEMENTUM)
+        monkeypatch.setattr(
+            player_utils,
+            "get_elementum_url",
+            lambda magnet, url, mode, ids: resolver_calls.append((magnet, url, mode, ids)) or "plugin://elementum/play",
+        )
+
+    resolved = stremio_playback.resolve_stremio_playback_url(data)
+
+    assert resolver_calls
+    assert resolved["file_idx"] == 3
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        pytest.param(
+            {"type": IndexerType.DIRECT, "url": "https://media.example/movie.mkv", "fileIdx": 3},
+            id="direct_http",
+        ),
+        pytest.param({"ytId": "dQw4w9WgXcQ", "fileIdx": 3}, id="youtube"),
+    ],
+)
+def test_indexed_non_torrent_sources_reject_with_fresh_jacktorr_before_resolution(
+    monkeypatch, data
+):
+    monkeypatch.setattr(stremio_playback, "is_youtube_addon_enabled", lambda: True)
+
+    _assert_stremio_runtime_rejected_before_resolution(monkeypatch, data)
+
+
+@pytest.mark.parametrize("metadata_key", ["stremio_metadata", "stremioMetadata"])
+def test_unindexed_serialized_metadata_preserves_direct_torrent_and_debrid_resolution(
+    monkeypatch, metadata_key
+):
+    direct = {"type": IndexerType.DIRECT, "url": "https://media.example/direct", metadata_key: "{}"}
+    torrent = {"url": "magnet:?xt=urn:btih:example", metadata_key: "{}"}
+    debrid = {"debrid_type": DebridType.RD, "url": "https://media.example/debrid", metadata_key: "{}"}
+    torrent_resolver = MagicMock(return_value="plugin://torrent/play")
+    debrid_resolver = MagicMock(return_value="https://media.example/resolved")
+    monkeypatch.setattr(player_utils, "get_torrent_url", torrent_resolver)
+    monkeypatch.setattr(player_utils, "get_debrid_url", debrid_resolver)
+
+    assert player_utils.resolve_playback_url(direct) is direct
+    assert player_utils.resolve_playback_url(torrent)["url"] == "plugin://torrent/play"
+    assert player_utils.resolve_playback_url(debrid) is debrid
+    torrent_resolver.assert_called_once_with(torrent)
+    debrid_resolver.assert_called_once_with(debrid, DebridType.RD, False)
 
 
 def test_catalog_skips_incomplete_object_without_aborting_valid_candidates(monkeypatch):

@@ -16,6 +16,7 @@ from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
     classify,
+    current_stremio_playback_capabilities,
     normalize_stream,
     payload_from_torrent,
     resolve,
@@ -49,7 +50,6 @@ from lib.utils.kodi.utils import (
     ADDON_PATH,
     cancel_playback,
     close_busy_dialog,
-    is_youtube_addon_enabled,
     kodilog,
     notification,
     translation,
@@ -406,7 +406,7 @@ def _preferred_stremio_results(raw_streams: Any) -> List[TorrentStream]:
     for stream in raw_streams:
         try:
             candidate = normalize_stream(stream, origin="video")
-            decision = classify(candidate, _stremio_capabilities())
+            decision = classify(candidate, current_stremio_playback_capabilities())
             if not decision.supported:
                 continue
         except (TypeError, ValueError):
@@ -426,10 +426,6 @@ def _preferred_stremio_results(raw_streams: Any) -> List[TorrentStream]:
             )
         )
     return results
-
-
-def _stremio_capabilities() -> dict:
-    return {"youtube_available": is_youtube_addon_enabled()}
 
 
 def _stremio_metadata_diagnostics(candidate: Any) -> str:
@@ -467,7 +463,7 @@ def _prepare_stremio_results(
 
         payload = payload_from_torrent(result)
         candidate = candidate_from_payload(payload)
-        decision = classify(candidate, _stremio_capabilities())
+        decision = classify(candidate, current_stremio_playback_capabilities())
         if decision.supported:
             prepared.append(result)
         else:
@@ -488,13 +484,16 @@ def _resolve_stremio_source(source: Any, context: Optional[Mapping[str, Any]] = 
     payload = payload_from_torrent(source)
     candidate = candidate_from_payload(payload)
     playback_context = dict(context or {})
-    playback_context.update(_stremio_capabilities())
+    playback_context.update(current_stremio_playback_capabilities())
     decision = classify(candidate, playback_context)
     playback_context["is_torrent"] = decision.source_class == "torrent_hash"
 
     def legacy_resolver(resolved_payload, _context=None):
         resolved_payload.update(dict(context or {}))
         resolved_payload["is_torrent"] = playback_context["is_torrent"]
+        for key in ("type", "debrid_type", "indexer", "is_pack"):
+            if key in payload:
+                resolved_payload.setdefault(key, payload[key])
         return resolve_playback_url(resolved_payload)
 
     resolved = resolve(candidate, playback_context, legacy_resolver=legacy_resolver)
@@ -662,13 +661,6 @@ def run_search_entry(params: dict):
         except (ValueError, TypeError):
             year = None
 
-    kodilog(
-        f"run_search_entry received: query={query}, mode={mode}, media_type={media_type}, "
-        f"variant={variant}, title_language_mode={title_language_mode}, year={year}, "
-        f"rescrape={rescrape}, force_select={params.get('force_select', False)}"
-    )
-    kodilog(f"[PLAYNEXT] run_search_entry: tv_data from params={tv_data}, ids={ids}")
-
     library_data = None
     if params.get("stremio_addon_url") and params.get("stremio_catalog_type"):
         library_data = {
@@ -816,9 +808,7 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
 
         return results
 
-    kodilog(f"[ExternalScraper] _perform_search for {indexer_key}, getting client...")
     client = get_client(indexer_key)
-    kodilog(f"[ExternalScraper] client={client}")
     if not client:
         return []
 
@@ -1469,12 +1459,6 @@ def show_source_select(
 
     if not direct and ids:
         item_info.update(build_media_metadata(ids, mode))
-
-    kodilog(
-        "show_source_select context: "
-        f"query={query}, mode={mode}, media_type={media_type}, "
-        f"year={item_info.get('year')}, ids={ids}"
-    )
 
     xml_file_string = "source_select_direct.xml" if mode == "direct" else "source_select.xml"
 

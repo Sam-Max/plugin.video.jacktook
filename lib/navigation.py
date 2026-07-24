@@ -11,6 +11,7 @@ import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
 from lib.api.trakt.trakt import ProviderException, TraktAPI
 from lib.clients.stremio.catalog_menus import list_stremio_catalogs
+from lib.clients.stremio.playback import resolve_stremio_playback_url
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
 )
@@ -105,7 +106,6 @@ from lib.utils.kodi.utils import (
     set_setting,
     translation,
 )
-from lib.utils.player.utils import resolve_playback_url
 from lib.utils.torrent.torrserver_init import get_torrserver_api
 from lib.utils.torrentio.utils import open_providers_selection
 
@@ -870,7 +870,7 @@ def torrents(params):
 
 def play_media(params):
     data = json.loads(params["data"])
-    data = resolve_playback_url(data)
+    data = resolve_stremio_playback_url(data)
     if not data:
         notification("Failed to resolve playback URL")
         return
@@ -1003,7 +1003,7 @@ def play_trailer(params):
 
 def play_from_pack(params):
     data = json.loads(params.get("data"))
-    data = resolve_playback_url(data)
+    data = resolve_stremio_playback_url(data)
     if not data:
         return
     from lib.player import JacktookPLayer

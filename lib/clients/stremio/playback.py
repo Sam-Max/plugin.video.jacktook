@@ -1,9 +1,14 @@
 """Safe normalization and resolution contracts for Stremio playback sources."""
 
+import json
 import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Tuple
 from urllib.parse import parse_qs, quote, unquote, urlparse
+
+from lib.utils.kodi.utils import (
+    is_youtube_addon_enabled,
+)
 
 _HASH_RE = re.compile(r"^[0-9a-fA-F]{40}$")
 _CONTROL_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -93,6 +98,12 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
 
     values = _as_mapping(raw)
     metadata = _mapping_value(values, "stremioMetadata", "stremio_metadata")
+    metadata_values = [
+        value
+        for key, value in values.items()
+        if key in {"stremioMetadata", "stremio_metadata"} and isinstance(value, Mapping)
+    ]
+    file_index, invalid_file_index = _file_index_value(values, metadata_values)
     merged = dict(metadata) if isinstance(metadata, Mapping) else {}
     merged.update(values)
     behavior_hints = _mapping_value(merged, "behaviorHints", "behavior_hints")
@@ -130,14 +141,18 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
         "fileMustInclude", "nzbUrl", "rarUrls", "zipUrls", "sevenZipUrls", "7zipUrls", "tgzUrls",
         "tarUrls",
     }
-    extra_metadata = dict(metadata) if isinstance(metadata, Mapping) else {}
+    extra_metadata = {}
+    for metadata_value in metadata_values:
+        extra_metadata.update(metadata_value)
     extra_metadata.update({key: value for key, value in values.items() if key not in known_fields})
+    if invalid_file_index:
+        extra_metadata["_invalid_file_index"] = True
 
     return StremioPlaybackCandidate(
         url=_string_or_none(_mapping_value(merged, "url")),
         ytId=_string_or_none(_mapping_value(merged, "ytId", "yt_id")),
         infoHash=_string_or_none(_mapping_value(merged, "infoHash", "info_hash")),
-        fileIdx=_mapping_value(merged, "fileIdx", "file_idx"),
+        fileIdx=file_index,
         externalUrl=_string_or_none(_mapping_value(merged, "externalUrl", "external_url")),
         title=_string_or_none(_mapping_value(merged, "title")),
         name=_string_or_none(_mapping_value(merged, "name")),
@@ -163,13 +178,105 @@ def candidate_from_payload(data: Any) -> StremioPlaybackCandidate:
     return normalize_stream(data, origin="payload")
 
 
+def current_stremio_playback_capabilities() -> Dict[str, Any]:
+    """Build Stremio playback capabilities from the current Kodi configuration."""
+    return {"youtube_available": is_youtube_addon_enabled()}
+
+
+def canonicalize_stremio_playback_payload(data: Any) -> Dict[str, Any]:
+    """Normalize serialized Stremio aliases before making a runtime policy decision."""
+    canonical = _as_mapping(data)
+    metadata_values = []
+    invalid_metadata = False
+    has_debrid_intent = any(
+        key in canonical for key in ("debrid_type", "debridType")
+    )
+
+    for key in ("stremio_metadata", "stremioMetadata"):
+        metadata = canonical.get(key)
+        if metadata is None:
+            continue
+        if isinstance(metadata, str):
+            try:
+                metadata = json.loads(metadata)
+            except (TypeError, ValueError):
+                invalid_metadata = True
+                continue
+        if not isinstance(metadata, Mapping):
+            invalid_metadata = True
+            continue
+        canonical[key] = metadata
+        metadata_values.append(metadata)
+        invalid_metadata = invalid_metadata or metadata.get("_invalid_stremio_metadata") is True
+        has_debrid_intent = has_debrid_intent or any(
+            debrid_key in metadata for debrid_key in ("debrid_type", "debridType")
+        )
+
+    file_index, invalid_file_index = _file_index_value(canonical, metadata_values)
+    if file_index is not None:
+        canonical["file_idx"] = file_index
+    if invalid_metadata or invalid_file_index:
+        canonical["_invalid_stremio_metadata"] = True
+    if has_debrid_intent:
+        canonical["_stremio_debrid_intent"] = True
+    return canonical
+
+
+def requires_indexed_or_malformed_stremio_policy(data: Mapping[str, Any]) -> bool:
+    """Return whether indexed or malformed Stremio metadata requires fail-closed handling."""
+    return (
+        data.get("file_idx") is not None
+        or data.get("fileIdx") is not None
+        or data.get("_invalid_stremio_metadata") is True
+    )
+
+
+def resolve_stremio_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Reject malformed or indexed non-torrent sources before legacy resolution."""
+    canonical_data = canonicalize_stremio_playback_payload(data)
+    if not requires_indexed_or_malformed_stremio_policy(canonical_data):
+        from lib.utils.player.utils import resolve_playback_url
+
+        return resolve_playback_url(data)
+
+    decision = classify(
+        candidate_from_payload(canonical_data),
+        current_stremio_playback_capabilities(),
+    )
+    if decision.source_class != "torrent_hash":
+        return None
+
+    from lib.utils.player.utils import resolve_playback_url
+
+    return resolve_playback_url(canonical_data)
+
+
 def payload_from_torrent(
     source: Any, context: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, Any]:
     """Convert a current or legacy ``TorrentStream`` into a canonical payload."""
     values = _as_mapping(source)
-    metadata = _mapping_value(values, "stremioMetadata", "stremio_metadata")
-    metadata = dict(metadata) if isinstance(metadata, Mapping) else {}
+    metadata = {}
+    metadata_values = []
+    for key in ("stremioMetadata", "stremio_metadata"):
+        value = values.get(key)
+        if isinstance(value, Mapping):
+            metadata_values.append(value)
+            metadata.update(value)
+    invalid_stremio_metadata = any(
+        value is not None and not isinstance(value, Mapping)
+        for key, value in values.items()
+        if key in {"stremioMetadata", "stremio_metadata"}
+    )
+    _file_index, invalid_file_index = _file_index_value(values, metadata_values)
+    debrid_keys = ("debridType", "debrid_type")
+    has_debrid_intent = any(
+        key in values
+        and (isinstance(source, Mapping) or values.get(key) not in (None, "", False, [], {}))
+        for key in debrid_keys
+    ) or any(
+        key in metadata_value for metadata_value in metadata_values for key in debrid_keys
+    )
 
     def value(*keys: str, default: Any = None) -> Any:
         result = _mapping_value(metadata, *keys)
@@ -180,7 +287,6 @@ def payload_from_torrent(
 
     payload = {
         "type": value("type", default=""),
-        "debrid_type": value("debridType", "debrid_type", default=""),
         "indexer": value("indexer", default=""),
         "url": value("url", default=""),
         "magnet": value("magnet", default=""),
@@ -197,15 +303,19 @@ def payload_from_torrent(
         "sources": value("sources", default=[]),
         "trackers": value("trackers", default=[]),
         "stremio_metadata": metadata,
+        "_stremio_debrid_intent": has_debrid_intent,
     }
+    if has_debrid_intent:
+        payload["debrid_type"] = value("debridType", "debrid_type")
     for key in ("ytId", "externalUrl", "videoHash", "fileMustInclude", "nzbUrl"):
         item = value(key)
         if item is not None:
             payload[key] = item
-
     candidate = candidate_from_payload(payload)
     result = _payload_from_candidate(candidate)
     result.update({key: value for key, value in payload.items() if key not in result})
+    if invalid_stremio_metadata or invalid_file_index:
+        result["_invalid_stremio_metadata"] = True
     if context:
         result["context"] = dict(context)
     return result
@@ -220,6 +330,8 @@ def classify(
 
     if _client_is_unsupported(capabilities):
         return _unsupported("unsupported_client", "The selected playback client is unavailable.")
+    if candidate.metadata.get("_invalid_file_index"):
+        return _unsupported("malformed_locator", "The torrent file index is malformed.")
     metadata_problem = _metadata_problem(candidate)
     if metadata_problem:
         return _unsupported(*metadata_problem)
@@ -227,6 +339,11 @@ def classify(
     if header_problem:
         return _unsupported(*header_problem)
     if candidate.ytId:
+        if candidate.fileIdx is not None:
+            return _unsupported(
+                "file_index_unsupported",
+                "This torrent client cannot verify the requested file index.",
+            )
         if _CONTROL_RE.search(candidate.ytId) or "|" in candidate.ytId:
             return _unsupported("malformed_locator", "The video source is malformed.")
         return Decision("youtube", True, "", "youtube")
@@ -252,6 +369,11 @@ def classify(
 
     if candidate.url:
         if _valid_http_url(candidate.url):
+            if candidate.fileIdx is not None:
+                return _unsupported(
+                    "file_index_unsupported",
+                    "This torrent client cannot verify the requested file index.",
+                )
             if "|" in candidate.url:
                 return _unsupported("unsafe_locator", "The direct source locator is unsafe.")
             return Decision("direct_http", True, "", "direct_http")
@@ -340,6 +462,25 @@ def _mapping_value(values: Mapping[str, Any], *keys: str) -> Any:
     return None
 
 
+def _file_index_value(
+    values: Mapping[str, Any], metadata_values: Iterable[Mapping[str, Any]]
+) -> Tuple[Optional[int], bool]:
+    """Return a shared valid file index or flag malformed/conflicting aliases."""
+    indexes = []
+    for mapping in (values, *metadata_values):
+        for key in ("fileIdx", "file_idx"):
+            if key in mapping and mapping[key] is not None:
+                indexes.append(mapping[key])
+
+    if not indexes:
+        return None, False
+    if any(isinstance(index, bool) or not isinstance(index, int) or index < 0 for index in indexes):
+        return None, True
+    if len(set(indexes)) != 1:
+        return None, True
+    return indexes[0], False
+
+
 def _first_present(*values: Any) -> Any:
     return next((value for value in values if value is not None), None)
 
@@ -387,6 +528,8 @@ def _header_mapping(value: Any) -> Dict[str, Any]:
 
 
 def _metadata_problem(candidate: StremioPlaybackCandidate) -> Optional[Tuple[str, str]]:
+    if candidate.metadata.get("_invalid_stremio_metadata"):
+        return "unsafe_metadata", "The stream metadata is malformed."
     for value in (candidate.filename, candidate.title, candidate.name):
         if value and _DISPLAY_METADATA_CONTROL_RE.search(value):
             return "unsafe_metadata", "The stream metadata contains unsafe characters."
@@ -434,26 +577,16 @@ def _client_is_unsupported(capabilities: Mapping[str, Any]) -> bool:
     return client in {"unsupported", "unavailable", "none"}
 
 
-def _file_index_supported(capabilities: Mapping[str, Any]) -> bool:
-    if capabilities.get("supports_file_idx") is True:
-        return True
-    if capabilities.get("file_index_support") is True:
-        return True
-    client = capabilities.get("client")
-    client_capabilities = capabilities.get("client_capabilities")
-    if isinstance(client_capabilities, Mapping) and isinstance(client, str):
-        selected = client_capabilities.get(client)
-        return isinstance(selected, Mapping) and selected.get("supports_file_idx") is True
-    return False
-
-
 def _torrent_decision(
     candidate: StremioPlaybackCandidate, capabilities: Mapping[str, Any]
 ) -> Decision:
-    if candidate.fileIdx is not None and not _file_index_supported(capabilities):
+    if candidate.fileIdx is not None and (
+        isinstance(candidate.fileIdx, bool)
+        or not isinstance(candidate.fileIdx, int)
+        or candidate.fileIdx < 0
+    ):
         return _unsupported(
-            "file_index_unsupported",
-            "This torrent client cannot verify the requested file index.",
+            "malformed_locator", "The torrent file index is malformed."
         )
     return Decision("torrent_hash", True, "", "torrent_hash")
 
