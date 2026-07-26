@@ -46,10 +46,11 @@ def test_cancel_playback_signals_kodi_and_stops_player():
     assert "self.stop()" in cancel_body
 
 
-def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
+@pytest.mark.parametrize("url", ["http://stream", "https://stream", "file:///video.mkv"])
+def test_play_video_resolves_direct_url_without_a_second_launch(monkeypatch, url):
     player_module = _player_module(monkeypatch)
     test_player = _player_for_episode(player_module)
-    test_player.url = "http://stream"
+    test_player.url = url
     test_player.play = MagicMock()
     test_player.monitor = MagicMock()
     test_player.cancel_playback = MagicMock()
@@ -57,10 +58,18 @@ def test_play_video_always_uses_player_play_not_resolved_url(monkeypatch):
     test_player._handle_trakt_scrobble = MagicMock()
     test_player.handle_subtitles = MagicMock()
     list_item = MagicMock()
+    set_resolved_url = MagicMock()
+    monkeypatch.setattr(player_module, "setResolvedUrl", set_resolved_url)
+
+    events = []
+    list_item.setPath.side_effect = lambda path: events.append(("setPath", path))
+    set_resolved_url.side_effect = lambda *_args, **_kwargs: events.append("setResolvedUrl")
 
     test_player.play_video(list_item)
 
-    test_player.play.assert_called_once_with("http://stream", list_item)
+    assert events == [("setPath", url), "setResolvedUrl"]
+    set_resolved_url.assert_called_once_with(player_module.ADDON_HANDLE, True, list_item)
+    test_player.play.assert_not_called()
     test_player.monitor.assert_called_once_with()
 
 
@@ -84,10 +93,32 @@ def test_failed_trakt_scrobble_keeps_direct_playback(monkeypatch):
 
     test_player.play_video(list_item)
 
-    test_player.play.assert_called_once_with("http://stream", list_item)
+    test_player.play.assert_not_called()
     test_player.monitor.assert_called_once_with()
     test_player.cancel_playback.assert_not_called()
     assert any("start scrobble failed; continuing playback" in str(call) for call in player_module.kodilog.call_args_list)
+
+
+def test_play_video_keeps_plugin_url_on_resolved_url_path(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.url = "plugin://plugin.video.example/play"
+    test_player.play = MagicMock()
+    test_player.monitor = MagicMock()
+    test_player.cancel_playback = MagicMock()
+    test_player._check_volume = MagicMock(return_value=True)
+    test_player._handle_trakt_scrobble = MagicMock()
+    test_player.handle_subtitles = MagicMock()
+    list_item = MagicMock()
+    set_resolved_url = MagicMock()
+    monkeypatch.setattr(player_module, "setResolvedUrl", set_resolved_url)
+
+    test_player.play_video(list_item)
+
+    list_item.setPath.assert_not_called()
+    set_resolved_url.assert_called_once_with(player_module.ADDON_HANDLE, True, list_item)
+    test_player.play.assert_not_called()
+    test_player.monitor.assert_called_once_with()
 
 
 def test_failed_trakt_metadata_setup_does_not_abort_tracking_setup(monkeypatch):

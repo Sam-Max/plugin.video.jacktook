@@ -19,6 +19,7 @@ from lib.utils.kodi.utils import (
     clear_property,
     kodilog,
     set_property,
+    sleep,
     translation,
 )
 
@@ -165,6 +166,9 @@ def run_next_dialog(params):
             del window
 
         if action == "next_episode":
+            # Let Kodi finish restoring VideoNav focus after the modal close
+            # animation before the player monitor consumes this handoff.
+            sleep(200)
             set_property("jacktook_next_dialog_action", "next_episode")
         else:
             clear_property("jacktook_next_dialog_action")

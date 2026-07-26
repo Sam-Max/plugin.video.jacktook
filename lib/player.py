@@ -156,22 +156,14 @@ class JacktookPLayer(xbmc.Player):
         try:
             self._handle_trakt_scrobble(list_item)
             self.handle_subtitles(list_item)
+            if self.url.startswith(("http://", "https://", "file://")):
+                list_item.setPath(self.url)
             # Signal Kodi that the plugin action is a playback (required to
             # avoid spinners when run() returns after video stops).
             setResolvedUrl(ADDON_HANDLE, True, list_item)
-            # For external addon URLs (plugin://, e.g. Jacktorr/Elementum/
-            # Torrest), setResolvedUrl already handles playback by invoking
-            # the external addon via Kodi's plugin protocol.  Calling
-            # Player().play() on top of that triggers a second concurrent
-            # busy dialog, crashing Kodi with "Logic error due to two
-            # concurrent busydialogs".
-            is_plugin = self.url.startswith("plugin://")
-            kodilog(
-                f"[PLAYER] play_video: is_plugin={is_plugin}, "
-                f"calling {'setResolvedUrl only' if is_plugin else 'setResolvedUrl + Player().play()'}"
-            )
-            if not is_plugin:
-                self.play(self.url, list_item)
+            # setResolvedUrl starts both direct streams and external plugin
+            # URLs. Calling Player().play() afterwards opens the stream twice.
+            kodilog("[PLAYER] play_video: calling setResolvedUrl only")
             self.monitor()
             kodilog("[PLAYER] play_video: monitor() returned")
         except Exception as e:

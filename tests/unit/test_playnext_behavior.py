@@ -36,6 +36,38 @@ def _player_instance():
     return player
 
 
+def test_playnext_modal_waits_before_publishing_stop_handoff(monkeypatch):
+    from lib.gui import custom_dialogs
+
+    events = []
+
+    class FakePlayNext:
+        action = "next_episode"
+
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def doModal(self):
+            events.append("modal_closed")
+
+    monkeypatch.setattr(custom_dialogs, "PLAYLIST", MagicMock(size=lambda: 0))
+    monkeypatch.setattr(custom_dialogs, "PlayNext", FakePlayNext)
+    monkeypatch.setattr(custom_dialogs, "sleep", lambda milliseconds: events.append(("sleep", milliseconds)))
+    monkeypatch.setattr(
+        custom_dialogs,
+        "set_property",
+        lambda key, value: events.append(("set_property", key, value)),
+    )
+
+    custom_dialogs.run_next_dialog({"item_info": "{}"})
+
+    assert events == [
+        "modal_closed",
+        ("sleep", 200),
+        ("set_property", "jacktook_next_dialog_action", "next_episode"),
+    ]
+
+
 def test_handle_next_dialog_action_ignores_playlist_advance_and_uses_handler(monkeypatch):
     from lib.player import JacktookPLayer
 
