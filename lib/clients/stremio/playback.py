@@ -118,14 +118,12 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
         _mapping_value(merged, "subtitles", "streamSubtitles", "stream_subtitles")
     )
     filename = _mapping_value(merged, "filename") or _mapping_value(behavior_hints, "filename")
-    size = _first_present(
-        _mapping_value(merged, "size", "videoSize"),
-        _mapping_value(behavior_hints, "videoSize"),
-    )
-    video_hash = _first_present(
-        _mapping_value(merged, "videoHash", "video_hash"),
-        _mapping_value(behavior_hints, "videoHash"),
-    )
+    size = _mapping_value(merged, "size", "videoSize")
+    if size is None:
+        size = _mapping_value(behavior_hints, "videoSize")
+    video_hash = _mapping_value(merged, "videoHash", "video_hash")
+    if video_hash is None:
+        video_hash = _mapping_value(behavior_hints, "videoHash")
     sources = _string_list(_mapping_value(merged, "sources"))
     trackers = _string_list(_mapping_value(merged, "trackers"))
     archive_urls = []
@@ -148,6 +146,7 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
     if invalid_file_index:
         extra_metadata["_invalid_file_index"] = True
 
+    file_must_include = _mapping_value(merged, "fileMustInclude")
     return StremioPlaybackCandidate(
         url=_string_or_none(_mapping_value(merged, "url")),
         ytId=_string_or_none(_mapping_value(merged, "ytId", "yt_id")),
@@ -165,7 +164,9 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
         trackers=trackers,
         headers=request_headers,
         responseHeaders=response_headers,
-        fileMustInclude=_string_list_or_none(_mapping_value(merged, "fileMustInclude")),
+        fileMustInclude=(
+            None if file_must_include is None else _string_list(file_must_include)
+        ),
         nzbUrl=_string_or_none(_mapping_value(merged, "nzbUrl")),
         archiveUrls=archive_urls,
         metadata=extra_metadata,
@@ -222,19 +223,14 @@ def canonicalize_stremio_playback_payload(data: Any) -> Dict[str, Any]:
     return canonical
 
 
-def requires_indexed_or_malformed_stremio_policy(data: Mapping[str, Any]) -> bool:
-    """Return whether indexed or malformed Stremio metadata requires fail-closed handling."""
-    return (
-        data.get("file_idx") is not None
-        or data.get("fileIdx") is not None
-        or data.get("_invalid_stremio_metadata") is True
-    )
-
-
 def resolve_stremio_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Reject malformed or indexed non-torrent sources before legacy resolution."""
     canonical_data = canonicalize_stremio_playback_payload(data)
-    if not requires_indexed_or_malformed_stremio_policy(canonical_data):
+    if (
+        canonical_data.get("file_idx") is None
+        and canonical_data.get("fileIdx") is None
+        and canonical_data.get("_invalid_stremio_metadata") is not True
+    ):
         from lib.utils.player.utils import resolve_playback_url
 
         return resolve_playback_url(data)
@@ -360,7 +356,7 @@ def classify(
             return _unsupported(*magnet_error)
         if candidate.infoHash and candidate.infoHash.lower() != info_hash:
             return _unsupported("malformed_locator", "The torrent locator is malformed.")
-        _trackers, tracker_error = _normalized_trackers(
+        _, tracker_error = _normalized_trackers(
             list(candidate.sources) + list(candidate.trackers) + magnet_trackers
         )
         if tracker_error:
@@ -382,7 +378,7 @@ def classify(
     if candidate.infoHash:
         if not _HASH_RE.fullmatch(candidate.infoHash):
             return _unsupported("malformed_locator", "The torrent hash is malformed.")
-        _trackers, tracker_error = _normalized_trackers(
+        _, tracker_error = _normalized_trackers(
             list(candidate.sources) + list(candidate.trackers)
         )
         if tracker_error:
@@ -481,10 +477,6 @@ def _file_index_value(
     return indexes[0], False
 
 
-def _first_present(*values: Any) -> Any:
-    return next((value for value in values if value is not None), None)
-
-
 def _string_or_none(value: Any) -> Optional[str]:
     return None if value is None else value if isinstance(value, str) else str(value)
 
@@ -493,10 +485,6 @@ def _string_list(value: Any) -> List[str]:
     if value is None or isinstance(value, (str, bytes)):
         return [value] if isinstance(value, str) else []
     return [item for item in value if isinstance(item, str)] if isinstance(value, Iterable) else []
-
-
-def _string_list_or_none(value: Any) -> Optional[List[str]]:
-    return None if value is None else _string_list(value)
 
 
 def _normalize_subtitles(value: Any) -> List[Dict[str, Any]]:
@@ -519,12 +507,14 @@ def _split_headers(value: Any) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     if "request" in value or "response" in value:
         request = value.get("request") or {}
         response = value.get("response") or {}
-        return _header_mapping(request), _header_mapping(response)
+        request_headers = (
+            dict(request) if isinstance(request, Mapping) else {"__invalid__": request}
+        )
+        response_headers = (
+            dict(response) if isinstance(response, Mapping) else {"__invalid__": response}
+        )
+        return request_headers, response_headers
     return dict(value), {}
-
-
-def _header_mapping(value: Any) -> Dict[str, Any]:
-    return dict(value) if isinstance(value, Mapping) else {"__invalid__": value}
 
 
 def _metadata_problem(candidate: StremioPlaybackCandidate) -> Optional[Tuple[str, str]]:
