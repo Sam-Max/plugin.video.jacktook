@@ -8,6 +8,7 @@ from lib.search import (
     _build_title_fallback_queries,
     _check_search_caches,
     _is_source_enabled,
+    _submit_search_tasks,
     run_search_entry,
     search_client,
     show_source_select,
@@ -20,6 +21,77 @@ def test_search_variant_values():
     assert SearchVariant.TITLE_YEAR == "title_year"
     assert SearchVariant.ORIGINAL_TITLE == "original_title"
     assert SearchVariant.ORIGINAL_TITLE_YEAR == "original_title_year"
+
+
+def test_simple_search_submits_selected_stremio_addon_with_strict_whitelist():
+    selected_addon = MagicMock()
+    selected_addon.key.return_value = "selected|https://selected.example"
+    selected_addon.url.return_value = "https://selected.example"
+    executor = MagicMock()
+    tasks = []
+
+    with patch(
+        "lib.search._get_source_manager_selection",
+        return_value={"Stremio:selected|https://selected.example"},
+    ), patch(
+        "lib.search.get_setting", side_effect=lambda key, default=None: key == "stremio_enabled"
+    ), patch("lib.search.get_selected_stream_addons", return_value=[selected_addon]):
+        _submit_search_tasks(
+            executor,
+            tasks,
+            MagicMock(),
+            "Movie",
+            "movies",
+            "movie",
+            0,
+            0,
+            {"imdb_id": "tt1234567"},
+            "",
+            None,
+            "tt1234567",
+            True,
+        )
+
+    assert len(tasks) == 1
+    assert executor.submit.call_args.kwargs["scoped_addon_url"] == "https://selected.example"
+
+
+def test_simple_search_excludes_unselected_stremio_addon_with_strict_whitelist():
+    selected_addon = MagicMock()
+    selected_addon.key.return_value = "selected|https://selected.example"
+    selected_addon.url.return_value = "https://selected.example"
+    unselected_addon = MagicMock()
+    unselected_addon.key.return_value = "unselected|https://unselected.example"
+    unselected_addon.url.return_value = "https://unselected.example"
+    executor = MagicMock()
+    tasks = []
+
+    with patch(
+        "lib.search._get_source_manager_selection",
+        return_value={"Stremio:selected|https://selected.example"},
+    ), patch(
+        "lib.search.get_setting", side_effect=lambda key, default=None: key == "stremio_enabled"
+    ), patch(
+        "lib.search.get_selected_stream_addons", return_value=[selected_addon, unselected_addon]
+    ):
+        _submit_search_tasks(
+            executor,
+            tasks,
+            MagicMock(),
+            "Movie",
+            "movies",
+            "movie",
+            0,
+            0,
+            {"imdb_id": "tt1234567"},
+            "",
+            None,
+            "tt1234567",
+            True,
+        )
+
+    assert len(tasks) == 1
+    assert executor.submit.call_args.kwargs["scoped_addon_url"] == "https://selected.example"
 
 
 def test_build_title_fallback_queries_default_variant_uses_tmdb_titles():

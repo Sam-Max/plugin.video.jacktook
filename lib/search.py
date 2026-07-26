@@ -990,14 +990,21 @@ def _submit_search_tasks(
                 year=str(year) if year else "",
                 aliases=title_aliases,
             )
-        if (
-            get_setting("stremio_enabled")
-            and (ids.get("imdb_id") or ids.get("original_id"))
-            and _is_source_enabled(Indexer.STREMIO)
-        ):
-            tasks.append(
-                submit_performer(Indexer.STREMIO, dialog, ids, mode, media_type, season, episode)
-            )
+        if get_setting("stremio_enabled") and (ids.get("imdb_id") or ids.get("original_id")):
+            for addon in get_selected_stream_addons():
+                if _is_source_enabled(Indexer.STREMIO, addon.key()):
+                    tasks.append(
+                        submit_performer(
+                            Indexer.STREMIO,
+                            dialog,
+                            ids,
+                            mode,
+                            media_type,
+                            season,
+                            episode,
+                            scoped_addon_url=addon.url(),
+                        )
+                    )
 
 
 def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]:
