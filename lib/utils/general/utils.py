@@ -995,15 +995,15 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     return data or {}
 
 
-def get_cached_results(query, mode, media_type, episode, cache_scope=""):
+def get_cached_results(query, mode, media_type, episode, season, cache_scope=""):
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        return get_cached(query, params=(episode, "index", cache_scope))
+        return get_cached(query, params=(season, episode, "index", cache_scope))
     return get_cached(query, params=("index", cache_scope))
 
 
-def cache_results(results, query, mode, media_type, episode, cache_scope=""):
+def cache_results(results, query, mode, media_type, episode, season, cache_scope=""):
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        set_cached(results, query, params=(episode, "index", cache_scope))
+        set_cached(results, query, params=(season, episode, "index", cache_scope))
     else:
         set_cached(results, query, params=("index", cache_scope))
 
@@ -1408,7 +1408,9 @@ def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStrea
 
 def is_torrent_url(uri):
     res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
-    return bool(res.status_code == 200 and res.headers.get("Content-Type") == "application/octet-stream")
+    return bool(
+        res.status_code == 200 and res.headers.get("Content-Type") == "application/octet-stream"
+    )
 
 
 def supported_video_extensions():

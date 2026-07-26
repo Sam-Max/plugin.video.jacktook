@@ -8,6 +8,8 @@ from lib.utils.general.utils import (
     extract_publish_date,
     extract_release_group,
     format_season_episode,
+    cache_results,
+    get_cached_results,
     get_image_size,
     get_random_color,
     get_rpdb_poster,
@@ -118,10 +120,26 @@ def test_normalize_tv_data_decodes_episode_name_and_preserves_number_coercion():
     assert normalized["episode"] == 3
 
 
+def test_episode_result_cache_keys_include_season_and_preserve_movie_key():
+    with patch("lib.utils.general.utils.set_cached") as set_cached:
+        cache_results(["season 1"], "Show", "tv", "tv", 1, 1, cache_scope="scope")
+        cache_results(["season 2"], "Show", "tv", "tv", 1, 2, cache_scope="scope")
+        cache_results(["movie"], "Movie", "movies", "movie", 0, 0, cache_scope="scope")
+
+    assert set_cached.call_args_list[0].kwargs["params"] == (1, 1, "index", "scope")
+    assert set_cached.call_args_list[1].kwargs["params"] == (2, 1, "index", "scope")
+    assert set_cached.call_args_list[2].kwargs["params"] == ("index", "scope")
+
+    with patch("lib.utils.general.utils.get_cached") as get_cached:
+        get_cached_results("Show", "anime", "tv", 1, 1, cache_scope="scope")
+        get_cached_results("Show", "anime", "tv", 1, 2, cache_scope="scope")
+
+    assert get_cached.call_args_list[0].kwargs["params"] == (1, 1, "index", "scope")
+    assert get_cached.call_args_list[1].kwargs["params"] == (2, 1, "index", "scope")
+
+
 def test_normalize_tv_data_keeps_decoded_episode_name_stable():
-    normalized = normalize_tv_data(
-        {"name": "The Scales & the Sword", "season": 2, "episode": 3}
-    )
+    normalized = normalize_tv_data({"name": "The Scales & the Sword", "season": 2, "episode": 3})
 
     assert normalized["name"] == "The Scales & the Sword"
     assert normalized["season"] == 2

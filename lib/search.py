@@ -96,9 +96,7 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "ed": bool(get_setting("easydebrid_enabled")),
     }
     selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
-    stremio_addon_aliases = json.dumps(
-        cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True
-    )
+    stremio_addon_aliases = json.dumps(cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True)
     source_manager_selection = str(cache.get("source_manager_selection") or "")
     external_scraper_module = str(get_setting("external_scraper_module") or "")
     normalized_scoped_url = str(scoped_addon_url or "")
@@ -438,10 +436,7 @@ def _stremio_metadata_diagnostics(candidate: Any) -> str:
             {
                 f"U+{ord(character):04X}"
                 for character in value
-                if (
-                    ord(character) < 0x20
-                    and ord(character) not in {0x09, 0x0A, 0x0D}
-                )
+                if (ord(character) < 0x20 and ord(character) not in {0x09, 0x0A, 0x0D})
                 or ord(character) == 0x7F
             }
         )
@@ -700,6 +695,16 @@ def run_search_entry(params: dict):
         kodilog("Search cancelled from detailed status window")
         results = exc.results
         suppress_debrid_dialog = True
+        if results and not rescrape:
+            cache_results(
+                results,
+                query,
+                mode,
+                media_type,
+                episode,
+                season,
+                cache_scope=_build_search_cache_scope(scoped_addon_url),
+            )
 
     if not results and not preferred_results:
         notification("No results found")
@@ -731,28 +736,34 @@ def run_search_entry(params: dict):
     autoplay_context = params.get("autoplay_context")
 
     if auto_play_enabled() and not force_select:
-        if not auto_play(
-            final_results,
-            ids,
-            tv_data,
-            mode,
-            preferred_group,
-            autoplay_context=autoplay_context,
-        ) and not skip_cancel:
+        if (
+            not auto_play(
+                final_results,
+                ids,
+                tv_data,
+                mode,
+                preferred_group,
+                autoplay_context=autoplay_context,
+            )
+            and not skip_cancel
+        ):
             cancel_playback()
         return
 
-    if not show_source_select(
-        final_results,
-        mode,
-        ids,
-        tv_data,
-        query,
-        media_type,
-        rescrape,
-        direct,
-        autoplay_context=autoplay_context,
-    ) and not skip_cancel:
+    if (
+        not show_source_select(
+            final_results,
+            mode,
+            ids,
+            tv_data,
+            query,
+            media_type,
+            rescrape,
+            direct,
+            autoplay_context=autoplay_context,
+        )
+        and not skip_cancel
+    ):
         cancel_playback()
 
 
@@ -1214,7 +1225,14 @@ def _check_search_caches(
     Returns cached results if found (even an empty list), or None if
     no cache entry exists (caller should perform a fresh search).
     """
-    cached = get_cached_results(query, mode, media_type, episode, cache_scope=cache_scope)
+    cached = get_cached_results(
+        query,
+        mode,
+        media_type,
+        episode,
+        season,
+        cache_scope=cache_scope,
+    )
     if cached is not None:
         return cached
 
@@ -1223,9 +1241,7 @@ def _check_search_caches(
     if mode != "tv" and media_type != "tv":
         return None
     id_value = (
-        (ids or {}).get("original_id")
-        or (ids or {}).get("imdb_id")
-        or (ids or {}).get("tmdb_id")
+        (ids or {}).get("original_id") or (ids or {}).get("imdb_id") or (ids or {}).get("tmdb_id")
     )
     if id_value is None or season is None or episode is None:
         return None
@@ -1239,7 +1255,15 @@ def _check_search_caches(
         return None
 
     kodilog(f"[CACHE] Autoscrape cache HIT for {as_key}, reusing {len(as_results)} results")
-    cache_results(as_results, query, mode, media_type, episode, cache_scope=cache_scope)
+    cache_results(
+        as_results,
+        query,
+        mode,
+        media_type,
+        episode,
+        season,
+        cache_scope=cache_scope,
+    )
     return as_results
 
 
@@ -1263,10 +1287,21 @@ def _run_detailed_search(
     manager = SearchTaskManager(executor)
     try:
         _submit_search_tasks_managed(
-            manager, None, query, mode, media_type, season, episode, ids,
-            scoped_addon_url, tmdb_id, imdb_id,
-            variant=variant, title_language_mode=title_language_mode,
-            year=year, title_aliases=title_aliases,
+            manager,
+            None,
+            query,
+            mode,
+            media_type,
+            season,
+            episode,
+            ids,
+            scoped_addon_url,
+            tmdb_id,
+            imdb_id,
+            variant=variant,
+            title_language_mode=title_language_mode,
+            year=year,
+            title_aliases=title_aliases,
         )
 
         item_info = {"ids": ids, "mode": mode}
@@ -1274,8 +1309,10 @@ def _run_detailed_search(
             item_info.update(build_media_metadata(ids, mode))
 
         window = SearchStatusWindow(
-            "search_status.xml", ADDON_PATH,
-            task_manager=manager, item_information=item_info,
+            "search_status.xml",
+            ADDON_PATH,
+            task_manager=manager,
+            item_information=item_info,
         )
         try:
             window.show()
@@ -1319,11 +1356,23 @@ def _run_simple_search(
 
         with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
             _submit_search_tasks(
-                executor, tasks, listener.dialog,
-                query, mode, media_type, season, episode, ids,
-                scoped_addon_url, tmdb_id, imdb_id, show_dialog,
-                variant=variant, title_language_mode=title_language_mode,
-                year=year, title_aliases=title_aliases,
+                executor,
+                tasks,
+                listener.dialog,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                ids,
+                scoped_addon_url,
+                tmdb_id,
+                imdb_id,
+                show_dialog,
+                variant=variant,
+                title_language_mode=title_language_mode,
+                year=year,
+                title_aliases=title_aliases,
             )
             total_results = _collect_search_results(tasks, listener, show_dialog)
 
@@ -1349,7 +1398,11 @@ def search_client(
         year = _infer_tmdb_year(ids, mode)
 
     title_aliases = _build_title_fallback_queries(
-        query, ids, mode, SearchVariant.DEFAULT, year,
+        query,
+        ids,
+        mode,
+        SearchVariant.DEFAULT,
+        year,
         title_language_mode=title_language_mode,
     )
     cache_scope = _build_search_cache_scope(scoped_addon_url)
@@ -1364,26 +1417,67 @@ def search_client(
     if show_dialog and get_setting("search_dialog_style", "0") == "1":
         try:
             total_results = _run_detailed_search(
-                query, ids, mode, media_type, season, episode, scoped_addon_url,
-                tmdb_id, imdb_id, variant, title_language_mode, year, title_aliases,
+                query,
+                ids,
+                mode,
+                media_type,
+                season,
+                episode,
+                scoped_addon_url,
+                tmdb_id,
+                imdb_id,
+                variant,
+                title_language_mode,
+                year,
+                title_aliases,
             )
         except SearchCancelled:
             raise
         except Exception as e:
             kodilog(f"Detailed search status failed, falling back to simple search: {e}")
             total_results = _run_simple_search(
-                query, ids, mode, media_type, season, episode, scoped_addon_url,
-                tmdb_id, imdb_id, True, variant, title_language_mode, year,
+                query,
+                ids,
+                mode,
+                media_type,
+                season,
+                episode,
+                scoped_addon_url,
+                tmdb_id,
+                imdb_id,
+                True,
+                variant,
+                title_language_mode,
+                year,
                 title_aliases,
             )
     else:
         total_results = _run_simple_search(
-            query, ids, mode, media_type, season, episode, scoped_addon_url,
-            tmdb_id, imdb_id, show_dialog, variant, title_language_mode, year,
+            query,
+            ids,
+            mode,
+            media_type,
+            season,
+            episode,
+            scoped_addon_url,
+            tmdb_id,
+            imdb_id,
+            show_dialog,
+            variant,
+            title_language_mode,
+            year,
             title_aliases,
         )
 
-    cache_results(total_results, query, mode, media_type, episode, cache_scope=cache_scope)
+    cache_results(
+        total_results,
+        query,
+        mode,
+        media_type,
+        episode,
+        season,
+        cache_scope=cache_scope,
+    )
     return total_results
 
 

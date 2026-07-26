@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.search import (
+    SearchCancelled,
     SearchVariant,
     _build_title_fallback_queries,
     _check_search_caches,
@@ -143,13 +144,13 @@ def test_run_search_entry_source_select_cancel_skipped_on_back():
 
     with patch("lib.search._handle_super_quick_play", return_value=False), patch(
         "lib.search.search_client", return_value=[object()]
-    ), patch(
-        "lib.search._process_search_results", return_value=[object()]
-    ), patch("lib.search.set_content_type"), patch(
-        "lib.search.set_watched_title"
-    ), patch("lib.search.auto_play_enabled", return_value=False), patch(
-        "lib.search.show_source_select", return_value=False
-    ), patch("lib.search.cancel_playback") as cancel_mock:
+    ), patch("lib.search._process_search_results", return_value=[object()]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=False
+    ), patch("lib.search.show_source_select", return_value=False), patch(
+        "lib.search.cancel_playback"
+    ) as cancel_mock:
         run_search_entry(params)
 
     cancel_mock.assert_not_called()
@@ -167,13 +168,13 @@ def test_run_search_entry_source_select_cancel_on_back_when_not_skipped():
 
     with patch("lib.search._handle_super_quick_play", return_value=False), patch(
         "lib.search.search_client", return_value=[object()]
-    ), patch(
-        "lib.search._process_search_results", return_value=[object()]
-    ), patch("lib.search.set_content_type"), patch(
-        "lib.search.set_watched_title"
-    ), patch("lib.search.auto_play_enabled", return_value=False), patch(
-        "lib.search.show_source_select", return_value=False
-    ), patch("lib.search.cancel_playback") as cancel_mock:
+    ), patch("lib.search._process_search_results", return_value=[object()]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=False
+    ), patch("lib.search.show_source_select", return_value=False), patch(
+        "lib.search.cancel_playback"
+    ) as cancel_mock:
         run_search_entry(params)
 
     cancel_mock.assert_called_once_with()
@@ -210,6 +211,59 @@ def test_run_search_entry_passes_decoded_episode_name_to_result_processing():
     assert process_args[2] == "The Scales & the Sword"
     assert process_args[3] == 3
     assert process_args[4] == 2
+
+
+def test_run_search_entry_caches_nonempty_cancelled_episode_results():
+    params = {
+        "query": "Show",
+        "mode": "tv",
+        "media_type": "tv",
+        "ids": json.dumps({"tmdb_id": "123"}),
+        "tv_data": json.dumps({"season": 2, "episode": 1}),
+    }
+    partial_results = [object()]
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", side_effect=SearchCancelled(partial_results)
+    ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+        "lib.search.cache_results"
+    ) as cache_results_mock, patch(
+        "lib.search._process_search_results", return_value=partial_results
+    ), patch("lib.search.set_content_type"), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=False
+    ), patch("lib.search.show_source_select", return_value=True):
+        run_search_entry(params)
+
+    cache_results_mock.assert_called_once_with(
+        partial_results,
+        "Show",
+        "tv",
+        "tv",
+        1,
+        2,
+        cache_scope="scope",
+    )
+
+
+def test_run_search_entry_does_not_cache_empty_cancelled_episode_results():
+    params = {
+        "query": "Show",
+        "mode": "tv",
+        "media_type": "tv",
+        "ids": json.dumps({"tmdb_id": "123"}),
+        "tv_data": json.dumps({"season": 2, "episode": 1}),
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", side_effect=SearchCancelled([])
+    ), patch("lib.search.cache_results") as cache_results_mock, patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch("lib.search.notification"), patch(
+        "lib.search.cancel_playback"
+    ):
+        run_search_entry(params)
+
+    cache_results_mock.assert_not_called()
 
 
 def test_is_source_enabled_returns_true_when_cache_empty():
@@ -424,7 +478,9 @@ class TestCheckSearchCaches:
         with (
             patch("lib.search.get_cached_results", return_value=None),
             patch("lib.db.cached.cache.get", return_value=None),
-            patch("lib.utils.player.utils.get_autoscrape_results_cache_key", return_value="as:123_1_2"),
+            patch(
+                "lib.utils.player.utils.get_autoscrape_results_cache_key", return_value="as:123_1_2"
+            ),
         ):
             result = _check_search_caches("q", ids, "tv", "tv", 2, 1, "scope")
         assert result is None
@@ -436,14 +492,23 @@ class TestCheckSearchCaches:
         with (
             patch("lib.search.get_cached_results", return_value=None),
             patch("lib.db.cached.cache.get", return_value=autoscrape_results),
-            patch("lib.utils.player.utils.get_autoscrape_results_cache_key", return_value="as:tt999_2_3"),
+            patch(
+                "lib.utils.player.utils.get_autoscrape_results_cache_key",
+                return_value="as:tt999_2_3",
+            ),
             patch("lib.search.cache_results") as mock_cache_results,
         ):
             result = _check_search_caches("q", ids, "tv", "tv", 3, 2, "scope")
 
         assert result == autoscrape_results
         mock_cache_results.assert_called_once_with(
-            autoscrape_results, "q", "tv", "tv", 3, cache_scope="scope",
+            autoscrape_results,
+            "q",
+            "tv",
+            "tv",
+            3,
+            2,
+            cache_scope="scope",
         )
 
 
@@ -455,8 +520,8 @@ class TestCheckSearchCaches:
 class TestSearchClient:
     """Cover orchestration logic of search_client (branching, cache, search dispatch)."""
 
-    def test_rescrape_skips_cache_checks(self):
-        """rescrape=True → skip _check_search_caches entirely."""
+    def test_rescrape_skips_cache_reads_but_writes_results(self):
+        """rescrape=True bypasses cache reads but replaces cached search results."""
         with (
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
@@ -465,11 +530,14 @@ class TestSearchClient:
             patch("lib.search._check_search_caches") as mock_check,
             patch("lib.search.get_setting", return_value="0"),
             patch("lib.search._run_simple_search", return_value=[]),
-            patch("lib.search.cache_results"),
+            patch("lib.search.cache_results") as mock_cache_results,
         ):
             search_client("q", {}, "movies", "movie", rescrape=True, season=0, episode=0)
 
         mock_check.assert_not_called()
+        mock_cache_results.assert_called_once_with(
+            [], "q", "movies", "movie", 0, 0, cache_scope="scope"
+        )
 
     def test_not_rescrape_cache_hit_returns_early(self):
         """Not rescrape + cache hit → return cached, no search."""
@@ -542,14 +610,22 @@ class TestSearchClient:
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="1"),  # would trigger detailed, but show_dialog=False
+            patch(
+                "lib.search.get_setting", return_value="1"
+            ),  # would trigger detailed, but show_dialog=False
             patch("lib.search._run_detailed_search") as mock_detailed,
             patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
             patch("lib.search.cache_results"),
         ):
             result = search_client(
-                "q", {}, "movies", "movie", rescrape=False,
-                season=0, episode=0, show_dialog=False,
+                "q",
+                {},
+                "movies",
+                "movie",
+                rescrape=False,
+                season=0,
+                episode=0,
+                show_dialog=False,
             )
 
         assert result == expected
@@ -566,7 +642,9 @@ class TestSearchClient:
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="1"),
-            patch("lib.search._run_detailed_search", side_effect=RuntimeError("xml failed")) as mock_detailed,
+            patch(
+                "lib.search._run_detailed_search", side_effect=RuntimeError("xml failed")
+            ) as mock_detailed,
             patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
             patch("lib.search.cache_results") as mock_cache,
         ):
@@ -576,7 +654,9 @@ class TestSearchClient:
         mock_detailed.assert_called_once()
         mock_simple.assert_called_once()
         assert mock_simple.call_args[0][9] is True
-        mock_cache.assert_called_once_with(expected, "q", "movies", "movie", 0, cache_scope="scope")
+        mock_cache.assert_called_once_with(
+            expected, "q", "movies", "movie", 0, 0, cache_scope="scope"
+        )
 
     def test_passes_year_to_infer_when_none(self):
         """year=None → _infer_tmdb_year is called."""
@@ -590,7 +670,9 @@ class TestSearchClient:
             patch("lib.search._run_simple_search", return_value=[]),
             patch("lib.search.cache_results"),
         ):
-            search_client("q", {"tmdb_id": "123"}, "movies", "movie", rescrape=False, season=0, episode=0)
+            search_client(
+                "q", {"tmdb_id": "123"}, "movies", "movie", rescrape=False, season=0, episode=0
+            )
 
         mock_infer.assert_called_once_with({"tmdb_id": "123"}, "movies")
 
@@ -606,6 +688,8 @@ class TestSearchClient:
             patch("lib.search._run_simple_search", return_value=[]),
             patch("lib.search.cache_results"),
         ):
-            search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0, year=2010)
+            search_client(
+                "q", {}, "movies", "movie", rescrape=False, season=0, episode=0, year=2010
+            )
 
         mock_infer.assert_not_called()
