@@ -191,10 +191,20 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
     _save_jacktorr_playback_metadata(magnet, data or {})
     poster = (data or {}).get("poster") or ""
     poster_param = f"&poster={quote(poster)}" if poster else ""
+    tv_data = (data or {}).get("tv_data")
+    season_episode_param = ""
+    if isinstance(tv_data, dict):
+        season = tv_data.get("season")
+        episode = tv_data.get("episode")
+        if all(
+            not isinstance(value, bool) and str(value).isdigit()
+            for value in (season, episode)
+        ):
+            season_episode_param = f"&season={quote(str(season))}&episode={quote(str(episode))}"
     if magnet:
-        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}{poster_param}"
+        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}{poster_param}{season_episode_param}"
     elif url:
-        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}{poster_param}"
+        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}{poster_param}{season_episode_param}"
     else:
         kodilog("Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG)
         raise TorrentException("No magnet or url found for Jacktorr playback")

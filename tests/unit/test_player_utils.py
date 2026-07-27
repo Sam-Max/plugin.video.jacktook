@@ -1,6 +1,8 @@
 from unittest.mock import patch
 from urllib.parse import quote
 
+import pytest
+
 
 def test_elementum_prefers_url_when_url_and_magnet_exist():
     from lib.utils.player import utils
@@ -167,3 +169,57 @@ def test_jacktorr_url_includes_poster_param_on_play_url_variant():
 
     assert url.startswith("plugin://plugin.video.jacktorr/play_url")
     assert f"poster={quote(poster)}" in url
+
+
+def test_jacktorr_url_forwards_season_and_episode_to_play_magnet():
+    from lib.utils.player import utils
+
+    magnet = "magnet:?xt=urn:btih:MAGNETHASH"
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
+    ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
+        url = utils.get_jacktorr_url(magnet, "", {"tv_data": {"season": 4, "episode": 2}})
+
+    assert url == (
+        f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}&season=4&episode=2"
+    )
+
+
+def test_jacktorr_url_forwards_season_and_episode_to_play_url():
+    from lib.utils.player import utils
+
+    torrent_url = "https://example.com/file.torrent?token=abc&name=Episode 2"
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        url = utils.get_jacktorr_url(
+            "", torrent_url, {"tv_data": {"season": "04", "episode": "02"}}
+        )
+
+    assert url == (
+        f"plugin://plugin.video.jacktorr/play_url?url={quote(torrent_url)}&season=04&episode=02"
+    )
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {},
+        {"tv_data": {}},
+        {"tv_data": {"season": 4}},
+        {"tv_data": {"episode": 2}},
+        {"tv_data": {"season": "four", "episode": 2}},
+        {"tv_data": {"season": True, "episode": 2}},
+        {"tv_data": [4, 2]},
+    ],
+)
+def test_jacktorr_url_omits_invalid_or_incomplete_season_episode(data):
+    from lib.utils.player import utils
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data)
+
+    assert "season=" not in url
+    assert "episode=" not in url
