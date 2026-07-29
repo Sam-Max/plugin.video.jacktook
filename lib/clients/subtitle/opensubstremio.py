@@ -36,6 +36,7 @@ AUTO_SELECT_ENDPOINT_TIMEOUT = 5
 DEFAULT_DOWNLOAD_TIMEOUT = 15
 AUTO_SELECT_DOWNLOAD_TIMEOUT = 5
 MAX_RETRY_DELAY = 5.0
+MAX_SUBTITLE_WORKERS = 4
 MAX_SUBTITLE_BYTES = 10 * 1024 * 1024
 DEFAULT_STREMIO_SUBTITLE_ADDON_URL = "https://opensubtitles-v3.strem.io/"
 
@@ -360,7 +361,7 @@ class OpenSubtitleStremioClient:
         timed_out = False
 
         try:
-            executor = ThreadPoolExecutor(max_workers=len(sources))
+            executor = ThreadPoolExecutor(max_workers=min(MAX_SUBTITLE_WORKERS, len(sources)))
             for source_key, base_url, source_label in sources:
                 try:
                     retry_options = {"max_retries": 0} if auto_select else {}

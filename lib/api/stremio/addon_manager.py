@@ -3,6 +3,8 @@ import json
 from typing import Any, List, Optional
 from urllib.parse import urlsplit, urlunsplit
 
+from lib.utils.kodi.utils import kodilog
+
 
 def normalize_transport_url(url: str) -> str:
     if not url:
@@ -247,64 +249,65 @@ class AddonManager:
 
     def _parse_addons(self, data: List[dict]) -> List[Addon]:
         addons = []
-        for item in data:
-            resources = [
-                (
-                    Resource(
-                        name=resource,
-                        types=item["manifest"].get("types", []),
-                        id_prefixes=item["manifest"].get("idPrefixes", []),
-                    )
-                    if isinstance(resource, str)
-                    else Resource(
-                        name=(resource["name"] if isinstance(resource, dict) else resource),
-                        types=resource.get("types", item["manifest"].get("types", [])),
-                        id_prefixes=resource.get(
-                            "idPrefixes", item["manifest"].get("idPrefixes", [])
-                        ),
-                    )
-                )
-                for resource in item["manifest"].get("resources", [])
-            ]
-
-            manifest_data = item["manifest"]
-            transport_url = item.get("transportUrl") or ""
-
-            logo = manifest_data.get("logo")
-            background = manifest_data.get("background")
-
-            if transport_url:
-                from urllib.parse import urljoin
-
-                if logo and not logo.startswith(("http://", "https://")):
-                    logo = urljoin(transport_url, logo)
-                if background and not background.startswith(("http://", "https://")):
-                    background = urljoin(transport_url, background)
-
-            manifest = Manifest(
-                id=manifest_data.get("id") or manifest_data.get("name") or "unknown",
-                version=manifest_data.get("version", "0.0.1"),
-                name=manifest_data.get("name", "Unknown Addon"),
-                description=manifest_data.get("description", ""),
-                catalogs=manifest_data.get("catalogs", []),
-                addon_catalogs=manifest_data.get("addonCatalogs", []),
-                config=manifest_data.get("config", []),
-                resources=resources,
-                types=manifest_data.get("types", []),
-                behavior_hints=manifest_data.get("behaviorHints", {}),
-                contact_email=manifest_data.get("contactEmail"),
-                logo=logo,
-                background=background,
-            )
-
-            addons.append(
-                Addon(
-                    transport_url=transport_url,
-                    transport_name=item.get("transportName", ""),
-                    manifest=manifest,
-                )
-            )
+        for index, item in enumerate(data if isinstance(data, list) else []):
+            try:
+                addons.append(self._parse_addon(item))
+            except (KeyError, TypeError, ValueError):
+                kodilog(f"Skipped malformed Stremio addon entry at index {index}")
         return addons
+
+    @staticmethod
+    def _parse_addon(item: dict) -> Addon:
+        if not isinstance(item, dict) or not isinstance(item.get("manifest"), dict):
+            raise ValueError("invalid addon entry")
+        manifest_data = item["manifest"]
+        resources = []
+        for resource in manifest_data.get("resources", []):
+            if isinstance(resource, str):
+                resources.append(
+                    Resource(
+                        resource,
+                        manifest_data.get("types", []),
+                        manifest_data.get("idPrefixes", []),
+                    )
+                )
+            elif isinstance(resource, dict) and resource.get("name"):
+                resources.append(
+                    Resource(
+                        resource["name"],
+                        resource.get("types", manifest_data.get("types", [])),
+                        resource.get("idPrefixes", manifest_data.get("idPrefixes", [])),
+                    )
+                )
+            else:
+                raise ValueError("invalid resource")
+
+        transport_url = item.get("transportUrl") or ""
+        logo = manifest_data.get("logo")
+        background = manifest_data.get("background")
+        if transport_url:
+            from urllib.parse import urljoin
+
+            if logo and not logo.startswith(("http://", "https://")):
+                logo = urljoin(transport_url, logo)
+            if background and not background.startswith(("http://", "https://")):
+                background = urljoin(transport_url, background)
+        manifest = Manifest(
+            id=manifest_data.get("id") or manifest_data.get("name") or "unknown",
+            version=manifest_data.get("version", "0.0.1"),
+            name=manifest_data.get("name", "Unknown Addon"),
+            description=manifest_data.get("description", ""),
+            catalogs=manifest_data.get("catalogs", []),
+            addon_catalogs=manifest_data.get("addonCatalogs", []),
+            config=manifest_data.get("config", []),
+            resources=resources,
+            types=manifest_data.get("types", []),
+            behavior_hints=manifest_data.get("behaviorHints", {}),
+            contact_email=manifest_data.get("contactEmail"),
+            logo=logo,
+            background=background,
+        )
+        return Addon(transport_url, item.get("transportName", ""), manifest)
 
     def get_addons_with_resource(
         self,

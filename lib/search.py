@@ -60,6 +60,8 @@ from lib.utils.player.utils import resolve_playback_url
 TITLE_LANGUAGE_LOCALIZED_FIRST = "localized_first"
 TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
 TITLE_LANGUAGE_ENGLISH_ONLY = "english_only"
+MAX_SEARCH_WORKERS = 8
+MAX_STREMIO_ADDONS_PER_SEARCH = 8
 
 
 class SearchCancelled(Exception):
@@ -109,6 +111,14 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         str(scoped_addon_url or ""),
     )
     return hashlib.sha256(raw_scope.encode("utf-8")).hexdigest()
+
+
+def _search_worker_count() -> int:
+    try:
+        configured = int(get_setting("thread_number", 6))
+    except (TypeError, ValueError):
+        configured = 6
+    return min(MAX_SEARCH_WORKERS, max(1, configured))
 
 
 BUILTIN_INDEXER_SETTINGS = {
@@ -777,7 +787,7 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             addon = get_addon_by_base_url(scoped_addon_url)
             stremio_addons = [addon] if addon else []
         else:
-            stremio_addons = get_selected_stream_addons()
+            stremio_addons = get_selected_stream_addons()[:MAX_STREMIO_ADDONS_PER_SEARCH]
         if not stremio_addons:
             notification("No Stremio addons selected")
             return []
@@ -800,16 +810,23 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
                     video_id = original_id
 
             # Try IMDb ID for addons that declare tt: prefix
-            if not video_id and ids_dict.get("imdb_id"):
-                if addon.isSupported("stream", media_kind, "tt"):
-                    video_id = ids_dict.get("imdb_id")
+            if (
+                not video_id
+                and ids_dict.get("imdb_id")
+                and addon.isSupported("stream", media_kind, "tt")
+            ):
+                video_id = ids_dict.get("imdb_id")
 
             # Try TMDB ID for addons that declare tmdb: prefix
-            if not video_id and ids_dict.get("tmdb_id"):
-                if addon.isSupported("stream", media_kind, "tmdb:") or addon.isSupported(
-                    "stream", media_kind, "tmdb"
-                ):
-                    video_id = f"tmdb:{ids_dict['tmdb_id']}"
+            if (
+                not video_id
+                and ids_dict.get("tmdb_id")
+                and (
+                    addon.isSupported("stream", media_kind, "tmdb:")
+                    or addon.isSupported("stream", media_kind, "tmdb")
+                )
+            ):
+                video_id = f"tmdb:{ids_dict['tmdb_id']}"
 
             if video_id:
                 try:
@@ -991,8 +1008,10 @@ def _submit_search_tasks(
                 year=str(year) if year else "",
                 aliases=title_aliases,
             )
-        if get_setting("stremio_enabled") and (ids.get("imdb_id") or ids.get("original_id")):
-            for addon in get_selected_stream_addons():
+        if get_setting("stremio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ):
+            for addon in get_selected_stream_addons()[:MAX_STREMIO_ADDONS_PER_SEARCH]:
                 if _is_source_enabled(Indexer.STREMIO, addon.key()):
                     tasks.append(
                         submit_performer(
@@ -1009,7 +1028,7 @@ def _submit_search_tasks(
 
 
 def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]:
-    total_results = []
+    results_by_future = {}
     total_tasks = len(tasks)
     completed_tasks = 0
 
@@ -1021,15 +1040,20 @@ def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]
                 update_dialog("Searching", f"Searching... {percent}%", listener.dialog, percent)
 
             results = future.result()
-            kodilog(f"Results from {future}: {results}", level=xbmc.LOGDEBUG)
-            if results:
-                total_results.extend(results)
+            kodilog(
+                f"Search task completed with {len(results) if results else 0} result(s)",
+                level=xbmc.LOGDEBUG,
+            )
+            results_by_future[future] = results or []
         except Exception as e:
             import traceback
 
             error_details = traceback.format_exc()
             kodilog(f"Error resolving future result in thread pool: {e}\n{error_details}")
 
+    total_results = []
+    for future in tasks:
+        total_results.extend(results_by_future.get(future, []))
     return total_results
 
 
@@ -1198,8 +1222,10 @@ def _submit_search_tasks_managed(
                 year=str(year) if year else "",
                 aliases=title_aliases,
             )
-        if get_setting("stremio_enabled") and (ids.get("imdb_id") or ids.get("original_id")):
-            stremio_addons = get_selected_stream_addons()
+        if get_setting("stremio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ):
+            stremio_addons = get_selected_stream_addons()[:MAX_STREMIO_ADDONS_PER_SEARCH]
             filtered_addons = [
                 addon
                 for addon in stremio_addons
@@ -1291,7 +1317,7 @@ def _run_detailed_search(
     title_aliases: List[str],
 ) -> List[TorrentStream]:
     """Search with SearchStatusWindow (``search_dialog_style=1``)."""
-    executor = ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6)))
+    executor = ThreadPoolExecutor(max_workers=_search_worker_count())
     manager = SearchTaskManager(executor)
     try:
         _submit_search_tasks_managed(
@@ -1362,7 +1388,7 @@ def _run_simple_search(
         if show_dialog:
             listener.dialog.create("")
 
-        with ThreadPoolExecutor(max_workers=int(get_setting("thread_number", 6))) as executor:
+        with ThreadPoolExecutor(max_workers=_search_worker_count()) as executor:
             _submit_search_tasks(
                 executor,
                 tasks,

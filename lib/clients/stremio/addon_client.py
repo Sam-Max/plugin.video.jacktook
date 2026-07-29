@@ -8,7 +8,7 @@ from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.clients.stremio.helpers import get_addon_display_name
-from lib.clients.stremio.protocol import build_resource_url
+from lib.clients.stremio.protocol import build_resource_url, response_json
 from lib.clients.stremio.playback import classify, normalize_stream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
@@ -127,7 +127,7 @@ class StremioAddonCatalogsClient(BaseClient):
             return
 
         try:
-            data = res.json()
+            data = response_json(res)
         except Exception:
             kodilog(
                 f"Stremio catalog response failed: {log_context} "
@@ -155,7 +155,7 @@ class StremioAddonCatalogsClient(BaseClient):
         if res.status_code != 200:
             return
 
-        data = res.json()
+        data = response_json(res)
         if "meta" in data:
             data["meta"] = Meta.from_dict(data["meta"])
         return data
@@ -173,7 +173,7 @@ class StremioAddonCatalogsClient(BaseClient):
         if res.status_code != 200:
             return
 
-        data = res.json()
+        data = response_json(res)
         if "streams" in data:
             data["streams"] = [Stream.from_dict(s) for s in data["streams"]]
         return data
