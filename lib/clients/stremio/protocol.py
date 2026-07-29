@@ -9,6 +9,8 @@ from urllib.parse import quote, urljoin, urlsplit
 
 
 MAX_RESOURCE_JSON_BYTES = 1024 * 1024
+MIN_CACHE_TTL_SECONDS = 60
+MAX_CACHE_TTL_SECONDS = 24 * 60 * 60
 MAX_REDIRECTS = 5
 
 
@@ -67,6 +69,17 @@ def response_json(response: Any, max_bytes: int = MAX_RESOURCE_JSON_BYTES) -> An
             raise ValueError("JSON response too large")
         return json.loads(content.decode("utf-8"))
     return response.json()
+
+
+def cache_ttl_seconds(value: Any, default: int) -> int:
+    """Clamp a Stremio cacheMaxAge value to the supported cache lifetime."""
+    try:
+        ttl = int(default if value is None else value)
+    except (TypeError, ValueError):
+        ttl = int(default)
+    if ttl <= 0:
+        return 0
+    return min(MAX_CACHE_TTL_SECONDS, max(MIN_CACHE_TTL_SECONDS, ttl))
 
 
 def safe_cache_key(prefix: str, identity: Any) -> str:

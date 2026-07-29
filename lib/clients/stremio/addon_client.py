@@ -1,4 +1,6 @@
+import contextlib
 import re
+from datetime import timedelta
 from typing import Any, Dict, List, Mapping, Optional
 from urllib.parse import quote
 
@@ -8,11 +10,17 @@ from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.clients.stremio.helpers import get_addon_display_name
-from lib.clients.stremio.protocol import build_resource_url, response_json
+from lib.clients.stremio.protocol import (
+    build_resource_url,
+    cache_ttl_seconds,
+    response_json,
+    safe_cache_key,
+)
+from lib.db.cached import cache
 from lib.clients.stremio.playback import classify, normalize_stream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
-from lib.utils.kodi.settings import get_int_setting
+from lib.utils.kodi.settings import get_cache_expiration, get_int_setting, is_cache_enabled
 from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
 
@@ -221,6 +229,16 @@ class StremioAddonClient(BaseClient):
             else:
                 return []
 
+            cache_key = safe_cache_key(
+                "stremio_stream",
+                {"addon": self.addon.key(), "video_id": resource_id},
+            )
+            cached_data = None
+            with contextlib.suppress(Exception):
+                cached_data = cache.get(cache_key)
+            if isinstance(cached_data, Mapping):
+                return self.parse_response(cached_data)
+
             kodilog("Using Stremio addon search URL: " + url)
 
             res = self.session.get(
@@ -230,7 +248,13 @@ class StremioAddonClient(BaseClient):
             )
             if res.status_code != 200:
                 return []
-            response = self.parse_response(res)
+            data = response_json(res)
+            fallback_seconds = get_cache_expiration() * 60 * 60 if is_cache_enabled() else 0
+            ttl = cache_ttl_seconds(data.get("cacheMaxAge"), fallback_seconds)
+            if ttl > 0:
+                with contextlib.suppress(Exception):
+                    cache.set(cache_key, data, timedelta(seconds=ttl))
+            response = self.parse_response(data)
             kodilog(f"Stremio addon {self.display_name} returned {len(response)} results")
             return response
         except Exception:

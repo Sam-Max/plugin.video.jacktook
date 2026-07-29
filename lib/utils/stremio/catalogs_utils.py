@@ -1,13 +1,23 @@
 from datetime import timedelta
 
 from lib.clients.stremio.addon_client import StremioAddonCatalogsClient
+from lib.clients.stremio.protocol import cache_ttl_seconds, safe_cache_key
 from lib.db.cached import cache
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import kodilog
 
 
 def catalogs_get_cache(path, params, *args, **kwargs):
-    identifier = f"{path}{params}{args}"
+    identity = {
+        "path": path,
+        "addon": params.get("addon_key") or params.get("addon_url", ""),
+        "catalog_type": params.get("catalog_type", ""),
+        "catalog_id": params.get("catalog_id", ""),
+        "meta_id": params.get("meta_id", ""),
+        "args": args,
+        "kwargs": kwargs,
+    }
+    identifier = safe_cache_key("stremio_resource", identity)
     data = cache.get(identifier)
     if data:
         return data
@@ -34,10 +44,12 @@ def catalogs_get_cache(path, params, *args, **kwargs):
         return {}
 
     if data is not None:
-        cache.set(
-            identifier,
-            data,
-            timedelta(hours=get_cache_expiration() if is_cache_enabled() else 0),
+        fallback_seconds = get_cache_expiration() * 60 * 60 if is_cache_enabled() else 0
+        ttl = cache_ttl_seconds(
+            data.get("cacheMaxAge") if isinstance(data, dict) else None,
+            fallback_seconds,
         )
+        if ttl > 0:
+            cache.set(identifier, data, timedelta(seconds=ttl))
 
     return data
