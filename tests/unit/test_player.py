@@ -106,7 +106,10 @@ def test_failed_trakt_scrobble_keeps_direct_playback(monkeypatch):
     test_player.play.assert_not_called()
     test_player.monitor.assert_called_once_with()
     test_player.cancel_playback.assert_not_called()
-    assert any("start scrobble failed; continuing playback" in str(call) for call in player_module.kodilog.call_args_list)
+    assert any(
+        "start scrobble failed; continuing playback" in str(call)
+        for call in player_module.kodilog.call_args_list
+    )
 
 
 def test_play_video_keeps_plugin_url_on_resolved_url_path(monkeypatch):
@@ -143,7 +146,10 @@ def test_failed_trakt_metadata_setup_does_not_abort_tracking_setup(monkeypatch):
     test_player.add_external_trakt_scrolling()
 
     player_module.set_property.assert_not_called()
-    assert any("metadata setup failed; continuing playback" in str(call) for call in player_module.kodilog.call_args_list)
+    assert any(
+        "metadata setup failed; continuing playback" in str(call)
+        for call in player_module.kodilog.call_args_list
+    )
 
 
 def test_live_tv_skips_authenticated_trakt_scrobbling_and_resume(monkeypatch):
@@ -215,6 +221,73 @@ def test_informational_placeholder_skips_trakt_scrobbling_resume_and_history(mon
     player_module.set_property.assert_not_called()
     player_module.set_watched_file.assert_not_called()
     assert test_player._is_trakt_scrobble_active is False
+
+
+@pytest.mark.parametrize(("progress", "expected_calls"), [(89.9, 0), (90, 1)])
+def test_yamtrack_sync_uses_90_percent_boundary(monkeypatch, progress, expected_calls):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["progress"] = progress
+    test_player._yamtrack_stop_attempted = False
+    send = MagicMock()
+    monkeypatch.setattr("lib.clients.yamtrack.send_watched_state", send)
+
+    test_player._sync_yamtrack_watched()
+
+    assert send.call_count == expected_calls
+
+
+def test_yamtrack_sync_attempts_only_once_per_playback(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["progress"] = 100
+    test_player._yamtrack_stop_attempted = False
+    send = MagicMock(return_value=False)
+    monkeypatch.setattr("lib.clients.yamtrack.send_watched_state", send)
+
+    test_player._sync_yamtrack_watched()
+    test_player._sync_yamtrack_watched()
+
+    send.assert_called_once_with(test_player.data)
+
+
+@pytest.mark.parametrize("flag", ["is_live_tv", "is_informational_placeholder"])
+def test_yamtrack_sync_skips_live_and_placeholder(monkeypatch, flag):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"progress": 100, flag: True})
+    test_player._yamtrack_stop_attempted = False
+    send = MagicMock()
+    monkeypatch.setattr("lib.clients.yamtrack.send_watched_state", send)
+
+    test_player._sync_yamtrack_watched()
+
+    send.assert_not_called()
+
+
+def test_yamtrack_failure_does_not_break_trakt_or_local_cleanup(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["progress"] = 100
+    test_player._yamtrack_stop_attempted = False
+    test_player._is_trakt_scrobble_active = True
+    send = MagicMock(side_effect=RuntimeError("secret webhook URL"))
+    trakt_api = MagicMock()
+    monkeypatch.setattr("lib.clients.yamtrack.send_watched_state", send)
+    monkeypatch.setattr(player_module, "TraktAPI", trakt_api)
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "close_busy_dialog", MagicMock())
+    monkeypatch.setattr(player_module, "clear_property", MagicMock())
+    log = MagicMock()
+    monkeypatch.setattr(player_module, "kodilog", log)
+
+    test_player.handle_playback_stop()
+
+    trakt_api.return_value.scrobble.trakt_stop_scrobble.assert_called_once_with(test_player.data)
+    player_module.set_watched_file.assert_called_once_with(test_player.data)
+    assert "secret webhook URL" not in " ".join(str(item) for item in log.call_args_list)
 
 
 def test_non_live_tv_keeps_authenticated_trakt_scrobbling(monkeypatch):

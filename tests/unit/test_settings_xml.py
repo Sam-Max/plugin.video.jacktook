@@ -37,3 +37,13 @@ def test_subtitle_automation_exposes_one_visible_setting_and_keeps_legacy_values
     assert automation.get("label") == "30878"
     assert legacy_selection.findtext("visible") == "false"
     assert legacy_download.findtext("visible") == "false"
+
+
+def test_yamtrack_settings_default_disabled_and_hide_token_input():
+    tree = ET.parse(SETTINGS_XML)
+
+    enabled = tree.find(".//setting[@id='yamtrack_enabled']")
+    token = tree.find(".//setting[@id='yamtrack_token']")
+
+    assert enabled.findtext("default") == "false"
+    assert token.find("control[@type='edit']/hidden").text == "true"

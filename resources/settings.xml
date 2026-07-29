@@ -1915,6 +1915,38 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="yamtrack" label="90958">
+                <setting id="yamtrack_enabled" type="boolean" label="90959" help="">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="yamtrack_base_url" type="string" label="90960" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="yamtrack_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="yamtrack_token" type="string" label="90961" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="yamtrack_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
         </category>
         <category id="webdav" label="90131">
             <group id="webdav_provider" label="90124">

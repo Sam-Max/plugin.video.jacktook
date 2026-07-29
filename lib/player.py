@@ -69,6 +69,7 @@ class JacktookPLayer(xbmc.Player):
         self.on_error = on_error
         self._is_trakt_scrobble_active = False
         self._playback_was_paused = False
+        self._yamtrack_stop_attempted = False
 
     def run(self, data=None):
         if data is None:
@@ -94,7 +95,7 @@ class JacktookPLayer(xbmc.Player):
 
         had_nextep = self._drain_nextep_queue()
         kodilog(f"[PLAYER] _drain_nextep_queue returned had_nextep={had_nextep}")
-        kodilog(f"[PLAYER] run() completed")
+        kodilog("[PLAYER] run() completed")
 
     def _drain_nextep_queue(self) -> bool:
         """Process queued next episodes after current video has stopped"""
@@ -122,6 +123,7 @@ class JacktookPLayer(xbmc.Player):
             else:
                 # Manual: show source select (safe context — no video playing)
                 from lib.search import show_source_select as _show_source_select
+
                 resolved = _show_source_select(
                     results,
                     mode=data.get("mode", "tv"),
@@ -610,10 +612,12 @@ class JacktookPLayer(xbmc.Player):
             "media_type": self.data.get("media_type", ""),
             "playnext_context": True,
         }
-        JacktookPLayer._nextep_queue.append({
-            "data": entry_data,
-            "results": cached_results,
-        })
+        JacktookPLayer._nextep_queue.append(
+            {
+                "data": entry_data,
+                "results": cached_results,
+            }
+        )
         kodilog(
             f"[PLAYNEXT] Queued source select from cache"
             f" (results: {len(cached_results) if cached_results else 0}),"
@@ -631,9 +635,6 @@ class JacktookPLayer(xbmc.Player):
         the `next_tv_data` shown by the dialog. Resolve the logical next episode
         first, then queue it from cache or via the silent background search.
         """
-
-        from json import dumps as json_dumps
-
         kodilog(
             f"[PLAYNEXT] _handle_next_dialog_action:"
             f" tv_data={self.data.get('tv_data')},"
@@ -833,6 +834,7 @@ class JacktookPLayer(xbmc.Player):
 
     def handle_playback_stop(self):
         kodilog("[PLAYER] handle_playback_stop entered")
+        self._sync_yamtrack_watched()
         if self._is_trakt_scrobble_enabled():
             try:
                 TraktAPI().scrobble.trakt_stop_scrobble(self.data)
@@ -846,6 +848,26 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
         clear_property("jacktook_next_dialog_action")
         kodilog("[PLAYER] handle_playback_stop completed")
+
+    def _sync_yamtrack_watched(self):
+        if getattr(self, "_yamtrack_stop_attempted", False):
+            return
+        if self._is_live_tv() or self.data.get("is_informational_placeholder"):
+            return
+        try:
+            progress = float(self.data.get("progress") or 0)
+        except (TypeError, ValueError):
+            return
+        if progress < 90:
+            return
+
+        self._yamtrack_stop_attempted = True
+        try:
+            from lib.clients.yamtrack import send_watched_state
+
+            send_watched_state(self.data)
+        except Exception as error:
+            kodilog(f"[YAMTRACK] Playback sync failed ({type(error).__name__})")
 
     def build_playlist(self):
         next_tv_data = self._get_next_episode_data()
@@ -915,6 +937,7 @@ class JacktookPLayer(xbmc.Player):
         self.next_dialog = get_setting("playnext_dialog_enabled")
         self._is_trakt_scrobble_active = False
         self._playback_was_paused = False
+        self._yamtrack_stop_attempted = False
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))

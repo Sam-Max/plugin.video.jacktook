@@ -4570,3 +4570,19 @@ msgstr ""
 msgctxt "#30957"
 msgid "Queries the integrated OpenSubtitles service with the current video ID and, when available, filename, size, and video hash. Disable this to prevent those requests."
 msgstr ""
+
+msgctxt "#90958"
+msgid "Yamtrack"
+msgstr ""
+
+msgctxt "#90959"
+msgid "Sync completed playback to Yamtrack"
+msgstr ""
+
+msgctxt "#90960"
+msgid "Yamtrack base URL"
+msgstr ""
+
+msgctxt "#90961"
+msgid "Yamtrack webhook token"
+msgstr ""

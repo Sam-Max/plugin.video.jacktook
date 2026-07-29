@@ -31,3 +31,17 @@ def test_tmdb_get_cache_set_uses_same_language_key():
                 set_call = mock_cache.set.call_args
                 assert set_call[1]["key"].endswith("|de-DE")
                 assert set_call[1]["key"].startswith("search_movie|")
+
+
+def test_tmdb_get_fetches_episode_external_ids():
+    params = {"id": 1396, "season": 0, "episode": 1}
+    with patch("lib.clients.tmdb.utils.utils.cache") as mock_cache:
+        mock_cache.get.return_value = None
+        with patch("lib.clients.tmdb.utils.utils.Episode") as mock_episode_cls:
+            expected = MagicMock()
+            mock_episode_cls.return_value.external_ids.return_value = expected
+
+            result = tmdb_get("episode_external_ids", params)
+
+    mock_episode_cls.return_value.external_ids.assert_called_once_with(1396, 0, 1)
+    assert result is expected
