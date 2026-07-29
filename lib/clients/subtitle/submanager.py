@@ -155,6 +155,9 @@ class SubtitleManager(KodiJsonRpcClient):
             level=xbmc.LOGINFO,
         )
         subtitles = self.opensub_client.select_subtitles(stream_subtitles, auto_select=auto_select)
+        if self.opensub_client.selection_cancelled:
+            self.last_fetch_status = "cancelled"
+            return None
         selected_embedded_subtitles = bool(subtitles)
         kodilog(
             f"[StremioSubs] embedded selection result: "

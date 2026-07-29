@@ -934,10 +934,10 @@ def test_config_token_base_preserved(monkeypatch, patch_opensubstremio_settings)
     monkeypatch.setattr(opensubstremio.requests, "get", _get)
     client = OpenSubtitleStremioClient(lambda *_a, **_k: None)
     # base64-style path segment
-    base = "https://opensubtitlesv3-pro.example/eyJsYW5ncyI6WyJlbmciXX0="
+    base = "https://example.com/eyJsYW5ncyI6WyJlbmciXX0="
     client._fetch_subtitles_data_for_source(base, "movie", "tt0111161", timeout=5)
     assert captured["url"] == (
-        "https://opensubtitlesv3-pro.example"
+        "https://example.com"
         "/eyJsYW5ncyI6WyJlbmciXX0=/subtitles/movie/tt0111161.json"
     )
 

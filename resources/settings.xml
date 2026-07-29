@@ -1437,17 +1437,22 @@
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
-                <setting id="stremio_sub_addon_host" type="string" label="30885" help="">
-                    <default>https://opensubtitles-v3.strem.io/</default>
-                    <constraints>
-                        <allowempty>true</allowempty>
-                    </constraints>
+                <setting id="stremio_opensubtitles_enabled" type="boolean" label="30956" help="30957">
+                    <default>true</default>
+                    <control type="toggle" />
                     <dependencies>
                         <dependency type="visible">
                             <condition operator="is" setting="stremio_subtitle_enabled">true</condition>
                         </dependency>
                     </dependencies>
+                </setting>
+                <setting id="stremio_sub_addon_host" type="string">
+                    <default>https://opensubtitles-v3.strem.io/</default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
+                    <visible>false</visible>
                 </setting>
                 <setting id="stremio_subtitle_addons" type="string">
                     <default></default>

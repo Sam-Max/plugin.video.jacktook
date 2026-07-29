@@ -4,13 +4,18 @@ import re
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from urllib.parse import quote, urlparse
+from urllib.parse import urlparse
 
 import requests
 import xbmc
 import xbmcgui
 
-from lib.clients.stremio.protocol import build_resource_url
+from lib.clients.stremio.protocol import (
+    build_resource_url,
+    is_safe_http_url,
+    request_with_safe_redirects,
+    response_json,
+)
 from lib.clients.subtitle.utils import (
     get_language_code,
     language_code_to_name,
@@ -31,6 +36,7 @@ AUTO_SELECT_ENDPOINT_TIMEOUT = 5
 DEFAULT_DOWNLOAD_TIMEOUT = 15
 AUTO_SELECT_DOWNLOAD_TIMEOUT = 5
 MAX_RETRY_DELAY = 5.0
+MAX_SUBTITLE_BYTES = 10 * 1024 * 1024
 DEFAULT_STREMIO_SUBTITLE_ADDON_URL = "https://opensubtitles-v3.strem.io/"
 
 
@@ -65,6 +71,7 @@ def _is_obvious_html_response(content: bytes) -> bool:
 class OpenSubtitleStremioClient:
     def __init__(self, notification: Callable[[str], None]):
         self.notification = notification
+        self.selection_cancelled = False
 
     @staticmethod
     def _build_url(
@@ -106,9 +113,20 @@ class OpenSubtitleStremioClient:
         """
         url = self._build_url(base_url, mode, imdb_id, season, episode, extra_args)
         safe_base_url = _redact_subtitle_url(base_url)
+        if not is_safe_http_url(url):
+            kodilog(
+                f"[StremioSubs] addon {safe_base_url} rejected by network policy",
+                level=xbmc.LOGWARNING,
+            )
+            return None
         for attempt in range(max_retries + 1):
             try:
-                response = requests.get(url, timeout=timeout)
+                response = request_with_safe_redirects(
+                    requests.get,
+                    url,
+                    validator=is_safe_http_url,
+                    timeout=timeout,
+                )
             except Exception as e:
                 if attempt < max_retries:
                     kodilog(
@@ -156,8 +174,15 @@ class OpenSubtitleStremioClient:
                     level=xbmc.LOGWARNING,
                 )
                 return None
+            final_url = getattr(response, "url", url)
+            if not isinstance(final_url, str) or not is_safe_http_url(final_url):
+                kodilog(
+                    f"[StremioSubs] addon {safe_base_url} redirect rejected by network policy",
+                    level=xbmc.LOGWARNING,
+                )
+                return None
             try:
-                data = response.json()
+                data = response_json(response)
             except Exception as e:
                 kodilog(
                     f"[StremioSubs] addon {safe_base_url} failed: invalid JSON "
@@ -172,7 +197,10 @@ class OpenSubtitleStremioClient:
             )
             if not isinstance(data, dict):
                 return []
-            return data.get("subtitles") or []
+            subtitles = data.get("subtitles") or []
+            if not isinstance(subtitles, list):
+                return []
+            return [subtitle for subtitle in subtitles if self._valid_subtitle_record(subtitle)]
         return None
 
     @staticmethod
@@ -234,7 +262,12 @@ class OpenSubtitleStremioClient:
                 live_manager = None
 
         canonical_keys = self._canonical_subtitle_addon_keys(live_manager)
-        ordered_sources = [("integrated-default", DEFAULT_STREMIO_SUBTITLE_ADDON_URL.rstrip("/"))]
+        integrated_enabled = bool(get_setting("stremio_opensubtitles_enabled", True))
+        ordered_sources = []
+        if integrated_enabled:
+            ordered_sources.append(
+                ("integrated-default", DEFAULT_STREMIO_SUBTITLE_ADDON_URL.rstrip("/"))
+            )
         seen_keys = set()
         for key in selected_keys:
             if key in canonical_keys or key in seen_keys:
@@ -270,13 +303,13 @@ class OpenSubtitleStremioClient:
                 addon = None
             if addon is None:
                 kodilog(
-                    f"[StremioSubs] addon {source_key} skipped: not installed",
+                    "[StremioSubs] selected addon skipped: not installed",
                     level=xbmc.LOGDEBUG,
                 )
                 continue
             if id_prefix and not addon.isSupported("subtitles", video_type, id_prefix):
                 kodilog(
-                    f"[StremioSubs] addon {source_key} skipped: idPrefix {id_prefix} not supported",
+                    f"[StremioSubs] selected addon skipped: idPrefix {id_prefix} not supported",
                     level=xbmc.LOGDEBUG,
                 )
                 continue
@@ -286,7 +319,7 @@ class OpenSubtitleStremioClient:
                 base_url = ""
             if not base_url:
                 kodilog(
-                    f"[StremioSubs] addon {source_key} skipped: empty base url",
+                    "[StremioSubs] selected addon skipped: empty base url",
                     level=xbmc.LOGDEBUG,
                 )
                 continue
@@ -346,7 +379,7 @@ class OpenSubtitleStremioClient:
                 except Exception as error:
                     failed += 1
                     kodilog(
-                        f"[StremioSubs] addon {source_key} dispatch failed: {type(error).__name__}",
+                        f"[StremioSubs] addon dispatch failed: {type(error).__name__}",
                         level=xbmc.LOGWARNING,
                     )
                     continue
@@ -389,7 +422,7 @@ class OpenSubtitleStremioClient:
                 level=xbmc.LOGINFO,
             )
 
-        for source_key, _base_url, source_label, future in futures:
+        for _source_key, _base_url, source_label, future in futures:
             if future not in results:
                 continue
             result = results[future]
@@ -398,7 +431,7 @@ class OpenSubtitleStremioClient:
                 continue
             if not result:
                 kodilog(
-                    f"[StremioSubs] addon {source_key} returned 0 subs (200 empty)",
+                    "[StremioSubs] addon returned 0 subs (200 empty)",
                     level=xbmc.LOGDEBUG,
                 )
                 continue
@@ -533,6 +566,7 @@ class OpenSubtitleStremioClient:
         subtitles: List[Dict[str, Any]],
         auto_select: bool = False,
     ) -> Optional[List[Dict[str, Any]]]:
+        self.selection_cancelled = False
         kodilog(
             f"[StremioSubs] select_subtitles input: {len(subtitles)} candidate(s), "
             f"auto_select={auto_select}",
@@ -585,6 +619,7 @@ class OpenSubtitleStremioClient:
             useDetails=True,
         )
         if selected_indices is None:
+            self.selection_cancelled = True
             kodilog(
                 "[StremioSubs] user cancelled the embedded subtitle multiselect "
                 "dialog -> returning [] (endpoint NOT tried)",
@@ -596,6 +631,19 @@ class OpenSubtitleStremioClient:
             level=xbmc.LOGINFO,
         )
         return [subtitles[i] for i in selected_indices]
+
+    @staticmethod
+    def _valid_subtitle_record(subtitle: Any) -> bool:
+        if not isinstance(subtitle, dict):
+            return False
+        url = subtitle.get("url")
+        if not is_safe_http_url(url):
+            return False
+        lang = subtitle.get("lang")
+        subtitle_id = subtitle.get("id") or subtitle.get("subId")
+        return (lang is None or isinstance(lang, str)) and (
+            subtitle_id is None or isinstance(subtitle_id, (str, int))
+        )
 
     def _get_subtitle_extension(self, url: str) -> str:
         extension = os.path.splitext(urlparse(url).path)[1].lower()
@@ -660,6 +708,8 @@ class OpenSubtitleStremioClient:
         timeout: int = DEFAULT_DOWNLOAD_TIMEOUT,
     ) -> Optional[str]:
         url = subtitle.get("url", "")
+        if not self._valid_subtitle_record(subtitle):
+            raise ValueError("unsafe subtitle record")
         lang = subtitle.get("lang") or ""
         lang_name = language_code_to_name(lang)
         lang_name = slugify_title(lang_name) or "unknown"
@@ -697,8 +747,13 @@ class OpenSubtitleStremioClient:
             response: Any = None
             for attempt in range(3):  # 1 initial + 2 retries
                 try:
-                    response = requests.get(
-                        url, stream=True, headers=USER_AGENT_HEADER, timeout=timeout
+                    response = request_with_safe_redirects(
+                        requests.get,
+                        url,
+                        validator=is_safe_http_url,
+                        stream=True,
+                        headers=USER_AGENT_HEADER,
+                        timeout=timeout,
                     )
                 except Exception:
                     if attempt < 2:
@@ -706,6 +761,9 @@ class OpenSubtitleStremioClient:
                         continue
                     raise
                 if response.status_code == 200:
+                    final_url = getattr(response, "url", url)
+                    if not isinstance(final_url, str) or not is_safe_http_url(final_url):
+                        raise ValueError("unsafe subtitle redirect")
                     break
                 if attempt < 2:
                     time.sleep(_retry_delay(response, attempt))
@@ -721,6 +779,8 @@ class OpenSubtitleStremioClient:
                             first_content += chunk[: 512 - len(first_content)]
                         file.write(chunk)
                         bytes_written += len(chunk)
+                        if bytes_written > MAX_SUBTITLE_BYTES:
+                            raise ValueError("subtitle response exceeds the size limit")
             if not bytes_written:
                 raise ValueError("empty subtitle response")
             if _is_obvious_html_response(first_content):
