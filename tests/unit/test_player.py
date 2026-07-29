@@ -11,6 +11,16 @@ import pytest
 PLAYER_PATH = Path(__file__).resolve().parents[2] / "lib" / "player.py"
 
 
+@pytest.fixture(autouse=True)
+def _restore_kodi_player_stub():
+    original_player = sys.modules["xbmc"].Player
+    original_player_class = getattr(sys.modules.get("lib.player"), "JacktookPLayer", None)
+    yield
+    sys.modules["xbmc"].Player = original_player
+    if "lib.player" in sys.modules and original_player_class is not None:
+        sys.modules["lib.player"].JacktookPLayer = original_player_class
+
+
 def test_monitor_finally_uses_non_destructive_cleanup():
     source = PLAYER_PATH.read_text()
     monitor_match = re.search(
@@ -286,9 +296,8 @@ def _player_for_episode(player_module, season=1, episode=1):
     return player
 
 
-def _player_instance():
-    from lib.player import JacktookPLayer
-
+def _player_instance(monkeypatch):
+    JacktookPLayer = _player_module(monkeypatch).JacktookPLayer
     player = object.__new__(JacktookPLayer)
     player.data = {
         "mode": "tv",
@@ -537,9 +546,8 @@ def test_drain_nextep_queue_clears_empty_queue(monkeypatch):
 
 def test_check_still_watching_threshold_disabled(monkeypatch):
     """Task 2.2: Threshold is zero skips dialog immediately."""
-    from lib.player import JacktookPLayer
-
-    player = _player_instance()
+    player = _player_instance(monkeypatch)
+    JacktookPLayer = type(player)
     monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 0)
 
     result = JacktookPLayer._check_still_watching_threshold(player)
@@ -549,9 +557,8 @@ def test_check_still_watching_threshold_disabled(monkeypatch):
 
 def test_check_still_watching_threshold_below_threshold(monkeypatch):
     """Task 2.2: Count below threshold increments counter."""
-    from lib.player import JacktookPLayer
-
-    player = _player_instance()
+    player = _player_instance(monkeypatch)
+    JacktookPLayer = type(player)
     set_property_mock = MagicMock()
 
     monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 3)
@@ -568,9 +575,8 @@ def test_check_still_watching_threshold_reached_user_continues(monkeypatch):
     """Task 2.2: Count reaches threshold, user continues, resets to 1."""
     import xbmcgui
 
-    from lib.player import JacktookPLayer
-
-    player = _player_instance()
+    player = _player_instance(monkeypatch)
+    JacktookPLayer = type(player)
     set_property_mock = MagicMock()
     clear_property_mock = MagicMock()
     dialog = MagicMock()
@@ -592,9 +598,8 @@ def test_check_still_watching_threshold_reached_user_stops(monkeypatch):
     """Task 2.2: Count reaches threshold, user stops, returns True."""
     import xbmcgui
 
-    from lib.player import JacktookPLayer
-
-    player = _player_instance()
+    player = _player_instance(monkeypatch)
+    JacktookPLayer = type(player)
     set_property_mock = MagicMock()
     clear_property_mock = MagicMock()
     dialog = MagicMock()
@@ -618,9 +623,8 @@ def test_check_still_watching_threshold_reached_user_stops(monkeypatch):
 
 def test_check_still_watching_threshold_invalid_count_str(monkeypatch):
     """Task 2.2: Invalid count_str defaults to 1, increments correctly."""
-    from lib.player import JacktookPLayer
-
-    player = _player_instance()
+    player = _player_instance(monkeypatch)
+    JacktookPLayer = type(player)
     set_property_mock = MagicMock()
 
     monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: 2)
