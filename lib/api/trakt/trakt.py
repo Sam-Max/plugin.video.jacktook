@@ -122,17 +122,17 @@ class TraktBase:
         if pagination:
             params["page"] = page_no
 
-        response = self._send_request(path, params, data, headers, is_delete, method)
-
-        # Rate Limiting Handling
-        if response.status_code == 429:
-            retry_after = int(response.headers.get("Retry-After", 1))
-            kodilog(f"Trakt Rate Limit Exceeded. Retrying in {retry_after} seconds.")
-            sleep(retry_after * 1000)
+        try:
             response = self._send_request(path, params, data, headers, is_delete, method)
 
-        kodilog(f"Trakt response status code: {response.status_code}")
-        try:
+            # Rate Limiting Handling
+            if response.status_code == 429:
+                retry_after = int(response.headers.get("Retry-After", 1))
+                kodilog(f"Trakt Rate Limit Exceeded. Retrying in {retry_after} seconds.")
+                sleep(retry_after * 1000)
+                response = self._send_request(path, params, data, headers, is_delete, method)
+
+            kodilog(f"Trakt response status code: {response.status_code}")
             response.raise_for_status()
         except requests.HTTPError as error:
             status_code = response.status_code
