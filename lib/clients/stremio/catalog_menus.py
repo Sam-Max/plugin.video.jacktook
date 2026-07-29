@@ -577,15 +577,71 @@ def search_catalog(params):
             )
         pickle_db.set_key("search_catalog_query", query)
     else:
-        query = pickle_db.get_key("search_catalog_query")
+        query = params.get("query") or pickle_db.get_key("search_catalog_query")
 
-    response = catalogs_get_cache("search_catalog", params, query)
+    declared_extras = _catalog_extra_names(
+        params["addon_url"],
+        params["catalog_type"],
+        params["catalog_id"],
+        params.get("addon_key", ""),
+    )
+    request_extras = {
+        key: params[key] for key in declared_extras if params.get(key) not in (None, "")
+    }
+    request_extras["search"] = query
+    catalog = _get_manifest_catalog(
+        params["addon_url"],
+        params["catalog_type"],
+        params["catalog_id"],
+        params.get("addon_key", ""),
+    )
+    if catalog:
+        for extra in catalog.extra:
+            name = extra.get("name")
+            if not extra.get("isRequired") or name in request_extras or name == "skip":
+                continue
+            options = list(extra.get("options") or [])
+            limit = extra.get("optionsLimit")
+            if isinstance(limit, int) and limit >= 0:
+                options = options[:limit]
+            if not options:
+                kodilog(f"Stremio catalog search skipped: missing required extra '{name}'")
+                return
+            selected = xbmcgui.Dialog().select(name, options)
+            if selected < 0:
+                return
+            request_extras[name] = options[selected]
+    supports_skip = "skip" in declared_extras
+    skip = (page - 1) * CATALOG_PAGE_SIZE
+    if supports_skip and skip:
+        request_extras["skip"] = skip
+    response = catalogs_get_cache("list_catalog", params, **request_extras)
     if not response:
         return
 
-    add_meta_items(response.get("metas", []), params)
+    metas = response.get("metas", [])
+    if not supports_skip:
+        metas = metas[skip : skip + CATALOG_PAGE_SIZE]
+    add_meta_items(metas, params)
 
-    add_next_button("search_catalog", page=page, mode=params["catalog_type"])
+    if len(metas) >= CATALOG_PAGE_SIZE:
+        next_params = {
+            key: value
+            for key, value in params.items()
+            if key not in {"addon_url", "page", "is_keyboard"}
+        }
+        if not next_params.get("addon_key"):
+            next_params["addon_url"] = params["addon_url"]
+        next_params.update({"page": page + 1, "query": query, "is_keyboard": False})
+        next_params.update(
+            {key: value for key, value in request_extras.items() if key not in {"search", "skip"}}
+        )
+        addDirectoryItem(
+            ADDON_HANDLE,
+            build_url("search_catalog", **next_params),
+            make_list_item(label=translation(90515)),
+            isFolder=True,
+        )
     end_of_directory()
 
 
@@ -942,8 +998,10 @@ def list_stremio_episodes(params):
         }
 
         preferred_stremio_streams = [asdict(stream) for stream in video.streams]
-        scoped_addon_url = "" if preferred_stremio_streams else (
-            params["addon_url"] if has_stream_resource else ""
+        scoped_addon_url = (
+            ""
+            if preferred_stremio_streams
+            else (params["addon_url"] if has_stream_resource else "")
         )
 
         url = build_url(
@@ -1177,8 +1235,7 @@ def _stremio_catalog_playback_data(stream, params):
         if not is_youtube_addon_enabled():
             return None
         playback_data["url"] = (
-            "plugin://plugin.video.youtube/play/?video_id="
-            f"{quote(candidate.ytId or '', safe='')}"
+            f"plugin://plugin.video.youtube/play/?video_id={quote(candidate.ytId or '', safe='')}"
         )
 
     if decision.source_class == "direct_http":

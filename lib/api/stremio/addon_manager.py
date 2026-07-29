@@ -277,6 +277,7 @@ class AddonManager:
                         resource["name"],
                         resource.get("types", manifest_data.get("types", [])),
                         resource.get("idPrefixes", manifest_data.get("idPrefixes", [])),
+                        resource.get("extra"),
                     )
                 )
             else:
@@ -338,7 +339,9 @@ class AddonManager:
             for resource in addon.manifest.resources:
                 if resource.name == resource_name and (
                     not resource.id_prefixes
-                    or any(prefix.rstrip(":") == normalized_prefix for prefix in resource.id_prefixes)
+                    or any(
+                        prefix.rstrip(":") == normalized_prefix for prefix in resource.id_prefixes
+                    )
                 ):
                     result.append(addon)
                     break
