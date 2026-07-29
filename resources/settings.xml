@@ -602,7 +602,18 @@
                 </setting>
                 <setting id="stremio_loggedin" type="string">
                     <default>false</default>
-                    <control type="edit" format="string" />
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
+                    <visible>false</visible>
+                </setting>
+                <setting id="stremio_auth_key" type="string">
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
                     <visible>false</visible>
                 </setting>
                 <setting id="stremio_email" type="string">
@@ -616,7 +627,9 @@
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
-                    <control type="edit" format="string" />
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
                     <visible>false</visible>
                 </setting>
                 <setting id="stremio_login" type="action" label="30871" help="30866">

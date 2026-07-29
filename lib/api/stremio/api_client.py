@@ -24,24 +24,22 @@ class Stremio:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 
             if resp.status_code != 200:
-                kodilog(
-                    f"Status code {resp.status_code} received for URL: {url}. Response: {resp.text}"
-                )
+                kodilog(f"Stremio API request failed: status={resp.status_code}")
                 resp.raise_for_status()
 
             try:
                 return resp.json()
             except JSONDecodeError:
-                kodilog(f"Failed to decode JSON response for URL: {url}. Response: {resp.text}")
+                kodilog("Stremio API returned invalid JSON")
                 raise
         except Timeout:
-            kodilog(f"Request timed out for URL: {url}")
+            kodilog("Stremio API request timed out")
             raise
         except TooManyRedirects:
-            kodilog(f"Too many redirects encountered for URL: {url}")
+            kodilog("Stremio API request exceeded redirect limit")
             raise
         except RequestException as e:
-            kodilog(f"Failed to fetch data from {url}: {e}")
+            kodilog(f"Stremio API request failed: {type(e).__name__}")
             raise
 
     def _get(self, url):
@@ -60,6 +58,7 @@ class Stremio:
 
         res = self._post("https://api.strem.io/api/login", data)
         self.authKey = res.get("result", {}).get("authKey", None)
+        return self.authKey
 
     def dataExport(self):
         """Export user data."""

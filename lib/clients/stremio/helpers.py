@@ -8,8 +8,8 @@ from lib.api.stremio.addon_manager import (
     Addon,
     AddonManager,
     build_addon_instance_key,
+    build_legacy_addon_instance_key,
 )
-from lib.api.stremio.api_client import Stremio
 from lib.clients.stremio.constants import (
     STREMIO_ADDON_ALIASES_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
@@ -19,8 +19,9 @@ from lib.clients.stremio.constants import (
     STREMIO_USER_ADDONS,
     decode_selected_ids,
 )
+from lib.clients.stremio.protocol import is_safe_http_url
 from lib.db.cached import cache
-from lib.utils.kodi.utils import get_setting, kodilog
+from lib.utils.kodi.utils import kodilog
 
 
 def get_addon_merge_key(addon):
@@ -60,9 +61,7 @@ def get_addon_display_name(addon):
 
 
 def get_catalog_display_name(addon, catalog):
-    alias = _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(
-        get_catalog_alias_key(addon, catalog)
-    )
+    alias = _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(get_catalog_alias_key(addon, catalog))
     return alias or catalog.name or catalog.id
 
 
@@ -87,9 +86,7 @@ def clear_catalog_alias(addon, catalog):
 
 
 def get_catalog_alias(addon, catalog):
-    return _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(
-        get_catalog_alias_key(addon, catalog), ""
-    )
+    return _get_aliases(STREMIO_CATALOG_ALIASES_KEY).get(get_catalog_alias_key(addon, catalog), "")
 
 
 def merge_addons_lists(*lists):
@@ -114,6 +111,9 @@ def _resolve_selected_addons(catalog: AddonManager, selected_ids_list: List[str]
         return []
 
     addons_by_key = {addon.key(): addon for addon in catalog.addons}
+    addons_by_key.update(
+        {build_legacy_addon_instance_key(addon): addon for addon in catalog.addons}
+    )
     addons_by_id = {}
     for addon in catalog.addons:
         addons_by_id.setdefault(addon.manifest.id, []).append(addon)
@@ -136,10 +136,7 @@ def _resolve_selected_addons(catalog: AddonManager, selected_ids_list: List[str]
                 seen_keys.add(addon.key())
                 selected_addons.append(addon)
         elif len(legacy_matches) > 1:
-            kodilog(
-                "Ambiguous legacy Stremio addon selection for id "
-                f"'{selected_id}', please reselect addons."
-            )
+            kodilog("Ambiguous legacy Stremio addon selection; please reselect addons.")
 
     return selected_addons
 
@@ -150,20 +147,6 @@ def get_addons():
     cached_account_addons = [a for a in all_user_addons if a.get("transportName") != "custom"]
     user_addons = list(cached_account_addons)
 
-    logged_in = get_setting("stremio_loggedin")
-    if logged_in:
-        stremio = Stremio()
-        try:
-            email = get_setting("stremio_email")
-            password = get_setting("stremio_pass")
-            if email and password:
-                stremio.login(email, password)
-                live_user_addons = stremio.get_my_addons() or []
-                user_addons = merge_addons_lists(live_user_addons, cached_account_addons)
-            else:
-                kodilog("Stremio credentials missing, cannot fetch user addons.")
-        except Exception as e:
-            kodilog(f"Failed to fetch user addons: {e}")
     merged_addons = merge_addons_lists(custom_addons, user_addons)
 
     kodilog(f"Loaded {len(merged_addons)} addons from catalog")
@@ -197,6 +180,11 @@ def get_addon_by_base_url(addon_url):
     return None
 
 
+def get_addon_by_key(addon_key):
+    """Resolve an addon from its redacted instance key or legacy key."""
+    return get_addons().get_addon_by_key(addon_key)
+
+
 def ping_addons(
     addons: List[Addon], progress_callback: Optional[Callable[[int, int], None]] = None
 ) -> List[Addon]:
@@ -211,6 +199,8 @@ def ping_addons(
                 if not url.endswith("/"):
                     url += "/"
                 url += "manifest.json"
+            if not is_safe_http_url(url):
+                return None
             requests.get(url, timeout=5)
             return addon
         except Exception:

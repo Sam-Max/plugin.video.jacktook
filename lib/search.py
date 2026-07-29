@@ -1,3 +1,4 @@
+import hashlib
 import json
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Any, List, Mapping, Optional
@@ -99,15 +100,15 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     stremio_addon_aliases = json.dumps(cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True)
     source_manager_selection = str(cache.get("source_manager_selection") or "")
     external_scraper_module = str(get_setting("external_scraper_module") or "")
-    normalized_scoped_url = str(scoped_addon_url or "")
-    return "{}|{}|{}|{}|{}|{}".format(
+    raw_scope = "{}|{}|{}|{}|{}|{}".format(
         "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
         selected_stream_addons,
         stremio_addon_aliases,
         source_manager_selection,
         external_scraper_module,
-        normalized_scoped_url,
+        str(scoped_addon_url or ""),
     )
+    return hashlib.sha256(raw_scope.encode("utf-8")).hexdigest()
 
 
 BUILTIN_INDEXER_SETTINGS = {

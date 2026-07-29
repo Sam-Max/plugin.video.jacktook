@@ -26,7 +26,11 @@ def stremio_login(params):
     if not email:
         return
 
-    password = dialog.input(heading=translation(90615), type=xbmcgui.INPUT_ALPHANUM)
+    password = dialog.input(
+        heading=translation(90615),
+        type=xbmcgui.INPUT_ALPHANUM,
+        option=xbmcgui.ALPHANUM_HIDE_INPUT,
+    )
     if not password:
         return
 
@@ -50,7 +54,8 @@ def log_in(email, password, dialog):
         cache.set(STREMIO_USER_ADDONS, all_addons, timedelta(days=365 * 20))
 
         set_setting("stremio_email", email)
-        set_setting("stremio_pass", password)
+        set_setting("stremio_auth_key", stremio.authKey or "")
+        set_setting("stremio_pass", "")
         set_setting("stremio_loggedin", "true")
 
         kodilog(f"Stremio addons imported: {len(all_addons)}")
@@ -76,10 +81,28 @@ def stremio_update(params):
     if not confirm:
         return
 
+    auth_key = get_setting("stremio_auth_key")
     email = get_setting("stremio_email")
     password = get_setting("stremio_pass")
-
-    log_in(email, password, dialog)
+    try:
+        stremio = Stremio(auth_key)
+        if not auth_key and email and password:
+            stremio.login(email, password)
+            set_setting("stremio_auth_key", stremio.authKey or "")
+            set_setting("stremio_pass", "")
+        user_account_addons = stremio.get_my_addons() or []
+        all_user_addons = cache.get(STREMIO_USER_ADDONS) or []
+        custom_addons = [a for a in all_user_addons if a.get("transportName") == "custom"]
+        cache.set(
+            STREMIO_USER_ADDONS,
+            merge_addons_lists(user_account_addons, custom_addons),
+            timedelta(days=365 * 20),
+        )
+    except Exception as e:
+        kodilog(f"Failed to refresh Stremio account addons: {type(e).__name__}")
+        dialog.ok(translation(90618), translation(90619))
+        return
+    dialog.ok(translation(90620), translation(90621))
 
 
 def stremio_logout(params):
@@ -102,3 +125,4 @@ def stremio_logout(params):
         set_setting("stremio_loggedin", "false")
         set_setting("stremio_email", "")
         set_setting("stremio_pass", "")
+        set_setting("stremio_auth_key", "")

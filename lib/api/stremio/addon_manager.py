@@ -1,3 +1,4 @@
+import hashlib
 import json
 from typing import Any, List, Optional
 from urllib.parse import urlsplit, urlunsplit
@@ -36,6 +37,24 @@ def build_addon_instance_key(addon_like: Any) -> str:
         addon_id = manifest.get("id") or addon_like.get("id") or addon_like.get("name") or ""
         transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
 
+    normalized_url = normalize_transport_url(transport_url)
+    if addon_id and normalized_url:
+        digest = hashlib.sha256(normalized_url.encode("utf-8")).hexdigest()[:16]
+        return f"{addon_id}|{digest}"
+    if normalized_url:
+        return hashlib.sha256(normalized_url.encode("utf-8")).hexdigest()[:16]
+    return addon_id
+
+
+def build_legacy_addon_instance_key(addon_like: Any) -> str:
+    """Return the pre-redaction key for resolving existing persisted selections."""
+    if isinstance(addon_like, Addon):
+        addon_id = addon_like.manifest.id or ""
+        transport_url = addon_like.transport_url or ""
+    else:
+        manifest = addon_like.get("manifest") or {}
+        addon_id = manifest.get("id") or addon_like.get("id") or addon_like.get("name") or ""
+        transport_url = addon_like.get("transportUrl") or addon_like.get("transport_url") or ""
     normalized_url = normalize_transport_url(transport_url)
     if addon_id and normalized_url:
         return f"{addon_id}|{normalized_url}"
@@ -329,7 +348,7 @@ class AddonManager:
             return None
         for addon in self.addons:
             try:
-                if addon.key() == key:
+                if addon.key() == key or build_legacy_addon_instance_key(addon) == key:
                     return addon
             except Exception:
                 continue

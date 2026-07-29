@@ -102,7 +102,7 @@ def test_build_backup_payload_includes_custom_stremio_addons(monkeypatch, tmp_pa
         "transportName": "stremio-account",
         "transportUrl": "https://account.example/manifest.json",
     }
-    custom_key = "custom.one|https://example.com"
+    custom_key = settings_backup.build_addon_instance_key(custom_addon)
     fake_cache = FakeCache(
         {
             settings_backup.STREMIO_USER_ADDONS: [custom_addon, another_addon],
@@ -176,7 +176,7 @@ def test_apply_backup_payload_replaces_custom_stremio_addons(monkeypatch, tmp_pa
         "transportUrl": "https://account.example/manifest.json",
     }
     old_key = "custom.old|https://old.example"
-    new_key = "custom.new|https://new.example"
+    new_key = settings_backup.build_addon_instance_key(new_custom)
     account_key = "account.one|https://account.example"
     fake_cache = FakeCache(
         {

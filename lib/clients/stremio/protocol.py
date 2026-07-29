@@ -1,7 +1,78 @@
 """Shared Stremio protocol, cache, and network safety helpers."""
 
-from typing import Any, Mapping, Optional
-from urllib.parse import quote
+import hashlib
+import ipaddress
+import json
+import socket
+from typing import Any, Callable, Mapping, Optional
+from urllib.parse import quote, urljoin, urlsplit
+
+
+MAX_RESOURCE_JSON_BYTES = 1024 * 1024
+MAX_REDIRECTS = 5
+
+
+def is_safe_http_url(url: Any, resolve_dns: bool = True) -> bool:
+    """Return whether *url* is a public HTTP(S) destination."""
+    try:
+        parts = urlsplit(str(url or ""))
+        if (
+            parts.scheme.lower() not in {"http", "https"}
+            or not parts.hostname
+            or parts.username
+            or parts.password
+        ):
+            return False
+        try:
+            addresses = [str(ipaddress.ip_address(parts.hostname))]
+        except ValueError:
+            if not resolve_dns:
+                return True
+            addresses = [entry[4][0] for entry in socket.getaddrinfo(parts.hostname, None)]
+        for address in addresses:
+            ip = ipaddress.ip_address(address)
+            if not ip.is_global:
+                return False
+        return True
+    except (OSError, ValueError):
+        return False
+
+
+def request_with_safe_redirects(
+    request: Callable[..., Any], url: str, validator: Callable[[str], bool], **kwargs: Any
+) -> Any:
+    """Request a URL while validating every redirect before following it."""
+    target = url
+    for _ in range(MAX_REDIRECTS + 1):
+        if not validator(target):
+            raise ValueError("unsafe request destination")
+        response = request(target, allow_redirects=False, **kwargs)
+        if response.status_code not in {301, 302, 303, 307, 308}:
+            return response
+        location = (getattr(response, "headers", {}) or {}).get("Location")
+        if not location:
+            return response
+        target = urljoin(target, location)
+    raise ValueError("too many redirects")
+
+
+def response_json(response: Any, max_bytes: int = MAX_RESOURCE_JSON_BYTES) -> Any:
+    """Decode a bounded JSON response."""
+    content_length = (getattr(response, "headers", {}) or {}).get("Content-Length")
+    if content_length and int(content_length) > max_bytes:
+        raise ValueError("JSON response too large")
+    content = getattr(response, "content", None)
+    if isinstance(content, (bytes, bytearray)):
+        if len(content) > max_bytes:
+            raise ValueError("JSON response too large")
+        return json.loads(content.decode("utf-8"))
+    return response.json()
+
+
+def safe_cache_key(prefix: str, identity: Any) -> str:
+    """Build a deterministic cache key without exposing identity values."""
+    payload = json.dumps(identity, sort_keys=True, default=str, separators=(",", ":"))
+    return "{}:{}".format(prefix, hashlib.sha256(payload.encode("utf-8")).hexdigest())
 
 
 def build_resource_url(

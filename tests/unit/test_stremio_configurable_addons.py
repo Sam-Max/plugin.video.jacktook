@@ -1,8 +1,15 @@
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from lib.api.stremio.addon_manager import AddonManager
 from lib.clients.stremio import addon_selection
+
+
+@pytest.fixture(autouse=True)
+def _public_manifest_hosts(monkeypatch):
+    monkeypatch.setattr(addon_selection, "is_safe_http_url", lambda _url: True)
 
 
 def _manifest(addon_id="configured"):

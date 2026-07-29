@@ -9,6 +9,7 @@ from xbmcplugin import addDirectoryItem, setContent
 
 from lib.clients.stremio.helpers import (
     get_addon_by_base_url,
+    get_addon_by_key,
     get_addon_display_name,
     get_catalog_display_name,
     get_selected_catalogs_addons,
@@ -58,7 +59,7 @@ CATALOG_PAGE_SIZE = 25
 
 def _stremio_search_history_key(params):
     return "stremio_search_catalog|{}|{}|{}".format(
-        params.get("addon_url", ""),
+        params.get("addon_key") or params.get("addon_url", ""),
         params.get("catalog_type", ""),
         params.get("catalog_id", ""),
     )
@@ -226,6 +227,22 @@ def _param_truthy(value):
     return str(value).lower() in ("1", "true", "yes")
 
 
+def _resolve_addon_params(params):
+    params = dict(params)
+    if not params.get("addon_url") and params.get("addon_key"):
+        addon = get_addon_by_key(params["addon_key"])
+        if addon:
+            params["addon_url"] = addon.url()
+    return params
+
+
+def _addon_route_reference(addon):
+    try:
+        return {"addon_key": addon.key()}
+    except (AttributeError, TypeError):
+        return {"addon_url": addon.url()}
+
+
 def _get_stremio_catalogs(menu_type="", sub_menu_type=""):
     if menu_type == "tv":
         selected_addons = get_selected_tv_addons()
@@ -300,7 +317,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                     build_url(
                         "search_catalog",
                         page=1,
-                        addon_url=addon.url(),
+                        **_addon_route_reference(addon),
                         catalog_type=catalog.type,
                         catalog_id=catalog_id,
                         menu_type=menu_type,
@@ -326,7 +343,7 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
                 (
                     build_url(
                         action="list_catalog",
-                        addon_url=addon.url(),
+                        **_addon_route_reference(addon),
                         menu_type=menu_type,
                         sub_menu_type=sub_menu_type,
                         catalog_type=catalog.type,
@@ -381,7 +398,7 @@ def list_catalog_genres(params):
                 (
                     build_url(
                         action="list_catalog",
-                        addon_url=addon.url(),
+                        **_addon_route_reference(addon),
                         menu_type=params["menu_type"],
                         sub_menu_type=params.get("sub_menu_type", ""),
                         catalog_type=catalog.type,
@@ -416,6 +433,7 @@ def _catalog_extra_names(addon_url, catalog_type, catalog_id):
 
 
 def list_catalog(params):
+    params = _resolve_addon_params(params)
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
@@ -464,7 +482,6 @@ def list_catalog(params):
 
     if has_next_page:
         next_page_params = {
-            "addon_url": params["addon_url"],
             "menu_type": params["menu_type"],
             "sub_menu_type": params.get("sub_menu_type", ""),
             "catalog_type": params["catalog_type"],
@@ -473,6 +490,10 @@ def list_catalog(params):
         }
         if params.get("genre") not in (None, ""):
             next_page_params["genre"] = params["genre"]
+        if params.get("addon_key"):
+            next_page_params["addon_key"] = params["addon_key"]
+        else:
+            next_page_params["addon_url"] = params["addon_url"]
         next_url = build_url("list_catalog", **next_page_params)
         list_item = make_list_item(label=translation(90515))
         addDirectoryItem(handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True)
@@ -481,6 +502,7 @@ def list_catalog(params):
 
 
 def search_catalog(params):
+    params = _resolve_addon_params(params)
     page = int(params["page"])
     pickle_db = PickleDatabase()
     history_key = _stremio_search_history_key(params)
@@ -738,6 +760,7 @@ def add_meta_items(metas, params):
 
 
 def list_stremio_seasons(params):
+    params = _resolve_addon_params(params)
     kodilog("list_stremio_seasons")
     response = catalogs_get_cache("list_stremio_seasons", params)
     if not response:
@@ -792,6 +815,7 @@ def list_stremio_seasons(params):
 
 
 def list_stremio_episodes(params):
+    params = _resolve_addon_params(params)
     kodilog("list_stremio_episodes")
     response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
@@ -1122,6 +1146,7 @@ def _stremio_catalog_playback_data(stream, params):
 
 
 def list_stremio_movie(params):
+    params = _resolve_addon_params(params)
     response = catalogs_get_cache("list_stremio_movie", params)
     if not response:
         return
@@ -1154,6 +1179,7 @@ def list_stremio_movie(params):
 
 
 def list_stremio_tv(params):
+    params = _resolve_addon_params(params)
     response = catalogs_get_cache("list_stremio_tv", params)
     if not response:
         end_of_directory()

@@ -251,8 +251,6 @@ def test_get_addons_uses_cached_account_addons_before_settings_refresh(monkeypat
     fake_cache.get.return_value = [custom_addon, account_addon]
 
     monkeypatch.setattr(helpers, "cache", fake_cache)
-    monkeypatch.setattr(helpers, "get_setting", lambda key: False)
-
     addon_manager = helpers.get_addons()
     addon_ids = [addon.manifest.id for addon in addon_manager.addons]
 

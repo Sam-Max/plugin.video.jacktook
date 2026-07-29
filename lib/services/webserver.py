@@ -25,6 +25,11 @@ from lib.clients.stremio.constants import (
     decode_selected_ids,
     encode_selected_ids,
 )
+from lib.clients.stremio.protocol import (
+    MAX_RESOURCE_JSON_BYTES,
+    is_safe_http_url,
+    request_with_safe_redirects,
+)
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.utils import kodilog
@@ -81,9 +86,9 @@ def _addon_capabilities(manifest):
 
             if res_name == "stream":
                 # Stremio addon providing streams
-                if any(t in res_types for t in ("movie", "series", "anime")) and supports_searchable_stream(
-                    res_prefixes
-                ):
+                if any(
+                    t in res_types for t in ("movie", "series", "anime")
+                ) and supports_searchable_stream(res_prefixes):
                     is_stream = True
 
                 if any(t in res_types for t in ("tv", "channel")):
@@ -139,25 +144,61 @@ def _is_local_or_private_host(url):
         return False
 
 
+def _safe_url_description(url):
+    parts = urlsplit(str(url or ""))
+    if parts.scheme and parts.hostname:
+        return f"{parts.scheme}://{parts.hostname}/<redacted>"
+    return "<redacted URL>"
+
+
+def _allowed_manifest_url(url):
+    parts = urlsplit(url)
+    if parts.scheme not in {"http", "https"} or parts.username or parts.password:
+        return False
+    return is_safe_http_url(url) or _is_local_or_private_host(url)
+
+
 def _fetch_manifest(url, initial_url):
     def try_fetch(target_url):
         try:
-            kodilog(f"[WebServer] Fetching Stremio manifest: {target_url}")
-            resp = requests.get(target_url, headers=USER_AGENT_HEADER, timeout=10)
+            if not _allowed_manifest_url(target_url):
+                raise ValueError("manifest destination rejected")
+            kodilog(f"[WebServer] Fetching Stremio manifest: {_safe_url_description(target_url)}")
+            resp = request_with_safe_redirects(
+                requests.get,
+                target_url,
+                validator=_allowed_manifest_url,
+                headers=USER_AGENT_HEADER,
+                timeout=10,
+                stream=True,
+            )
             resp.raise_for_status()
-            return resp, resp.json(), None
+            if not _allowed_manifest_url(resp.url):
+                raise ValueError("manifest redirect rejected")
+            content = bytearray()
+            for chunk in resp.iter_content(chunk_size=8192):
+                content.extend(chunk)
+                if len(content) > MAX_RESOURCE_JSON_BYTES:
+                    raise ValueError("manifest too large")
+            manifest = json.loads(content.decode("utf-8"))
+            return resp, manifest, None
         except Exception as ex:
-            return None, None, str(ex)
+            return None, None, type(ex).__name__
 
     resp, manifest, error = try_fetch(url)
 
-    if error and url.startswith("https://"):
-        if initial_url.startswith("stremio://") or _is_local_or_private_host(url):
-            http_url = url.replace("https://", "http://", 1)
-            kodilog(f"[WebServer] HTTPS failed, trying HTTP fallback: {http_url}")
-            r2, m2, e2 = try_fetch(http_url)
-            if not e2:
-                return r2, m2, None
+    if (
+        error
+        and url.startswith("https://")
+        and (initial_url.startswith("stremio://") or _is_local_or_private_host(url))
+    ):
+        http_url = url.replace("https://", "http://", 1)
+        kodilog(
+            f"[WebServer] HTTPS failed, trying HTTP fallback: {_safe_url_description(http_url)}"
+        )
+        r2, m2, e2 = try_fetch(http_url)
+        if not e2:
+            return r2, m2, None
 
     return resp, manifest, error
 
@@ -260,7 +301,7 @@ def _validate_manifest(url):
     initial_url = url
     url = _normalize_manifest_url(url)
 
-    kodilog(f"[WebServer] Validating Stremio manifest: {url}")
+    kodilog(f"[WebServer] Validating Stremio manifest: {_safe_url_description(url)}")
     _, manifest, error = _fetch_manifest(url, initial_url)
     if error or not manifest:
         kodilog(f"[WebServer] Manifest validation failed: {error}")

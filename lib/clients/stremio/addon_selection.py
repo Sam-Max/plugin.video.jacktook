@@ -7,7 +7,10 @@ from urllib.parse import urlsplit, urlunsplit
 import requests
 import xbmcgui
 
-from lib.api.stremio.addon_manager import build_addon_instance_key
+from lib.api.stremio.addon_manager import (
+    build_addon_instance_key,
+    build_legacy_addon_instance_key,
+)
 from lib.clients.stremio.constants import (
     STREMIO_ADDON_ALIASES_KEY,
     STREMIO_ADDONS_CATALOGS_KEY,
@@ -32,6 +35,7 @@ from lib.clients.stremio.helpers import (
     set_addon_alias,
     set_catalog_alias,
 )
+from lib.clients.stremio.protocol import is_safe_http_url, request_with_safe_redirects
 from lib.db.cached import cache
 from lib.utils.general.utils import USER_AGENT_HEADER
 from lib.utils.kodi.settings import get_int_setting
@@ -44,7 +48,6 @@ from lib.utils.kodi.utils import (
     translation,
 )
 
-
 MAX_MANIFEST_BYTES = 512 * 1024
 
 
@@ -52,7 +55,7 @@ def _redact_url(url):
     """Keep configured paths and query parameters out of diagnostics."""
     parts = urlsplit(str(url or ""))
     if parts.scheme and parts.hostname:
-        return "{}://{}/<redacted>".format(parts.scheme, parts.hostname)
+        return f"{parts.scheme}://{parts.hostname}/<redacted>"
     return "<redacted URL>"
 
 
@@ -91,18 +94,20 @@ def _configuration_url(addon):
 def _fetch_manifest(url):
     """Fetch a small JSON manifest without exposing a configured URL."""
     manifest_url = _safe_manifest_url(url)
-    if not manifest_url:
+    if not manifest_url or not is_safe_http_url(manifest_url):
         raise ValueError("invalid manifest URL")
 
-    response = requests.get(
+    response = request_with_safe_redirects(
+        requests.get,
         manifest_url,
+        validator=is_safe_http_url,
         headers=USER_AGENT_HEADER,
         timeout=get_int_setting("stremio_timeout"),
         stream=True,
     )
     response.raise_for_status()
     final_url = _safe_manifest_url(response.url)
-    if not final_url:
+    if not final_url or not is_safe_http_url(final_url):
         raise ValueError("unsafe redirect")
 
     content_length = response.headers.get("Content-Length")
@@ -446,11 +451,7 @@ def add_custom_stremio_addon(params):
     try:
         manifest, transport_url = _fetch_manifest(url)
     except Exception as e:
-        kodilog(
-            "Custom addon manifest import failed for {}: {}".format(
-                _redact_url(url), type(e).__name__
-            )
-        )
+        kodilog(f"Custom addon manifest import failed for {_redact_url(url)}: {type(e).__name__}")
         dialog.ok(translation(90522), translation(90838))
         return
 
@@ -484,8 +485,7 @@ def add_custom_stremio_addon(params):
                         {"movie", "series", "anime"}
                     )
                     if supports_video_type and (
-                        not normalized_prefixes
-                        or normalized_prefixes.intersection({"tt", "tmdb"})
+                        not normalized_prefixes or normalized_prefixes.intersection({"tt", "tmdb"})
                     ):
                         is_stream = True
                     if "tv" in res_types or "channel" in res_types:
@@ -557,7 +557,7 @@ def add_custom_stremio_addon(params):
         else:
             dialog.ok(translation(90522), translation(90529))
     except Exception as e:
-        kodilog("Custom addon persistence failed: {}".format(type(e).__name__))
+        kodilog(f"Custom addon persistence failed: {type(e).__name__}")
         dialog.ok(translation(90522), translation(90839))
 
 
@@ -581,11 +581,7 @@ def configure_stremio_addon(params=None):
         if not webbrowser.open(configure_url, new=2):
             raise RuntimeError("browser did not open")
     except Exception:
-        kodilog(
-            "Could not open Stremio addon configurator for {}".format(
-                _redact_url(addon.transport_url)
-            )
-        )
+        kodilog(f"Could not open Stremio addon configurator for {_redact_url(addon.transport_url)}")
         xbmcgui.Dialog().ok(translation(90836), translation(90840))
 
 
@@ -627,6 +623,9 @@ def remove_custom_stremio_addon(params=None):
         addon_key = build_addon_instance_key(addon)
         if addon_key:
             to_remove_keys.add(addon_key)
+        legacy_key = build_legacy_addon_instance_key(addon)
+        if legacy_key:
+            to_remove_keys.add(legacy_key)
 
     # Remove from user_addons
     new_user_addons = [a for a in user_addons if build_addon_instance_key(a) not in to_remove_keys]
