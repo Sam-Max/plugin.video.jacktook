@@ -57,12 +57,19 @@ class TraktBase:
         if expires and refresh_token:
             try:
                 expires = float(expires)
-                # Refresh if less than 1 hour left
-                if expires - time.time() < 3600:
-                    self.trakt_refresh = refresh_token
-                    self.trakt_refresh_token()
             except Exception as e:
                 kodilog(f"Error checking token expiry: {e}")
+                return None
+
+            # Refresh if less than 1 hour left
+            if expires - time.time() < 3600:
+                self.trakt_refresh = refresh_token
+                try:
+                    return self.trakt_refresh_token()
+                except Exception as e:
+                    kodilog(f"Error refreshing Trakt token: {e}")
+                    return False
+        return None
 
     def no_client_key(self):
         notification(translation(90382))
@@ -105,7 +112,8 @@ class TraktBase:
             return self.no_client_key()
 
         if with_auth:
-            self.ensure_token_valid()
+            if self.ensure_token_valid() is False:
+                return []
             token = get_property("trakt_token")
 
             if token:
@@ -129,7 +137,8 @@ class TraktBase:
         except requests.HTTPError as error:
             status_code = response.status_code
             if status_code == 401:
-                self._handle_unauthorized()
+                if "Authorization" in headers:
+                    self._handle_unauthorized()
                 return []
 
             status_code = response.status_code
@@ -222,10 +231,12 @@ class TraktBase:
     def trakt_refresh_token(self):
         CLIENT_ID = trakt_client()
         if CLIENT_ID in self.empty_setting_check:
-            return self.no_client_key()
+            self.no_client_key()
+            return False
         CLIENT_SECRET = trakt_secret()
         if CLIENT_SECRET in self.empty_setting_check:
-            return self.no_secret_key()
+            self.no_secret_key()
+            return False
         data = {
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
@@ -238,6 +249,9 @@ class TraktBase:
             set_property("trakt_token", response["access_token"])
             set_property("trakt_refresh", response["refresh_token"])
             set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
+            return True
+        self._handle_unauthorized()
+        return False
 
     def get_trakt_id_by_tmdb(self, tmdb_id, media_type="movie"):
         trakt_object = self.get_trakt_object_by_tmdb(tmdb_id, media_type)
