@@ -1880,7 +1880,7 @@ def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
     assert client.get_catalog_info(search="Spider & Friends", sort="top/rated") == {"metas": []}
     assert captured["url"] == (
         "https://example.com/addon/catalog/movie/popular/search=Spider%20%26%20Friends"
-        "/sort=top%2Frated.json"
+        "&sort=top%2Frated.json"
     )
 
 

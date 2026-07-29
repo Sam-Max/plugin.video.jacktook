@@ -8,6 +8,7 @@ from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.clients.stremio.helpers import get_addon_display_name
+from lib.clients.stremio.protocol import build_resource_url
 from lib.clients.stremio.playback import classify, normalize_stream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
@@ -98,20 +99,9 @@ class StremioAddonCatalogsClient(BaseClient):
         return self.get_catalog_info(search=query)
 
     def get_catalog_info(self, **kwargs) -> Optional[Dict[str, Any]]:
-        extra_path = "".join(
-            f"/{key}={quote(str(value), safe='')}"
-            for key, value in kwargs.items()
-            if value is not None and value != ""
-        )
-
-        if not extra_path:
-            path_suffix = ".json"
-        else:
-            path_suffix = f"{extra_path}.json"
-
         catalog_type = self.params.get("catalog_type")
         catalog_id = self.params.get("catalog_id")
-        url = f"{self.base_url}/catalog/{catalog_type}/{catalog_id}{path_suffix}"
+        url = build_resource_url(self.base_url, "catalog", catalog_type, catalog_id, kwargs)
         extra_keys = sorted(
             str(key) for key, value in kwargs.items() if value is not None and value != ""
         )
@@ -155,7 +145,7 @@ class StremioAddonCatalogsClient(BaseClient):
     def get_meta_info(self) -> Optional[Dict[str, Any]]:
         catalog_type = self.params.get("catalog_type")
         meta_id = self.params.get("meta_id")
-        url = f"{self.base_url}/meta/{catalog_type}/{meta_id}.json"
+        url = build_resource_url(self.base_url, "meta", catalog_type, meta_id)
 
         kodilog(f"Using Stremio addon meta URL: {url}")
 
@@ -173,7 +163,7 @@ class StremioAddonCatalogsClient(BaseClient):
     def get_stream_info(self) -> Optional[Dict[str, Any]]:
         catalog_type = self.params.get("catalog_type")
         meta_id = self.params.get("meta_id")
-        url = f"{self.base_url}/stream/{catalog_type}/{meta_id}.json"
+        url = build_resource_url(self.base_url, "stream", catalog_type, meta_id)
 
         kodilog(f"Using Stremio addon stream URL: {url}")
 
@@ -219,13 +209,15 @@ class StremioAddonClient(BaseClient):
                     return []
 
                 if prefix == "kitsu":
-                    url = f"{self.addon.url()}/stream/series/{video_id}:{episode}.json"
+                    resource_id = f"{video_id}:{episode}"
                 else:
-                    url = f"{self.addon.url()}/stream/series/{video_id}:{season}:{episode}.json"
+                    resource_id = f"{video_id}:{season}:{episode}"
+                url = build_resource_url(self.addon.url(), "stream", "series", resource_id)
             elif mode == "movies" or media_type == "movies":
                 if not self.addon.isSupported("stream", "movie", prefix):
                     return []
-                url = f"{self.addon.url()}/stream/movie/{video_id}.json"
+                resource_id = video_id
+                url = build_resource_url(self.addon.url(), "stream", "movie", resource_id)
             else:
                 return []
 

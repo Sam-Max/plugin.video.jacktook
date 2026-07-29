@@ -10,6 +10,7 @@ import requests
 import xbmc
 import xbmcgui
 
+from lib.clients.stremio.protocol import build_resource_url
 from lib.clients.subtitle.utils import (
     get_language_code,
     language_code_to_name,
@@ -81,15 +82,9 @@ class OpenSubtitleStremioClient:
         is expected to come from :func:`build_addon_base_url` (which strips
         the trailing slash) or :func:`normalize_transport_url`.
         """
-        base = (base_url or "").rstrip("/") + "/"
         resource_id = f"{imdb_id}:{season}:{episode}" if mode == "tv" else imdb_id
-        extra_path = "".join(
-            f"/{key}={quote(str(value), safe='')}"
-            for key, value in (extra_args or {}).items()
-            if value is not None and value != ""
-        )
         resource_type = "series" if mode == "tv" else "movie"
-        return f"{base}subtitles/{resource_type}/{resource_id}{extra_path}.json"
+        return build_resource_url(base_url, "subtitles", resource_type, resource_id, extra_args)
 
     def _fetch_subtitles_data_for_source(
         self,

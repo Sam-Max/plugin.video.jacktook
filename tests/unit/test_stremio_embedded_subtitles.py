@@ -465,8 +465,8 @@ def test_subtitle_endpoint_encodes_stream_extra_args_without_logging_them(monkey
     ) == []
 
     assert captured["url"] == (
-        "https://example.com/subtitles/movie/tt123/videoHash=hash%2Fwith%20space"
-        "/videoSize=123/filename=Movie%20%26%20Episode.mkv.json"
+        "https://example.com/subtitles/movie/tt123/filename=Movie%20%26%20Episode.mkv"
+        "&videoHash=hash%2Fwith%20space&videoSize=123.json"
     )
     assert all("hash/with space" not in message for message in logs)
 
