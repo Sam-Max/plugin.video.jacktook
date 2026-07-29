@@ -24,6 +24,7 @@ from lib.utils.kodi.utils import convert_size_to_bytes, get_setting, kodilog
 from lib.utils.localization.language_detection import find_languages_in_string
 
 EXCLUDED_RD_ADDONS = ["org.nuvio.streams", "org.mycine.addon"]
+MAX_CATALOG_JSON_BYTES = 2 * 1024 * 1024
 
 
 def _candidate_metadata(candidate, url_override=None, info_hash_override=None):
@@ -140,7 +141,7 @@ class StremioAddonCatalogsClient(BaseClient):
             return
 
         try:
-            data = response_json(res)
+            data = response_json(res, max_bytes=MAX_CATALOG_JSON_BYTES)
         except Exception:
             kodilog(
                 f"Stremio catalog response failed: {log_context} "

@@ -8,6 +8,7 @@ from lib.api.stremio.addon_manager import AddonManager
 from lib.api.stremio.models import Meta, MetaBehaviorHints, Stream, Video
 from lib.clients.stremio import addon_client, catalog_menus
 from lib.clients.stremio import playback as stremio_playback
+from lib.clients.stremio.protocol import MAX_RESOURCE_JSON_BYTES, response_json
 from lib.clients.stremio.playback import (
     StremioPlaybackError,
     candidate_from_payload,
@@ -1882,6 +1883,29 @@ def test_catalog_url_encodes_manifest_declared_extra_args(monkeypatch):
         "https://example.com/addon/catalog/movie/popular/search=Spider%20%26%20Friends"
         "&sort=top%2Frated.json"
     )
+
+
+def test_catalog_response_allows_bounded_payload_above_default_limit(monkeypatch):
+    payload = json.dumps(
+        {"metas": [], "padding": "x" * MAX_RESOURCE_JSON_BYTES}
+    ).encode("utf-8")
+
+    class _Response:
+        status_code = 200
+        headers = {"Content-Length": str(len(payload))}
+        content = payload
+
+    assert MAX_RESOURCE_JSON_BYTES < len(payload) < addon_client.MAX_CATALOG_JSON_BYTES
+    with pytest.raises(ValueError, match="JSON response too large"):
+        response_json(_Response())
+
+    client = addon_client.StremioAddonCatalogsClient(
+        {"addon_url": "https://example.com/addon", "catalog_type": "movie", "catalog_id": "popular"}
+    )
+    monkeypatch.setattr(client.session, "get", lambda *args, **kwargs: _Response())
+    monkeypatch.setattr(addon_client, "get_int_setting", lambda _key: 7)
+
+    assert client.get_catalog_info() == {"metas": [], "padding": "x" * MAX_RESOURCE_JSON_BYTES}
 
 
 def _catalog_client():
