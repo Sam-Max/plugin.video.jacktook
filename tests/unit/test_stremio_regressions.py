@@ -1434,6 +1434,53 @@ def test_clear_stremio_search_history_clears_only_current_catalog(monkeypatch):
     assert shown == [params]
 
 
+def test_safe_stremio_rating_handles_provider_values():
+    assert catalog_menus._safe_stremio_rating(7) == 7.0
+    assert catalog_menus._safe_stremio_rating("8.5") == 8.5
+
+    for value in (None, "", "N/A", "invalid", float("inf"), float("nan"), [], True):
+        assert catalog_menus._safe_stremio_rating(value) == 0.0
+
+
+def test_list_stremio_seasons_handles_invalid_rating(monkeypatch):
+    meta_data = Meta.from_dict(
+        {
+            "id": "tt123",
+            "type": "series",
+            "name": "Rated Show",
+            "imdbRating": "N/A",
+            "videos": [{"id": "tt123:1:1", "season": 1, "episode": 1}],
+        }
+    )
+    ratings = []
+
+    class _InfoTag:
+        def setRating(self, rating):
+            ratings.append(rating)
+
+        def __getattr__(self, name):
+            return lambda *args, **kwargs: None
+
+    class _ListItem:
+        def getVideoInfoTag(self):
+            return _InfoTag()
+
+        def setArt(self, *args, **kwargs):
+            pass
+
+    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args: {"meta": meta_data})
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda *args, **kwargs: _ListItem())
+    monkeypatch.setattr(catalog_menus, "build_url", lambda *args, **kwargs: "plugin://test")
+    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda *args: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda: None)
+
+    catalog_menus.list_stremio_seasons(
+        {"addon_url": "https://example.com/addon", "catalog_type": "series", "meta_id": "tt123"}
+    )
+
+    assert ratings == [0.0]
+
+
 def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     meta_data = Meta.from_dict(
         {
@@ -1441,6 +1488,7 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
             "type": "series",
             "name": "Fallback Show",
             "imdb_id": "tt123",
+            "imdbRating": "N/A",
             "videos": [
                 {
                     "id": "tt123:1:2",
@@ -1457,6 +1505,7 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
         }
     )
     added = []
+    ratings = []
 
     class _InfoTag:
         def setUniqueID(self, *args, **kwargs):
@@ -1468,8 +1517,8 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
         def setPlot(self, *args, **kwargs):
             pass
 
-        def setRating(self, *args, **kwargs):
-            pass
+        def setRating(self, rating):
+            ratings.append(rating)
 
         def setSeason(self, *args, **kwargs):
             pass
@@ -1537,6 +1586,7 @@ def test_list_stremio_episodes_uses_safe_title_fallback(monkeypatch):
     )
 
     assert added == ["1x2. Fallback Show"]
+    assert ratings == [0.0]
 
 
 def test_list_stremio_episodes_main_search_url_preserves_stremio_route(monkeypatch):

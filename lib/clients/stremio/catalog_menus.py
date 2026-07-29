@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from collections.abc import Mapping
 from dataclasses import asdict
@@ -55,6 +56,18 @@ from lib.utils.kodi.utils import (
 from lib.utils.stremio.catalogs_utils import catalogs_get_cache
 
 CATALOG_PAGE_SIZE = 25
+
+
+def _safe_stremio_rating(value):
+    if isinstance(value, bool):
+        return 0.0
+
+    try:
+        rating = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+
+    return rating if math.isfinite(rating) else 0.0
 
 
 def _stremio_search_history_key(params):
@@ -895,7 +908,7 @@ def list_stremio_seasons(params):
         info_tag.setUniqueID(meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf")
         info_tag.setTitle(meta_data.name)
         info_tag.setPlot(truncate_text(meta_data.description or ""))
-        info_tag.setRating(float(meta_data.imdbRating or 0))
+        info_tag.setRating(_safe_stremio_rating(meta_data.imdbRating))
         info_tag.setGenres(meta_data.genres)
         info_tag.setTvShowTitle(meta_data.name)
         info_tag.setSeason(season)
@@ -1020,7 +1033,7 @@ def list_stremio_episodes(params):
         info_tag.setUniqueID(meta_data.id, type="imdb" if meta_data.id.startswith("tt") else "mf")
         info_tag.setTitle(title)
         info_tag.setPlot(truncate_text(video.overview or ""))
-        info_tag.setRating(float(meta_data.imdbRating or 0))
+        info_tag.setRating(_safe_stremio_rating(meta_data.imdbRating))
         info_tag.setGenres(meta_data.genres)
         info_tag.setTvShowTitle(title)
         info_tag.setSeason(season)
