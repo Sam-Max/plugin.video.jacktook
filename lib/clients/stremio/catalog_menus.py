@@ -467,22 +467,19 @@ def list_catalog(params):
             name = extra.get("name")
             if not name or name in extras or name == "skip":
                 continue
+            if not extra.get("isRequired"):
+                continue
             options = list(extra.get("options") or [])
             limit = extra.get("optionsLimit")
             if isinstance(limit, int) and limit >= 0:
                 options = options[:limit]
             if options:
-                choices = options if extra.get("isRequired") else ["All", *options]
-                selected = xbmcgui.Dialog().select(name, choices)
+                selected = xbmcgui.Dialog().select(name, options)
                 if selected < 0:
-                    if extra.get("isRequired"):
-                        end_of_directory()
-                        return
-                    continue
-                if not extra.get("isRequired") and selected == 0:
-                    continue
-                extras[name] = choices[selected]
-            elif extra.get("isRequired"):
+                    end_of_directory()
+                    return
+                extras[name] = options[selected]
+            else:
                 kodilog(f"Stremio catalog skipped: missing required extra '{name}'")
                 notification(f"This catalog requires {name}.")
                 end_of_directory()
