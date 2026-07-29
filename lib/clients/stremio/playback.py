@@ -37,9 +37,10 @@ class StremioPlaybackCandidate:
     trackers: List[str] = field(default_factory=list)
     headers: Dict[str, Any] = field(default_factory=dict)
     responseHeaders: Dict[str, Any] = field(default_factory=dict)
-    fileMustInclude: Optional[List[str]] = None
+    fileMustInclude: Optional[str] = None
     nzbUrl: Optional[str] = None
-    archiveUrls: List[str] = field(default_factory=list)
+    archiveUrls: List[Any] = field(default_factory=list)
+    servers: List[Any] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     origin: str = ""
 
@@ -128,21 +129,66 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
     trackers = _string_list(_mapping_value(merged, "trackers"))
     archive_urls = []
     for key in ("rarUrls", "zipUrls", "sevenZipUrls", "7zipUrls", "tgzUrls", "tarUrls"):
-        archive_urls.extend(_string_list(_mapping_value(merged, key)))
+        archive_urls.extend(_value_list(_mapping_value(merged, key)))
+
+    preserved_hints = {}
+    hint_aliases = {
+        "countryWhitelist": ("countryWhitelist", "countryAllowlist"),
+        "countryBlacklist": ("countryBlacklist", "countryDenylist"),
+        "bingeGroup": ("bingeGroup",),
+        "notWebReady": ("notWebReady",),
+    }
+    for canonical_name, aliases in hint_aliases.items():
+        value = _mapping_value(behavior_hints, *aliases)
+        if value is not None:
+            preserved_hints[canonical_name] = value
 
     known_fields = {
-        "url", "ytId", "yt_id", "infoHash", "info_hash", "fileIdx", "file_idx",
-        "externalUrl", "external_url", "title", "name", "description", "filename", "size",
-        "videoSize", "videoHash", "video_hash", "subtitles", "streamSubtitles",
-        "stream_subtitles", "sources", "trackers", "proxyHeaders", "proxy_headers", "headers",
-        "stremioMetadata", "stremio_metadata", "behaviorHints", "behavior_hints",
-        "fileMustInclude", "nzbUrl", "rarUrls", "zipUrls", "sevenZipUrls", "7zipUrls", "tgzUrls",
+        "url",
+        "ytId",
+        "yt_id",
+        "infoHash",
+        "info_hash",
+        "fileIdx",
+        "file_idx",
+        "externalUrl",
+        "external_url",
+        "title",
+        "name",
+        "description",
+        "filename",
+        "size",
+        "videoSize",
+        "videoHash",
+        "video_hash",
+        "subtitles",
+        "streamSubtitles",
+        "stream_subtitles",
+        "sources",
+        "trackers",
+        "proxyHeaders",
+        "proxy_headers",
+        "headers",
+        "stremioMetadata",
+        "stremio_metadata",
+        "behaviorHints",
+        "behavior_hints",
+        "fileMustInclude",
+        "nzbUrl",
+        "rarUrls",
+        "zipUrls",
+        "sevenZipUrls",
+        "7zipUrls",
+        "tgzUrls",
         "tarUrls",
+        "servers",
     }
     extra_metadata = {}
     for metadata_value in metadata_values:
         extra_metadata.update(metadata_value)
     extra_metadata.update({key: value for key, value in values.items() if key not in known_fields})
+    if preserved_hints:
+        extra_metadata["behaviorHints"] = preserved_hints
     if invalid_file_index:
         extra_metadata["_invalid_file_index"] = True
 
@@ -164,11 +210,10 @@ def normalize_stream(raw: Any, origin: str = "") -> StremioPlaybackCandidate:
         trackers=trackers,
         headers=request_headers,
         responseHeaders=response_headers,
-        fileMustInclude=(
-            None if file_must_include is None else _string_list(file_must_include)
-        ),
+        fileMustInclude=_string_or_none(file_must_include),
         nzbUrl=_string_or_none(_mapping_value(merged, "nzbUrl")),
         archiveUrls=archive_urls,
+        servers=_value_list(_mapping_value(merged, "servers")),
         metadata=extra_metadata,
         origin=origin or _string_or_none(_mapping_value(merged, "origin")) or "",
     )
@@ -189,9 +234,7 @@ def canonicalize_stremio_playback_payload(data: Any) -> Dict[str, Any]:
     canonical = _as_mapping(data)
     metadata_values = []
     invalid_metadata = False
-    has_debrid_intent = any(
-        key in canonical for key in ("debrid_type", "debridType")
-    )
+    has_debrid_intent = any(key in canonical for key in ("debrid_type", "debridType"))
 
     for key in ("stremio_metadata", "stremioMetadata"):
         metadata = canonical.get(key)
@@ -270,9 +313,7 @@ def payload_from_torrent(
         key in values
         and (isinstance(source, Mapping) or values.get(key) not in (None, "", False, [], {}))
         for key in debrid_keys
-    ) or any(
-        key in metadata_value for metadata_value in metadata_values for key in debrid_keys
-    )
+    ) or any(key in metadata_value for metadata_value in metadata_values for key in debrid_keys)
 
     def value(*keys: str, default: Any = None) -> Any:
         result = _mapping_value(metadata, *keys)
@@ -292,9 +333,7 @@ def payload_from_torrent(
         "size": value("size", default=0),
         "filename": value("filename"),
         "is_pack": value("isPack", "is_pack", default=False),
-        "stream_subtitles": value(
-            "streamSubtitles", "stream_subtitles", "subtitles", default=[]
-        ),
+        "stream_subtitles": value("streamSubtitles", "stream_subtitles", "subtitles", default=[]),
         "subtitles": value("subtitles", "streamSubtitles", "stream_subtitles", default=[]),
         "sources": value("sources", default=[]),
         "trackers": value("trackers", default=[]),
@@ -317,9 +356,7 @@ def payload_from_torrent(
     return result
 
 
-def classify(
-    candidate: Any, capabilities: Optional[Mapping[str, Any]] = None
-) -> Decision:
+def classify(candidate: Any, capabilities: Optional[Mapping[str, Any]] = None) -> Decision:
     """Classify a candidate and reject unsafe capability combinations early."""
     candidate = normalize_stream(candidate)
     capabilities = capabilities or {}
@@ -378,9 +415,7 @@ def classify(
     if candidate.infoHash:
         if not _HASH_RE.fullmatch(candidate.infoHash):
             return _unsupported("malformed_locator", "The torrent hash is malformed.")
-        _, tracker_error = _normalized_trackers(
-            list(candidate.sources) + list(candidate.trackers)
-        )
+        _, tracker_error = _normalized_trackers(list(candidate.sources) + list(candidate.trackers))
         if tracker_error:
             return _unsupported(*tracker_error)
         return _torrent_decision(candidate, capabilities)
@@ -487,17 +522,25 @@ def _string_list(value: Any) -> List[str]:
     return [item for item in value if isinstance(item, str)] if isinstance(value, Iterable) else []
 
 
+def _value_list(value: Any) -> List[Any]:
+    if value is None or isinstance(value, (str, bytes, Mapping)):
+        return [value] if isinstance(value, (str, Mapping)) else []
+    return list(value) if isinstance(value, Iterable) else []
+
+
 def _normalize_subtitles(value: Any) -> List[Dict[str, Any]]:
     result: List[Dict[str, Any]] = []
     for subtitle in value or []:
         if isinstance(subtitle, Mapping):
             result.append(dict(subtitle))
         else:
-            result.append({
-                key: getattr(subtitle, key)
-                for key in ("id", "url", "lang")
-                if getattr(subtitle, key, None) is not None
-            })
+            result.append(
+                {
+                    key: getattr(subtitle, key)
+                    for key in ("id", "url", "lang")
+                    if getattr(subtitle, key, None) is not None
+                }
+            )
     return result
 
 
@@ -575,9 +618,7 @@ def _torrent_decision(
         or not isinstance(candidate.fileIdx, int)
         or candidate.fileIdx < 0
     ):
-        return _unsupported(
-            "malformed_locator", "The torrent file index is malformed."
-        )
+        return _unsupported("malformed_locator", "The torrent file index is malformed.")
     return Decision("torrent_hash", True, "", "torrent_hash")
 
 
@@ -620,8 +661,10 @@ def _normalized_magnet(candidate: StremioPlaybackCandidate) -> str:
     trackers, _ = _normalized_trackers(
         list(candidate.sources) + list(candidate.trackers) + magnet_trackers
     )
-    return "magnet:?xt=urn:btih:" + info_hash.lower() + "".join(
-        f"&tr={quote(tracker, safe='')}" for tracker in trackers
+    return (
+        "magnet:?xt=urn:btih:"
+        + info_hash.lower()
+        + "".join(f"&tr={quote(tracker, safe='')}" for tracker in trackers)
     )
 
 
@@ -651,6 +694,10 @@ def _payload_from_candidate(candidate: StremioPlaybackCandidate) -> Dict[str, An
         "headers": dict(candidate.headers),
         "ytId": candidate.ytId,
         "externalUrl": candidate.externalUrl,
+        "fileMustInclude": candidate.fileMustInclude,
+        "nzbUrl": candidate.nzbUrl,
+        "archiveUrls": list(candidate.archiveUrls),
+        "servers": list(candidate.servers),
         "stremio_metadata": dict(candidate.metadata),
     }
 

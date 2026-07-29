@@ -2,14 +2,13 @@ import contextlib
 import re
 from datetime import timedelta
 from typing import Any, Dict, List, Mapping, Optional
-from urllib.parse import quote
 
 import xbmc
 
 from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
-from lib.clients.stremio.helpers import get_addon_display_name
+from lib.clients.stremio.helpers import get_addon_by_key, get_addon_display_name
 from lib.clients.stremio.protocol import (
     build_resource_url,
     cache_ttl_seconds,
@@ -33,9 +32,7 @@ def _candidate_metadata(candidate, url_override=None, info_hash_override=None):
         {
             "url": candidate.url if url_override is None else url_override,
             "ytId": candidate.ytId,
-            "infoHash": candidate.infoHash
-            if info_hash_override is None
-            else info_hash_override,
+            "infoHash": candidate.infoHash if info_hash_override is None else info_hash_override,
             "fileIdx": candidate.fileIdx,
             "externalUrl": candidate.externalUrl,
             "title": candidate.title,
@@ -49,6 +46,8 @@ def _candidate_metadata(candidate, url_override=None, info_hash_override=None):
             "trackers": list(candidate.trackers),
             "fileMustInclude": candidate.fileMustInclude,
             "nzbUrl": candidate.nzbUrl,
+            "archiveUrls": list(candidate.archiveUrls),
+            "servers": list(candidate.servers),
         }
     )
 
@@ -64,6 +63,9 @@ def _candidate_metadata(candidate, url_override=None, info_hash_override=None):
             "request": dict(candidate.headers),
             "response": dict(candidate.responseHeaders),
         }
+    preserved_hints = candidate.metadata.get("behaviorHints")
+    if isinstance(preserved_hints, Mapping):
+        behavior_hints.update(preserved_hints)
     if behavior_hints:
         metadata["behaviorHints"] = behavior_hints
 
@@ -87,7 +89,10 @@ class StremioAddonCatalogsClient(BaseClient):
     def __init__(self, params: Dict[str, Any]) -> None:
         super().__init__(None, None)
         self.params = params
-        self.base_url = self.params["addon_url"]
+        addon = (
+            get_addon_by_key(self.params.get("addon_key")) if self.params.get("addon_key") else None
+        )
+        self.base_url = addon.url() if addon else self.params.get("addon_url", "")
 
     def search(
         self,
@@ -143,7 +148,9 @@ class StremioAddonCatalogsClient(BaseClient):
             )
             raise
         if "metas" in data:
-            metas_count = len(data["metas"]) if isinstance(data["metas"], (list, tuple)) else "unknown"
+            metas_count = (
+                len(data["metas"]) if isinstance(data["metas"], (list, tuple)) else "unknown"
+            )
             data["metas"] = [MetaPreview.from_dict(m) for m in data["metas"]]
         else:
             metas_count = 0
@@ -155,7 +162,7 @@ class StremioAddonCatalogsClient(BaseClient):
         meta_id = self.params.get("meta_id")
         url = build_resource_url(self.base_url, "meta", catalog_type, meta_id)
 
-        kodilog(f"Using Stremio addon meta URL: {url}")
+        kodilog(f"Stremio meta request: catalog_type={catalog_type}")
 
         res = self.session.get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
@@ -173,7 +180,7 @@ class StremioAddonCatalogsClient(BaseClient):
         meta_id = self.params.get("meta_id")
         url = build_resource_url(self.base_url, "stream", catalog_type, meta_id)
 
-        kodilog(f"Using Stremio addon stream URL: {url}")
+        kodilog(f"Stremio stream request: catalog_type={catalog_type}")
 
         res = self.session.get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
@@ -239,7 +246,10 @@ class StremioAddonClient(BaseClient):
             if isinstance(cached_data, Mapping):
                 return self.parse_response(cached_data)
 
-            kodilog("Using Stremio addon search URL: " + url)
+            kodilog(
+                f"Stremio stream search: addon={self.addon.manifest.id} "
+                f"type={'series' if mode == 'tv' or media_type == 'tv' else 'movie'}"
+            )
 
             res = self.session.get(
                 url,
@@ -277,9 +287,7 @@ class StremioAddonClient(BaseClient):
                 continue
 
             item_values = dict(item) if isinstance(item, Mapping) else {}
-            parsed = self.parse_torrent_description(
-                candidate.description or candidate.title or ""
-            )
+            parsed = self.parse_torrent_description(candidate.description or candidate.title or "")
 
             if is_external_cache:
                 match = re.search(r"\b[0-9a-fA-F]{40}\b", candidate.url or "")

@@ -20,6 +20,7 @@ class MetaLink:
 @dataclass
 class StreamBehaviorHints:
     countryWhitelist: List[str] = field(default_factory=list)
+    countryBlacklist: List[str] = field(default_factory=list)
     notWebReady: bool = False
     bingeGroup: Optional[str] = None
     proxyHeaders: Dict[str, Any] = field(default_factory=dict)
@@ -30,7 +31,8 @@ class StreamBehaviorHints:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "StreamBehaviorHints":
         return cls(
-            countryWhitelist=data.get("countryWhitelist", []),
+            countryWhitelist=data.get("countryWhitelist", data.get("countryAllowlist", [])),
+            countryBlacklist=data.get("countryBlacklist", data.get("countryDenylist", [])),
             notWebReady=data.get("notWebReady", False),
             bingeGroup=data.get("bingeGroup"),
             proxyHeaders=data.get("proxyHeaders", {}),
@@ -69,14 +71,14 @@ class Stream:
     subtitles: List[StreamSubtitle] = field(default_factory=list)
 
     # Custom/Extended fields
-    fileMustInclude: Optional[List[str]] = None
+    fileMustInclude: Optional[str] = None
     nzbUrl: Optional[str] = None
-    servers: List[str] = field(default_factory=list)
-    rarUrls: List[str] = field(default_factory=list)
-    zipUrls: List[str] = field(default_factory=list)
-    sevenZipUrls: List[str] = field(default_factory=list)
-    tgzUrls: List[str] = field(default_factory=list)
-    tarUrls: List[str] = field(default_factory=list)
+    servers: List[Any] = field(default_factory=list)
+    rarUrls: List[Any] = field(default_factory=list)
+    zipUrls: List[Any] = field(default_factory=list)
+    sevenZipUrls: List[Any] = field(default_factory=list)
+    tgzUrls: List[Any] = field(default_factory=list)
+    tarUrls: List[Any] = field(default_factory=list)
 
     meta: Dict[str, Any] = field(default_factory=dict)
     sources: List[str] = field(default_factory=list)
@@ -220,7 +222,7 @@ class Meta:
             imdbRating=data.get("imdbRating"),
             released=data.get("released"),
             trailers=data.get("trailers", []),
-            links=[MetaLink.from_dict(l) for l in data.get("links", [])],
+            links=[MetaLink.from_dict(link) for link in data.get("links", [])],
             videos=[Video.from_dict(v) for v in data.get("videos", [])],
             runtime=data.get("runtime"),
             language=data.get("language"),
@@ -268,7 +270,7 @@ class MetaPreview:
             releaseInfo=data.get("releaseInfo"),
             director=data.get("director", []),
             cast=data.get("cast", []),
-            links=[MetaLink.from_dict(l) for l in data.get("links", [])],
+            links=[MetaLink.from_dict(link) for link in data.get("links", [])],
             description=data.get("description"),
             trailers=data.get("trailers", []),
             moviedb_id=data.get("moviedb_id"),
