@@ -5,6 +5,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from urllib.parse import quote
 
+import xbmcgui
 from xbmcplugin import addDirectoryItem, setContent
 
 from lib.clients.stremio.helpers import (
@@ -32,7 +33,6 @@ from lib.db.cached import cache
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     IndexerType,
-    add_next_button,
     info_hash_to_magnet,
     truncate_text,
 )
@@ -361,8 +361,11 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     add_directory_items_batch(directory_items)
 
 
-def _get_manifest_catalog(addon_url, catalog_type, catalog_id):
-    addon = get_addon_by_base_url(addon_url)
+def _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key=""):
+    try:
+        addon = get_addon_by_key(addon_key) if addon_key else get_addon_by_base_url(addon_url)
+    except Exception:
+        return None
     if not addon:
         return None
 
@@ -414,17 +417,17 @@ def list_catalog_genres(params):
     end_of_directory()
 
 
-def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name):
-    catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id)
+def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name, addon_key=""):
+    catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key)
     if not catalog:
         return False
 
     return any(extra.get("name") == extra_name for extra in (catalog.extra or []))
 
 
-def _catalog_extra_names(addon_url, catalog_type, catalog_id):
+def _catalog_extra_names(addon_url, catalog_type, catalog_id, addon_key=""):
     try:
-        catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id)
+        catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key)
     except Exception:
         return set()
     if not catalog:
@@ -434,22 +437,63 @@ def _catalog_extra_names(addon_url, catalog_type, catalog_id):
 
 def list_catalog(params):
     params = _resolve_addon_params(params)
+    if not params.get("addon_url"):
+        end_of_directory()
+        return
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
     setContent(ADDON_HANDLE, content_type)
 
     skip = int(params.get("skip", 0))
 
     declared_extras = _catalog_extra_names(
-        params["addon_url"], params["catalog_type"], params["catalog_id"]
+        params["addon_url"],
+        params["catalog_type"],
+        params["catalog_id"],
+        params.get("addon_key", ""),
     )
     extras = {
         key: params[key]
         for key in declared_extras.union({"genre", "search"})
         if params.get(key) not in (None, "")
     }
+    catalog = _get_manifest_catalog(
+        params["addon_url"],
+        params["catalog_type"],
+        params["catalog_id"],
+        params.get("addon_key", ""),
+    )
+    if catalog:
+        for extra in catalog.extra:
+            name = extra.get("name")
+            if not name or name in extras or name == "skip":
+                continue
+            options = list(extra.get("options") or [])
+            limit = extra.get("optionsLimit")
+            if isinstance(limit, int) and limit >= 0:
+                options = options[:limit]
+            if options:
+                choices = options if extra.get("isRequired") else ["All", *options]
+                selected = xbmcgui.Dialog().select(name, choices)
+                if selected < 0:
+                    if extra.get("isRequired"):
+                        end_of_directory()
+                        return
+                    continue
+                if not extra.get("isRequired") and selected == 0:
+                    continue
+                extras[name] = choices[selected]
+            elif extra.get("isRequired"):
+                kodilog(f"Stremio catalog skipped: missing required extra '{name}'")
+                notification(f"This catalog requires {name}.")
+                end_of_directory()
+                return
 
     supports_skip = _catalog_supports_extra(
-        params["addon_url"], params["catalog_type"], params["catalog_id"], "skip"
+        params["addon_url"],
+        params["catalog_type"],
+        params["catalog_id"],
+        "skip",
+        params.get("addon_key", ""),
     )
 
     request_kwargs = dict(extras)
@@ -490,6 +534,9 @@ def list_catalog(params):
         }
         if params.get("genre") not in (None, ""):
             next_page_params["genre"] = params["genre"]
+        for key, value in extras.items():
+            if value not in (None, ""):
+                next_page_params[key] = value
         if params.get("addon_key"):
             next_page_params["addon_key"] = params["addon_key"]
         else:
@@ -503,6 +550,8 @@ def list_catalog(params):
 
 def search_catalog(params):
     params = _resolve_addon_params(params)
+    if not params.get("addon_url"):
+        return
     page = int(params["page"])
     pickle_db = PickleDatabase()
     history_key = _stremio_search_history_key(params)

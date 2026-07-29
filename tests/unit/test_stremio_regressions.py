@@ -765,7 +765,6 @@ def test_search_catalog_uses_stremio_routes_when_catalog_has_meta(monkeypatch):
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
-    monkeypatch.setattr(catalog_menus, "add_next_button", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
     monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
@@ -1390,7 +1389,6 @@ def test_search_catalog_backfills_missing_menu_type(monkeypatch):
     monkeypatch.setattr(catalog_menus, "show_keyboard", lambda *args, **kwargs: "paradise")
     monkeypatch.setattr(catalog_menus.cache, "add_to_list", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus.PickleDatabase, "set_key", lambda self, key, value: None)
-    monkeypatch.setattr(catalog_menus, "add_next_button", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
 
     captured = {}

@@ -93,7 +93,16 @@ class Catalog:
         self.type = type
         self.id = id
         self.name = name
-        self.extra = extra or []
+        self.extra = [
+            {
+                "name": item.get("name"),
+                "isRequired": bool(item.get("isRequired", False)),
+                "options": list(item.get("options") or []),
+                "optionsLimit": item.get("optionsLimit"),
+            }
+            for item in (extra or [])
+            if isinstance(item, dict) and item.get("name")
+        ]
         self.genres = []
         for item in self.extra:
             if item.get("name") == "genre" and "options" in item:
