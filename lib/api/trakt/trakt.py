@@ -192,7 +192,20 @@ class TraktBase:
                     result = sort_list(headers["X-Sort-By"], headers["X-Sort-How"], result)
 
         if pagination:
-            return result, response.headers.get("X-Pagination-Page-Count")
+            pagination_headers = (
+                "X-Pagination-Page",
+                "X-Pagination-Limit",
+                "X-Pagination-Page-Count",
+                "X-Pagination-Item-Count",
+            )
+            pagination_data = {}
+            for header in pagination_headers:
+                value = response.headers.get(header)
+                try:
+                    pagination_data[header] = int(value) if value is not None else None
+                except (TypeError, ValueError):
+                    pagination_data[header] = None
+            return result, pagination_data
         return result
 
     def get_trakt(self, params):
@@ -217,6 +230,8 @@ class TraktBase:
             )
             if result is not None:
                 if params.get("pagination", True):
+                    if params.get("return_pagination"):
+                        return result
                     if isinstance(result, (list, tuple)) and len(result) > 0:
                         return result[0]
                     return []
@@ -424,11 +439,12 @@ class TraktAuthentication(TraktBase):
 class TraktMovies(TraktBase):
     def trakt_movies_trending(self, page_no):
         set_pluging_category(translation(90028))
-        string = f"trakt_movies_trending_{page_no}"
+        string = f"trakt_movies_trending_{page_no}_pagination_v2"
         params = {
             "path": "movies/trending",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -436,11 +452,12 @@ class TraktMovies(TraktBase):
         set_pluging_category(translation(90024))
         current_year = get_datetime().year
         years = f"{current_year - 1!s}-{current_year!s}"
-        string = f"trakt_movies_trending_recent_{page_no}"
+        string = f"trakt_movies_trending_recent_{page_no}_pagination_v2"
         params = {
             "path": "movies/trending",
             "params": {"limit": 20, "years": years},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -452,21 +469,23 @@ class TraktMovies(TraktBase):
 
     def trakt_movies_most_watched(self, page_no):
         set_pluging_category(translation(90029))
-        string = f"trakt_movies_most_watched_{page_no}"
+        string = f"trakt_movies_most_watched_{page_no}_pagination_v2"
         params = {
             "path": "movies/watched/daily",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_movies_most_favorited(self, page_no):
         set_pluging_category(translation(90030))
-        string = f"trakt_movies_most_favorited{page_no}"
+        string = f"trakt_movies_most_favorited{page_no}_pagination_v2"
         params = {
             "path": "movies/favorited/daily",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -509,6 +528,7 @@ class TraktMovies(TraktBase):
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
+            "return_pagination": True,
         }
         return self.get_trakt(params)
 
@@ -516,11 +536,12 @@ class TraktMovies(TraktBase):
 class TraktTV(TraktBase):
     def trakt_tv_trending(self, page_no):
         set_pluging_category(translation(90028))
-        string = f"trakt_tv_trending_{page_no}"
+        string = f"trakt_tv_trending_{page_no}_pagination_v2"
         params = {
             "path": "shows/trending",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -528,31 +549,34 @@ class TraktTV(TraktBase):
         set_pluging_category(translation(90024))
         current_year = get_datetime().year
         years = f"{current_year - 1!s}-{current_year!s}"
-        string = f"trakt_tv_trending_recent_{page_no}"
+        string = f"trakt_tv_trending_recent_{page_no}_pagination_v2"
         params = {
             "path": "shows/trending",
             "params": {"limit": 20, "years": years},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_tv_most_watched(self, page_no):
         set_pluging_category(translation(90029))
-        string = f"trakt_tv_most_watched_{page_no}"
+        string = f"trakt_tv_most_watched_{page_no}_pagination_v2"
         params = {
             "path": "shows/watched/daily",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_tv_most_favorited(self, page_no):
         set_pluging_category(translation(90030))
-        string = f"trakt_tv_most_favorited_{page_no}"
+        string = f"trakt_tv_most_favorited_{page_no}_pagination_v2"
         params = {
             "path": "shows/favorited/daily",
             "params": {"limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -785,6 +809,7 @@ class TraktTV(TraktBase):
             "params": {"limit": 20, "extended": "full"},
             "page_no": page_no,
             "with_auth": True,
+            "return_pagination": True,
         }
         return self.get_trakt(params)
 
@@ -795,11 +820,12 @@ class TraktAnime(TraktBase):
 
     def trakt_anime_trending(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = f"trakt_anime_trending_{mode}_{page_no}"
+        string = f"trakt_anime_trending_{mode}_{page_no}_pagination_v2"
         params = {
             "path": f"{path_prefix}/trending",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -807,31 +833,34 @@ class TraktAnime(TraktBase):
         path_prefix = self._get_path_prefix(mode)
         current_year = get_datetime().year
         years = f"{current_year - 1!s}-{current_year!s}"
-        string = f"trakt_anime_trending_recent_{mode}_{page_no}"
+        string = f"trakt_anime_trending_recent_{mode}_{page_no}_pagination_v2"
         params = {
             "path": f"{path_prefix}/trending",
             "params": {"genres": "anime", "limit": 20, "years": years},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_anime_most_watched(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = f"trakt_anime_most_watched_{mode}_{page_no}"
+        string = f"trakt_anime_most_watched_{mode}_{page_no}_pagination_v2"
         params = {
             "path": f"{path_prefix}/watched/daily",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
     def trakt_anime_most_favorited(self, page_no, mode="tv"):
         path_prefix = self._get_path_prefix(mode)
-        string = f"trakt_anime_most_favorited_{mode}_{page_no}"
+        string = f"trakt_anime_most_favorited_{mode}_{page_no}_pagination_v2"
         params = {
             "path": f"{path_prefix}/favorited/daily",
             "params": {"genres": "anime", "limit": 20},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return lists_cache_object(self.get_trakt, string, params)
 
@@ -1033,9 +1062,12 @@ class TraktLists(TraktBase):
     def trakt_watched_history(self, media_type, page_no, sort_type="recent"):
         def _process(params, media_type):
             response = self.get_trakt(params)
+            pagination = None
+            if isinstance(response, tuple):
+                response, pagination = response
             history = []
             if not response or not isinstance(response, (list, tuple)):
-                return history
+                return history, pagination
             if media_type == "movies":
                 for item in response:
                     if item["type"] == "movie":
@@ -1070,7 +1102,7 @@ class TraktLists(TraktBase):
             elif sort_type is None:
                 # Default: sort by watched_at descending
                 history.sort(key=lambda k: k.get("watched_at") or "", reverse=True)
-            return history
+            return history, pagination
 
         if media_type in ("movie", "movies"):
             media_type = "movies"
@@ -1082,6 +1114,7 @@ class TraktLists(TraktBase):
             "path_insert": media_type,
             "page_no": page_no,
             "with_auth": True,
+            "return_pagination": True,
         }
         return _process(params, media_type)
 
@@ -1191,10 +1224,11 @@ class TraktLists(TraktBase):
                 pagination=True,
                 page_no=page_no,
             )
+            pagination = None
             if isinstance(result, tuple):
-                result = result[0]
+                result, pagination = result
             if not result:
-                return []
+                return [], pagination
 
             normalized = []
             for item in result:
@@ -1224,9 +1258,9 @@ class TraktLists(TraktBase):
                     }
                 )
 
-            return normalized
+            return normalized, pagination
 
-        string = f"trakt_search_lists_{search_title}_{page_no}"
+        string = f"trakt_search_lists_{search_title}_{page_no}_pagination_v2"
         return cache_object(_process, string, "dummy_arg", False, 4)
 
     def trakt_favorites(self, media_type):
@@ -1257,12 +1291,15 @@ class TraktLists(TraktBase):
         }
         return cache_trakt_object(_process, string, params)
 
-    def get_trakt_list_contents(self, list_type, user, slug, with_auth, trakt_id=None):
+    def get_trakt_list_contents(self, list_type, user, slug, with_auth, trakt_id=None, page_no=1):
         def _process(params):
             result = self.get_trakt(params)
+            pagination = None
+            if isinstance(result, tuple):
+                result, pagination = result
             if not result:
-                return []
-            return [
+                return [], pagination
+            items = [
                 {
                     "media_ids": i[i["type"]]["ids"],
                     "title": i[i["type"]]["title"],
@@ -1272,8 +1309,9 @@ class TraktLists(TraktBase):
                 for c, i in enumerate(result)
                 if i["type"] in ("movie", "show")
             ]
+            return items, pagination
 
-        string = f"trakt_list_contents_{list_type}_{user}_{slug}_{trakt_id}"
+        string = f"trakt_list_contents_{list_type}_{user}_{slug}_{trakt_id}_{page_no}"
         if list_type == "my_lists" and trakt_id:
             params = {
                 "path": "users/me/lists/%s/items",
@@ -1281,6 +1319,8 @@ class TraktLists(TraktBase):
                 "params": {"extended": "full"},
                 "with_auth": True,
                 "method": "sort_by_headers",
+                "page_no": page_no,
+                "return_pagination": True,
             }
         elif trakt_id:
             params = {
@@ -1289,6 +1329,8 @@ class TraktLists(TraktBase):
                 "params": {"extended": "full"},
                 "with_auth": with_auth,
                 "method": "sort_by_headers",
+                "page_no": page_no,
+                "return_pagination": True,
             }
         else:
             params = {
@@ -1297,17 +1339,20 @@ class TraktLists(TraktBase):
                 "params": {"extended": "full"},
                 "with_auth": with_auth,
                 "method": "sort_by_headers",
+                "page_no": page_no,
+                "return_pagination": True,
             }
         return cache_trakt_object(_process, string, params)
 
     def trakt_trending_popular_lists(self, list_type, page_no):
         set_pluging_category(translation(90072))
-        string = f"trakt_{list_type}_user_lists_{page_no}"
+        string = f"trakt_{list_type}_user_lists_{page_no}_pagination_v2"
         params = {
             "path": "lists/%s",
             "path_insert": list_type,
             "params": {"limit": 50},
             "page_no": page_no,
+            "return_pagination": True,
         }
         return cache_object(self.get_trakt, string, params, False)
 

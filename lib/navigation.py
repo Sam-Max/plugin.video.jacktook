@@ -1149,7 +1149,15 @@ def trakt_list_content(params):
 def list_trakt_page(params):
     mode = params.get("mode")
     set_content_type(mode)
-    TraktClient.show_list_trakt_page(int(params.get("page", "")), mode)
+    TraktClient.show_list_trakt_page(
+        int(params.get("page", "")),
+        mode,
+        params.get("list_type"),
+        params.get("user"),
+        params.get("slug"),
+        params.get("with_auth", ""),
+        params.get("trakt_id"),
+    )
 
 
 def anime_search(params):

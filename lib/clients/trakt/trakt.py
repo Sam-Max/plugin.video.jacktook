@@ -42,8 +42,6 @@ from lib.utils.kodi.utils import (
     translation,
 )
 
-from .paginator import paginator_db
-
 
 def _normalize_user_slug(value):
     if value in (None, "", "None"):
@@ -830,6 +828,10 @@ class TraktClient:
 
     @staticmethod
     def process_trakt_result(results, query, category, mode, submode, api, page, search_term=""):
+        pagination = None
+        if isinstance(results, tuple) and len(results) == 2 and isinstance(results[1], dict):
+            results, pagination = results
+
         if query == Trakt.ACCOUNT_INFO:
             TraktPresentation.show_account_info(results)
             end_of_directory(cache=False)
@@ -942,7 +944,7 @@ class TraktClient:
         if category in anime_handlers:
             anime_handlers[category]()
 
-        if TraktClient._should_add_next_button(query, category):
+        if results and TraktClient._should_add_next_button(query, category, pagination):
             next_kwargs = {
                 "query": query,
                 "category": category,
@@ -956,7 +958,7 @@ class TraktClient:
         end_of_directory(cache=TraktClient._should_cache_directory(query))
 
     @staticmethod
-    def _should_add_next_button(query, category):
+    def _should_add_next_button(query, category, pagination):
         paginated_queries = {
             Trakt.TRENDING,
             Trakt.WATCHED,
@@ -973,7 +975,12 @@ class TraktClient:
             Anime.MOST_WATCHED,
             Anime.FAVORITED,
         }
-        return query in paginated_queries or category in paginated_categories
+        is_paginated = query in paginated_queries or category in paginated_categories
+        if not is_paginated or not pagination:
+            return False
+        current_page = pagination.get("X-Pagination-Page")
+        page_count = pagination.get("X-Pagination-Page-Count")
+        return current_page is not None and page_count is not None and current_page < page_count
 
     @staticmethod
     def _should_cache_directory(query):
@@ -992,23 +999,47 @@ class TraktClient:
 
     @staticmethod
     def show_trakt_list_content(list_type, mode, user, slug, with_auth, page, trakt_id=None):
-        data = TraktAPI().lists.get_trakt_list_contents(list_type, user, slug, with_auth, trakt_id)
+        page = int(page)
+        data, pagination = TraktAPI().lists.get_trakt_list_contents(
+            list_type, user, slug, with_auth, trakt_id, page
+        )
         if not data:
             notification("No results found", time=3000)
             end_of_directory(cache=not bool(with_auth))
             return
-        paginator_db.initialize(data)
-        items = paginator_db.get_page(page)
-        execute_thread_pool(items, TraktPresentation.show_lists_content_items)
-        add_next_button("list_trakt_page", page, mode=mode)
+        execute_thread_pool(data, TraktPresentation.show_lists_content_items)
+        if TraktClient._pagination_has_next(pagination):
+            add_next_button(
+                "list_trakt_page",
+                page,
+                mode=mode,
+                list_type=list_type,
+                user=user,
+                slug=slug,
+                with_auth=with_auth,
+                trakt_id=trakt_id,
+            )
         end_of_directory(cache=not bool(with_auth))
 
     @staticmethod
-    def show_list_trakt_page(page, mode):
-        items = paginator_db.get_page(page)
-        execute_thread_pool(items, TraktPresentation.show_lists_content_items)
-        add_next_button("list_trakt_page", page, mode=mode)
-        end_of_directory()
+    def show_list_trakt_page(
+        page, mode, list_type=None, user=None, slug=None, with_auth="", trakt_id=None
+    ):
+        if not list_type:
+            notification("Unable to load this Trakt list page", time=3000)
+            end_of_directory(cache=False)
+            return
+        return TraktClient.show_trakt_list_content(
+            list_type, mode, user, slug, with_auth, page, trakt_id
+        )
+
+    @staticmethod
+    def _pagination_has_next(pagination):
+        if not pagination:
+            return False
+        current_page = pagination.get("X-Pagination-Page")
+        page_count = pagination.get("X-Pagination-Page-Count")
+        return current_page is not None and page_count is not None and current_page < page_count
 
 
 class TraktPresentation:
