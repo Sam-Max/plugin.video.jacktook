@@ -146,19 +146,26 @@ def cache_trakt_object(function, string, url):
     return result
 
 
-def reset_activity(latest_activities):
+def get_activity():
     string = "trakt_get_activity"
     try:
         dbcon = connect_database("trakt_db")
         data = dbcon.execute(TC_BASE_GET, (string,)).fetchone()
         if data:
-            cached_data = eval(data[0])
-        else:
-            cached_data = default_activities()
-        dbcon.execute(DELETE, (string,))
-        trakt_cache.set(string, latest_activities)
+            return eval(data[0])
     except Exception:
-        cached_data = default_activities()
+        pass
+    return default_activities()
+
+
+def set_activity(latest_activities):
+    dbcon = connect_database("trakt_db")
+    dbcon.execute(TC_BASE_SET, ("trakt_get_activity", repr(latest_activities)))
+
+
+def reset_activity(latest_activities):
+    cached_data = get_activity()
+    set_activity(latest_activities)
     return cached_data
 
 

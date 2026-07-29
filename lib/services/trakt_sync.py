@@ -11,7 +11,8 @@ from lib.api.trakt.trakt_cache import (
     clear_trakt_list_contents_data,
     clear_trakt_list_data,
     clear_trakt_watchlist,
-    reset_activity,
+    get_activity,
+    set_activity,
     trakt_watched_cache,
 )
 from lib.utils.kodi.utils import get_property_no_fallback, get_setting, kodilog
@@ -75,7 +76,6 @@ class TraktSyncService:
                 self.sync_activities(force=True)
             except Exception as e:
                 self._log_sync_failure("startup", True, e)
-                return
 
             while not self.monitor.abortRequested():
                 if self._wait_for_next_cycle():
@@ -92,7 +92,6 @@ class TraktSyncService:
                     self.sync_activities()
                 except Exception as e:
                     self._log_sync_failure("periodic", False, e)
-                    return
         except Exception as e:
             kodilog(f"Error during Trakt Sync: {e}", level=xbmc.LOGERROR)
         finally:
@@ -140,7 +139,7 @@ class TraktSyncService:
                 )
                 return set()
 
-            previous_activities = reset_activity(latest_activities)
+            previous_activities = get_activity()
             detected_buckets = self._get_changed_buckets(previous_activities, latest_activities)
             applied_buckets = set(detected_buckets)
             if force and not applied_buckets:
@@ -153,6 +152,7 @@ class TraktSyncService:
                 forced_defaults = True
 
             if not applied_buckets:
+                set_activity(latest_activities)
                 self._log_sync_summary(
                     cycle_context,
                     force,
@@ -166,6 +166,7 @@ class TraktSyncService:
 
             kodilog("Trakt sync: changed buckets = {}".format(", ".join(sorted(applied_buckets))))
             self._apply_activity_changes(applied_buckets)
+            set_activity(latest_activities)
             self._log_sync_summary(
                 cycle_context,
                 force,
