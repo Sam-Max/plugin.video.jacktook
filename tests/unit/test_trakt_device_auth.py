@@ -137,6 +137,23 @@ def test_pending_then_success_returns_token_and_closes_dialog():
     dialog.close_dialog.assert_called_once_with()
 
 
+def test_device_token_poll_includes_contract_headers():
+    api = TraktAuthentication()
+    token = {"access_token": "access", "refresh_token": "refresh"}
+    with patch("lib.api.trakt.trakt.ADDON_NAME", "Jacktook"), patch(
+        "lib.api.trakt.trakt.ADDON_VERSION", "1.15.0"
+    ):
+        result, _dialog, _failure, post, _sleep = run_poll(api, [response(200, token)])
+
+    assert result == token
+    assert post.call_args.kwargs["headers"] == {
+        "Content-Type": "application/json",
+        "trakt-api-version": "2",
+        "trakt-api-key": "client-id",
+        "User-Agent": "Jacktook/1.15.0",
+    }
+
+
 @pytest.mark.parametrize(
     ("status_code", "message"),
     [

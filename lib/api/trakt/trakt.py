@@ -22,7 +22,7 @@ from lib.api.trakt.trakt_cache import (
 )
 from lib.api.trakt.trakt_utils import clean_ids, sort_for_article, sort_list
 from lib.gui.qr_progress_dialog import QRProgressDialog
-from lib.jacktook.utils import ADDON_PATH
+from lib.jacktook.utils import ADDON_NAME, ADDON_PATH, ADDON_VERSION
 from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.utils import set_pluging_category
 from lib.utils.kodi.settings import (
@@ -47,6 +47,8 @@ from lib.utils.kodi.utils import (
 class TraktBase:
     OAUTH_EXPIRY_FALLBACK_SECONDS = 82800  # Preserve the existing 23-hour compatibility window.
     OAUTH_CREATED_AT_FUTURE_TOLERANCE_SECONDS = 300  # Allow five minutes of server clock skew.
+    USER_AGENT_FALLBACK_NAME = "Jacktook"
+    USER_AGENT_FALLBACK_VERSION = "0.0.0"
 
     def __init__(self):
         self.api_endpoint = "https://api.trakt.tv/%s"
@@ -130,6 +132,28 @@ class TraktBase:
         with contextlib.suppress(BaseException):
             TraktCache().clear_all_trakt_cache_data()
 
+    @classmethod
+    def _trakt_user_agent(cls):
+        def metadata_value(value, fallback):
+            if not isinstance(value, str):
+                return fallback
+            value = value.strip()
+            if not value or "\r" in value or "\n" in value:
+                return fallback
+            return value
+
+        name = metadata_value(ADDON_NAME, cls.USER_AGENT_FALLBACK_NAME)
+        version = metadata_value(ADDON_VERSION, cls.USER_AGENT_FALLBACK_VERSION)
+        return f"{name}/{version}"
+
+    def _trakt_headers(self, client_id=None):
+        return {
+            "Content-Type": "application/json",
+            "trakt-api-version": "2",
+            "trakt-api-key": trakt_client() if client_id is None else client_id,
+            "User-Agent": self._trakt_user_agent(),
+        }
+
     def call_trakt(
         self,
         path,
@@ -142,11 +166,7 @@ class TraktBase:
         page_no=1,
     ):
         params = params or {}
-        headers = {
-            "Content-Type": "application/json",
-            "trakt-api-version": "2",
-            "trakt-api-key": trakt_client(),
-        }
+        headers = self._trakt_headers()
 
         if headers["trakt-api-key"] in self.empty_setting_check:
             return self.no_client_key()
@@ -436,11 +456,7 @@ class TraktAuthentication(TraktBase):
         if not self._validate_device_code(device_codes):
             self._device_auth_failure("Invalid device code data. Restart authorization.")
             return None
-        headers = {
-            "Content-Type": "application/json",
-            "trakt-api-version": "2",
-            "trakt-api-key": CLIENT_ID,
-        }
+        headers = self._trakt_headers(CLIENT_ID)
         data = {
             "code": device_codes["device_code"],
             "client_id": CLIENT_ID,
