@@ -954,7 +954,7 @@ class TraktTV(TraktBase):
             "with_auth": True,
             "pagination": False,
         }
-        return cache_trakt_object(_process, string, params)
+        return cache_trakt_object(_process, string, params, list, int)
 
     def trakt_up_next(self):
         watched_shows = self.get_watched_shows()
@@ -1449,7 +1449,7 @@ class TraktLists(TraktBase):
             "with_auth": True,
             "pagination": False,
         }
-        return cache_trakt_object(_process, string, params)
+        return cache_trakt_object(_process, string, params, list, dict)
 
     def get_trakt_list_contents(self, list_type, user, slug, with_auth, trakt_id=None, page_no=1):
         def _process(params):
@@ -1502,7 +1502,7 @@ class TraktLists(TraktBase):
                 "page_no": page_no,
                 "return_pagination": True,
             }
-        return cache_trakt_object(_process, string, params)
+        return cache_trakt_object(_process, string, params, tuple)
 
     def trakt_trending_popular_lists(self, list_type, page_no):
         set_pluging_category(translation(90072))
@@ -1563,7 +1563,7 @@ class TraktLists(TraktBase):
             "pagination": False,
             "with_auth": True,
         }
-        return cache_trakt_object(_process, string, params)
+        return cache_trakt_object(_process, string, params, list, dict)
 
     def add_to_favorites(self, media_type, ids):
         response = self.call_trakt(

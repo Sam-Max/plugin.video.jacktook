@@ -139,7 +139,7 @@ def test_custom_list_api_requests_and_returns_the_selected_page():
         api, "get_trakt", return_value=(raw_items, pagination(2, 3))
     ) as get_trakt, patch(
         "lib.api.trakt.trakt.cache_trakt_object",
-        side_effect=lambda function, _key, params: function(params),
+        side_effect=lambda function, _key, params, _expected_type: function(params),
     ):
         items, metadata = api.get_trakt_list_contents(
             "liked_lists", "alice", "favorites", False, 99, 2

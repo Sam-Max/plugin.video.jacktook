@@ -1,4 +1,8 @@
+import ast
+import json
+
 from lib.api.trakt.base_cache import connect_database
+from lib.utils.kodi.utils import kodilog
 
 SELECT = "SELECT id FROM trakt_data"
 DELETE = "DELETE FROM trakt_data WHERE id=?"
@@ -13,24 +17,31 @@ BASE_DELETE = "DELETE FROM %s"
 TC_BASE_GET = "SELECT data FROM trakt_data WHERE id = ?"
 TC_BASE_SET = "INSERT OR REPLACE INTO trakt_data (id, data) VALUES (?, ?)"
 TC_BASE_DELETE = "DELETE FROM trakt_data WHERE id = ?"
+MAX_TRAKT_LEGACY_LITERAL_SIZE = 128 * 1024  # Bound Python AST expansion for repr rows.
+MAX_TRAKT_JSON_ROW_SIZE = 512 * 1024  # About 2x the measured 1,000-row normalized cache.
 
 
 class TraktCache:
-    def get(self, string):
+    def get(self, string, expected_type, item_type=None):
         result = None
         try:
             dbcon = connect_database("trakt_db")
             cache_data = dbcon.execute(TC_BASE_GET, (string,)).fetchone()
             if cache_data:
-                result = eval(cache_data[0])
+                result = _decode_cache_value(
+                    cache_data[0], string, expected_type, item_type=item_type
+                )
         except Exception:
             pass
         return result
 
     def set(self, string, data):
         try:
+            encoded = _encode_cache_value(data, string)
+            if encoded is None:
+                return None
             dbcon = connect_database("trakt_db")
-            dbcon.execute(TC_BASE_SET, (string, repr(data)))
+            dbcon.execute(TC_BASE_SET, (string, encoded))
         except Exception:
             return None
 
@@ -59,12 +70,15 @@ class TraktWatched:
         self._executemany(STATUS_INSERT, insert_list)
 
     def set_tvshow_status(self, insert_dict):
+        encoded = _encode_cache_value(insert_dict, "trakt_tvshow_status")
+        if encoded is None:
+            return
         dbcon = connect_database("trakt_db")
         dbcon.execute(
             "INSERT OR REPLACE INTO trakt_data (id, data) VALUES (?, ?)",
             (
                 "trakt_tvshow_status",
-                repr(insert_dict),
+                encoded,
             ),
         )
 
@@ -137,8 +151,8 @@ class TraktWatched:
 trakt_watched_cache = TraktWatched()
 
 
-def cache_trakt_object(function, string, url):
-    cache = trakt_cache.get(string)
+def cache_trakt_object(function, string, url, expected_type, item_type=None):
+    cache = trakt_cache.get(string, expected_type, item_type=item_type)
     if cache:
         return cache
     result = function(url)
@@ -152,21 +166,126 @@ def get_activity():
         dbcon = connect_database("trakt_db")
         data = dbcon.execute(TC_BASE_GET, (string,)).fetchone()
         if data:
-            return eval(data[0])
+            activity = _decode_cache_value(data[0], string, dict)
+            if activity is not None and _matches_required_activity_shape(
+                activity, default_activities()
+            ):
+                return activity
+            if activity is not None:
+                kodilog(f"Unexpected Trakt activity row shape ignored: {string}")
     except Exception:
         pass
     return default_activities()
 
 
 def set_activity(latest_activities):
+    encoded = _encode_cache_value(latest_activities, "trakt_get_activity")
+    if encoded is None:
+        return
     dbcon = connect_database("trakt_db")
-    dbcon.execute(TC_BASE_SET, ("trakt_get_activity", repr(latest_activities)))
+    dbcon.execute(TC_BASE_SET, ("trakt_get_activity", encoded))
 
 
 def reset_activity(latest_activities):
     cached_data = get_activity()
     set_activity(latest_activities)
     return cached_data
+
+
+def _decode_cache_value(raw_value, cache_key, expected_type, item_type=None):
+    encoded_size = _encoded_cache_size(raw_value)
+    if encoded_size is None:
+        kodilog(f"Invalid Trakt cache row encoding ignored: {cache_key}")
+        return None
+    if encoded_size > MAX_TRAKT_JSON_ROW_SIZE:
+        kodilog(f"Oversized or invalid Trakt cache row ignored: {cache_key}")
+        return None
+
+    decoded_from_json = False
+    try:
+        value = json.loads(raw_value)
+        decoded_from_json = True
+    except (
+        UnicodeDecodeError,
+        TypeError,
+        ValueError,
+        MemoryError,
+        OverflowError,
+        RecursionError,
+    ):
+        if encoded_size > MAX_TRAKT_LEGACY_LITERAL_SIZE:
+            kodilog(f"Oversized legacy Trakt cache row ignored: {cache_key}")
+            return None
+        try:
+            value = ast.literal_eval(raw_value)
+        except (ValueError, SyntaxError, TypeError, MemoryError, OverflowError, RecursionError):
+            kodilog(f"Corrupt Trakt cache row ignored: {cache_key}")
+            return None
+
+    if expected_type is tuple:
+        valid = (
+            isinstance(value, (list, tuple))
+            and len(value) == 2
+            and isinstance(value[0], list)
+            and all(isinstance(item, dict) for item in value[0])
+            and (value[1] is None or isinstance(value[1], dict))
+        )
+        if valid and decoded_from_json:
+            value = (value[0], value[1])
+    else:
+        valid = isinstance(value, expected_type)
+        if valid and item_type is not None:
+            valid = all(isinstance(item, item_type) for item in value)
+    if not valid:
+        kodilog(f"Unexpected Trakt cache row type ignored: {cache_key}")
+        return None
+    return value
+
+
+def _encoded_cache_size(raw_value):
+    if isinstance(raw_value, bytes):
+        return len(raw_value)
+    if not isinstance(raw_value, str) or len(raw_value) > MAX_TRAKT_JSON_ROW_SIZE:
+        return None if not isinstance(raw_value, str) else len(raw_value)
+    try:
+        return len(raw_value.encode("utf-8"))
+    except UnicodeEncodeError:
+        return None
+
+
+def _encode_cache_value(value, cache_key):
+    try:
+        encoded = json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
+    except (TypeError, ValueError, MemoryError, RecursionError):
+        kodilog(f"Unsupported Trakt cache value not written: {cache_key}")
+        return None
+    if len(encoded) > MAX_TRAKT_JSON_ROW_SIZE:
+        kodilog(f"Oversized Trakt cache value not written: {cache_key}")
+        return None
+    try:
+        encoded_size = len(encoded.encode("utf-8"))
+    except UnicodeEncodeError:
+        kodilog(f"Invalid Trakt cache value encoding not written: {cache_key}")
+        return None
+    if encoded_size > MAX_TRAKT_JSON_ROW_SIZE:
+        kodilog(f"Oversized Trakt cache value not written: {cache_key}")
+        return None
+    return encoded
+
+
+def _matches_required_activity_shape(value, required):
+    if not isinstance(value, dict):
+        return False
+    for key, required_value in required.items():
+        if key not in value:
+            return False
+        actual_value = value[key]
+        if isinstance(required_value, dict):
+            if not _matches_required_activity_shape(actual_value, required_value):
+                return False
+        elif not isinstance(actual_value, type(required_value)):
+            return False
+    return True
 
 
 def clear_trakt_hidden_data(list_type):
