@@ -49,6 +49,10 @@ class TraktBase:
     OAUTH_CREATED_AT_FUTURE_TOLERANCE_SECONDS = 300  # Allow five minutes of server clock skew.
     USER_AGENT_FALLBACK_NAME = "Jacktook"
     USER_AGENT_FALLBACK_VERSION = "0.0.0"
+    OVERLOAD_RETRY_STATUS_CODES = (502, 503, 504)
+    OVERLOAD_RETRY_DELAY_SECONDS = 30
+    OVERLOAD_RETRY_MAX_DELAY_SECONDS = 60
+    RATE_LIMIT_RETRY_FALLBACK_SECONDS = 1
 
     def __init__(self):
         self.api_endpoint = "https://api.trakt.tv/%s"
@@ -154,6 +158,38 @@ class TraktBase:
             "User-Agent": self._trakt_user_agent(),
         }
 
+    @staticmethod
+    def _is_safe_retry_request(method, data, is_delete):
+        return method not in ("post", "delete") and data is None and not is_delete
+
+    @classmethod
+    def _retry_delay(cls, response):
+        if response.status_code == 429:
+            fallback_delay = cls.RATE_LIMIT_RETRY_FALLBACK_SECONDS
+        elif response.status_code in cls.OVERLOAD_RETRY_STATUS_CODES:
+            fallback_delay = cls.OVERLOAD_RETRY_DELAY_SECONDS
+        else:
+            return None
+        try:
+            retry_after = float(response.headers.get("Retry-After"))
+        except (AttributeError, TypeError, ValueError):
+            return fallback_delay
+        if not math.isfinite(retry_after) or retry_after < 0:
+            return fallback_delay
+        return min(retry_after, cls.OVERLOAD_RETRY_MAX_DELAY_SECONDS)
+
+    @staticmethod
+    def _wait_for_retry(delay):
+        monitor = xbmc.Monitor()
+        deadline = time.monotonic() + delay
+        while True:
+            if monitor.abortRequested():
+                return False
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return True
+            sleep(max(1, int(min(remaining, 0.25) * 1000)))
+
     def call_trakt(
         self,
         path,
@@ -185,12 +221,20 @@ class TraktBase:
         try:
             response = self._send_request(path, params, data, headers, is_delete, method)
 
-            # Rate Limiting Handling
-            if response.status_code == 429:
-                retry_after = int(response.headers.get("Retry-After", 1))
-                kodilog(f"Trakt Rate Limit Exceeded. Retrying in {retry_after} seconds.")
-                sleep(retry_after * 1000)
-                response = self._send_request(path, params, data, headers, is_delete, method)
+            if self._is_safe_retry_request(method, data, is_delete):
+                retry_delay = self._retry_delay(response)
+                if retry_delay is not None:
+                    if response.status_code == 429:
+                        kodilog(f"Trakt Rate Limit Exceeded. Retrying in {retry_delay:g} seconds.")
+                    else:
+                        kodilog(
+                            f"Trakt service overloaded ({response.status_code}). "
+                            f"Retrying in {retry_delay:g} seconds."
+                        )
+                    if self._wait_for_retry(retry_delay):
+                        response = self._send_request(
+                            path, params, data, headers, is_delete, method
+                        )
 
             kodilog(f"Trakt response status code: {response.status_code}")
             response.raise_for_status()
@@ -220,6 +264,7 @@ class TraktBase:
                 422: "Unprocessable Entity",
                 429: "Rate Limit Exceeded",
                 500: "Internal Server Error",
+                502: "Bad Gateway",
                 503: "Service Unavailable",
                 504: "Gateway Timeout",
             }
