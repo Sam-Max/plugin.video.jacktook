@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call
 
 import pytest
+import requests
 
 PLAYER_PATH = Path(__file__).resolve().parents[2] / "lib" / "player.py"
 
@@ -288,6 +289,42 @@ def test_yamtrack_failure_does_not_break_trakt_or_local_cleanup(monkeypatch):
     trakt_api.return_value.scrobble.trakt_stop_scrobble.assert_called_once_with(test_player.data)
     player_module.set_watched_file.assert_called_once_with(test_player.data)
     assert "secret webhook URL" not in " ".join(str(item) for item in log.call_args_list)
+
+
+def test_duplicate_trakt_stop_conflict_does_not_interrupt_player_cleanup(monkeypatch):
+    import lib.api.trakt.trakt as trakt_module
+
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data["progress"] = 100
+    test_player._is_trakt_scrobble_active = True
+    scrobble = trakt_module.TraktScrobble()
+    duplicate = MagicMock(status_code=409, headers={}, text="duplicate")
+    duplicate.raise_for_status.side_effect = requests.HTTPError(response=duplicate)
+    scrobble._send_request = MagicMock(return_value=duplicate)
+    notification = MagicMock()
+
+    monkeypatch.setattr(player_module, "TraktAPI", lambda: SimpleNamespace(scrobble=scrobble))
+    monkeypatch.setattr(player_module, "is_trakt_auth", lambda: True)
+    monkeypatch.setattr(player_module, "get_setting", lambda _key: True)
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "close_busy_dialog", MagicMock())
+    monkeypatch.setattr(player_module, "clear_property", MagicMock())
+    monkeypatch.setattr(test_player, "_sync_yamtrack_watched", MagicMock())
+    monkeypatch.setattr(trakt_module, "trakt_client", lambda: "client-id")
+    monkeypatch.setattr(
+        trakt_module,
+        "get_property",
+        lambda key: "access-token" if key == "trakt_token" else "",
+    )
+    monkeypatch.setattr(trakt_module, "notification", notification)
+
+    test_player.handle_playback_stop()
+
+    notification.assert_not_called()
+    player_module.set_watched_file.assert_called_once_with(test_player.data)
+    player_module.close_busy_dialog.assert_called_once_with()
+    assert test_player._is_trakt_scrobble_active is False
 
 
 def test_non_live_tv_keeps_authenticated_trakt_scrobbling(monkeypatch):

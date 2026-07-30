@@ -176,6 +176,16 @@ class TraktBase:
             response.raise_for_status()
         except requests.HTTPError as error:
             status_code = response.status_code
+            if (
+                status_code == 409
+                and path == "scrobble/stop"
+                and self._is_post_request(method, data)
+            ):
+                kodilog(
+                    "Trakt duplicate scrobble/stop conflict ignored (HTTP 409)",
+                    level=xbmc.LOGDEBUG,
+                )
+                return None
             if status_code == 401:
                 if "Authorization" in headers:
                     self._handle_unauthorized()
@@ -201,6 +211,12 @@ class TraktBase:
             raise ProviderException(error_message) from error
 
         return self._process_response(response, method, pagination)
+
+    @staticmethod
+    def _is_post_request(method, data):
+        return method == "post" or (
+            method not in ("delete", "sort_by_headers") and data is not None
+        )
 
     def _send_request(self, path, params, data, headers, is_delete, method):
         url = self.api_endpoint % path
