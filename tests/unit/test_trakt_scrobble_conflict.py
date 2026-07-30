@@ -55,7 +55,7 @@ def test_successful_stop_response_is_preserved():
         ("scrobble/stop", None, None),
     ],
 )
-def test_other_conflicts_still_raise_and_notify(path, method, data):
+def test_other_conflicts_still_raise_without_notification(path, method, data):
     api = TraktBase()
     api._send_request = Mock(return_value=response(409))
     with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch(
@@ -68,4 +68,4 @@ def test_other_conflicts_still_raise_and_notify(path, method, data):
             with_auth=False,
         )
 
-    notification.assert_called_once_with("Trakt API error: HTTP Error: 409")
+    notification.assert_not_called()

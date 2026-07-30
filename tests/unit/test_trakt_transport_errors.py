@@ -28,7 +28,7 @@ def test_initial_transport_failure_is_normalized(transport_error):
 
     with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch(
         "lib.api.trakt.trakt.notification"
-    ), pytest.raises(ProviderException, match=f"Trakt API error: {transport_error}") as exc_info:
+    ), pytest.raises(ProviderException, match="Trakt API request failed") as exc_info:
         trakt.call_trakt("movies/trending", with_auth=False)
 
     assert exc_info.value.__cause__ is transport_error
@@ -44,7 +44,7 @@ def test_retry_transport_failure_is_normalized():
     with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch(
         "lib.api.trakt.trakt.notification"
     ), patch.object(trakt, "_wait_for_retry", return_value=True) as wait, pytest.raises(
-        ProviderException, match="Trakt API error: retry connection failed"
+        ProviderException, match="Trakt API request failed"
     ) as exc_info:
         trakt.call_trakt("movies/trending", with_auth=False)
 
@@ -168,7 +168,7 @@ def test_overload_retry_transport_failure_is_normalized():
 
     with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch.object(
         trakt, "_wait_for_retry", return_value=True
-    ), pytest.raises(ProviderException, match="Trakt API error: retry connection failed") as exc_info:
+    ), pytest.raises(ProviderException, match="Trakt API request failed") as exc_info:
         trakt.call_trakt("movies/trending", with_auth=False)
 
     assert exc_info.value.__cause__ is transport_error

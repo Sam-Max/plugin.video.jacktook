@@ -776,10 +776,10 @@ class TraktClient:
     def trakt_add_item_to_list(params):
         media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
-        selected_list = TraktClient._select_trakt_list()
-        if not selected_list:
-            return
         try:
+            selected_list = TraktClient._select_trakt_list()
+            if not selected_list:
+                return
             TraktAPI().lists.add_item_to_list(selected_list.get("trakt_id"), media_type, ids)
             notification(translation(90457), time=3000)
         except Exception as e:
@@ -790,10 +790,10 @@ class TraktClient:
     def trakt_remove_item_from_list(params):
         media_type = params.get("media_type")
         ids = json.loads(params.get("ids", "{}"))
-        selected_list = TraktClient._select_trakt_list()
-        if not selected_list:
-            return
         try:
+            selected_list = TraktClient._select_trakt_list()
+            if not selected_list:
+                return
             TraktAPI().lists.remove_item_from_list(selected_list.get("trakt_id"), media_type, ids)
             notification(translation(90536), time=3000)
         except Exception as e:

@@ -1090,6 +1090,10 @@ def mdblist_menu(mode):
     apply_section_view("view.main")
 
 
+def _notify_trakt_request_failure(error):
+    notification(error.user_message, time=3500)
+
+
 def search_item(params):
     query = params.get("query", "")
     category = params.get("category", None)
@@ -1115,11 +1119,7 @@ def search_item(params):
                     search_term=params.get("search_term", ""),
                 )
         except ProviderException as error:
-            message = str(error)
-            if "Internal Server Error" in message or "Service Unavailable" in message:
-                notification("Trakt is temporarily unavailable", time=3500)
-            else:
-                notification(message.replace("Trakt API error: ", ""), time=3500)
+            _notify_trakt_request_failure(error)
             end_of_directory(cache=False)
     elif api == "tmdb":
         if submode == "people_menu":
@@ -1135,29 +1135,37 @@ def search_item(params):
 def trakt_list_content(params):
     mode = params.get("mode")
     set_content_type(mode)
-    TraktClient.show_trakt_list_content(
-        params.get("list_type"),
-        mode,
-        params.get("user"),
-        params.get("slug"),
-        params.get("with_auth", ""),
-        params.get("page", 1),
-        params.get("trakt_id"),
-    )
+    try:
+        TraktClient.show_trakt_list_content(
+            params.get("list_type"),
+            mode,
+            params.get("user"),
+            params.get("slug"),
+            params.get("with_auth", ""),
+            params.get("page", 1),
+            params.get("trakt_id"),
+        )
+    except ProviderException as error:
+        _notify_trakt_request_failure(error)
+        end_of_directory(cache=False)
 
 
 def list_trakt_page(params):
     mode = params.get("mode")
     set_content_type(mode)
-    TraktClient.show_list_trakt_page(
-        int(params.get("page", "")),
-        mode,
-        params.get("list_type"),
-        params.get("user"),
-        params.get("slug"),
-        params.get("with_auth", ""),
-        params.get("trakt_id"),
-    )
+    try:
+        TraktClient.show_list_trakt_page(
+            int(params.get("page", "")),
+            mode,
+            params.get("list_type"),
+            params.get("user"),
+            params.get("slug"),
+            params.get("with_auth", ""),
+            params.get("trakt_id"),
+        )
+    except ProviderException as error:
+        _notify_trakt_request_failure(error)
+        end_of_directory(cache=False)
 
 
 def anime_search(params):
@@ -1352,7 +1360,10 @@ def trakt_auth(params):
 
 
 def trakt_auth_revoke(params):
-    TraktAPI().auth.trakt_revoke_authentication()
+    try:
+        TraktAPI().auth.trakt_revoke_authentication()
+    except ProviderException as error:
+        _notify_trakt_request_failure(error)
 
 
 def tb_auth(params):

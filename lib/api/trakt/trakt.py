@@ -270,10 +270,17 @@ class TraktBase:
             }
             error_message = error_messages.get(status_code, f"HTTP Error: {status_code}")
             kodilog(f"Trakt API error: {response.text}")
-            raise ProviderException(f"Trakt API error: {error_message}") from error
+            raise ProviderException(
+                f"Trakt API error: {error_message}",
+                status_code=status_code,
+                operation=self._request_operation(method, data, is_delete),
+            ) from error
         except requests.RequestException as error:
-            error_message = f"Trakt API error: {error}"
-            raise ProviderException(error_message) from error
+            kodilog(f"Trakt API transport error: {error}")
+            raise ProviderException(
+                "Trakt API request failed",
+                operation=self._request_operation(method, data, is_delete),
+            ) from error
 
         return self._process_response(response, method, pagination)
 
@@ -282,6 +289,14 @@ class TraktBase:
         return method == "post" or (
             method not in ("delete", "sort_by_headers") and data is not None
         )
+
+    @classmethod
+    def _request_operation(cls, method, data, is_delete):
+        if method == "delete" or is_delete:
+            return "delete"
+        if cls._is_post_request(method, data):
+            return "write"
+        return "read"
 
     def _send_request(self, path, params, data, headers, is_delete, method):
         url = self.api_endpoint % path
@@ -443,6 +458,9 @@ class TraktAuthentication(TraktBase):
         data = {"client_id": CLIENT_ID}
         try:
             device_codes = self.call_trakt("oauth/device/code", data=data, with_auth=False)
+        except ProviderException as error:
+            self._device_auth_failure(error.user_message)
+            return None
         except Exception as error:
             self._device_auth_failure(f"Unable to request a device code: {error}")
             return None
@@ -739,6 +757,8 @@ class TraktMovies(TraktBase):
         set_pluging_category(translation(90200))
         try:
             return TraktScrobble().trakt_get_playback_progress("movies")
+        except ProviderException:
+            raise
         except Exception:
             return []
 
@@ -1873,6 +1893,8 @@ class TraktScrobble(TraktBase):
                 "pagination": False,
             }
             return self.get_trakt(params)
+        except ProviderException:
+            raise
         except Exception as e:
             kodilog(f"Error fetching playback progress: {e}")
             return []
@@ -1945,7 +1967,13 @@ class TraktAPI:
 
 
 class ProviderException(Exception):
-    def __init__(self, message):
+    def __init__(self, message, status_code=None, operation="read"):
         self.message = message
+        self.status_code = status_code
+        self.operation = operation
+        self.user_message = (
+            "Trakt is temporarily unavailable"
+            if status_code in (500, 502, 503, 504)
+            else "Trakt request failed"
+        )
         super().__init__(self.message)
-        notification(self.message)
