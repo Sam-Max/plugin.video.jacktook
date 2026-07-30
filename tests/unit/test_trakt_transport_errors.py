@@ -2,6 +2,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 import requests
+import xbmc
 
 from lib.api.trakt.trakt import ProviderException, TraktBase
 
@@ -19,8 +20,41 @@ def _response(status_code=200, payload=None, headers=None):
 
 
 @pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        ("lists/trending", "lists_trending"),
+        ("lists/popular", "lists_popular"),
+        ("lists/private-list-id/items?extended=full", "list_items_by_id"),
+        ("users/private-user/lists/private-slug/items", "list_items_by_user"),
+        ("lists//items", "other"),
+        ("users//lists//items", "other"),
+        ("movies/trending", "other"),
+        (None, "other"),
+    ],
+)
+def test_safe_route_label_returns_only_redacted_fixed_categories(path, expected):
+    label = TraktBase._safe_route_label(path)
+
+    assert label == expected
+    assert label in {
+        "lists_trending",
+        "lists_popular",
+        "list_items_by_id",
+        "list_items_by_user",
+        "other",
+    }
+    for sensitive_value in ("private-list-id", "private-user", "private-slug", "extended"):
+        assert sensitive_value not in label
+
+
+@pytest.mark.parametrize(
     "transport_error",
-    [requests.Timeout("timed out"), requests.ConnectionError("connection failed")],
+    [
+        requests.Timeout("timed out"),
+        requests.ConnectionError(
+            "request failed for https://api.trakt.tv/users/private-user/lists/private-slug/items"
+        ),
+    ],
 )
 def test_initial_transport_failure_is_normalized(transport_error):
     trakt = TraktBase()
@@ -28,10 +62,17 @@ def test_initial_transport_failure_is_normalized(transport_error):
 
     with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch(
         "lib.api.trakt.trakt.notification"
-    ), pytest.raises(ProviderException, match="Trakt API request failed") as exc_info:
-        trakt.call_trakt("movies/trending", with_auth=False)
+    ), patch(
+        "lib.api.trakt.trakt.kodilog"
+    ) as kodilog, pytest.raises(ProviderException, match="Trakt API request failed") as exc_info:
+        trakt.call_trakt(
+            "users/private-user/lists/private-slug/items", with_auth=False
+        )
 
     assert exc_info.value.__cause__ is transport_error
+    kodilog.assert_called_once_with(
+        "Trakt API transport error [route=list_items_by_user]", level=xbmc.LOGERROR
+    )
 
 
 def test_retry_transport_failure_is_normalized():
@@ -260,3 +301,21 @@ def test_http_error_handling_is_preserved():
         trakt.call_trakt("movies/trending", with_auth=False)
 
     assert isinstance(exc_info.value.__cause__, requests.HTTPError)
+
+
+def test_non_overload_http_failure_logs_at_error_level():
+    trakt = TraktBase()
+    trakt._send_request = Mock(return_value=_response(400))
+
+    with patch("lib.api.trakt.trakt.trakt_client", return_value="client-id"), patch(
+        "lib.api.trakt.trakt.kodilog"
+    ) as kodilog, pytest.raises(
+        ProviderException, match="Trakt API error: Bad Request"
+    ) as exc_info:
+        trakt.call_trakt("lists/private-list-id/items", with_auth=False)
+
+    assert exc_info.value.user_message == "Trakt request failed"
+    kodilog.assert_any_call(
+        "Trakt API error [route=list_items_by_id] (HTTP 400): response body",
+        level=xbmc.LOGERROR,
+    )

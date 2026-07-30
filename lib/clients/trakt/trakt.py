@@ -1000,6 +1000,10 @@ class TraktClient:
     @staticmethod
     def show_trakt_list_content(list_type, mode, user, slug, with_auth, page, trakt_id=None):
         page = int(page)
+        if trakt_id is None or (
+            isinstance(trakt_id, str) and trakt_id.strip().lower() in ("", "none", "null")
+        ):
+            trakt_id = None
         data, pagination = TraktAPI().lists.get_trakt_list_contents(
             list_type, user, slug, with_auth, trakt_id, page
         )
@@ -1009,16 +1013,16 @@ class TraktClient:
             return
         execute_thread_pool(data, TraktPresentation.show_lists_content_items)
         if TraktClient._pagination_has_next(pagination):
-            add_next_button(
-                "list_trakt_page",
-                page,
-                mode=mode,
-                list_type=list_type,
-                user=user,
-                slug=slug,
-                with_auth=with_auth,
-                trakt_id=trakt_id,
-            )
+            next_params = {
+                "mode": mode,
+                "list_type": list_type,
+                "user": user,
+                "slug": slug,
+                "with_auth": with_auth,
+            }
+            if trakt_id is not None:
+                next_params["trakt_id"] = trakt_id
+            add_next_button("list_trakt_page", page, **next_params)
         end_of_directory(cache=not bool(with_auth))
 
     @staticmethod

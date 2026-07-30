@@ -1,9 +1,11 @@
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
 from lib.utils.general.utils import (
     TMDB_IMAGE_SIZES,
+    add_next_button,
     build_media_metadata,
     extract_publish_date,
     extract_release_group,
@@ -81,6 +83,29 @@ def test_is_video():
     assert is_video("show.mkv") is True
     assert is_video("document.txt") is False
     assert is_video("archive.zip") is False
+
+
+@pytest.mark.parametrize(
+    "page, expected_next_page",
+    [
+        (1, 2),
+        (2, 3),
+    ],
+)
+def test_add_next_button_labels_and_links_to_next_page(page, expected_next_page):
+    list_item = MagicMock()
+
+    with patch(
+        "lib.utils.general.utils.make_list_item", return_value=list_item
+    ) as make_item, patch("lib.utils.general.utils.addDirectoryItem") as add_directory_item:
+        add_next_button("list_movies", page=page, genre="drama")
+
+    make_item.assert_called_once_with(label=f"Next ({expected_next_page})")
+    next_url = add_directory_item.call_args.args[1]
+    params = parse_qs(urlparse(next_url).query)
+    assert params["action"] == ["list_movies"]
+    assert params["page"] == [str(expected_next_page)]
+    assert params["genre"] == ["drama"]
 
 
 def test_get_random_color():

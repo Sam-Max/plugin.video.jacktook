@@ -1,4 +1,7 @@
 from unittest.mock import MagicMock, patch
+from urllib.parse import parse_qs, urlparse
+
+import pytest
 
 from lib.api.trakt.trakt import TraktBase, TraktLists
 from lib.clients.trakt.trakt import Trakt, TraktClient, TraktPresentation
@@ -103,7 +106,8 @@ def test_process_trakt_result_empty_non_final_page_does_not_add_next():
     add_next.assert_not_called()
 
 
-def test_custom_list_uses_api_page_and_preserves_next_route_parameters():
+@pytest.mark.parametrize("trakt_id", [99, "99"])
+def test_custom_list_uses_api_page_and_preserves_next_route_parameters(trakt_id):
     items = [{"title": "Page two", "type": "movie", "media_ids": {"tmdb": 1}}]
     with patch("lib.clients.trakt.trakt.TraktAPI") as trakt_api, patch(
         "lib.clients.trakt.trakt.execute_thread_pool"
@@ -114,10 +118,12 @@ def test_custom_list_uses_api_page_and_preserves_next_route_parameters():
         get_contents.return_value = (items, pagination(2, 3))
 
         TraktClient.show_trakt_list_content(
-            "liked_lists", "movies", "alice", "favorites", False, 2, 99
+            "liked_lists", "movies", "alice", "favorites", False, 2, trakt_id
         )
 
-    get_contents.assert_called_once_with("liked_lists", "alice", "favorites", False, 99, 2)
+    get_contents.assert_called_once_with(
+        "liked_lists", "alice", "favorites", False, trakt_id, 2
+    )
     execute.assert_called_once_with(items, TraktPresentation.show_lists_content_items)
     assert add_next.call_args.args == ("list_trakt_page", 2)
     assert add_next.call_args.kwargs == {
@@ -126,11 +132,42 @@ def test_custom_list_uses_api_page_and_preserves_next_route_parameters():
         "user": "alice",
         "slug": "favorites",
         "with_auth": False,
-        "trakt_id": 99,
+        "trakt_id": trakt_id,
     }
 
 
-def test_custom_list_api_requests_and_returns_the_selected_page():
+@pytest.mark.parametrize("trakt_id", [None, "", "None", "null"])
+def test_user_slug_custom_list_next_url_omits_absent_trakt_id(trakt_id):
+    items = [{"title": "Page one", "type": "show", "media_ids": {"tmdb": 1}}]
+    with patch("lib.clients.trakt.trakt.TraktAPI") as trakt_api, patch(
+        "lib.clients.trakt.trakt.execute_thread_pool"
+    ), patch("lib.utils.general.utils.addDirectoryItem") as add_directory_item, patch(
+        "lib.clients.trakt.trakt.end_of_directory"
+    ):
+        trakt_api.return_value.lists.get_trakt_list_contents.return_value = (
+            items,
+            pagination(1, 2),
+        )
+
+        TraktClient.show_trakt_list_content(
+            "trending_lists", "tv", "alice", "favorites", False, 1, trakt_id
+        )
+
+    trakt_api.return_value.lists.get_trakt_list_contents.assert_called_once_with(
+        "trending_lists", "alice", "favorites", False, None, 1
+    )
+    next_url = add_directory_item.call_args.args[1]
+    params = parse_qs(urlparse(next_url).query)
+    assert params["action"] == ["list_trakt_page"]
+    assert params["page"] == ["2"]
+    assert params["user"] == ["alice"]
+    assert params["slug"] == ["favorites"]
+    assert "trakt_id" not in params
+    assert "trakt_id=" not in next_url
+
+
+@pytest.mark.parametrize("trakt_id", [99, "99"])
+def test_custom_list_api_requests_and_returns_the_selected_page(trakt_id):
     api = TraktLists()
     raw_items = [
         {"type": "movie", "movie": {"title": "Page two", "ids": {"tmdb": 1}}}
@@ -142,7 +179,7 @@ def test_custom_list_api_requests_and_returns_the_selected_page():
         side_effect=lambda function, _key, params, _expected_type: function(params),
     ):
         items, metadata = api.get_trakt_list_contents(
-            "liked_lists", "alice", "favorites", False, 99, 2
+            "liked_lists", "alice", "favorites", False, trakt_id, 2
         )
 
     assert items == [
@@ -154,9 +191,31 @@ def test_custom_list_api_requests_and_returns_the_selected_page():
         }
     ]
     assert metadata == pagination(2, 3)
-    assert get_trakt.call_args.args[0]["page_no"] == 2
-    assert get_trakt.call_args.args[0]["method"] == "sort_by_headers"
-    assert get_trakt.call_args.args[0]["return_pagination"] is True
+    request = get_trakt.call_args.args[0]
+    assert request["path"] == "lists/%s/items"
+    assert request["path_insert"] == trakt_id
+    assert request["page_no"] == 2
+    assert request["method"] == "sort_by_headers"
+    assert request["return_pagination"] is True
+
+
+@pytest.mark.parametrize("trakt_id", [None, "", "None", "null"])
+def test_custom_list_absent_trakt_id_uses_user_slug_endpoint(trakt_id):
+    api = TraktLists()
+    with patch.object(
+        api, "get_trakt", return_value=([], pagination(2, 3))
+    ) as get_trakt, patch(
+        "lib.api.trakt.trakt.cache_trakt_object",
+        side_effect=lambda function, _key, params, _expected_type: function(params),
+    ):
+        api.get_trakt_list_contents(
+            "trending_lists", "alice", "favorites", False, trakt_id, 2
+        )
+
+    request = get_trakt.call_args.args[0]
+    assert request["path"] == "users/%s/lists/%s/items"
+    assert request["path_insert"] == ("alice", "favorites")
+    assert request["page_no"] == 2
 
 
 def test_custom_list_final_and_empty_pages_do_not_add_next_or_raise():

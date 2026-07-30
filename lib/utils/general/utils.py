@@ -1419,10 +1419,10 @@ def supported_video_extensions():
 
 
 def add_next_button(func_name, page=1, **kwargs):
-    list_item = make_list_item(label="Next")
+    page += 1
+    list_item = make_list_item(label=f"Next ({page})")
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
 
-    page += 1
     addDirectoryItem(
         ADDON_HANDLE,
         build_url(func_name, page=page, **kwargs),

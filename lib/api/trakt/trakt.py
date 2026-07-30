@@ -190,6 +190,36 @@ class TraktBase:
                 return True
             sleep(max(1, int(min(remaining, 0.25) * 1000)))
 
+    @staticmethod
+    def _safe_route_label(path):
+        if not isinstance(path, str):
+            return "other"
+
+        route = path.split("?", 1)[0].strip("/")
+        if route == "lists/trending":
+            return "lists_trending"
+        if route == "lists/popular":
+            return "lists_popular"
+
+        segments = route.split("/")
+        if (
+            len(segments) == 3
+            and segments[0] == "lists"
+            and segments[1]
+            and segments[2] == "items"
+        ):
+            return "list_items_by_id"
+        if (
+            len(segments) == 5
+            and segments[0] == "users"
+            and segments[1]
+            and segments[2] == "lists"
+            and segments[3]
+            and segments[4] == "items"
+        ):
+            return "list_items_by_user"
+        return "other"
+
     def call_trakt(
         self,
         path,
@@ -269,14 +299,19 @@ class TraktBase:
                 504: "Gateway Timeout",
             }
             error_message = error_messages.get(status_code, f"HTTP Error: {status_code}")
-            kodilog(f"Trakt API error: {response.text}")
+            route = self._safe_route_label(path)
+            kodilog(
+                f"Trakt API error [route={route}] (HTTP {status_code}): {response.text}",
+                level=xbmc.LOGERROR,
+            )
             raise ProviderException(
                 f"Trakt API error: {error_message}",
                 status_code=status_code,
                 operation=self._request_operation(method, data, is_delete),
             ) from error
         except requests.RequestException as error:
-            kodilog(f"Trakt API transport error: {error}")
+            route = self._safe_route_label(path)
+            kodilog(f"Trakt API transport error [route={route}]", level=xbmc.LOGERROR)
             raise ProviderException(
                 "Trakt API request failed",
                 operation=self._request_operation(method, data, is_delete),
@@ -1533,6 +1568,11 @@ class TraktLists(TraktBase):
         return cache_trakt_object(_process, string, params, list, dict)
 
     def get_trakt_list_contents(self, list_type, user, slug, with_auth, trakt_id=None, page_no=1):
+        if trakt_id is None or (
+            isinstance(trakt_id, str) and trakt_id.strip().lower() in ("", "none", "null")
+        ):
+            trakt_id = None
+
         def _process(params):
             result = self.get_trakt(params)
             pagination = None
