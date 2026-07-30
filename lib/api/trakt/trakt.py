@@ -1,6 +1,7 @@
 import contextlib
 import datetime
 import json
+import math
 import random
 import time
 from typing import Any, Dict
@@ -320,7 +321,55 @@ class TraktAuthentication(TraktBase):
         if CLIENT_ID in self.empty_setting_check:
             return self.no_client_key()
         data = {"client_id": CLIENT_ID}
-        return self.call_trakt("oauth/device/code", data=data, with_auth=False)
+        try:
+            device_codes = self.call_trakt("oauth/device/code", data=data, with_auth=False)
+        except Exception as error:
+            self._device_auth_failure(f"Unable to request a device code: {error}")
+            return None
+        if not self._validate_device_code(device_codes):
+            self._device_auth_failure(
+                "Trakt returned an invalid device code response. Retry authorization."
+            )
+            return None
+        return device_codes
+
+    @staticmethod
+    def _validate_device_code(device_codes):
+        if not isinstance(device_codes, dict):
+            return False
+        required_strings = ("device_code", "user_code", "verification_url")
+        if any(
+            not isinstance(device_codes.get(key), str) or not device_codes[key]
+            for key in required_strings
+        ):
+            return False
+        for key in ("expires_in", "interval"):
+            value = device_codes.get(key)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return False
+            try:
+                valid_timing = math.isfinite(value) and value > 0
+            except OverflowError:
+                valid_timing = False
+            if not valid_timing:
+                return False
+        return True
+
+    @staticmethod
+    def _wait_for_device_poll(delay, progress_dialog, monitor):
+        wait_deadline = time.monotonic() + delay
+        while True:
+            if progress_dialog.iscanceled or monitor.abortRequested():
+                return False
+            remaining = wait_deadline - time.monotonic()
+            if remaining <= 0:
+                return True
+            sleep(max(1, int(min(remaining, 0.25) * 1000)))
+
+    def _device_auth_failure(self, message):
+        self._device_auth_failure_shown = True
+        kodilog(f"Trakt device authorization failed: {message}")
+        notification(f"{translation(90384)}: {message}", time=5000)
 
     def trakt_get_device_token(self, device_codes):
         CLIENT_ID = trakt_client()
@@ -329,7 +378,9 @@ class TraktAuthentication(TraktBase):
         CLIENT_SECRET = trakt_secret()
         if CLIENT_SECRET in self.empty_setting_check:
             return self.no_secret_key()
-        result = None
+        if not self._validate_device_code(device_codes):
+            self._device_auth_failure("Invalid device code data. Restart authorization.")
+            return None
         headers = {
             "Content-Type": "application/json",
             "trakt-api-version": "2",
@@ -340,62 +391,116 @@ class TraktAuthentication(TraktBase):
             "client_id": CLIENT_ID,
             "client_secret": CLIENT_SECRET,
         }
-        start = time.time()
-        expires_in = device_codes["expires_in"]
-        sleep_interval = device_codes["interval"]
+        expires_in = float(device_codes["expires_in"])
+        poll_interval = float(device_codes["interval"])
         user_code = str(device_codes["user_code"])
         verification_url = str(device_codes["verification_url"])
 
-        # Generate QR code for the verification URL
         qr_code = make_qrcode(verification_url)
         with contextlib.suppress(BaseException):
             copy2clip(user_code)
 
-        # Create and display QR code dialog
         progressDialog = QRProgressDialog("qr_dialog.xml", ADDON_PATH)
-        progressDialog.setup(
-            translation(90563),
-            qr_code,
-            verification_url,
-            user_code,
-            "",
-            is_debrid=False,
-        )
-        progressDialog.show_dialog()
-
+        monitor = xbmc.Monitor()
+        deadline = time.monotonic() + expires_in
         try:
-            time_passed = 0
-            while not progressDialog.iscanceled and time_passed < expires_in:
-                sleep(max(sleep_interval, 1) * 1000)
-                response = requests.post(
-                    self.api_endpoint % "oauth/device/token",
-                    data=json.dumps(data),
-                    headers=headers,
-                    timeout=self.timeout,
-                )
+            progressDialog.setup(
+                translation(90563),
+                qr_code,
+                verification_url,
+                user_code,
+                "",
+                is_debrid=False,
+            )
+            progressDialog.show_dialog()
+
+            while True:
+                if progressDialog.iscanceled or monitor.abortRequested():
+                    kodilog("Trakt device authorization cancelled")
+                    return None
+
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    self._device_auth_failure("Device code expired. Restart authorization.")
+                    return None
+
+                if not self._wait_for_device_poll(
+                    min(poll_interval, remaining), progressDialog, monitor
+                ):
+                    kodilog("Trakt device authorization cancelled")
+                    return None
+                if time.monotonic() >= deadline:
+                    self._device_auth_failure("Device code expired. Restart authorization.")
+                    return None
+
+                try:
+                    response = requests.post(
+                        self.api_endpoint % "oauth/device/token",
+                        data=json.dumps(data),
+                        headers=headers,
+                        timeout=self.timeout,
+                    )
+                except requests.RequestException as error:
+                    self._device_auth_failure(f"Token polling request failed: {error}")
+                    return None
+
                 status_code = response.status_code
                 if status_code == 200:
-                    result = response.json()
+                    try:
+                        result = response.json()
+                    except ValueError as error:
+                        self._device_auth_failure(f"Invalid token response: {error}")
+                        return None
+                    if not isinstance(result, dict) or not all(
+                        result.get(key) for key in ("access_token", "refresh_token")
+                    ):
+                        self._device_auth_failure("Trakt returned an incomplete token response.")
+                        return None
                     progressDialog.update_progress(100, translation(90545))
-                    break
-                elif status_code == 400:
-                    time_passed = time.time() - start
-                    progress = int(100 * time_passed / expires_in)
-                    progressDialog.update_progress(progress)
-                else:
-                    break
-        except Exception:
-            pass
-        with contextlib.suppress(BaseException):
-            progressDialog.close_dialog()
-        return result
+                    return result
+                if status_code == 400:
+                    elapsed = expires_in - max(deadline - time.monotonic(), 0)
+                    progressDialog.update_progress(min(int(100 * elapsed / expires_in), 99))
+                    continue
+
+                terminal_errors = {
+                    404: "Device code is invalid. Restart authorization.",
+                    409: "Device code was already used. Restart authorization.",
+                    410: "Device code expired. Restart authorization.",
+                    418: "Authorization was denied by the user.",
+                }
+                if status_code in terminal_errors:
+                    self._device_auth_failure(terminal_errors[status_code])
+                    return None
+                if status_code == 429:
+                    poll_interval = min(max(poll_interval * 2, poll_interval + 1), 60)
+                    kodilog(
+                        "Trakt device authorization rate limited; "
+                        f"polling in {poll_interval:g} seconds"
+                    )
+                    continue
+
+                self._device_auth_failure(
+                    f"Unexpected token polling response ({status_code}). Retry authorization."
+                )
+                return None
+        except Exception as error:
+            self._device_auth_failure(f"Unexpected polling failure: {error}")
+            return None
+        finally:
+            with contextlib.suppress(BaseException):
+                progressDialog.close_dialog()
 
     def trakt_authenticate(self):
+        self._device_auth_failure_shown = False
         code = self.trakt_get_device_code()
+        if not code:
+            return False
         token = self.trakt_get_device_token(code)
         if not token:
             kodilog("Trakt authentication failed, no token received")
-            notification(translation(90384), time=3000)
+            if not self._device_auth_failure_shown:
+                notification(translation(90384), time=3000)
             return False
         set_property("trakt_token", str(token["access_token"]))
         set_property("trakt_refresh", str(token["refresh_token"]))
