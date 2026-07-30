@@ -45,6 +45,9 @@ from lib.utils.kodi.utils import (
 
 
 class TraktBase:
+    OAUTH_EXPIRY_FALLBACK_SECONDS = 82800  # Preserve the existing 23-hour compatibility window.
+    OAUTH_CREATED_AT_FUTURE_TOLERANCE_SECONDS = 300  # Allow five minutes of server clock skew.
+
     def __init__(self):
         self.api_endpoint = "https://api.trakt.tv/%s"
         self.timeout = 20
@@ -71,6 +74,42 @@ class TraktBase:
                     kodilog(f"Error refreshing Trakt token: {e}")
                     return False
         return None
+
+    @staticmethod
+    def _finite_positive_number(value):
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        try:
+            if not math.isfinite(value) or value <= 0:
+                return None
+            return float(value)
+        except (OverflowError, ValueError):
+            return None
+
+    def _oauth_token_expiration(self, response, receipt_time=None):
+        receipt_time = time.time() if receipt_time is None else receipt_time
+        expires_in = self._finite_positive_number(response.get("expires_in"))
+        if expires_in is None:
+            kodilog("Invalid Trakt OAuth expires_in; using the 23-hour compatibility fallback")
+            return receipt_time + self.OAUTH_EXPIRY_FALLBACK_SECONDS
+
+        created_at = self._finite_positive_number(response.get("created_at"))
+        if created_at is not None and not math.isfinite(created_at + expires_in):
+            kodilog("Invalid Trakt OAuth expiration; using the 23-hour compatibility fallback")
+            return receipt_time + self.OAUTH_EXPIRY_FALLBACK_SECONDS
+        if (
+            created_at is None
+            or created_at > receipt_time + self.OAUTH_CREATED_AT_FUTURE_TOLERANCE_SECONDS
+        ):
+            if created_at is not None:
+                kodilog("Trakt OAuth created_at is too far in the future; using local receipt time")
+            created_at = receipt_time
+
+        expiration = created_at + expires_in
+        if not math.isfinite(expiration):
+            kodilog("Invalid Trakt OAuth expiration; using the 23-hour compatibility fallback")
+            return receipt_time + self.OAUTH_EXPIRY_FALLBACK_SECONDS
+        return expiration
 
     def no_client_key(self):
         notification(translation(90382))
@@ -264,7 +303,7 @@ class TraktBase:
         if response and isinstance(response, dict):
             set_property("trakt_token", response["access_token"])
             set_property("trakt_refresh", response["refresh_token"])
-            set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
+            set_property("trakt_expires", str(self._oauth_token_expiration(response)))
             return True
         self._handle_unauthorized()
         return False
@@ -504,7 +543,7 @@ class TraktAuthentication(TraktBase):
             return False
         set_property("trakt_token", str(token["access_token"]))
         set_property("trakt_refresh", str(token["refresh_token"]))
-        set_property("trakt_expires", str(time.time() + 82800))  # 23 hours
+        set_property("trakt_expires", str(self._oauth_token_expiration(token)))
         try:
             user = self.call_trakt("users/me")
             if user and isinstance(user, dict):
