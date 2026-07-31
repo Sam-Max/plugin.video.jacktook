@@ -110,6 +110,16 @@ def test_route_simkl_dispatches_resume_action():
     simkl_resume.assert_called_once_with({"simkl_session_id": "9"})
 
 
+def test_route_simkl_dispatches_library_action():
+    router = _load_router_module()
+
+    params = {"media_type": "movies"}
+    with patch("lib.navigation.simkl_library_statuses") as simkl_library_statuses:
+        router._route_simkl("simkl_library_statuses", params)
+
+    simkl_library_statuses.assert_called_once_with(params)
+
+
 def test_get_route_handler_returns_simkl_dispatcher():
     router = _load_router_module()
 
@@ -117,6 +127,8 @@ def test_get_route_handler_returns_simkl_dispatcher():
     assert router._get_route_handler("simkl_logout") is router._route_simkl
     assert router._get_route_handler("simkl_continue_watching") is router._route_simkl
     assert router._get_route_handler("simkl_discard_playback") is router._route_simkl
+    assert router._get_route_handler("simkl_library") is router._route_simkl
+    assert router._get_route_handler("simkl_move_to_status") is router._route_simkl
 
 
 def test_route_downloads_dispatches_handle_download_file():

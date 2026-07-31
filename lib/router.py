@@ -154,6 +154,10 @@ def _is_simkl_action(action):
         "simkl_auth",
         "simkl_logout",
         "simkl_continue_watching",
+        "simkl_library",
+        "simkl_library_statuses",
+        "simkl_library_items",
+        "simkl_move_to_status",
         "simkl_resume",
         "simkl_discard_playback",
     )
@@ -526,7 +530,11 @@ def _route_simkl(action, params):
         simkl_auth,
         simkl_continue_watching,
         simkl_discard_playback,
+        simkl_library,
+        simkl_library_items,
+        simkl_library_statuses,
         simkl_logout,
+        simkl_move_to_status,
         simkl_resume,
     )
 
@@ -534,6 +542,10 @@ def _route_simkl(action, params):
         "simkl_auth": simkl_auth,
         "simkl_logout": simkl_logout,
         "simkl_continue_watching": simkl_continue_watching,
+        "simkl_library": simkl_library,
+        "simkl_library_statuses": simkl_library_statuses,
+        "simkl_library_items": simkl_library_items,
+        "simkl_move_to_status": simkl_move_to_status,
         "simkl_resume": simkl_resume,
         "simkl_discard_playback": simkl_discard_playback,
     }

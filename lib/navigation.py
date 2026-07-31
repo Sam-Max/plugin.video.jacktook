@@ -1387,6 +1387,30 @@ def simkl_continue_watching(params):
     show_simkl_continue_watching()
 
 
+def simkl_library(params):
+    from lib.utils.views.simkl_library import show_simkl_library
+
+    show_simkl_library(params)
+
+
+def simkl_library_statuses(params):
+    from lib.utils.views.simkl_library import show_simkl_library_statuses
+
+    show_simkl_library_statuses(params)
+
+
+def simkl_library_items(params):
+    from lib.utils.views.simkl_library import show_simkl_library_items
+
+    show_simkl_library_items(params)
+
+
+def simkl_move_to_status(params):
+    from lib.utils.views.simkl_library import move_simkl_item_to_status
+
+    move_simkl_item_to_status(params)
+
+
 def simkl_resume(params):
     from lib.search import run_search_entry
 

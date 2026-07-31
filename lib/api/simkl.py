@@ -25,6 +25,8 @@ class SimklClient:
     REQUEST_TIMEOUT = 5
     RATE_LIMIT_COOLDOWN = 20
     _scrobble_backoff_until = 0.0
+    LIBRARY_STATUSES = ("plantowatch", "watching", "completed", "hold", "dropped")
+    MOVIE_LIBRARY_STATUSES = ("plantowatch", "completed", "dropped")
 
     def __init__(self, client_id=None, access_token=None):
         client_id_override = client_id if client_id is not None else get_setting("simkl_client_id")
@@ -146,6 +148,99 @@ class SimklClient:
             kodilog(f"[SIMKL] {action} rejected (HTTP {response.status_code}); continuing playback")
             return False
         return True
+
+    @classmethod
+    def allowed_library_statuses(cls, media_type):
+        if media_type == "movies":
+            return cls.MOVIE_LIBRARY_STATUSES
+        if media_type == "shows":
+            return cls.LIBRARY_STATUSES
+        return ()
+
+    @classmethod
+    def library_item(cls, item, media_type, status):
+        if status not in cls.allowed_library_statuses(media_type) or not isinstance(item, dict):
+            return None
+        media = item.get("movie" if media_type == "movies" else "show")
+        ids = media.get("ids") if isinstance(media, dict) else None
+        tmdb_id = cls._positive_integer(ids.get("tmdb")) if isinstance(ids, dict) else None
+        title = media.get("title") if isinstance(media, dict) else None
+        if not tmdb_id or not isinstance(title, str) or not title.strip():
+            return None
+        return {
+            "query": title.strip(),
+            "mode": "movies" if media_type == "movies" else "tv",
+            "media_type": "movie" if media_type == "movies" else "tv",
+            "ids": {"tmdb_id": tmdb_id},
+            "simkl_status": status,
+        }
+
+    def get_library_items(self, media_type, status):
+        if (
+            status not in self.allowed_library_statuses(media_type)
+            or not self.client_id
+            or not self.access_token
+        ):
+            return []
+        params = dict(self._params, extended="full")
+        try:
+            response = requests.get(
+                f"{self.BASE_URL}/sync/all-items/{media_type}/{status}",
+                params=params,
+                headers=self._headers,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] library retrieval rejected (HTTP {response.status_code})")
+                return []
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] library retrieval failed ({type(error).__name__})")
+            return []
+        if not isinstance(result, list):
+            return []
+        return [
+            library_item
+            for library_item in (self.library_item(item, media_type, status) for item in result)
+            if library_item
+        ]
+
+    def move_to_library_status(self, media_type, tmdb_id, status):
+        tmdb_id = self._positive_integer(tmdb_id)
+        if (
+            not tmdb_id
+            or status not in self.allowed_library_statuses(media_type)
+            or not self.client_id
+            or not self.access_token
+        ):
+            return None
+        payload = {"items": [{"ids": {"tmdb": tmdb_id}, "to": status}]}
+        try:
+            response = requests.post(
+                f"{self.BASE_URL}/sync/add-to-list",
+                params=self._params,
+                headers=self._headers,
+                json=payload,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] library update rejected (HTTP {response.status_code})")
+                return None
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] library update failed ({type(error).__name__})")
+            return None
+        items = result.get("items") if isinstance(result, dict) else None
+        result_item = items[0] if isinstance(items, list) and len(items) == 1 else None
+        response_data = result_item.get("response") if isinstance(result_item, dict) else None
+        resolved_status = response_data.get("status") if isinstance(response_data, dict) else None
+        if (
+            not isinstance(result_item, dict)
+            or result_item.get("to") != status
+            or resolved_status not in self.allowed_library_statuses(media_type)
+        ):
+            return None
+        return resolved_status
 
     @classmethod
     def playback_item(cls, session):

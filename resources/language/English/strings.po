@@ -939,6 +939,42 @@ msgctxt "#90980"
 msgid "Send movie and TV episode playback start, pause, resume, and stop events to Simkl."
 msgstr "Send movie and TV episode playback start, pause, resume, and stop events to Simkl."
 
+msgctxt "#90981"
+msgid "Simkl Library"
+msgstr "Simkl Library"
+
+msgctxt "#90983"
+msgid "Plan to Watch"
+msgstr "Plan to Watch"
+
+msgctxt "#90984"
+msgid "Watching"
+msgstr "Watching"
+
+msgctxt "#90985"
+msgid "Completed"
+msgstr "Completed"
+
+msgctxt "#90986"
+msgid "On Hold"
+msgstr "On Hold"
+
+msgctxt "#90987"
+msgid "Dropped"
+msgstr "Dropped"
+
+msgctxt "#90988"
+msgid "Move to %s"
+msgstr "Move to %s"
+
+msgctxt "#90989"
+msgid "Simkl status updated."
+msgstr "Simkl status updated."
+
+msgctxt "#90990"
+msgid "Unable to update Simkl status."
+msgstr "Unable to update Simkl status."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""
