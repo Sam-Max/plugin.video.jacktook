@@ -9,6 +9,7 @@ from xbmc import getCondVisibility as get_visibility
 from xbmcgui import Dialog, ListItem
 from xbmcplugin import setResolvedUrl
 
+from lib.api.simkl import SimklClient, is_simkl_scrobbling_enabled
 from lib.api.trakt.trakt import TraktAPI, TraktLists
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
@@ -68,6 +69,7 @@ class JacktookPLayer(xbmc.Player):
         self.on_started = on_started
         self.on_error = on_error
         self._is_trakt_scrobble_active = False
+        self._is_simkl_scrobble_active = False
         self._playback_was_paused = False
         self._yamtrack_stop_attempted = False
 
@@ -157,6 +159,7 @@ class JacktookPLayer(xbmc.Player):
 
         try:
             self._handle_trakt_scrobble(list_item)
+            self._handle_simkl_scrobble()
             self.handle_subtitles(list_item)
             if self.url.startswith(("http://", "https://", "file://")):
                 list_item.setPath(self.url)
@@ -227,23 +230,67 @@ class JacktookPLayer(xbmc.Player):
             and get_setting("trakt_scrobbling_enabled")
         )
 
+    def _handle_simkl_scrobble(self):
+        try:
+            if self._is_simkl_tracking_excluded() or not is_simkl_scrobbling_enabled():
+                return
+            self._is_simkl_scrobble_active = self._queue_simkl_scrobble("start")
+        except Exception as error:
+            self._is_simkl_scrobble_active = False
+            kodilog(f"[SIMKL] start setup failed; continuing playback ({type(error).__name__})")
+
+    def _is_simkl_scrobble_enabled(self):
+        try:
+            return (
+                getattr(self, "_is_simkl_scrobble_active", False)
+                and not self._is_simkl_tracking_excluded()
+                and is_simkl_scrobbling_enabled()
+            )
+        except Exception as error:
+            kodilog(f"[SIMKL] state check failed; continuing playback ({type(error).__name__})")
+            return False
+
+    def _queue_simkl_scrobble(self, action):
+        try:
+            data = {
+                "mode": self.data.get("mode"),
+                "ids": dict(self.data.get("ids") or {}),
+                "tv_data": dict(self.data.get("tv_data") or {}),
+                "progress": self.data.get("progress", 0),
+            }
+            thread = Thread(target=self._send_simkl_scrobble, args=(action, data))
+            thread.daemon = True
+            thread.start()
+            return True
+        except Exception as error:
+            kodilog(f"[SIMKL] {action} queue failed; continuing playback ({type(error).__name__})")
+            return False
+
+    @staticmethod
+    def _send_simkl_scrobble(action, data):
+        try:
+            SimklClient().scrobble(action, data)
+        except Exception as error:
+            kodilog(f"[SIMKL] {action} failed; continuing playback ({type(error).__name__})")
+
     def handle_trakt_pause_resume(self):
         is_paused = bool(get_visibility("Player.Paused"))
-
-        if not self._is_trakt_scrobble_enabled():
-            self._playback_was_paused = is_paused
-            return
-
         if is_paused and not self._playback_was_paused:
-            try:
-                TraktAPI().scrobble.trakt_pause_scrobble(self.data)
-            except Exception as e:
-                self._log_trakt_playback_failure("pause scrobble", e)
+            if self._is_trakt_scrobble_enabled():
+                try:
+                    TraktAPI().scrobble.trakt_pause_scrobble(self.data)
+                except Exception as e:
+                    self._log_trakt_playback_failure("pause scrobble", e)
+            if self._is_simkl_scrobble_enabled():
+                self._queue_simkl_scrobble("pause")
         elif self._playback_was_paused and not is_paused:
-            try:
-                TraktAPI().scrobble.trakt_start_scrobble(self.data)
-            except Exception as e:
-                self._log_trakt_playback_failure("resume scrobble", e)
+            if self._is_trakt_scrobble_enabled():
+                try:
+                    TraktAPI().scrobble.trakt_start_scrobble(self.data)
+                except Exception as e:
+                    self._log_trakt_playback_failure("resume scrobble", e)
+            if self._is_simkl_scrobble_enabled():
+                self._queue_simkl_scrobble("start")
 
         self._playback_was_paused = is_paused
 
@@ -841,6 +888,10 @@ class JacktookPLayer(xbmc.Player):
             except Exception as e:
                 self._log_trakt_playback_failure("stop scrobble", e)
             self._is_trakt_scrobble_active = False
+        if getattr(self, "_is_simkl_scrobble_active", False):
+            if self._is_simkl_scrobble_enabled():
+                self._queue_simkl_scrobble("stop")
+            self._is_simkl_scrobble_active = False
 
         if not self._is_trakt_tracking_excluded():
             set_watched_file(self.data)
@@ -936,6 +987,7 @@ class JacktookPLayer(xbmc.Player):
         self.autoscrape_started = False
         self.next_dialog = get_setting("playnext_dialog_enabled")
         self._is_trakt_scrobble_active = False
+        self._is_simkl_scrobble_active = False
         self._playback_was_paused = False
         self._yamtrack_stop_attempted = False
         from lib.utils.general.utils import extract_release_group
@@ -1154,6 +1206,29 @@ class JacktookPLayer(xbmc.Player):
             self._is_positive_integer(tv_data.get(key)) for key in ("season", "episode")
         )
 
+    def _is_simkl_tracking_excluded(self):
+        return (
+            self._is_live_tv()
+            or bool(self.data.get("is_informational_placeholder"))
+            or not self._has_simkl_tracking_identity()
+        )
+
+    def _has_simkl_tracking_identity(self):
+        ids = self.data.get("ids")
+        if not isinstance(ids, dict) or not self._is_positive_integer(ids.get("tmdb_id")):
+            return False
+        mode = self.data.get("mode")
+        if mode == "movies":
+            return True
+        if mode != "tv":
+            return False
+        tv_data = self.data.get("tv_data")
+        return (
+            isinstance(tv_data, dict)
+            and self._is_non_negative_integer(tv_data.get("season"))
+            and self._is_positive_integer(tv_data.get("episode"))
+        )
+
     @staticmethod
     def _is_positive_integer(value):
         if isinstance(value, bool):
@@ -1161,6 +1236,14 @@ class JacktookPLayer(xbmc.Player):
         if isinstance(value, int):
             return value > 0
         return isinstance(value, str) and value.strip().isdigit() and int(value.strip()) > 0
+
+    @staticmethod
+    def _is_non_negative_integer(value):
+        if isinstance(value, bool):
+            return False
+        if isinstance(value, int):
+            return value >= 0
+        return isinstance(value, str) and value.strip().isdigit()
 
     def _log_trakt_playback_failure(self, action, error):
         ids = self.data.get("ids") or {}

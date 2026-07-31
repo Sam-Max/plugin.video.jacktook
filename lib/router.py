@@ -149,6 +149,10 @@ def _is_trakt_action(action):
     return action.startswith("trakt_") or action in _TRAKT_EXTRAS
 
 
+def _is_simkl_action(action):
+    return action in ("simkl_auth", "simkl_logout")
+
+
 def _is_debrid_action(action):
     return action in _DEBRID_ACTIONS
 
@@ -511,6 +515,13 @@ def _route_telegram(action, params):
             action_func(params)
 
 
+def _route_simkl(action, params):
+    from lib.navigation import simkl_auth, simkl_logout
+
+    actions = {"simkl_auth": simkl_auth, "simkl_logout": simkl_logout}
+    actions[action](params)
+
+
 def _route_torrserver(action, params):
     if action in ("torrent_action", "torrent_files", "display_picture", "display_text"):
         from lib.utils.torrent.torrserver_utils import (
@@ -866,6 +877,7 @@ ROUTE_GROUPS = (
     (_is_stremio_action, _route_stremio),
     (_is_tmdb_action, _route_tmdb),
     (_is_trakt_action, _route_trakt),
+    (_is_simkl_action, _route_simkl),
     (_is_debrid_action, _route_debrid),
     (_is_telegram_action, _route_telegram),
     (_is_torrserver_action, _route_torrserver),

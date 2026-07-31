@@ -1915,6 +1915,70 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="simkl" label="90970">
+                <setting id="simkl_enabled" type="boolean" label="90971" help="90972">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="simkl_client_id" type="string" label="90973" help="90974">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="simkl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="simkl_access_token" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
+                </setting>
+                <setting id="simkl_authenticated" type="boolean">
+                    <default>false</default>
+                    <visible>false</visible>
+                    <control type="toggle" />
+                </setting>
+                <setting id="simkl_auth" type="action" label="90975" help="90976">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=simkl_auth)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="simkl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="simkl_logout" type="action" label="90977" help="90978">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=simkl_logout)</data>
+                    <control type="button" format="action">
+                        <close>false</close>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="simkl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+                <setting id="simkl_scrobbling_enabled" type="boolean" label="90979" help="90980">
+                    <default>true</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="simkl_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
+            </group>
             <group id="yamtrack" label="90958">
                 <setting id="yamtrack_enabled" type="boolean" label="90959" help="">
                     <default>false</default>

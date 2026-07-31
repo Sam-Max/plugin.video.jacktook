@@ -92,6 +92,22 @@ def test_route_trakt_dispatches_trakt_group_menu_action():
     trakt_group_menu.assert_called_once_with(params)
 
 
+def test_route_simkl_dispatches_auth_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.simkl_auth") as simkl_auth:
+        router._route_simkl("simkl_auth", {})
+
+    simkl_auth.assert_called_once_with({})
+
+
+def test_get_route_handler_returns_simkl_dispatcher():
+    router = _load_router_module()
+
+    assert router._get_route_handler("simkl_auth") is router._route_simkl
+    assert router._get_route_handler("simkl_logout") is router._route_simkl
+
+
 def test_route_downloads_dispatches_handle_download_file():
     router = _load_router_module()
 

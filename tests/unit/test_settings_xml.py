@@ -47,3 +47,28 @@ def test_yamtrack_settings_default_disabled_and_hide_token_input():
 
     assert enabled.findtext("default") == "false"
     assert token.find("control[@type='edit']/hidden").text == "true"
+
+
+def test_simkl_settings_default_disabled_and_persist_hidden_auth():
+    tree = ET.parse(SETTINGS_XML)
+
+    enabled = tree.find(".//setting[@id='simkl_enabled']")
+    client_id = tree.find(".//setting[@id='simkl_client_id']")
+    token = tree.find(".//setting[@id='simkl_access_token']")
+    authenticated = tree.find(".//setting[@id='simkl_authenticated']")
+
+    assert enabled.findtext("default") == "false"
+    assert client_id.find("control[@type='edit']") is not None
+    assert token.findtext("visible") == "false"
+    assert token.find("control[@type='edit']/hidden").text == "true"
+    assert authenticated.findtext("default") == "false"
+
+
+def test_simkl_client_id_is_an_empty_optional_advanced_override():
+    tree = ET.parse(SETTINGS_XML)
+
+    client_id = tree.find(".//setting[@id='simkl_client_id']")
+
+    assert client_id.findtext("default", "") == ""
+    assert client_id.get("label") == "90973"
+    assert client_id.get("help") == "90974"

@@ -75,6 +75,7 @@ SENSITIVE_SETTING_IDS = {
     "tmdb_api_key",
     "mdblist_api_key",
     "trakt_secret",
+    "simkl_access_token",
     "webdav_password",
 }
 
@@ -95,6 +96,7 @@ AUTH_STATE_SETTING_IDS = {
     "debrider_authorized",
     "stremio_loggedin",
     "is_trakt_auth",
+    "simkl_authenticated",
 }
 
 SCRUBBED_SETTING_IDS = SENSITIVE_SETTING_IDS | IDENTITY_SETTING_IDS | AUTH_STATE_SETTING_IDS

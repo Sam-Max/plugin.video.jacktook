@@ -367,6 +367,95 @@ def test_valid_movie_keeps_authenticated_trakt_scrobbling(monkeypatch):
     assert test_player._is_trakt_scrobble_active is True
 
 
+def test_simkl_scrobbling_queues_start_pause_resume_and_stop(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player._is_simkl_scrobble_active = False
+    test_player._is_trakt_scrobble_active = False
+    test_player._playback_was_paused = False
+    queued = MagicMock(return_value=True)
+    monkeypatch.setattr(player_module, "is_simkl_scrobbling_enabled", lambda: True)
+    monkeypatch.setattr(test_player, "_queue_simkl_scrobble", queued)
+
+    test_player._handle_simkl_scrobble()
+    monkeypatch.setattr(player_module, "get_visibility", lambda _condition: True)
+    test_player.handle_trakt_pause_resume()
+    monkeypatch.setattr(player_module, "get_visibility", lambda _condition: False)
+    test_player.handle_trakt_pause_resume()
+    monkeypatch.setattr(test_player, "_sync_yamtrack_watched", MagicMock())
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "close_busy_dialog", MagicMock())
+    monkeypatch.setattr(player_module, "clear_property", MagicMock())
+    test_player.handle_playback_stop()
+
+    assert [item.args[0] for item in queued.call_args_list] == ["start", "pause", "start", "stop"]
+    assert test_player._is_simkl_scrobble_active is False
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {
+            "mode": "tv",
+            "ids": {"tmdb_id": "opaque-id"},
+            "tv_data": {"season": 1, "episode": 2},
+        },
+        {
+            "mode": "tv",
+            "ids": {"tmdb_id": 123},
+            "tv_data": {"season": 1, "episode": 2},
+            "is_live_tv": True,
+        },
+        {
+            "mode": "tv",
+            "ids": {"tmdb_id": 123},
+            "tv_data": {"season": 1, "episode": 2},
+            "is_informational_placeholder": True,
+        },
+    ],
+)
+def test_simkl_skips_noncanonical_live_and_placeholder_items(monkeypatch, data):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data = data
+    test_player._is_simkl_scrobble_active = False
+    queued = MagicMock()
+    monkeypatch.setattr(player_module, "is_simkl_scrobbling_enabled", lambda: True)
+    monkeypatch.setattr(test_player, "_queue_simkl_scrobble", queued)
+
+    test_player._handle_simkl_scrobble()
+
+    queued.assert_not_called()
+    assert test_player._is_simkl_scrobble_active is False
+
+
+def test_simkl_tracks_season_zero_special_without_relaxing_trakt(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module, season=0, episode=1)
+    test_player._is_simkl_scrobble_active = False
+    queued = MagicMock(return_value=True)
+    monkeypatch.setattr(player_module, "is_simkl_scrobbling_enabled", lambda: True)
+    monkeypatch.setattr(test_player, "_queue_simkl_scrobble", queued)
+
+    test_player._handle_simkl_scrobble()
+
+    queued.assert_called_once_with("start")
+    assert test_player._is_simkl_scrobble_active is True
+    assert test_player._is_trakt_tracking_excluded() is True
+
+
+def test_simkl_worker_failure_is_contained(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    simkl = MagicMock(side_effect=RuntimeError("network down"))
+    log = MagicMock()
+    monkeypatch.setattr(player_module, "SimklClient", simkl)
+    monkeypatch.setattr(player_module, "kodilog", log)
+
+    player_module.JacktookPLayer._send_simkl_scrobble("start", {"progress": 0})
+
+    assert any("continuing playback" in str(item) for item in log.call_args_list)
+
+
 def test_run_does_not_add_next_episode_to_kodi_playlist():
     source = PLAYER_PATH.read_text()
     run_match = re.search(

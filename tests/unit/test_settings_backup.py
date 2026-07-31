@@ -41,6 +41,8 @@ def test_build_backup_payload_skips_action_settings_and_scrubs_sensitive_data(
         <setting id='jackett_apikey' type='string'><default /></setting>
         <setting id='stremio_email' type='string'><default /></setting>
         <setting id='is_trakt_auth' type='boolean'><default>false</default></setting>
+        <setting id='simkl_access_token' type='string'><default /></setting>
+        <setting id='simkl_authenticated' type='boolean'><default>false</default></setting>
         <setting id='some_action' type='action' />
       </group>
     </category>
@@ -51,6 +53,8 @@ def test_build_backup_payload_skips_action_settings_and_scrubs_sensitive_data(
         "jackett_apikey": "secret",
         "stremio_email": "user@example.com",
         "is_trakt_auth": "true",
+        "simkl_access_token": "simkl-token",
+        "simkl_authenticated": "true",
     }
 
     monkeypatch.setattr(

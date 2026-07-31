@@ -895,6 +895,50 @@ msgctxt "#30937"
 msgid "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
 msgstr "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
 
+msgctxt "#90970"
+msgid "Simkl Configuration"
+msgstr "Simkl Configuration"
+
+msgctxt "#90971"
+msgid "Enable Simkl"
+msgstr "Enable Simkl"
+
+msgctxt "#90972"
+msgid "Enable Simkl account integration."
+msgstr "Enable Simkl account integration."
+
+msgctxt "#90973"
+msgid "Advanced Simkl Client ID Override"
+msgstr "Advanced Simkl Client ID Override"
+
+msgctxt "#90974"
+msgid "Optional. Leave empty to use Jacktook's built-in Simkl application."
+msgstr "Optional. Leave empty to use Jacktook's built-in Simkl application."
+
+msgctxt "#90975"
+msgid "Authorize Simkl"
+msgstr "Authorize Simkl"
+
+msgctxt "#90976"
+msgid "Link your Simkl account using PIN authorization."
+msgstr "Link your Simkl account using PIN authorization."
+
+msgctxt "#90977"
+msgid "Reset Simkl Authorization"
+msgstr "Reset Simkl Authorization"
+
+msgctxt "#90978"
+msgid "Remove the saved Simkl access token from Jacktook."
+msgstr "Remove the saved Simkl access token from Jacktook."
+
+msgctxt "#90979"
+msgid "Enable Simkl Scrobbling"
+msgstr "Enable Simkl Scrobbling"
+
+msgctxt "#90980"
+msgid "Send movie and TV episode playback start, pause, resume, and stop events to Simkl."
+msgstr "Send movie and TV episode playback start, pause, resume, and stop events to Simkl."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

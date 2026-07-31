@@ -1366,6 +1366,18 @@ def trakt_auth_revoke(params):
         _notify_trakt_request_failure(error)
 
 
+def simkl_auth(params):
+    from lib.api.simkl import SimklClient
+
+    SimklClient().authenticate()
+
+
+def simkl_logout(params):
+    from lib.api.simkl import SimklClient
+
+    SimklClient().logout()
+
+
 def tb_auth(params):
     return debrid_navigation.tb_auth(params)
 
