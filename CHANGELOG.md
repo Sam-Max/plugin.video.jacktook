@@ -1,3 +1,23 @@
+## 1.16.0
+- Stremio: Add configurable addons, channel and genre catalog navigation, and integrated subtitle discovery and playback.
+- Sources: Add filtering by release group and improve Stremio source selection and catalog paging.
+- Library: Add Yamtrack synchronization for watched movies and episodes.
+- Torrents: Show only playable files, simplify folder paths, and preserve poster and episode metadata when handing playback to JackTorr.
+- Playback: Support trackerless Stremio torrents, prevent duplicate stream launches, and keep live TV playback independent of Trakt scrobbling.
+- Stremio: Improve compatibility with more addons, catalog filters, paging, and source formats; private subtitle retrieval now uses trusted sources only.
+- Search: Honor selected Stremio sources and keep episode results separated by season, including partial results from cancelled searches.
+- Trakt: Improve device authorization, token refresh, library synchronization, list paging, scrobbling, and recovery from temporary service errors.
+
+Spanish:
+- Stremio: Añadido soporte para addons configurables, navegación de catálogos por canales y géneros, y descubrimiento y reproducción integrados de subtítulos.
+- Fuentes: Añadido filtro por grupo de lanzamiento y mejorada la selección de fuentes Stremio y la paginación de catálogos.
+- Biblioteca: Añadida sincronización con Yamtrack para películas y episodios vistos.
+- Torrents: Mostrar solo archivos reproducibles, simplificar rutas de carpetas y conservar el póster y los metadatos de episodios al enviar la reproducción a TorrServer o JackTorr.
+- Reproducción: Añadido soporte para torrents Stremio sin trackers, prevención de inicios duplicados de streams y reproducción de TV en vivo independiente del scrobbling de Trakt.
+- Stremio: Mejorada la compatibilidad con más addons, filtros de catálogo, paginación y formatos de fuentes; la obtención de subtítulos privados ahora utiliza solo fuentes confiables.
+- Búsqueda: Respetada la selección de fuentes Stremio y separadas por temporada las cachés de resultados de episodios, incluidos los resultados parciales de búsquedas canceladas.
+- Trakt: Mejoradas la autorización por dispositivo, la renovación de tokens, la sincronización de biblioteca, la paginación de listas, el scrobbling y la recuperación ante errores temporales del servicio.
+
 ## 1.15.0
 - Debrid: Add Offcloud provider with OAuth device-flow authentication.
 - Stremio: Add rename aliases support and reorganize related settings.
