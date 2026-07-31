@@ -1,5 +1,7 @@
 import contextlib
+import math
 import time
+from datetime import datetime
 
 import requests
 import xbmc
@@ -64,6 +66,17 @@ class SimklClient:
         if isinstance(value, str) and value.strip().isdigit():
             return int(value.strip())
         return None
+
+    @staticmethod
+    def _is_iso8601_timestamp(value):
+        if not isinstance(value, str) or value != value.strip() or "T" not in value:
+            return False
+        normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+        try:
+            datetime.fromisoformat(normalized)
+        except ValueError:
+            return False
+        return True
 
     @classmethod
     def scrobble_payload(cls, data):
@@ -131,6 +144,110 @@ class SimklClient:
             return False
         if response.status_code >= 400:
             kodilog(f"[SIMKL] {action} rejected (HTTP {response.status_code}); continuing playback")
+            return False
+        return True
+
+    @classmethod
+    def playback_item(cls, session):
+        if not isinstance(session, dict):
+            return None
+        session_id = cls._positive_integer(session.get("id"))
+        if isinstance(session.get("progress"), bool):
+            return None
+        try:
+            progress = float(session.get("progress"))
+        except (TypeError, ValueError):
+            return None
+        if not session_id or not math.isfinite(progress) or progress < 0 or progress > 100:
+            return None
+        paused_at = session.get("paused_at")
+        if not cls._is_iso8601_timestamp(paused_at):
+            return None
+
+        if session.get("type") == "movie":
+            movie = session.get("movie")
+            ids = movie.get("ids") if isinstance(movie, dict) else None
+            tmdb_id = cls._positive_integer(ids.get("tmdb")) if isinstance(ids, dict) else None
+            title = movie.get("title") if isinstance(movie, dict) else None
+            if not tmdb_id or not isinstance(title, str) or not title.strip():
+                return None
+            return {
+                "query": title.strip(),
+                "mode": "movies",
+                "media_type": "movie",
+                "ids": {"tmdb_id": tmdb_id},
+                "tv_data": {},
+                "simkl_session_id": session_id,
+                "simkl_resume_progress": progress,
+                "paused_at": paused_at,
+            }
+
+        if session.get("type") != "episode":
+            return None
+        show, episode = session.get("show"), session.get("episode")
+        ids = show.get("ids") if isinstance(show, dict) else None
+        tmdb_id = cls._positive_integer(ids.get("tmdb")) if isinstance(ids, dict) else None
+        season = (
+            cls._non_negative_integer(episode.get("season")) if isinstance(episode, dict) else None
+        )
+        number = cls._positive_integer(episode.get("number")) if isinstance(episode, dict) else None
+        title = show.get("title") if isinstance(show, dict) else None
+        if (
+            not tmdb_id
+            or season is None
+            or not number
+            or not isinstance(title, str)
+            or not title.strip()
+        ):
+            return None
+        return {
+            "query": title.strip(),
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": {"tmdb_id": tmdb_id},
+            "tv_data": {"name": episode.get("title", ""), "season": season, "episode": number},
+            "simkl_session_id": session_id,
+            "simkl_resume_progress": progress,
+            "paused_at": paused_at,
+        }
+
+    def get_playback(self):
+        if not self.client_id or not self.access_token:
+            return []
+        try:
+            response = requests.get(
+                f"{self.BASE_URL}/sync/playback",
+                params=self._params,
+                headers=self._headers,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] playback retrieval rejected (HTTP {response.status_code})")
+                return []
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] playback retrieval failed ({type(error).__name__})")
+            return []
+        if not isinstance(result, list):
+            return []
+        return [item for item in (self.playback_item(session) for session in result) if item]
+
+    def delete_playback(self, session_id):
+        session_id = self._positive_integer(session_id)
+        if not session_id or not self.client_id or not self.access_token:
+            return False
+        try:
+            response = requests.delete(
+                f"{self.BASE_URL}/sync/playback/{session_id}",
+                params=self._params,
+                headers=self._headers,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+        except requests.RequestException as error:
+            kodilog(f"[SIMKL] playback deletion failed ({type(error).__name__})")
+            return False
+        if response.status_code != 204:
+            kodilog(f"[SIMKL] playback deletion rejected (HTTP {response.status_code})")
             return False
         return True
 
@@ -246,6 +363,14 @@ def is_simkl_scrobbling_enabled():
     return bool(
         get_setting("simkl_enabled")
         and get_setting("simkl_scrobbling_enabled")
+        and get_setting("simkl_authenticated")
+        and get_setting("simkl_access_token")
+    )
+
+
+def is_simkl_authenticated():
+    return bool(
+        get_setting("simkl_enabled")
         and get_setting("simkl_authenticated")
         and get_setting("simkl_access_token")
     )

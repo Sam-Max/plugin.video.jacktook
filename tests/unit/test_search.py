@@ -7,6 +7,7 @@ from lib.search import (
     SearchVariant,
     _build_title_fallback_queries,
     _check_search_caches,
+    _handle_super_quick_play,
     _is_source_enabled,
     _submit_search_tasks,
     run_search_entry,
@@ -21,6 +22,29 @@ def test_search_variant_values():
     assert SearchVariant.TITLE_YEAR == "title_year"
     assert SearchVariant.ORIGINAL_TITLE == "original_title"
     assert SearchVariant.ORIGINAL_TITLE_YEAR == "original_title_year"
+
+
+def test_super_quick_play_preserves_simkl_resume_metadata():
+    params = {
+        "ids": json.dumps({"tmdb_id": 123}),
+        "simkl_session_id": "9",
+        "simkl_resume_progress": "50",
+    }
+    playback_info = {"url": "https://stream.example/video"}
+    player = MagicMock()
+
+    with patch(
+        "lib.search.get_setting",
+        side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
+    ), \
+        patch("lib.search.cache.get", return_value=MagicMock()), \
+        patch("lib.search._resolve_cached_source", return_value=playback_info), \
+        patch("lib.search.JacktookPLayer", return_value=player):
+        assert _handle_super_quick_play(params) is True
+
+    assert playback_info["simkl_session_id"] == "9"
+    assert playback_info["simkl_resume_progress"] == "50"
+    player.run.assert_called_once_with(data=playback_info)
 
 
 def test_simple_search_submits_selected_stremio_addon_with_strict_whitelist():

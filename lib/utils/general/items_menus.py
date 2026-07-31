@@ -1,5 +1,6 @@
 from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
+from lib.utils.views.simkl_continue_watching import has_simkl_continue_watching_items
 
 trakt_tv_library_items = [
     {
@@ -503,6 +504,12 @@ root_menu_items = [
         "action": "continue_watching_menu",
         "condition": has_continue_watching_items,
     },  # Continue Watching
+    {
+        "name": "Simkl Continue Watching",
+        "icon": "continue_watching.png",
+        "action": "simkl_continue_watching",
+        "condition": has_simkl_continue_watching_items,
+    },
     {"name": 90007, "icon": "tv.png", "action": "tv_shows_items"},
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},
     {"name": 90009, "icon": "anime.png", "action": "anime_menu"},

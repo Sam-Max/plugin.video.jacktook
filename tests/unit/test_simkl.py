@@ -170,3 +170,110 @@ def test_logout_clears_persisted_auth(monkeypatch):
     assert client.access_token == ""
     assert settings.call_args_list[0].args == ("simkl_access_token", "")
     assert settings.call_args_list[1].args == ("simkl_authenticated", "false")
+
+
+def test_get_playback_maps_only_safe_canonical_sessions(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = [
+        {
+            "id": "10",
+            "type": "movie",
+            "progress": "42.5",
+            "paused_at": "2026-07-31T21:53:39.000Z",
+            "movie": {"title": "Movie", "ids": {"tmdb": "123"}},
+        },
+        {
+            "id": 11,
+            "type": "episode",
+            "progress": 12,
+            "paused_at": "2026-07-31T21:53:39+00:00",
+            "show": {"title": "Show", "ids": {"tmdb": 456}},
+            "episode": {"title": "Special", "season": 0, "number": 1},
+        },
+        {"id": 12, "type": "movie", "progress": 10, "movie": {"title": "Bad", "ids": {}}},
+        {"id": 13, "type": "episode", "progress": 10, "show": {"title": "Bad", "ids": {"tmdb": 1}}},
+        {
+            "id": 14,
+            "type": "movie",
+            "progress": True,
+            "movie": {"title": "Bad", "ids": {"tmdb": 1}},
+        },
+        {
+            "id": 15,
+            "type": "movie",
+            "progress": "nan",
+            "movie": {"title": "Bad", "ids": {"tmdb": 1}},
+        },
+    ]
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    items = client.get_playback()
+
+    assert [item["simkl_session_id"] for item in items] == [10, 11]
+    assert items[1]["tv_data"] == {"name": "Special", "season": 0, "episode": 1}
+    get.assert_called_once_with(
+        "https://api.simkl.com/sync/playback",
+        params=client._params,
+        headers=client._headers,
+        timeout=5,
+    )
+
+
+def test_get_playback_skips_missing_or_malformed_paused_at(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = [
+        {
+            "id": 1,
+            "type": "movie",
+            "progress": 10,
+            "movie": {"title": "Movie", "ids": {"tmdb": 1}},
+        },
+        {
+            "id": 2,
+            "type": "movie",
+            "progress": 10,
+            "paused_at": "not-a-timestamp",
+            "movie": {"title": "Movie", "ids": {"tmdb": 2}},
+        },
+        {
+            "id": 3,
+            "type": "movie",
+            "progress": 10,
+            "paused_at": "2026-07-31",
+            "movie": {"title": "Movie", "ids": {"tmdb": 3}},
+        },
+    ]
+    monkeypatch.setattr("lib.api.simkl.requests.get", MagicMock(return_value=response))
+
+    assert SimklClient("client-id", "token").get_playback() == []
+
+
+def test_get_playback_failure_is_empty_and_non_fatal(monkeypatch):
+    monkeypatch.setattr("lib.api.simkl.requests.get", MagicMock(side_effect=requests.Timeout()))
+
+    assert SimklClient("client-id", "token").get_playback() == []
+
+
+def test_delete_playback_uses_authenticated_delete_contract(monkeypatch):
+    response = MagicMock(status_code=204)
+    delete = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.delete", delete)
+    client = SimklClient("client-id", "token")
+
+    assert client.delete_playback("42") is True
+    delete.assert_called_once_with(
+        "https://api.simkl.com/sync/playback/42",
+        params=client._params,
+        headers=client._headers,
+        timeout=5,
+    )
+
+
+def test_delete_playback_rejects_invalid_id_and_preserves_session(monkeypatch):
+    delete = MagicMock()
+    monkeypatch.setattr("lib.api.simkl.requests.delete", delete)
+
+    assert SimklClient("client-id", "token").delete_playback(False) is False
+    delete.assert_not_called()

@@ -938,6 +938,7 @@ def play_autoscraped(params):
 def play_url(params):
     url = params.get("url")
     from xbmc import Player
+
     list_item = ListItem(label=params.get("name"), path=url)
     list_item.setPath(url)
     list_item.setProperty("IsPlayable", "true")
@@ -998,6 +999,7 @@ def play_trailer(params):
     if playback.get("source_type") == "adaptive" and playback.get("audio_url"):
         list_item.setProperty("inputstream.adaptive.manifest_type", "mpd")
     from xbmc import Player
+
     Player().play(video_url, list_item)
 
 
@@ -1007,6 +1009,7 @@ def play_from_pack(params):
     if not data:
         return
     from lib.player import JacktookPLayer
+
     player = JacktookPLayer()
     player.run(data=data)
     del player
@@ -1376,6 +1379,24 @@ def simkl_logout(params):
     from lib.api.simkl import SimklClient
 
     SimklClient().logout()
+
+
+def simkl_continue_watching(params):
+    from lib.utils.views.simkl_continue_watching import show_simkl_continue_watching
+
+    show_simkl_continue_watching()
+
+
+def simkl_resume(params):
+    from lib.search import run_search_entry
+
+    run_search_entry(params)
+
+
+def simkl_discard_playback(params):
+    from lib.utils.views.simkl_continue_watching import discard_simkl_playback
+
+    discard_simkl_playback(params)
 
 
 def tb_auth(params):

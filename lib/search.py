@@ -566,6 +566,10 @@ def _handle_super_quick_play(params: dict) -> bool:
             notification(translation(90144))
             return True
 
+        for key in ("simkl_session_id", "simkl_resume_progress"):
+            if key in params:
+                playback_info[key] = params[key]
+
         player = JacktookPLayer()
         player.run(data=playback_info)
         return True
@@ -652,6 +656,9 @@ def run_search_entry(params: dict):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
     skip_cancel = params.get("skip_cancel_on_back", False)
+    simkl_resume = {
+        key: params[key] for key in ("simkl_session_id", "simkl_resume_progress") if key in params
+    }
 
     variant = _normalize_search_variant(params.get("search_variant", SearchVariant.DEFAULT))
     title_language_mode = _normalize_title_language_mode(
@@ -755,6 +762,7 @@ def run_search_entry(params: dict):
                 mode,
                 preferred_group,
                 autoplay_context=autoplay_context,
+                playback_context=simkl_resume,
             )
             and not skip_cancel
         ):
@@ -772,6 +780,7 @@ def run_search_entry(params: dict):
             rescrape,
             direct,
             autoplay_context=autoplay_context,
+            playback_context=simkl_resume,
         )
         and not skip_cancel
     ):
@@ -1561,6 +1570,7 @@ def show_source_select(
     rescrape: bool,
     direct: bool = False,
     autoplay_context: Optional[str] = None,
+    playback_context: Optional[dict] = None,
 ) -> bool:
     rejection_reasons = []
     results = _prepare_stremio_results(
@@ -1584,6 +1594,8 @@ def show_source_select(
     if autoplay_context:
         item_info["playnext_context"] = True
         item_info["direct_play"] = True
+    if playback_context:
+        item_info.update(playback_context)
 
     if not direct and ids:
         item_info.update(build_media_metadata(ids, mode))
@@ -1601,6 +1613,7 @@ def auto_play(
     preferred_group=None,
     force_select=False,
     autoplay_context: Optional[str] = None,
+    playback_context: Optional[dict] = None,
 ) -> bool:
     if force_select:
         return False
@@ -1666,6 +1679,8 @@ def auto_play(
     if autoplay_context:
         playback_info["playnext_context"] = True
         playback_info["direct_play"] = True
+    if playback_context:
+        playback_info.update(playback_context)
 
     player = JacktookPLayer()
     player.run(data=playback_info)

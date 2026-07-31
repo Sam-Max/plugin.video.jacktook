@@ -72,6 +72,9 @@ class JacktookPLayer(xbmc.Player):
         self._is_simkl_scrobble_active = False
         self._playback_was_paused = False
         self._yamtrack_stop_attempted = False
+        self._simkl_resume_applied = False
+        self._simkl_resume_playback_observed = False
+        self._simkl_playback_delete_attempted = False
 
     def run(self, data=None):
         if data is None:
@@ -454,12 +457,12 @@ class JacktookPLayer(xbmc.Player):
 
     def handle_playback_start(self):
         try:
-            if (
-                self.getTotalTime() not in total_time_errors
-                and get_visibility(video_fullscreen_check)
-                and self.on_started
+            if self.getTotalTime() not in total_time_errors and get_visibility(
+                video_fullscreen_check
             ):
-                self.on_started()
+                self._apply_simkl_resume()
+                if self.on_started:
+                    self.on_started()
         except Exception as e:
             kodilog(f"Error in handle_playback_start: {e}")
 
@@ -472,6 +475,7 @@ class JacktookPLayer(xbmc.Player):
                 self.data["progress"] = self.watched_percentage
                 self.data["current_time"] = self.current_time
                 self.data["total_time"] = self.total_time
+                self._simkl_resume_playback_observed = True
         except Exception as e:
             kodilog(f"Error updating playback progress: {e}")
 
@@ -892,6 +896,7 @@ class JacktookPLayer(xbmc.Player):
             if self._is_simkl_scrobble_enabled():
                 self._queue_simkl_scrobble("stop")
             self._is_simkl_scrobble_active = False
+        self._delete_completed_simkl_playback()
 
         if not self._is_trakt_tracking_excluded():
             set_watched_file(self.data)
@@ -899,6 +904,46 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
         clear_property("jacktook_next_dialog_action")
         kodilog("[PLAYER] handle_playback_stop completed")
+
+    def _apply_simkl_resume(self):
+        if getattr(self, "_simkl_resume_applied", False):
+            return
+        try:
+            progress = float(self.data.get("simkl_resume_progress"))
+            total_time = float(self.getTotalTime())
+        except (TypeError, ValueError):
+            return
+        if progress <= 0 or progress >= 100 or total_time <= 0:
+            return
+        try:
+            self.seekTime(total_time * progress / 100)
+            self._simkl_resume_applied = True
+        except Exception as error:
+            kodilog(f"[SIMKL] resume seek failed; continuing playback ({type(error).__name__})")
+
+    def _delete_completed_simkl_playback(self):
+        if getattr(self, "_simkl_playback_delete_attempted", False):
+            return
+        if not getattr(self, "_simkl_resume_playback_observed", False):
+            return
+        session_id = SimklClient._positive_integer(self.data.get("simkl_session_id"))
+        try:
+            completed = float(self.data.get("progress", 0)) >= 90
+        except (TypeError, ValueError):
+            completed = False
+        if not session_id or not completed:
+            return
+        self._simkl_playback_delete_attempted = True
+        thread = Thread(target=self._delete_simkl_playback, args=(session_id,))
+        thread.daemon = True
+        thread.start()
+
+    @staticmethod
+    def _delete_simkl_playback(session_id):
+        try:
+            SimklClient().delete_playback(session_id)
+        except Exception as error:
+            kodilog(f"[SIMKL] playback deletion failed; preserving resume ({type(error).__name__})")
 
     def _sync_yamtrack_watched(self):
         if getattr(self, "_yamtrack_stop_attempted", False):
@@ -990,6 +1035,9 @@ class JacktookPLayer(xbmc.Player):
         self._is_simkl_scrobble_active = False
         self._playback_was_paused = False
         self._yamtrack_stop_attempted = False
+        self._simkl_resume_applied = False
+        self._simkl_resume_playback_observed = False
+        self._simkl_playback_delete_attempted = False
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))

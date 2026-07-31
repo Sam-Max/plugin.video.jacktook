@@ -150,7 +150,13 @@ def _is_trakt_action(action):
 
 
 def _is_simkl_action(action):
-    return action in ("simkl_auth", "simkl_logout")
+    return action in (
+        "simkl_auth",
+        "simkl_logout",
+        "simkl_continue_watching",
+        "simkl_resume",
+        "simkl_discard_playback",
+    )
 
 
 def _is_debrid_action(action):
@@ -516,9 +522,21 @@ def _route_telegram(action, params):
 
 
 def _route_simkl(action, params):
-    from lib.navigation import simkl_auth, simkl_logout
+    from lib.navigation import (
+        simkl_auth,
+        simkl_continue_watching,
+        simkl_discard_playback,
+        simkl_logout,
+        simkl_resume,
+    )
 
-    actions = {"simkl_auth": simkl_auth, "simkl_logout": simkl_logout}
+    actions = {
+        "simkl_auth": simkl_auth,
+        "simkl_logout": simkl_logout,
+        "simkl_continue_watching": simkl_continue_watching,
+        "simkl_resume": simkl_resume,
+        "simkl_discard_playback": simkl_discard_playback,
+    }
     actions[action](params)
 
 

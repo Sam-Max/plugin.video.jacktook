@@ -101,11 +101,22 @@ def test_route_simkl_dispatches_auth_action():
     simkl_auth.assert_called_once_with({})
 
 
+def test_route_simkl_dispatches_resume_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.simkl_resume") as simkl_resume:
+        router._route_simkl("simkl_resume", {"simkl_session_id": "9"})
+
+    simkl_resume.assert_called_once_with({"simkl_session_id": "9"})
+
+
 def test_get_route_handler_returns_simkl_dispatcher():
     router = _load_router_module()
 
     assert router._get_route_handler("simkl_auth") is router._route_simkl
     assert router._get_route_handler("simkl_logout") is router._route_simkl
+    assert router._get_route_handler("simkl_continue_watching") is router._route_simkl
+    assert router._get_route_handler("simkl_discard_playback") is router._route_simkl
 
 
 def test_route_downloads_dispatches_handle_download_file():
