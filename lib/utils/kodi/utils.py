@@ -805,6 +805,9 @@ def make_list_item(label="", path="", offscreen=True):
 
 def add_directory_items_batch(items):
     if items:
+        from lib.utils.simkl_indicators import apply_simkl_indicators
+
+        apply_simkl_indicators(items)
         addDirectoryItems(ADDON_HANDLE, items)
 
 

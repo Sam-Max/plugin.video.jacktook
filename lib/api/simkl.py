@@ -242,6 +242,47 @@ class SimklClient:
             return None
         return resolved_status
 
+    def get_watched(self, descriptors):
+        if not self.client_id or not self.access_token or not isinstance(descriptors, list):
+            return []
+        payload = []
+        for descriptor in descriptors:
+            if not isinstance(descriptor, tuple) or len(descriptor) not in (2, 4):
+                return []
+            media_type, tmdb_id = descriptor[:2]
+            tmdb_id = self._positive_integer(tmdb_id)
+            if media_type not in ("movie", "show", "episode") or not tmdb_id:
+                return []
+            item = {"movie" if media_type == "movie" else "show": {"ids": {"tmdb": tmdb_id}}}
+            if media_type == "episode":
+                season = self._non_negative_integer(descriptor[2])
+                episode = self._positive_integer(descriptor[3])
+                if season is None or not episode:
+                    return []
+                item["episode"] = {"season": season, "number": episode}
+            payload.append(item)
+        if not payload or len(payload) > 100:
+            return []
+        params = dict(self._params)
+        if any(descriptor[0] == "show" for descriptor in descriptors):
+            params["extended"] = "counters"
+        try:
+            response = requests.post(
+                f"{self.BASE_URL}/sync/watched",
+                params=params,
+                headers=self._headers,
+                json=payload,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] watched lookup rejected (HTTP {response.status_code})")
+                return []
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] watched lookup failed ({type(error).__name__})")
+            return []
+        return result if isinstance(result, list) else []
+
     @classmethod
     def playback_item(cls, session):
         if not isinstance(session, dict):

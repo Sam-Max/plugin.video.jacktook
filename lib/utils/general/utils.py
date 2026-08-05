@@ -416,12 +416,21 @@ def set_media_infoTag(list_item, data, fanart_data=None, mode="video", detailed=
     _set_artwork(list_item, data, fanart_data)
     _set_released_info(info_tag, data)
     _set_trakt_ui_state(list_item, info_tag, data, mode)
+    _set_simkl_indicator_identity(list_item, data, mode)
 
     if mode == "tv" or mode == "season" or mode == "episode":
         _set_show_info(info_tag, data, mode)
 
     if detailed:
         _set_detailed_info(info_tag, data, mode)
+
+
+def _set_simkl_indicator_identity(list_item, data, mode):
+    tmdb_id = data.get("id")
+    if not tmdb_id or mode not in ("movies", "tv"):
+        return
+    list_item.setProperty("jacktook.simkl.tmdb_id", str(tmdb_id))
+    list_item.setProperty("jacktook.simkl.media_type", "movie" if mode == "movies" else "show")
 
 
 def _set_basic_info(info_tag, data):

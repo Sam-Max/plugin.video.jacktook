@@ -175,6 +175,10 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
 
     list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")
+    list_item.setProperty("jacktook.simkl.tmdb_id", str(ids.get("tmdb_id", "")))
+    list_item.setProperty("jacktook.simkl.media_type", "episode")
+    list_item.setProperty("jacktook.simkl.season", str(season))
+    list_item.setProperty("jacktook.simkl.episode", str(episode_number))
     set_media_infoTag(list_item, data=episode, fanart_data=fanart_details, mode="episode")
 
     context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids)
