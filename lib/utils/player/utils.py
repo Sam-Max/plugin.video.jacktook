@@ -117,7 +117,7 @@ def get_torrent_url_for_client(
     if torrent_client in [Players.TORREST]:
         return get_torrest_url(magnet, url)
     elif torrent_client in [Players.ELEMENTUM]:
-        return get_elementum_url(magnet, url, mode, ids)
+        return get_elementum_url(magnet, url, mode, ids, data=data)
     elif torrent_client in [Players.JACKTORR]:
         jacktorr_data = dict(data or {})
         jacktorr_data.pop("file_idx", None)
@@ -148,6 +148,7 @@ def get_elementum_url(
     url: str,
     mode: str,
     ids: Any,
+    data: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
     if not is_elementum_addon():
         if Dialog().yesno(
@@ -162,13 +163,30 @@ def get_elementum_url(
             return None
 
     tmdb_id = ids.get("tmdb_id", "") if isinstance(ids, dict) else ""
-
     uri = url or magnet
 
-    if uri:
-        return f"plugin://plugin.video.elementum/play?uri={quote(uri)}&type={mode}&tmdb={tmdb_id}"
-    else:
+    if not uri:
         raise TorrentException("No magnet or url found for Elementum playback")
+
+    episode_params = ""
+    tv_data = (data or {}).get("tv_data")
+    if mode == "tv" and isinstance(tv_data, dict):
+        season = tv_data.get("season")
+        episode = tv_data.get("episode")
+        if all(
+            not isinstance(value, bool) and str(value).isdigit()
+            for value in (tmdb_id, season, episode)
+        ):
+            episode_params = (
+                f"&show={quote(str(tmdb_id))}"
+                f"&season={quote(str(season))}"
+                f"&episode={quote(str(episode))}"
+            )
+
+    return (
+        f"plugin://plugin.video.elementum/play?uri={quote(uri)}"
+        f"&type={mode}&tmdb={tmdb_id}{episode_params}"
+    )
 
 
 def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = None) -> Optional[str]:
