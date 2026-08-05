@@ -25,6 +25,7 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+from lib.utils.simkl_context import add_simkl_history_context_menu
 
 
 class BaseTmdbClient:
@@ -40,6 +41,7 @@ class BaseTmdbClient:
                     + add_trakt_favorites_context_menu("movies", ids)
                     + add_trakt_custom_list_context_menu("movies", ids)
                 )
+            context_menu += add_simkl_history_context_menu("movie", ids.get("tmdb_id"))
             list_item.addContextMenuItems(context_menu)
             list_item.setProperty("IsPlayable", "true")
             is_folder = False

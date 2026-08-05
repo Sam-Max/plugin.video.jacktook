@@ -25,6 +25,9 @@ def test_movie_item_adds_trakt_context_actions_when_authenticated():
     ), patch(
         "lib.clients.tmdb.base.add_trakt_custom_list_context_menu",
         return_value=[("customlist", "cmd")],
+    ), patch(
+        "lib.clients.tmdb.base.add_simkl_history_context_menu",
+        return_value=[("simkl", "cmd")],
     ), patch("lib.clients.tmdb.base.add_kodi_dir_item"):
         BaseTmdbClient.add_media_directory_item(list_item, "movies", "Demo Movie", ids)
 
@@ -36,6 +39,7 @@ def test_movie_item_adds_trakt_context_actions_when_authenticated():
             ("collection", "cmd"),
             ("favorites", "cmd"),
             ("customlist", "cmd"),
+            ("simkl", "cmd"),
         ]
     )
     list_item.setProperty.assert_called_once_with("IsPlayable", "true")

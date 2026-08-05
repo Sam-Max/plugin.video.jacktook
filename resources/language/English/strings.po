@@ -975,6 +975,30 @@ msgctxt "#90990"
 msgid "Unable to update Simkl status."
 msgstr "Unable to update Simkl status."
 
+msgctxt "#90991"
+msgid "Mark as Watched on Simkl"
+msgstr "Mark as Watched on Simkl"
+
+msgctxt "#90992"
+msgid "Mark as Unwatched on Simkl"
+msgstr "Mark as Unwatched on Simkl"
+
+msgctxt "#90993"
+msgid "Remove Movie from Simkl?"
+msgstr "Remove Movie from Simkl?"
+
+msgctxt "#90994"
+msgid "Removing a movie from its Simkl watch history also removes it from your Simkl library. Continue?"
+msgstr "Removing a movie from its Simkl watch history also removes it from your Simkl library. Continue?"
+
+msgctxt "#90995"
+msgid "Simkl watch history updated."
+msgstr "Simkl watch history updated."
+
+msgctxt "#90996"
+msgid "Unable to update Simkl watch history."
+msgstr "Unable to update Simkl watch history."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

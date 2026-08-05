@@ -284,6 +284,74 @@ class SimklClient:
         return result if isinstance(result, list) else []
 
     @classmethod
+    def history_payload(cls, media_type, tmdb_id, season=None, episode=None):
+        tmdb_id = cls._positive_integer(tmdb_id)
+        if not tmdb_id:
+            return None
+        if media_type == "movie":
+            return {"movies": [{"ids": {"tmdb": tmdb_id}}]}
+        if media_type != "episode":
+            return None
+        season = cls._non_negative_integer(season)
+        episode = cls._positive_integer(episode)
+        if season is None or not episode:
+            return None
+        return {
+            "shows": [
+                {
+                    "ids": {"tmdb": tmdb_id},
+                    "seasons": [{"number": season, "episodes": [{"number": episode}]}],
+                }
+            ]
+        }
+
+    @staticmethod
+    def _history_change_confirmed(result, action, media_type):
+        if not isinstance(result, dict):
+            return False
+        expected_section = "added" if action == "add" else "deleted"
+        expected_key = "movies" if media_type == "movie" else "episodes"
+        changes = result.get(expected_section)
+        if (
+            not isinstance(changes, dict)
+            or set(changes) != {expected_key}
+            or isinstance(changes.get(expected_key), bool)
+            or changes.get(expected_key) != 1
+        ):
+            return False
+        not_found = result.get("not_found")
+        return (
+            isinstance(not_found, dict)
+            and set(not_found) == {expected_key}
+            and isinstance(not_found.get(expected_key), list)
+            and not not_found[expected_key]
+        )
+
+    def update_history(self, action, media_type, tmdb_id, season=None, episode=None):
+        if action not in ("add", "remove") or not self.client_id or not self.access_token:
+            return False
+        payload = self.history_payload(media_type, tmdb_id, season, episode)
+        if payload is None:
+            return False
+        endpoint = "history" if action == "add" else "history/remove"
+        try:
+            response = requests.post(
+                f"{self.BASE_URL}/sync/{endpoint}",
+                params=self._params,
+                headers=self._headers,
+                json=payload,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] history {action} rejected (HTTP {response.status_code})")
+                return False
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] history {action} failed ({type(error).__name__})")
+            return False
+        return self._history_change_confirmed(result, action, media_type)
+
+    @classmethod
     def playback_item(cls, session):
         if not isinstance(session, dict):
             return None

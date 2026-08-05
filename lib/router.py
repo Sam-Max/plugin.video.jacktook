@@ -158,6 +158,7 @@ def _is_simkl_action(action):
         "simkl_library_statuses",
         "simkl_library_items",
         "simkl_move_to_status",
+        "simkl_update_history",
         "simkl_resume",
         "simkl_discard_playback",
     )
@@ -536,6 +537,7 @@ def _route_simkl(action, params):
         simkl_logout,
         simkl_move_to_status,
         simkl_resume,
+        simkl_update_history,
     )
 
     actions = {
@@ -546,6 +548,7 @@ def _route_simkl(action, params):
         "simkl_library_statuses": simkl_library_statuses,
         "simkl_library_items": simkl_library_items,
         "simkl_move_to_status": simkl_move_to_status,
+        "simkl_update_history": simkl_update_history,
         "simkl_resume": simkl_resume,
         "simkl_discard_playback": simkl_discard_playback,
     }

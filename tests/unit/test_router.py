@@ -120,6 +120,16 @@ def test_route_simkl_dispatches_library_action():
     simkl_library_statuses.assert_called_once_with(params)
 
 
+def test_route_simkl_dispatches_history_update_action():
+    router = _load_router_module()
+
+    params = {"operation": "add", "media_type": "movie", "tmdb_id": "42"}
+    with patch("lib.navigation.simkl_update_history") as simkl_update_history:
+        router._route_simkl("simkl_update_history", params)
+
+    simkl_update_history.assert_called_once_with(params)
+
+
 def test_get_route_handler_returns_simkl_dispatcher():
     router = _load_router_module()
 
@@ -129,6 +139,7 @@ def test_get_route_handler_returns_simkl_dispatcher():
     assert router._get_route_handler("simkl_discard_playback") is router._route_simkl
     assert router._get_route_handler("simkl_library") is router._route_simkl
     assert router._get_route_handler("simkl_move_to_status") is router._route_simkl
+    assert router._get_route_handler("simkl_update_history") is router._route_simkl
 
 
 def test_route_downloads_dispatches_handle_download_file():

@@ -1411,6 +1411,12 @@ def simkl_move_to_status(params):
     move_simkl_item_to_status(params)
 
 
+def simkl_update_history(params):
+    from lib.utils.views.simkl_history import update_simkl_history
+
+    update_simkl_history(params)
+
+
 def simkl_resume(params):
     from lib.search import run_search_entry
 
