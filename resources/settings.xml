@@ -1947,6 +1947,18 @@
                     <visible>false</visible>
                     <control type="toggle" />
                 </setting>
+                <setting id="simkl_sync_activities" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <control type="edit" format="string">
+                        <hidden>true</hidden>
+                    </control>
+                </setting>
+                <setting id="simkl_sync_interval" type="integer">
+                    <default>15</default>
+                    <visible>false</visible>
+                    <control type="spinner" format="integer" />
+                </setting>
                 <setting id="simkl_auth" type="action" label="90975" help="90976">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=simkl_auth)</data>
                     <control type="button" format="action">

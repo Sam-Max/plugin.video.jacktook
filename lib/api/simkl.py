@@ -6,6 +6,17 @@ from datetime import datetime
 import requests
 import xbmc
 
+from lib.api.simkl_cache import (
+    SIMKL_LIBRARY_CACHE_PREFIX,
+    SIMKL_PLAYBACK_CACHE_KEY,
+    clear_simkl_cache,
+    get_cached,
+    invalidate_library_cache,
+    invalidate_playback_cache,
+    invalidate_watched_cache,
+    set_cached,
+    watched_cache_key,
+)
 from lib.clients.simkl import SIMKL_CLIENT_ID
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import ADDON_NAME, ADDON_PATH, ADDON_VERSION
@@ -147,6 +158,8 @@ class SimklClient:
         if response.status_code >= 400:
             kodilog(f"[SIMKL] {action} rejected (HTTP {response.status_code}); continuing playback")
             return False
+        with contextlib.suppress(Exception):
+            invalidate_playback_cache()
         return True
 
     @classmethod
@@ -182,6 +195,10 @@ class SimklClient:
             or not self.access_token
         ):
             return []
+        cache_key = f"{SIMKL_LIBRARY_CACHE_PREFIX}{media_type}.{status}"
+        cached_items = get_cached(cache_key)
+        if isinstance(cached_items, list):
+            return cached_items
         params = dict(self._params, extended="full")
         try:
             response = requests.get(
@@ -199,11 +216,13 @@ class SimklClient:
             return []
         if not isinstance(result, list):
             return []
-        return [
+        items = [
             library_item
             for library_item in (self.library_item(item, media_type, status) for item in result)
             if library_item
         ]
+        set_cached(cache_key, items)
+        return items
 
     def move_to_library_status(self, media_type, tmdb_id, status):
         tmdb_id = self._positive_integer(tmdb_id)
@@ -240,6 +259,9 @@ class SimklClient:
             or resolved_status not in self.allowed_library_statuses(media_type)
         ):
             return None
+        with contextlib.suppress(Exception):
+            invalidate_library_cache()
+            invalidate_watched_cache()
         return resolved_status
 
     def get_watched(self, descriptors):
@@ -263,6 +285,10 @@ class SimklClient:
             payload.append(item)
         if not payload or len(payload) > 100:
             return []
+        cache_key = watched_cache_key(descriptors)
+        cached_items = get_cached(cache_key)
+        if isinstance(cached_items, list):
+            return cached_items
         params = dict(self._params)
         if any(descriptor[0] == "show" for descriptor in descriptors):
             params["extended"] = "counters"
@@ -281,7 +307,10 @@ class SimklClient:
         except (requests.RequestException, ValueError) as error:
             kodilog(f"[SIMKL] watched lookup failed ({type(error).__name__})")
             return []
-        return result if isinstance(result, list) else []
+        if not isinstance(result, list):
+            return []
+        set_cached(cache_key, result)
+        return result
 
     @classmethod
     def history_payload(cls, media_type, tmdb_id, season=None, episode=None):
@@ -349,7 +378,11 @@ class SimklClient:
         except (requests.RequestException, ValueError) as error:
             kodilog(f"[SIMKL] history {action} failed ({type(error).__name__})")
             return False
-        return self._history_change_confirmed(result, action, media_type)
+        changed = self._history_change_confirmed(result, action, media_type)
+        if changed:
+            with contextlib.suppress(Exception):
+                invalidate_watched_cache()
+        return changed
 
     @classmethod
     def playback_item(cls, session):
@@ -418,6 +451,9 @@ class SimklClient:
     def get_playback(self):
         if not self.client_id or not self.access_token:
             return []
+        cached_items = get_cached(SIMKL_PLAYBACK_CACHE_KEY)
+        if isinstance(cached_items, list):
+            return cached_items
         try:
             response = requests.get(
                 f"{self.BASE_URL}/sync/playback",
@@ -434,7 +470,28 @@ class SimklClient:
             return []
         if not isinstance(result, list):
             return []
-        return [item for item in (self.playback_item(session) for session in result) if item]
+        items = [item for item in (self.playback_item(session) for session in result) if item]
+        set_cached(SIMKL_PLAYBACK_CACHE_KEY, items)
+        return items
+
+    def get_activities(self):
+        if not self.client_id or not self.access_token:
+            return None
+        try:
+            response = requests.get(
+                f"{self.BASE_URL}/sync/activities",
+                params=self._params,
+                headers=self._headers,
+                timeout=self.REQUEST_TIMEOUT,
+            )
+            if response.status_code >= 400:
+                kodilog(f"[SIMKL] activity retrieval rejected (HTTP {response.status_code})")
+                return None
+            result = response.json()
+        except (requests.RequestException, ValueError) as error:
+            kodilog(f"[SIMKL] activity retrieval failed ({type(error).__name__})")
+            return None
+        return result if isinstance(result, dict) else None
 
     def delete_playback(self, session_id):
         session_id = self._positive_integer(session_id)
@@ -453,6 +510,8 @@ class SimklClient:
         if response.status_code != 204:
             kodilog(f"[SIMKL] playback deletion rejected (HTTP {response.status_code})")
             return False
+        with contextlib.suppress(Exception):
+            invalidate_playback_cache()
         return True
 
     def request_pin(self):
@@ -544,6 +603,7 @@ class SimklClient:
                     and result.get("access_token")
                 ):
                     self.access_token = str(result["access_token"])
+                    clear_simkl_cache()
                     set_setting("simkl_access_token", self.access_token)
                     set_setting("simkl_authenticated", "true")
                     notification("Simkl authorization completed.", time=3000)
@@ -558,8 +618,10 @@ class SimklClient:
 
     def logout(self):
         self.access_token = ""
+        clear_simkl_cache()
         set_setting("simkl_access_token", "")
         set_setting("simkl_authenticated", "false")
+        set_setting("simkl_sync_activities", "")
         notification("Simkl authorization removed.", time=3000)
 
 

@@ -168,8 +168,25 @@ def test_logout_clears_persisted_auth(monkeypatch):
     client.logout()
 
     assert client.access_token == ""
-    assert settings.call_args_list[0].args == ("simkl_access_token", "")
-    assert settings.call_args_list[1].args == ("simkl_authenticated", "false")
+    assert ("simkl_access_token", "") in [call.args for call in settings.call_args_list]
+    assert ("simkl_authenticated", "false") in [call.args for call in settings.call_args_list]
+    assert ("simkl_sync_activities", "") in [call.args for call in settings.call_args_list]
+
+
+def test_get_activities_uses_authenticated_simkl_contract(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {"all": "2026-08-05T12:00:00Z"}
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    assert client.get_activities() == {"all": "2026-08-05T12:00:00Z"}
+    get.assert_called_once_with(
+        "https://api.simkl.com/sync/activities",
+        params=client._params,
+        headers=client._headers,
+        timeout=5,
+    )
 
 
 def test_get_playback_maps_only_safe_canonical_sessions(monkeypatch):

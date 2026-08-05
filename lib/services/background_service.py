@@ -9,6 +9,7 @@ import xbmcvfs
 from lib.api.trakt.base_cache import setup_databases
 from lib.services.migrations import run_migrations
 from lib.services.preloader import StartupPreloader
+from lib.services.simkl_sync import SimklSyncService
 from lib.services.trakt_sync import TraktSyncService
 from lib.updater import updates_check_addon
 from lib.utils.kodi.settings import update_delay
@@ -220,6 +221,7 @@ class JacktookMOnitor(xbmc.Monitor):
         run_migrations()
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
+        Thread(target=SimklSyncService().run).start()
         Thread(target=DebridExpirationCheck().run).start()
         StartupPreloader().run()
         DownloaderSetup().run()
