@@ -13,6 +13,7 @@ from lib.utils.debrid.debrid_utils import (
 )
 from lib.utils.general.utils import Indexer, IndexerType, truncate_text
 from lib.utils.kodi.logging import summarize_locator_for_log
+from lib.utils.parsers.pack_parser import detect_pack_scope
 from lib.utils.kodi.utils import ADDON, kodilog, translation
 from lib.clients.stremio.playback import resolve_stremio_playback_url
 
@@ -237,6 +238,22 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
         pack_select: bool = False,
     ) -> Dict[str, Any]:
         """Prepare the source data dictionary for resolving playback."""
+        tv_data = self.item_information.get("tv_data")
+        current_season = tv_data.get("season") if isinstance(tv_data, dict) else None
+        pack_scope = detect_pack_scope(
+            source.title,
+            current_season=current_season,
+            source_is_pack=bool(source.isPack or pack_select),
+        )
+        kodilog(
+            "Playback pack scope: type={!r}, seasons={!r}, reason={!r}, source={!r}".format(
+                pack_scope["pack_type"],
+                pack_scope["pack_seasons"],
+                pack_scope["pack_reason"],
+                source.title,
+            )
+        )
+
         playback_data = {
             "type": source.type,
             "indexer": source.indexer,
@@ -246,11 +263,15 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "title": self.item_information.get("title")
             or self.item_information.get("query")
             or source.title,
+            "source_title": source.title,
             "is_torrent": is_torrent,
-            "is_pack": pack_select,
+            "is_pack": pack_scope["is_pack"],
+            "pack_type": pack_scope["pack_type"],
+            "pack_seasons": pack_scope["pack_seasons"],
+            "pack_reason": pack_scope["pack_reason"],
             "mode": self.item_information.get("mode"),
             "ids": self.item_information.get("ids"),
-            "tv_data": self.item_information.get("tv_data"),
+            "tv_data": tv_data,
             "poster": self.item_information.get("poster"),
             "stream_subtitles": source.streamSubtitles,
         }

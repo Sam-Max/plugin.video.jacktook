@@ -1,3 +1,4 @@
+import json
 import sys
 from types import ModuleType
 from unittest.mock import MagicMock, call
@@ -59,13 +60,22 @@ def test_playnext_modal_waits_before_publishing_stop_handoff(monkeypatch):
         lambda key, value: events.append(("set_property", key, value)),
     )
 
-    custom_dialogs.run_next_dialog({"item_info": "{}"})
+    custom_dialogs.run_next_dialog(
+        {
+            "item_info": json.dumps(
+                {"playback_session_id": "owner-session"}
+            )
+        }
+    )
 
-    assert events == [
-        "modal_closed",
-        ("sleep", 200),
-        ("set_property", "jacktook_next_dialog_action", "next_episode"),
-    ]
+    assert events[:2] == ["modal_closed", ("sleep", 200)]
+    event, key, raw_payload = events[2]
+    assert event == "set_property"
+    assert key == "jacktook_next_dialog_action"
+    assert json.loads(raw_payload) == {
+        "action": "next_episode",
+        "session_id": "owner-session",
+    }
 
 
 def test_handle_next_dialog_action_ignores_playlist_advance_and_uses_handler(monkeypatch):

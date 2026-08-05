@@ -133,6 +133,7 @@ def source_select(item_info: Dict[str, str], xml_file: str, sources: List[Torren
 
 
 def run_next_dialog(params):
+    playback_session_id = ""
     try:
         playlist_size = PLAYLIST.size()
         playlist_pos = PLAYLIST.getposition() if playlist_size > 0 else -1
@@ -143,6 +144,9 @@ def run_next_dialog(params):
     window = None
     try:
         item_information = json.loads(params["item_info"])
+        playback_session_id = str(
+            item_information.get("playback_session_id") or ""
+        )
         if playlist_size > 0 and playlist_pos >= 0 and playlist_pos < playlist_size - 1:
             try:
                 next_item = PLAYLIST[playlist_pos + 1]
@@ -167,11 +171,22 @@ def run_next_dialog(params):
 
         if action == "next_episode":
             # Let Kodi finish restoring VideoNav focus after the modal close
-            # animation before the player monitor consumes this handoff.
+            # animation before the owning player monitor consumes this handoff.
             sleep(200)
-            set_property("jacktook_next_dialog_action", "next_episode")
-        else:
-            clear_property("jacktook_next_dialog_action")
+            if playback_session_id:
+                set_property(
+                    "jacktook_next_dialog_action",
+                    json.dumps(
+                        {
+                            "action": "next_episode",
+                            "session_id": playback_session_id,
+                        }
+                    ),
+                )
+            else:
+                kodilog(
+                    "[PLAYNEXT] Ignoring next action without playback session"
+                )
 
 
 def run_resume_dialog(params):
