@@ -3,6 +3,7 @@ from json import dumps as json_dumps
 from json import loads
 from threading import Thread
 from typing import Optional
+from uuid import uuid4
 
 import xbmc
 from xbmc import getCondVisibility as get_visibility
@@ -39,11 +40,14 @@ from lib.utils.kodi.utils import (
 )
 from lib.utils.player.utils import (
     autoscrape_next_episode,
+    build_elementum_pack_next_playback,
     get_autoscrape_cache_key,
     get_autoscrape_results_cache_key,
 )
 
 AUTOPLAY_CONTEXT_NEXT_EPISODE = 1
+ACTIVE_PLAYER_SESSION_PROPERTY = "jacktook_active_player_session"
+PLAYNEXT_ACTION_PROPERTY = "jacktook_next_dialog_action"
 total_time_errors = ("0.0", "", 0.0, None)
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 
@@ -75,11 +79,55 @@ class JacktookPLayer(xbmc.Player):
         self._simkl_resume_applied = False
         self._simkl_resume_playback_observed = False
         self._simkl_playback_delete_attempted = False
+        self.playback_session_id = ""
+        self._was_superseded = False
+
+    def _activate_playback_session(self):
+        self.playback_session_id = uuid4().hex
+        self.data["playback_session_id"] = self.playback_session_id
+        set_property(ACTIVE_PLAYER_SESSION_PROPERTY, self.playback_session_id)
+        clear_property(PLAYNEXT_ACTION_PROPERTY)
+        kodilog(
+            f"[PLAYER] Activated playback session {self.playback_session_id[:8]}"
+        )
+
+    def _owns_playback_session(self) -> bool:
+        return bool(self.playback_session_id) and (
+            get_property(ACTIVE_PLAYER_SESSION_PROPERTY)
+            == self.playback_session_id
+        )
+
+    def _consume_next_dialog_action(self) -> bool:
+        raw_action = get_property(PLAYNEXT_ACTION_PROPERTY)
+        if not raw_action:
+            return False
+        try:
+            payload = loads(raw_action)
+        except (TypeError, ValueError):
+            kodilog(
+                f"[PLAYNEXT] Ignoring unscoped action payload: {raw_action!r}"
+            )
+            return False
+        if not isinstance(payload, dict):
+            return False
+        if payload.get("action") != "next_episode":
+            return False
+        if payload.get("session_id") != self.playback_session_id:
+            return False
+        clear_property(PLAYNEXT_ACTION_PROPERTY)
+        return True
+
+    def _release_playback_session(self):
+        if not self._owns_playback_session():
+            return
+        clear_property(PLAYNEXT_ACTION_PROPERTY)
+        clear_property(ACTIVE_PLAYER_SESSION_PROPERTY)
 
     def run(self, data=None):
         if data is None:
             data = {}
         self.set_constants(data)
+        self._activate_playback_session()
         self.clear_playback_properties()
         if not self._is_trakt_tracking_excluded():
             self.add_external_trakt_scrolling()
@@ -97,6 +145,12 @@ class JacktookPLayer(xbmc.Player):
             self.play_video(self.list_item)
         except Exception as e:
             self.run_error(e)
+
+        if self._was_superseded:
+            kodilog(
+                "[PLAYER] run() superseded; skipping PlayNext queue drain"
+            )
+            return
 
         had_nextep = self._drain_nextep_queue()
         kodilog(f"[PLAYER] _drain_nextep_queue returned had_nextep={had_nextep}")
@@ -121,9 +175,14 @@ class JacktookPLayer(xbmc.Player):
             )
 
             if _auto_play_enabled() or results is None:
-                # Autoplay or resolved data: play directly (video is already stopped)
+                # This is an internal handoff after the previous plugin action
+                # has already finished resolving. setResolvedUrl() no longer has
+                # a pending Kodi request to answer, so mark the new playback for
+                # an explicit Player.play() call.
+                handoff_data = dict(data)
+                handoff_data["direct_playback_handoff"] = True
                 player = JacktookPLayer()
-                player.run(data=data)
+                player.run(data=handoff_data)
                 del player
             else:
                 # Manual: show source select (safe context — no video playing)
@@ -166,12 +225,20 @@ class JacktookPLayer(xbmc.Player):
             self.handle_subtitles(list_item)
             if self.url.startswith(("http://", "https://", "file://")):
                 list_item.setPath(self.url)
-            # Signal Kodi that the plugin action is a playback (required to
-            # avoid spinners when run() returns after video stops).
-            setResolvedUrl(ADDON_HANDLE, True, list_item)
-            # setResolvedUrl starts both direct streams and external plugin
-            # URLs. Calling Player().play() afterwards opens the stream twice.
-            kodilog("[PLAYER] play_video: calling setResolvedUrl only")
+            if self.data.get("direct_playback_handoff"):
+                # The original plugin resolution has already completed. Start
+                # the queued external-plugin URL explicitly instead of trying
+                # to resolve a stale addon handle.
+                kodilog(
+                    "[PLAYER] play_video: calling Player.play for internal "
+                    "PlayNext handoff"
+                )
+                self.play(self.url, list_item)
+            else:
+                # Normal plugin entry point: answer Kodi's pending resolution.
+                # Calling Player.play() here as well would open the stream twice.
+                setResolvedUrl(ADDON_HANDLE, True, list_item)
+                kodilog("[PLAYER] play_video: calling setResolvedUrl only")
             self.monitor()
             kodilog("[PLAYER] play_video: monitor() returned")
         except Exception as e:
@@ -303,6 +370,12 @@ class JacktookPLayer(xbmc.Player):
 
         try:
             while not self.isPlayingVideo():
+                if not self._owns_playback_session():
+                    self._was_superseded = True
+                    kodilog(
+                        "[PLAYER] monitor superseded while waiting for playback"
+                    )
+                    return
                 if self.kodi_monitor.abortRequested():
                     kodilog("[PLAYER] monitor: abort requested while waiting for video to start")
                     return
@@ -331,6 +404,12 @@ class JacktookPLayer(xbmc.Player):
 
             # Monitor loop
             while self.isPlayingVideo():
+                if not self._owns_playback_session():
+                    self._was_superseded = True
+                    kodilog(
+                        "[PLAYER] monitor superseded by a newer playback session"
+                    )
+                    return
                 self.update_playback_progress()
                 self.handle_trakt_pause_resume()
                 self.check_autoscrape_threshold()
@@ -344,7 +423,7 @@ class JacktookPLayer(xbmc.Player):
                 self.check_stinger_notification()
 
                 # Handle pending next-episode action from dialog
-                if get_property("jacktook_next_dialog_action") == "next_episode":
+                if self._consume_next_dialog_action():
                     self._handle_next_dialog_action()
 
                 sleep(1000)
@@ -355,8 +434,16 @@ class JacktookPLayer(xbmc.Player):
         except Exception:
             self.kill_dialog()
         finally:
-            kodilog("[PLAYER] monitor: finally block - clearing playback properties")
-            self.clear_playback_properties()
+            if self._owns_playback_session():
+                kodilog(
+                    "[PLAYER] monitor: owner cleanup for playback session"
+                )
+                self.clear_playback_properties()
+                self._release_playback_session()
+            else:
+                kodilog(
+                    "[PLAYER] monitor: superseded session; skipping global cleanup"
+                )
         kodilog("[PLAYER] monitor: exiting")
 
     def handle_subtitles(self, list_item):
@@ -621,8 +708,23 @@ class JacktookPLayer(xbmc.Player):
         set_property("jacktook_consecutive_autoplays", str(count))
         return False
 
+    def _queue_elementum_pack_next(self, next_tv_data: dict) -> bool:
+        """Queue the next episode from the currently selected Elementum pack."""
+        next_data = build_elementum_pack_next_playback(self.data, next_tv_data)
+        if not next_data:
+            return False
+
+        JacktookPLayer._nextep_queue.append({"data": next_data})
+        kodilog(
+            f"[PLAYNEXT] Queued same Elementum pack for "
+            f"S{next_tv_data.get('season')}E{next_tv_data.get('episode')}"
+        )
+        self.stop()
+        clear_property("jacktook_next_dialog_action")
+        return True
+
     def _queue_from_autoscrape_cache(self, next_tv_data: dict, ids: dict) -> bool:
-        """Check autoscrape cache and if hit, queue next episode + STOP player."""
+        """Queue resolved autoplay data or raw results for manual selection."""
         id_value = ids.get("original_id") or ids.get("imdb_id") or ids.get("tmdb_id")
         if id_value is None:
             return False
@@ -630,50 +732,51 @@ class JacktookPLayer(xbmc.Player):
         cache_key = get_autoscrape_cache_key(
             id_value, next_tv_data.get("season"), next_tv_data.get("episode")
         )
-        cached_data = cache.get(cache_key)
-        if not cached_data:
-            kodilog(f"[PLAYNEXT] Autoscrape cache MISS for key={cache_key}")
-            return False
+        results_cache_key = get_autoscrape_results_cache_key(
+            id_value, next_tv_data.get("season"), next_tv_data.get("episode")
+        )
 
-        kodilog(f"[PLAYNEXT] Autoscrape cache HIT for key={cache_key}")
         from lib.utils.kodi.settings import auto_play_enabled
 
         if auto_play_enabled():
+            cached_data = cache.get(cache_key)
+            if not cached_data:
+                kodilog(f"[PLAYNEXT] Autoscrape resolved cache MISS for key={cache_key}")
+                return False
+
             entry_data = dict(cached_data)
             entry_data["autoplay"] = True
             entry_data["playnext_context"] = True
             JacktookPLayer._nextep_queue.append({"data": entry_data})
             kodilog("[PLAYNEXT] Queued autoplay from cache, stopping player")
-            self.stop()
-            clear_property("jacktook_next_dialog_action")
-            return True
+        else:
+            cached_results = cache.get(results_cache_key)
+            if not cached_results:
+                kodilog(
+                    f"[PLAYNEXT] Autoscrape results cache MISS for key={results_cache_key}"
+                )
+                return False
 
-        # Autoplay disabled: queue cached raw results for source select
-        results_cache_key = get_autoscrape_results_cache_key(
-            id_value, next_tv_data.get("season"), next_tv_data.get("episode")
-        )
-        cached_results = cache.get(results_cache_key)
-
-        entry_data = {
-            "mode": self.data.get("mode", "tv"),
-            "ids": ids,
-            "tv_data": next_tv_data,
-            "return_tv_data": self.data.get("tv_data", {}),
-            "query": self.data.get("title", ""),
-            "media_type": self.data.get("media_type", ""),
-            "playnext_context": True,
-        }
-        JacktookPLayer._nextep_queue.append(
-            {
-                "data": entry_data,
-                "results": cached_results,
+            entry_data = {
+                "mode": self.data.get("mode", "tv"),
+                "ids": ids,
+                "tv_data": next_tv_data,
+                "return_tv_data": self.data.get("tv_data", {}),
+                "query": self.data.get("title", ""),
+                "media_type": self.data.get("media_type", ""),
+                "playnext_context": True,
             }
-        )
-        kodilog(
-            f"[PLAYNEXT] Queued source select from cache"
-            f" (results: {len(cached_results) if cached_results else 0}),"
-            f" stopping player"
-        )
+            JacktookPLayer._nextep_queue.append(
+                {
+                    "data": entry_data,
+                    "results": cached_results,
+                }
+            )
+            kodilog(
+                f"[PLAYNEXT] Queued manual source select from cache "
+                f"({len(cached_results)} sources), stopping player"
+            )
+
         self.stop()
         clear_property("jacktook_next_dialog_action")
         return True
@@ -702,6 +805,11 @@ class JacktookPLayer(xbmc.Player):
 
         ids = self.data.get("ids", {})
 
+        # An explicit PlayNext click may reuse the exact pack selected by the
+        # user. This is intentionally independent from global autoplay.
+        if self._queue_elementum_pack_next(next_tv_data):
+            return
+
         # Prefer the logical PlayNext queue paths over Kodi PLAYLIST advance.
         # PLAYLIST fallback is intentionally not consulted before next_tv_data.
         if self._queue_from_autoscrape_cache(next_tv_data, ids):
@@ -724,7 +832,7 @@ class JacktookPLayer(xbmc.Player):
 
         try:
             kodilog("[PLAYNEXT] Background search starting (silent)")
-            autoscrape_next_episode(item_data, next_tv_data)
+            autoscrape_next_episode(item_data, next_tv_data, force=True)
             kodilog("[PLAYNEXT] Background search complete, checking cache")
 
             ids = item_data.get("ids", {})
@@ -1038,6 +1146,7 @@ class JacktookPLayer(xbmc.Player):
         self._simkl_resume_applied = False
         self._simkl_resume_playback_observed = False
         self._simkl_playback_delete_attempted = False
+        self._was_superseded = False
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))
