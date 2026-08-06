@@ -2,6 +2,7 @@ from xbmc import executebuiltin
 from xbmcplugin import setContent
 
 from lib.api.simkl import SimklClient, is_simkl_authenticated
+from lib.utils.general.utils import build_list_item
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     action_url_run,
@@ -36,7 +37,7 @@ def show_simkl_library(_params):
         return
     entries = []
     for media_type, label in (("movies", translation(90008)), ("shows", translation(90007))):
-        list_item = make_list_item(label=label)
+        list_item = build_list_item(label, "simkl.png")
         list_item.getVideoInfoTag().setTitle(label)
         entries.append(
             (build_url("simkl_library_statuses", media_type=media_type), list_item, True)
@@ -52,7 +53,7 @@ def show_simkl_library_statuses(params):
     entries = []
     for status in SimklClient.allowed_library_statuses(media_type):
         label = _status_label(status)
-        list_item = make_list_item(label=label)
+        list_item = build_list_item(label, "simkl.png")
         list_item.getVideoInfoTag().setTitle(label)
         entries.append(
             (

@@ -100,7 +100,8 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
 
     item = MagicMock()
     add_items = MagicMock()
-    monkeypatch.setattr(view, "make_list_item", MagicMock(return_value=item))
+    build_list_item = MagicMock(return_value=item)
+    monkeypatch.setattr(view, "build_list_item", build_list_item)
     monkeypatch.setattr(view, "add_directory_items_batch", add_items)
     monkeypatch.setattr(view, "end_of_directory", MagicMock())
     monkeypatch.setattr(view, "translation", lambda value: str(value))
@@ -110,11 +111,18 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
     add_items.assert_not_called()
 
     monkeypatch.setattr(view, "is_simkl_authenticated", lambda: True)
+    view.show_simkl_library({})
+    assert build_list_item.call_count == 2
+    assert all(call.args[1] == "simkl.png" for call in build_list_item.call_args_list)
+
+    build_list_item.reset_mock()
     view.show_simkl_library_statuses({"media_type": "movies"})
     entries = add_items.call_args.args[0]
     assert len(entries) == 3
     assert all("action=simkl_library_items" in entry[0] for entry in entries)
     assert all("watching" not in entry[0] and "hold" not in entry[0] for entry in entries)
+    assert build_list_item.call_count == 3
+    assert all(call.args[1] == "simkl.png" for call in build_list_item.call_args_list)
 
 
 def test_simkl_library_items_build_standard_tmdb_destinations_and_context_actions(monkeypatch):
