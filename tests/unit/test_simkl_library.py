@@ -114,6 +114,10 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
     view.show_simkl_library({})
     assert build_list_item.call_count == 2
     assert all(call.args[1] == "simkl.png" for call in build_list_item.call_args_list)
+    media_type_entries = add_items.call_args.args[0]
+    assert {"media_type=movies", "media_type=shows"} == {
+        entry[0].split("&")[-1] for entry in media_type_entries
+    }
 
     build_list_item.reset_mock()
     view.show_simkl_library_statuses({"media_type": "movies"})

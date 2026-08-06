@@ -316,6 +316,13 @@ tv_items = [
         "icon": "mdblist.png",
     },
     {
+        "name": translation(90981),
+        "icon": "simkl.png",
+        "action": "simkl_library_statuses",
+        "params": {"media_type": "shows"},
+        "condition": has_simkl_library_items,
+    },
+    {
         "name": translation(90292),
         "icon": "trakt.png",
         "action": "trakt_group_menu",
@@ -387,6 +394,13 @@ movie_items = [
         "api": "mdblist",
         "query": "mdblist",
         "icon": "mdblist.png",
+    },
+    {
+        "name": translation(90981),
+        "icon": "simkl.png",
+        "action": "simkl_library_statuses",
+        "params": {"media_type": "movies"},
+        "condition": has_simkl_library_items,
     },
     {
         "name": translation(90292),
@@ -510,12 +524,6 @@ root_menu_items = [
         "icon": "continue_watching.png",
         "action": "simkl_continue_watching",
         "condition": has_simkl_continue_watching_items,
-    },
-    {
-        "name": 90981,
-        "icon": "library.png",
-        "action": "simkl_library",
-        "condition": has_simkl_library_items,
     },
     {"name": 90007, "icon": "tv.png", "action": "tv_shows_items"},
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},
