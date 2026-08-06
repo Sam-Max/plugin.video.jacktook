@@ -309,7 +309,7 @@ tv_items = [
         "icon": "tmdb.png",
     },
     {
-        "name": translation(90073),
+        "name": translation(90962),
         "mode": "tv",
         "api": "mdblist",
         "query": "mdblist",
@@ -389,7 +389,7 @@ movie_items = [
         "icon": "tmdb.png",
     },
     {
-        "name": translation(90073),
+        "name": translation(90962),
         "mode": "movies",
         "api": "mdblist",
         "query": "mdblist",
