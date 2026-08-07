@@ -1,10 +1,18 @@
+import os
+
 from xbmc import executebuiltin
 from xbmcplugin import setContent
 
 from lib.api.simkl import SimklClient, is_simkl_authenticated
-from lib.utils.general.utils import format_season_episode, set_pluging_category
+from lib.clients.tmdb.utils.utils import tmdb_get
+from lib.utils.general.utils import (
+    format_season_episode,
+    set_media_infoTag,
+    set_pluging_category,
+)
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
+    ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
@@ -29,8 +37,26 @@ def show_simkl_continue_watching():
             )
             label = f"{label} {episode_label}"
         list_item = make_list_item(label=label)
-        list_item.getVideoInfoTag().setTitle(label)
-        list_item.setProperty("PercentPlayed", str(item["simkl_resume_progress"]))
+        try:
+            details = tmdb_get(
+                "tv_details" if item["mode"] == "tv" else "movie_details",
+                item["ids"]["tmdb_id"],
+            )
+        except Exception:
+            details = None
+
+        if details:
+            set_media_infoTag(list_item, data=details, mode=item["mode"])
+        else:
+            list_item.setArt(
+                {"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")}
+            )
+
+        progress = item["simkl_resume_progress"]
+        info_tag = list_item.getVideoInfoTag()
+        info_tag.setTitle(label)
+        info_tag.setResumePoint(progress / 100, 1)
+        list_item.setProperty("PercentPlayed", str(progress))
         list_item.setProperty("IsPlayable", "true")
         list_item.addContextMenuItems(
             [

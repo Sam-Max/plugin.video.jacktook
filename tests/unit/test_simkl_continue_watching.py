@@ -58,6 +58,10 @@ def test_simkl_continue_watching_builds_resume_and_explicit_discard_actions(monk
     monkeypatch.setattr(view, "end_of_directory", MagicMock())
     monkeypatch.setattr(view, "apply_section_view", MagicMock())
     monkeypatch.setattr(view, "set_pluging_category", MagicMock())
+    tmdb_get = MagicMock(return_value={"id": 1})
+    set_media_info_tag = MagicMock()
+    monkeypatch.setattr(view, "tmdb_get", tmdb_get)
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
     monkeypatch.setattr(
         view.SimklClient,
         "get_playback",
@@ -80,7 +84,93 @@ def test_simkl_continue_watching_builds_resume_and_explicit_discard_actions(monk
     assert "action=simkl_resume" in url
     assert "simkl_session_id=9" in url
     assert is_folder is False
+    tmdb_get.assert_called_once_with("movie_details", 1)
+    set_media_info_tag.assert_called_once_with(list_item, data={"id": 1}, mode="movies")
+    list_item.getVideoInfoTag().setResumePoint.assert_called_once_with(0.5, 1)
+    list_item.setProperty.assert_any_call("PercentPlayed", "50")
     assert list_item.addContextMenuItems.call_args.args[0][0][0] == "Discard Simkl Resume"
+
+
+def test_simkl_continue_watching_uses_parent_show_tmdb_details(monkeypatch):
+    from lib.utils.views import simkl_continue_watching as view
+
+    item = MagicMock()
+    monkeypatch.setattr(view, "make_list_item", MagicMock(return_value=item))
+    monkeypatch.setattr(view, "add_directory_items_batch", MagicMock())
+    monkeypatch.setattr(view, "setContent", MagicMock())
+    monkeypatch.setattr(view, "end_of_directory", MagicMock())
+    monkeypatch.setattr(view, "apply_section_view", MagicMock())
+    monkeypatch.setattr(view, "set_pluging_category", MagicMock())
+    tmdb_get = MagicMock(return_value={"id": 2})
+    set_media_info_tag = MagicMock()
+    monkeypatch.setattr(view, "tmdb_get", tmdb_get)
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
+    monkeypatch.setattr(
+        view.SimklClient,
+        "get_playback",
+        lambda _self: [
+            {
+                "query": "Show",
+                "mode": "tv",
+                "media_type": "tv",
+                "ids": {"tmdb_id": 2},
+                "tv_data": {"name": "Episode", "season": 2, "episode": 3},
+                "simkl_session_id": 9,
+                "simkl_resume_progress": 50,
+            }
+        ],
+    )
+
+    view.show_simkl_continue_watching()
+
+    assert view.make_list_item.call_args.kwargs["label"] == "Show S02E03"
+    tmdb_get.assert_called_once_with("tv_details", 2)
+    set_media_info_tag.assert_called_once_with(item, data={"id": 2}, mode="tv")
+
+
+def test_simkl_continue_watching_keeps_remote_resume_when_tmdb_metadata_is_unavailable(
+    monkeypatch,
+):
+    from lib.utils.views import simkl_continue_watching as view
+
+    item = MagicMock()
+    monkeypatch.setattr(view, "make_list_item", MagicMock(return_value=item))
+    add_items = MagicMock()
+    monkeypatch.setattr(view, "add_directory_items_batch", add_items)
+    monkeypatch.setattr(view, "setContent", MagicMock())
+    monkeypatch.setattr(view, "end_of_directory", MagicMock())
+    monkeypatch.setattr(view, "apply_section_view", MagicMock())
+    monkeypatch.setattr(view, "set_pluging_category", MagicMock())
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    set_media_info_tag = MagicMock()
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
+    monkeypatch.setattr(
+        view.SimklClient,
+        "get_playback",
+        lambda _self: [
+            {
+                "query": "Movie",
+                "mode": "movies",
+                "media_type": "movie",
+                "ids": {"tmdb_id": 1},
+                "tv_data": {},
+                "simkl_session_id": 9,
+                "simkl_resume_progress": 50,
+            }
+        ],
+    )
+
+    view.show_simkl_continue_watching()
+
+    url, list_item, is_folder = add_items.call_args.args[0][0]
+    assert "action=simkl_resume" in url
+    assert is_folder is False
+    assert list_item is item
+    assert item.setArt.call_args.args[0] == {
+        "icon": view.os.path.join(view.ADDON_PATH, "resources", "img", "magnet.png")
+    }
+    set_media_info_tag.assert_not_called()
+    item.setProperty.assert_any_call("IsPlayable", "true")
 
 
 def test_discard_refreshes_only_after_successful_delete(monkeypatch):
