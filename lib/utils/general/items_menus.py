@@ -55,10 +55,17 @@ trakt_tv_library_items = [
         "icon": "trakt.png",
     },
     {
-        "name": translation(90076),
+        "name": translation(90033),
         "mode": "tv",
         "api": "trakt",
-        "query": "trakt_search_lists",
+        "query": "trakt_recommendations",
+        "icon": "trakt.png",
+    },
+    {
+        "name": translation(30896),
+        "mode": "tv",
+        "api": "trakt",
+        "query": "trakt_calendar",
         "icon": "trakt.png",
     },
     {
@@ -94,10 +101,10 @@ trakt_tv_discovery_items = [
         "icon": "trakt.png",
     },
     {
-        "name": translation(90033),
+        "name": translation(90076),
         "mode": "tv",
         "api": "trakt",
-        "query": "trakt_recommendations",
+        "query": "trakt_search_lists",
         "icon": "trakt.png",
     },
     {
@@ -112,13 +119,6 @@ trakt_tv_discovery_items = [
         "mode": "tv",
         "api": "trakt",
         "query": "trakt_popular_lists",
-        "icon": "trakt.png",
-    },
-    {
-        "name": translation(30896),
-        "mode": "tv",
-        "api": "trakt",
-        "query": "trakt_calendar",
         "icon": "trakt.png",
     },
 ]
@@ -175,10 +175,10 @@ trakt_movie_library_items = [
         "icon": "trakt.png",
     },
     {
-        "name": translation(90076),
+        "name": translation(90033),
         "mode": "movies",
         "api": "trakt",
-        "query": "trakt_search_lists",
+        "query": "trakt_recommendations",
         "icon": "trakt.png",
     },
     {
@@ -221,10 +221,10 @@ trakt_movie_discovery_items = [
         "icon": "trakt.png",
     },
     {
-        "name": translation(90033),
+        "name": translation(90076),
         "mode": "movies",
         "api": "trakt",
-        "query": "trakt_recommendations",
+        "query": "trakt_search_lists",
         "icon": "trakt.png",
     },
     {
