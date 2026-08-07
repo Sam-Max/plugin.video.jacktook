@@ -1950,6 +1950,9 @@
                 <setting id="simkl_sync_activities" type="string">
                     <default />
                     <visible>false</visible>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string">
                         <hidden>true</hidden>
                     </control>
