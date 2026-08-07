@@ -20,7 +20,7 @@ from lib.api.trakt.trakt_cache import (
     clear_trakt_list_data,
     trakt_watched_cache,
 )
-from lib.api.trakt.trakt_utils import clean_ids, sort_for_article, sort_list
+from lib.api.trakt.trakt_utils import clean_ids, is_trakt_auth, sort_for_article, sort_list
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import ADDON_NAME, ADDON_PATH, ADDON_VERSION
 from lib.utils.debrid.qrcode_utils import make_qrcode
@@ -1939,6 +1939,159 @@ class TraktScrobble(TraktBase):
             kodilog(f"Error fetching playback progress: {e}")
             return []
         return 0
+
+    @staticmethod
+    def _playback_positive_integer(value):
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value if value > 0 else None
+
+        if isinstance(value, str) and value.strip().isdigit():
+            parsed = int(value.strip())
+            return parsed if parsed > 0 else None
+        return None
+
+    @staticmethod
+    def _playback_overview(*media):
+        for entry in media:
+            if not isinstance(entry, dict):
+                continue
+            overview = entry.get("overview")
+            if isinstance(overview, str) and overview.strip():
+                return overview.strip()
+        return ""
+
+    @staticmethod
+    def _playback_non_negative_integer(value):
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value if value >= 0 else None
+        if isinstance(value, str) and value.strip().isdigit():
+            return int(value.strip())
+        return None
+
+    @staticmethod
+    def _playback_is_iso8601_timestamp(value):
+        if not isinstance(value, str) or value != value.strip() or "T" not in value:
+            return False
+        normalized = f"{value[:-1]}+00:00" if value.endswith("Z") else value
+        try:
+            datetime.datetime.fromisoformat(normalized)
+        except ValueError:
+            return False
+        return True
+
+    @classmethod
+    def playback_item(cls, session):
+        if not isinstance(session, dict):
+            return None
+        playback_id = cls._playback_positive_integer(session.get("id"))
+        if isinstance(session.get("progress"), bool):
+            return None
+        try:
+            progress = float(session.get("progress"))
+        except (TypeError, ValueError):
+            return None
+        if not playback_id or not math.isfinite(progress) or progress <= 0 or progress >= 80:
+            return None
+        paused_at = session.get("paused_at")
+        if not cls._playback_is_iso8601_timestamp(paused_at):
+            return None
+
+        if session.get("type") == "movie":
+            movie = session.get("movie")
+            ids = movie.get("ids") if isinstance(movie, dict) else None
+            tmdb_id = cls._playback_positive_integer(ids.get("tmdb")) if isinstance(ids, dict) else None
+            title = movie.get("title") if isinstance(movie, dict) else None
+            if not tmdb_id or not isinstance(title, str) or not title.strip():
+                return None
+            item = {
+                "query": title.strip(),
+                "mode": "movies",
+                "media_type": "movie",
+                "ids": {"tmdb_id": tmdb_id},
+                "tv_data": {},
+                "trakt_playback_id": playback_id,
+                "trakt_resume_progress": progress,
+                "paused_at": paused_at,
+            }
+            item["overview"] = cls._playback_overview(movie)
+            return item
+
+        if session.get("type") != "episode":
+            return None
+        show, episode = session.get("show"), session.get("episode")
+        ids = show.get("ids") if isinstance(show, dict) else None
+        tmdb_id = cls._playback_positive_integer(ids.get("tmdb")) if isinstance(ids, dict) else None
+        season = (
+            cls._playback_non_negative_integer(episode.get("season"))
+            if isinstance(episode, dict)
+            else None
+        )
+        number = (
+            cls._playback_positive_integer(episode.get("number"))
+            if isinstance(episode, dict)
+            else None
+        )
+        title = show.get("title") if isinstance(show, dict) else None
+        if not tmdb_id or season is None or not number or not isinstance(title, str) or not title.strip():
+            return None
+        item = {
+            "query": title.strip(),
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": {"tmdb_id": tmdb_id},
+            "tv_data": {"name": episode.get("title", ""), "season": season, "episode": number},
+            "trakt_playback_id": playback_id,
+            "trakt_resume_progress": progress,
+            "paused_at": paused_at,
+        }
+        item["overview"] = cls._playback_overview(episode, show)
+        return item
+
+    def get_playback(self):
+        if not is_trakt_auth():
+            return []
+        try:
+            result = self.call_trakt(
+                "sync/playback",
+                params={"limit": 1000, "extended": "full"},
+                with_auth=True,
+                pagination=False,
+            )
+        except Exception as error:
+            kodilog(f"Trakt playback retrieval failed: {error}")
+            return []
+        if not isinstance(result, list):
+            return []
+        return [item for item in (self.playback_item(session) for session in result) if item]
+
+    def delete_playback(self, playback_id):
+        playback_id = self._playback_positive_integer(playback_id)
+        if not playback_id or not is_trakt_auth():
+            return False
+        if self.ensure_token_valid() is False:
+            return False
+        token = get_property("trakt_token")
+        if not token:
+            return False
+        headers = self._trakt_headers()
+        headers["Authorization"] = f"Bearer {token}"
+        try:
+            response = requests.delete(
+                self.api_endpoint % f"sync/playback/{playback_id}", headers=headers, timeout=self.timeout
+            )
+        except requests.RequestException as error:
+            kodilog(f"Trakt playback deletion failed: {error}")
+            return False
+        if response.status_code == 401:
+            self._handle_unauthorized()
+        if response.status_code != 204:
+            kodilog(f"Trakt playback deletion rejected (HTTP {response.status_code})")
+            return False
+        return True
 
 
 class TraktCache(TraktBase):

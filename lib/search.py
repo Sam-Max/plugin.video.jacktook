@@ -566,7 +566,12 @@ def _handle_super_quick_play(params: dict) -> bool:
             notification(translation(90144))
             return True
 
-        for key in ("simkl_session_id", "simkl_resume_progress"):
+        for key in (
+            "simkl_session_id",
+            "simkl_resume_progress",
+            "trakt_playback_id",
+            "trakt_resume_progress",
+        ):
             if key in params:
                 playback_info[key] = params[key]
 
@@ -656,8 +661,15 @@ def run_search_entry(params: dict):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
     skip_cancel = params.get("skip_cancel_on_back", False)
-    simkl_resume = {
-        key: params[key] for key in ("simkl_session_id", "simkl_resume_progress") if key in params
+    playback_resume = {
+        key: params[key]
+        for key in (
+            "simkl_session_id",
+            "simkl_resume_progress",
+            "trakt_playback_id",
+            "trakt_resume_progress",
+        )
+        if key in params
     }
 
     variant = _normalize_search_variant(params.get("search_variant", SearchVariant.DEFAULT))
@@ -762,7 +774,7 @@ def run_search_entry(params: dict):
                 mode,
                 preferred_group,
                 autoplay_context=autoplay_context,
-                playback_context=simkl_resume,
+                playback_context=playback_resume,
             )
             and not skip_cancel
         ):
@@ -780,7 +792,7 @@ def run_search_entry(params: dict):
             rescrape,
             direct,
             autoplay_context=autoplay_context,
-            playback_context=simkl_resume,
+            playback_context=playback_resume,
         )
         and not skip_cancel
     ):

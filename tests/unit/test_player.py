@@ -502,6 +502,52 @@ def test_simkl_failed_resume_attempt_does_not_delete_remote_session(monkeypatch)
     thread.assert_not_called()
 
 
+def test_trakt_resume_seeks_once_after_playback_is_ready(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"trakt_resume_progress": 25, "trakt_playback_id": 9})
+    test_player._trakt_resume_applied = False
+    test_player.getTotalTime = MagicMock(return_value=200)
+    test_player.seekTime = MagicMock()
+
+    test_player._apply_trakt_resume()
+    test_player._apply_trakt_resume()
+
+    test_player.seekTime.assert_called_once_with(50)
+
+
+def test_trakt_completed_resume_deletes_only_after_observed_terminal_progress(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"trakt_playback_id": 9, "progress": 80})
+    test_player._trakt_resume_playback_observed = True
+    test_player._trakt_playback_delete_attempted = False
+    thread = MagicMock()
+    monkeypatch.setattr(player_module, "Thread", MagicMock(return_value=thread))
+
+    test_player._delete_completed_trakt_playback()
+
+    player_module.Thread.assert_called_once_with(
+        target=test_player._delete_trakt_playback, args=(9,)
+    )
+    assert thread.daemon is True
+    thread.start.assert_called_once_with()
+
+
+def test_trakt_failed_resume_attempt_does_not_delete_remote_session(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"trakt_playback_id": 9, "progress": 80})
+    test_player._trakt_resume_playback_observed = False
+    test_player._trakt_playback_delete_attempted = False
+    thread = MagicMock()
+    monkeypatch.setattr(player_module, "Thread", thread)
+
+    test_player._delete_completed_trakt_playback()
+
+    thread.assert_not_called()
+
+
 def test_run_does_not_add_next_episode_to_kodi_playlist():
     source = PLAYER_PATH.read_text()
     run_match = re.search(

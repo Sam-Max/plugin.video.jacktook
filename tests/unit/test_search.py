@@ -47,6 +47,80 @@ def test_super_quick_play_preserves_simkl_resume_metadata():
     player.run.assert_called_once_with(data=playback_info)
 
 
+def test_super_quick_play_preserves_trakt_resume_metadata():
+    params = {
+        "ids": json.dumps({"tmdb_id": 123}),
+        "trakt_playback_id": "9",
+        "trakt_resume_progress": "50",
+    }
+    playback_info = {"url": "https://stream.example/video"}
+    player = MagicMock()
+
+    with patch(
+        "lib.search.get_setting",
+        side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
+    ), patch("lib.search.cache.get", return_value=MagicMock()), patch(
+        "lib.search._resolve_cached_source", return_value=playback_info
+    ), patch("lib.search.JacktookPLayer", return_value=player):
+        assert _handle_super_quick_play(params) is True
+
+    assert playback_info["trakt_playback_id"] == "9"
+    assert playback_info["trakt_resume_progress"] == "50"
+    player.run.assert_called_once_with(data=playback_info)
+
+
+def test_run_search_entry_forwards_trakt_resume_to_source_selection():
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movie",
+        "ids": json.dumps({"tmdb_id": "123"}),
+        "tv_data": "{}",
+        "trakt_playback_id": "9",
+        "trakt_resume_progress": "50",
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[object()]
+    ), patch("lib.search._process_search_results", return_value=[object()]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=False
+    ), patch("lib.search.show_source_select", return_value=True) as show_source_select:
+        run_search_entry(params)
+
+    assert show_source_select.call_args.kwargs["playback_context"] == {
+        "trakt_playback_id": "9",
+        "trakt_resume_progress": "50",
+    }
+
+
+def test_run_search_entry_forwards_trakt_resume_to_autoplay():
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movie",
+        "ids": json.dumps({"tmdb_id": "123"}),
+        "tv_data": "{}",
+        "trakt_playback_id": "9",
+        "trakt_resume_progress": "50",
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[object()]
+    ), patch("lib.search._process_search_results", return_value=[object()]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=True
+    ), patch("lib.search.auto_play", return_value=True) as auto_play:
+        run_search_entry(params)
+
+    assert auto_play.call_args.kwargs["playback_context"] == {
+        "trakt_playback_id": "9",
+        "trakt_resume_progress": "50",
+    }
+
+
 def test_simple_search_submits_selected_stremio_addon_with_strict_whitelist():
     selected_addon = MagicMock()
     selected_addon.key.return_value = "selected|https://selected.example"

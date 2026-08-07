@@ -92,6 +92,16 @@ def test_route_trakt_dispatches_trakt_group_menu_action():
     trakt_group_menu.assert_called_once_with(params)
 
 
+def test_route_trakt_dispatches_resume_action():
+    router = _load_router_module()
+
+    params = {"trakt_playback_id": "9"}
+    with patch("lib.navigation.trakt_resume") as trakt_resume:
+        router._route_trakt("trakt_resume", params)
+
+    trakt_resume.assert_called_once_with(params)
+
+
 def test_route_simkl_dispatches_auth_action():
     router = _load_router_module()
 

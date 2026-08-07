@@ -1429,6 +1429,24 @@ def simkl_discard_playback(params):
     discard_simkl_playback(params)
 
 
+def trakt_continue_watching(params):
+    from lib.utils.views.trakt_continue_watching import show_trakt_continue_watching
+
+    show_trakt_continue_watching()
+
+
+def trakt_resume(params):
+    from lib.search import run_search_entry
+
+    run_search_entry(params)
+
+
+def trakt_discard_playback(params):
+    from lib.utils.views.trakt_continue_watching import discard_trakt_playback
+
+    discard_trakt_playback(params)
+
+
 def tb_auth(params):
     return debrid_navigation.tb_auth(params)
 

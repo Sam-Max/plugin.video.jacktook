@@ -431,15 +431,21 @@ def _route_trakt(action, params):
             list_trakt_page,
             trakt_auth,
             trakt_auth_revoke,
+            trakt_continue_watching,
+            trakt_discard_playback,
             trakt_group_menu,
             trakt_list_content,
+            trakt_resume,
         )
 
         actions = {
             "trakt_auth": trakt_auth,
             "trakt_auth_revoke": trakt_auth_revoke,
+            "trakt_continue_watching": trakt_continue_watching,
+            "trakt_discard_playback": trakt_discard_playback,
             "trakt_group_menu": trakt_group_menu,
             "trakt_list_content": trakt_list_content,
+            "trakt_resume": trakt_resume,
             "list_trakt_page": list_trakt_page,
         }
         action_func = actions.get(action)

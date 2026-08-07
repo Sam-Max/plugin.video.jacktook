@@ -10,7 +10,7 @@ from xbmcgui import Dialog, ListItem
 from xbmcplugin import setResolvedUrl
 
 from lib.api.simkl import SimklClient, is_simkl_scrobbling_enabled
-from lib.api.trakt.trakt import TraktAPI, TraktLists
+from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktScrobble
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
 from lib.clients.tmdb.utils.utils import get_movie_keywords, tmdb_get
@@ -75,6 +75,9 @@ class JacktookPLayer(xbmc.Player):
         self._simkl_resume_applied = False
         self._simkl_resume_playback_observed = False
         self._simkl_playback_delete_attempted = False
+        self._trakt_resume_applied = False
+        self._trakt_resume_playback_observed = False
+        self._trakt_playback_delete_attempted = False
 
     def run(self, data=None):
         if data is None:
@@ -461,6 +464,7 @@ class JacktookPLayer(xbmc.Player):
                 video_fullscreen_check
             ):
                 self._apply_simkl_resume()
+                self._apply_trakt_resume()
                 if self.on_started:
                     self.on_started()
         except Exception as e:
@@ -476,6 +480,7 @@ class JacktookPLayer(xbmc.Player):
                 self.data["current_time"] = self.current_time
                 self.data["total_time"] = self.total_time
                 self._simkl_resume_playback_observed = True
+                self._trakt_resume_playback_observed = True
         except Exception as e:
             kodilog(f"Error updating playback progress: {e}")
 
@@ -897,6 +902,7 @@ class JacktookPLayer(xbmc.Player):
                 self._queue_simkl_scrobble("stop")
             self._is_simkl_scrobble_active = False
         self._delete_completed_simkl_playback()
+        self._delete_completed_trakt_playback()
 
         if not self._is_trakt_tracking_excluded():
             set_watched_file(self.data)
@@ -944,6 +950,46 @@ class JacktookPLayer(xbmc.Player):
             SimklClient().delete_playback(session_id)
         except Exception as error:
             kodilog(f"[SIMKL] playback deletion failed; preserving resume ({type(error).__name__})")
+
+    def _apply_trakt_resume(self):
+        if getattr(self, "_trakt_resume_applied", False):
+            return
+        try:
+            progress = float(self.data.get("trakt_resume_progress"))
+            total_time = float(self.getTotalTime())
+        except (TypeError, ValueError):
+            return
+        if progress <= 0 or progress >= 80 or total_time <= 0:
+            return
+        try:
+            self.seekTime(total_time * progress / 100)
+            self._trakt_resume_applied = True
+        except Exception as error:
+            kodilog(f"Trakt resume seek failed; continuing playback ({type(error).__name__})")
+
+    def _delete_completed_trakt_playback(self):
+        if getattr(self, "_trakt_playback_delete_attempted", False):
+            return
+        if not getattr(self, "_trakt_resume_playback_observed", False):
+            return
+        playback_id = TraktScrobble._playback_positive_integer(self.data.get("trakt_playback_id"))
+        try:
+            completed = float(self.data.get("progress", 0)) >= 80
+        except (TypeError, ValueError):
+            completed = False
+        if not playback_id or not completed:
+            return
+        self._trakt_playback_delete_attempted = True
+        thread = Thread(target=self._delete_trakt_playback, args=(playback_id,))
+        thread.daemon = True
+        thread.start()
+
+    @staticmethod
+    def _delete_trakt_playback(playback_id):
+        try:
+            TraktAPI().scrobble.delete_playback(playback_id)
+        except Exception as error:
+            kodilog(f"Trakt playback deletion failed; preserving resume ({type(error).__name__})")
 
     def _sync_yamtrack_watched(self):
         if getattr(self, "_yamtrack_stop_attempted", False):
