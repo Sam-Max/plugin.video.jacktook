@@ -95,17 +95,24 @@ def test_trakt_playback_retrieval_and_deletion_use_authenticated_contract(monkey
     )
 
 
-def test_trakt_menu_is_visible_only_for_authenticated_accounts(monkeypatch):
+def test_trakt_menu_is_visible_only_for_enabled_authenticated_accounts(monkeypatch):
     item = next(item for item in root_menu_items if item["action"] == "trakt_continue_watching")
-    monkeypatch.setattr(
-        "lib.utils.views.trakt_continue_watching.is_trakt_auth", lambda: False
-    )
-    assert item["condition"]() is False
+    for enabled, authenticated, expected_visible in (
+        (False, False, False),
+        (False, True, False),
+        (True, False, False),
+        (True, True, True),
+    ):
+        settings = {"trakt_enabled": enabled}
+        monkeypatch.setattr(
+            "lib.utils.views.trakt_continue_watching.get_setting",
+            lambda setting_id: settings[setting_id],
+        )
+        monkeypatch.setattr(
+            "lib.utils.views.trakt_continue_watching.is_trakt_auth", lambda: authenticated
+        )
 
-    monkeypatch.setattr(
-        "lib.utils.views.trakt_continue_watching.is_trakt_auth", lambda: True
-    )
-    assert item["condition"]() is True
+        assert item["condition"]() is expected_visible
 
 
 def test_trakt_continue_watching_builds_resume_and_explicit_discard_actions(monkeypatch):

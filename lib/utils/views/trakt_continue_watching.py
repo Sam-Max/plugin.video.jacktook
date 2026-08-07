@@ -19,12 +19,13 @@ from lib.utils.kodi.utils import (
     apply_section_view,
     build_url,
     end_of_directory,
+    get_setting,
     make_list_item,
 )
 
 
 def has_trakt_continue_watching_items():
-    return is_trakt_auth()
+    return get_setting("trakt_enabled") and is_trakt_auth()
 
 
 def show_trakt_continue_watching():
