@@ -604,6 +604,7 @@ def _process_search_results(
     media_type,
     rescrape,
     suppress_debrid_dialog=False,
+    suppress_busy_dialog=False,
 ):
     bypassed_streams = []
     other_results = results
@@ -643,6 +644,7 @@ def _process_search_results(
             rescrape,
             episode,
             suppress_dialog=suppress_debrid_dialog,
+            suppress_busy_dialog=suppress_busy_dialog,
         )
 
     # Combine results, prioritizing bypassed streams exact native sorting
@@ -1555,11 +1557,13 @@ def process_results(
     rescrape: bool,
     episode: int,
     suppress_dialog: bool = False,
+    suppress_busy_dialog: bool = False,
 ) -> List[TorrentStream]:
     torrent_results = []
     if get_setting("torrent_enable"):
         torrent_results = post_process(pre_results)
-    close_busy_dialog()
+    if not suppress_busy_dialog:
+        close_busy_dialog()
     if suppress_dialog:
         debrid_results = check_debrid_cached(
             query, pre_results, mode, media_type, SilentProgressDialog(), rescrape, episode

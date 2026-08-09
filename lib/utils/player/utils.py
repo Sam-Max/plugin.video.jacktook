@@ -492,6 +492,7 @@ def autoscrape_next_episode(
                 item_data.get("media_type", ""),
                 True,
                 suppress_debrid_dialog=True,
+                suppress_busy_dialog=force,
             )
             if not results:
                 kodilog("Autoscrape: no results after normal source processing")

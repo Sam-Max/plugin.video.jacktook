@@ -404,6 +404,10 @@ def test_forced_manual_search_caches_normal_processed_results(monkeypatch):
 
     search_client.assert_called_once()
     process_results.assert_called_once()
+    assert process_results.call_args.kwargs == {
+        "suppress_debrid_dialog": True,
+        "suppress_busy_dialog": True,
+    }
     cache_set.assert_called_once()
     assert cache_set.call_args.args[0] == "as_results:tt1942683_5_4"
     assert cache_set.call_args.args[1] == processed_results
