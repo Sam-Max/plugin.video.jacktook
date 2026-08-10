@@ -388,20 +388,27 @@ def test_run_next_dialog_sets_pending_action_without_direct_playback():
                     "title": "Show",
                     "ids": {"tmdb_id": "123"},
                     "tv_data": {"season": 1, "episode": 1},
+                    "playback_session_id": "owner-session",
                 }
             )
         }
 
         run_next_dialog(params)
 
-        mock_set_property.assert_called_once_with("jacktook_next_dialog_action", "next_episode")
+        mock_set_property.assert_called_once()
+        key, raw_payload = mock_set_property.call_args.args
+        assert key == "jacktook_next_dialog_action"
+        assert json.loads(raw_payload) == {
+            "action": "next_episode",
+            "session_id": "owner-session",
+        }
         mock_clear_property.assert_not_called()
         mock_xbmc_player.assert_not_called()
         created_item_info = mock_window_cls.call_args.kwargs["item_information"]
         assert created_item_info["next_label"] == "1x2. Next Episode"
 
 
-def test_run_next_dialog_clears_pending_action_when_dialog_not_accepted():
+def test_run_next_dialog_does_not_publish_action_when_dialog_not_accepted():
     from lib.gui.custom_dialogs import run_next_dialog
 
     with patch("lib.gui.custom_dialogs.PLAYLIST") as mock_playlist, patch(
@@ -429,7 +436,7 @@ def test_run_next_dialog_clears_pending_action_when_dialog_not_accepted():
         run_next_dialog(params)
 
         mock_set_property.assert_not_called()
-        mock_clear_property.assert_called_once_with("jacktook_next_dialog_action")
+        mock_clear_property.assert_not_called()
 
 
 def test_run_next_dialog_shows_without_next_playlist_item():
@@ -446,10 +453,22 @@ def test_run_next_dialog_shows_without_next_playlist_item():
         mock_window.action = "next_episode"
         mock_window_cls.return_value = mock_window
 
-        run_next_dialog({"item_info": "{}"})
+        run_next_dialog(
+            {
+                "item_info": json.dumps(
+                    {"playback_session_id": "owner-session"}
+                )
+            }
+        )
 
         mock_window_cls.assert_called_once()
         created_item_info = mock_window_cls.call_args.kwargs["item_information"]
         assert "next_label" not in created_item_info
-        mock_set_property.assert_called_once_with("jacktook_next_dialog_action", "next_episode")
+        mock_set_property.assert_called_once()
+        key, raw_payload = mock_set_property.call_args.args
+        assert key == "jacktook_next_dialog_action"
+        assert json.loads(raw_payload) == {
+            "action": "next_episode",
+            "session_id": "owner-session",
+        }
         mock_clear_property.assert_not_called()

@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Tuple
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
 from xbmc import LOGDEBUG
 from xbmcgui import Dialog
@@ -21,6 +21,10 @@ from lib.utils.general.utils import (
     torrent_clients,
 )
 from lib.utils.kodi.logging import summarize_locator_for_log
+from lib.utils.parsers.pack_parser import (
+    pack_scope_allows_transition,
+    playback_pack_scope,
+)
 from lib.utils.kodi.utils import (
     execute_builtin,
     get_setting,
@@ -189,6 +193,87 @@ def get_elementum_url(
     )
 
 
+def build_elementum_pack_next_playback(
+    data: Dict[str, Any], next_tv_data: Dict[str, Any]
+) -> Optional[Dict[str, Any]]:
+    """Build resolved PlayNext data when the selected Elementum pack covers it."""
+    if data.get("mode") != "tv" or not isinstance(next_tv_data, dict):
+        return None
+
+    ids = data.get("ids")
+    current_tv_data = data.get("tv_data")
+    if not isinstance(ids, dict) or not isinstance(current_tv_data, dict):
+        return None
+
+    tmdb_id = ids.get("tmdb_id")
+    current_season = current_tv_data.get("season")
+    next_season = next_tv_data.get("season")
+    next_episode = next_tv_data.get("episode")
+    values = (tmdb_id, current_season, next_season, next_episode)
+    if not all(not isinstance(value, bool) and str(value).isdigit() for value in values):
+        return None
+
+    pack_scope = playback_pack_scope(data, current_season=current_season)
+    if not pack_scope.get("is_pack"):
+        kodilog(
+            f"[PLAYNEXT] Elementum pack reuse rejected: "
+            f"type={pack_scope.get('pack_type')}, reason={pack_scope.get('pack_reason')}"
+        )
+        return None
+    if not pack_scope_allows_transition(pack_scope, current_season, next_season):
+        kodilog(
+            f"[PLAYNEXT] Elementum pack reuse rejected for season transition "
+            f"S{current_season}->S{next_season}: type={pack_scope.get('pack_type')}, "
+            f"seasons={pack_scope.get('pack_seasons')}"
+        )
+        return None
+
+    current_url = str(data.get("url") or "")
+    parsed = urlparse(current_url)
+    if (
+        parsed.scheme != "plugin"
+        or parsed.netloc != "plugin.video.elementum"
+        or parsed.path.rstrip("/") != "/play"
+    ):
+        return None
+
+    uri_values = parse_qs(parsed.query).get("uri") or []
+    uri = str(uri_values[0]) if uri_values else str(data.get("magnet") or "")
+    if not uri:
+        return None
+
+    next_data = dict(data)
+    next_data["tv_data"] = dict(next_tv_data)
+    next_data["playnext_context"] = True
+    next_data["is_pack"] = True
+    next_data["pack_type"] = pack_scope["pack_type"]
+    next_data["pack_seasons"] = pack_scope["pack_seasons"]
+    next_data["pack_reason"] = pack_scope["pack_reason"]
+    for key in (
+        "autoplay",
+        "current_time",
+        "direct_play",
+        "next_tv_data",
+        "progress",
+        "resume",
+        "subtitles_path",
+        "stream_subtitles",
+        "total_time",
+    ):
+        next_data.pop(key, None)
+
+    magnet = uri if uri.startswith("magnet:") else ""
+    torrent_url = "" if magnet else uri
+    next_data["url"] = get_elementum_url(
+        magnet,
+        torrent_url,
+        "tv",
+        ids,
+        data=next_data,
+    )
+    return next_data
+
+
 def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = None) -> Optional[str]:
     kodilog(
         f"Preparing Jacktorr URL with magnet={summarize_locator_for_log(magnet)!r}, url={summarize_locator_for_log(url)!r}, has_magnet={bool(magnet)}, has_url={bool(url)}",
@@ -348,9 +433,17 @@ def _extract_quality_from_titles(results: List[TorrentStream]) -> None:
             res.quality = _UNKNOWN_QUALITY_LABEL
 
 
-def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, Any]) -> None:
-    """Background thread: search, select, resolve, and cache next episode."""
-    if not get_setting("autoscrape_next_episode", False):
+def autoscrape_next_episode(
+    item_data: Dict[str, Any],
+    next_tv_data: Dict[str, Any],
+    force: bool = False,
+) -> None:
+    """Background thread: search and cache the next episode.
+
+    ``force`` is used after an explicit PlayNext click. It bypasses only the
+    proactive pre-scrape setting; it does not enable global autoplay.
+    """
+    if not force and not get_setting("autoscrape_next_episode", False):
         return
 
     ids = item_data.get("ids")
@@ -370,9 +463,9 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
     results_cache_key = get_autoscrape_results_cache_key(id_value, season, episode)
 
     try:
-        from lib.search import search_client
+        from lib.search import _process_search_results, search_client
 
-        results = search_client(
+        raw_results = search_client(
             query=item_data.get("title", ""),
             ids=ids,
             mode=item_data.get("mode", ""),
@@ -383,17 +476,36 @@ def autoscrape_next_episode(item_data: Dict[str, Any], next_tv_data: Dict[str, A
             show_dialog=False,
         )
 
-        if not results:
+        if not raw_results:
             kodilog("Autoscrape: no results found")
             return
 
-        # Populate quality from title for each result (search_client
-        # returns raw TorrentStream objects with quality="N/A"). This
-        # matches what PreProcessBuilder.filter_by_quality() does without
-        # importing Kodi-dependent modules in this background thread.
-        _extract_quality_from_titles(results)
+        if not get_setting("auto_play", False):
+            results = _process_search_results(
+                raw_results,
+                item_data.get("mode", ""),
+                next_tv_data.get("name", ""),
+                episode,
+                season,
+                "",
+                item_data.get("title", ""),
+                item_data.get("media_type", ""),
+                True,
+                suppress_debrid_dialog=True,
+                suppress_busy_dialog=force,
+            )
+            if not results:
+                kodilog("Autoscrape: no results after normal source processing")
+                return
+            cache_autoscrape_result(results_cache_key, results)
+            kodilog(
+                f"Autoscrape: cached processed results {results_cache_key} "
+                f"({len(results)} sources)"
+            )
+            return
 
-        # Cache results for source select (when autoplay is disabled)
+        results = raw_results
+        _extract_quality_from_titles(results)
         cache_autoscrape_result(results_cache_key, results)
         kodilog(f"Autoscrape: cached results {results_cache_key} ({len(results)} sources)")
 

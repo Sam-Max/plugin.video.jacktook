@@ -41,7 +41,7 @@ def test_simkl_library_is_in_tv_and_movie_menus_not_root_menu():
         assert simkl_items[0]["name"] != 90981
         assert len(simkl_menu_entries) == 1
         assert simkl_menu_entries[0]["name"] == simkl_items[0]["name"]
-        assert simkl_items[0]["icon"] == "library.png"
+        assert simkl_items[0]["icon"] == "simkl.png"
         assert simkl_items[0]["params"] == {"media_type": media_type}
         assert simkl_items[0]["condition"] is has_simkl_library_items
         assert items[items.index(simkl_items[0]) + 1]["params"]["group"] == "library"

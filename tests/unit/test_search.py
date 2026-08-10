@@ -24,6 +24,41 @@ def test_search_variant_values():
     assert SearchVariant.ORIGINAL_TITLE_YEAR == "original_title_year"
 
 
+def test_process_results_suppresses_busy_dialog_when_requested():
+    from lib import search
+
+    close_busy_dialog = MagicMock()
+    silent_dialog = MagicMock()
+    check_debrid_cached = MagicMock(return_value=[])
+    with patch.object(search, "get_setting", return_value=False), patch.object(
+        search, "close_busy_dialog", close_busy_dialog
+    ), patch.object(search, "SilentProgressDialog", return_value=silent_dialog), patch.object(
+        search, "check_debrid_cached", check_debrid_cached
+    ):
+        assert search.process_results(
+            [MagicMock()], "Show", "tv", "tv", True, 2,
+            suppress_dialog=True,
+            suppress_busy_dialog=True,
+        ) == []
+
+    close_busy_dialog.assert_not_called()
+    assert check_debrid_cached.call_args.args[4] is silent_dialog
+
+
+def test_process_results_closes_busy_dialog_by_default():
+    from lib import search
+
+    close_busy_dialog = MagicMock()
+    with patch.object(search, "get_setting", return_value=False), patch.object(
+        search, "close_busy_dialog", close_busy_dialog
+    ), patch.object(search, "SilentProgressDialog"), patch.object(
+        search, "check_debrid_cached", return_value=[]
+    ):
+        search.process_results([MagicMock()], "Show", "tv", "tv", True, 2, suppress_dialog=True)
+
+    close_busy_dialog.assert_called_once_with()
+
+
 def test_super_quick_play_preserves_simkl_resume_metadata():
     params = {
         "ids": json.dumps({"tmdb_id": 123}),

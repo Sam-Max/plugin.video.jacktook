@@ -1663,7 +1663,7 @@ def test_serialized_file_index_uses_existing_route_without_index_handoff(monkeyp
         monkeypatch.setattr(
             player_utils,
             "get_elementum_url",
-            lambda magnet, url, mode, ids: resolver_calls.append((magnet, url, mode, ids)) or "plugin://elementum/play",
+            lambda magnet, url, mode, ids, data=None: resolver_calls.append((magnet, url, mode, ids)) or "plugin://elementum/play",
         )
 
     resolved = stremio_playback.resolve_stremio_playback_url(data)
