@@ -57,6 +57,7 @@ from lib.utils.kodi.utils import (
     translation,
 )
 from lib.utils.player.utils import resolve_playback_url
+from lib.utils.source_manager import parse_source_selection, reconcile_source_selection
 
 TITLE_LANGUAGE_LOCALIZED_FIRST = "localized_first"
 TITLE_LANGUAGE_ENGLISH_FIRST = "english_first"
@@ -89,6 +90,10 @@ class SilentProgressDialog:
 def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     flags = {
         "torrent": bool(get_setting("torrent_enable")),
+        "jackett": bool(get_setting("jackett_enabled")),
+        "prowlarr": bool(get_setting("prowlarr_enabled")),
+        "burst": bool(get_setting("jacktookburst_enabled")),
+        "jackgram": bool(get_setting("jackgram_enabled")),
         "external_scraper": bool(get_setting("external_scraper_enabled")),
         "stremio": bool(get_setting("stremio_enabled")),
         "rd": bool(get_setting("real_debrid_enabled")),
@@ -133,27 +138,21 @@ BUILTIN_INDEXER_SETTINGS = {
 }
 
 
-def _get_source_manager_selection() -> set:
+def _get_source_manager_selection() -> Optional[set]:
     """Return the cached source-manager selection as a set of strings.
 
-    If the cache is empty, missing, or corrupt, returns an empty set so
-    that callers treat every source as enabled (open fallback).
+    Missing or corrupt values return None so callers use the legacy open
+    fallback. A persisted empty list remains an explicit empty whitelist.
     """
-    raw = cache.get("source_manager_selection")
-    if not raw:
-        return set()
-    try:
-        parsed = json.loads(raw) if isinstance(raw, str) else list(raw)
-    except (ValueError, TypeError):
-        return set()
-    return set(parsed) if parsed else set()
+    parsed = parse_source_selection(cache.get("source_manager_selection"))
+    return set(parsed) if parsed is not None else None
 
 
 def _is_source_enabled(indexer_key, stremio_addon_key=None):
     selected = _get_source_manager_selection()
 
-    # Empty cache → everything is enabled (no whitelist restriction)
-    if not selected:
+    # Missing or corrupt cache → everything is enabled (no whitelist restriction)
+    if selected is None:
         return True
 
     # Stremio addons are keyed with a "Stremio:" prefix
@@ -1452,6 +1451,11 @@ def search_client(
     year: Optional[int] = None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
+    reconcile_source_selection(
+        cache_backend=cache,
+        settings_getter=get_setting,
+        stremio_addons_getter=get_selected_stream_addons,
+    )
     if year is None:
         year = _infer_tmdb_year(ids, mode)
 

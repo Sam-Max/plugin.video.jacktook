@@ -187,10 +187,10 @@ class TestOpenSourceManagerDialog:
     @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
     @patch("lib.gui.source_manager_dialog.xbmcgui.ListItem")
     @patch("lib.gui.source_manager_dialog.cache")
-    def test_empty_selection_does_not_modify_cache(
+    def test_empty_selection_is_saved_to_cache(
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
-        # Seed an existing selection so the default-init path is skipped
+        # Seed an existing selection so the default-init path is skipped.
         def setting_side_effect(key):
             return key in ("jackett_enabled", "prowlarr_enabled")
 
@@ -204,7 +204,11 @@ class TestOpenSourceManagerDialog:
 
         open_source_manager_dialog()
 
-        mock_cache.set.assert_not_called()
+        saved_calls = {
+            call.args[0]: json.loads(call.args[1]) for call in mock_cache.set.call_args_list
+        }
+        assert saved_calls["source_manager_selection"] == []
+        assert saved_calls["source_manager_known_keys"] == ["Jackett", "Prowlarr"]
 
     @patch("lib.gui.source_manager_dialog.get_setting")
     @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")

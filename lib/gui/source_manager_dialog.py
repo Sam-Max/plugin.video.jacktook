@@ -1,39 +1,17 @@
-import json
 import os
-from datetime import timedelta
 
 import xbmcgui
 
 from lib.db.cached import cache
 from lib.utils.kodi.settings import get_setting
 from lib.utils.kodi.utils import ADDON_PATH, kodilog, translation
-
-BUILTIN_SOURCE_SETTINGS = [
-    ("jackett_enabled", "Jackett"),
-    ("prowlarr_enabled", "Prowlarr"),
-    ("jacktookburst_enabled", "Burst"),
-    ("jackgram_enabled", "Jackgram"),
-    ("easynews_enabled", "Easynews"),
-    ("stremio_enabled", "Stremio"),
-    ("external_scraper_enabled", "External Scraper"),
-]
-
-CACHE_KEY = "source_manager_selection"
-KNOWN_CACHE_KEY = "source_manager_known_keys"
-
-
-def _parse_selection(raw):
-    if raw is None:
-        return []
-    if isinstance(raw, str):
-        try:
-            return json.loads(raw)
-        except (ValueError, TypeError):
-            return []
-    try:
-        return list(raw)
-    except TypeError:
-        return []
+from lib.utils.source_manager import (
+    BUILTIN_SOURCE_SETTINGS,
+    CACHE_KEY,
+    KNOWN_CACHE_KEY,
+    persist_source_selection,
+    reconcile_source_selection,
+)
 
 
 def _get_icon_path(name):
@@ -105,39 +83,12 @@ def _build_source_items():
 
 
 def _resolve_selection(cache_keys):
-    """Load saved selection, auto-select newly enabled sources, and persist changes.
-
-    Returns the current selection list.
-    """
-    current_selection = _parse_selection(cache.get(CACHE_KEY))
-    known_keys = _parse_selection(cache.get(KNOWN_CACHE_KEY))
-    modified = False
-
-    if not current_selection:
-        current_selection = list(cache_keys)
-        known_keys = list(cache_keys)
-        modified = True
-    else:
-        # Only auto-select sources that were not known the last time the
-        # dialog was saved. This avoids re-selecting sources the user
-        # deliberately deselected.
-        newly_enabled = [key for key in cache_keys if key not in known_keys]
-        if newly_enabled:
-            current_selection.extend(newly_enabled)
-            known_keys = list(cache_keys)
-            modified = True
-
-    if modified:
-        cache.set(CACHE_KEY, json.dumps(current_selection), expires=timedelta(days=365))
-        cache.set(KNOWN_CACHE_KEY, json.dumps(known_keys), expires=timedelta(days=365))
-
-    return current_selection
+    return reconcile_source_selection(cache_keys, cache_backend=cache)
 
 
 def _persist_selection(selected, cache_keys):
     """Save the user's selection and the set of known source keys."""
-    cache.set(CACHE_KEY, json.dumps(selected), expires=timedelta(days=365))
-    cache.set(KNOWN_CACHE_KEY, json.dumps(cache_keys), expires=timedelta(days=365))
+    persist_source_selection(selected, cache_keys, cache_backend=cache)
 
 
 def open_source_manager_dialog():
@@ -156,7 +107,7 @@ def open_source_manager_dialog():
         useDetails=True,
     )
 
-    if result is None or not result:
+    if result is None:
         return
 
     selected = [cache_keys[i] for i in result]

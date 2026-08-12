@@ -8,6 +8,7 @@ from lib.api.tmdbv3api.as_obj import AsObj
 from lib.search import (
     SearchCancelled,
     SearchVariant,
+    _build_search_cache_scope,
     _build_title_fallback_queries,
     _check_search_caches,
     _handle_super_quick_play,
@@ -568,10 +569,143 @@ def test_is_source_enabled_returns_true_when_cache_empty():
         assert _is_source_enabled(Indexer.STREMIO, "some_addon") is True
 
 
+def test_search_reconciles_new_settings_source_before_cache_and_eligibility():
+    """New Settings sources join the whitelist without re-enabling known deselections."""
+    cached = [MagicMock()]
+    stored = {
+        "source_manager_selection": json.dumps(["Jackett"]),
+        "source_manager_known_keys": json.dumps(["Jackett", "Prowlarr"]),
+    }
+
+    def cache_get_side_effect(key):
+        return stored.get(key)
+
+    def cache_set_side_effect(key, value, **kwargs):
+        stored[key] = value
+
+    def setting_side_effect(key, default=None):
+        return key == "jacktookburst_enabled"
+
+    with (
+        patch("lib.search.cache") as mock_cache,
+        patch("lib.search.get_setting", side_effect=setting_side_effect),
+        patch("lib.search.get_selected_stream_addons", return_value=[]),
+        patch("lib.search.close_busy_dialog"),
+        patch("lib.search._infer_tmdb_year", return_value=2020),
+        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
+        patch("lib.search._check_search_caches", return_value=cached),
+    ):
+        mock_cache.get.side_effect = cache_get_side_effect
+        mock_cache.set.side_effect = cache_set_side_effect
+        assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
+        assert _is_source_enabled(Indexer.BURST) is True
+        assert _is_source_enabled(Indexer.PROWLARR) is False
+
+    saved = {call.args[0]: json.loads(call.args[1]) for call in mock_cache.set.call_args_list}
+    assert saved["source_manager_selection"] == ["Jackett", "Burst"]
+    assert saved["source_manager_known_keys"] == ["Jackett", "Prowlarr", "Burst"]
+
+
+def test_search_preserves_explicit_empty_source_selection():
+    """An explicit empty whitelist excludes enabled providers after reconciliation."""
+    cached = [MagicMock()]
+    stored = {
+        "source_manager_selection": "[]",
+        "source_manager_known_keys": json.dumps(["Jackett", "Prowlarr"]),
+    }
+
+    with (
+        patch("lib.search.cache") as mock_cache,
+        patch(
+            "lib.search.get_setting",
+            side_effect=lambda key, default=None: key in ("jackett_enabled", "prowlarr_enabled"),
+        ),
+        patch("lib.search.get_selected_stream_addons", return_value=[]),
+        patch("lib.search.close_busy_dialog"),
+        patch("lib.search._infer_tmdb_year", return_value=2020),
+        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
+        patch("lib.search._check_search_caches", return_value=cached),
+    ):
+        mock_cache.get.side_effect = stored.get
+        assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
+        assert json.loads(stored["source_manager_selection"]) == []
+        assert _is_source_enabled(Indexer.JACKETT) is False
+        assert _is_source_enabled(Indexer.PROWLARR) is False
+        mock_cache.set.assert_not_called()
+
+
+def test_search_initializes_missing_source_selection():
+    """A missing selection cache initializes the enabled sources."""
+    cached = [MagicMock()]
+    stored = {}
+
+    def cache_set_side_effect(key, value, **kwargs):
+        stored[key] = value
+
+    with (
+        patch("lib.search.cache") as mock_cache,
+        patch("lib.search.get_setting", side_effect=lambda key, default=None: key == "jackett_enabled"),
+        patch("lib.search.get_selected_stream_addons", return_value=[]),
+        patch("lib.search.close_busy_dialog"),
+        patch("lib.search._infer_tmdb_year", return_value=2020),
+        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
+        patch("lib.search._check_search_caches", return_value=cached),
+    ):
+        mock_cache.get.side_effect = stored.get
+        mock_cache.set.side_effect = cache_set_side_effect
+        assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
+
+    assert json.loads(stored["source_manager_selection"]) == ["Jackett"]
+    assert json.loads(stored["source_manager_known_keys"]) == ["Jackett"]
+
+
+def test_search_cache_scope_changes_for_enabled_search_providers():
+    settings = {
+        "jackett_enabled": False,
+        "prowlarr_enabled": False,
+        "jacktookburst_enabled": False,
+        "jackgram_enabled": False,
+        "external_scraper_enabled": False,
+        "stremio_enabled": False,
+        "torrent_enable": False,
+        "real_debrid_enabled": False,
+        "alldebrid_enabled": False,
+        "torbox_enabled": False,
+        "offcloud_enabled": False,
+        "premiumize_enabled": False,
+        "debrider_enabled": False,
+        "easydebrid_enabled": False,
+        "external_scraper_module": "",
+    }
+
+    with patch("lib.search.get_setting", side_effect=lambda key, default=None: settings.get(key, default)), patch(
+        "lib.search.cache.get", side_effect=lambda key: {"source_manager_selection": "[]"}.get(key)
+    ):
+        base_scope = _build_search_cache_scope()
+        for key in (
+            "jackett_enabled",
+            "prowlarr_enabled",
+            "jacktookburst_enabled",
+            "jackgram_enabled",
+            "external_scraper_enabled",
+            "stremio_enabled",
+        ):
+            settings[key] = True
+            assert _build_search_cache_scope() != base_scope
+            settings[key] = False
+
+
 def test_is_source_enabled_returns_true_when_cache_invalid():
     with patch("lib.search.cache") as mock_cache:
         mock_cache.get.return_value = "not-json"
         assert _is_source_enabled(Indexer.JACKETT) is True
+
+
+def test_is_source_enabled_returns_false_when_cache_is_explicitly_empty():
+    with patch("lib.search.cache") as mock_cache:
+        mock_cache.get.return_value = "[]"
+        assert _is_source_enabled(Indexer.JACKETT) is False
+        assert _is_source_enabled(Indexer.STREMIO, "some_addon") is False
 
 
 @patch("lib.search.get_setting")
@@ -821,6 +955,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches") as mock_check,
             patch("lib.search.get_setting", return_value="0"),
@@ -841,6 +976,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=cached),
             patch("lib.search.get_setting") as mock_get_setting,
@@ -862,6 +998,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="1"),
@@ -883,6 +1020,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="0"),
@@ -903,6 +1041,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch(
@@ -934,6 +1073,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020),
             patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="1"),
@@ -959,6 +1099,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year", return_value=2020) as mock_infer,
             patch("lib.search._build_title_fallback_queries", return_value=["q"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="0"),
@@ -977,6 +1118,7 @@ class TestSearchClient:
             patch("lib.search.close_busy_dialog"),
             patch("lib.search._infer_tmdb_year") as mock_infer,
             patch("lib.search._build_title_fallback_queries", return_value=["q"]),
+            patch("lib.search.reconcile_source_selection"),
             patch("lib.search._build_search_cache_scope", return_value="scope"),
             patch("lib.search._check_search_caches", return_value=None),
             patch("lib.search.get_setting", return_value="0"),
