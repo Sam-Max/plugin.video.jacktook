@@ -273,6 +273,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             "ids": self.item_information.get("ids"),
             "tv_data": tv_data,
             "poster": self.item_information.get("poster"),
+            "description": self.item_information.get("overview") or "",
             "stream_subtitles": source.streamSubtitles,
         }
         metadata = source.stremioMetadata

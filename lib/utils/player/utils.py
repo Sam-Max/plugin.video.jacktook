@@ -294,6 +294,12 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
     _save_jacktorr_playback_metadata(magnet, data or {})
     poster = (data or {}).get("poster") or ""
     poster_param = f"&poster={quote(poster)}" if poster else ""
+    title = (data or {}).get("title") or ""
+    title_param = f"&title={quote(title)}" if title else ""
+    description = (data or {}).get("description") or ""
+    description_param = f"&description={quote(description)}" if description else ""
+    category = _get_jacktorr_category((data or {}).get("mode"))
+    category_param = f"&category={quote(category)}" if category else ""
     tv_data = (data or {}).get("tv_data")
     season_episode_param = ""
     if isinstance(tv_data, dict):
@@ -305,13 +311,22 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
         ):
             season_episode_param = f"&season={quote(str(season))}&episode={quote(str(episode))}"
     if magnet:
-        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}{poster_param}{season_episode_param}"
+        _url = f"plugin://plugin.video.jacktorr/play_magnet?magnet={quote(magnet)}{poster_param}{title_param}{description_param}{category_param}{season_episode_param}"
     elif url:
-        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}{poster_param}{season_episode_param}"
+        _url = f"plugin://plugin.video.jacktorr/play_url?url={quote(url)}{poster_param}{title_param}{description_param}{category_param}{season_episode_param}"
     else:
         kodilog("Jacktorr playback failed due to empty magnet and url", level=LOGDEBUG)
         raise TorrentException("No magnet or url found for Jacktorr playback")
     return _url
+
+
+def _get_jacktorr_category(mode: Any) -> Optional[str]:
+    if not isinstance(mode, str):
+        return None
+    category = mode.strip().lower()
+    if category == "movies":
+        return "movie"
+    return category if category in {"movie", "tv", "music", "other"} else None
 
 
 def _save_jacktorr_playback_metadata(magnet: str, data: Dict[str, Any]) -> None:

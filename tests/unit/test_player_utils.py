@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlsplit
 
 import pytest
 
@@ -169,6 +169,87 @@ def test_jacktorr_url_includes_poster_param_on_play_url_variant():
 
     assert url.startswith("plugin://plugin.video.jacktorr/play_url")
     assert f"poster={quote(poster)}" in url
+
+
+@pytest.mark.parametrize(
+    ("magnet", "url", "route"),
+    [
+        ("magnet:?xt=urn:btih:MAGNETHASH", "", "play_magnet"),
+        ("", "https://example.com/file.torrent", "play_url"),
+    ],
+)
+def test_jacktorr_url_forwards_encoded_title_and_description(magnet, url, route):
+    from lib.utils.player import utils
+
+    title = "El titulo & la pelicula"
+    description = "Descripcion con espacios, signos & unicode: cafe"
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        jacktorr_url = utils.get_jacktorr_url(
+            magnet,
+            url,
+            {"title": title, "description": description},
+        )
+
+    parsed = urlsplit(jacktorr_url)
+    assert parsed.path == "/{}".format(route)
+    assert parse_qs(parsed.query)["title"] == [title]
+    assert parse_qs(parsed.query)["description"] == [description]
+
+
+def test_jacktorr_url_round_trips_unicode_html_description():
+    from lib.utils.player import utils
+
+    description = "Sinopsis <b>café 東京 & más</b>"
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        jacktorr_url = utils.get_jacktorr_url(
+            "magnet:?xt=urn:btih:MAGNETHASH",
+            "",
+            {"description": description},
+        )
+
+    assert parse_qs(urlsplit(jacktorr_url).query)["description"] == [description]
+
+
+@pytest.mark.parametrize(
+    ("mode", "category"),
+    [
+        ("movie", "movie"),
+        ("movies", "movie"),
+        (" TV ", "tv"),
+        ("MuSiC", "music"),
+        ("other", "other"),
+    ],
+)
+def test_jacktorr_url_forwards_normalized_recognized_category(mode, category):
+    from lib.utils.player import utils
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        jacktorr_url = utils.get_jacktorr_url(
+            "magnet:?xt=urn:btih:MAGNETHASH", "", {"mode": mode}
+        )
+
+    assert parse_qs(urlsplit(jacktorr_url).query)["category"] == [category]
+
+
+@pytest.mark.parametrize(
+    "data",
+    [{}, {"mode": "series"}, {"mode": 1}, {"mode": None}],
+)
+def test_jacktorr_url_omits_missing_or_unknown_category(data):
+    from lib.utils.player import utils
+
+    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+        "lib.utils.torrent.torrserver_utils.save_torrent_meta"
+    ):
+        jacktorr_url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data)
+
+    assert "category" not in parse_qs(urlsplit(jacktorr_url).query)
 
 
 def test_jacktorr_url_forwards_season_and_episode_to_play_magnet():

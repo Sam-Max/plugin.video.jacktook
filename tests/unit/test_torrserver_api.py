@@ -5,6 +5,7 @@ instead of a dict for some endpoints, causing TypeError when
 accessing ["hash"] on the list.
 """
 
+from json import loads
 from unittest.mock import MagicMock
 
 import pytest
@@ -118,6 +119,25 @@ class TestAddMagnet:
         result = torrserver.add_magnet("magnet:?xt=urn:btih:abc123")
         assert result == "magnet_hash_1"
 
+    def test_add_magnet_includes_recognized_category_only(self, torrserver):
+        torrserver._session.request.return_value = _make_response({"hash": "magnet_hash_1"})
+
+        torrserver.add_magnet("magnet:?xt=urn:btih:abc123", category="movie")
+        payload = loads(torrserver._session.request.call_args.kwargs["data"])
+        assert payload["category"] == "movie"
+
+        torrserver.add_magnet("magnet:?xt=urn:btih:abc123", category="custom")
+        payload = loads(torrserver._session.request.call_args.kwargs["data"])
+        assert "category" not in payload
+
+    def test_data_argument_is_accepted_but_not_sent_to_torrserver(self, torrserver):
+        torrserver._session.request.return_value = _make_response({"hash": "magnet_hash_1"})
+
+        torrserver.add_magnet("magnet:?xt=urn:btih:abc123", data="legacy")
+
+        payload = loads(torrserver._session.request.call_args.kwargs["data"])
+        assert "data" not in payload
+
 
 class TestAddTorrentObj:
     """Tests for TorrServer.add_torrent_obj with normalized responses."""
@@ -135,6 +155,15 @@ class TestAddTorrentObj:
         mock_file = MagicMock()
         result = torrserver.add_torrent_obj(mock_file)
         assert result == "torrent_hash_1"
+
+    def test_add_torrent_obj_includes_recognized_category_only(self, torrserver):
+        torrserver._session.request.return_value = _make_response({"hash": "torrent_hash_1"})
+
+        torrserver.add_torrent_obj(MagicMock(), category="tv")
+        assert torrserver._session.request.call_args.kwargs["data"]["category"] == "tv"
+
+        torrserver.add_torrent_obj(MagicMock(), category=None)
+        assert "category" not in torrserver._session.request.call_args.kwargs["data"]
 
 
 class TestAddTorrent:

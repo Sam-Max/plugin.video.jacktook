@@ -66,6 +66,7 @@ from lib.utils.general.utils import (
     clear_tmdb_cache as utils_clear_tmdb_cache,
 )
 from lib.utils.kodi.settings import addon_settings, subtitle_automation_enabled
+from lib.utils.torrent.display_metadata import get_display_metadata, prune_display_metadata
 from lib.utils.kodi.settings_backup import (
     export_settings_backup as kodi_export_settings_backup,
 )
@@ -780,16 +781,31 @@ def get_oc_downloads(params):
     return debrid_navigation.get_oc_downloads(params)
 
 
-def torrents(params):
-    if not JACKTORR_ADDON:
-        notification(translation(30253))
-        end_of_directory(cache=False)
-        return
+def _normalize_torrent_category(category):
+    if not isinstance(category, str):
+        return None
+    category = category.strip()
+    return category or None
 
-    set_pluging_category(translation(90012))
 
-    for torrent in get_torrserver_api().torrents():
+def _torrent_categories(torrent_list):
+    categories = {_normalize_torrent_category(torrent.get("category")) for torrent in torrent_list}
+    return sorted(
+        (category for category in categories if category is not None),
+        key=lambda category: (category.casefold(), category),
+    ) + (
+        [None] if None in categories else []
+    )
+
+
+def _add_torrent_items(torrent_list):
+    api = get_torrserver_api()
+    for torrent in torrent_list:
         info_hash = torrent.get("hash")
+        display_metadata = get_display_metadata(api._base_url, info_hash)
+        display_title = display_metadata.get("title") or torrent.get("title", "")
+        display_plot = display_metadata.get("plot", "")
+        display_poster = display_metadata.get("poster") or torrent.get("poster") or ""
 
         context_menu_items = [(translation(30700), play_info_hash(info_hash))]
 
@@ -804,7 +820,7 @@ def torrents(params):
             parsed_data.get("ids", {}) if isinstance(parsed_data.get("ids", {}), dict) else {}
         )
         meta = {
-            "title": parsed_data.get("title") or torrent.get("title", ""),
+            "title": parsed_data.get("title") or display_title,
             "mode": parsed_data.get("mode", ""),
             "ids": {
                 "tmdb_id": parsed_ids.get("tmdb_id", ""),
@@ -855,8 +871,16 @@ def torrents(params):
         )
 
         torrent_li = build_list_item(
-            torrent.get("title", ""), "magnet.png", poster_path=torrent.get("poster") or ""
+            display_title, "magnet.png", poster_path=display_poster
         )
+        get_video_info_tag = getattr(torrent_li, "getVideoInfoTag", None)
+        if callable(get_video_info_tag):
+            video_info_tag = get_video_info_tag()
+            video_info_tag.setTitle(display_title)
+            if display_plot:
+                video_info_tag.setPlot(display_plot)
+        else:
+            torrent_li.setInfo("video", {"title": display_title, "plot": display_plot})
         torrent_li.addContextMenuItems(context_menu_items)
         addDirectoryItem(
             ADDON_HANDLE,
@@ -864,6 +888,43 @@ def torrents(params):
             torrent_li,
             isFolder=True,
         )
+
+
+def torrents(params):
+    if not JACKTORR_ADDON:
+        notification(translation(30253))
+        end_of_directory(cache=False)
+        return
+
+    api = get_torrserver_api()
+    torrent_list = api.torrents()
+    prune_display_metadata(api._base_url)
+    uncategorized = str(params.get("uncategorized", "")).lower() == "true"
+    selected_category = _normalize_torrent_category(params.get("category"))
+
+    if uncategorized or selected_category:
+        category_label = translation(90963) if uncategorized else selected_category
+        set_pluging_category(f"{translation(90012)}: {category_label}")
+        if uncategorized:
+            torrent_list = (
+                torrent
+                for torrent in torrent_list
+                if _normalize_torrent_category(torrent.get("category")) is None
+            )
+        else:
+            torrent_list = (
+                torrent
+                for torrent in torrent_list
+                if _normalize_torrent_category(torrent.get("category")) == selected_category
+            )
+        _add_torrent_items(torrent_list)
+    else:
+        set_pluging_category(translation(90012))
+        for category in _torrent_categories(torrent_list):
+            label = category or translation(90963)
+            torrent_li = build_list_item(label, "magnet.png")
+            params = {"uncategorized": True} if category is None else {"category": category}
+            addDirectoryItem(ADDON_HANDLE, build_url("torrents", **params), torrent_li, isFolder=True)
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")
 

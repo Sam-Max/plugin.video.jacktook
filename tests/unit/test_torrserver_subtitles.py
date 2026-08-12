@@ -312,8 +312,10 @@ class TestTorrentMetadataCache:
             module.save_torrent_meta("ABC123", meta)
             result = module.get_torrent_meta("abc123")
 
-        assert result == meta
-        assert stored == {"torrent_meta:abc123": meta}
+        assert result == {"mode": "", "ids": {"imdb_id": "tt123"}, "tv_data": {}}
+        assert stored == {
+            "torrent_meta:abc123": {"mode": "", "ids": {"imdb_id": "tt123"}, "tv_data": {}}
+        }
 
     def test_get_torrent_meta_strips_hash_whitespace(self):
         module = _load_torrserver_utils()
@@ -326,3 +328,26 @@ class TestTorrentMetadataCache:
 
         assert result == meta
         mock_get.assert_called_once_with("torrent_meta:abc123")
+
+    def test_torrent_files_uses_shared_display_plot_and_poster(self):
+        module = _load_torrserver_utils()
+        api = MagicMock(_base_url="http://server:8090")
+        api.get_torrent_info.return_value = {
+            "title": "Server title",
+            "poster": "Server poster",
+            "file_stats": [{"id": 1, "path": "movie.mkv"}],
+        }
+        file_item = MagicMock()
+        video_tag = MagicMock()
+        file_item.getVideoInfoTag.return_value = video_tag
+
+        with patch.object(module, "get_torrserver_api", return_value=api), patch.object(
+            module, "get_display_metadata", return_value={"title": "Shared", "plot": "Plot", "poster": "Poster"}
+        ), patch.object(module, "build_list_item", return_value=file_item) as build_item, patch.object(
+            module, "addDirectoryItem"
+        ), patch.object(module, "end_of_directory"), patch.object(module, "set_pluging_category"):
+            module.torrent_files({"info_hash": "a" * 40})
+
+        build_item.assert_called_once_with("movie.mkv", "download.png", poster_path="Poster")
+        video_tag.setTitle.assert_called_once_with("Shared")
+        video_tag.setPlot.assert_called_once_with("Plot")

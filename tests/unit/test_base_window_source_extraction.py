@@ -66,6 +66,35 @@ def test_extract_source_details_uses_infohash_fallback_without_http_url():
     assert magnet == "magnet:?xt=urn:btih:abc123"
 
 
+@pytest.mark.parametrize("mode", ["movies", "tv"])
+def test_prepare_source_data_forwards_localized_overview_as_description(mode):
+    synopsis = "Localized synopsis <b>without truncation</b>"
+    source = TorrentStream(
+        title="Selected source",
+        type=IndexerType.TORRENT,
+        indexer=Indexer.JACKETT,
+    )
+    window = _DummyWindow("dummy.xml", "")
+    window.item_information = {"mode": mode, "overview": synopsis}
+
+    playback_data = window.prepare_source_data(source, "", "", True)
+
+    assert playback_data["description"] == synopsis
+
+
+def test_prepare_source_data_uses_empty_description_when_overview_is_missing():
+    source = TorrentStream(
+        title="Selected source",
+        type=IndexerType.TORRENT,
+        indexer=Indexer.JACKETT,
+    )
+    window = _DummyWindow("dummy.xml", "")
+
+    playback_data = window.prepare_source_data(source, "", "", True)
+
+    assert playback_data["description"] == ""
+
+
 @pytest.mark.parametrize(
     "source",
     [

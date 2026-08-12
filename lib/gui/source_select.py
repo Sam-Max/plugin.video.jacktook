@@ -458,6 +458,7 @@ class SourceSelect(BaseWindow):
             title=title,
             poster=poster,
             data=data,
+            category=self.item_information.get("mode"),
         )
 
     def _download_file(self, selected_source) -> None:

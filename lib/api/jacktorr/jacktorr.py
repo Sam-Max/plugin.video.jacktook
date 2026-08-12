@@ -42,20 +42,20 @@ class TorrServer:
         """Tests server status"""
         return self._get("/echo").content
 
-    def add_magnet(self, magnet, title="", poster="", data=""):
+    def add_magnet(self, magnet, title="", poster="", data="", category=None):
+        payload = {
+            "action": "add",
+            "link": magnet,
+            "title": title,
+            "poster": poster,
+            "save_to_db": True,
+        }
+        if category in {"movie", "tv", "music", "other"}:
+            payload["category"] = category
         return self._extract_hash(
             self._post(
                 "/torrents",
-                data=dumps(
-                    {
-                        "action": "add",
-                        "link": magnet,
-                        "title": title,
-                        "poster": poster,
-                        "data": data,
-                        "save_to_db": True,
-                    }
-                ),
+                data=dumps(payload),
             )
         )
 
@@ -69,22 +69,23 @@ class TorrServer:
                         "save": "true",
                         "title": title,
                         "poster": poster,
-                        "data": data,
                     },
                 )
             )
 
-    def add_torrent_obj(self, obj, title="", poster="", data=""):
+    def add_torrent_obj(self, obj, title="", poster="", data="", category=None):
+        payload = {
+            "save": "true",
+            "title": title,
+            "poster": poster,
+        }
+        if category in {"movie", "tv", "music", "other"}:
+            payload["category"] = category
         return self._extract_hash(
             self._post(
                 "/torrent/upload",
                 files={"file": obj},
-                data={
-                    "save": "true",
-                    "title": title,
-                    "poster": poster,
-                    "data": data,
-                },
+                data=payload,
             )
         )
 

@@ -28,11 +28,12 @@ from lib.gui.custom_dialogs import source_select
 from lib.gui.search_status_window import SearchStatusWindow, SearchTaskManager
 from lib.player import JacktookPLayer
 from lib.utils.clients.utils import get_client, update_dialog
-from lib.utils.debrid.debrid_utils import check_debrid_cached
+from lib.utils.debrid.debrid_utils import check_debrid_cached, is_supported_debrid_type
 from lib.utils.general.utils import (
     DialogListener,
     Indexer,
     IndexerType,
+    Players,
     SearchVariant,
     build_media_metadata,
     cache_results,
@@ -1621,6 +1622,31 @@ def show_source_select(
     return source_select(item_info, xml_file=xml_file_string, sources=results)
 
 
+def _autoplay_description(source: TorrentStream, ids: dict, mode: str) -> str:
+    if not (
+        get_setting("torrent_enable")
+        and get_setting("torrent_client") == Players.JACKTORR
+    ):
+        return ""
+
+    if _is_stremio_source(source):
+        payload = payload_from_torrent(source)
+        decision = classify(
+            candidate_from_payload(payload), current_stremio_playback_capabilities()
+        )
+        if decision.source_class != "torrent_hash" or is_supported_debrid_type(
+            payload.get("debrid_type", "")
+        ):
+            return ""
+    elif (
+        source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID)
+        or is_supported_debrid_type(source.debridType)
+    ):
+        return ""
+
+    return build_media_metadata(ids or {}, mode).get("overview") or ""
+
+
 def auto_play(
     results: List[TorrentStream],
     ids,
@@ -1654,11 +1680,13 @@ def auto_play(
         if group_matches:
             selected_result = group_matches[0]
 
+    description = _autoplay_description(selected_result, ids, mode)
     if _is_stremio_source(selected_result):
         try:
             playback_info = _resolve_stremio_source(
                 selected_result,
                 {
+                    "description": description,
                     "mode": mode,
                     "ids": ids,
                     "tv_data": tv_data,
@@ -1676,6 +1704,7 @@ def auto_play(
         playback_info = resolve_playback_url(
             data={
                 "title": selected_result.title,
+                "description": description,
                 "mode": mode,
                 "indexer": selected_result.indexer,
                 "type": selected_result.type,

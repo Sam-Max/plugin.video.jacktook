@@ -1,5 +1,8 @@
 import json
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.search import (
@@ -14,7 +17,7 @@ from lib.search import (
     search_client,
     show_source_select,
 )
-from lib.utils.general.utils import Indexer
+from lib.utils.general.utils import Indexer, IndexerType, Players
 
 
 def test_search_variant_values():
@@ -314,6 +317,20 @@ def test_show_source_select_passes_year_from_media_metadata():
     assert item_info["query"] == "Inception"
 
 
+@pytest.mark.parametrize("mode", ["movies", "tv"])
+def test_show_source_select_passes_localized_tmdb_overview(mode):
+    metadata = {"overview": "Localized TMDB synopsis"}
+    ids = {"tmdb_id": "123"}
+
+    with patch("lib.search.build_media_metadata", return_value=metadata) as build_metadata, patch(
+        "lib.search.source_select", return_value=True
+    ) as source_select_mock:
+        show_source_select([object()], mode, ids, {}, "Title", mode, False)
+
+    build_metadata.assert_called_once_with(ids, mode)
+    assert source_select_mock.call_args.args[0]["overview"] == metadata["overview"]
+
+
 def test_show_source_select_playnext_context_sets_direct_without_autoplay():
     results = [object()]
 
@@ -335,6 +352,79 @@ def test_show_source_select_playnext_context_sets_direct_without_autoplay():
     assert item_info["playnext_context"] is True
     assert item_info["direct_play"] is True
     assert "autoplay" not in item_info
+
+
+def _auto_play_source(source_type):
+    return SimpleNamespace(
+        title="Selected source",
+        quality="1080p",
+        type=source_type,
+        indexer=Indexer.JACKETT,
+        debridType="",
+        infoHash="abc123",
+        url="https://example.com/file.torrent",
+        stremioMetadata=None,
+    )
+
+
+def _autoplay_setting(key, default=None):
+    return {
+        "auto_play_quality": "1080p",
+        "torrent_enable": True,
+        "torrent_client": Players.JACKTORR,
+    }.get(key, default)
+
+
+def test_auto_play_hydrates_localized_overview_for_jacktorr():
+    from lib import search
+
+    source = _auto_play_source(IndexerType.TORRENT)
+    synopsis = "Localized TMDB synopsis"
+    with patch("lib.search._prepare_stremio_results", return_value=[source]), patch(
+        "lib.search.clean_auto_play_undesired", return_value=[source]
+    ), patch("lib.search.get_setting", side_effect=_autoplay_setting), patch(
+        "lib.search.build_media_metadata", return_value={"overview": synopsis}
+    ) as build_metadata, patch(
+        "lib.search.resolve_playback_url", side_effect=lambda data: data
+    ) as resolve_playback_url, patch("lib.search.JacktookPLayer"):
+        assert search.auto_play([source], {"tmdb_id": "123"}, {}, "movies") is True
+
+    build_metadata.assert_called_once_with({"tmdb_id": "123"}, "movies")
+    assert resolve_playback_url.call_args.kwargs["data"]["description"] == synopsis
+
+
+def test_auto_play_preserves_description_through_stremio_resolution():
+    from lib import search
+
+    source = _auto_play_source(IndexerType.TORRENT)
+    source.stremioMetadata = {"infoHash": "a" * 40}
+    synopsis = "Localized TMDB synopsis"
+    with patch("lib.search._prepare_stremio_results", return_value=[source]), patch(
+        "lib.search.clean_auto_play_undesired", return_value=[source]
+    ), patch("lib.search.get_setting", side_effect=_autoplay_setting), patch(
+        "lib.search._autoplay_description", return_value=synopsis
+    ), patch(
+        "lib.search._resolve_stremio_source", return_value={"url": "plugin://resolved"}
+    ) as resolve_stremio_source, patch("lib.search.JacktookPLayer"):
+        assert search.auto_play([source], {"tmdb_id": "123"}, {}, "movies") is True
+
+    assert resolve_stremio_source.call_args.args[1]["description"] == synopsis
+
+
+def test_auto_play_skips_metadata_hydration_for_direct_sources():
+    from lib import search
+
+    source = _auto_play_source(IndexerType.DIRECT)
+    with patch("lib.search._prepare_stremio_results", return_value=[source]), patch(
+        "lib.search.clean_auto_play_undesired", return_value=[source]
+    ), patch("lib.search.get_setting", side_effect=_autoplay_setting), patch(
+        "lib.search.build_media_metadata"
+    ) as build_metadata, patch(
+        "lib.search.resolve_playback_url", side_effect=lambda data: data
+    ), patch("lib.search.JacktookPLayer"):
+        assert search.auto_play([source], {"tmdb_id": "123"}, {}, "movies") is True
+
+    build_metadata.assert_not_called()
 
 
 def test_run_search_entry_source_select_cancel_skipped_on_back():

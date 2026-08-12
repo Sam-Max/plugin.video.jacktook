@@ -44,6 +44,11 @@ from lib.utils.kodi.utils import (
     translation,
 )
 from lib.utils.torrent.torrserver_init import get_torrserver_api
+from lib.utils.torrent.display_metadata import (
+    delete_display_metadata,
+    get_display_metadata,
+    save_display_metadata,
+)
 from lib.vendor.bencodepy import bencodepy
 
 
@@ -82,25 +87,30 @@ def torrent_status(info_hash):
 def torrent_files(params):
     info_hash = params.get("info_hash")
 
-    info = get_torrserver_api().get_torrent_info(link=info_hash)
+    api = get_torrserver_api()
+    info = api.get_torrent_info(link=info_hash)
+    display_metadata = get_display_metadata(api._base_url, info_hash)
+    display_title = display_metadata.get("title") or info.get("title", "")
+    display_plot = display_metadata.get("plot", "")
+    display_poster = display_metadata.get("poster") or info.get("poster") or ""
     file_stats = info.get("file_stats")
     file_stats = [f for f in file_stats if is_displayable(f.get("path", ""))]
     display_names = strip_common_folder_prefix(file_stats)
 
-    set_pluging_category(info.get("title", ""))
+    set_pluging_category(display_title)
 
     for f, display_name in zip(file_stats, display_names):
         name = f.get("path")
         id = f.get("id")
-        serve_url = get_torrserver_api().get_stream_url(
+        serve_url = api.get_stream_url(
             link=info_hash, path=f.get("path"), file_id=id
         )
-        file_li = build_list_item(display_name, "download.png", poster_path=info.get("poster") or "")
+        file_li = build_list_item(display_name, "download.png", poster_path=display_poster)
         file_li.setPath(serve_url)
 
         context_menu_items = []
         info_type = None
-        info_labels = {"title": info.get("title")}
+        info_labels = {"title": display_title}
         kwargs = dict(info_hash=info_hash, file_id=id, path=name)
 
         if is_picture(name):
@@ -119,6 +129,8 @@ def torrent_files(params):
                 jacktorr_url = _buffer_and_play_url(info_hash, id, name)
                 if info_type == "video":
                     file_li.getVideoInfoTag().setTitle(info_labels.get("title", ""))
+                    if display_plot:
+                        file_li.getVideoInfoTag().setPlot(display_plot)
                 elif info_type == "music":
                     file_li.getMusicInfoTag().setTitle(info_labels.get("title", ""))
                 file_li.setProperty("IsPlayable", "true")
@@ -139,7 +151,7 @@ def torrent_files(params):
                         else {}
                     )
                     meta = {
-                        "title": parsed_data.get("title") or info.get("title", ""),
+                        "title": parsed_data.get("title") or display_title,
                         "mode": parsed_data.get("mode", ""),
                         "ids": {
                             "tmdb_id": parsed_ids.get("tmdb_id", ""),
@@ -205,7 +217,10 @@ def torrent_action(params):
     if action_str == "drop":
         get_torrserver_api().drop_torrent(info_hash)
     elif action_str == "remove_torrent":
-        get_torrserver_api().remove_torrent(info_hash)
+        api = get_torrserver_api()
+        response = api.remove_torrent(info_hash)
+        if getattr(response, "status_code", None) == 200:
+            delete_display_metadata(api._base_url, info_hash)
     elif action_str == "torrent_status":
         torrent_status(info_hash)
         needs_refresh = False
@@ -238,7 +253,19 @@ def display_text(params):
     Dialog().textviewer(params.get("path"), r.text)
 
 
-def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="", data=""):
+def _normalize_torrserver_category(mode):
+    if not isinstance(mode, str):
+        return None
+    return {
+        "movie": "movie",
+        "movies": "movie",
+        "tv": "tv",
+        "music": "music",
+        "other": "other",
+    }.get(mode.strip().lower())
+
+
+def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="", data="", category=None):
     if not JACKTORR_ADDON:
         notification(translation(30253))
         return None
@@ -250,6 +277,26 @@ def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="
 
     try:
         added_hash = None
+        meta = json.loads(data) if isinstance(data, str) and data else {}
+        meta = meta if isinstance(meta, dict) else {}
+        category = _normalize_torrserver_category(category)
+        magnet_hash = ""
+        if magnet:
+            try:
+                magnet_hash = get_info_hash_from_magnet(magnet)
+            except Exception as exc:
+                kodilog(f"Failed to extract metadata hash from magnet: {exc}")
+        display_title = meta.get("title") or title
+        display_plot = meta.get("plot") or meta.get("description") or meta.get("overview") or ""
+        display_poster = meta.get("poster") or poster
+        for hash_candidate in _metadata_hash_candidates(info_hash, magnet_hash):
+            save_display_metadata(
+                api._base_url,
+                hash_candidate,
+                title=display_title,
+                plot=display_plot,
+                poster=display_poster,
+            )
         kodilog(
             f"add_source_to_torrserver input: info_hash={info_hash!r}, title={title!r}, has_magnet={bool(magnet)}, has_url={bool(url)}, has_data={bool(data)}"
         )
@@ -260,7 +307,10 @@ def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="
                 response.raise_for_status()
                 torrent_obj = BytesIO(response.content)
                 torrent_obj.name = "torrent.torrent"
-                added_hash = api.add_torrent_obj(torrent_obj, title=title, poster=poster)
+                add_kwargs = {"title": title, "poster": poster}
+                if category:
+                    add_kwargs["category"] = category
+                added_hash = api.add_torrent_obj(torrent_obj, **add_kwargs)
                 kodilog(f"add_source_to_torrserver added torrent URL: returned_hash={added_hash!r}")
             except Exception as exc:
                 kodilog(f"Failed to add torrent URL to TorrServer: {exc}")
@@ -270,29 +320,24 @@ def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="
                 magnet = convert_info_hash_to_magnet(info_hash)
 
             if magnet:
-                added_hash = api.add_magnet(magnet, title=title, poster=poster)
+                add_kwargs = {"title": title, "poster": poster}
+                if category:
+                    add_kwargs["category"] = category
+                added_hash = api.add_magnet(magnet, **add_kwargs)
                 kodilog(f"add_source_to_torrserver added magnet: returned_hash={added_hash!r}")
             else:
                 notification(translation(90361))
                 return None
 
-        if added_hash and data:
-            try:
-                meta = json.loads(data) if isinstance(data, str) else {}
-                magnet_hash = ""
-                if magnet:
-                    try:
-                        magnet_hash = get_info_hash_from_magnet(magnet)
-                    except Exception as exc:
-                        kodilog(f"Failed to extract metadata hash from magnet: {exc}")
-
-                hash_candidates = _metadata_hash_candidates(added_hash, info_hash, magnet_hash)
-                for hash_candidate in hash_candidates:
-                    save_torrent_meta(hash_candidate, meta)
-            except Exception as exc:
-                kodilog(f"Failed to parse/save torrent metadata for {added_hash}: {exc}")
-        elif added_hash:
-            kodilog(f"add_source_to_torrserver no metadata data provided for {added_hash}")
+        for hash_candidate in _metadata_hash_candidates(added_hash, info_hash, magnet_hash):
+            save_torrent_meta(hash_candidate, meta)
+            save_display_metadata(
+                api._base_url,
+                hash_candidate,
+                title=display_title,
+                plot=display_plot,
+                poster=display_poster,
+            )
 
         notification(translation(90360))
         return added_hash
@@ -359,7 +404,16 @@ def save_torrent_meta(info_hash, meta):
 
     key = f"{_TORRENT_META_CACHE_PREFIX}{info_hash}"
     try:
-        cache.set(key, meta, expires=timedelta(days=365))
+        meta = meta if isinstance(meta, dict) else {}
+        cache.set(
+            key,
+            {
+                "mode": meta.get("mode", ""),
+                "ids": meta.get("ids", {}) if isinstance(meta.get("ids", {}), dict) else {},
+                "tv_data": meta.get("tv_data", {}) if isinstance(meta.get("tv_data", {}), dict) else {},
+            },
+            expires=timedelta(days=365),
+        )
     except Exception as exc:
         kodilog(f"Failed to save torrent meta for {info_hash}: {exc}")
 

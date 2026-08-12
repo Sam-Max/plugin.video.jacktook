@@ -24,6 +24,7 @@ class TestTorrentsContextMenu:
             "hash": "abc123",
             "title": "Test Movie",
             "stat": 1,
+            "category": "movie",
         }
 
         mock_meta = {
@@ -48,7 +49,7 @@ class TestTorrentsContextMenu:
                 f"RunPlugin({nav.build_url(name, **kwargs)})"
             )
 
-            nav.torrents({})
+            nav.torrents({"category": "movie"})
 
             # Find the call for download_torrent_subtitles
             subtitle_calls = [
@@ -70,6 +71,7 @@ class TestTorrentsContextMenu:
             "hash": "abc123",
             "title": "Fallback Title",
             "stat": 1,
+            "category": "movie",
         }
 
         with patch.object(nav, "get_torrserver_api") as mock_api, patch.object(
@@ -86,7 +88,7 @@ class TestTorrentsContextMenu:
                 f"RunPlugin({nav.build_url(name, **kwargs)})"
             )
 
-            nav.torrents({})
+            nav.torrents({"category": "movie"})
 
             subtitle_calls = [
                 call
@@ -107,6 +109,7 @@ class TestTorrentsContextMenu:
             "title": "Test Movie",
             "stat": 1,
             "poster": poster,
+            "category": "movie",
         }
 
         with patch.object(nav, "get_torrserver_api") as mock_api, patch.object(
@@ -122,7 +125,7 @@ class TestTorrentsContextMenu:
         ):
             mock_api.return_value.torrents.return_value = [mock_torrent]
 
-            nav.torrents({})
+            nav.torrents({"category": "movie"})
 
             mock_build.assert_called_once()
             assert mock_build.call_args.kwargs["poster_path"] == poster
