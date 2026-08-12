@@ -214,6 +214,10 @@ def search_direct(params):
                         rename=True,
                     ),
                 ),
+                (
+                    translation(90755),
+                    "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
+                ),
             ]
         )
         addDirectoryItem(
