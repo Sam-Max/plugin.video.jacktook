@@ -999,6 +999,14 @@ msgctxt "#90996"
 msgid "Unable to update Simkl watch history."
 msgstr "Unable to update Simkl watch history."
 
+msgctxt "#90997"
+msgid "Enable and authorize Simkl in settings to access your library."
+msgstr "Enable and authorize Simkl in settings to access your library."
+
+msgctxt "#90998"
+msgid "Enable and authorize Trakt in settings to access your library."
+msgstr "Enable and authorize Trakt in settings to access your library."
+
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
 msgstr ""

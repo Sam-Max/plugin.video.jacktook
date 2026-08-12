@@ -24,16 +24,18 @@ STATUS_LABELS = {
 }
 
 
-def has_simkl_library_items():
-    return is_simkl_authenticated()
-
-
 def _status_label(status):
     return translation(STATUS_LABELS[status])
 
 
+def _notify_simkl_unavailable():
+    notification(translation(90997), time=3000)
+
+
 def show_simkl_library(_params):
     if not is_simkl_authenticated():
+        _notify_simkl_unavailable()
+        end_of_directory(cache=False)
         return
     entries = []
     for media_type, label in (("movies", translation(90008)), ("shows", translation(90007))):
@@ -48,6 +50,8 @@ def show_simkl_library(_params):
 
 def show_simkl_library_statuses(params):
     if not is_simkl_authenticated():
+        _notify_simkl_unavailable()
+        end_of_directory(cache=False)
         return
     media_type = params.get("media_type")
     entries = []
@@ -81,6 +85,8 @@ def _status_context_menu(media_type, tmdb_id, current_status):
 
 def show_simkl_library_items(params):
     if not is_simkl_authenticated():
+        _notify_simkl_unavailable()
+        end_of_directory(cache=False)
         return
     media_type, status = params.get("media_type"), params.get("status")
     if status not in SimklClient.allowed_library_statuses(media_type):

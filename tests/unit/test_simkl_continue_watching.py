@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 from lib.utils.general.items_menus import (
-    has_simkl_library_items,
     movie_items,
     root_menu_items,
     tv_items,
@@ -21,10 +20,11 @@ def test_simkl_menu_is_visible_only_for_authenticated_accounts(monkeypatch):
     assert item["condition"]() is True
 
 
-def test_simkl_library_is_in_tv_and_movie_menus_not_root_menu():
+def test_simkl_library_is_visible_in_tv_and_movie_menus_when_unavailable(monkeypatch):
     from lib.navigation import _build_media_menu_entries
 
     assert not any(item.get("action") == "simkl_library" for item in root_menu_items)
+    monkeypatch.setattr("lib.api.simkl.is_simkl_authenticated", lambda: False)
 
     for items, media_type in ((tv_items, "shows"), (movie_items, "movies")):
         menu_entries = _build_media_menu_entries(items)
@@ -43,7 +43,7 @@ def test_simkl_library_is_in_tv_and_movie_menus_not_root_menu():
         assert simkl_menu_entries[0]["name"] == simkl_items[0]["name"]
         assert simkl_items[0]["icon"] == "simkl.png"
         assert simkl_items[0]["params"] == {"media_type": media_type}
-        assert simkl_items[0]["condition"] is has_simkl_library_items
+        assert "condition" not in simkl_items[0]
         assert items[items.index(simkl_items[0]) + 1]["params"]["group"] == "library"
 
 

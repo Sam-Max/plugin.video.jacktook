@@ -95,7 +95,7 @@ def test_move_to_library_status_rejects_invalid_or_unconfirmed_results(monkeypat
     assert client.move_to_library_status("movies", 1, "completed") is None
 
 
-def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypatch):
+def test_simkl_library_menu_and_statuses_are_eligible_when_authenticated(monkeypatch):
     from lib.utils.views import simkl_library as view
 
     item = MagicMock()
@@ -105,12 +105,8 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
     monkeypatch.setattr(view, "add_directory_items_batch", add_items)
     monkeypatch.setattr(view, "end_of_directory", MagicMock())
     monkeypatch.setattr(view, "translation", lambda value: str(value))
-    monkeypatch.setattr(view, "is_simkl_authenticated", lambda: False)
-
-    view.show_simkl_library({})
-    add_items.assert_not_called()
-
     monkeypatch.setattr(view, "is_simkl_authenticated", lambda: True)
+
     view.show_simkl_library({})
     assert build_list_item.call_count == 2
     assert all(call.args[1] == "simkl.png" for call in build_list_item.call_args_list)
@@ -118,8 +114,10 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
     assert {"media_type=movies", "media_type=shows"} == {
         entry[0].split("&")[-1] for entry in media_type_entries
     }
+    view.end_of_directory.assert_called_once_with(cache=False)
 
     build_list_item.reset_mock()
+    view.end_of_directory.reset_mock()
     view.show_simkl_library_statuses({"media_type": "movies"})
     entries = add_items.call_args.args[0]
     assert len(entries) == 3
@@ -127,6 +125,7 @@ def test_simkl_library_menu_and_statuses_are_authenticated_and_eligible(monkeypa
     assert all("watching" not in entry[0] and "hold" not in entry[0] for entry in entries)
     assert build_list_item.call_count == 3
     assert all(call.args[1] == "simkl.png" for call in build_list_item.call_args_list)
+    view.end_of_directory.assert_called_once_with(cache=False)
 
 
 def test_simkl_library_items_build_standard_tmdb_destinations_and_context_actions(monkeypatch):
@@ -164,6 +163,29 @@ def test_simkl_library_items_build_standard_tmdb_destinations_and_context_action
     actions = list_item.addContextMenuItems.call_args.args[0]
     assert len(actions) == 2
     assert all("action=simkl_move_to_status" in command for _label, command in actions)
+
+
+def test_simkl_library_routes_close_directory_when_simkl_is_unavailable(monkeypatch):
+    from lib.utils.views import simkl_library as view
+
+    end_directory = MagicMock()
+    notification = MagicMock()
+    monkeypatch.setattr(view, "is_simkl_authenticated", lambda: False)
+    monkeypatch.setattr(view, "end_of_directory", end_directory)
+    monkeypatch.setattr(view, "notification", notification)
+    monkeypatch.setattr(view, "translation", lambda value: str(value))
+
+    view.show_simkl_library({})
+    view.show_simkl_library_statuses({"media_type": "movies"})
+    view.show_simkl_library_items({"media_type": "movies", "status": "plantowatch"})
+
+    assert end_directory.call_count == 3
+    assert all(call.kwargs == {"cache": False} for call in end_directory.call_args_list)
+    assert notification.call_count == 3
+    assert all(
+        call.args == ("90997",) and call.kwargs == {"time": 3000}
+        for call in notification.call_args_list
+    )
 
 
 def test_move_simkl_item_only_refreshes_when_simkl_confirms_target_status(monkeypatch):

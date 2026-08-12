@@ -10,6 +10,7 @@ from xbmcplugin import (
 import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
 from lib.api.trakt.trakt import ProviderException, TraktAPI
+from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.stremio.catalog_menus import list_stremio_catalogs
 from lib.clients.stremio.playback import resolve_stremio_playback_url
 from lib.clients.tmdb.tmdb import (
@@ -540,6 +541,11 @@ def trakt_group_menu(params):
             }
             for item in items
         ]
+
+    if group == "library" and not (get_setting("trakt_enabled") and is_trakt_auth()):
+        notification(translation(90998), time=3000)
+        end_of_directory(cache=False)
+        return
 
     if mode == "tv" and group == "library":
         set_pluging_category(translation(90292))

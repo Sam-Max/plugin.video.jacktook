@@ -1,7 +1,6 @@
 from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
 from lib.utils.views.simkl_continue_watching import has_simkl_continue_watching_items
-from lib.utils.views.simkl_library import has_simkl_library_items
 from lib.utils.views.trakt_continue_watching import has_trakt_continue_watching_items
 
 trakt_tv_library_items = [
@@ -321,7 +320,6 @@ tv_items = [
         "icon": "simkl.png",
         "action": "simkl_library_statuses",
         "params": {"media_type": "shows"},
-        "condition": has_simkl_library_items,
     },
     {
         "name": translation(90292),
@@ -401,7 +399,6 @@ movie_items = [
         "icon": "simkl.png",
         "action": "simkl_library_statuses",
         "params": {"media_type": "movies"},
-        "condition": has_simkl_library_items,
     },
     {
         "name": translation(90292),
