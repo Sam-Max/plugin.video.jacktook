@@ -4706,3 +4706,7 @@ msgstr ""
 msgctxt "#90963"
 msgid "Uncategorized"
 msgstr ""
+
+msgctxt "#90964"
+msgid "The installed version is newer than the version published in the repository."
+msgstr "The installed version is newer than the version published in the repository."

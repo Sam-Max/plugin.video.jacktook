@@ -1,158 +1,145 @@
-import io
-import os
-import shutil
-import zipfile
+import inspect
+from pathlib import Path
 
-from lib import updater
-
-
-def _write_addon_xml(path, version):
-    os.makedirs(path, exist_ok=True)
-    with open(os.path.join(path, "addon.xml"), "w", encoding="utf-8") as handle:
-        handle.write(
-            "<?xml version='1.0' encoding='utf-8'?>\n"
-            f"<addon id='plugin.video.jacktook' name='Jacktook' version='{version}' provider-name='Sam-Max'>\n"
-            "</addon>\n"
-        )
+from lib import navigation, router, updater
+from lib.utils.kodi import settings
 
 
-def _build_release_zip_bytes(version):
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
-        archive.writestr(
-            "plugin.video.jacktook/addon.xml",
-            "<?xml version='1.0' encoding='utf-8'?>\n"
-            f"<addon id='plugin.video.jacktook' name='Jacktook' version='{version}' provider-name='Sam-Max'>\n"
-            "</addon>\n",
-        )
-        archive.writestr("plugin.video.jacktook/resources/readme.txt", "ok")
-    buffer.seek(0)
-    return buffer.getvalue()
+def _configure_update_check(
+    monkeypatch, action, confirmed=True, current_version="1.0.0", online_version="1.1.0"
+):
+    builtins = []
+    notifications = []
 
-
-def _configure_updater_paths(monkeypatch, tmp_path):
-    packages_dir = tmp_path / "packages"
-    destination_dir = tmp_path / "addons" / updater.ADDON_ID
-    packages_dir.mkdir(parents=True)
-    destination_dir.parent.mkdir(parents=True)
-
-    monkeypatch.setattr(updater, "PACKAGES_DIR", str(packages_dir))
-    monkeypatch.setattr(updater, "HOME_ADDONS_DIR", str(destination_dir.parent))
-    monkeypatch.setattr(updater, "DESTINATION_DIR", str(destination_dir))
+    monkeypatch.setattr(updater, "get_versions", lambda: (current_version, online_version))
+    monkeypatch.setattr(settings, "get_update_action", lambda: action)
+    monkeypatch.setattr(updater, "dialogyesno", lambda **kwargs: confirmed)
     monkeypatch.setattr(
         updater,
-        "delete_file",
-        lambda path: os.path.exists(path) and os.remove(path),
+        "execute_builtin",
+        lambda command, block=False: builtins.append((command, block)),
     )
-    monkeypatch.setattr(updater, "close_all_dialog", lambda: None)
-    monkeypatch.setattr(updater, "execute_builtin", lambda *args, **kwargs: None)
-    monkeypatch.setattr(updater, "notification", lambda *args, **kwargs: None)
-    monkeypatch.setattr(updater, "show_busy_dialog", lambda: None)
-    monkeypatch.setattr(updater, "close_busy_dialog", lambda: None)
-    monkeypatch.setattr(updater, "dialogyesno", lambda *args, **kwargs: False)
-    monkeypatch.setattr(updater, "update_local_addons", lambda: None)
-    monkeypatch.setattr(updater, "disable_enable_addon", lambda: None)
-    monkeypatch.setattr(updater, "update_kodi_addons_db", lambda: None)
+    monkeypatch.setattr(
+        updater,
+        "notification",
+        lambda **kwargs: notifications.append(kwargs),
+    )
     monkeypatch.setattr(updater, "kodilog", lambda *args, **kwargs: None)
-    monkeypatch.setattr(updater, "translation", lambda string_id: f"string-{string_id}")
-    monkeypatch.setattr(updater.xbmc, "getInfoLabel", lambda *args, **kwargs: "Default")
-
-    return packages_dir, destination_dir
-
-
-def test_downgrade_menu_only_lists_versions_older_than_current(monkeypatch):
-    class Response:
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return [
-                {"name": "plugin.video.jacktook-1.8.0.zip"},
-                {"name": "plugin.video.jacktook-1.7.2.zip"},
-                {"name": "plugin.video.jacktook-1.6.0.zip"},
-                {"name": "plugin.video.jacktook-1.9.0.zip"},
-            ]
-
-    selections = []
-
-    monkeypatch.setattr(updater, "ADDON_VERSION", "1.8.0")
-    monkeypatch.setattr(updater.requests, "get", lambda *args, **kwargs: Response())
+    translations = {
+        90580: "%s %s",
+        90581: "",
+        90582: "Update available: %s",
+        90964: "Installed version is newer than the repository version.",
+    }
     monkeypatch.setattr(
         updater,
-        "dialog_select",
-        lambda heading, _list: selections.append((heading, _list)) or -1,
+        "translation",
+        lambda string_id: translations.get(string_id, f"string-{string_id}"),
     )
-    monkeypatch.setattr(updater, "dialog_ok", lambda *args, **kwargs: None)
-    monkeypatch.setattr(updater, "kodilog", lambda *args, **kwargs: None)
-    monkeypatch.setattr(updater, "translation", lambda string_id: f"string-{string_id}")
 
-    updater.downgrade_addon_menu()
-
-    assert selections == [("string-90585", ["1.7.2", "1.6.0"])]
+    return builtins, notifications
 
 
-def test_update_addon_keeps_current_install_when_zip_is_invalid(monkeypatch, tmp_path):
-    _, destination_dir = _configure_updater_paths(monkeypatch, tmp_path)
-    _write_addon_xml(destination_dir, "1.8.0")
+def test_manual_update_refreshes_repositories_before_install(monkeypatch):
+    builtins, _ = _configure_update_check(monkeypatch, updater.UPDATE_ACTION_NONE)
 
-    dialog_calls = []
-    monkeypatch.setattr(updater, "dialog_ok", lambda *args, **kwargs: dialog_calls.append(kwargs))
-    monkeypatch.setattr(updater, "http_get", lambda *args, **kwargs: io.BytesIO(b"not-a-zip"))
+    updater.updates_check_addon()
 
-    updater.update_addon("1.7.2")
+    assert builtins == [
+        ("UpdateAddonRepos", True),
+        ("InstallAddon(plugin.video.jacktook)", False),
+    ]
 
-    assert (
-        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
+
+def test_automatic_ask_installs_only_after_confirmation(monkeypatch):
+    builtins, _ = _configure_update_check(monkeypatch, updater.UPDATE_ACTION_ASK)
+
+    updater.updates_check_addon(automatic=True)
+
+    assert builtins == [
+        ("UpdateAddonRepos", True),
+        ("InstallAddon(plugin.video.jacktook)", False),
+    ]
+
+
+def test_automatic_ask_does_not_install_when_declined(monkeypatch):
+    builtins, _ = _configure_update_check(monkeypatch, updater.UPDATE_ACTION_ASK, confirmed=False)
+
+    updater.updates_check_addon(automatic=True)
+
+    assert builtins == []
+
+
+def test_automatic_notify_announces_update_without_installing(monkeypatch):
+    builtins, notifications = _configure_update_check(monkeypatch, updater.UPDATE_ACTION_NOTIFY)
+
+    updater.updates_check_addon(automatic=True)
+
+    assert builtins == []
+    assert notifications == [{"heading": updater.HEADING, "message": "Update available: 1.1.0"}]
+
+
+def test_automatic_none_does_nothing(monkeypatch):
+    builtins, notifications = _configure_update_check(monkeypatch, updater.UPDATE_ACTION_NONE)
+
+    updater.updates_check_addon(automatic=True)
+
+    assert builtins == []
+    assert notifications == []
+
+
+def test_manual_check_notifies_when_installed_version_is_newer(monkeypatch):
+    builtins, notifications = _configure_update_check(
+        monkeypatch,
+        updater.UPDATE_ACTION_NONE,
+        current_version="1.1.0",
+        online_version="1.0.0",
     )
-    assert dialog_calls
+
+    updater.updates_check_addon()
+
+    assert notifications == [
+        {
+            "heading": updater.HEADING,
+            "message": "Installed version is newer than the repository version.",
+        }
+    ]
+    assert builtins == []
 
 
-def test_update_addon_restores_backup_when_install_move_fails(monkeypatch, tmp_path):
-    packages_dir, destination_dir = _configure_updater_paths(monkeypatch, tmp_path)
-    _write_addon_xml(destination_dir, "1.8.0")
-
-    monkeypatch.setattr(
-        updater,
-        "http_get",
-        lambda *args, **kwargs: io.BytesIO(_build_release_zip_bytes("1.7.2")),
+def test_automatic_check_is_silent_when_installed_version_is_newer(monkeypatch):
+    builtins, notifications = _configure_update_check(
+        monkeypatch,
+        updater.UPDATE_ACTION_NONE,
+        current_version="1.1.0",
+        online_version="1.0.0",
     )
-    monkeypatch.setattr(updater, "dialog_ok", lambda *args, **kwargs: None)
 
-    real_move = shutil.move
+    updater.updates_check_addon(automatic=True)
 
-    def failing_move(src, dst, *args, **kwargs):
-        staging_addon_dir = os.path.join(
-            str(packages_dir), f"{updater.ADDON_ID}-staging", updater.ADDON_ID
-        )
-        if src == staging_addon_dir and dst == str(destination_dir):
-            raise OSError("install failed")
-        return real_move(src, dst, *args, **kwargs)
-
-    monkeypatch.setattr(updater.shutil, "move", failing_move)
-
-    updater.update_addon("1.7.2")
-
-    assert (
-        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.8.0"
-    )
-    assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-backup"))
+    assert notifications == []
+    assert builtins == []
 
 
-def test_update_addon_installs_valid_downgrade(monkeypatch, tmp_path):
-    packages_dir, destination_dir = _configure_updater_paths(monkeypatch, tmp_path)
-    _write_addon_xml(destination_dir, "1.8.0")
+def test_updater_has_no_custom_install_or_downgrade_mechanism():
+    source = inspect.getsource(updater)
 
-    monkeypatch.setattr(
-        updater,
-        "http_get",
-        lambda *args, **kwargs: io.BytesIO(_build_release_zip_bytes("1.7.2")),
-    )
-    monkeypatch.setattr(updater, "dialog_ok", lambda *args, **kwargs: None)
+    for name in (
+        "_safe_remove_path",
+        "_validate_downloaded_zip",
+        "_validate_installed_version",
+        "downgrade_addon_menu",
+        "unzip",
+        "update_kodi_addons_db",
+        "update_local_addons",
+        "disable_enable_addon",
+    ):
+        assert name not in source
 
-    updater.update_addon("1.7.2")
 
-    assert (
-        updater._read_addon_version_from_xml(os.path.join(destination_dir, "addon.xml")) == "1.7.2"
-    )
-    assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-backup"))
-    assert not os.path.exists(os.path.join(str(packages_dir), f"{updater.ADDON_ID}-staging"))
+def test_downgrade_route_and_setting_are_removed():
+    settings_xml = Path(__file__).parents[2] / "resources" / "settings.xml"
+
+    assert "downgrade_addon" not in inspect.getsource(navigation)
+    assert "downgrade_addon" not in inspect.getsource(router)
+    assert "downgrade_addon" not in settings_xml.read_text(encoding="utf-8")

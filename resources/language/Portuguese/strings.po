@@ -4490,3 +4490,7 @@ msgstr ""
 msgctxt "#90962"
 msgid "MDbList"
 msgstr "MDbList"
+
+msgctxt "#90964"
+msgid "The installed version is newer than the version published in the repository."
+msgstr "A versão instalada é mais recente do que a versão publicada no repositório."

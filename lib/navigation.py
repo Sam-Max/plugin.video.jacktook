@@ -30,7 +30,7 @@ from lib.gui.custom_dialogs import (
     source_select_mock,
 )
 from lib.player import JacktookPLayer
-from lib.updater import downgrade_addon_menu, updates_check_addon
+from lib.updater import updates_check_addon
 from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
@@ -1296,10 +1296,6 @@ def open_download_manager(params):
 
 def addon_update(params):
     updates_check_addon()
-
-
-def downgrade_addon(params):
-    downgrade_addon_menu()
 
 
 def show_changelog(params):
