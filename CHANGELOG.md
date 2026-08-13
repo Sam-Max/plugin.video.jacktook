@@ -1,3 +1,19 @@
+## 1.17.0
+- TorrServer: Add category browsing and richer torrent metadata.
+- Search: Add source management to direct search history and apply managed provider selections consistently.
+- Playback: Reuse Elementum multi-file packs when PlayNext starts the next episode.
+- Library: Show a clear notification when the library service is unavailable.
+- Performance: Reduce overhead in root navigation, TMDB menus, and Simkl indicators.
+- Simkl: Add PIN authorization, playback scrobbling, remote Continue Watching, and TV/movie library integration with watched-status controls and incremental activity sync.
+
+Spanish:
+- TorrServer: Añadida navegación por categorías y metadatos de torrents más detallados.
+- Búsqueda: Añadida gestión de fuentes al historial de búsquedas directas y aplicación coherente de las selecciones de proveedores administrados.
+- Reproducción: Reutilizados paquetes multiarchivo de Elementum cuando PlayNext inicia el siguiente episodio.
+- Biblioteca: Añadida una notificación clara cuando el servicio de biblioteca no está disponible.
+- Rendimiento: Reducida la sobrecarga en la navegación principal, los menús de TMDB y los indicadores de Simkl.
+- Simkl: Añadida autorización por PIN, scrobbling de reproducción, Continuar viendo remoto e integración de biblioteca en los menús de TV y películas, con controles de estado visto y sincronización incremental de actividad.
+
 ## 1.16.0
 - Stremio: Add configurable addons, channel and genre catalog navigation, and integrated subtitle discovery and playback.
 - Sources: Add filtering by release group and improve Stremio source selection and catalog paging.
