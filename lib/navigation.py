@@ -243,11 +243,16 @@ def _render_cached_menu_entries(menu_entries, cache=True):
     add_directory_items_batch(directory_items)
 
 
-def render_menu(items, cache=True, cache_key=None):
+def render_menu(items, cache=True, cache_key=None, condition_results=None):
     def _build_menu_entries():
         menu_entries = []
-        for item in items:
-            if "condition" in item and not item["condition"]():
+        for index, item in enumerate(items):
+            condition_met = (
+                condition_results[index]
+                if condition_results is not None
+                else "condition" not in item or bool(item["condition"]())
+            )
+            if not condition_met:
                 continue
             name = item["name"]
             if isinstance(name, int):
@@ -387,10 +392,12 @@ def reset_views(params):
 def root_menu():
     maybe_show_donation_prompt()
     set_pluging_category(translation(90069))
+    condition_results = _menu_condition_signature(root_menu_items)
     render_menu(
         root_menu_items,
         cache=False,
-        cache_key=f"nav.root:{_menu_condition_signature(root_menu_items)}",
+        cache_key=f"nav.root:{condition_results}",
+        condition_results=condition_results,
     )
     apply_section_view("view.main")
 
