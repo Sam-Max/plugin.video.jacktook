@@ -141,7 +141,10 @@ def apply_simkl_indicators(items):
     if not is_simkl_authenticated():
         return
     item_descriptors = [(item, _descriptor(item)) for _, item, _ in items]
-    indicators = get_indicators([descriptor for _, descriptor in item_descriptors if descriptor])
+    descriptors = [descriptor for _, descriptor in item_descriptors if descriptor]
+    if not descriptors:
+        return
+    indicators = get_indicators(descriptors)
     for item, descriptor in item_descriptors:
         indicator = indicators.get(descriptor)
         if not indicator:

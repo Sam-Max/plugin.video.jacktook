@@ -114,6 +114,17 @@ def test_apply_indicators_uses_valid_matching_movie_show_and_episode_responses(m
     assert movie.label == "[COLOR gray][Completed][/COLOR] Movie"
     assert show.label == "[COLOR gray][Watching | 3/10][/COLOR] Show"
     assert episode.label == "[COLOR gray][Watched][/COLOR] Episode"
+    get_watched.assert_called_once_with([("movie", 1), ("show", 2), ("episode", 2, 1, 3)])
+
+
+def test_apply_indicators_skips_client_for_batches_without_descriptors(monkeypatch):
+    get_watched = MagicMock()
+    monkeypatch.setattr(simkl_indicators, "is_simkl_authenticated", lambda: True)
+    monkeypatch.setattr(simkl_indicators.SimklClient, "get_watched", get_watched)
+
+    simkl_indicators.apply_simkl_indicators([("directory", FakeListItem("Menu", {}), True)])
+
+    get_watched.assert_not_called()
 
 
 def test_malformed_or_ambiguous_responses_do_not_change_items(monkeypatch):
