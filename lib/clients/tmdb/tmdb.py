@@ -108,6 +108,12 @@ class TmdbClient(BaseTmdbClient):
         return metadata
 
     @staticmethod
+    def _has_render_logo(item):
+        images = TmdbClient._get_result_value(item, "images")
+        logos = TmdbClient._get_result_value(images, "logos", [])
+        return any(TmdbClient._get_result_value(logo, "file_path") for logo in logos or [])
+
+    @staticmethod
     def _get_cached_tmdb_item_metadata(item, mode):
         tmdb_id = TmdbClient._get_result_value(item, "id")
         if not tmdb_id:
@@ -145,10 +151,11 @@ class TmdbClient(BaseTmdbClient):
             finally:
                 TMDb().language = current_lang
 
-        path = "movie_images" if normalized_mode == "movies" else "tv_images"
-        images = tmdb_get(path, {"id": tmdb_id})
-        if images:
-            metadata["images"] = images
+        if not TmdbClient._has_render_logo(item):
+            path = "movie_images" if normalized_mode == "movies" else "tv_images"
+            images = tmdb_get(path, {"id": tmdb_id})
+            if images:
+                metadata["images"] = images
 
         cache.set(cache_key, metadata, timedelta(hours=24))
         return metadata

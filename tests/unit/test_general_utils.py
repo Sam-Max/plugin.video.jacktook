@@ -195,6 +195,15 @@ class TestGetImageSize:
         with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
             assert get_image_size("unknown_type") == ""
 
+    def test_reads_fresh_tier_for_each_call(self):
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", side_effect=["0", "3"]
+        ) as get_setting_fresh:
+            assert get_image_size("poster") == TMDB_IMAGE_SIZES["low"]["poster"]
+            assert get_image_size("poster") == TMDB_IMAGE_SIZES["original"]["poster"]
+
+        assert get_setting_fresh.call_count == 2
+
 
 class TestSetListitemArtwork:
     def _make_mock_item(self):
@@ -221,9 +230,12 @@ class TestSetListitemArtwork:
             "poster_path": "/poster.jpg",
             "backdrop_path": "/backdrop.jpg",
         }
-        with patch("lib.utils.general.utils.get_setting_fresh", return_value=setting_value):
+        with patch(
+            "lib.utils.general.utils.get_setting_fresh", return_value=setting_value
+        ) as get_setting_fresh:
             set_listitem_artwork(item, data, {})
 
+        get_setting_fresh.assert_called_once_with("image_resolution_tier", "2")
         assert item.setArt.called
         art_call = item.setArt.call_args
         assert poster_size in self._extract_url(art_call, "poster")

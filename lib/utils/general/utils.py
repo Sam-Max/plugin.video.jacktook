@@ -736,18 +736,21 @@ def build_actor(member, is_cast=True):
 
 
 def set_listitem_artwork(list_item, data, fanart_data):
+    tier_map = {"0": "low", "1": "medium", "2": "high", "3": "original"}
+    tier = tier_map.get(get_setting_fresh("image_resolution_tier", "2"), "high")
+    image_sizes = TMDB_IMAGE_SIZES.get(tier, {})
     thumb_sources = [
-        (data.get("poster_path"), get_image_size("thumb")),
-        (data.get("still_path"), get_image_size("thumb")),
+        (data.get("poster_path"), image_sizes.get("thumb", "")),
+        (data.get("still_path"), image_sizes.get("thumb", "")),
     ]
     poster_sources = [
-        (data.get("poster_path"), get_image_size("poster")),
-        (data.get("still_path"), get_image_size("poster")),
-        (data.get("profile_path"), get_image_size("profile")),
+        (data.get("poster_path"), image_sizes.get("poster", "")),
+        (data.get("still_path"), image_sizes.get("poster", "")),
+        (data.get("profile_path"), image_sizes.get("profile", "")),
     ]
     fanart_sources = [
-        (data.get("backdrop_path"), get_image_size("fanart")),
-        (data.get("still_path"), get_image_size("fanart")),
+        (data.get("backdrop_path"), image_sizes.get("fanart", "")),
+        (data.get("still_path"), image_sizes.get("fanart", "")),
     ]
 
     clear_logo = [(extract_tmdb_logo_url(data), "original")]
