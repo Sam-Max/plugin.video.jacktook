@@ -42,8 +42,17 @@ def check_and_get_jackgram_client():
     return get_client(Indexer.JACKGRAM)
 
 
+def _parse_page(query):
+    raw = query.get("page", 1)
+    try:
+        page = int(raw)
+        return page if page >= 1 else 1
+    except (TypeError, ValueError):
+        return 1
+
+
 def list_jackgram_latest_movies(query):
-    page = int(query.get("page"))
+    page = _parse_page(query)
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         end_of_directory(cache=False)
@@ -53,7 +62,7 @@ def list_jackgram_latest_movies(query):
 
 
 def list_jackgram_latest_series(query):
-    page = int(query.get("page"))
+    page = _parse_page(query)
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         end_of_directory(cache=False)
@@ -63,7 +72,7 @@ def list_jackgram_latest_series(query):
 
 
 def list_jackgram_raw_files(query):
-    page = int(query.get("page"))
+    page = _parse_page(query)
     jackgram_client = check_and_get_jackgram_client()
     if not jackgram_client:
         end_of_directory(cache=False)
@@ -187,10 +196,10 @@ def process_results(results, callback, next_button_action, page):
         end_of_directory()
         return
 
-    # Sort results by date (newest first)
     results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
 
     execute_thread_pool(results, callback)
-    add_next_button(next_button_action, page=page)
+    if isinstance(results, list) and len(results) >= 12:
+        add_next_button(next_button_action, page=page)
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")
