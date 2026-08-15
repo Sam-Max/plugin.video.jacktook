@@ -48,11 +48,30 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 data["url"] = resolved_url
                 return data
             return None
-        elif data.get("indexer") in [Indexer.JACKGRAM, Indexer.TELEGRAM]:
-            token = get_setting("jackgram_token", "")
-            url = data.get("url", "")
-            if token and "|Authorization=Bearer" not in url:
-                data["url"] = f"{url}|Authorization=Bearer {token}"
+        else:
+            # Detect jackgram payload even when indexer is missing (e.g. navigation latest)
+            indexer_val = data.get("indexer")
+            name_val = data.get("name")
+            is_jackgram = indexer_val in [Indexer.JACKGRAM, Indexer.TELEGRAM] or name_val in [
+                Indexer.JACKGRAM,
+                Indexer.TELEGRAM,
+            ]
+            if not is_jackgram:
+                url_val = data.get("url", "")
+                if "/dl?" in url_val and data.get("type") == IndexerType.DIRECT:
+                    try:
+                        host = str(get_setting("jackgram_host") or "")
+                        if (host and host.rstrip("/") in url_val) or (
+                            get_setting("jackgram_token") and name_val == "Telegram"
+                        ):
+                            is_jackgram = True
+                    except Exception:
+                        pass
+            if is_jackgram:
+                token = get_setting("jackgram_token", "")
+                url = data.get("url", "")
+                if token and "|Authorization=Bearer" not in url:
+                    data["url"] = f"{url}|Authorization=Bearer {token}"
         return data
 
     if is_supported_debrid_type(debrid_type):

@@ -78,6 +78,7 @@ def add_jackgram_raw_file_item(item):
     item["type"] = IndexerType.DIRECT
     item["is_torrent"] = False
     # URL clean; token injected only in resolve_playback_url
+    item["indexer"] = Indexer.JACKGRAM  # needed for resolve_playback_url
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -153,6 +154,8 @@ def add_jackgram_source_item(file_entry, parent_data):
     merged_data["type"] = IndexerType.DIRECT
     merged_data["is_torrent"] = False
     # URL clean; token injected only in resolve_playback_url
+    # Always enforce indexer so resolve_playback_url can inject the Bearer token
+    merged_data["indexer"] = Indexer.JACKGRAM
 
     addDirectoryItem(
         ADDON_HANDLE,
