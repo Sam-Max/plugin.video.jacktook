@@ -260,7 +260,8 @@ def process_results(results, callback, next_button_action, page):
         results = _dedupe_title_items(results)
 
     execute_thread_pool(results, callback)
-    if isinstance(results, list) and len(results) >= 12:
+    threshold = 11 if callback is add_jackgram_raw_file_item else 12
+    if isinstance(results, list) and len(results) >= threshold:
         add_next_button(next_button_action, page=page)
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")

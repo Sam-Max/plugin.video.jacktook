@@ -776,3 +776,139 @@ def test_jackgram_connection_does_not_request_an_invalid_host(
     mock_jackgram.assert_not_called()
     mock_notification.assert_not_called()
     mock_kodilog.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# process_results pagination thresholds (raw_files=11, latest=12)
+# ---------------------------------------------------------------------------
+
+
+def _make_raw_items(n):
+    return [{"date": f"2024-01-{i + 1:02d}", "file_name": f"file{i}.mkv"} for i in range(n)]
+
+
+def _make_title_items(n):
+    return [
+        {"date": f"2024-01-{i + 1:02d}", "type": "movie", "tmdb_id": i, "title": f"Title {i}"}
+        for i in range(n)
+    ]
+
+
+def test_process_results_raw_files_with_11_shows_next():
+    from lib.clients.jackgram.utils import add_jackgram_raw_file_item, process_results
+
+    items = _make_raw_items(11)
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory") as mock_eod, patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ) as mock_view, patch("lib.clients.jackgram.utils.kodilog"):
+        process_results(items, add_jackgram_raw_file_item, "list_jackgram_raw_files", 1)
+
+        mock_pool.assert_called_once()
+        mock_next.assert_called_once_with("list_jackgram_raw_files", page=1)
+        assert mock_eod.called
+        mock_view.assert_called_once()
+
+
+def test_process_results_raw_files_with_10_no_next():
+    from lib.clients.jackgram.utils import add_jackgram_raw_file_item, process_results
+
+    items = _make_raw_items(10)
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory"), patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ), patch("lib.clients.jackgram.utils.kodilog"):
+        process_results(items, add_jackgram_raw_file_item, "list_jackgram_raw_files", 3)
+
+        mock_pool.assert_called_once()
+        mock_next.assert_not_called()
+
+
+def test_process_results_latest_with_12_shows_next():
+    from lib.clients.jackgram.utils import add_jackgram_title_item, process_results
+
+    items = _make_title_items(12)
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory"), patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ), patch("lib.clients.jackgram.utils.kodilog"):
+        process_results(items, add_jackgram_title_item, "list_jackgram_latest_movies", 2)
+
+        mock_pool.assert_called_once()
+        mock_next.assert_called_once_with("list_jackgram_latest_movies", page=2)
+
+
+def test_process_results_latest_with_11_no_next():
+    from lib.clients.jackgram.utils import add_jackgram_title_item, process_results
+
+    items = _make_title_items(11)
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory"), patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ), patch("lib.clients.jackgram.utils.kodilog"):
+        process_results(items, add_jackgram_title_item, "list_jackgram_latest_series", 1)
+
+        mock_pool.assert_called_once()
+        mock_next.assert_not_called()
+
+
+def test_process_results_empty_and_none_no_next():
+    from lib.clients.jackgram.utils import add_jackgram_raw_file_item, process_results
+
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory") as mock_eod, patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ) as mock_view, patch("lib.clients.jackgram.utils.kodilog") as mock_log:
+        process_results([], add_jackgram_raw_file_item, "list_jackgram_raw_files", 1)
+        mock_next.assert_not_called()
+        mock_pool.assert_not_called()
+        mock_eod.assert_called_once()
+        mock_view.assert_not_called()
+        assert mock_log.called
+
+        mock_pool.reset_mock()
+        mock_next.reset_mock()
+        mock_eod.reset_mock()
+        mock_view.reset_mock()
+        mock_log.reset_mock()
+
+        process_results(None, add_jackgram_raw_file_item, "list_jackgram_raw_files", 1)
+        mock_next.assert_not_called()
+        mock_pool.assert_not_called()
+        mock_eod.assert_called_once()
+        mock_view.assert_not_called()
+
+    from lib.clients.jackgram.utils import add_jackgram_title_item
+
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool2, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next2, patch("lib.clients.jackgram.utils.end_of_directory") as mock_eod2, patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ), patch("lib.clients.jackgram.utils.kodilog"):
+        process_results([], add_jackgram_title_item, "list_jackgram_latest_movies", 1)
+        mock_next2.assert_not_called()
+        mock_pool2.assert_not_called()
+        mock_eod2.assert_called_once()
+
+
+def test_process_results_latest_dedupe_can_suppress_next():
+    from lib.clients.jackgram.utils import add_jackgram_title_item, process_results
+
+    dup_items = [
+        {"date": f"2024-01-{i + 1:02d}", "type": "movie", "tmdb_id": 1, "title": f"Title {i}"}
+        for i in range(12)
+    ]
+    with patch("lib.clients.jackgram.utils.execute_thread_pool") as mock_pool, patch(
+        "lib.clients.jackgram.utils.add_next_button"
+    ) as mock_next, patch("lib.clients.jackgram.utils.end_of_directory"), patch(
+        "lib.clients.jackgram.utils.apply_section_view"
+    ), patch("lib.clients.jackgram.utils.kodilog"):
+        process_results(dup_items, add_jackgram_title_item, "list_jackgram_latest_movies", 1)
+
+        mock_pool.assert_called_once()
+        mock_next.assert_not_called()
