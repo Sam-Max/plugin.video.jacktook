@@ -1,4 +1,5 @@
 import json
+import threading
 
 from xbmcplugin import addDirectoryItem
 
@@ -24,6 +25,25 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+
+_tmdb_cache = {}
+_tmdb_cache_lock = threading.Lock()
+
+
+def _cached_tmdb_get(path, params=None):
+    if isinstance(params, (str, int)):
+        key = (path, params)
+    elif isinstance(params, dict):
+        key = (path, json.dumps(params, sort_keys=True))
+    else:
+        key = (path, str(params))
+    with _tmdb_cache_lock:
+        if key in _tmdb_cache:
+            return _tmdb_cache[key]
+    result = tmdb_get(path, params)
+    with _tmdb_cache_lock:
+        _tmdb_cache[key] = result
+    return result
 
 
 def check_jackgram_active():
@@ -96,26 +116,31 @@ def add_jackgram_raw_file_item(item):
     )
 
 
-def add_jackgram_title_item(entry):
+def _fetch_title_item(entry):
     api_type = entry["type"]
-    title = entry["title"]
     tmdb_id = entry["tmdb_id"]
-
-    details = tmdb_get(f"{api_type}_details", tmdb_id)
+    details = _cached_tmdb_get(f"{api_type}_details", tmdb_id)
     if details is None:
         kodilog(f"Failed to get details for {api_type} with ID {tmdb_id}")
+        return None
+    entry["ids"] = {
+        "tmdb_id": tmdb_id,
+        "tvdb_id": details.external_ids.get("tvdb_id"),
+        "imdb_id": details.external_ids.get("imdb_id"),
+    }
+    return entry, details
+
+
+def add_jackgram_title_item(entry):
+    result = _fetch_title_item(entry)
+    if result is None:
         return
-
-    # Normalize mode
+    entry, details = result
+    api_type = entry["type"]
+    title = entry["title"]
     mode = "movies" if api_type == "movie" else api_type
-
-    imdb_id = details.external_ids.get("imdb_id")
-    tvdb_id = details.external_ids.get("tvdb_id")
-    entry["ids"] = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
-
     list_item = make_list_item(label=title)
     set_media_infoTag(list_item, data=details, mode=mode)
-
     addDirectoryItem(
         ADDON_HANDLE,
         build_url("list_jackgram_title_sources", data=json.dumps(entry)),
@@ -133,7 +158,8 @@ def list_jackgram_title_sources(query):
         mode="tg_latest",
     )
     set_content_type(parent_data["type"])
-    execute_thread_pool(parent_data["files"], add_jackgram_source_item, parent_data)
+    files = _dedupe_source_items(parent_data.get("files") or [])
+    execute_thread_pool(files, add_jackgram_source_item, parent_data)
     end_of_directory()
 
 
@@ -159,7 +185,7 @@ def add_jackgram_source_item(file_entry, parent_data):
         except (TypeError, ValueError):
             episode_val = None
         if season_val is not None and episode_val is not None:
-            details = tmdb_get(
+            details = _cached_tmdb_get(
                 "episode_details",
                 params={
                     "id": parent_data.get("tmdb_id"),
@@ -170,7 +196,7 @@ def add_jackgram_source_item(file_entry, parent_data):
     else:
         tmdb_id = parent_data.get("tmdb_id")
         if tmdb_id is not None:
-            details = tmdb_get("movie_details", tmdb_id)
+            details = _cached_tmdb_get("movie_details", tmdb_id)
 
     list_item.setProperty("IsPlayable", "true")
     if details is not None:
@@ -198,8 +224,42 @@ def process_results(results, callback, next_button_action, page):
 
     results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
 
+    if callback is add_jackgram_title_item:
+        results = _dedupe_title_items(results)
+
     execute_thread_pool(results, callback)
     if isinstance(results, list) and len(results) >= 12:
         add_next_button(next_button_action, page=page)
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")
+
+
+def _dedupe_title_items(results):
+    seen = set()
+    deduped = []
+    for entry in results:
+        key = (entry.get("type"), entry.get("tmdb_id"))
+        if key not in seen and key != (None, None):
+            seen.add(key)
+            deduped.append(entry)
+    orig_count = len(results)
+    if len(deduped) != orig_count:
+        kodilog(f"Jackgram deduped {orig_count - len(deduped)} duplicate title(s)")
+    return deduped
+
+
+def _dedupe_source_items(files):
+    seen = set()
+    deduped = []
+    for f in files:
+        season = f.get("season")
+        episode = f.get("episode")
+        if isinstance(season, list):
+            season = tuple(season)
+        if isinstance(episode, list):
+            episode = tuple(episode)
+        key = (f.get("url"), season, episode)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(f)
+    return deduped
