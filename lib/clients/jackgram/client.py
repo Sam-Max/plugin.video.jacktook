@@ -45,7 +45,19 @@ class Jackgram(BaseClient):
 
             kodilog(f"Jackgram search URL: {_sanitize_url_for_log(url)}")
 
-            res = self.session.get(url, timeout=10)
+            timeout = getattr(self, "timeout", (5, 15))
+            res = self.session.get(url, timeout=timeout)
+            if res.status_code == 401:
+                kodilog(f"Jackgram search 401 unauthorized for URL: {_sanitize_url_for_log(url)}")
+                self.handle_exception(f"{translation(30221)}: Jackgram")
+                return []
+            if res.status_code == 429:
+                retry_after = res.headers.get("Retry-After") if hasattr(res, "headers") else None
+                kodilog(
+                    f"Jackgram search 429 rate limited for URL: {_sanitize_url_for_log(url)} "
+                    f"retry_after={retry_after}"
+                )
+                return []
             if res.status_code != 200:
                 kodilog(
                     f"Jackgram search failed with status {res.status_code} "
@@ -64,9 +76,23 @@ class Jackgram(BaseClient):
     def get_latest_movies(self, page: int) -> Optional[Dict[str, Any]]:
         try:
             url = f"{self.host}/stream/movies/latest?page={page}"
-            res = self.session.get(url, timeout=10)
+            timeout = getattr(self, "timeout", (5, 15))
+            res = self.session.get(url, timeout=timeout)
+            if res.status_code == 401:
+                kodilog(f"get_latest_movies 401 unauthorized for URL: {_sanitize_url_for_log(url)}")
+                return
+            if res.status_code == 429:
+                retry_after = res.headers.get("Retry-After") if hasattr(res, "headers") else None
+                kodilog(
+                    f"get_latest_movies 429 rate limited for URL: {_sanitize_url_for_log(url)} "
+                    f"retry_after={retry_after}"
+                )
+                return
             if res.status_code != 200:
-                kodilog(f"get_latest_movies failed with status {res.status_code}")
+                kodilog(
+                    f"get_latest_movies failed with status {res.status_code} "
+                    f"for URL: {_sanitize_url_for_log(url)}"
+                )
                 return
             return res.json()
         except Exception as e:
@@ -75,9 +101,23 @@ class Jackgram(BaseClient):
     def get_latest_series(self, page: int) -> Optional[Dict[str, Any]]:
         try:
             url = f"{self.host}/stream/series/latest?page={page}"
-            res = self.session.get(url, timeout=10)
+            timeout = getattr(self, "timeout", (5, 15))
+            res = self.session.get(url, timeout=timeout)
+            if res.status_code == 401:
+                kodilog(f"get_latest_series 401 unauthorized for URL: {_sanitize_url_for_log(url)}")
+                return
+            if res.status_code == 429:
+                retry_after = res.headers.get("Retry-After") if hasattr(res, "headers") else None
+                kodilog(
+                    f"get_latest_series 429 rate limited for URL: {_sanitize_url_for_log(url)} "
+                    f"retry_after={retry_after}"
+                )
+                return
             if res.status_code != 200:
-                kodilog(f"get_latest_series failed with status {res.status_code}")
+                kodilog(
+                    f"get_latest_series failed with status {res.status_code} "
+                    f"for URL: {_sanitize_url_for_log(url)}"
+                )
                 return
             return res.json()
         except Exception as e:
@@ -86,9 +126,23 @@ class Jackgram(BaseClient):
     def get_files(self, page: int) -> Optional[Dict[str, Any]]:
         try:
             url = f"{self.host}/stream/files?page={page}"
-            res = self.session.get(url, timeout=10)
+            timeout = getattr(self, "timeout", (5, 15))
+            res = self.session.get(url, timeout=timeout)
+            if res.status_code == 401:
+                kodilog(f"get_files 401 unauthorized for URL: {_sanitize_url_for_log(url)}")
+                return
+            if res.status_code == 429:
+                retry_after = res.headers.get("Retry-After") if hasattr(res, "headers") else None
+                kodilog(
+                    f"get_files 429 rate limited for URL: {_sanitize_url_for_log(url)} "
+                    f"retry_after={retry_after}"
+                )
+                return
             if res.status_code != 200:
-                kodilog(f"get_files failed with status {res.status_code}")
+                kodilog(
+                    f"get_files failed with status {res.status_code} "
+                    f"for URL: {_sanitize_url_for_log(url)}"
+                )
                 return
             return res.json()
         except Exception as e:
