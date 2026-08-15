@@ -158,14 +158,27 @@ def add_to_library(params):
 def search_direct(params):
     set_pluging_category(translation(90011))
     mode = params.get("mode")
+    history_key = params.get("history_key", mode)
+    jackgram_only = (
+        str(params.get("jackgram_only", "")).lower() == "true"
+        or params.get("jackgram_only") is True
+    )
+    label_id = params.get("label_id", 90006)
     query = params.get("query", "")
     is_clear = params.get("is_clear", False)
     is_keyboard = params.get("is_keyboard", True)
     update_listing = params.get("update_listing", False)
     rename = params.get("rename", False)
+    history_params = {}
+    if history_key != mode:
+        history_params["history_key"] = history_key
+    if jackgram_only:
+        history_params["jackgram_only"] = "true"
+    if label_id != 90006:
+        history_params["label_id"] = label_id
 
     if is_clear:
-        cache.clear_list(key=mode)
+        cache.clear_list(key=history_key)
         is_keyboard = False
 
     if rename or is_clear:
@@ -175,21 +188,21 @@ def search_direct(params):
         text = show_keyboard(id=30243, default=query)
         if text:
             cache.add_to_list(
-                key=mode,
+                key=history_key,
                 item=(mode, text),
                 expires=timedelta(hours=get_cache_expiration()),
             )
 
-    list_item = make_list_item(label=translation(90006))
+    list_item = make_list_item(label=translation(label_id))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_direct", mode=mode),
+        build_url("search_direct", mode=mode, **history_params),
         list_item,
         isFolder=True,
     )
 
-    for item_mode, text in cache.get_list(key=mode):
+    for item_mode, text in cache.get_list(key=history_key):
         list_item = make_list_item(label=f"[I]{text}[/I]")
         list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
         list_item.setProperty("IsPlayable", "true")
@@ -203,6 +216,7 @@ def search_direct(params):
                         query=text,
                         rescrape=True,
                         direct=True,
+                        **history_params,
                     ),
                 ),
                 (
@@ -212,6 +226,7 @@ def search_direct(params):
                         mode=item_mode,
                         query=text,
                         rename=True,
+                        **history_params,
                     ),
                 ),
                 (
@@ -222,7 +237,7 @@ def search_direct(params):
         )
         addDirectoryItem(
             ADDON_HANDLE,
-            build_url("search", mode=item_mode, query=text, direct=True),
+            build_url("search", mode=item_mode, query=text, direct=True, **history_params),
             list_item,
             isFolder=False,
         )
@@ -231,7 +246,7 @@ def search_direct(params):
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     addDirectoryItem(
         ADDON_HANDLE,
-        build_url("search_direct", mode=mode, is_clear=True),
+        build_url("search_direct", mode=mode, is_clear=True, **history_params),
         list_item,
         isFolder=True,
     )

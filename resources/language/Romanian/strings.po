@@ -283,6 +283,10 @@ msgctxt "#30261"
 msgid "Host not reachable"
 msgstr "Nu se poate conecta la gazdă"
 
+msgctxt "#30262"
+msgid "Search in Telegram"
+msgstr "Caută pe Telegram"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "În așteptare"

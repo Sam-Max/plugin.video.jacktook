@@ -991,6 +991,47 @@ class TestSearchClient:
         mock_detailed.assert_not_called()
         mock_cache_results.assert_not_called()
 
+    @pytest.mark.parametrize(
+        ("jackgram_only", "expected_scope", "expected_addon_url"),
+        [
+            (True, "scope:jackgram", ""),
+            (False, "scope", "https://addon.example"),
+        ],
+    )
+    def test_jackgram_only_uses_an_isolated_cache_scope(
+        self, jackgram_only, expected_scope, expected_addon_url
+    ):
+        results = [MagicMock()]
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch(
+            "lib.search._build_search_cache_scope", return_value="scope"
+        ) as build_scope, patch(
+            "lib.search._check_search_caches", return_value=None
+        ) as check_cache, patch("lib.search.get_setting", return_value="0"), patch(
+            "lib.search._run_simple_search", return_value=results
+        ), patch("lib.search.cache_results") as cache_results_mock:
+            result = search_client(
+                "q",
+                {},
+                "movies",
+                "movie",
+                rescrape=False,
+                season=0,
+                episode=0,
+                scoped_addon_url="https://addon.example",
+                jackgram_only=jackgram_only,
+            )
+
+        assert result == results
+        build_scope.assert_called_once_with(expected_addon_url)
+        check_cache.assert_called_once_with("q", {}, "movies", "movie", 0, 0, expected_scope)
+        cache_results_mock.assert_called_once_with(
+            results, "q", "movies", "movie", 0, 0, cache_scope=expected_scope
+        )
+
     def test_cache_miss_detailed_dialog_branch(self):
         """Cache miss + search_dialog_style=1 → calls _run_detailed_search."""
         expected = [MagicMock()]

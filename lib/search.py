@@ -663,6 +663,10 @@ def run_search_entry(params: dict):
     direct = params.get("direct", False)
     rescrape = params.get("rescrape", False)
     skip_cancel = params.get("skip_cancel_on_back", False)
+    jackgram_only = (
+        str(params.get("jackgram_only", "")).lower() == "true"
+        or params.get("jackgram_only") is True
+    )
     playback_resume = {
         key: params[key]
         for key in (
@@ -705,6 +709,8 @@ def run_search_entry(params: dict):
     season = tv_data.get("season", 1)
 
     scoped_addon_url = params.get("scoped_addon_url", "")
+    if jackgram_only and scoped_addon_url:
+        scoped_addon_url = ""
     preferred_stremio_streams = safe_json_loads(params.get("preferred_stremio_streams") or "[]")
     preferred_results = _preferred_stremio_results(preferred_stremio_streams)
 
@@ -722,12 +728,16 @@ def run_search_entry(params: dict):
             variant=variant,
             title_language_mode=title_language_mode,
             year=year,
+            jackgram_only=jackgram_only,
         )
     except SearchCancelled as exc:
         kodilog("Search cancelled from detailed status window")
         results = exc.results
         suppress_debrid_dialog = True
         if results and not rescrape:
+            _cache_scope = _build_search_cache_scope(scoped_addon_url)
+            if jackgram_only:
+                _cache_scope = f"{_cache_scope}:jackgram"
             cache_results(
                 results,
                 query,
@@ -735,7 +745,7 @@ def run_search_entry(params: dict):
                 media_type,
                 episode,
                 season,
-                cache_scope=_build_search_cache_scope(scoped_addon_url),
+                cache_scope=_cache_scope,
             )
 
     if not results and not preferred_results:
@@ -888,6 +898,7 @@ def _submit_search_tasks(
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
     title_aliases: Optional[List[str]] = None,
+    jackgram_only: bool = False,
 ):
     def submit_performer(*args, **kwargs):
         if "show_dialog" not in kwargs:
@@ -905,6 +916,26 @@ def _submit_search_tasks(
             *args,
             **kwargs,
         )
+
+    if jackgram_only:
+        if _is_source_enabled(Indexer.JACKGRAM):
+            add_task_if_enabled(
+                executor,
+                tasks,
+                "jackgram_enabled",
+                Indexer.JACKGRAM,
+                _perform_search,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=show_dialog,
+                scoped_addon_url=scoped_addon_url,
+            )
+        return
 
     if scoped_addon_url:
         addon = get_addon_by_base_url(scoped_addon_url)
@@ -1096,6 +1127,7 @@ def _submit_search_tasks_managed(
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
     title_aliases: Optional[List[str]] = None,
+    jackgram_only: bool = False,
 ):
     def submit_performer_managed(name, indexer_key, *args, **kwargs):
         kwargs["show_dialog"] = False
@@ -1115,6 +1147,25 @@ def _submit_search_tasks_managed(
             *args,
             **kwargs,
         )
+
+    if jackgram_only:
+        if _is_source_enabled(Indexer.JACKGRAM):
+            add_task_if_enabled_managed(
+                manager,
+                "jackgram_enabled",
+                Indexer.JACKGRAM,
+                _perform_search,
+                dialog,
+                tmdb_id,
+                query,
+                mode,
+                media_type,
+                season,
+                episode,
+                show_dialog=False,
+                scoped_addon_url=scoped_addon_url,
+            )
+        return
 
     if scoped_addon_url:
         addon = get_addon_by_base_url(scoped_addon_url)
@@ -1338,8 +1389,11 @@ def _run_detailed_search(
     title_language_mode: str,
     year: Optional[int],
     title_aliases: List[str],
+    jackgram_only: bool = False,
 ) -> List[TorrentStream]:
     """Search with SearchStatusWindow (``search_dialog_style=1``)."""
+    if jackgram_only:
+        scoped_addon_url = ""
     executor = ThreadPoolExecutor(max_workers=_search_worker_count())
     manager = SearchTaskManager(executor)
     try:
@@ -1359,6 +1413,7 @@ def _run_detailed_search(
             title_language_mode=title_language_mode,
             year=year,
             title_aliases=title_aliases,
+            jackgram_only=jackgram_only,
         )
 
         item_info = {"ids": ids, "mode": mode}
@@ -1404,8 +1459,11 @@ def _run_simple_search(
     title_language_mode: str,
     year: Optional[int],
     title_aliases: List[str],
+    jackgram_only: bool = False,
 ) -> List[TorrentStream]:
     """Search with a simple progress dialog (``search_dialog_style=0``)."""
+    if jackgram_only:
+        scoped_addon_url = ""
     tasks: List[Future] = []
     with DialogListener() as listener:
         if show_dialog:
@@ -1430,6 +1488,7 @@ def _run_simple_search(
                 title_language_mode=title_language_mode,
                 year=year,
                 title_aliases=title_aliases,
+                jackgram_only=jackgram_only,
             )
             total_results = _collect_search_results(tasks, listener, show_dialog)
 
@@ -1449,6 +1508,7 @@ def search_client(
     variant: str = SearchVariant.DEFAULT,
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
+    jackgram_only: bool = False,
 ) -> List[TorrentStream]:
     close_busy_dialog()
     reconcile_source_selection(
@@ -1467,7 +1527,11 @@ def search_client(
         year,
         title_language_mode=title_language_mode,
     )
+    if jackgram_only and scoped_addon_url:
+        scoped_addon_url = ""
     cache_scope = _build_search_cache_scope(scoped_addon_url)
+    if jackgram_only:
+        cache_scope = f"{cache_scope}:jackgram"
 
     if not rescrape:
         cached = _check_search_caches(query, ids, mode, media_type, episode, season, cache_scope)
@@ -1492,6 +1556,7 @@ def search_client(
                 title_language_mode,
                 year,
                 title_aliases,
+                jackgram_only=jackgram_only,
             )
         except SearchCancelled:
             raise
@@ -1512,6 +1577,7 @@ def search_client(
                 title_language_mode,
                 year,
                 title_aliases,
+                jackgram_only=jackgram_only,
             )
     else:
         total_results = _run_simple_search(
@@ -1529,6 +1595,7 @@ def search_client(
             title_language_mode,
             year,
             title_aliases,
+            jackgram_only=jackgram_only,
         )
 
     cache_results(
@@ -1627,10 +1694,7 @@ def show_source_select(
 
 
 def _autoplay_description(source: TorrentStream, ids: dict, mode: str) -> str:
-    if not (
-        get_setting("torrent_enable")
-        and get_setting("torrent_client") == Players.JACKTORR
-    ):
+    if not (get_setting("torrent_enable") and get_setting("torrent_client") == Players.JACKTORR):
         return ""
 
     if _is_stremio_source(source):
@@ -1642,10 +1706,10 @@ def _autoplay_description(source: TorrentStream, ids: dict, mode: str) -> str:
             payload.get("debrid_type", "")
         ):
             return ""
-    elif (
-        source.type in (IndexerType.DIRECT, IndexerType.STREMIO_DEBRID)
-        or is_supported_debrid_type(source.debridType)
-    ):
+    elif source.type in (
+        IndexerType.DIRECT,
+        IndexerType.STREMIO_DEBRID,
+    ) or is_supported_debrid_type(source.debridType):
         return ""
 
     return build_media_metadata(ids or {}, mode).get("overview") or ""

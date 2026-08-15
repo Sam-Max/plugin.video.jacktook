@@ -446,8 +446,8 @@ def telegram_menu(params):
     add_directory_items_batch(
         [
             (
-                build_url("search_direct", mode="direct"),
-                build_list_item(translation(90006), "search.png"),
+                build_url("search_jackgram", mode="direct"),
+                build_list_item(translation(30262), "search.png"),
                 True,
             ),
             (
@@ -474,6 +474,15 @@ def telegram_menu(params):
     )
     end_of_directory()
     apply_section_view("view.main")
+
+
+def search_jackgram(params):
+    jparams = dict(params)
+    jparams["jackgram_only"] = "true"
+    jparams["history_key"] = "direct_jackgram"
+    jparams.setdefault("mode", "direct")
+    jparams["label_id"] = 30262
+    return library_history_navigation.search_direct(jparams)
 
 
 def search_tmdb_year(params):
@@ -811,9 +820,7 @@ def _torrent_categories(torrent_list):
     return sorted(
         (category for category in categories if category is not None),
         key=lambda category: (category.casefold(), category),
-    ) + (
-        [None] if None in categories else []
-    )
+    ) + ([None] if None in categories else [])
 
 
 def _add_torrent_items(torrent_list):
@@ -888,9 +895,7 @@ def _add_torrent_items(torrent_list):
             ]
         )
 
-        torrent_li = build_list_item(
-            display_title, "magnet.png", poster_path=display_poster
-        )
+        torrent_li = build_list_item(display_title, "magnet.png", poster_path=display_poster)
         get_video_info_tag = getattr(torrent_li, "getVideoInfoTag", None)
         if callable(get_video_info_tag):
             video_info_tag = get_video_info_tag()
@@ -942,7 +947,9 @@ def torrents(params):
             label = category or translation(90963)
             torrent_li = build_list_item(label, "magnet.png")
             params = {"uncategorized": True} if category is None else {"category": category}
-            addDirectoryItem(ADDON_HANDLE, build_url("torrents", **params), torrent_li, isFolder=True)
+            addDirectoryItem(
+                ADDON_HANDLE, build_url("torrents", **params), torrent_li, isFolder=True
+            )
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")
 

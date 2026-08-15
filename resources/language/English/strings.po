@@ -283,6 +283,10 @@ msgctxt "#30261"
 msgid "Host not reachable"
 msgstr ""
 
+msgctxt "#30262"
+msgid "Search in Telegram"
+msgstr ""
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr ""
