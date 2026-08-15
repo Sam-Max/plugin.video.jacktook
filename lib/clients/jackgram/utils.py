@@ -129,24 +129,43 @@ def list_jackgram_title_sources(query):
 
 
 def add_jackgram_source_item(file_entry, parent_data):
-    mode = file_entry["mode"]
-    title = file_entry["title"]
+    mode = file_entry.get("mode", "tv")
+    title = file_entry.get("title", "")
 
     list_item = make_list_item(label=title)
+    details = None
     if mode == "tv":
-        details = tmdb_get(
-            "episode_details",
-            params={
-                "id": parent_data["tmdb_id"],
-                "season": file_entry["season"],
-                "episode": file_entry["episode"],
-            },
-        )
+        season = file_entry.get("season")
+        episode = file_entry.get("episode")
+        if isinstance(season, list):
+            season = season[0] if season else None
+        if isinstance(episode, list):
+            episode = episode[0] if episode else None
+        try:
+            season_val = int(season) if season is not None else None
+        except (TypeError, ValueError):
+            season_val = None
+        try:
+            episode_val = int(episode) if episode is not None else None
+        except (TypeError, ValueError):
+            episode_val = None
+        if season_val is not None and episode_val is not None:
+            details = tmdb_get(
+                "episode_details",
+                params={
+                    "id": parent_data.get("tmdb_id"),
+                    "season": season_val,
+                    "episode": episode_val,
+                },
+            )
     else:
-        details = tmdb_get("movie_details", parent_data["tmdb_id"])
+        tmdb_id = parent_data.get("tmdb_id")
+        if tmdb_id is not None:
+            details = tmdb_get("movie_details", tmdb_id)
 
     list_item.setProperty("IsPlayable", "true")
-    set_media_infoTag(list_item, data=details, mode=mode)
+    if details is not None:
+        set_media_infoTag(list_item, data=details, mode=mode)
 
     merged_data = {**parent_data, **file_entry}
 
