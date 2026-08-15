@@ -267,6 +267,10 @@ msgctxt "#30257"
 msgid "Do you want to install Jacktook Burst?"
 msgstr "Deseja instalar Jacktook Burst?"
 
+msgctxt "#30258"
+msgid "Invalid host for %s. Use http:// or https://"
+msgstr "Host inválido para %s. Use http:// ou https://"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "Adicionado à fila"

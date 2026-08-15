@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional
+from urllib.parse import urlparse
 
 from lib.utils.general.utils import Indexer
 from lib.utils.kodi.settings import get_int_setting
@@ -6,8 +7,12 @@ from lib.utils.kodi.utils import get_setting, notification, translation
 
 
 def validate_host(host: Optional[str], indexer: str) -> Optional[bool]:
-    if not host:
+    if not host or not host.strip():
         notification(f"{translation(30223)}: {indexer}")
+        return None
+    parsed = urlparse(host.strip())
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        notification(translation(30258) % indexer)
         return None
     return True
 
