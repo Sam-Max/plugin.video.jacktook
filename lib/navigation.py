@@ -465,6 +465,11 @@ def telegram_menu(params):
                 build_list_item(translation(90371), "cloud.png"),
                 True,
             ),
+            (
+                build_url("test_jackgram_connection"),
+                build_list_item(translation(30259), "settings.png"),
+                False,
+            ),
         ]
     )
     end_of_directory()

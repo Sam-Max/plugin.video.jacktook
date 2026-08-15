@@ -2063,14 +2063,6 @@
                 </setting>
             </group>
         </category>
-        <category id="menus" label="30804">
-            <group id="telegram" label="">
-                <setting id="show_telegram_menu" type="boolean" label="30805" help="30816">
-                    <default>false</default>
-                    <control type="toggle" />
-                </setting>
-            </group>
-        </category>
         <category id="backup_category" label="90258">
             <group id="backup" label="90258">
                 <setting id="settings_backup_strip_sensitive" type="boolean" label="90263" help="90264">

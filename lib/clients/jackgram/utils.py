@@ -3,7 +3,9 @@ import threading
 
 from xbmcplugin import addDirectoryItem
 
+from lib.clients.jackgram.client import Jackgram
 from lib.clients.tmdb.utils.utils import tmdb_get
+from lib.utils.clients.utils import validate_host
 from lib.utils.general.utils import (
     Indexer,
     IndexerType,
@@ -60,6 +62,36 @@ def check_and_get_jackgram_client():
     from lib.utils.clients.utils import get_client
 
     return get_client(Indexer.JACKGRAM)
+
+
+def test_jackgram_connection(params):
+    host = str(get_setting("jackgram_host") or "").strip()
+    token = str(get_setting("jackgram_token", "") or "").strip()
+    if not validate_host(host, Indexer.JACKGRAM):
+        return
+    normalized_host = host.rstrip("/")
+    url = f"{normalized_host}/status"
+    try:
+        client = Jackgram(normalized_host, notification, token if token else None)
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        res = client.session.get(url, headers=headers, timeout=(5, 15))
+    except Exception as exc:
+        kodilog(f"Jackgram test connection failed: {exc}")
+        notification(translation(30261))
+        return
+    try:
+        if res.status_code == 401:
+            notification(f"{translation(30221)}: Jackgram")
+            return
+        if res.status_code == 200:
+            notification(translation(30260))
+            return
+        notification(translation(30261))
+    except Exception as exc:
+        kodilog(f"Jackgram test connection error: {exc}")
+        notification(translation(30261))
 
 
 def _parse_page(query):

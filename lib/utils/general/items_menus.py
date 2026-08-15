@@ -539,7 +539,7 @@ root_menu_items = [
         "name": 90013,
         "icon": "telegram.png",
         "action": "telegram_menu",
-        "condition": lambda: get_setting("show_telegram_menu"),
+        "condition": lambda: bool(get_setting("jackgram_enabled")),
     },
     {"name": 90014, "icon": "cloud2.png", "action": "cloud"},
     {"name": 90015, "icon": "download2.png", "action": "downloads_menu"},

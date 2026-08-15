@@ -271,6 +271,18 @@ msgctxt "#30258"
 msgid "Invalid host for %s. Use http:// or https://"
 msgstr "Неверный хост для %s. Используйте http:// или https://"
 
+msgctxt "#30259"
+msgid "Test connection"
+msgstr "Проверить подключение"
+
+msgctxt "#30260"
+msgid "Jackgram: OK"
+msgstr "Jackgram: OK"
+
+msgctxt "#30261"
+msgid "Host not reachable"
+msgstr "Не удалось подключиться к хосту"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "В очереди"

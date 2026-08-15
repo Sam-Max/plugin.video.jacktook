@@ -669,3 +669,110 @@ def test_resolve_playback_url_no_injection_when_token_empty(mock_get_setting):
     assert result is not None
     assert result["url"] == "http://x/file"
     assert "|Authorization" not in result["url"]
+
+
+@patch("lib.clients.jackgram.utils.kodilog")
+@patch("lib.clients.jackgram.utils.translation", side_effect=lambda string_id: f"{string_id}")
+@patch("lib.clients.jackgram.utils.notification")
+@patch("lib.clients.jackgram.utils.Jackgram")
+@patch("lib.clients.jackgram.utils.validate_host", return_value=True)
+@patch("lib.clients.jackgram.utils.get_setting")
+def test_jackgram_connection_notifies_success_on_200(
+    mock_get_setting,
+    mock_validate_host,
+    mock_jackgram,
+    mock_notification,
+    mock_translation,
+    mock_kodilog,
+):
+    from lib.clients.jackgram.utils import test_jackgram_connection
+
+    mock_get_setting.side_effect = lambda key, default=None: {
+        "jackgram_host": "http://example.com/",
+        "jackgram_token": "token",
+    }.get(key, default)
+    mock_jackgram.return_value.session.get.return_value = _make_response(status_code=200)
+
+    test_jackgram_connection({})
+
+    mock_translation.assert_called_once_with(30260)
+    mock_notification.assert_called_once_with("30260")
+    mock_jackgram.return_value.session.get.assert_called_once_with(
+        "http://example.com/status",
+        headers={"Authorization": "Bearer token"},
+        timeout=(5, 15),
+    )
+    mock_kodilog.assert_not_called()
+
+
+@patch("lib.clients.jackgram.utils.kodilog")
+@patch("lib.clients.jackgram.utils.translation", side_effect=lambda string_id: f"{string_id}")
+@patch("lib.clients.jackgram.utils.notification")
+@patch("lib.clients.jackgram.utils.Jackgram")
+@patch("lib.clients.jackgram.utils.validate_host", return_value=True)
+@patch("lib.clients.jackgram.utils.get_setting", return_value="http://example.com")
+def test_jackgram_connection_notifies_unauthorized_on_401(
+    mock_get_setting,
+    mock_validate_host,
+    mock_jackgram,
+    mock_notification,
+    mock_translation,
+    mock_kodilog,
+):
+    from lib.clients.jackgram.utils import test_jackgram_connection
+
+    mock_jackgram.return_value.session.get.return_value = _make_response(status_code=401)
+
+    test_jackgram_connection({})
+
+    mock_translation.assert_called_once_with(30221)
+    mock_notification.assert_called_once_with("30221: Jackgram")
+    mock_kodilog.assert_not_called()
+
+
+@patch("lib.clients.jackgram.utils.kodilog")
+@patch("lib.clients.jackgram.utils.translation", side_effect=lambda string_id: f"{string_id}")
+@patch("lib.clients.jackgram.utils.notification")
+@patch("lib.clients.jackgram.utils.Jackgram")
+@patch("lib.clients.jackgram.utils.validate_host", return_value=True)
+@patch("lib.clients.jackgram.utils.get_setting", return_value="http://example.com")
+def test_jackgram_connection_notifies_and_logs_request_errors(
+    mock_get_setting,
+    mock_validate_host,
+    mock_jackgram,
+    mock_notification,
+    mock_translation,
+    mock_kodilog,
+):
+    from lib.clients.jackgram.utils import test_jackgram_connection
+
+    mock_jackgram.return_value.session.get.side_effect = requests.RequestException("network down")
+
+    test_jackgram_connection({})
+
+    mock_translation.assert_called_once_with(30261)
+    mock_notification.assert_called_once_with("30261")
+    mock_kodilog.assert_called_once_with("Jackgram test connection failed: network down")
+
+
+@patch("lib.clients.jackgram.utils.kodilog")
+@patch("lib.clients.jackgram.utils.translation")
+@patch("lib.clients.jackgram.utils.notification")
+@patch("lib.clients.jackgram.utils.Jackgram")
+@patch("lib.clients.jackgram.utils.validate_host", return_value=False)
+@patch("lib.clients.jackgram.utils.get_setting", return_value="invalid-host")
+def test_jackgram_connection_does_not_request_an_invalid_host(
+    mock_get_setting,
+    mock_validate_host,
+    mock_jackgram,
+    mock_notification,
+    mock_translation,
+    mock_kodilog,
+):
+    from lib.clients.jackgram.utils import test_jackgram_connection
+
+    test_jackgram_connection({})
+
+    mock_jackgram.assert_not_called()
+    mock_notification.assert_not_called()
+    mock_kodilog.assert_not_called()

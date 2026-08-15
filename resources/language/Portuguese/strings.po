@@ -271,6 +271,18 @@ msgctxt "#30258"
 msgid "Invalid host for %s. Use http:// or https://"
 msgstr "Host inválido para %s. Use http:// ou https://"
 
+msgctxt "#30259"
+msgid "Test connection"
+msgstr "Testar conexão"
+
+msgctxt "#30260"
+msgid "Jackgram: OK"
+msgstr "Jackgram: OK"
+
+msgctxt "#30261"
+msgid "Host not reachable"
+msgstr "Não foi possível conectar ao host"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "Adicionado à fila"

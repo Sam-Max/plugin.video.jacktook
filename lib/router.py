@@ -169,7 +169,9 @@ def _is_debrid_action(action):
 
 
 def _is_telegram_action(action):
-    return action.startswith(("telegram_", "list_telegram", "list_jackgram"))
+    return action.startswith(
+        ("telegram_", "list_telegram", "list_jackgram", "test_jackgram")
+    ) or action == "test_jackgram_connection"
 
 
 def _is_torrserver_action(action):
@@ -513,6 +515,10 @@ def _route_telegram(action, params):
         from lib.navigation import telegram_menu
 
         telegram_menu(params)
+    elif action == "test_jackgram_connection":
+        from lib.clients.jackgram.utils import test_jackgram_connection
+
+        test_jackgram_connection(params)
     else:
         from lib.clients.jackgram.utils import (
             list_jackgram_latest_movies,

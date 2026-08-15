@@ -271,6 +271,18 @@ msgctxt "#30258"
 msgid "Invalid host for %s. Use http:// or https://"
 msgstr ""
 
+msgctxt "#30259"
+msgid "Test connection"
+msgstr ""
+
+msgctxt "#30260"
+msgid "Jackgram: OK"
+msgstr ""
+
+msgctxt "#30261"
+msgid "Host not reachable"
+msgstr ""
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr ""

@@ -271,6 +271,18 @@ msgctxt "#30258"
 msgid "Invalid host for %s. Use http:// or https://"
 msgstr "Host invalid pentru %s. Folosește http:// sau https://"
 
+msgctxt "#30259"
+msgid "Test connection"
+msgstr "Testează conexiunea"
+
+msgctxt "#30260"
+msgid "Jackgram: OK"
+msgstr "Jackgram: OK"
+
+msgctxt "#30261"
+msgid "Host not reachable"
+msgstr "Nu se poate conecta la gazdă"
+
 msgctxt "#30650"
 msgid "Queued"
 msgstr "În așteptare"
