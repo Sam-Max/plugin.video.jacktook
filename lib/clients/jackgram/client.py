@@ -104,7 +104,6 @@ class Jackgram(BaseClient):
             if not isinstance(item, dict):
                 continue
             url = item.get("url", "")
-            # URL clean; token injected only in resolve_playback_url
 
             results.append(
                 TorrentStream(
@@ -157,7 +156,6 @@ class Jackgram(BaseClient):
                 "url": "",
             }
         url = file.get("url", "")
-        # URL clean; token injected only in resolve_playback_url
 
         return {
             "title": file.get("title", ""),
