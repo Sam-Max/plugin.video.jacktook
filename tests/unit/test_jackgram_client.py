@@ -1,16 +1,16 @@
-import requests
 from unittest.mock import MagicMock, patch
 from urllib.parse import quote
 
 import pytest
+import requests
 
 from lib.clients.jackgram.client import Jackgram, _sanitize_url_for_log
 from lib.domain.torrent import TorrentStream
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_client(host="http://example.com", token=None):
     """Create a Jackgram client with a mockable session and notification."""
@@ -34,6 +34,7 @@ def _make_response(json_data=None, status_code=200):
 # ---------------------------------------------------------------------------
 # search() — endpoint routing
 # ---------------------------------------------------------------------------
+
 
 @patch("lib.clients.jackgram.client.kodilog")
 @patch("lib.clients.jackgram.client.translation", return_value="err")
@@ -89,13 +90,17 @@ def test_search_tv_missing_tmdb_falls_back_to_search(mock_translation, mock_kodi
     assert "page=1" in url2
 
     # case 3: season None
-    client.search(tmdb_id="123", query="my show", mode="tv", media_type="tv", season=None, episode=1)
+    client.search(
+        tmdb_id="123", query="my show", mode="tv", media_type="tv", season=None, episode=1
+    )
     url3 = client.session.get.call_args[0][0]
     assert "/search?query=" in url3
     assert "page=1" in url3
 
     # case 4: episode None
-    client.search(tmdb_id="123", query="my show", mode="tv", media_type="tv", season=1, episode=None)
+    client.search(
+        tmdb_id="123", query="my show", mode="tv", media_type="tv", season=1, episode=None
+    )
     url4 = client.session.get.call_args[0][0]
     assert "/search?query=" in url4
     assert "page=1" in url4
@@ -120,13 +125,22 @@ def test_search_movies_missing_tmdb_falls_back_to_search(mock_translation, mock_
     client = _make_client()
     client.session.get.return_value = _make_response({"results": []})
 
-    client.search(tmdb_id="", query="inception", mode="movies", media_type="movies", season=None, episode=None)
+    client.search(
+        tmdb_id="", query="inception", mode="movies", media_type="movies", season=None, episode=None
+    )
     url1 = client.session.get.call_args[0][0]
     assert "/search?query=" in url1
     assert "page=1" in url1
     assert "inception" in url1
 
-    client.search(tmdb_id=None, query="inception", mode="movies", media_type="movies", season=None, episode=None)
+    client.search(
+        tmdb_id=None,
+        query="inception",
+        mode="movies",
+        media_type="movies",
+        season=None,
+        episode=None,
+    )
     url2 = client.session.get.call_args[0][0]
     assert "/search?query=" in url2
     assert "/stream/movie" not in url2
@@ -140,7 +154,14 @@ def test_search_movies_with_valid_tmdb_uses_movie_endpoint(mock_translation, moc
         {"streams": [{"title": "Movie", "name": "idx", "url": "http://x/file"}]}
     )
 
-    result = client.search(tmdb_id="999", query="ignored", mode="movies", media_type="movies", season=None, episode=None)
+    result = client.search(
+        tmdb_id="999",
+        query="ignored",
+        mode="movies",
+        media_type="movies",
+        season=None,
+        episode=None,
+    )
 
     called_url = client.session.get.call_args[0][0]
     assert "/stream/movie/999.json" in called_url
@@ -153,7 +174,14 @@ def test_search_unknown_mode_falls_back_to_search(mock_translation, mock_kodilog
     client = _make_client()
     client.session.get.return_value = _make_response({"results": []})
 
-    client.search(tmdb_id="123", query="something", mode="other", media_type="other", season=None, episode=None)
+    client.search(
+        tmdb_id="123",
+        query="something",
+        mode="other",
+        media_type="other",
+        season=None,
+        episode=None,
+    )
     url = client.session.get.call_args[0][0]
     assert "/search?query=" in url
     assert "page=1" in url
@@ -168,7 +196,9 @@ def test_search_query_with_special_chars_is_quoted(mock_translation, mock_kodilo
     query = "a & b/c?"
     expected_encoded = quote(query, safe="")
 
-    client.search(tmdb_id="", query=query, mode="other", media_type="other", season=None, episode=None)
+    client.search(
+        tmdb_id="", query=query, mode="other", media_type="other", season=None, episode=None
+    )
     called_url = client.session.get.call_args[0][0]
     # Must be percent-encoded, not raw
     assert expected_encoded in called_url
@@ -177,7 +207,9 @@ def test_search_query_with_special_chars_is_quoted(mock_translation, mock_kodilo
     assert "page=1" in called_url
 
     # verify None query does not crash and encodes as empty
-    client.search(tmdb_id="", query=None, mode="other", media_type="other", season=None, episode=None)
+    client.search(
+        tmdb_id="", query=None, mode="other", media_type="other", season=None, episode=None
+    )
     url_none = client.session.get.call_args[0][0]
     assert "/search?query=&page=1" in url_none
 
@@ -185,12 +217,16 @@ def test_search_query_with_special_chars_is_quoted(mock_translation, mock_kodilo
 @patch("lib.clients.jackgram.client.kodilog")
 @patch("lib.clients.jackgram.client.translation", return_value="err")
 @patch("lib.clients.base.notification")
-def test_search_status_not_200_returns_empty_list(mock_base_notification, mock_translation, mock_kodilog):
+def test_search_status_not_200_returns_empty_list(
+    mock_base_notification, mock_translation, mock_kodilog
+):
     client = _make_client()
     mock_res = _make_response({"streams": [{"title": "t"}]}, status_code=500)
     client.session.get.return_value = mock_res
 
-    result = client.search(tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1)
+    result = client.search(
+        tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1
+    )
 
     assert result == []
     assert result is not None
@@ -205,7 +241,9 @@ def test_search_exception_returns_empty(mock_base_notification, mock_translation
     client = _make_client()
     client.session.get.side_effect = requests.RequestException("network down")
 
-    result = client.search(tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1)
+    result = client.search(
+        tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1
+    )
 
     assert result == []
     assert result is not None
@@ -219,7 +257,9 @@ def test_search_returns_empty_never_none_on_exception_generic(mock_translation, 
     client = _make_client()
     client.session.get.side_effect = RuntimeError("boom")
 
-    result = client.search(tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None)
+    result = client.search(
+        tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None
+    )
 
     assert result == []
     assert isinstance(result, list)
@@ -228,6 +268,7 @@ def test_search_returns_empty_never_none_on_exception_generic(mock_translation, 
 # ---------------------------------------------------------------------------
 # parse_response()
 # ---------------------------------------------------------------------------
+
 
 def test_parse_response_missing_streams_returns_empty():
     client = _make_client()
@@ -294,7 +335,7 @@ def test_parse_response_with_valid_streams_parses():
     assert "|Authorization" not in ts.url
     assert ts.type == "Direct"
 
-    # with token — url should contain |Authorization=Bearer <token>
+    # M2: client returns clean URL; token injected only in resolve_playback_url
     client_with_token = _make_client(token="secret123")
     mock_res2 = _make_response(
         {
@@ -319,7 +360,8 @@ def test_parse_response_with_valid_streams_parses():
     result2 = client_with_token.parse_response(mock_res2)
     assert len(result2) == 1
     ts2 = result2[0]
-    assert ts2.url == "http://x/file|Authorization=Bearer secret123"
+    assert ts2.url == "http://x/file"
+    assert "|Authorization" not in ts2.url
     assert ts2.guid == "g1"
     assert ts2.infoHash == "hash1"
     assert ts2.seeders == 5
@@ -345,6 +387,7 @@ def test_parse_response_accepts_plain_dict_without_json_method():
 # ---------------------------------------------------------------------------
 # parse_response_search()
 # ---------------------------------------------------------------------------
+
 
 def test_parse_response_search_missing_results_returns_empty():
     client = _make_client()
@@ -409,11 +452,13 @@ def test_parse_response_search_file_type_and_nested_files():
     for ts in result:
         assert ts.type == "Direct"
 
-    # with token — nested files should also get Authorization suffix
+    # M2: client returns clean URLs; token injected only in resolve_playback_url
     client_tok = _make_client(token="tok123")
     result_tok = client_tok.parse_response_search(mock_res)
-    assert result_tok[0].url == "http://x/direct|Authorization=Bearer tok123"
-    assert result_tok[1].url == "http://x/nested1|Authorization=Bearer tok123"
+    assert result_tok[0].url == "http://x/direct"
+    assert result_tok[1].url == "http://x/nested1"
+    assert "|Authorization" not in result_tok[0].url
+    assert "|Authorization" not in result_tok[1].url
 
     # files is not a list -> should be skipped gracefully
     mock_res_bad = _make_response({"results": [{"type": "folder", "files": "bad"}]})
@@ -444,6 +489,7 @@ def test_parse_response_search_plain_dict_without_json():
 # ---------------------------------------------------------------------------
 # _extract_file_info()
 # ---------------------------------------------------------------------------
+
 
 def test_extract_file_info_non_dict_returns_defaults():
     client = _make_client(token=None)
@@ -482,17 +528,19 @@ def test_extract_file_info_with_valid_dict():
 
 
 def test_extract_file_info_token_appended():
+    # M2: client returns clean URL; token injected only in resolve_playback_url
     client = _make_client(token="mytoken")
     file_dict = {"title": "t", "url": "http://x/file"}
     result = client._extract_file_info(file_dict)
-    assert result["url"] == "http://x/file|Authorization=Bearer mytoken"
+    assert result["url"] == "http://x/file"
+    assert "|Authorization" not in result["url"]
 
-    # empty url should not append token
+    # empty url stays empty even with token
     file_dict_empty = {"title": "t", "url": ""}
     result2 = client._extract_file_info(file_dict_empty)
     assert result2["url"] == ""
 
-    # token None should not append
+    # token None still returns clean URL
     client_no_tok = _make_client(token=None)
     result3 = client_no_tok._extract_file_info(file_dict)
     assert result3["url"] == "http://x/file"
@@ -501,6 +549,7 @@ def test_extract_file_info_token_appended():
 # ---------------------------------------------------------------------------
 # _sanitize_url_for_log()
 # ---------------------------------------------------------------------------
+
 
 def test_sanitize_url_for_log_hides_token():
     secret = "http://x/file|Authorization=Bearer secret123"
@@ -529,7 +578,9 @@ def test_kodilog_never_logs_raw_token(mock_translation, mock_kodilog):
     client.session.get.return_value = _make_response({"streams": []})
 
     # trigger search that will log the URL (via kodilog)
-    client.search(tmdb_id="123", query="test", mode="movies", media_type="movies", season=None, episode=None)
+    client.search(
+        tmdb_id="123", query="test", mode="movies", media_type="movies", season=None, episode=None
+    )
 
     # also trigger a failed status path
     client.session.get.return_value = _make_response({}, status_code=500)
@@ -553,7 +604,68 @@ def test_kodilog_never_logs_raw_token(mock_translation, mock_kodilog):
 def test_host_trailing_slash_does_not_double_slash(mock_translation, mock_kodilog):
     client = _make_client(host="http://example.com/")
     client.session.get.return_value = _make_response({"streams": []})
-    client.search(tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None)
+    client.search(
+        tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None
+    )
     called_url = client.session.get.call_args[0][0]
     assert "http://example.com/stream/movie/123.json" in called_url
     assert "http://example.com//stream" not in called_url
+
+
+# ---------------------------------------------------------------------------
+# M2 contract: client returns clean URLs — token only in resolve_playback_url
+# ---------------------------------------------------------------------------
+
+
+def test_parse_response_does_not_inject_token_even_when_token_set():
+    client = _make_client(token="tok123")
+    mock_res = _make_response({"streams": [{"title": "t", "name": "n", "url": "http://x/file"}]})
+    result = client.parse_response(mock_res)
+    assert len(result) == 1
+    assert result[0].url == "http://x/file"
+    assert "|Authorization" not in result[0].url
+
+
+def test_extract_file_info_does_not_inject_token():
+    client = _make_client(token="tok123")
+    result = client._extract_file_info({"title": "t", "url": "http://x/file"})
+    assert result["url"] == "http://x/file"
+    assert "|Authorization" not in result["url"]
+
+
+@patch("lib.utils.player.utils.get_setting", return_value="tok123")
+def test_resolve_playback_url_injects_token_once(mock_get_setting):
+    from lib.utils.player.utils import resolve_playback_url
+
+    data = {"type": "Direct", "indexer": "Jackgram", "url": "http://x/file"}
+    result = resolve_playback_url(data)
+    assert result is not None
+    assert result["url"] == "http://x/file|Authorization=Bearer tok123"
+    mock_get_setting.assert_called_with("jackgram_token", "")
+
+
+@patch("lib.utils.player.utils.get_setting", return_value="tok123")
+def test_resolve_playback_url_idempotent_no_double_injection(mock_get_setting):
+    from lib.utils.player.utils import resolve_playback_url
+
+    data = {
+        "type": "Direct",
+        "indexer": "Jackgram",
+        "url": "http://x/file|Authorization=Bearer tok123",
+    }
+    result = resolve_playback_url(data)
+    assert result is not None
+    assert result["url"] == "http://x/file|Authorization=Bearer tok123"
+    # must not duplicate
+    assert result["url"].count("|Authorization=Bearer") == 1
+
+
+@patch("lib.utils.player.utils.get_setting", return_value="")
+def test_resolve_playback_url_no_injection_when_token_empty(mock_get_setting):
+    from lib.utils.player.utils import resolve_playback_url
+
+    data = {"type": "Direct", "indexer": "Jackgram", "url": "http://x/file"}
+    result = resolve_playback_url(data)
+    assert result is not None
+    assert result["url"] == "http://x/file"
+    assert "|Authorization" not in result["url"]

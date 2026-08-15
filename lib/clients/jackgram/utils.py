@@ -77,10 +77,7 @@ def add_jackgram_raw_file_item(item):
     list_item.setProperty("IsPlayable", "true")
     item["type"] = IndexerType.DIRECT
     item["is_torrent"] = False
-
-    token = get_setting("jackgram_token", "")
-    if token and "url" in item:
-        item["url"] = f"{item['url']}|Authorization=Bearer {token}"
+    # URL clean; token injected only in resolve_playback_url
 
     addDirectoryItem(
         ADDON_HANDLE,
@@ -155,10 +152,7 @@ def add_jackgram_source_item(file_entry, parent_data):
 
     merged_data["type"] = IndexerType.DIRECT
     merged_data["is_torrent"] = False
-
-    token = get_setting("jackgram_token", "")
-    if token and "url" in merged_data:
-        merged_data["url"] = f"{merged_data['url']}|Authorization=Bearer {token}"
+    # URL clean; token injected only in resolve_playback_url
 
     addDirectoryItem(
         ADDON_HANDLE,
