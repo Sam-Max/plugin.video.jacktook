@@ -1,0 +1,559 @@
+import requests
+from unittest.mock import MagicMock, patch
+from urllib.parse import quote
+
+import pytest
+
+from lib.clients.jackgram.client import Jackgram, _sanitize_url_for_log
+from lib.domain.torrent import TorrentStream
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _make_client(host="http://example.com", token=None):
+    """Create a Jackgram client with a mockable session and notification."""
+    mock_notification = MagicMock()
+    with patch("lib.clients.base.notification"):
+        client = Jackgram(host=host, notification=mock_notification, token=token)
+    # Replace the real Session with a MagicMock so no network is used
+    client.session = MagicMock()
+    client._mock_notification = mock_notification
+    return client
+
+
+def _make_response(json_data=None, status_code=200):
+    """Build a MagicMock resembling requests.Response with .json() and .status_code."""
+    mock_res = MagicMock()
+    mock_res.status_code = status_code
+    mock_res.json.return_value = json_data if json_data is not None else {}
+    return mock_res
+
+
+# ---------------------------------------------------------------------------
+# search() — endpoint routing
+# ---------------------------------------------------------------------------
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_tv_with_valid_tmdb_uses_series_endpoint(mock_translation, mock_kodilog):
+    client = _make_client()
+    mock_res = _make_response(
+        {
+            "streams": [
+                {
+                    "title": "Show S01E02",
+                    "name": "idx",
+                    "size": "1GB",
+                    "date": "2024-01-01",
+                    "url": "http://x/file",
+                    "guid": "g1",
+                    "infoHash": "abc",
+                }
+            ]
+        }
+    )
+    client.session.get.return_value = mock_res
+
+    result = client.search(
+        tmdb_id="123", query="anything", mode="tv", media_type="tv", season=1, episode=2
+    )
+
+    assert client.session.get.call_count == 1
+    called_url = client.session.get.call_args[0][0]
+    assert "/stream/series/123:1:2.json" in called_url
+    assert len(result) == 1
+    assert isinstance(result[0], TorrentStream)
+    assert result[0].title == "Show S01E02"
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_tv_missing_tmdb_falls_back_to_search(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.return_value = _make_response({"results": []})
+
+    # case 1: empty string tmdb_id
+    client.search(tmdb_id="", query="my show", mode="tv", media_type="tv", season=1, episode=1)
+    url1 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url1
+    assert "page=1" in url1
+    assert "my%20show" in url1
+    assert "/stream/series" not in url1
+
+    # case 2: None tmdb_id
+    client.search(tmdb_id=None, query="my show", mode="tv", media_type="tv", season=1, episode=1)
+    url2 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url2
+    assert "page=1" in url2
+
+    # case 3: season None
+    client.search(tmdb_id="123", query="my show", mode="tv", media_type="tv", season=None, episode=1)
+    url3 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url3
+    assert "page=1" in url3
+
+    # case 4: episode None
+    client.search(tmdb_id="123", query="my show", mode="tv", media_type="tv", season=1, episode=None)
+    url4 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url4
+    assert "page=1" in url4
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_tv_missing_tmdb_falls_back_with_media_type(mock_translation, mock_kodilog):
+    """media_type == 'tv' also triggers tv branch even when mode is not 'tv'."""
+    client = _make_client()
+    client.session.get.return_value = _make_response({"results": []})
+
+    client.search(tmdb_id="", query="fallback", mode="other", media_type="tv", season=1, episode=1)
+    url = client.session.get.call_args[0][0]
+    assert "/search?query=" in url
+    assert "/stream/series" not in url
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_movies_missing_tmdb_falls_back_to_search(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.return_value = _make_response({"results": []})
+
+    client.search(tmdb_id="", query="inception", mode="movies", media_type="movies", season=None, episode=None)
+    url1 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url1
+    assert "page=1" in url1
+    assert "inception" in url1
+
+    client.search(tmdb_id=None, query="inception", mode="movies", media_type="movies", season=None, episode=None)
+    url2 = client.session.get.call_args[0][0]
+    assert "/search?query=" in url2
+    assert "/stream/movie" not in url2
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_movies_with_valid_tmdb_uses_movie_endpoint(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.return_value = _make_response(
+        {"streams": [{"title": "Movie", "name": "idx", "url": "http://x/file"}]}
+    )
+
+    result = client.search(tmdb_id="999", query="ignored", mode="movies", media_type="movies", season=None, episode=None)
+
+    called_url = client.session.get.call_args[0][0]
+    assert "/stream/movie/999.json" in called_url
+    assert len(result) == 1
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_unknown_mode_falls_back_to_search(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.return_value = _make_response({"results": []})
+
+    client.search(tmdb_id="123", query="something", mode="other", media_type="other", season=None, episode=None)
+    url = client.session.get.call_args[0][0]
+    assert "/search?query=" in url
+    assert "page=1" in url
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_query_with_special_chars_is_quoted(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.return_value = _make_response({"results": []})
+
+    query = "a & b/c?"
+    expected_encoded = quote(query, safe="")
+
+    client.search(tmdb_id="", query=query, mode="other", media_type="other", season=None, episode=None)
+    called_url = client.session.get.call_args[0][0]
+    # Must be percent-encoded, not raw
+    assert expected_encoded in called_url
+    assert "a & b" not in called_url
+    assert "a%20%26%20b" in called_url
+    assert "page=1" in called_url
+
+    # verify None query does not crash and encodes as empty
+    client.search(tmdb_id="", query=None, mode="other", media_type="other", season=None, episode=None)
+    url_none = client.session.get.call_args[0][0]
+    assert "/search?query=&page=1" in url_none
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+@patch("lib.clients.base.notification")
+def test_search_status_not_200_returns_empty_list(mock_base_notification, mock_translation, mock_kodilog):
+    client = _make_client()
+    mock_res = _make_response({"streams": [{"title": "t"}]}, status_code=500)
+    client.session.get.return_value = mock_res
+
+    result = client.search(tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1)
+
+    assert result == []
+    assert result is not None
+    # kodilog should have been called for the failure
+    assert mock_kodilog.called
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+@patch("lib.clients.base.notification")
+def test_search_exception_returns_empty(mock_base_notification, mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.side_effect = requests.RequestException("network down")
+
+    result = client.search(tmdb_id="123", query="q", mode="tv", media_type="tv", season=1, episode=1)
+
+    assert result == []
+    assert result is not None
+    # handle_exception triggers base notification
+    assert mock_base_notification.called
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_returns_empty_never_none_on_exception_generic(mock_translation, mock_kodilog):
+    client = _make_client()
+    client.session.get.side_effect = RuntimeError("boom")
+
+    result = client.search(tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None)
+
+    assert result == []
+    assert isinstance(result, list)
+
+
+# ---------------------------------------------------------------------------
+# parse_response()
+# ---------------------------------------------------------------------------
+
+def test_parse_response_missing_streams_returns_empty():
+    client = _make_client()
+
+    # empty dict
+    mock_res = _make_response({})
+    assert client.parse_response(mock_res) == []
+
+    # no streams key explicitly
+    mock_res2 = MagicMock()
+    mock_res2.json.return_value = {"other": 123}
+    assert client.parse_response(mock_res2) == []
+
+    # streams is None
+    mock_res3 = _make_response({"streams": None})
+    # data.get("streams", []) returns None, iterating should yield []
+    # original code would fail if streams is None? It does data.get("streams", []) -> None,
+    # then for item in None would raise TypeError, but M1 should guard.
+    # Check guard: streams is None -> should return []
+    # We verify it does not raise and returns []
+    try:
+        result = client.parse_response(mock_res3)
+    except TypeError:
+        pytest.fail("parse_response should handle streams=None without TypeError")
+    assert result == []
+
+    # streams contains non-dict items should be skipped
+    mock_res4 = _make_response({"streams": ["not a dict", 123, None]})
+    assert client.parse_response(mock_res4) == []
+
+    # data is not a dict
+    mock_res5 = MagicMock()
+    mock_res5.json.return_value = []
+    assert client.parse_response(mock_res5) == []
+
+
+def test_parse_response_with_valid_streams_parses():
+    # without token — url should remain raw
+    client_no_token = _make_client(token=None)
+    mock_res = _make_response(
+        {
+            "streams": [
+                {
+                    "title": "t",
+                    "name": "n",
+                    "size": "1GB",
+                    "date": "2024-01-01",
+                    "url": "http://x/file",
+                    "guid": "",
+                    "infoHash": "",
+                }
+            ]
+        }
+    )
+    result = client_no_token.parse_response(mock_res)
+    assert len(result) == 1
+    ts = result[0]
+    assert isinstance(ts, TorrentStream)
+    assert ts.title == "t"
+    assert ts.indexer == "n"
+    assert ts.size == "1GB"
+    assert ts.publishDate == "2024-01-01"
+    assert ts.url == "http://x/file"
+    assert "|Authorization" not in ts.url
+    assert ts.type == "Direct"
+
+    # with token — url should contain |Authorization=Bearer <token>
+    client_with_token = _make_client(token="secret123")
+    mock_res2 = _make_response(
+        {
+            "streams": [
+                {
+                    "title": "t",
+                    "name": "n",
+                    "size": "1GB",
+                    "date": "2024-01-01",
+                    "url": "http://x/file",
+                    "guid": "g1",
+                    "infoHash": "hash1",
+                    "seeders": 5,
+                    "languages": ["en"],
+                    "fullLanguages": "English",
+                    "provider": "p1",
+                    "peers": 10,
+                }
+            ]
+        }
+    )
+    result2 = client_with_token.parse_response(mock_res2)
+    assert len(result2) == 1
+    ts2 = result2[0]
+    assert ts2.url == "http://x/file|Authorization=Bearer secret123"
+    assert ts2.guid == "g1"
+    assert ts2.infoHash == "hash1"
+    assert ts2.seeders == 5
+    assert ts2.peers == 10
+    assert ts2.languages == ["en"]
+    assert ts2.fullLanguages == "English"
+    assert ts2.provider == "p1"
+
+    # empty url should not append token
+    mock_res3 = _make_response({"streams": [{"title": "t", "url": ""}]})
+    result3 = client_with_token.parse_response(mock_res3)
+    assert result3[0].url == ""
+
+
+def test_parse_response_accepts_plain_dict_without_json_method():
+    client = _make_client(token=None)
+    plain_dict = {"streams": [{"title": "plain", "name": "idx", "url": "http://x/f"}]}
+    result = client.parse_response(plain_dict)
+    assert len(result) == 1
+    assert result[0].title == "plain"
+
+
+# ---------------------------------------------------------------------------
+# parse_response_search()
+# ---------------------------------------------------------------------------
+
+def test_parse_response_search_missing_results_returns_empty():
+    client = _make_client()
+
+    assert client.parse_response_search(_make_response({})) == []
+    assert client.parse_response_search(_make_response({"results": None})) == []
+    assert client.parse_response_search(_make_response({"other": []})) == []
+
+    # results is not a list -> guarded
+    mock_res = _make_response({"results": "not a list"})
+    assert client.parse_response_search(mock_res) == []
+
+    # data is not a dict
+    mock_res2 = MagicMock()
+    mock_res2.json.return_value = []
+    assert client.parse_response_search(mock_res2) == []
+
+
+def test_parse_response_search_file_type_and_nested_files():
+    # test both branches: type == "file" direct, and else with files[]
+    client = _make_client(token=None)
+    mock_res = _make_response(
+        {
+            "results": [
+                {
+                    "type": "file",
+                    "title": "direct file",
+                    "name": "idx1",
+                    "size": "500MB",
+                    "date": "2024-02-02",
+                    "url": "http://x/direct",
+                },
+                {
+                    "type": "folder",
+                    "files": [
+                        {
+                            "title": "nested1",
+                            "name": "idx2",
+                            "size": "700MB",
+                            "date": "2024-03-03",
+                            "url": "http://x/nested1",
+                        },
+                        {
+                            "title": "nested2",
+                            "name": "idx3",
+                            "size": "800MB",
+                            "date": "2024-04-04",
+                            "url": "http://x/nested2",
+                        },
+                    ],
+                },
+            ]
+        }
+    )
+    result = client.parse_response_search(mock_res)
+    assert len(result) == 3
+    assert result[0].title == "direct file"
+    assert result[0].indexer == "idx1"
+    assert result[0].url == "http://x/direct"
+    assert result[1].title == "nested1"
+    assert result[2].title == "nested2"
+    for ts in result:
+        assert ts.type == "Direct"
+
+    # with token — nested files should also get Authorization suffix
+    client_tok = _make_client(token="tok123")
+    result_tok = client_tok.parse_response_search(mock_res)
+    assert result_tok[0].url == "http://x/direct|Authorization=Bearer tok123"
+    assert result_tok[1].url == "http://x/nested1|Authorization=Bearer tok123"
+
+    # files is not a list -> should be skipped gracefully
+    mock_res_bad = _make_response({"results": [{"type": "folder", "files": "bad"}]})
+    assert client.parse_response_search(mock_res_bad) == []
+
+    # non-dict items should be skipped
+    mock_res_mixed = _make_response(
+        {
+            "results": [
+                "not a dict",
+                {"type": "file", "title": "ok", "url": "http://x/ok"},
+            ]
+        }
+    )
+    res_mixed = client.parse_response_search(mock_res_mixed)
+    assert len(res_mixed) == 1
+    assert res_mixed[0].title == "ok"
+
+
+def test_parse_response_search_plain_dict_without_json():
+    client = _make_client()
+    plain = {"results": [{"type": "file", "title": "plain", "url": "http://x/p"}]}
+    result = client.parse_response_search(plain)
+    assert len(result) == 1
+    assert result[0].title == "plain"
+
+
+# ---------------------------------------------------------------------------
+# _extract_file_info()
+# ---------------------------------------------------------------------------
+
+def test_extract_file_info_non_dict_returns_defaults():
+    client = _make_client(token=None)
+
+    result = client._extract_file_info("not a dict")
+    assert result["title"] == ""
+    assert result["type"] == "Direct"
+    assert result["indexer"] == ""
+    assert result["size"] == ""
+    assert result["publishDate"] == ""
+    assert result["url"] == ""
+
+    result2 = client._extract_file_info(None)
+    assert result2["title"] == ""
+
+    result3 = client._extract_file_info(12345)
+    assert result3["url"] == ""
+
+
+def test_extract_file_info_with_valid_dict():
+    client = _make_client(token=None)
+    file_dict = {
+        "title": "my file",
+        "name": "my indexer",
+        "size": "1GB",
+        "date": "2024-05-05",
+        "url": "http://x/file",
+    }
+    result = client._extract_file_info(file_dict)
+    assert result["title"] == "my file"
+    assert result["indexer"] == "my indexer"
+    assert result["size"] == "1GB"
+    assert result["publishDate"] == "2024-05-05"
+    assert result["url"] == "http://x/file"
+    assert result["type"] == "Direct"
+
+
+def test_extract_file_info_token_appended():
+    client = _make_client(token="mytoken")
+    file_dict = {"title": "t", "url": "http://x/file"}
+    result = client._extract_file_info(file_dict)
+    assert result["url"] == "http://x/file|Authorization=Bearer mytoken"
+
+    # empty url should not append token
+    file_dict_empty = {"title": "t", "url": ""}
+    result2 = client._extract_file_info(file_dict_empty)
+    assert result2["url"] == ""
+
+    # token None should not append
+    client_no_tok = _make_client(token=None)
+    result3 = client_no_tok._extract_file_info(file_dict)
+    assert result3["url"] == "http://x/file"
+
+
+# ---------------------------------------------------------------------------
+# _sanitize_url_for_log()
+# ---------------------------------------------------------------------------
+
+def test_sanitize_url_for_log_hides_token():
+    secret = "http://x/file|Authorization=Bearer secret123"
+    sanitized = _sanitize_url_for_log(secret)
+    assert "secret123" not in sanitized
+    assert sanitized == "http://x/file|Authorization=Bearer ***"
+    assert "***" in sanitized
+
+    # without pipe stays identical
+    plain = "http://x/file"
+    assert _sanitize_url_for_log(plain) == plain
+
+    # without Bearer inside pipe — unchanged
+    other = "http://x/file|Other=123"
+    assert _sanitize_url_for_log(other) == other
+
+    # empty string
+    assert _sanitize_url_for_log("") == ""
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_kodilog_never_logs_raw_token(mock_translation, mock_kodilog):
+    token = "supersecrettoken999"
+    client = _make_client(token=token)
+    client.session.get.return_value = _make_response({"streams": []})
+
+    # trigger search that will log the URL (via kodilog)
+    client.search(tmdb_id="123", query="test", mode="movies", media_type="movies", season=None, episode=None)
+
+    # also trigger a failed status path
+    client.session.get.return_value = _make_response({}, status_code=500)
+    client.search(tmdb_id="123", query="test", mode="tv", media_type="tv", season=1, episode=1)
+
+    # collect all kodilog call args
+    all_calls = " ".join(str(call) for call in mock_kodilog.call_args_list)
+    # raw token must never appear in any log call
+    assert token not in all_calls
+    # if the URL contained the token pipe, it should be sanitized with ***
+    # search URLs themselves do not contain token, but direct stream URLs could
+    # Ensure no raw token leaked
+    for call in mock_kodilog.call_args_list:
+        args, _ = call
+        for arg in args:
+            assert token not in str(arg)
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_host_trailing_slash_does_not_double_slash(mock_translation, mock_kodilog):
+    client = _make_client(host="http://example.com/")
+    client.session.get.return_value = _make_response({"streams": []})
+    client.search(tmdb_id="123", query="q", mode="movies", media_type="movies", season=None, episode=None)
+    called_url = client.session.get.call_args[0][0]
+    assert "http://example.com/stream/movie/123.json" in called_url
+    assert "http://example.com//stream" not in called_url

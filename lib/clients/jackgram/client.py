@@ -1,7 +1,15 @@
 from typing import Any, Callable, Dict, List, Optional
+from urllib.parse import quote
 
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.kodi.utils import kodilog, translation
+
+
+def _sanitize_url_for_log(url: str) -> str:
+    if "|Authorization=Bearer" in url:
+        idx = url.find("|Authorization=Bearer")
+        return url[:idx] + "|Authorization=Bearer ***"
+    return url
 
 
 class Jackgram(BaseClient):
@@ -20,20 +28,30 @@ class Jackgram(BaseClient):
         season: Optional[int],
         episode: Optional[int],
         **kwargs: Any,
-    ) -> Optional[List[TorrentStream]]:
+    ) -> List[TorrentStream]:
         try:
             if mode == "tv" or media_type == "tv":
-                url = f"{self.host}/stream/series/{tmdb_id}:{season}:{episode}.json"
+                if tmdb_id and season is not None and episode is not None:
+                    url = f"{self.host}/stream/series/{tmdb_id}:{season}:{episode}.json"
+                else:
+                    url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
             elif mode == "movies" or media_type == "movies":
-                url = f"{self.host}/stream/movie/{tmdb_id}.json"
+                if tmdb_id:
+                    url = f"{self.host}/stream/movie/{tmdb_id}.json"
+                else:
+                    url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
             else:
-                url = f"{self.host}/search?query={query}"
+                url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
 
-            kodilog(f"URL: {url}")
+            kodilog(f"Jackgram search URL: {_sanitize_url_for_log(url)}")
 
             res = self.session.get(url, timeout=10)
             if res.status_code != 200:
-                return
+                kodilog(
+                    f"Jackgram search failed with status {res.status_code} "
+                    f"for URL: {_sanitize_url_for_log(url)}"
+                )
+                return []
 
             if mode in ["tv", "movies"]:
                 return self.parse_response(res)
@@ -41,6 +59,7 @@ class Jackgram(BaseClient):
                 return self.parse_response_search(res)
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
+            return []
 
     def get_latest_movies(self, page: int) -> Optional[Dict[str, Any]]:
         try:
@@ -76,20 +95,25 @@ class Jackgram(BaseClient):
             self.handle_exception(f"{translation(30232)}: {e}")
 
     def parse_response(self, res: Any) -> List[TorrentStream]:
-        res = res.json()
+        data = res.json() if hasattr(res, "json") else res
+        streams = data.get("streams", []) if isinstance(data, dict) else []
+        if not isinstance(streams, list):
+            return []
         results = []
-        for item in res["streams"]:
-            url = item["url"]
+        for item in streams:
+            if not isinstance(item, dict):
+                continue
+            url = item.get("url", "")
             if self.token and url:
                 url = f"{url}|Authorization=Bearer {self.token}"
 
             results.append(
                 TorrentStream(
-                    title=item["title"],
+                    title=item.get("title", ""),
                     type="Direct",
-                    indexer=item["name"],
-                    size=item["size"],
-                    publishDate=item["date"],
+                    indexer=item.get("name", ""),
+                    size=item.get("size", ""),
+                    publishDate=item.get("date", ""),
                     url=url,
                     guid=item.get("guid", ""),
                     infoHash=item.get("infoHash", ""),
@@ -103,19 +127,36 @@ class Jackgram(BaseClient):
         return results
 
     def parse_response_search(self, res: Any) -> List[TorrentStream]:
-        res = res.json()
+        data = res.json() if hasattr(res, "json") else res
+        results_data = data.get("results", []) if isinstance(data, dict) else []
+        if not isinstance(results_data, list):
+            return []
         results = []
-        for item in res["results"]:
+        for item in results_data:
+            if not isinstance(item, dict):
+                continue
             if item.get("type") == "file":
                 file_info = self._extract_file_info(item)
                 results.append(TorrentStream(**file_info))
             else:
-                for file in item.get("files", []):
+                files = item.get("files", [])
+                if not isinstance(files, list):
+                    continue
+                for file in files:
                     file_info = self._extract_file_info(file)
                     results.append(TorrentStream(**file_info))
         return results
 
     def _extract_file_info(self, file):
+        if not isinstance(file, dict):
+            return {
+                "title": "",
+                "type": "Direct",
+                "indexer": "",
+                "size": "",
+                "publishDate": "",
+                "url": "",
+            }
         url = file.get("url", "")
         if self.token and url:
             url = f"{url}|Authorization=Bearer {self.token}"
