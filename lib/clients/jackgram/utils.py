@@ -254,10 +254,10 @@ def process_results(results, callback, next_button_action, page):
         end_of_directory()
         return
 
-    results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
-
     if callback is add_jackgram_title_item:
         results = _dedupe_title_items(results)
+    else:
+        results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
 
     execute_thread_pool(results, callback)
     threshold = 11 if callback is add_jackgram_raw_file_item else 12
