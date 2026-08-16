@@ -1,6 +1,7 @@
 import json
 import threading
 
+import xbmc
 from xbmcplugin import addDirectoryItem
 
 from lib.clients.jackgram.client import Jackgram
@@ -110,6 +111,18 @@ def list_jackgram_latest_movies(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_movies(page=page)
+    if isinstance(results, list):
+        kodilog(
+            f"Latest movies page={page} received={len(results)} "
+            f"server_order={[r.get('title') for r in results[:5]]} "
+            f"tmdb_ids={[r.get('tmdb_id') for r in results[:5]]}",
+            xbmc.LOGINFO,
+        )
+    else:
+        kodilog(
+            f"Latest movies page={page} received=0 results={results!r:.200}",
+            xbmc.LOGINFO,
+        )
     process_results(results, add_jackgram_title_item, "list_jackgram_latest_movies", page)
 
 
@@ -120,6 +133,18 @@ def list_jackgram_latest_series(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_latest_series(page=page)
+    if isinstance(results, list):
+        kodilog(
+            f"Latest series page={page} received={len(results)} "
+            f"server_order={[r.get('title') for r in results[:5]]} "
+            f"tmdb_ids={[r.get('tmdb_id') for r in results[:5]]}",
+            xbmc.LOGINFO,
+        )
+    else:
+        kodilog(
+            f"Latest series page={page} received=0 results={results!r:.200}",
+            xbmc.LOGINFO,
+        )
     process_results(results, add_jackgram_title_item, "list_jackgram_latest_series", page)
 
 
@@ -130,6 +155,8 @@ def list_jackgram_raw_files(query):
         end_of_directory(cache=False)
         return
     results = jackgram_client.get_files(page=page)
+    if isinstance(results, list):
+        kodilog(f"Raw files page={page} received={len(results)}", xbmc.LOGINFO)
     process_results(results, add_jackgram_raw_file_item, "list_jackgram_raw_files", page)
 
 
@@ -255,7 +282,20 @@ def process_results(results, callback, next_button_action, page):
         return
 
     if callback is add_jackgram_title_item:
+        if isinstance(results, list):
+            kodilog(
+                f"Latest order server={[r.get('title') for r in results[:5]]} "
+                f"tmdb_ids={[r.get('tmdb_id') for r in results[:5]]} page={page}",
+                xbmc.LOGINFO,
+            )
         results = _dedupe_title_items(results)
+        if isinstance(results, list):
+            kodilog(
+                f"Latest order final={[r.get('title') for r in results[:5]]} "
+                f"tmdb_ids={[r.get('tmdb_id') for r in results[:5]]} "
+                f"page={page} count={len(results)}",
+                xbmc.LOGINFO,
+            )
     else:
         results = sorted(results, key=lambda x: x.get("date") or "", reverse=True)
 
