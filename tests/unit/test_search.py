@@ -39,11 +39,19 @@ def test_process_results_suppresses_busy_dialog_when_requested():
     ), patch.object(search, "SilentProgressDialog", return_value=silent_dialog), patch.object(
         search, "check_debrid_cached", check_debrid_cached
     ):
-        assert search.process_results(
-            [MagicMock()], "Show", "tv", "tv", True, 2,
-            suppress_dialog=True,
-            suppress_busy_dialog=True,
-        ) == []
+        assert (
+            search.process_results(
+                [MagicMock()],
+                "Show",
+                "tv",
+                "tv",
+                True,
+                2,
+                suppress_dialog=True,
+                suppress_busy_dialog=True,
+            )
+            == []
+        )
 
     close_busy_dialog.assert_not_called()
     assert check_debrid_cached.call_args.args[4] is silent_dialog
@@ -75,10 +83,9 @@ def test_super_quick_play_preserves_simkl_resume_metadata():
     with patch(
         "lib.search.get_setting",
         side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
-    ), \
-        patch("lib.search.cache.get", return_value=MagicMock()), \
-        patch("lib.search._resolve_cached_source", return_value=playback_info), \
-        patch("lib.search.JacktookPLayer", return_value=player):
+    ), patch("lib.search.cache.get", return_value=MagicMock()), patch(
+        "lib.search._resolve_cached_source", return_value=playback_info
+    ), patch("lib.search.JacktookPLayer", return_value=player):
         assert _handle_super_quick_play(params) is True
 
     assert playback_info["simkl_session_id"] == "9"
@@ -644,7 +651,9 @@ def test_search_initializes_missing_source_selection():
 
     with (
         patch("lib.search.cache") as mock_cache,
-        patch("lib.search.get_setting", side_effect=lambda key, default=None: key == "jackett_enabled"),
+        patch(
+            "lib.search.get_setting", side_effect=lambda key, default=None: key == "jackett_enabled"
+        ),
         patch("lib.search.get_selected_stream_addons", return_value=[]),
         patch("lib.search.close_busy_dialog"),
         patch("lib.search._infer_tmdb_year", return_value=2020),
@@ -678,7 +687,9 @@ def test_search_cache_scope_changes_for_enabled_search_providers():
         "external_scraper_module": "",
     }
 
-    with patch("lib.search.get_setting", side_effect=lambda key, default=None: settings.get(key, default)), patch(
+    with patch(
+        "lib.search.get_setting", side_effect=lambda key, default=None: settings.get(key, default)
+    ), patch(
         "lib.search.cache.get", side_effect=lambda key: {"source_manager_selection": "[]"}.get(key)
     ):
         base_scope = _build_search_cache_scope()
@@ -1027,10 +1038,82 @@ class TestSearchClient:
 
         assert result == results
         build_scope.assert_called_once_with(expected_addon_url)
-        check_cache.assert_called_once_with("q", {}, "movies", "movie", 0, 0, expected_scope)
+        check_cache.assert_called_once_with(
+            "q",
+            {},
+            "movies",
+            "movie",
+            0,
+            0,
+            expected_scope,
+            allow_autoscrape_fallback=not jackgram_only,
+        )
         cache_results_mock.assert_called_once_with(
             results, "q", "movies", "movie", 0, 0, cache_scope=expected_scope
         )
+
+    def test_jackgram_only_filters_legacy_isolated_cache_results(self):
+        matching = MagicMock(title="Love Story 1080p")
+        non_matching = MagicMock(title="The Witcher S03E01")
+        cached = [matching, non_matching]
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["love story"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=cached
+        ) as check_cache, patch("lib.search._run_simple_search") as mock_simple:
+            result = search_client(
+                "LOVE  story",
+                {},
+                "movies",
+                "movie",
+                rescrape=False,
+                season=0,
+                episode=0,
+                jackgram_only=True,
+            )
+
+        assert result == [matching]
+        check_cache.assert_called_once_with(
+            "LOVE  story",
+            {},
+            "movies",
+            "movie",
+            0,
+            0,
+            "scope:jackgram",
+            allow_autoscrape_fallback=False,
+        )
+        mock_simple.assert_not_called()
+
+    def test_jackgram_only_tv_search_skips_autoscrape_cache(self):
+        fresh_results = [MagicMock()]
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._infer_tmdb_year", return_value=2020), patch(
+            "lib.search._build_title_fallback_queries", return_value=["Show"]
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search.get_cached_results", return_value=None
+        ), patch(
+            "lib.utils.player.utils.get_autoscrape_results_cache_key"
+        ) as autoscrape_key, patch("lib.search.get_setting", return_value="0"), patch(
+            "lib.search._run_simple_search", return_value=fresh_results
+        ) as mock_simple, patch("lib.search.cache_results"):
+            result = search_client(
+                "Show",
+                {"tmdb_id": "123"},
+                "tv",
+                "tv",
+                rescrape=False,
+                season=1,
+                episode=2,
+                jackgram_only=True,
+            )
+
+        assert result == fresh_results
+        autoscrape_key.assert_not_called()
+        mock_simple.assert_called_once()
 
     def test_cache_miss_detailed_dialog_branch(self):
         """Cache miss + search_dialog_style=1 → calls _run_detailed_search."""

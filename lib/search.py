@@ -119,6 +119,19 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
     return hashlib.sha256(raw_scope.encode("utf-8")).hexdigest()
 
 
+def _filter_isolated_jackgram_cache_results(
+    query: str, results: List[TorrentStream]
+) -> List[TorrentStream]:
+    terms = str(query or "").casefold().split()
+    if not terms:
+        return results
+    return [
+        r
+        for r in results
+        if all(term in str(getattr(r, "title", "") or "").casefold() for term in terms)
+    ]
+
+
 def _search_worker_count() -> int:
     try:
         configured = int(get_setting("thread_number", 6))
@@ -1327,8 +1340,9 @@ def _check_search_caches(
     episode: int,
     season: int,
     cache_scope: str,
+    allow_autoscrape_fallback: bool = True,
 ) -> Optional[List[TorrentStream]]:
-    """Check standard cache then autoscrape fallback cache.
+    """Check the scoped cache and, optionally, the autoscrape fallback cache.
 
     Returns cached results if found (even an empty list), or None if
     no cache entry exists (caller should perform a fresh search).
@@ -1346,7 +1360,7 @@ def _check_search_caches(
 
     # Fallback: autoscrape cache (PlayNext background scrape) under
     # ``as_results:{id}_{season}_{episode}``.
-    if mode != "tv" and media_type != "tv":
+    if not allow_autoscrape_fallback or (mode != "tv" and media_type != "tv"):
         return None
     id_value = (
         (ids or {}).get("original_id") or (ids or {}).get("imdb_id") or (ids or {}).get("tmdb_id")
@@ -1534,8 +1548,19 @@ def search_client(
         cache_scope = f"{cache_scope}:jackgram"
 
     if not rescrape:
-        cached = _check_search_caches(query, ids, mode, media_type, episode, season, cache_scope)
+        cached = _check_search_caches(
+            query,
+            ids,
+            mode,
+            media_type,
+            episode,
+            season,
+            cache_scope,
+            allow_autoscrape_fallback=not jackgram_only,
+        )
         if cached is not None:
+            if jackgram_only:
+                return _filter_isolated_jackgram_cache_results(query, cached)
             return cached
 
     tmdb_id, imdb_id = (ids.get("tmdb_id"), ids.get("imdb_id")) if ids else (None, None)

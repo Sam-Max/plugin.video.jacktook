@@ -12,6 +12,19 @@ def _sanitize_url_for_log(url: str) -> str:
     return url
 
 
+def _filter_jackgram_search_results(
+    query: str, results: List[TorrentStream]
+) -> List[TorrentStream]:
+    terms = str(query or "").casefold().split()
+    if not terms:
+        return results
+    return [
+        result
+        for result in results
+        if all(term in str(getattr(result, "title", "") or "").casefold() for term in terms)
+    ]
+
+
 class Jackgram(BaseClient):
     def __init__(self, host: str, notification: Callable, token: Optional[str] = None) -> None:
         super().__init__(host, notification)
@@ -30,18 +43,22 @@ class Jackgram(BaseClient):
         **kwargs: Any,
     ) -> List[TorrentStream]:
         try:
+            use_query_search = False
             if mode == "tv" or media_type == "tv":
                 if tmdb_id and season is not None and episode is not None:
                     url = f"{self.host}/stream/series/{tmdb_id}:{season}:{episode}.json"
                 else:
                     url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
+                    use_query_search = True
             elif mode == "movies" or media_type == "movies":
                 if tmdb_id:
                     url = f"{self.host}/stream/movie/{tmdb_id}.json"
                 else:
                     url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
+                    use_query_search = True
             else:
                 url = f"{self.host}/search?query={quote(query or '', safe='')}&page=1"
+                use_query_search = True
 
             kodilog(f"Jackgram search URL: {_sanitize_url_for_log(url)}")
 
@@ -65,10 +82,9 @@ class Jackgram(BaseClient):
                 )
                 return []
 
-            if mode in ["tv", "movies"]:
-                return self.parse_response(res)
-            else:
-                return self.parse_response_search(res)
+            if use_query_search:
+                return _filter_jackgram_search_results(query, self.parse_response_search(res))
+            return self.parse_response(res)
         except Exception as e:
             self.handle_exception(f"{translation(30232)}: {e}")
             return []

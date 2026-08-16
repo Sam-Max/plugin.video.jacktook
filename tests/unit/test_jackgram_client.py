@@ -912,3 +912,51 @@ def test_process_results_latest_dedupe_can_suppress_next():
 
         mock_pool.assert_called_once()
         mock_next.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Search in Telegram — client-side title filtering
+# ---------------------------------------------------------------------------
+
+
+def _search_payload_mixed():
+    return {
+        "results": [
+            {
+                "type": "file",
+                "title": "Love Story 1080p BluRay",
+                "name": "idx",
+                "url": "http://x/love1",
+            },
+            {
+                "type": "file",
+                "title": "The Witcher S03E01 1080p",
+                "name": "idx",
+                "url": "http://x/witcher",
+            },
+            {
+                "type": "file",
+                "title": "Random Movie 720p",
+                "name": "idx",
+                "url": "http://x/random",
+            },
+        ]
+    }
+
+
+@patch("lib.clients.jackgram.client.kodilog")
+@patch("lib.clients.jackgram.client.translation", return_value="err")
+def test_search_filters_query_endpoint_results_by_all_case_insensitive_terms(
+    mock_translation, mock_kodilog
+):
+    client = _make_client()
+    client.session.get.return_value = _make_response(_search_payload_mixed())
+    result = client.search(
+        tmdb_id="",
+        query=" LOVE   story ",
+        mode="other",
+        media_type="other",
+        season=None,
+        episode=None,
+    )
+    assert [stream.title for stream in result] == ["Love Story 1080p BluRay"]
