@@ -163,7 +163,11 @@ def search_direct(params):
         str(params.get("jackgram_only", "")).lower() == "true"
         or params.get("jackgram_only") is True
     )
-    label_id = params.get("label_id", 90006)
+    raw_label_id = params.get("label_id", 90006)
+    try:
+        label_id = int(raw_label_id)
+    except (TypeError, ValueError):
+        label_id = 90006
     query = params.get("query", "")
     is_clear = params.get("is_clear", False)
     is_keyboard = params.get("is_keyboard", True)
