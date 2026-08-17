@@ -1,3 +1,5 @@
+import re
+import unicodedata
 from datetime import timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, quote, urlparse
@@ -34,6 +36,49 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+
+_ELEMENTUM_MOVIE_FILE_SEPARATOR = r"[\s._'’\-]+"
+_ELEMENTUM_MOVIE_ACCENT_CLASSES = {
+    "a": r"[aàáâäãå]",
+    "c": r"[cç]",
+    "e": r"[eèéêë]",
+    "i": r"[iìíîï]",
+    "n": r"[nñ]",
+    "o": r"[oòóôöõ]",
+    "u": r"[uùúûü]",
+    "y": r"[yýÿ]",
+}
+
+
+def _build_elementum_movie_file_match(title: Any) -> str:
+    """Build a conservative filename regex for Elementum movie torrents.
+
+    Elementum selects the first playable file matching ``file_match`` and falls
+    back to its normal file picker when no file matches. Keep this deliberately
+    strict so collection/trilogy torrents never auto-select from a vague title.
+    """
+    if not isinstance(title, str):
+        return ""
+
+    normalized = title.casefold().replace("œ", "oe").replace("æ", "ae")
+    normalized = unicodedata.normalize("NFKD", normalized)
+    normalized = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
+    tokens = re.findall(r"[a-z0-9]+", normalized)
+
+    # One-word/very short titles are too ambiguous for a first-match strategy.
+    if len(tokens) < 2 or not any(len(token) >= 4 for token in tokens):
+        return ""
+
+    def token_pattern(token: str) -> str:
+        return "".join(
+            _ELEMENTUM_MOVIE_ACCENT_CLASSES.get(char, char) for char in token
+        )
+
+    return _ELEMENTUM_MOVIE_FILE_SEPARATOR.join(
+        token_pattern(token) for token in tokens
+    )
 
 
 def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -191,7 +236,7 @@ def get_elementum_url(
     if not uri:
         raise TorrentException("No magnet or url found for Elementum playback")
 
-    episode_params = ""
+    selection_params = ""
     tv_data = (data or {}).get("tv_data")
     if mode == "tv" and isinstance(tv_data, dict):
         season = tv_data.get("season")
@@ -200,15 +245,19 @@ def get_elementum_url(
             not isinstance(value, bool) and str(value).isdigit()
             for value in (tmdb_id, season, episode)
         ):
-            episode_params = (
+            selection_params = (
                 f"&show={quote(str(tmdb_id))}"
                 f"&season={quote(str(season))}"
                 f"&episode={quote(str(episode))}"
             )
+    elif mode == "movie":
+        file_match = _build_elementum_movie_file_match((data or {}).get("title"))
+        if file_match:
+            selection_params = f"&file_match={quote(file_match)}"
 
     return (
         f"plugin://plugin.video.elementum/play?uri={quote(uri)}"
-        f"&type={mode}&tmdb={tmdb_id}{episode_params}"
+        f"&type={mode}&tmdb={tmdb_id}{selection_params}"
     )
 
 
