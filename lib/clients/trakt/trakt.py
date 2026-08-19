@@ -1,6 +1,6 @@
 import contextlib
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktMovies, TraktTV
 from lib.api.trakt.trakt_utils import (
@@ -329,7 +329,7 @@ class TraktClient:
         total_seasons = getattr(show_details, "number_of_seasons", 0) or show_details.get(
             "number_of_seasons", 0
         )
-        today = datetime.utcnow().date()
+        today = datetime.now(timezone.utc).date()
         seasons_payload = []
 
         for season_number in range(1, int(total_seasons) + 1):
