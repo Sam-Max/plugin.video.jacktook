@@ -250,7 +250,7 @@ def get_elementum_url(
                 f"&season={quote(str(season))}"
                 f"&episode={quote(str(episode))}"
             )
-    elif mode == "movie":
+    elif mode in ("movie", "movies"):
         file_match = _build_elementum_movie_file_match((data or {}).get("title"))
         if file_match:
             selection_params = f"&file_match={quote(file_match)}"

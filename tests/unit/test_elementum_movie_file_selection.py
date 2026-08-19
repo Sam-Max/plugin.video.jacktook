@@ -15,7 +15,7 @@ def test_elementum_movie_forwards_conservative_file_match():
 
     ids = {"tmdb_id": "4271"}
     data = {
-        "mode": "movie",
+        "mode": "movies",
         "ids": ids,
         "title": "Mais où est donc passée la 7ème compagnie ?",
     }
@@ -24,7 +24,7 @@ def test_elementum_movie_forwards_conservative_file_match():
         url = utils.get_torrent_url_for_client(
             "magnet:?xt=urn:btih:TRILOGYHASH",
             "",
-            "movie",
+            "movies",
             ids,
             client=Players.ELEMENTUM,
             data=data,
