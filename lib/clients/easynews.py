@@ -113,6 +113,11 @@ class Easynews(BaseClient):
             return results
         except Exception as e:
             kodilog(f"EasyNews search error: {e}")
+            # Keep partial results collected before the failure instead of
+            # discarding them: a mid-pagination error still yields usable
+            # matches (mirrors easynews-plus-plus searchAll behavior).
+            if results:
+                return results
             return []
 
     def parse_response(self, res: Any) -> List[TorrentStream]:

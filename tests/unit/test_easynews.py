@@ -169,6 +169,33 @@ def test_search_stops_on_empty_page():
     assert client.session.get.call_count == 2
 
 
+def test_search_returns_partial_results_on_page_error():
+    client = Easynews("user", "password", 10, MagicMock())
+    page1 = _search_response([("hash-1", "Movie 1080p"), ("hash-2", "Movie 720p")])
+
+    def failing_get(*_args, **_kwargs):
+        if client.session.get.call_count >= 2:
+            raise ConnectionError("boom")
+        return page1
+
+    client.session.get = MagicMock(side_effect=failing_get)
+
+    results = client.search("Movie", "movies", "movies")
+
+    assert len(results) == 2
+    assert client.session.get.call_count == 2
+
+
+def test_search_returns_empty_on_first_page_error():
+    client = Easynews("user", "password", 10, MagicMock())
+    client.session.get = MagicMock(side_effect=ConnectionError("boom"))
+
+    results = client.search("Movie", "movies", "movies")
+
+    assert results == []
+    assert client.session.get.call_count == 1
+
+
 def test_adult_group_regex_matches_expected_tokens():
     adult_groups = [
         "alt.binaries.erotica",
