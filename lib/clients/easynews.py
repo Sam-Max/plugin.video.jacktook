@@ -1,6 +1,6 @@
 import re
 from typing import Any, Callable, List, Optional, Tuple
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import Indexer, IndexerType
@@ -82,7 +82,12 @@ class Easynews(BaseClient):
         if not response_json or "data" not in response_json:
             return results
 
-        down_url = response_json.get("downURL")
+        down_url = str(response_json.get("downURL") or "").strip()
+        if down_url.startswith("//"):
+            down_url = f"https:{down_url}"
+        parsed_down_url = urlparse(down_url)
+        if parsed_down_url.scheme not in ("http", "https") or not parsed_down_url.netloc:
+            return results
         dl_farm = response_json.get("dlFarm")
         dl_port = response_json.get("dlPort")
 

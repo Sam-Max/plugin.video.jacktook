@@ -97,7 +97,7 @@ def build_easynews_client() -> Optional[object]:
     password = str(get_setting("easynews_password"))
     timeout = get_int_setting("easynews_timeout")
 
-    if not validate_credentials(Indexer.EASYNEWS, user, password):
+    if not validate_key(user, Indexer.EASYNEWS) or not validate_key(password, Indexer.EASYNEWS):
         return None
     return Easynews(user, password, timeout, notification)
 
