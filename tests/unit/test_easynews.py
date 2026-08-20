@@ -63,6 +63,22 @@ def test_parse_response_allows_non_adult_newsgroups():
     assert len(results) == 1
 
 
+def test_parse_response_filters_password_protected_posts():
+    response = _response_with_item({"passwd": "1"})
+
+    results = Easynews("user", "password", 10, MagicMock()).parse_response(response)
+
+    assert results == []
+
+
+def test_parse_response_allows_posts_without_password():
+    response = _response_with_item({})
+
+    results = Easynews("user", "password", 10, MagicMock()).parse_response(response)
+
+    assert len(results) == 1
+
+
 def test_adult_group_regex_matches_expected_tokens():
     adult_groups = [
         "alt.binaries.erotica",

@@ -121,6 +121,8 @@ class Easynews(BaseClient):
                     continue
                 if item.get("virus"):
                     continue
+                if item.get("passwd"):
+                    continue
                 if ADULT_GROUP_RE.search(str(item.get("9") or "")):
                     continue
                 if re.match(r"^\d+s", duration) or re.match(r"^[0-5]m", duration):
