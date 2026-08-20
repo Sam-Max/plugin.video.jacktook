@@ -5,6 +5,14 @@ from urllib.parse import quote, urlparse
 from lib.clients.base import BaseClient, TorrentStream
 from lib.utils.general.utils import Indexer, IndexerType
 from lib.utils.kodi.utils import kodilog
+from lib.utils.parsers.title_parser import matches_title
+
+SERIES_QUERY_RE = re.compile(r"\bs\d{1,3}(?:e\d{1,3})?\b", re.IGNORECASE)
+
+
+def is_series_query(query: str) -> bool:
+    """Whether a search query targets a TV episode/season (SxxExx or Sxx)."""
+    return bool(SERIES_QUERY_RE.search(query or ""))
 
 VIDEO_EXTENSIONS = (
     "m4v,3g2,3gp,nsv,tp,ts,ty,pls,rm,rmvb,mpd,ifo,mov,qt,divx,xvid,bivx,vob,nrg,img,iso,udf,pva,wmv,asf,asx,ogm,m2v,avi,bin,dat,mpg,mpeg,mp4,mkv,"
@@ -86,7 +94,7 @@ class Easynews(BaseClient):
                     timeout=self.timeout,
                 )
                 response.raise_for_status()
-                page_results = self.parse_response(response)
+                page_results = self.parse_response(response, query=search_query)
 
                 if not page_results:
                     break
@@ -108,7 +116,7 @@ class Easynews(BaseClient):
                 return results
             return []
 
-    def parse_response(self, res: Any) -> List[TorrentStream]:
+    def parse_response(self, res: Any, query: Optional[str] = None) -> List[TorrentStream]:
         results = []
         try:
             response_json = res.json()
@@ -151,6 +159,16 @@ class Easynews(BaseClient):
                     continue
                 if re.match(r"^\d+s", duration) or re.match(r"^[0-5]m", duration):
                     continue
+
+                # Title matching: drop posts that don't correspond to the
+                # searched title (full-text indexers return anything containing
+                # the query words). TV queries carry SxxExx so they may use the
+                # relaxed matcher; movie queries force strict matching.
+                if query:
+                    strict = not is_series_query(query)
+                    if not matches_title(post_title, query, strict):
+                        kodilog(f"Easynews rejected by title: {post_title!r} vs {query!r}")
+                        continue
 
                 url = down_url + quote(f"/{dl_farm}/{dl_port}/{post_hash}{ext}/{post_title}{ext}")
                 title = post_title

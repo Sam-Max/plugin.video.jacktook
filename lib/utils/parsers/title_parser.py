@@ -1,6 +1,5 @@
 import re
 
-
 VIDEO_EXTENSIONS = (
     "avi",
     "m2ts",
@@ -341,3 +340,133 @@ def parse_title_info(title):
     info["release_group"] = _extract_release_group(title)
 
     return info
+
+
+# ── Title matching ──────────────────────────
+# Normalizes titles and compares release titles against a search query so
+# full-text indexers (Easynews) can drop unrelated posts.
+
+_ACCENT_MAP = {
+    "ä": "ae",
+    "ö": "oe",
+    "ü": "ue",
+    "ß": "ss",
+    "Ä": "Ae",
+    "Ö": "Oe",
+    "Ü": "Ue",
+    "æ": "ae",
+    "ø": "oe",
+    "å": "aa",
+    "Æ": "Ae",
+    "Ø": "Oe",
+    "Å": "Aa",
+}
+
+
+def sanitize_title(title: str) -> str:
+    """Normalize a title for case-insensitive comparison.
+
+    Converts accented characters to their digraph spelling, replaces common
+    separators with a single space, drops brackets/parentheses, removes
+    non-alphanumeric characters, and lowercases the result.
+    """
+    if not title:
+        return ""
+    result = title
+    for char, replacement in _ACCENT_MAP.items():
+        result = result.replace(char, replacement)
+    result = result.replace("&", " and ")
+    result = re.sub(r"[.\-_:\s]+", " ", result)
+    result = re.sub(r"[\[\]\(\){}]", " ", result)
+    result = re.sub(r"[^\w\sÀ-ÿ]", "", result)
+    result = re.sub(r"\s+", " ", result)
+    return result.lower().strip()
+
+
+def is_anchored_query(query: str) -> bool:
+    """Whether a query carries an episode code (SxxExx) or a 19xx/20xx year.
+
+    Unanchored queries (bare title) are low-precision for full-text indexers;
+    callers force strict matching when this returns False.
+    """
+    return bool(re.search(r"s\d{1,3}e\d{1,3}", query, re.IGNORECASE)) or bool(
+        re.search(r"\b(?:19|20)\d{2}\b", query)
+    )
+
+
+def _word_in_text(word: str, text: str) -> bool:
+    escaped = re.escape(word)
+    return re.search(rf"\b{escaped}\b", text) is not None
+
+
+def matches_title(title: str, query: str, strict: bool) -> bool:
+    """Whether a release title matches a search query.
+
+    Mirrors easynews-plus-plus matchesTitle():
+    - strict: exact title match, or exact title + year / episode code.
+    - non-strict: episode code present plus >=70% of the show-name words
+      (whole-word), or >=70% of significant query words.
+    """
+    if not title or not query:
+        return False
+
+    sanitized_query = sanitize_title(query)
+    sanitized_title = sanitize_title(title)
+
+    # Main title part of the query, excluding episode info.
+    main_query_part = sanitized_query.split(r"s\d+e\d+")[0].strip()
+    season_episode_pattern = re.compile(r"s\d+e\d+", re.IGNORECASE)
+    has_season_episode = season_episode_pattern.search(sanitized_query)
+
+    if strict:
+        if has_season_episode:
+            se_match = has_season_episode
+            title_before_se = sanitized_title.split(se_match.group(0))[0].strip()
+            title_without_year = re.sub(r"\b(?:19|20)\d{2}\b", "", title_before_se).strip()
+
+            if sanitized_title == main_query_part:
+                return True
+            if title_before_se == main_query_part or title_without_year == main_query_part:
+                return True
+
+            # Series title must start with the exact query words followed by
+            # episode info (possibly with a year in between).
+            main_query_words = main_query_part.split()
+            title_words = title_without_year.split()
+            if len(title_words) > len(main_query_words):
+                return False
+            return title_words == main_query_words
+
+        # Movie path: exact title, or title + year.
+        year_match = re.search(r"\b(?:19|20)\d{2}\b", sanitized_query)
+        query_year = year_match.group(0) if year_match else None
+        query_without_year = re.sub(r"\b(?:19|20)\d{2}\b", "", sanitized_query).strip()
+        title_without_year = re.sub(r"\b(?:19|20)\d{2}\b", "", sanitized_title).strip()
+
+        if sanitized_title == sanitized_query:
+            return True
+        if query_year and title_without_year == query_without_year:
+            return True
+        return title_without_year == sanitized_query
+
+    # Non-strict path.
+    if has_season_episode:
+        pattern = has_season_episode.group(0).lower()
+        if pattern not in sanitized_title:
+            return False
+        name_words = [
+            w
+            for w in re.sub(season_episode_pattern, " ", sanitized_query).split()
+            if len(w) > 2
+        ]
+        if not name_words:
+            return True
+        matching = sum(1 for w in name_words if _word_in_text(w, sanitized_title))
+        return matching / len(name_words) >= 0.7
+
+    query_words = sanitized_query.split()
+    significant_words = [w for w in query_words if len(w) > 2]
+    if not significant_words:
+        return True
+    matching = sum(1 for w in significant_words if _word_in_text(w, sanitized_title))
+    return matching / len(significant_words) >= 0.7
