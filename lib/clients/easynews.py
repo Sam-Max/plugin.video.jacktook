@@ -30,13 +30,6 @@ SEARCH_PARAMS = {
     "pby": 150,
 }
 
-# Adult-content tokens that appear in Easynews source-newsgroup names. Matched
-# against field "9" (the space-separated list of groups a post was found in).
-# Porn is almost always cross-posted to an explicitly adult group, so matching
-# any token in the combined string catches the large majority of it. The token
-# set is deliberately conservative — only segments that are unambiguously adult
-# in newsgroup names, so the filter is effectively false-positive-free against
-# legitimate content.
 ADULT_GROUP_RE = re.compile(
     r"(erotic|xxx|porn|pron|masturbat|bestial|incest|hentai|shemale|transsex|(?:^|\.)sex)",
     re.IGNORECASE,
@@ -71,10 +64,6 @@ class Easynews(BaseClient):
         params = SEARCH_PARAMS.copy()
         params["gps"] = search_query
 
-        # Paginate the advanced-search API like easynews-plus-plus: keep fetching
-        # pages until we hit the total cap or the API starts re-serving the same
-        # page (detected via the first post of consecutive pages). The results
-        # are deduplicated downstream by PreProcessBuilder.remove_duplicates().
         total_max_results = 500
         max_pages = 10
         results: List[TorrentStream] = []
@@ -115,7 +104,6 @@ class Easynews(BaseClient):
             kodilog(f"EasyNews search error: {e}")
             # Keep partial results collected before the failure instead of
             # discarding them: a mid-pagination error still yields usable
-            # matches (mirrors easynews-plus-plus searchAll behavior).
             if results:
                 return results
             return []
