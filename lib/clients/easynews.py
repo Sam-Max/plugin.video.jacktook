@@ -30,6 +30,18 @@ SEARCH_PARAMS = {
     "pby": 150,
 }
 
+# Adult-content tokens that appear in Easynews source-newsgroup names. Matched
+# against field "9" (the space-separated list of groups a post was found in).
+# Porn is almost always cross-posted to an explicitly adult group, so matching
+# any token in the combined string catches the large majority of it. The token
+# set is deliberately conservative — only segments that are unambiguously adult
+# in newsgroup names, so the filter is effectively false-positive-free against
+# legitimate content.
+ADULT_GROUP_RE = re.compile(
+    r"(erotic|xxx|porn|pron|masturbat|bestial|incest|hentai|shemale|transsex|(?:^|\.)sex)",
+    re.IGNORECASE,
+)
+
 
 class Easynews(BaseClient):
     def __init__(self, user: str, password: str, timeout: int, notification: Callable) -> None:
@@ -108,6 +120,8 @@ class Easynews(BaseClient):
                 if item.get("type", "").upper() != "VIDEO":
                     continue
                 if item.get("virus"):
+                    continue
+                if ADULT_GROUP_RE.search(str(item.get("9") or "")):
                     continue
                 if re.match(r"^\d+s", duration) or re.match(r"^[0-5]m", duration):
                     continue
