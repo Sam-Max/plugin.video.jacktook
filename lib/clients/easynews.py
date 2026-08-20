@@ -71,15 +71,46 @@ class Easynews(BaseClient):
         params = SEARCH_PARAMS.copy()
         params["gps"] = search_query
 
+        # Paginate the advanced-search API like easynews-plus-plus: keep fetching
+        # pages until we hit the total cap or the API starts re-serving the same
+        # page (detected via the first post of consecutive pages). The results
+        # are deduplicated downstream by PreProcessBuilder.remove_duplicates().
+        total_max_results = 500
+        max_pages = 10
+        results: List[TorrentStream] = []
+        previous_first_hash: Optional[str] = None
+
         try:
-            response = self.session.get(
-                self.base_url,
-                params=params,
-                auth=(self.user, self.password),
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            return self.parse_response(response)
+            for page_nr in range(1, max_pages + 1):
+                remaining = total_max_results - len(results)
+                if remaining <= 0:
+                    break
+
+                page_params = params.copy()
+                page_params["pno"] = page_nr
+                page_params["pby"] = min(SEARCH_PARAMS.get("pby", 150), remaining)
+
+                response = self.session.get(
+                    self.base_url,
+                    params=page_params,
+                    auth=(self.user, self.password),
+                    timeout=self.timeout,
+                )
+                response.raise_for_status()
+                page_results = self.parse_response(response)
+
+                if not page_results:
+                    break
+
+                # Detect the API re-serving the same page (cycling).
+                first_hash = page_results[0].title
+                if previous_first_hash is not None and first_hash == previous_first_hash:
+                    break
+                previous_first_hash = first_hash
+
+                results.extend(page_results)
+
+            return results
         except Exception as e:
             kodilog(f"EasyNews search error: {e}")
             return []
