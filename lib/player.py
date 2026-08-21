@@ -90,14 +90,11 @@ class JacktookPLayer(xbmc.Player):
         self.data["playback_session_id"] = self.playback_session_id
         set_property(ACTIVE_PLAYER_SESSION_PROPERTY, self.playback_session_id)
         clear_property(PLAYNEXT_ACTION_PROPERTY)
-        kodilog(
-            f"[PLAYER] Activated playback session {self.playback_session_id[:8]}"
-        )
+        kodilog(f"[PLAYER] Activated playback session {self.playback_session_id[:8]}")
 
     def _owns_playback_session(self) -> bool:
         return bool(self.playback_session_id) and (
-            get_property(ACTIVE_PLAYER_SESSION_PROPERTY)
-            == self.playback_session_id
+            get_property(ACTIVE_PLAYER_SESSION_PROPERTY) == self.playback_session_id
         )
 
     def _consume_next_dialog_action(self) -> bool:
@@ -107,9 +104,7 @@ class JacktookPLayer(xbmc.Player):
         try:
             payload = loads(raw_action)
         except (TypeError, ValueError):
-            kodilog(
-                f"[PLAYNEXT] Ignoring unscoped action payload: {raw_action!r}"
-            )
+            kodilog(f"[PLAYNEXT] Ignoring unscoped action payload: {raw_action!r}")
             return False
         if not isinstance(payload, dict):
             return False
@@ -150,9 +145,7 @@ class JacktookPLayer(xbmc.Player):
             self.run_error(e)
 
         if self._was_superseded:
-            kodilog(
-                "[PLAYER] run() superseded; skipping PlayNext queue drain"
-            )
+            kodilog("[PLAYER] run() superseded; skipping PlayNext queue drain")
             return
 
         had_nextep = self._drain_nextep_queue()
@@ -232,10 +225,7 @@ class JacktookPLayer(xbmc.Player):
                 # The original plugin resolution has already completed. Start
                 # the queued external-plugin URL explicitly instead of trying
                 # to resolve a stale addon handle.
-                kodilog(
-                    "[PLAYER] play_video: calling Player.play for internal "
-                    "PlayNext handoff"
-                )
+                kodilog("[PLAYER] play_video: calling Player.play for internal PlayNext handoff")
                 self.play(self.url, list_item)
             else:
                 # Normal plugin entry point: answer Kodi's pending resolution.
@@ -289,6 +279,7 @@ class JacktookPLayer(xbmc.Player):
                 last_position = 0
             if last_position > 0:
                 list_item.setProperty("StartPercent", str(last_position))
+                self.playback_started_properly = True
             try:
                 TraktAPI().scrobble.trakt_start_scrobble(self.data)
                 self._is_trakt_scrobble_active = True
@@ -375,9 +366,7 @@ class JacktookPLayer(xbmc.Player):
             while not self.isPlayingVideo():
                 if not self._owns_playback_session():
                     self._was_superseded = True
-                    kodilog(
-                        "[PLAYER] monitor superseded while waiting for playback"
-                    )
+                    kodilog("[PLAYER] monitor superseded while waiting for playback")
                     return
                 if self.kodi_monitor.abortRequested():
                     kodilog("[PLAYER] monitor: abort requested while waiting for video to start")
@@ -409,9 +398,7 @@ class JacktookPLayer(xbmc.Player):
             while self.isPlayingVideo():
                 if not self._owns_playback_session():
                     self._was_superseded = True
-                    kodilog(
-                        "[PLAYER] monitor superseded by a newer playback session"
-                    )
+                    kodilog("[PLAYER] monitor superseded by a newer playback session")
                     return
                 self.update_playback_progress()
                 self.handle_trakt_pause_resume()
@@ -438,15 +425,11 @@ class JacktookPLayer(xbmc.Player):
             self.kill_dialog()
         finally:
             if self._owns_playback_session():
-                kodilog(
-                    "[PLAYER] monitor: owner cleanup for playback session"
-                )
+                kodilog("[PLAYER] monitor: owner cleanup for playback session")
                 self.clear_playback_properties()
                 self._release_playback_session()
             else:
-                kodilog(
-                    "[PLAYER] monitor: superseded session; skipping global cleanup"
-                )
+                kodilog("[PLAYER] monitor: superseded session; skipping global cleanup")
         kodilog("[PLAYER] monitor: exiting")
 
     def handle_subtitles(self, list_item):
@@ -598,10 +581,6 @@ class JacktookPLayer(xbmc.Player):
 
     def check_next_dialog(self):
         try:
-            # Skip dialog entirely during autoplay (Play Next chain) — no interruptions
-            if self.data.get("autoplay"):
-                return
-
             # Only show PlayNext for TV series, never for movies
             if self.data.get("mode") != "tv":
                 return
@@ -757,9 +736,7 @@ class JacktookPLayer(xbmc.Player):
         else:
             cached_results = cache.get(results_cache_key)
             if not cached_results:
-                kodilog(
-                    f"[PLAYNEXT] Autoscrape results cache MISS for key={results_cache_key}"
-                )
+                kodilog(f"[PLAYNEXT] Autoscrape results cache MISS for key={results_cache_key}")
                 return False
 
             entry_data = {
@@ -1031,6 +1008,7 @@ class JacktookPLayer(xbmc.Player):
             return
         try:
             self.seekTime(total_time * progress / 100)
+            self.playback_started_properly = True
             self._simkl_resume_applied = True
         except Exception as error:
             kodilog(f"[SIMKL] resume seek failed; continuing playback ({type(error).__name__})")
@@ -1071,6 +1049,7 @@ class JacktookPLayer(xbmc.Player):
             return
         try:
             self.seekTime(total_time * progress / 100)
+            self.playback_started_properly = True
             self._trakt_resume_applied = True
         except Exception as error:
             kodilog(f"Trakt resume seek failed; continuing playback ({type(error).__name__})")

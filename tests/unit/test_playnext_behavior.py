@@ -53,7 +53,9 @@ def test_playnext_modal_waits_before_publishing_stop_handoff(monkeypatch):
 
     monkeypatch.setattr(custom_dialogs, "PLAYLIST", MagicMock(size=lambda: 0))
     monkeypatch.setattr(custom_dialogs, "PlayNext", FakePlayNext)
-    monkeypatch.setattr(custom_dialogs, "sleep", lambda milliseconds: events.append(("sleep", milliseconds)))
+    monkeypatch.setattr(
+        custom_dialogs, "sleep", lambda milliseconds: events.append(("sleep", milliseconds))
+    )
     monkeypatch.setattr(
         custom_dialogs,
         "set_property",
@@ -61,11 +63,7 @@ def test_playnext_modal_waits_before_publishing_stop_handoff(monkeypatch):
     )
 
     custom_dialogs.run_next_dialog(
-        {
-            "item_info": json.dumps(
-                {"playback_session_id": "owner-session"}
-            )
-        }
+        {"item_info": json.dumps({"playback_session_id": "owner-session"})}
     )
 
     assert events[:2] == ["modal_closed", ("sleep", 200)]
@@ -125,10 +123,11 @@ def test_handle_next_dialog_action_still_watching_cancel_clears_and_stops(monkey
     ]
 
 
-def test_check_next_dialog_time_mode_triggers_at_time_left_threshold(monkeypatch):
+def test_check_next_dialog_dispatches_for_autoplay_tv_at_time_left_threshold(monkeypatch):
     from lib.player import JacktookPLayer
 
     player = _player_instance()
+    player.data["autoplay"] = True
     player.total_time = 600
     player.current_time = 550
     player.watched_percentage = 91.7
@@ -145,6 +144,62 @@ def test_check_next_dialog_time_mode_triggers_at_time_left_threshold(monkeypatch
 
     execute_builtin.assert_called_once_with("RunPlugin(test)")
     assert player.next_dialog is False
+
+
+def test_check_next_dialog_dispatches_after_trakt_start_percent_resume(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    player.total_time = 600
+    player.current_time = 550
+    player.watched_percentage = 91.7
+    player.next_dialog = True
+    player.playing_next_time = 50
+    player._is_trakt_tracking_excluded = MagicMock(return_value=False)
+    list_item = MagicMock()
+    scrobble = MagicMock()
+    scrobble.trakt_get_last_tracked_position.return_value = 25
+    trakt_api = MagicMock()
+    trakt_api.scrobble = scrobble
+    execute_builtin = MagicMock()
+
+    def get_setting(key, default=None):
+        return {"trakt_scrobbling_enabled": True, "playnext_use_percentage": False}.get(
+            key, default
+        )
+
+    monkeypatch.setattr("lib.player.is_trakt_auth", lambda: True)
+    monkeypatch.setattr("lib.player.get_setting", get_setting)
+    monkeypatch.setattr("lib.player.TraktAPI", lambda: trakt_api)
+    monkeypatch.setattr("lib.player.action_url_run", lambda **kwargs: "RunPlugin(test)")
+    monkeypatch.setattr("lib.player.xbmc.executebuiltin", execute_builtin)
+
+    JacktookPLayer._handle_trakt_scrobble(player, list_item)
+    JacktookPLayer.check_next_dialog(player)
+
+    list_item.setProperty.assert_called_once_with("StartPercent", "25")
+    execute_builtin.assert_called_once_with("RunPlugin(test)")
+
+
+def test_check_next_dialog_does_not_dispatch_on_first_high_sample_without_resume(monkeypatch):
+    from lib.player import JacktookPLayer
+
+    player = _player_instance()
+    player.total_time = 600
+    player.current_time = 550
+    player.watched_percentage = 91.7
+    player.playback_started_properly = False
+    player.next_dialog = True
+    player.playing_next_time = 50
+    execute_builtin = MagicMock()
+
+    monkeypatch.setattr("lib.player.get_setting", lambda key, default=None: False)
+    monkeypatch.setattr("lib.player.xbmc.executebuiltin", execute_builtin)
+
+    JacktookPLayer.check_next_dialog(player)
+
+    execute_builtin.assert_not_called()
+    assert player.next_dialog is True
 
 
 def test_check_next_dialog_passes_authoritative_next_tv_data(monkeypatch):
@@ -250,6 +305,46 @@ def test_play_window_background_tasks_ignores_missing_progress_bar(monkeypatch):
 
     window.close.assert_called_once_with()
     assert window.smart_play_called is True
+
+
+def test_playnext_timeout_uses_neutral_copy_when_global_autoplay_is_disabled(monkeypatch):
+    from lib.gui.play_next_window import PlayNext
+
+    def get_setting(key, default=None):
+        return {"playnext_auto_timeout": "1", "auto_play": False}.get(key, default)
+
+    monkeypatch.setattr("lib.gui.play_next_window.get_setting", get_setting)
+    monkeypatch.setattr(
+        "lib.gui.play_next_window.PlayWindow.__init__", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr("lib.gui.play_next_window.xbmc.sleep", MagicMock())
+
+    window = object.__new__(PlayNext)
+    window.setProperty = MagicMock()
+    PlayNext.__init__(window, "", "")
+    window.setProperty.reset_mock()
+    window.closed = False
+    window.playing_file = "file.mkv"
+    window.getControl = MagicMock(side_effect=RuntimeError("missing"))
+    window.getTotalTime = MagicMock(return_value=100)
+    window.getTime = MagicMock(return_value=0)
+    window.getPlayingFile = MagicMock(return_value="file.mkv")
+    window.handle_action = MagicMock()
+    window.close = MagicMock()
+
+    window.background_tasks()
+
+    timer_labels = [
+        value
+        for key, value in (call.args for call in window.setProperty.call_args_list)
+        if key == "timer_label"
+    ]
+    assert timer_labels == [
+        "Continuing in 1 seconds",
+        "Continuing in 1 seconds",
+        "Continuing in 0 seconds",
+    ]
+    window.handle_action.assert_called_once_with(7, 3001)
 
 
 def test_build_next_episode_properties_prefers_next_tv_data():
