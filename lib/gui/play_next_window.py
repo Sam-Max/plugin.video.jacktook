@@ -135,7 +135,7 @@ class PlayNext(PlayWindow):
                 self.setProperty("timer", str(remaining))
                 self.setProperty(
                     "timer_label",
-                    f"Auto-playing in {remaining} seconds",
+                    f"Continuing in {remaining} seconds",
                 )
 
                 if progress_bar is not None:

@@ -307,6 +307,46 @@ def test_play_window_background_tasks_ignores_missing_progress_bar(monkeypatch):
     assert window.smart_play_called is True
 
 
+def test_playnext_timeout_uses_neutral_copy_when_global_autoplay_is_disabled(monkeypatch):
+    from lib.gui.play_next_window import PlayNext
+
+    def get_setting(key, default=None):
+        return {"playnext_auto_timeout": "1", "auto_play": False}.get(key, default)
+
+    monkeypatch.setattr("lib.gui.play_next_window.get_setting", get_setting)
+    monkeypatch.setattr(
+        "lib.gui.play_next_window.PlayWindow.__init__", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr("lib.gui.play_next_window.xbmc.sleep", MagicMock())
+
+    window = object.__new__(PlayNext)
+    window.setProperty = MagicMock()
+    PlayNext.__init__(window, "", "")
+    window.setProperty.reset_mock()
+    window.closed = False
+    window.playing_file = "file.mkv"
+    window.getControl = MagicMock(side_effect=RuntimeError("missing"))
+    window.getTotalTime = MagicMock(return_value=100)
+    window.getTime = MagicMock(return_value=0)
+    window.getPlayingFile = MagicMock(return_value="file.mkv")
+    window.handle_action = MagicMock()
+    window.close = MagicMock()
+
+    window.background_tasks()
+
+    timer_labels = [
+        value
+        for key, value in (call.args for call in window.setProperty.call_args_list)
+        if key == "timer_label"
+    ]
+    assert timer_labels == [
+        "Continuing in 1 seconds",
+        "Continuing in 1 seconds",
+        "Continuing in 0 seconds",
+    ]
+    window.handle_action.assert_called_once_with(7, 3001)
+
+
 def test_build_next_episode_properties_prefers_next_tv_data():
     from lib.gui.play_next_window import build_next_episode_properties
 
