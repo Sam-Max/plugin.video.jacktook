@@ -1,3 +1,15 @@
+## 1.18.0
+- Jackgram: Unify the Telegram menu with a test-connection action, add filtered search with its own history, keep Latest order as sent by the server, fix Raw Files pagination threshold, cache TMDB lookups, dedupe listings, and harden retry/401/429 handling, host validation, and the client search contract.
+- Easynews: Add result pagination, keep partial results on pagination errors, filter adult and password-protected posts, filter by title match, and validate credentials with normalized download URLs.
+- Playback: Restore next-episode handoff to the torrent client and select the matching movie file in Elementum multi-file torrents.
+- Maintenance: Replace deprecated UTC datetime usage.
+
+Spanish:
+- Jackgram: Unificado el menú de Telegram con una acción de prueba de conexión, añadida búsqueda filtrada con historial propio, conservado el orden Latest tal como lo envía el servidor, corregido el umbral de paginación de Raw Files, cacheadas las búsquedas de TMDB, deduplicados los listados y reforzados el reintento y el manejo de errores 401/429, la validación del host y el contrato de búsqueda del cliente.
+- Easynews: Añadida paginación de resultados, conservados los resultados parciales ante errores de paginación, filtrados los posts adultos y protegidos con contraseña, filtrado por coincidencia de título y validación de credenciales con URLs de descarga normalizadas.
+- Reproducción: Restaurada la entrega del siguiente episodio al cliente de torrents y selección del archivo de película correcto en torrents multiarchivo de Elementum.
+- Mantenimiento: Reemplazado el uso de datetime UTC obsoleto.
+
 ## 1.17.0
 - TorrServer: Add category browsing and richer torrent metadata.
 - Search: Add source management to direct search history and apply managed provider selections consistently.
