@@ -89,6 +89,10 @@ class SourceSelect(BaseWindow):
         self.filtered_sources: Optional[List[TorrentStream]] = None
         self.filter_applied: bool = False
         self.resolved = False
+        # Kodi's original plugin resolution handle can only be consumed once.
+        # If a playback attempt fails but SourceSelect stays open, subsequent
+        # attempts must start playback explicitly with Player.play().
+        self._kodi_resolution_consumed = False
 
     def onInit(self) -> None:
         theme_index = get_setting("source_select_theme", "0")
@@ -644,6 +648,10 @@ class SourceSelect(BaseWindow):
         local_subtitle_path: Optional[str] = None,
     ) -> None:
         self.setProperty("resolving", "true")
+        kodi_resolution_consumed = bool(
+            getattr(self, "_kodi_resolution_consumed", False)
+        )
+
         resolver_window = ResolverWindow(
             "resolver.xml",
             ADDON_PATH,
@@ -652,9 +660,28 @@ class SourceSelect(BaseWindow):
             item_information=self.item_information,
             is_subtitle_download=is_subtitle_download,
             local_subtitle_path=local_subtitle_path,
+            direct_playback_handoff=kodi_resolution_consumed,
         )
-        self.resolved = resolver_window.doModal(pack_select)
-        del resolver_window
+        try:
+            self.resolved = resolver_window.doModal(pack_select)
+
+            playback_resolution_attempted = (
+                getattr(
+                    resolver_window,
+                    "playback_resolution_attempted",
+                    False,
+                )
+                is True
+            )
+
+            self._kodi_resolution_consumed = (
+                kodi_resolution_consumed
+                or playback_resolution_attempted
+            )
+        finally:
+            if not self.resolved:
+                self.setProperty("resolving", "false")
+            del resolver_window
 
     def show_resume_dialog(self, playback_percent: float) -> Optional[bool]:
         try:

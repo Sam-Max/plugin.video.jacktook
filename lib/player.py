@@ -47,6 +47,7 @@ from lib.utils.player.utils import (
 
 AUTOPLAY_CONTEXT_NEXT_EPISODE = 1
 ACTIVE_PLAYER_SESSION_PROPERTY = "jacktook_active_player_session"
+ELEMENTUM_RESOLUTION_FAILURE_PREFIX = "jacktook.elementum_resolution_failure."
 PLAYNEXT_ACTION_PROPERTY = "jacktook_next_dialog_action"
 total_time_errors = ("0.0", "", 0.0, None)
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
@@ -84,6 +85,7 @@ class JacktookPLayer(xbmc.Player):
         self._trakt_playback_delete_attempted = False
         self.playback_session_id = ""
         self._was_superseded = False
+        self._playback_error_detected = False
 
     def _activate_playback_session(self):
         self.playback_session_id = uuid4().hex
@@ -91,6 +93,52 @@ class JacktookPLayer(xbmc.Player):
         set_property(ACTIVE_PLAYER_SESSION_PROPERTY, self.playback_session_id)
         clear_property(PLAYNEXT_ACTION_PROPERTY)
         kodilog(f"[PLAYER] Activated playback session {self.playback_session_id[:8]}")
+
+    def _scope_elementum_resolution_signal(self):
+        if not self.url or not self.url.startswith(
+            "plugin://plugin.video.elementum/play"
+        ):
+            return
+
+        session_id = getattr(self, "playback_session_id", "")
+        if not session_id:
+            kodilog("[PLAYER] Elementum resolution signal has no playback session")
+            return
+
+        # Each playback gets its own failure property so late cleanup from an
+        # older Elementum player cannot overwrite a newer attempt.
+        failure_property = (
+            f"{ELEMENTUM_RESOLUTION_FAILURE_PREFIX}{session_id}"
+        )
+        clear_property(failure_property)
+
+        # A reused Elementum pack may already contain an older session marker.
+        # Replace it rather than accumulating markers across PlayNext episodes.
+        from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+        parsed = urlsplit(self.url)
+        query = [
+            (key, value)
+            for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+            if key != "jacktook_session"
+        ]
+        query.append(("jacktook_session", session_id))
+
+        self.url = urlunsplit(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                urlencode(query),
+                parsed.fragment,
+            )
+        )
+        self.data["url"] = self.url
+
+        kodilog(
+            f"[PLAYER] Scoped Elementum resolution to "
+            f"{session_id[:8]}"
+        )
 
     def _owns_playback_session(self) -> bool:
         return bool(self.playback_session_id) and (
@@ -126,6 +174,7 @@ class JacktookPLayer(xbmc.Player):
             data = {}
         self.set_constants(data)
         self._activate_playback_session()
+        self._scope_elementum_resolution_signal()
         self.clear_playback_properties()
         if not self._is_trakt_tracking_excluded():
             self.add_external_trakt_scrolling()
@@ -358,12 +407,32 @@ class JacktookPLayer(xbmc.Player):
 
         self._playback_was_paused = is_paused
 
+    def onPlayBackError(self):
+        self._playback_error_detected = True
+        kodilog("[PLAYER] Kodi reported playback error while resolving")
+
     def monitor(self):
         ensure_dialog_closed = False
         kodilog("[PLAYER] monitor() entered")
 
         try:
             while not self.isPlayingVideo():
+                elementum_failure_property = (
+                    f"{ELEMENTUM_RESOLUTION_FAILURE_PREFIX}"
+                    f"{self.playback_session_id}"
+                )
+                if get_property(elementum_failure_property) == "true":
+                    clear_property(elementum_failure_property)
+                    kodilog(
+                        "[PLAYER] Elementum reported failed/cancelled resolution"
+                    )
+                    self.handle_playback_failure()
+                    return
+
+                if self._playback_error_detected:
+                    kodilog("[PLAYER] monitor detected failed playback resolution")
+                    self.handle_playback_failure()
+                    return
                 if not self._owns_playback_session():
                     self._was_superseded = True
                     kodilog("[PLAYER] monitor superseded while waiting for playback")
@@ -523,9 +592,12 @@ class JacktookPLayer(xbmc.Player):
                         break
 
     def handle_playback_failure(self):
-        self.kill_dialog()
         if self.on_error:
+            # ResolverWindow owns its UI lifecycle. Let its error callback close
+            # only the resolver so SourceSelect remains open underneath.
             self.on_error()
+        else:
+            self.kill_dialog()
         self.stop()
 
     def handle_playback_start(self):
@@ -1172,6 +1244,7 @@ class JacktookPLayer(xbmc.Player):
         self._simkl_resume_playback_observed = False
         self._simkl_playback_delete_attempted = False
         self._was_superseded = False
+        self._playback_error_detected = False
         from lib.utils.general.utils import extract_release_group
 
         self.preferred_group = extract_release_group(self.data.get("title", ""))
