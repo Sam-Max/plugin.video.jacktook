@@ -79,13 +79,13 @@ def test_elementum_url_is_scoped_to_current_playback_session(monkeypatch):
         "plugin://plugin.video.elementum/play"
         "?uri=magnet%3A%3Fxt%3Durn%3Abtih%3ATEST"
         "&type=tv"
-        "&jacktook_session=old-session"
+        "&resolution_token=old-session"
     )
     player.data = {"url": player.url}
 
     JacktookPLayer._scope_elementum_resolution_signal(player)
 
-    assert "jacktook_session=new-session" in player.url
+    assert "resolution_token=new-session" in player.url
     assert "old-session" not in player.url
     assert player.data["url"] == player.url
 
@@ -139,7 +139,7 @@ def test_elementum_scope_clears_only_current_session_signal(monkeypatch):
     JacktookPLayer._scope_elementum_resolution_signal(player)
 
     clear_property.assert_called_once_with(
-        "jacktook.elementum_resolution_failure.session-two"
+        "plugin.video.elementum.resolution_status.session-two"
     )
 
 

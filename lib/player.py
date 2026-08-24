@@ -47,7 +47,7 @@ from lib.utils.player.utils import (
 
 AUTOPLAY_CONTEXT_NEXT_EPISODE = 1
 ACTIVE_PLAYER_SESSION_PROPERTY = "jacktook_active_player_session"
-ELEMENTUM_RESOLUTION_FAILURE_PREFIX = "jacktook.elementum_resolution_failure."
+ELEMENTUM_RESOLUTION_STATUS_PREFIX = "plugin.video.elementum.resolution_status."
 PLAYNEXT_ACTION_PROPERTY = "jacktook_next_dialog_action"
 total_time_errors = ("0.0", "", 0.0, None)
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
@@ -108,7 +108,7 @@ class JacktookPLayer(xbmc.Player):
         # Each playback gets its own failure property so late cleanup from an
         # older Elementum player cannot overwrite a newer attempt.
         failure_property = (
-            f"{ELEMENTUM_RESOLUTION_FAILURE_PREFIX}{session_id}"
+            f"{ELEMENTUM_RESOLUTION_STATUS_PREFIX}{session_id}"
         )
         clear_property(failure_property)
 
@@ -120,9 +120,9 @@ class JacktookPLayer(xbmc.Player):
         query = [
             (key, value)
             for key, value in parse_qsl(parsed.query, keep_blank_values=True)
-            if key != "jacktook_session"
+            if key != "resolution_token"
         ]
-        query.append(("jacktook_session", session_id))
+        query.append(("resolution_token", session_id))
 
         self.url = urlunsplit(
             (
@@ -418,10 +418,10 @@ class JacktookPLayer(xbmc.Player):
         try:
             while not self.isPlayingVideo():
                 elementum_failure_property = (
-                    f"{ELEMENTUM_RESOLUTION_FAILURE_PREFIX}"
+                    f"{ELEMENTUM_RESOLUTION_STATUS_PREFIX}"
                     f"{self.playback_session_id}"
                 )
-                if get_property(elementum_failure_property) == "true":
+                if get_property(elementum_failure_property) == "failed":
                     clear_property(elementum_failure_property)
                     kodilog(
                         "[PLAYER] Elementum reported failed/cancelled resolution"
