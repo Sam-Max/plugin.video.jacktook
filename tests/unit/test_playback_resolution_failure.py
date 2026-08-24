@@ -164,3 +164,100 @@ def test_source_select_backgrounds_do_not_fade_while_resolving():
     )
 
     assert resolving_fades == []
+
+
+def test_source_select_retry_uses_explicit_playback_handoff():
+    from lib.gui.source_select import SourceSelect
+
+    window = object.__new__(SourceSelect)
+    window.resolved = False
+    window.item_information = {}
+    window.setProperty = MagicMock()
+    window._kodi_resolution_consumed = False
+
+    first_resolver = MagicMock()
+    first_resolver.doModal.return_value = False
+    first_resolver.playback_resolution_attempted = True
+
+    retry_resolver = MagicMock()
+    retry_resolver.doModal.return_value = False
+    retry_resolver.playback_resolution_attempted = True
+
+    with patch(
+        "lib.gui.source_select.ResolverWindow",
+        side_effect=[first_resolver, retry_resolver],
+    ) as resolver_class:
+        SourceSelect._resolve_item(
+            window,
+            selected_source=MagicMock(),
+            pack_select=False,
+        )
+
+        assert (
+            resolver_class.call_args_list[0]
+            .kwargs["direct_playback_handoff"]
+            is False
+        )
+        assert window._kodi_resolution_consumed is True
+
+        SourceSelect._resolve_item(
+            window,
+            selected_source=MagicMock(),
+            pack_select=False,
+        )
+
+        assert (
+            resolver_class.call_args_list[1]
+            .kwargs["direct_playback_handoff"]
+            is True
+        )
+
+
+def test_normal_playback_uses_pending_kodi_resolution(monkeypatch):
+    player_module = _load_real_player_module(monkeypatch)
+    JacktookPLayer = player_module.JacktookPLayer
+
+    player = object.__new__(JacktookPLayer)
+    player.url = "plugin://plugin.video.elementum/play?uri=test"
+    player.data = {}
+    player.play = MagicMock()
+    player._check_volume = MagicMock(return_value=True)
+    player._handle_trakt_scrobble = MagicMock()
+    player._handle_simkl_scrobble = MagicMock()
+    player.handle_subtitles = MagicMock()
+    player.monitor = MagicMock()
+
+    list_item = MagicMock()
+
+    with patch.object(player_module, "setResolvedUrl") as set_resolved:
+        JacktookPLayer.play_video(player, list_item)
+
+    set_resolved.assert_called_once_with(
+        player_module.ADDON_HANDLE,
+        True,
+        list_item,
+    )
+    player.play.assert_not_called()
+
+
+def test_explicit_handoff_uses_player_play(monkeypatch):
+    player_module = _load_real_player_module(monkeypatch)
+    JacktookPLayer = player_module.JacktookPLayer
+
+    player = object.__new__(JacktookPLayer)
+    player.url = "plugin://plugin.video.elementum/play?uri=test"
+    player.data = {"direct_playback_handoff": True}
+    player.play = MagicMock()
+    player._check_volume = MagicMock(return_value=True)
+    player._handle_trakt_scrobble = MagicMock()
+    player._handle_simkl_scrobble = MagicMock()
+    player.handle_subtitles = MagicMock()
+    player.monitor = MagicMock()
+
+    list_item = MagicMock()
+
+    with patch.object(player_module, "setResolvedUrl") as set_resolved:
+        JacktookPLayer.play_video(player, list_item)
+
+    set_resolved.assert_not_called()
+    player.play.assert_called_once_with(player.url, list_item)

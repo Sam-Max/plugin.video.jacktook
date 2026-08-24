@@ -112,8 +112,8 @@ class JacktookPLayer(xbmc.Player):
         )
         clear_property(failure_property)
 
-        # A reused Elementum pack may already contain an older session marker.
-        # Replace it rather than accumulating markers across PlayNext episodes.
+        # A reused Elementum playback URL may already contain an older session
+        # marker. Replace it rather than accumulating markers across handoffs.
         from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
         parsed = urlsplit(self.url)
@@ -274,7 +274,7 @@ class JacktookPLayer(xbmc.Player):
                 # The original plugin resolution has already completed. Start
                 # the queued external-plugin URL explicitly instead of trying
                 # to resolve a stale addon handle.
-                kodilog("[PLAYER] play_video: calling Player.play for internal PlayNext handoff")
+                kodilog("[PLAYER] play_video: calling Player.play for explicit playback handoff")
                 self.play(self.url, list_item)
             else:
                 # Normal plugin entry point: answer Kodi's pending resolution.
