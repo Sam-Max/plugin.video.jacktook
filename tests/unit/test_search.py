@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from lib.api.tmdbv3api.as_obj import AsObj
+from lib.clients.stremio.playback import StremioPlaybackError
+from lib.domain.torrent import TorrentStream
 from lib.search import (
     SearchCancelled,
     SearchVariant,
@@ -433,6 +435,106 @@ def test_auto_play_skips_metadata_hydration_for_direct_sources():
         assert search.auto_play([source], {"tmdb_id": "123"}, {}, "movies") is True
 
     build_metadata.assert_not_called()
+
+
+def test_run_search_entry_does_not_repeat_stremio_rejection_after_autoplay_fallback():
+    from lib import search
+
+    source = TorrentStream(
+        title="Unsupported source",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"externalUrl": "https://external.example/watch"},
+    )
+    notifications = []
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movies",
+        "ids": json.dumps({"imdb_id": "tt123"}),
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[source]
+    ), patch("lib.search._process_search_results", return_value=[source]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=True
+    ), patch("lib.search.notification", side_effect=notifications.append), patch(
+        "lib.search.show_source_select", wraps=search.show_source_select
+    ) as show_source_select_mock, patch("lib.search.source_select") as source_select_mock, patch(
+        "lib.search.cancel_playback"
+    ) as cancel_playback_mock:
+        run_search_entry(params)
+
+    assert notifications == [
+        "External web pages are not playable sources.",
+        "No suitable source found for auto play.",
+    ]
+    assert show_source_select_mock.call_args.kwargs["rejection_already_notified"] is True
+    source_select_mock.assert_not_called()
+    cancel_playback_mock.assert_called_once_with()
+
+
+def test_run_search_entry_falls_back_to_source_selection_after_quality_failure():
+    source = _auto_play_source(IndexerType.TORRENT)
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movies",
+        "ids": json.dumps({"imdb_id": "tt123"}),
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[source]
+    ), patch("lib.search._process_search_results", return_value=[source]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=True
+    ), patch("lib.search.get_setting", return_value="2160p"), patch(
+        "lib.search.build_media_metadata", return_value={}
+    ), patch("lib.search.notification") as notification_mock, patch(
+        "lib.search.source_select", return_value=True
+    ) as source_select_mock, patch("lib.search.cancel_playback") as cancel_playback_mock:
+        run_search_entry(params)
+
+    notification_mock.assert_called_once_with("No sources found with the preferred quality.")
+    assert source_select_mock.call_args.kwargs["sources"] == [source]
+    cancel_playback_mock.assert_not_called()
+
+
+def test_run_search_entry_falls_back_to_source_selection_after_resolution_failure():
+    source = TorrentStream(
+        title="Resolvable source",
+        quality="1080p",
+        addonKey="org.example.addon|https://example.com",
+        stremioMetadata={"url": "https://media.example/movie.mkv"},
+    )
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movies",
+        "ids": json.dumps({"imdb_id": "tt123"}),
+    }
+
+    with patch("lib.search._handle_super_quick_play", return_value=False), patch(
+        "lib.search.search_client", return_value=[source]
+    ), patch("lib.search._process_search_results", return_value=[source]), patch(
+        "lib.search.set_content_type"
+    ), patch("lib.search.set_watched_title"), patch(
+        "lib.search.auto_play_enabled", return_value=True
+    ), patch("lib.search.get_setting", return_value="1080p"), patch(
+        "lib.search._resolve_stremio_source",
+        side_effect=StremioPlaybackError("resolution_failed", "Unable to resolve source."),
+    ), patch("lib.search.build_media_metadata", return_value={}), patch(
+        "lib.search.notification"
+    ) as notification_mock, patch("lib.search.source_select", return_value=True) as source_select_mock, patch(
+        "lib.search.cancel_playback"
+    ) as cancel_playback_mock:
+        run_search_entry(params)
+
+    notification_mock.assert_called_once_with("Unable to resolve source.")
+    assert source_select_mock.call_args.kwargs["sources"] == [source]
+    cancel_playback_mock.assert_not_called()
 
 
 def test_run_search_entry_source_select_cancel_skipped_on_back():
