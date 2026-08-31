@@ -954,11 +954,37 @@ def torrents(params):
     apply_section_view("view.downloads", content_type="files")
 
 
+def _resume_search_params(data, params):
+    ids = data.get("ids") or {}
+    tv_data = data.get("tv_data") or {}
+    search_params = {
+        "query": data.get("query") or data.get("title") or "",
+        "mode": params.get("mode") or data.get("mode") or "",
+        "media_type": params.get("media_type") or data.get("media_type") or "",
+        "ids": json.dumps(ids),
+        "rescrape": True,
+    }
+    if tv_data:
+        search_params["tv_data"] = json.dumps(tv_data)
+    return search_params
+
+
 def play_media(params):
     data = json.loads(params["data"])
     data = resolve_stremio_playback_url(data)
     if not data:
         notification("Failed to resolve playback URL")
+        fallback_params = _resume_search_params(json.loads(params["data"]), params)
+        has_search_identity = bool(fallback_params["query"]) and bool(
+            json.loads(fallback_params["ids"])
+        )
+        if not has_search_identity:
+            kodilog("play_media: cannot fall back to search, missing query/ids")
+            return
+        kodilog("play_media: playback URL resolution failed, falling back to search")
+        from lib.search import run_search_entry
+
+        run_search_entry(fallback_params)
         return
     player = JacktookPLayer()
     player.run(data=data)

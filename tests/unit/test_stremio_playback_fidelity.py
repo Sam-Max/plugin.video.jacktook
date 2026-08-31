@@ -1612,6 +1612,77 @@ def test_runtime_routes_delegate_clean_unindexed_payloads_to_legacy_resolution(m
     assert legacy_calls == [payload]
 
 
+def test_play_media_falls_back_to_search_when_resolution_fails(monkeypatch):
+    payload = {
+        "title": "Old Movie",
+        "type": "torrent",
+        "debrid_type": DebridType.RD,
+        "info_hash": INFO_HASH,
+        "ids": {"imdb_id": "tt123"},
+        "mode": "movies",
+        "media_type": "movie",
+    }
+    search_calls = []
+    notifications = []
+
+    monkeypatch.setattr(player_utils, "resolve_playback_url", lambda data: None)
+    monkeypatch.setattr(navigation, "notification", notifications.append)
+    monkeypatch.setattr(
+        "lib.search._handle_super_quick_play", lambda params: False
+    )
+    monkeypatch.setattr(
+        "lib.search.run_search_entry", lambda params: search_calls.append(params)
+    )
+
+    navigation.play_media({"data": json.dumps(payload)})
+
+    assert notifications == ["Failed to resolve playback URL"]
+    assert len(search_calls) == 1
+    search_params = search_calls[0]
+    assert search_params["query"] == "Old Movie"
+    assert search_params["rescrape"] is True
+    assert json.loads(search_params["ids"]) == {"imdb_id": "tt123"}
+
+
+def test_play_media_fallback_skipped_without_query_or_ids(monkeypatch):
+    payload = {"title": "Mystery stream", "url": "https://media.example/movie.mkv"}
+    search_calls = []
+    notifications = []
+
+    monkeypatch.setattr(player_utils, "resolve_playback_url", lambda data: None)
+    monkeypatch.setattr(navigation, "notification", notifications.append)
+    monkeypatch.setattr("lib.search._handle_super_quick_play", lambda params: False)
+    monkeypatch.setattr("lib.search.run_search_entry", lambda params: search_calls.append(params))
+
+    navigation.play_media({"data": json.dumps(payload)})
+
+    assert notifications == ["Failed to resolve playback URL"]
+    assert search_calls == []
+
+
+def test_play_media_fallback_prefers_stored_query_and_tv_data(monkeypatch):
+    payload = {
+        "query": "Show S01E02",
+        "title": "Local filename",
+        "mode": "tv",
+        "media_type": "tv",
+        "ids": {"tmdb_id": 456},
+        "tv_data": {"season": 1, "episode": 2},
+    }
+    search_calls = []
+
+    monkeypatch.setattr(player_utils, "resolve_playback_url", lambda data: None)
+    monkeypatch.setattr("lib.search._handle_super_quick_play", lambda params: False)
+    monkeypatch.setattr("lib.search.run_search_entry", lambda params: search_calls.append(params))
+
+    navigation.play_media({"data": json.dumps(payload)})
+
+    search_params = search_calls[0]
+    assert search_params["query"] == "Show S01E02"
+    assert search_params["mode"] == "tv"
+    assert json.loads(search_params["tv_data"]) == {"season": 1, "episode": 2}
+
+
 def test_file_index_zero_reaches_legacy_resolution(monkeypatch):
     payload = _supported_hash_payload(fileIdx=0)
     selector_calls = []

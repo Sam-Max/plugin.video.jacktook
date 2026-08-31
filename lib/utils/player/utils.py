@@ -15,6 +15,7 @@ from lib.utils.debrid.debrid_utils import (
     get_debrid_pack_direct_url,
     is_supported_debrid_type,
 )
+from lib.utils.debrid.debrid_utils import _is_torrent_ready_in_debrid
 from lib.utils.general.utils import (
     DebridType,
     Indexer,
@@ -130,6 +131,34 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         data["url"] = addon_url
         return data
     return None
+
+
+def resolve_failure_reason(data: Dict[str, Any]) -> str:
+    """Best-effort reason for why resolve_playback_url() returned None.
+
+    Never mutates ``data`` and never raises: it is only used for logging.
+    """
+    indexer_type: str = data.get("type", "")
+    debrid_type: str = data.get("debrid_type", "")
+
+    if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
+        if data.get("indexer") == Indexer.EASYNEWS:
+            return "easynews_url_unresolved"
+        if data.get("url"):
+            return "none"
+        return "missing_url"
+
+    if is_supported_debrid_type(debrid_type):
+        info_hash = data.get("info_hash", "")
+        if not info_hash:
+            return "debrid_missing_info_hash"
+        if not _is_torrent_ready_in_debrid(debrid_type, info_hash):
+            return "debrid_torrent_not_ready"
+        return "debrid_link_unresolved"
+
+    if data.get("is_torrent") or data.get("magnet") or data.get("info_hash"):
+        return "torrent_client_unresolved"
+    return "missing_url"
 
 
 def get_easynews_url(data: Dict[str, Any]) -> Optional[str]:

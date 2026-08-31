@@ -536,7 +536,15 @@ def _resolve_cached_source(source: Any, params: Mapping[str, Any]):
         )
 
     legacy_source = source if isinstance(source, Mapping) else payload_from_torrent(source)
-    return resolve_playback_url(legacy_source)
+    resolved = resolve_playback_url(legacy_source)
+    if resolved is None:
+        from lib.utils.player.utils import resolve_failure_reason
+
+        kodilog(
+            "resolve_cached_source_failed reason="
+            f"{resolve_failure_reason(legacy_source)}"
+        )
+    return resolved
 
 
 def _handle_super_quick_play(params: dict) -> bool:
