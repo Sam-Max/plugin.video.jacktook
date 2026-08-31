@@ -548,6 +548,10 @@ def _resolve_cached_source(source: Any, params: Mapping[str, Any]):
 
 
 def _handle_super_quick_play(params: dict) -> bool:
+    if params.get("force_select"):
+        kodilog("Super quick play: force_select requested, skipping cached shortcut")
+        return False
+
     if not get_setting("super_quick_play", False):
         kodilog("Super quick play disabled")
         return False
@@ -570,6 +574,23 @@ def _handle_super_quick_play(params: dict) -> bool:
         return False
 
     def play_cached_source() -> bool:
+        def play(data: dict) -> None:
+            for key in (
+                "simkl_session_id",
+                "simkl_resume_progress",
+                "trakt_playback_id",
+                "trakt_resume_progress",
+            ):
+                if key in params:
+                    data[key] = params[key]
+            player = JacktookPLayer()
+            player.run(data=data)
+
+        cached_url = cached_torrent.get("url") if isinstance(cached_torrent, Mapping) else None
+        if isinstance(cached_url, str) and cached_url.startswith("plugin://"):
+            play(dict(cached_torrent))
+            return True
+
         try:
             playback_info = _resolve_cached_source(cached_torrent, params)
         except StremioPlaybackError as error:
@@ -587,17 +608,7 @@ def _handle_super_quick_play(params: dict) -> bool:
             notification(translation(90144))
             return True
 
-        for key in (
-            "simkl_session_id",
-            "simkl_resume_progress",
-            "trakt_playback_id",
-            "trakt_resume_progress",
-        ):
-            if key in params:
-                playback_info[key] = params[key]
-
-        player = JacktookPLayer()
-        player.run(data=playback_info)
+        play(playback_info)
         return True
 
     if get_setting("silent_resume", False):

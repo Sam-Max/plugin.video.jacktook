@@ -79,20 +79,22 @@ def test_super_quick_play_preserves_simkl_resume_metadata():
         "simkl_session_id": "9",
         "simkl_resume_progress": "50",
     }
-    playback_info = {"url": "https://stream.example/video"}
+    cached_playback_info = {"url": "plugin://plugin.video.jacktorr/play_magnet?magnet=x"}
     player = MagicMock()
 
     with patch(
         "lib.search.get_setting",
         side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
-    ), patch("lib.search.cache.get", return_value=MagicMock()), patch(
-        "lib.search._resolve_cached_source", return_value=playback_info
-    ), patch("lib.search.JacktookPLayer", return_value=player):
+    ), patch("lib.search.cache.get", return_value=cached_playback_info), patch(
+        "lib.search.JacktookPLayer", return_value=player
+    ):
         assert _handle_super_quick_play(params) is True
 
-    assert playback_info["simkl_session_id"] == "9"
-    assert playback_info["simkl_resume_progress"] == "50"
-    player.run.assert_called_once_with(data=playback_info)
+    played_data = player.run.call_args.kwargs["data"]
+    assert played_data["url"] == cached_playback_info["url"]
+    assert played_data["simkl_session_id"] == "9"
+    assert played_data["simkl_resume_progress"] == "50"
+    assert "simkl_session_id" not in cached_playback_info
 
 
 def test_super_quick_play_preserves_trakt_resume_metadata():
@@ -101,20 +103,62 @@ def test_super_quick_play_preserves_trakt_resume_metadata():
         "trakt_playback_id": "9",
         "trakt_resume_progress": "50",
     }
-    playback_info = {"url": "https://stream.example/video"}
+    cached_playback_info = {"url": "plugin://plugin.video.jacktorr/play_magnet?magnet=x"}
     player = MagicMock()
 
     with patch(
         "lib.search.get_setting",
         side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
-    ), patch("lib.search.cache.get", return_value=MagicMock()), patch(
-        "lib.search._resolve_cached_source", return_value=playback_info
-    ), patch("lib.search.JacktookPLayer", return_value=player):
+    ), patch("lib.search.cache.get", return_value=cached_playback_info), patch(
+        "lib.search.JacktookPLayer", return_value=player
+    ):
         assert _handle_super_quick_play(params) is True
 
-    assert playback_info["trakt_playback_id"] == "9"
-    assert playback_info["trakt_resume_progress"] == "50"
-    player.run.assert_called_once_with(data=playback_info)
+    played_data = player.run.call_args.kwargs["data"]
+    assert played_data["url"] == cached_playback_info["url"]
+    assert played_data["trakt_playback_id"] == "9"
+    assert played_data["trakt_resume_progress"] == "50"
+    assert "trakt_playback_id" not in cached_playback_info
+
+
+def test_super_quick_play_plays_resolved_plugin_locator_without_reclassifying():
+    params = {"ids": json.dumps({"tmdb_id": 123})}
+    cached_playback_info = {
+        "url": "plugin://plugin.video.jacktorr/play_magnet?magnet=abc",
+        "magnet": "magnet:?xt=urn:btih:abc",
+        "title": "Cached episode",
+    }
+    player = MagicMock()
+
+    with patch(
+        "lib.search.get_setting",
+        side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
+    ), patch("lib.search.cache.get", return_value=cached_playback_info), patch(
+        "lib.search._resolve_cached_source"
+    ) as resolve_cached_source, patch("lib.search.JacktookPLayer", return_value=player):
+        assert _handle_super_quick_play(params) is True
+
+    resolve_cached_source.assert_not_called()
+    played_data = player.run.call_args.kwargs["data"]
+    assert played_data["url"] == cached_playback_info["url"]
+    assert played_data["magnet"] == cached_playback_info["magnet"]
+
+
+def test_super_quick_play_skips_cache_when_force_select_requested():
+    params = {"ids": json.dumps({"tmdb_id": 123}), "force_select": True}
+    cache_get = MagicMock(return_value={"url": "plugin://plugin.video.jacktorr/play_magnet?magnet=abc"})
+    player = MagicMock()
+
+    with patch(
+        "lib.search.get_setting",
+        side_effect=lambda key, default=None: key in {"super_quick_play", "silent_resume"},
+    ), patch("lib.search.cache.get", cache_get), patch(
+        "lib.search.JacktookPLayer", return_value=player
+    ):
+        assert _handle_super_quick_play(params) is False
+
+    cache_get.assert_not_called()
+    player.run.assert_not_called()
 
 
 def test_run_search_entry_forwards_trakt_resume_to_source_selection():
