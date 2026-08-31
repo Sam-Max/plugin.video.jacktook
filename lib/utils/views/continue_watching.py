@@ -6,6 +6,8 @@ from xbmcplugin import setContent
 
 from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
+    Indexer,
+    IndexerType,
     format_season_episode,
     set_pluging_category,
     truncate_text,
@@ -39,6 +41,33 @@ def remove_continue_watching_item(params):
         executebuiltin("Container.Refresh")
 
 
+def _source_label(data):
+    """Best-effort human-readable source class for a stored playback payload."""
+    indexer = data.get("indexer", "")
+    name = data.get("name", "")
+    if indexer in (Indexer.JACKGRAM, Indexer.TELEGRAM) or name in (
+        Indexer.JACKGRAM,
+        Indexer.TELEGRAM,
+    ):
+        return str(indexer or name)
+    if data.get("indexer") == Indexer.EASYNEWS:
+        return "Easynews"
+    if data.get("debrid_type"):
+        return str(data["debrid_type"])
+    source_type = data.get("type", "")
+    if source_type == IndexerType.STREMIO_DEBRID:
+        return "Stremio"
+    if source_type == IndexerType.DEBRID:
+        return "Debrid"
+    if source_type == IndexerType.TORRENT:
+        return "Torrent"
+    if source_type == IndexerType.DIRECT:
+        return "Direct"
+    if data.get("is_torrent") or data.get("magnet") or data.get("info_hash"):
+        return "Torrent"
+    return ""
+
+
 def show_continue_watching():
     set_pluging_category(translation(90200))
     setContent(ADDON_HANDLE, "videos")
@@ -66,6 +95,10 @@ def show_continue_watching():
                 label = show_name or label_title
         else:
             label = label_title
+
+        source_label = _source_label(data)
+        if source_label:
+            label = f"{label} ({source_label})"
 
         list_item = make_list_item(label=label)
 
