@@ -1,4 +1,7 @@
+import json
 from unittest.mock import MagicMock
+
+import pytest
 
 from lib.utils.general.items_menus import (
     movie_items,
@@ -189,13 +192,68 @@ def test_discard_refreshes_only_after_successful_delete(monkeypatch):
     refresh.assert_called_once_with("Container.Refresh")
 
 
-def test_simkl_resume_delegates_to_standard_source_search(monkeypatch):
+def test_simkl_resume_resolves_external_ids_and_forces_rescrape(monkeypatch):
     from lib import navigation
 
     run_search_entry = MagicMock()
+    tmdb_metadata = MagicMock(
+        return_value={"external_ids": {"imdb_id": "tt7654321", "tvdb_id": 56789}}
+    )
     monkeypatch.setattr("lib.search.run_search_entry", run_search_entry)
-    params = {"query": "Movie", "simkl_session_id": "9", "simkl_resume_progress": "50"}
+    monkeypatch.setattr(navigation.TmdbClient, "_get_tmdb_metadata", tmdb_metadata)
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movie",
+        "ids": json.dumps({"tmdb_id": 123}),
+        "simkl_session_id": "9",
+        "simkl_resume_progress": "50",
+    }
 
     navigation.simkl_resume(params)
 
-    run_search_entry.assert_called_once_with(params)
+    tmdb_metadata.assert_called_once_with("movies", "movie", 123)
+    run_search_entry.assert_called_once()
+    search_params = run_search_entry.call_args.args[0]
+    assert search_params["rescrape"] is True
+    assert json.loads(search_params["ids"]) == {
+        "tmdb_id": 123,
+        "imdb_id": "tt7654321",
+        "tvdb_id": 56789,
+    }
+
+
+@pytest.mark.parametrize(
+    "tmdb_response",
+    [None, RuntimeError("TMDB unavailable")],
+    ids=["metadata unavailable", "TMDB request fails"],
+)
+def test_simkl_resume_continues_search_when_tmdb_metadata_is_unavailable(
+    monkeypatch, tmdb_response
+):
+    from lib import navigation
+
+    run_search_entry = MagicMock()
+    tmdb_metadata = MagicMock()
+    if isinstance(tmdb_response, Exception):
+        tmdb_metadata.side_effect = tmdb_response
+    else:
+        tmdb_metadata.return_value = tmdb_response
+    monkeypatch.setattr("lib.search.run_search_entry", run_search_entry)
+    monkeypatch.setattr(navigation.TmdbClient, "_get_tmdb_metadata", tmdb_metadata)
+    params = {
+        "query": "Movie",
+        "mode": "movies",
+        "media_type": "movie",
+        "ids": json.dumps({"tmdb_id": 123}),
+        "simkl_session_id": "9",
+        "simkl_resume_progress": "50",
+    }
+
+    navigation.simkl_resume(params)
+
+    run_search_entry.assert_called_once()
+    search_params = run_search_entry.call_args.args[0]
+    assert search_params["query"] == "Movie"
+    assert search_params["rescrape"] is True
+    assert json.loads(search_params["ids"]) == {"tmdb_id": 123}

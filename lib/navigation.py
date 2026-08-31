@@ -1502,7 +1502,7 @@ def simkl_update_history(params):
 def simkl_resume(params):
     from lib.search import run_search_entry
 
-    run_search_entry(params)
+    run_search_entry(_prepare_resume_search_params(params))
 
 
 def simkl_discard_playback(params):
@@ -1520,7 +1520,51 @@ def trakt_continue_watching(params):
 def trakt_resume(params):
     from lib.search import run_search_entry
 
-    run_search_entry(params)
+    run_search_entry(_prepare_resume_search_params(params))
+
+
+def _prepare_resume_search_params(params):
+    """Prepare params coming from a Trakt/Simkl "continue watching" resume
+    for a reliable search.
+
+    Two problems fixed here:
+
+    1. The playback items built by TraktScrobble.get_playback() and
+       SimklClient.get_playback() never set "rescrape", so resuming an
+       episode/movie could silently return a stale (possibly empty)
+       cached search result instead of searching again.
+    2. Those same items only carry a bare {"tmdb_id": ...} in "ids" -
+       no imdb_id/tvdb_id at all. Sources that match by IMDB id (e.g.
+       Stremio addons like Torrentio) then find nothing, even though a
+       normal search for the same title works fine. We resolve the
+       missing ids from TMDB before searching, same as rescrape_tmdb_media
+       already does for the regular "Scrape again" context menu action.
+    """
+    import json
+
+    from lib.utils.general.utils import safe_json_loads
+
+    params = dict(params)
+    ids = safe_json_loads(params.get("ids")) or {}
+
+    if ids.get("tmdb_id") and not ids.get("imdb_id"):
+        try:
+            from lib.clients.tmdb.tmdb import TmdbClient
+
+            mode = params.get("mode", "")
+            media_type = params.get("media_type", "")
+            tmdb_obj = TmdbClient._get_tmdb_metadata(mode, media_type, ids["tmdb_id"])
+            external_ids = (tmdb_obj or {}).get("external_ids") or {}
+            if external_ids.get("imdb_id"):
+                ids["imdb_id"] = external_ids["imdb_id"]
+            if external_ids.get("tvdb_id"):
+                ids["tvdb_id"] = external_ids["tvdb_id"]
+        except Exception as error:
+            kodilog(f"resume: failed to resolve imdb/tvdb id from tmdb_id: {error}")
+
+    params["ids"] = json.dumps(ids)
+    params["rescrape"] = True
+    return params
 
 
 def trakt_discard_playback(params):
