@@ -96,7 +96,7 @@ def library_menu(params):
 def continue_watching_menu(params):
     from lib.utils.views.continue_watching import show_continue_watching
 
-    show_continue_watching()
+    show_continue_watching(params)
 
 
 def remove_from_continue_watching(params):

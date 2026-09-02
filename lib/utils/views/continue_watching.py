@@ -68,20 +68,33 @@ def _source_label(data):
     return ""
 
 
-def show_continue_watching():
+def show_continue_watching(params=None):
+    if params is None:
+        params = {}
+
     set_pluging_category(translation(90200))
     setContent(ADDON_HANDLE, "videos")
+
+    per_page = 10
+    page = int(params.get("page", 1))
 
     all_items = list(reversed(PickleDatabase().get_key("jt:lfh").items()))
     items = sorted(all_items, key=parse_time, reverse=True)
 
+    # Filter by progress before slicing so pages stay dense
+    filtered_items = []
+    for title, data in items:
+        progress = float(data.get("progress", 0))
+        if 5 < progress < 90:
+            filtered_items.append((title, data))
+
+    total = len(filtered_items)
+    start = (page - 1) * per_page
+    end = start + per_page
+    items = filtered_items[start:end]
+
     directory_items = []
     for title, data in items:
-        # Check progress
-        progress = float(data.get("progress", 0))
-        if progress <= 5 or progress >= 90:
-            continue
-
         tv_data = data.get("tv_data", {})
 
         label_title = data.get("title", "")
@@ -144,6 +157,16 @@ def show_continue_watching():
         url = build_url("play_media", data=json.dumps(data))
 
         directory_items.append((url, list_item, False))
+
+    # "Next Page (N more)"
+    if end < total:
+        total_pages = -(-total // per_page)
+        remaining_pages = total_pages - page
+        list_item = make_list_item(label=f"Next Page ({remaining_pages} more)")
+        list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
+        directory_items.append(
+            (build_url("continue_watching_menu", page=page + 1), list_item, True)
+        )
 
     add_directory_items_batch(directory_items)
 
