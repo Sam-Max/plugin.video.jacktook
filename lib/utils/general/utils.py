@@ -915,6 +915,9 @@ def build_media_metadata(ids, mode: str) -> dict:
 
 def set_watched_file(data):
     title = data.get("title", "")
+    if isinstance(title, str):
+        title = unquote(title)
+        data["title"] = title
     is_torrent = data.get("is_torrent", False)
     is_direct = data.get("type", "") == IndexerType.DIRECT
     is_stremio = data.get("type", "") == IndexerType.STREMIO_DEBRID
@@ -935,6 +938,11 @@ def set_watched_file(data):
     data["timestamp"] = datetime.now().strftime("%a, %d %b %Y %I:%M %p")
 
     pickle_db.set_item(key="jt:lfh", subkey=title, value=data)
+
+
+def clear_continue_watching_history():
+    """Clear all Continue Watching entries from the shared database."""
+    pickle_db.set_key("jt:lfh", {})
 
 
 def set_watched_title(title, ids, mode, tg_data="", media_type="", library_data=None):

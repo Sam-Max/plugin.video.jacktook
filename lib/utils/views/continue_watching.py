@@ -1,5 +1,6 @@
 import json
 import os
+from urllib.parse import unquote
 
 from xbmc import executebuiltin
 from xbmcplugin import setContent
@@ -8,6 +9,7 @@ from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     Indexer,
     IndexerType,
+    clear_continue_watching_history,
     format_season_episode,
     set_pluging_category,
     truncate_text,
@@ -20,6 +22,7 @@ from lib.utils.kodi.utils import (
     build_url,
     end_of_directory,
     make_list_item,
+    notification,
     translation,
 )
 from lib.utils.views.last_files import add_last_files_context_menu, parse_time
@@ -36,6 +39,11 @@ def has_continue_watching_items():
 
 def remove_continue_watching_item(params):
     title = params.get("title")
+    if title == "__all__":
+        clear_continue_watching_history()
+        notification(translation(91001))
+        executebuiltin("Container.Refresh")
+        return
     if title:
         PickleDatabase().delete_item(key="jt:lfh", subkey=title)
         executebuiltin("Container.Refresh")
@@ -94,7 +102,13 @@ def show_continue_watching(params=None):
     items = filtered_items[start:end]
 
     directory_items = []
+
     for title, data in items:
+        label_title = data.get("title", "")
+        if isinstance(label_title, str):
+            data = dict(data)
+            data["title"] = unquote(label_title)
+
         tv_data = data.get("tv_data", {})
 
         label_title = data.get("title", "")
@@ -149,6 +163,12 @@ def show_continue_watching(params=None):
             (
                 translation(90206),
                 f"RunPlugin({build_url('remove_continue_watching', title=title)})",
+            )
+        )
+        context_menu.append(
+            (
+                translation(90999),
+                f"RunPlugin({build_url('remove_continue_watching', title='__all__')})",
             )
         )
         list_item.addContextMenuItems(context_menu)

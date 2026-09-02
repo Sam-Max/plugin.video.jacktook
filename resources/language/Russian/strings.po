@@ -4513,3 +4513,11 @@ msgstr "MDbList"
 msgctxt "#90964"
 msgid "The installed version is newer than the version published in the repository."
 msgstr "Установленная версия новее версии, опубликованной в репозитории."
+
+msgctxt "#90999"
+msgid "Clear Continue Watching"
+msgstr "Очистить «Продолжить просмотр»"
+
+msgctxt "#91001"
+msgid "Continue Watching cleared"
+msgstr "«Продолжить просмотр» очищен"
