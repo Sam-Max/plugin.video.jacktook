@@ -600,6 +600,69 @@ def test_stremio_indexed_debrid_torrent_reaches_legacy_resolution(
 def test_malformed_nested_metadata_with_top_level_file_index_rejects_before_resolution(
     monkeypatch, metadata_key
 ):
+def test_indexed_debrid_torrent_resume_uses_direct_url_without_file_index(monkeypatch):
+    source = {
+        "addonKey": "org.example.addon|https://example.com",
+        "stremioMetadata": _supported_hash_payload(fileIdx=3, debridType=DebridType.RD),
+        "stremio_metadata": {"file_idx": 3, "debrid_type": DebridType.RD},
+    }
+    debrid_payloads = []
+
+    def resolve_debrid(data):
+        debrid_payloads.append(data)
+        data["url"] = "https://debrid.example/movie.mkv"
+        return data
+
+    monkeypatch.setattr(search, "resolve_playback_url", resolve_debrid)
+
+    resolved = search._resolve_stremio_source(source)
+
+    assert len(debrid_payloads) == 1
+    assert debrid_payloads[0]["file_idx"] == 3
+    assert debrid_payloads[0]["stremio_metadata"]["file_idx"] == 3
+    assert debrid_payloads[0]["stremio_metadata"]["fileIdx"] == 3
+    assert "file_idx" not in resolved
+    assert "fileIdx" not in resolved
+    assert "file_idx" not in resolved["stremio_metadata"]
+    assert "fileIdx" not in resolved["stremio_metadata"]
+
+    resumed_payloads = []
+    monkeypatch.setattr(
+        player_utils,
+        "resolve_playback_url",
+        lambda data: resumed_payloads.append(data) or data,
+    )
+
+    resumed = stremio_playback.resolve_stremio_playback_url(resolved)
+
+    assert resumed == resolved
+    assert resumed_payloads == [resolved]
+    assert len(debrid_payloads) == 1
+
+
+@pytest.mark.parametrize("debrid_type", [[], {}], ids=["list", "mapping"])
+def test_malformed_stremio_debrid_type_does_not_fall_back_to_torrent_client(
+    monkeypatch, debrid_type
+):
+    torrent_calls = []
+    monkeypatch.setattr(
+        player_utils,
+        "get_torrent_url",
+        lambda data: torrent_calls.append(data) or "plugin://torrent-client/play",
+    )
+
+    resolved = stremio_playback.resolve_stremio_playback_url(
+        {
+            "info_hash": INFO_HASH,
+            "magnet": f"magnet:?xt=urn:btih:{INFO_HASH}",
+            "debrid_type": debrid_type,
+            "is_torrent": True,
+        }
+    )
+
+    assert resolved is None
+    assert torrent_calls == []
+
     source = {
         "addonKey": "org.example.addon|https://example.com",
         "info_hash": INFO_HASH,

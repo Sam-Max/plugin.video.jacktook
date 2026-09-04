@@ -542,8 +542,8 @@ def get_debrid_pack_direct_url(debrid_type, data) -> Optional[Dict[str, Any]]:
     return get_debrid_helper(debrid_type).get_pack_link(data)
 
 
-def is_supported_debrid_type(debrid_type: str) -> bool:
-    return debrid_type in DEBRID_HELPERS
+def is_supported_debrid_type(debrid_type: Any) -> bool:
+    return isinstance(debrid_type, str) and debrid_type in DEBRID_HELPERS
 
 
 def process_external_cache(data: dict, debrid: str, token: str, url: str):

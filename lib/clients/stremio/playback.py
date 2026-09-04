@@ -290,6 +290,21 @@ def resolve_stremio_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any
     return resolve_playback_url(canonical_data)
 
 
+def strip_stremio_file_index(data: Mapping[str, Any]) -> Dict[str, Any]:
+    """Remove file-index aliases after a Stremio torrent becomes a direct URL."""
+    sanitized = dict(data)
+    for key in ("file_idx", "fileIdx"):
+        sanitized.pop(key, None)
+    for key in ("stremio_metadata", "stremioMetadata"):
+        metadata = sanitized.get(key)
+        if isinstance(metadata, Mapping):
+            metadata = dict(metadata)
+            metadata.pop("file_idx", None)
+            metadata.pop("fileIdx", None)
+            sanitized[key] = metadata
+    return sanitized
+
+
 def payload_from_torrent(
     source: Any, context: Optional[Mapping[str, Any]] = None
 ) -> Dict[str, Any]:
@@ -472,6 +487,10 @@ def resolve(
             resolved["url"] = legacy_result
         elif isinstance(legacy_result, Mapping):
             resolved.update(legacy_result)
+        if candidate.metadata.get("_stremio_debrid_intent") and _valid_http_url(
+            resolved.get("url", "")
+        ):
+            resolved = strip_stremio_file_index(resolved)
     return resolved
 
 

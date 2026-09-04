@@ -84,7 +84,7 @@ def _build_elementum_movie_file_match(title: Any) -> str:
 
 def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     indexer_type: str = data.get("type", "")
-    debrid_type: str = data.get("debrid_type", "")
+    debrid_type: Any = data.get("debrid_type", "")
     is_pack: bool = data.get("is_pack", False)
 
     if indexer_type in [IndexerType.DIRECT, IndexerType.STREMIO_DEBRID]:
@@ -124,6 +124,9 @@ def resolve_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         debrid_url = get_debrid_url(data, debrid_type, is_pack)
         if debrid_url:
             return data
+        return None
+
+    if not isinstance(debrid_type, str):
         return None
 
     addon_url = get_torrent_url(data)
