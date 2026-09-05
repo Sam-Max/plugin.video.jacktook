@@ -30,9 +30,7 @@ def test_add_task_if_enabled_managed_submits_enabled_task(monkeypatch):
         RecordingManager(), "stremio_enabled", "stremio", perform_search, "dialog", "query"
     )
 
-    assert submitted == [
-        (("Stremio", "stremio", perform_search, "stremio", "dialog", "query"), {})
-    ]
+    assert submitted == [(("Stremio", "stremio", perform_search, "stremio", "dialog", "query"), {})]
 
 
 def test_subtitle_addon_selector_preselects_persisted_instance_key(monkeypatch):
@@ -73,9 +71,9 @@ def test_subtitle_addon_selector_preselects_persisted_instance_key(monkeypatch):
     monkeypatch.setattr(
         addon_selection,
         "get_setting_fresh",
-        lambda setting_id, default=None: selected_key
-        if setting_id == "stremio_subtitle_addons"
-        else default,
+        lambda setting_id, default=None: (
+            selected_key if setting_id == "stremio_subtitle_addons" else default
+        ),
     )
     monkeypatch.setattr(addon_selection.xbmcgui, "Dialog", _Dialog)
 
@@ -325,7 +323,9 @@ def test_managed_search_submits_and_executes_enabled_stremio_task(monkeypatch):
         "get_setting",
         lambda key, default=None: {"stremio_enabled": True}.get(key, default),
     )
-    monkeypatch.setattr(search, "_is_source_enabled", lambda indexer, *_args: indexer == search.Indexer.STREMIO)
+    monkeypatch.setattr(
+        search, "_is_source_enabled", lambda indexer, *_args: indexer == search.Indexer.STREMIO
+    )
     monkeypatch.setattr(search, "get_selected_stream_addons", lambda: [addon])
     monkeypatch.setattr(search, "get_addon_display_name", lambda _addon: "Kodi Alias")
     monkeypatch.setattr(search, "_perform_search", perform_search)
@@ -402,9 +402,7 @@ def test_stremio_catalog_alias_uses_addon_type_and_catalog_id(monkeypatch):
 
     assert helpers.get_catalog_display_name(addon, movie_catalog) == "Movies Alias"
     assert helpers.get_catalog_display_name(addon, series_catalog) == "Popular Shows"
-    assert stored[STREMIO_CATALOG_ALIASES_KEY] == {
-        f"{addon.key()}|movie|popular": "Movies Alias"
-    }
+    assert stored[STREMIO_CATALOG_ALIASES_KEY] == {f"{addon.key()}|movie|popular": "Movies Alias"}
 
 
 def test_rename_stremio_addon_empty_input_keeps_alias_and_clear_is_explicit(monkeypatch):
@@ -656,7 +654,9 @@ def test_list_catalog_next_page_preserves_genre(monkeypatch):
         for i in range(CATALOG_PAGE_SIZE)
     ]
 
-    monkeypatch.setattr(catalog_menus, "catalogs_get_cache", lambda *args, **kwargs: {"metas": metas})
+    monkeypatch.setattr(
+        catalog_menus, "catalogs_get_cache", lambda *args, **kwargs: {"metas": metas}
+    )
     monkeypatch.setattr(catalog_menus, "_catalog_supports_extra", lambda *args, **kwargs: True)
     monkeypatch.setattr(catalog_menus, "add_meta_items", lambda *args, **kwargs: None)
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args, **kwargs: None)
@@ -831,9 +831,7 @@ def test_list_stremio_catalogs_uses_batch_add(monkeypatch):
             return "https://example.com/addon"
 
     monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
-    monkeypatch.setattr(
-        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
-    )
+    monkeypatch.setattr(catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name)
     monkeypatch.setattr(
         catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name or catalog.id
     )
@@ -915,7 +913,9 @@ def test_list_stremio_catalogs_adds_one_global_genres_folder(monkeypatch):
     )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
-    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(
+        catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items)
+    )
 
     catalog_menus.list_stremio_catalogs(menu_type="movie")
 
@@ -979,7 +979,9 @@ def test_list_catalog_genres_combines_declared_options_using_first_catalog(monke
     )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
-    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(
+        catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items)
+    )
     monkeypatch.setattr(catalog_menus, "end_of_directory", lambda: None)
 
     catalog_menus.list_catalog_genres(
@@ -1036,7 +1038,9 @@ def test_list_stremio_catalogs_omits_genre_entries_without_declared_genre(monkey
     )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "build_url", lambda action, **kwargs: (action, kwargs))
-    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(
+        catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items)
+    )
 
     catalog_menus.list_stremio_catalogs(menu_type="movie")
 
@@ -1075,13 +1079,13 @@ def test_list_stremio_catalogs_uses_catalog_alias(monkeypatch):
             return "https://example.com/addon"
 
     monkeypatch.setattr(catalog_menus, "get_selected_catalogs_addons", lambda: [_Addon()])
-    monkeypatch.setattr(
-        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
-    )
+    monkeypatch.setattr(catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name)
     monkeypatch.setattr(catalog_menus, "get_catalog_display_name", lambda *_args: "Renamed")
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
     monkeypatch.setattr(catalog_menus, "build_url", lambda action=None, **kwargs: action)
-    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(
+        catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items)
+    )
 
     catalog_menus.list_stremio_catalogs(menu_type="series", sub_menu_type="series")
 
@@ -1128,14 +1132,14 @@ def test_channel_catalog_is_listed_and_navigates_to_tv_streams(monkeypatch):
             return "https://example.com/addon"
 
     monkeypatch.setattr(catalog_menus, "get_selected_tv_addons", lambda: [_Addon()])
-    monkeypatch.setattr(
-        catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name
-    )
+    monkeypatch.setattr(catalog_menus, "get_addon_display_name", lambda addon: addon.manifest.name)
     monkeypatch.setattr(
         catalog_menus, "get_catalog_display_name", lambda addon, catalog: catalog.name
     )
     monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": _ListItem(label))
-    monkeypatch.setattr(catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items))
+    monkeypatch.setattr(
+        catalog_menus, "add_directory_items_batch", lambda items: added_batches.append(items)
+    )
     monkeypatch.setattr(catalog_menus, "setContent", lambda *args: None)
     monkeypatch.setattr(catalog_menus, "get_addon_by_base_url", lambda *args: None)
     monkeypatch.setattr(catalog_menus, "addon_has_meta", lambda *args, **kwargs: False)
@@ -1151,7 +1155,7 @@ def test_channel_catalog_is_listed_and_navigates_to_tv_streams(monkeypatch):
     catalog_menus.add_meta_items(
         [
             MetaPreview(
-                id=None,
+                id="",
                 type="channel",
                 name="News Live",
                 poster="",
@@ -1311,9 +1315,7 @@ def test_stremio_addon_aliases_are_part_of_result_cache_scopes(monkeypatch):
     monkeypatch.setattr(search, "get_setting", lambda *_args: False)
 
     first_scope = search._build_search_cache_scope()
-    stored[STREMIO_ADDON_ALIASES_KEY] = {
-        "org.example.addon|https://example.com": "Alias Two"
-    }
+    stored[STREMIO_ADDON_ALIASES_KEY] = {"org.example.addon|https://example.com": "Alias Two"}
 
     assert search._build_search_cache_scope() != first_scope
 
@@ -1327,9 +1329,7 @@ def test_stremio_addon_aliases_are_part_of_debrid_cache_scope(monkeypatch):
     monkeypatch.setattr(debrid_utils, "get_setting", lambda *_args: False)
 
     first_scope = debrid_utils._build_debrid_cache_scope()
-    stored[STREMIO_ADDON_ALIASES_KEY] = {
-        "org.example.addon|https://example.com": "Alias Two"
-    }
+    stored[STREMIO_ADDON_ALIASES_KEY] = {"org.example.addon|https://example.com": "Alias Two"}
 
     assert debrid_utils._build_debrid_cache_scope() != first_scope
 
@@ -1886,7 +1886,7 @@ def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
 
     assert captured["action"] == "play_media"
     assert captured["data"] == {
-        "mode": "movie",
+        "mode": "movies",
         "source": "stremio_catalog",
         "title": "Movie Stream",
         "overview": "Stream plot",
@@ -1900,3 +1900,129 @@ def test_list_stremio_movie_builds_enriched_play_media_payload(monkeypatch):
         "url": "https://video",
         "type": catalog_menus.IndexerType.DIRECT,
     }
+
+
+def test_list_stremio_movie_resolves_imdb_only_identity_for_tracking(monkeypatch):
+    captured = {}
+    tmdb_calls = []
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {
+            "streams": [
+                type(
+                    "Stream",
+                    (),
+                    {
+                        "title": "Movie Stream",
+                        "description": "Stream plot",
+                        "url": "https://video",
+                        "infoHash": "",
+                    },
+                )()
+            ]
+        },
+    )
+    monkeypatch.setattr(
+        catalog_menus,
+        "tmdb_get",
+        lambda endpoint, imdb_id: tmdb_calls.append((endpoint, imdb_id))
+        or type("FindResult", (), {"movie_results": [{"id": 550}]})(),
+    )
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="": MagicMock())
+    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: captured.update(action=action, data=json.loads(kwargs["data"]))
+        or "plugin://test",
+    )
+
+    catalog_menus.list_stremio_movie(
+        {
+            "addon_url": "https://example.com/addon",
+            "catalog_type": "movie",
+            "meta_id": "custom:movie",
+            "ids": json.dumps({"imdb_id": "tt0133093", "original_id": "custom:movie"}),
+        }
+    )
+
+    assert captured["action"] == "play_media"
+    assert captured["data"]["mode"] == "movies"
+    assert captured["data"]["ids"]["tmdb_id"] == "550"
+    assert tmdb_calls == [("find_by_imdb_id", "tt0133093")]
+
+
+def test_stremio_catalog_tracking_ignores_malformed_remote_ids(monkeypatch):
+    tmdb_calls = []
+    monkeypatch.setattr(
+        catalog_menus, "tmdb_get", lambda *args: tmdb_calls.append(args) or None
+    )
+
+    for ids in (
+        {"imdb_id": 123},
+        {"imdb_id": ["tt123"]},
+        {"tmdb_id": "\u00b2"},
+        {"tmdb_id": "9" * 5000},
+    ):
+        playback_data = {"mode": "movie", "meta_id": "custom:movie", "ids": ids}
+        catalog_menus._apply_stremio_catalog_tracking_identity(
+            playback_data, {"media_kind": "movie"}
+        )
+        assert playback_data["mode"] == "movie"
+        assert playback_data["ids"] == ids
+
+    assert tmdb_calls == []
+
+
+def test_list_stremio_movie_without_ids_remains_untracked_without_title_search(monkeypatch):
+    captured = {}
+    tmdb_calls = []
+
+    monkeypatch.setattr(
+        catalog_menus,
+        "catalogs_get_cache",
+        lambda *args, **kwargs: {
+            "streams": [
+                type(
+                    "Stream",
+                    (),
+                    {
+                        "title": "Custom Stream",
+                        "description": "Stream plot",
+                        "url": "https://video",
+                        "infoHash": "",
+                    },
+                )()
+            ]
+        },
+    )
+    monkeypatch.setattr(catalog_menus, "tmdb_get", lambda endpoint, *args: tmdb_calls.append(endpoint))
+    monkeypatch.setattr(catalog_menus, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "end_of_directory", lambda *args, **kwargs: None)
+    monkeypatch.setattr(catalog_menus, "make_list_item", lambda label="", path="": MagicMock())
+    monkeypatch.setattr(catalog_menus, "addDirectoryItem", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        catalog_menus,
+        "build_url",
+        lambda action, **kwargs: captured.update(action=action, data=json.loads(kwargs["data"]))
+        or "plugin://test",
+    )
+
+    catalog_menus.list_stremio_movie(
+        {
+            "addon_url": "https://example.com/addon",
+            "catalog_type": "movie",
+            "meta_id": "custom:movie",
+            "title": "Unidentified Custom Movie",
+            "ids": json.dumps({"original_id": "custom:movie"}),
+        }
+    )
+
+    assert captured["action"] == "play_media"
+    assert captured["data"]["mode"] == "movie"
+    assert captured["data"]["ids"] == {"original_id": "custom:movie"}
+    assert "search_movie" not in tmdb_calls

@@ -1135,6 +1135,66 @@ def _stremio_catalog_param(params, key, default):
     return parsed if isinstance(parsed, type(default)) else default
 
 
+def _has_positive_int_id(ids, key):
+    ids = ids if isinstance(ids, Mapping) else {}
+    value = ids.get(key)
+    if isinstance(value, str):
+        value = value.strip()
+        if not value.isascii() or not value.isdigit():
+            return False
+        try:
+            return int(value) > 0
+        except (TypeError, ValueError):
+            return False
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, int) and value > 0
+
+
+def _resolve_stremio_catalog_tmdb_id(ids):
+    """Resolve a TMDB id for movie catalog playback without guessing by title."""
+    ids = ids if isinstance(ids, Mapping) else {}
+    if _has_positive_int_id(ids, "tmdb_id"):
+        return str(ids.get("tmdb_id")).strip()
+
+    imdb_id = ids.get("imdb_id")
+    if not isinstance(imdb_id, str) or not imdb_id.startswith("tt"):
+        return ""
+
+    res = tmdb_get("find_by_imdb_id", imdb_id)
+    movie_results = getattr(res, "movie_results", [])
+    if movie_results:
+        tmdb_id = movie_results[0].get("id", "")
+        if _has_positive_int_id({"tmdb_id": tmdb_id}, "tmdb_id"):
+            return str(tmdb_id).strip()
+
+    return ""
+
+
+def _apply_stremio_catalog_tracking_identity(playback_data, params):
+    """Give movie catalog stream payloads a canonical tracking identity.
+
+    The player only records progress/scrobbles when the payload carries
+    ``mode == "movies"`` plus a positive integer ``tmdb_id``.
+    """
+    if params.get("media_kind") != "movie":
+        return
+
+    meta_id = str(playback_data.get("meta_id") or "")
+    if meta_id.startswith(("movie:placeholder-", "tv:placeholder-")):
+        return
+
+    ids = playback_data.get("ids")
+    tmdb_id = _resolve_stremio_catalog_tmdb_id(ids)
+    if not tmdb_id:
+        return
+
+    playback_data["mode"] = "movies"
+    resolved_ids = dict(ids) if isinstance(ids, Mapping) else {}
+    resolved_ids["tmdb_id"] = tmdb_id
+    playback_data["ids"] = resolved_ids
+
+
 def _stremio_catalog_source(stream):
     if isinstance(stream, Mapping):
         return stream
@@ -1206,6 +1266,10 @@ def _stremio_catalog_playback_data(stream, params):
         "catalog_type": params.get("catalog_type", ""),
         "meta_id": params.get("meta_id", ""),
     }
+
+    # Tracking identity (scrobble / continue-watching / progress): catalog
+    _apply_stremio_catalog_tracking_identity(playback_data, params)
+
     if params.get("catalog_type") == "channel":
         playback_data["is_live_tv"] = True
     elif isinstance(playback_data["meta_id"], str) and playback_data["meta_id"].startswith(
@@ -1263,6 +1327,7 @@ def _stremio_catalog_playback_data(stream, params):
 
 def list_stremio_movie(params):
     params = _resolve_addon_params(params)
+    params["media_kind"] = "movie"
     response = catalogs_get_cache("list_stremio_movie", params)
     if not response:
         return
