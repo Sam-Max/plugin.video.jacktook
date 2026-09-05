@@ -1,16 +1,31 @@
+## 1.19.0
+- Continue Watching: Paginate the menu with 10 items per page, show the source label in item names, and add a clear-all context action.
+- Playback: Fix resume from Trakt/Simkl Continue Watching by resolving the missing imdb_id and forcing a rescrape, prevent Super Quick Play from overriding an already-resolved source selection and fall back to source select instead of failing silently on auto play
+- Webserver: Allow manifest hosts resolving to private IPs.
+- Stremio: Avoid unsafe catalog tracking identity.
+
+Spanish:
+- Continuar viendo: Paginado el menú con 10 elementos por página, mostrada la etiqueta de la fuente en los nombres de los elementos y añadida una acción contextual para borrar todo.
+- Reproducción: Corregida la reanudación desde Continuar viendo de Trakt/Simkl resolviendo el imdb_id faltante y forzando un nuevo escrapeo, evitado que Super Quick Play anule una selección de fuente ya resuelta y añadido un retorno a la selección de fuentes cuando la reproducción automática falla en silencio
+- Servidor web: Permitidos los hosts de manifiesto que resuelven a IPs privadas.
+- Stremio: Evitada la identidad de seguimiento de catálogo insegura.
+
 ## 1.18.0
+
 - Jackgram: Unify the Telegram menu with a test-connection action, add filtered search with its own history, keep Latest order as sent by the server, fix Raw Files pagination threshold, cache TMDB lookups, dedupe listings, and harden retry/401/429 handling, host validation, and the client search contract.
 - Easynews: Add result pagination, keep partial results on pagination errors, filter adult and password-protected posts, filter by title match, and validate credentials with normalized download URLs.
 - Playback: Restore next-episode handoff to the torrent client and select the matching movie file in Elementum multi-file torrents.
 - Maintenance: Replace deprecated UTC datetime usage.
 
 Spanish:
+
 - Jackgram: Unificado el menú de Telegram con una acción de prueba de conexión, añadida búsqueda filtrada con historial propio, conservado el orden Latest tal como lo envía el servidor, corregido el umbral de paginación de Raw Files, cacheadas las búsquedas de TMDB, deduplicados los listados y reforzados el reintento y el manejo de errores 401/429, la validación del host y el contrato de búsqueda del cliente.
 - Easynews: Añadida paginación de resultados, conservados los resultados parciales ante errores de paginación, filtrados los posts adultos y protegidos con contraseña, filtrado por coincidencia de título y validación de credenciales con URLs de descarga normalizadas.
 - Reproducción: Restaurada la entrega del siguiente episodio al cliente de torrents y selección del archivo de película correcto en torrents multiarchivo de Elementum.
 - Mantenimiento: Reemplazado el uso de datetime UTC obsoleto.
 
 ## 1.17.0
+
 - TorrServer: Add category browsing and richer torrent metadata.
 - Search: Add source management to direct search history and apply managed provider selections consistently.
 - Playback: Reuse Elementum multi-file packs when PlayNext starts the next episode.
@@ -19,6 +34,7 @@ Spanish:
 - Simkl: Add PIN authorization, playback scrobbling, remote Continue Watching, and TV/movie library integration with watched-status controls and incremental activity sync.
 
 Spanish:
+
 - TorrServer: Añadida navegación por categorías y metadatos de torrents más detallados.
 - Búsqueda: Añadida gestión de fuentes al historial de búsquedas directas y aplicación coherente de las selecciones de proveedores administrados.
 - Reproducción: Reutilizados paquetes multiarchivo de Elementum cuando PlayNext inicia el siguiente episodio.
@@ -27,6 +43,7 @@ Spanish:
 - Simkl: Añadida autorización por PIN, scrobbling de reproducción, Continuar viendo remoto e integración de biblioteca en los menús de TV y películas, con controles de estado visto y sincronización incremental de actividad.
 
 ## 1.16.0
+
 - Stremio: Add configurable addons, channel and genre catalog navigation, and integrated subtitle discovery and playback.
 - Sources: Add filtering by release group and improve Stremio source selection and catalog paging.
 - Library: Add Yamtrack synchronization for watched movies and episodes.
@@ -37,6 +54,7 @@ Spanish:
 - Trakt: Improve device authorization, token refresh, library synchronization, list paging, scrobbling, and recovery from temporary service errors.
 
 Spanish:
+
 - Stremio: Añadido soporte para addons configurables, navegación de catálogos por canales y géneros, y descubrimiento y reproducción integrados de subtítulos.
 - Fuentes: Añadido filtro por grupo de lanzamiento y mejorada la selección de fuentes Stremio y la paginación de catálogos.
 - Biblioteca: Añadida sincronización con Yamtrack para películas y episodios vistos.
@@ -47,6 +65,7 @@ Spanish:
 - Trakt: Mejoradas la autorización por dispositivo, la renovación de tokens, la sincronización de biblioteca, la paginación de listas, el scrobbling y la recuperación ante errores temporales del servicio.
 
 ## 1.15.0
+
 - Debrid: Add Offcloud provider with OAuth device-flow authentication.
 - Stremio: Add rename aliases support and reorganize related settings.
 - Sources: Make Manage Sources a strict whitelist so deselected providers are actually skipped.
@@ -54,6 +73,7 @@ Spanish:
 - Playback: Prefer torrent URLs when resolving sources for Elementum.
 
 Spanish:
+
 - Debrid: Añadido proveedor Offcloud con autenticación OAuth por flujo de dispositivo.
 - Stremio: Añadido soporte de alias renombrados y reorganizados ajustes relacionados.
 - Fuentes: Manage Sources ahora es una lista blanca estricta; los proveedores deseleccionados se omiten realmente.
@@ -61,14 +81,17 @@ Spanish:
 - Reproducción: Preferencia por URLs de torrent al resolver fuentes para Elementum.
 
 ## 1.14.1
+
 - Startup: Fix a Kodi startup crash caused by a Python runtime-incompatible `tuple[str, str]` type annotation.
 - Maintenance: Harden the Python 3.7 compatibility checker to catch similar runtime-incompatible typing patterns before release.
 
 Spanish:
+
 - Inicio: Corregido un crash al iniciar Kodi causado por una anotación de tipo `tuple[str, str]` incompatible con el runtime de Python.
 - Mantenimiento: Reforzado el verificador de compatibilidad con Python 3.7 para detectar patrones de typing incompatibles antes de publicar.
 
 ## 1.14.0
+
 - PlayNext: Add and stabilize the built-in Next Episode dialog with localized labels and safer playback transitions.
 - Search: Stabilize the detailed search status window on Windows/Kodi and reduce unsafe GUI threading during search startup.
 - Search: Fix episode-title searches containing ampersands and improve Stremio source-size parsing for European number formats.
@@ -76,6 +99,7 @@ Spanish:
 - Maintenance: Add developer tooling configuration and harden lint/type-cleanup issues for safer future changes.
 
 Spanish:
+
 - PlayNext: Añadido y estabilizado el diálogo integrado de Siguiente Episodio con etiquetas localizadas y transiciones de reproducción más seguras.
 - Búsqueda: Estabilizada la ventana detallada de estado de búsqueda en Windows/Kodi y reducidos riesgos de threading GUI al iniciar búsquedas.
 - Búsqueda: Corregidas búsquedas de episodios con ampersands y mejorado el parseo de tamaños de fuentes Stremio con formatos numéricos europeos.
@@ -83,6 +107,7 @@ Spanish:
 - Mantenimiento: Añadida configuración de herramientas de desarrollo y limpieza de lint/tipos para cambios futuros más seguros.
 
 ## 1.13.0
+
 - Downloads: Add a downloads manager for managing downloaded files inside Jacktook.
 - External Scraper: Add generic external scraper module support for addons like Magneto, CocoScrapers, etc, with settings and configuration dialog.
 - TMDB: Add configurable excluded languages filter for hiding content in selected original languages.
@@ -92,6 +117,7 @@ Spanish:
 - Localization: Fix missing and misaligned Romanian strings and improve Romanian translations.
 
 Spanish:
+
 - Descargas: Añadido gestor de descargas para administrar archivos descargados dentro de Jacktook.
 - Scraper Externo: Añadido soporte genérico de módulo de scraper externo para addons como Magneto, CocoScrapers, etc, con ajustes y diálogo de configuración.
 - TMDB: Añadido filtro configurable de idiomas excluidos para ocultar contenido en idiomas originales seleccionados.
@@ -112,6 +138,7 @@ Dacă îți place acest add-on, te rog să iei în considerare susținerea proie
 Se você gosta deste addon, considere apoiar o projeto com uma doação. As suas contribuições ajudam a continuar melhorando e mantendo-o. Obrigado!
 
 ## 1.12.0
+
 - Services: Add AutoStart service to automatically open Jacktook when Kodi boots (optional toggle in Settings > General > Startup).
 - Services: Add WidgetRefresh background service to periodically refresh Kodi widgets on a configurable timer (0-180 minutes) with optional notifications.
 - IMDb/Extras: Replace regex-based IMDb scraping with stable GraphQL API. Now fetches user reviews (with ratings, dates, and spoiler warnings), trivia, goofs/blunders, and structured parental guide (Sex & Nudity, Violence & Gore, Profanity, Alcohol/Drugs/Smoking, Frightening & Intense Scenes) in a single request.
@@ -122,6 +149,7 @@ Se você gosta deste addon, considere apoiar o projeto com uma doação. As suas
 - Localization: Add Romanian language support
 
 Spanish:
+
 - Servicios: Añadido servicio AutoStart para abrir Jacktook automaticamente al arrancar Kodi (interruptor opcional en Ajustes > General > Inicio).
 - Servicios: Añadido servicio WidgetRefresh en segundo plano para actualizar widgets de Kodi periodicamente con un temporizador configurable (0-180 minutos) y notificaciones opcionales.
 - IMDb/Extras: Reemplazado el scraper regex de IMDb por la API GraphQL estable. Ahora obtiene reviews de usuarios (con ratings, fechas y advertencias de spoilers), trivia, errores/blunders, y guia parental estructurada (Sexo y Desnudez, Violencia y Sangre, Lenguaje, Alcohol/Drogas/Tabaco, Escenas Aterradoras e Intensas) en una sola peticion.
@@ -131,8 +159,8 @@ Spanish:
 - TMDB/UI: Reordenado el item de contexto "manage sources" para mejor organizacion del menu.
 - Localizacion: Añadido soporte para rumano.
 
-
 ## 1.11.0
+
 - Source Manager: Add a dialog to enable or disable individual stream sources/providers.
 - Playback: Add Autoscrape Next Episode with resolved playback caching for faster next-episode playback.
 - Playback: Add stinger/post-credit scene notifications for movies with during-credits or after-credits scenes.
@@ -146,6 +174,7 @@ Spanish:
 - Localization: Rename Buffer and play to Play Torrent and add localized missing-metadata messages.
 
 Spanish:
+
 - Source Manager: Añadido dialogo para activar o desactivar fuentes/proveedores de streams individualmente.
 - Reproduccion: Añadido Autoscrape Next Episode con cache de reproduccion resuelta para acelerar la reproduccion del siguiente episodio.
 - Reproduccion: Añadidas notificaciones de escenas post-creditos/stinger para peliculas con escenas durante o despues de los creditos.
@@ -159,6 +188,7 @@ Spanish:
 - Localizacion: Renombrado Buffer and play a Play Torrent y añadidos mensajes localizados para metadata faltante.
 
 ## 1.10.0
+
 - Search: Add Search Title Language mode with localized first, English first, and English only ordering for Easynews/Jackett/Prowlarr context searches.
 - Search: Improve English-first fallback behavior to prioritize TMDB original titles before localized titles when English translations are missing.
 - Search/Cache: Scope search and debrid cache entries by active provider/addon state to avoid stale cross-provider reuse.
@@ -168,6 +198,7 @@ Spanish:
 - UX: Keep source focus cache outside addon settings to avoid unintended persistence issues.
 
 Spanish:
+
 - Busqueda: Añadido modo de idioma del titulo de busqueda con orden Localizado primero, Ingles primero y Solo ingles para busquedas de contexto en Easynews/Jackett/Prowlarr.
 - Busqueda: Mejorado el comportamiento de fallback en Ingles primero para priorizar el titulo original de TMDB antes del titulo localizado cuando falta traduccion al ingles.
 - Busqueda/Cache: Segmentada la cache de busqueda y debrid por estado activo de proveedores/addons para evitar reutilizacion obsoleta entre proveedores.
@@ -177,18 +208,21 @@ Spanish:
 - UX: Movida la cache de foco de fuente fuera de los ajustes del addon para evitar persistencia no deseada.
 
 ## 1.9.0
+
 - Subtitle: Add subtitle upload from device or from a local webserver.
 - Downloads: Preserve the file extension and episode info in downloaded filenames.
 - Torrents: Fix torrent file handoff to TorrServer for Jackett trackers like Filelist.
 - UI: Stop the fallback poster viewtype from overriding the user's preference.
 
 Spanish:
+
 - Subtitulos: Añade la subida de subtitulos desde el dispositivo o desde un servidor web local.
 - Descargas: Conserva la extension y la informacion del episodio en los nombres descargados.
 - Torrents: Corrige el envio de archivos torrent a TorrServer para trackers de Jackett como Filelist.
 - UI: Evita que la vista de poster de respaldo sobrescriba la preferencia del usuario.
 
 ## 1.8.0
+
 - Search: Add TMDB Search Modes for movies and episodes, including title editing, original title variants, and manual year/season/episode entry from TMDB context menus.
 - Performance: Rework menu and listing rendering with batch `addDirectoryItems`, `ListItem(offscreen=True)`, `reuselanguageinvoker`, cached navigator entries, and cached TMDB item metadata to improve navigation speed
 - TMDB: Remove repeated per-item image/detail rebuilding in major list views and avoid duplicate show-detail fetches in Calendar.
@@ -200,6 +234,7 @@ Spanish:
 - Moved view selection controls into the addon settings menu.
 
 Spanish:
+
 - Busqueda: Añadidos Modos de busqueda de TMDB para peliculas y episodios, incluyendo edicion de titulo, variantes con titulo original y entrada manual de ano/temporada/episodio desde los menus contextuales de TMDB.
 - Rendimiento: Rehecha la representacion de menus y listados con `addDirectoryItems` por lotes, `ListItem(offscreen=True)`, `reuselanguageinvoker`, cache de entradas del navigator y cache de metadatos TMDB por item para mejorar la velocidad de navegacion.
 - TMDB: Eliminada la reconstruccion repetida de imagenes/detalles por item en los principales listados y evitadas las consultas duplicadas de detalles de series en Calendar.
@@ -211,6 +246,7 @@ Spanish:
 - Movidos los controles de seleccion de vista al menu de ajustes del addon.
 
 ## 1.7.2
+
 - Trailers: Add YouTube trailer playback flow.
 - Playback: Add setting to skip the replay/resume dialog.
 - Settings: Add per-section view settings and improve description length handling by allowing `0` and applying truncation correctly.
@@ -221,6 +257,7 @@ Spanish:
 - Search: Remove Zilean search task handling.
 
 Spanish:
+
 - Trailers: Añadida la reproduccion de trailers de YouTube.
 - Reproduccion: Añadido ajuste para omitir el dialogo de reanudacion/repeticion.
 - Ajustes: Añadidos ajustes de vista por seccion y mejorado el manejo de la longitud de descripcion permitiendo `0` y aplicando truncado correctamente.
@@ -231,6 +268,7 @@ Spanish:
 - Busqueda: Eliminado el manejo de tareas de busqueda de Zilean.
 
 ## 1.7.1
+
 - Localization: Add Russian language support and expand/update translations for Spanish, Russian, and Portuguese.
 - UI: Replace remaining hardcoded dialog text with translated strings.
 - AllDebrid: Keep the authorization dialog open during reauthorization when a previous token exists.
@@ -239,6 +277,7 @@ Spanish:
 - Updater: Clarify automatic update action handling and preserve explicit `Ask`, `Notify`, and `None` modes.
 
 Spanish:
+
 - Localizacion: Añadido soporte para ruso y ampliadas/actualizadas las traducciones de espanol, ruso y portugues.
 - UI: Sustituidos los textos de dialogos que quedaban hardcodeados por cadenas traducidas.
 - AllDebrid: Mantiene abierto el dialogo de autorizacion durante la reautorizacion cuando existe un token previo.
@@ -247,6 +286,7 @@ Spanish:
 - Actualizador: Aclara el manejo de acciones de actualizacion automatica y mantiene los modos explicitos `Ask`, `Notify` y `None`.
 
 ## 1.7.0
+
 - Torrents: Add source actions to send torrents directly to Debrid cloud or TorrServer from the source select menu.
 - Torbox: Add Cloud downloads browsing.
 - Downloads: Fix `Download video` routing so source downloads start correctly.
@@ -257,6 +297,7 @@ Spanish:
 - Fix Prowlarr client search failing when receiving season and episode from TMDBHelper.
 
 Spanish:
+
 - Torrents: Añadidas acciones en la seleccion de fuentes para enviar torrents directamente a la nube de Debrid o a TorrServer.
 - Torbox: Añadida navegacion de descargas en Cloud.
 - Descargas: Corregido el enrutado de `Download video` para que las descargas desde fuentes se inicien correctamente.
@@ -267,6 +308,7 @@ Spanish:
 - Corregido el fallo en la búsqueda del cliente de Prowlarr al recibir temporada y episodio de TMDBHelper.
 
 ## 1.6.0
+
 - Search: Add English TMDB title fallback for Jackett and Prowlarr when localized titles return no matches.
 - Playback: Handle magnet redirects and torrent URLs from indexers more reliably.
 - Search: Fix result sorting across all sort modes.
@@ -274,6 +316,7 @@ Spanish:
 - UI: Hide peers and seeders metadata when a source is already cached.
 
 Spanish:
+
 - Busqueda: Anadido fallback al titulo en ingles de TMDB para Jackett y Prowlarr cuando los titulos localizados no devuelven coincidencias.
 - Reproduccion: Mejorado el manejo de redirecciones magnet y URLs torrent de indexadores.
 - Busqueda: Corregida la ordenacion de resultados en todos los modos de ordenacion.
@@ -281,6 +324,7 @@ Spanish:
 - UI: Ocultados los metadatos de peers y seeders cuando una fuente ya esta en cache.
 
 ## 1.5.3
+
 - Trakt: Add 'Continue Watching' option for movies to easily resume playback.
 - Trakt: Fix Unprocessable Entity (422) error when scrobbling items with no playback progress.
 - Trakt: Filter hidden items in Up Next and remove list limits.
@@ -290,6 +334,7 @@ Spanish:
 - Settings: Add Trakt credentials migration and update defaults.
 
 Spanish:
+
 - Trakt: Añadida opción 'Continuar Viendo' para películas para reanudar fácilmente la reproducción.
 - Trakt: Corregido error 'Unprocessable Entity' (422) al registrar progreso (scrobbling) de elementos sin avance.
 - Trakt: Filtrar elementos ocultos en Up Next y eliminar límites de listas.
@@ -298,29 +343,32 @@ Spanish:
 - Torbox: Corregido el análisis de la respuesta de autenticación.
 - Ajustes: Añadida migración de credenciales de Trakt y actualizados los valores por defecto.
 
-
 ## 1.5.2
+
 - Stremio: Distinguish addon instances by transport URL to support multiple accounts/configurations of the same addon with different flows.
 - Stremio: Support bypassing specific addon instances from Jacktook's filtering.
 - Settings: Reorganize backup options and add URL restore
 
 Spanish:
+
 - Stremio: Diferenciación de instancias de addons por URL de transporte para soportar múltiples cuentas/configuraciones del mismo addon con diferentes flujos.
 - Stremio: Soporte para omitir el filtrado de Jacktook en instancias específicas de addons.
 - Ajustes: Reorganización de las opciones de backup y añadido restauración por URL.
 
-
 ## 1.5.1
+
 - Stremio: Limit imported addons to account and custom sources and improved large catalog handling.
 - Settings: Simplify Stremio-related visibility rules, remove the old Torrentio settings group, and set safer disabled-by-default values for Stremio, torrents, and bypassed addons.
 - Localization: Fix conflicting string IDs.
 
 Spanish:
+
 - Stremio: Limitadas las importaciones de addons a las fuentes de cuenta y personalizadas y mejorado el manejo de catalogos grandes.
 - Ajustes: Simplificadas las reglas de visibilidad relacionadas con Stremio, eliminado el antiguo grupo de ajustes de Torrentio y establecidos valores mas seguros desactivados por defecto para Stremio, torrents y addons omitidos.
 - Localizacion: Corregidos los IDs de cadenas en conflicto.
 
 ## 1.5.0
+
 - Trakt Expansion: Added personal lists, search lists by keyword, create custom lists, favorites, account info.
 - Enhanced Trakt Sync: Improved scrobbling, progress tracking, and added periodic syncing service.
 - Added backup/reset tool for addon settings.
@@ -331,6 +379,7 @@ Spanish:
 - Other minor improvements.
 
 Spanish:
+
 - Expansión de Trakt: Añadidas listas personales, búsqueda de listas por palabra clave, creación de listas personalizadas, favoritos, información de la cuenta.
 - Sincronización mejorada de Trakt: Mejor scrobbling, seguimiento del progreso y servicio de sincronización periódica añadido.
 - Añadida herramienta de respaldo/restablecimiento de los ajustes del addon.
@@ -717,7 +766,7 @@ If you enjoy this addon, please consider supporting the project with a donation.
 
 - Added TMDB collections, languages, networks, and popular filters.
 - Added QR code dialog to simplify authentication for debrid services
-- Updated Stremio community addons URL to stable version (https://stremio-addons.net/).
+- Updated Stremio community addons URL to stable version (<https://stremio-addons.net/>).
 - Added notification messages to users when no stremio addons or catalogs are selected.
 - Added plugin categories for clearer window identification
 - Other minor improvements and fixes.
@@ -726,7 +775,7 @@ Spanish:
 
 - Se añadieron colecciones, idiomas, cadenas de televisión y filtros populares de TMDB.
 - Se añadió un diálogo de código QR para simplificar la autenticación de los servicios de debrid.
-- Se actualizó la URL de los addons de la comunidad de Stremio a la version estable (https://stremio-addons.net/).
+- Se actualizó la URL de los addons de la comunidad de Stremio a la version estable (<https://stremio-addons.net/>).
 - Se añadieron mensajes de notificación a los usuarios cuando no se seleccionan addons o catálogos de Stremio.
 - Se añadieron categorías para una identificación más clara de las ventanas.
 - Otras mejoras y correcciones menores.
@@ -738,7 +787,7 @@ If you enjoy this addon, please consider supporting the project with a donation.
 
 ## 0.11.0
 
-- Added support for Debrider (https://debrider.app/)
+- Added support for Debrider (<https://debrider.app/>)
 - Other minor improvements and fixes.
 
 ## 0.10.0
