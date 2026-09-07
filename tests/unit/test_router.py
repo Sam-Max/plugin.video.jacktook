@@ -120,6 +120,15 @@ def test_route_nuvio_dispatches_auth_action():
     nuvio_auth.assert_called_once_with({})
 
 
+def test_route_nuvio_dispatches_addon_selection_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.nuvio_toggle_addons") as nuvio_toggle_addons:
+        router._route_nuvio("nuvio_toggle_addons", {})
+
+    nuvio_toggle_addons.assert_called_once_with({})
+
+
 def test_route_simkl_dispatches_resume_action():
     router = _load_router_module()
 
@@ -166,6 +175,7 @@ def test_get_route_handler_returns_nuvio_dispatcher():
 
     assert router._get_route_handler("nuvio_auth") is router._route_nuvio
     assert router._get_route_handler("nuvio_logout") is router._route_nuvio
+    assert router._get_route_handler("nuvio_toggle_addons") is router._route_nuvio
 
 
 def test_route_downloads_dispatches_handle_download_file():

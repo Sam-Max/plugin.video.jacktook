@@ -1501,6 +1501,12 @@ def nuvio_logout(params):
     NuvioClient().logout()
 
 
+def nuvio_toggle_addons(params):
+    from lib.clients.nuvio.addon_selection import nuvio_toggle_addons as select_nuvio_addons
+
+    select_nuvio_addons(params)
+
+
 def simkl_continue_watching(params):
     from lib.utils.views.simkl_continue_watching import show_simkl_continue_watching
 

@@ -4597,3 +4597,23 @@ msgstr "Sincronizarea progresului de vizionare Nuvio este conectată."
 msgctxt "#91017"
 msgid "Choose Nuvio profile"
 msgstr "Alege profilul Nuvio"
+
+msgctxt "#91018"
+msgid "Nuvio: Addons"
+msgstr "Nuvio: Suplimente"
+
+msgctxt "#91019"
+msgid "Select Nuvio Addons"
+msgstr "Selectați suplimentele Nuvio"
+
+msgctxt "#91020"
+msgid "Select the enabled Nuvio addons to use for stream searches."
+msgstr "Selectați suplimentele Nuvio activate pentru a le utiliza la căutările de fluxuri."
+
+msgctxt "#91021"
+msgid "No usable Nuvio addons are available."
+msgstr "Nu sunt disponibile suplimente Nuvio utilizabile."
+
+msgctxt "#91022"
+msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
+msgstr "Suplimentele Nuvio nu au putut fi încărcate. Selecția salvată nu a fost modificată."

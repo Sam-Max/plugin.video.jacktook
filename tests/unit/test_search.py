@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from lib.api.stremio.addon_manager import AddonManager
 from lib.api.tmdbv3api.as_obj import AsObj
 from lib.clients.stremio.playback import StremioPlaybackError
 from lib.domain.torrent import TorrentStream
@@ -16,6 +17,7 @@ from lib.search import (
     _handle_super_quick_play,
     _is_source_enabled,
     _submit_search_tasks,
+    _submit_search_tasks_managed,
     run_search_entry,
     search_client,
     show_source_select,
@@ -28,6 +30,109 @@ def test_search_variant_values():
     assert SearchVariant.TITLE_YEAR == "title_year"
     assert SearchVariant.ORIGINAL_TITLE == "original_title"
     assert SearchVariant.ORIGINAL_TITLE_YEAR == "original_title_year"
+
+
+def test_nuvio_addons_join_stream_search_without_replacing_stremio_addons(monkeypatch):
+    stremio_addon = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "stremio.one",
+                    "name": "Stremio One",
+                    "types": ["movie"],
+                    "resources": ["stream"],
+                },
+                "transportUrl": "https://stremio.example/manifest.json",
+            }
+        ]
+    ).addons[0]
+    nuvio_addon = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "nuvio.one",
+                    "name": "Nuvio One",
+                    "types": ["movie"],
+                    "resources": ["stream"],
+                },
+                "transportUrl": "https://nuvio.example/private/manifest.json",
+                "transportName": "nuvio",
+            }
+        ]
+    ).addons[0]
+    submitted = []
+
+    class Executor:
+        def submit(self, *args, **kwargs):
+            submitted.append((args, kwargs))
+            return MagicMock()
+
+    monkeypatch.setattr(
+        "lib.search.get_setting", lambda key: key in {"stremio_enabled", "nuvio_enabled"}
+    )
+    monkeypatch.setattr("lib.search.get_selected_stream_addons", lambda: [stremio_addon])
+    monkeypatch.setattr("lib.search.get_selected_nuvio_stream_addons", lambda: [nuvio_addon])
+    monkeypatch.setattr("lib.search._is_source_enabled", lambda *_args, **_kwargs: True)
+
+    tasks = []
+    _submit_search_tasks(
+        Executor(),
+        tasks,
+        MagicMock(),
+        "Movie",
+        "movies",
+        "movies",
+        0,
+        0,
+        {"imdb_id": "tt123"},
+        "",
+        None,
+        "tt123",
+        False,
+    )
+
+    assert len(tasks) == 2
+    assert submitted[0][1]["scoped_addon_url"] == stremio_addon.url()
+    assert "addon_override" not in submitted[0][1]
+    assert submitted[1][1]["addon_override"] is nuvio_addon
+
+
+def test_nuvio_addons_join_managed_stream_search(monkeypatch):
+    nuvio_addon = AddonManager(
+        [
+            {
+                "manifest": {
+                    "id": "nuvio.one",
+                    "name": "Nuvio One",
+                    "types": ["movie"],
+                    "resources": ["stream"],
+                },
+                "transportUrl": "https://nuvio.example/private/manifest.json",
+                "transportName": "nuvio",
+            }
+        ]
+    ).addons[0]
+    manager = MagicMock()
+    monkeypatch.setattr("lib.search.get_setting", lambda key: key == "nuvio_enabled")
+    monkeypatch.setattr("lib.search.get_selected_nuvio_stream_addons", lambda: [nuvio_addon])
+    monkeypatch.setattr("lib.search._is_source_enabled", lambda *_args, **_kwargs: True)
+
+    _submit_search_tasks_managed(
+        manager,
+        MagicMock(),
+        "Movie",
+        "movies",
+        "movies",
+        0,
+        0,
+        {"imdb_id": "tt123"},
+        "",
+        None,
+        "tt123",
+    )
+
+    assert manager.submit_task.call_args.args[:2] == ("Nuvio: Nuvio One", Indexer.STREMIO)
+    assert manager.submit_task.call_args.kwargs["addon_override"] is nuvio_addon
 
 
 def test_process_results_suppresses_busy_dialog_when_requested():
@@ -146,7 +251,9 @@ def test_super_quick_play_plays_resolved_plugin_locator_without_reclassifying():
 
 def test_super_quick_play_skips_cache_when_force_select_requested():
     params = {"ids": json.dumps({"tmdb_id": 123}), "force_select": True}
-    cache_get = MagicMock(return_value={"url": "plugin://plugin.video.jacktorr/play_magnet?magnet=abc"})
+    cache_get = MagicMock(
+        return_value={"url": "plugin://plugin.video.jacktorr/play_magnet?magnet=abc"}
+    )
     player = MagicMock()
 
     with patch(
@@ -571,9 +678,9 @@ def test_run_search_entry_falls_back_to_source_selection_after_resolution_failur
         side_effect=StremioPlaybackError("resolution_failed", "Unable to resolve source."),
     ), patch("lib.search.build_media_metadata", return_value={}), patch(
         "lib.search.notification"
-    ) as notification_mock, patch("lib.search.source_select", return_value=True) as source_select_mock, patch(
-        "lib.search.cancel_playback"
-    ) as cancel_playback_mock:
+    ) as notification_mock, patch(
+        "lib.search.source_select", return_value=True
+    ) as source_select_mock, patch("lib.search.cancel_playback") as cancel_playback_mock:
         run_search_entry(params)
 
     notification_mock.assert_called_once_with("Unable to resolve source.")
@@ -739,15 +846,13 @@ def test_search_reconciles_new_settings_source_before_cache_and_eligibility():
     def setting_side_effect(key, default=None):
         return key == "jacktookburst_enabled"
 
-    with (
-        patch("lib.search.cache") as mock_cache,
-        patch("lib.search.get_setting", side_effect=setting_side_effect),
-        patch("lib.search.get_selected_stream_addons", return_value=[]),
-        patch("lib.search.close_busy_dialog"),
-        patch("lib.search._infer_tmdb_year", return_value=2020),
-        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
-        patch("lib.search._check_search_caches", return_value=cached),
-    ):
+    with patch("lib.search.cache") as mock_cache, patch(
+        "lib.search.get_setting", side_effect=setting_side_effect
+    ), patch("lib.search.get_selected_stream_addons", return_value=[]), patch(
+        "lib.search.close_busy_dialog"
+    ), patch("lib.search._infer_tmdb_year", return_value=2020), patch(
+        "lib.search._build_title_fallback_queries", return_value=["Movie"]
+    ), patch("lib.search._check_search_caches", return_value=cached):
         mock_cache.get.side_effect = cache_get_side_effect
         mock_cache.set.side_effect = cache_set_side_effect
         assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
@@ -767,18 +872,14 @@ def test_search_preserves_explicit_empty_source_selection():
         "source_manager_known_keys": json.dumps(["Jackett", "Prowlarr"]),
     }
 
-    with (
-        patch("lib.search.cache") as mock_cache,
-        patch(
-            "lib.search.get_setting",
-            side_effect=lambda key, default=None: key in ("jackett_enabled", "prowlarr_enabled"),
-        ),
-        patch("lib.search.get_selected_stream_addons", return_value=[]),
-        patch("lib.search.close_busy_dialog"),
-        patch("lib.search._infer_tmdb_year", return_value=2020),
-        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
-        patch("lib.search._check_search_caches", return_value=cached),
-    ):
+    with patch("lib.search.cache") as mock_cache, patch(
+        "lib.search.get_setting",
+        side_effect=lambda key, default=None: key in ("jackett_enabled", "prowlarr_enabled"),
+    ), patch("lib.search.get_selected_stream_addons", return_value=[]), patch(
+        "lib.search.close_busy_dialog"
+    ), patch("lib.search._infer_tmdb_year", return_value=2020), patch(
+        "lib.search._build_title_fallback_queries", return_value=["Movie"]
+    ), patch("lib.search._check_search_caches", return_value=cached):
         mock_cache.get.side_effect = stored.get
         assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
         assert json.loads(stored["source_manager_selection"]) == []
@@ -795,17 +896,13 @@ def test_search_initializes_missing_source_selection():
     def cache_set_side_effect(key, value, **kwargs):
         stored[key] = value
 
-    with (
-        patch("lib.search.cache") as mock_cache,
-        patch(
-            "lib.search.get_setting", side_effect=lambda key, default=None: key == "jackett_enabled"
-        ),
-        patch("lib.search.get_selected_stream_addons", return_value=[]),
-        patch("lib.search.close_busy_dialog"),
-        patch("lib.search._infer_tmdb_year", return_value=2020),
-        patch("lib.search._build_title_fallback_queries", return_value=["Movie"]),
-        patch("lib.search._check_search_caches", return_value=cached),
-    ):
+    with patch("lib.search.cache") as mock_cache, patch(
+        "lib.search.get_setting", side_effect=lambda key, default=None: key == "jackett_enabled"
+    ), patch("lib.search.get_selected_stream_addons", return_value=[]), patch(
+        "lib.search.close_busy_dialog"
+    ), patch("lib.search._infer_tmdb_year", return_value=2020), patch(
+        "lib.search._build_title_fallback_queries", return_value=["Movie"]
+    ), patch("lib.search._check_search_caches", return_value=cached):
         mock_cache.get.side_effect = stored.get
         mock_cache.set.side_effect = cache_set_side_effect
         assert search_client("Movie", {}, "movies", "movie", False, 0, 0) == cached
@@ -1061,12 +1158,10 @@ class TestCheckSearchCaches:
     def test_cache_miss_tv_no_autoscrape_data_returns_none(self):
         """Autoscrape key exists but cache miss → return None."""
         ids = {"tmdb_id": "123"}
-        with (
-            patch("lib.search.get_cached_results", return_value=None),
-            patch("lib.db.cached.cache.get", return_value=None),
-            patch(
-                "lib.utils.player.utils.get_autoscrape_results_cache_key", return_value="as:123_1_2"
-            ),
+        with patch("lib.search.get_cached_results", return_value=None), patch(
+            "lib.db.cached.cache.get", return_value=None
+        ), patch(
+            "lib.utils.player.utils.get_autoscrape_results_cache_key", return_value="as:123_1_2"
         ):
             result = _check_search_caches("q", ids, "tv", "tv", 2, 1, "scope")
         assert result is None
@@ -1075,15 +1170,12 @@ class TestCheckSearchCaches:
         """Autoscrape hit → migrate to standard cache + return results."""
         ids = {"imdb_id": "tt999"}
         autoscrape_results = [MagicMock(), MagicMock()]
-        with (
-            patch("lib.search.get_cached_results", return_value=None),
-            patch("lib.db.cached.cache.get", return_value=autoscrape_results),
-            patch(
-                "lib.utils.player.utils.get_autoscrape_results_cache_key",
-                return_value="as:tt999_2_3",
-            ),
-            patch("lib.search.cache_results") as mock_cache_results,
-        ):
+        with patch("lib.search.get_cached_results", return_value=None), patch(
+            "lib.db.cached.cache.get", return_value=autoscrape_results
+        ), patch(
+            "lib.utils.player.utils.get_autoscrape_results_cache_key",
+            return_value="as:tt999_2_3",
+        ), patch("lib.search.cache_results") as mock_cache_results:
             result = _check_search_caches("q", ids, "tv", "tv", 3, 2, "scope")
 
         assert result == autoscrape_results
@@ -1108,17 +1200,15 @@ class TestSearchClient:
 
     def test_rescrape_skips_cache_reads_but_writes_results(self):
         """rescrape=True bypasses cache reads but replaces cached search results."""
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches") as mock_check,
-            patch("lib.search.get_setting", return_value="0"),
-            patch("lib.search._run_simple_search", return_value=[]),
-            patch("lib.search.cache_results") as mock_cache_results,
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches"
+        ) as mock_check, patch("lib.search.get_setting", return_value="0"), patch(
+            "lib.search._run_simple_search", return_value=[]
+        ), patch("lib.search.cache_results") as mock_cache_results:
             search_client("q", {}, "movies", "movie", rescrape=True, season=0, episode=0)
 
         mock_check.assert_not_called()
@@ -1129,18 +1219,17 @@ class TestSearchClient:
     def test_not_rescrape_cache_hit_returns_early(self):
         """Not rescrape + cache hit → return cached, no search."""
         cached = [MagicMock()]
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=cached),
-            patch("lib.search.get_setting") as mock_get_setting,
-            patch("lib.search._run_simple_search") as mock_simple,
-            patch("lib.search._run_detailed_search") as mock_detailed,
-            patch("lib.search.cache_results") as mock_cache_results,
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=cached
+        ), patch("lib.search.get_setting"), patch(
+            "lib.search._run_simple_search"
+        ) as mock_simple, patch("lib.search._run_detailed_search") as mock_detailed, patch(
+            "lib.search.cache_results"
+        ) as mock_cache_results:
             result = search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0)
 
         assert result == cached
@@ -1264,18 +1353,17 @@ class TestSearchClient:
     def test_cache_miss_detailed_dialog_branch(self):
         """Cache miss + search_dialog_style=1 → calls _run_detailed_search."""
         expected = [MagicMock()]
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="1"),
-            patch("lib.search._run_detailed_search", return_value=expected) as mock_detailed,
-            patch("lib.search._run_simple_search") as mock_simple,
-            patch("lib.search.cache_results") as mock_cache,
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=None
+        ), patch("lib.search.get_setting", return_value="1"), patch(
+            "lib.search._run_detailed_search", return_value=expected
+        ) as mock_detailed, patch("lib.search._run_simple_search") as mock_simple, patch(
+            "lib.search.cache_results"
+        ) as mock_cache:
             result = search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0)
 
         assert result == expected
@@ -1286,18 +1374,17 @@ class TestSearchClient:
     def test_cache_miss_simple_dialog_branch(self):
         """Cache miss + search_dialog_style=0 → calls _run_simple_search."""
         expected = [MagicMock()]
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="0"),
-            patch("lib.search._run_detailed_search") as mock_detailed,
-            patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
-            patch("lib.search.cache_results"),
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=None
+        ), patch("lib.search.get_setting", return_value="0"), patch(
+            "lib.search._run_detailed_search"
+        ) as mock_detailed, patch(
+            "lib.search._run_simple_search", return_value=expected
+        ) as mock_simple, patch("lib.search.cache_results"):
             result = search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0)
 
         assert result == expected
@@ -1307,20 +1394,17 @@ class TestSearchClient:
     def test_show_dialog_false_uses_simple_branch(self):
         """show_dialog=False → simple branch regardless of search_dialog_style."""
         expected = [MagicMock()]
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch(
-                "lib.search.get_setting", return_value="1"
-            ),  # would trigger detailed, but show_dialog=False
-            patch("lib.search._run_detailed_search") as mock_detailed,
-            patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
-            patch("lib.search.cache_results"),
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=None
+        ), patch("lib.search.get_setting", return_value="1"), patch(
+            "lib.search._run_detailed_search"
+        ) as mock_detailed, patch(
+            "lib.search._run_simple_search", return_value=expected
+        ) as mock_simple, patch("lib.search.cache_results"):
             result = search_client(
                 "q",
                 {},
@@ -1339,20 +1423,17 @@ class TestSearchClient:
     def test_detailed_search_failure_falls_back_to_simple_search(self):
         """Detailed XML UI failure → search continues through simple progress."""
         expected = [MagicMock()]
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020),
-            patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="1"),
-            patch(
-                "lib.search._run_detailed_search", side_effect=RuntimeError("xml failed")
-            ) as mock_detailed,
-            patch("lib.search._run_simple_search", return_value=expected) as mock_simple,
-            patch("lib.search.cache_results") as mock_cache,
-        ):
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ), patch("lib.search._build_title_fallback_queries", return_value=["q 2020"]), patch(
+            "lib.search.reconcile_source_selection"
+        ), patch("lib.search._build_search_cache_scope", return_value="scope"), patch(
+            "lib.search._check_search_caches", return_value=None
+        ), patch("lib.search.get_setting", return_value="1"), patch(
+            "lib.search._run_detailed_search", side_effect=RuntimeError("xml failed")
+        ) as mock_detailed, patch(
+            "lib.search._run_simple_search", return_value=expected
+        ) as mock_simple, patch("lib.search.cache_results") as mock_cache:
             result = search_client("q", {}, "movies", "movie", rescrape=False, season=0, episode=0)
 
         assert result == expected
@@ -1365,16 +1446,16 @@ class TestSearchClient:
 
     def test_passes_year_to_infer_when_none(self):
         """year=None → _infer_tmdb_year is called."""
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year", return_value=2020) as mock_infer,
-            patch("lib.search._build_title_fallback_queries", return_value=["q"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="0"),
-            patch("lib.search._run_simple_search", return_value=[]),
-            patch("lib.search.cache_results"),
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year", return_value=2020
+        ) as mock_infer, patch(
+            "lib.search._build_title_fallback_queries", return_value=["q"]
+        ), patch("lib.search.reconcile_source_selection"), patch(
+            "lib.search._build_search_cache_scope", return_value="scope"
+        ), patch("lib.search._check_search_caches", return_value=None), patch(
+            "lib.search.get_setting", return_value="0"
+        ), patch("lib.search._run_simple_search", return_value=[]), patch(
+            "lib.search.cache_results"
         ):
             search_client(
                 "q", {"tmdb_id": "123"}, "movies", "movie", rescrape=False, season=0, episode=0
@@ -1384,16 +1465,16 @@ class TestSearchClient:
 
     def test_does_not_infer_year_when_provided(self):
         """year=2010 → _infer_tmdb_year is NOT called."""
-        with (
-            patch("lib.search.close_busy_dialog"),
-            patch("lib.search._infer_tmdb_year") as mock_infer,
-            patch("lib.search._build_title_fallback_queries", return_value=["q"]),
-            patch("lib.search.reconcile_source_selection"),
-            patch("lib.search._build_search_cache_scope", return_value="scope"),
-            patch("lib.search._check_search_caches", return_value=None),
-            patch("lib.search.get_setting", return_value="0"),
-            patch("lib.search._run_simple_search", return_value=[]),
-            patch("lib.search.cache_results"),
+        with patch("lib.search.close_busy_dialog"), patch(
+            "lib.search._infer_tmdb_year"
+        ) as mock_infer, patch(
+            "lib.search._build_title_fallback_queries", return_value=["q"]
+        ), patch("lib.search.reconcile_source_selection"), patch(
+            "lib.search._build_search_cache_scope", return_value="scope"
+        ), patch("lib.search._check_search_caches", return_value=None), patch(
+            "lib.search.get_setting", return_value="0"
+        ), patch("lib.search._run_simple_search", return_value=[]), patch(
+            "lib.search.cache_results"
         ):
             search_client(
                 "q", {}, "movies", "movie", rescrape=False, season=0, episode=0, year=2010

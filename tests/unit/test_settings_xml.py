@@ -145,10 +145,21 @@ def test_nuvio_settings_describe_qr_account_connection():
     )
 
 
+def test_nuvio_addon_action_is_separate_from_stremio_actions():
+    tree = ET.parse(SETTINGS_XML)
+    group = tree.find(".//group[@id='nuvio_addons']")
+    action = tree.find(".//setting[@id='nuvio_toggle_addons']")
+
+    assert group.get("label") == "91018"
+    assert action.findtext("data").endswith("action=nuvio_toggle_addons)")
+    assert action.get("help") == "91020"
+    assert group.find(".//setting[@id='stremio_toggle_addons']") is None
+
+
 def test_nuvio_strings_are_defined_in_every_supported_catalogue():
     language_root = ENGLISH_STRINGS.parent.parent
 
     for catalogue in language_root.glob("*/strings.po"):
         content = catalogue.read_text()
-        for string_id in range(91002, 91018):
+        for string_id in range(91002, 91023):
             assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue

@@ -9,6 +9,7 @@ from lib.api.stremio.addon_manager import Addon, build_addon_instance_label
 from lib.api.stremio.models import Meta, MetaPreview, Stream
 from lib.clients.base import BaseClient, TorrentStream
 from lib.clients.stremio.helpers import get_addon_by_key, get_addon_display_name
+from lib.clients.stremio.playback import classify, normalize_stream
 from lib.clients.stremio.protocol import (
     build_resource_url,
     cache_ttl_seconds,
@@ -16,7 +17,6 @@ from lib.clients.stremio.protocol import (
     safe_cache_key,
 )
 from lib.db.cached import cache
-from lib.clients.stremio.playback import classify, normalize_stream
 from lib.utils.debrid.debrid_utils import process_external_cache
 from lib.utils.general.utils import USER_AGENT_HEADER, IndexerType, info_hash_to_magnet
 from lib.utils.kodi.settings import get_cache_expiration, get_int_setting, is_cache_enabled
@@ -199,15 +199,20 @@ class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon) -> None:
         super().__init__(None, None)
         self.addon = addon
-        self.display_name = get_addon_display_name(addon)
-        self.instance_label = build_addon_instance_label(
-            {
-                "manifest": {"id": addon.manifest.id, "name": self.display_name},
-                "transportUrl": addon.transport_url,
-                "transportName": addon.transport_name,
-            }
-        )
-        self.indexer_name = (addon.manifest.name or addon.manifest.id).split(" ")[0]
+        if addon.transport_name == "nuvio":
+            self.display_name = addon.manifest.name or addon.manifest.id
+            self.instance_label = f"{self.display_name} (Nuvio)"
+            self.indexer_name = "Nuvio"
+        else:
+            self.display_name = get_addon_display_name(addon)
+            self.instance_label = build_addon_instance_label(
+                {
+                    "manifest": {"id": addon.manifest.id, "name": self.display_name},
+                    "transportUrl": addon.transport_url,
+                    "transportName": addon.transport_name,
+                }
+            )
+            self.indexer_name = (addon.manifest.name or addon.manifest.id).split(" ")[0]
 
     def search(
         self,
@@ -343,7 +348,11 @@ class StremioAddonClient(BaseClient):
                     subindexer=stream_subindexer,
                     addonKey=self.addon.key(),
                     addonName=self.display_name,
-                    addonSourceName=self.addon.manifest.name or self.addon.manifest.id,
+                    addonSourceName=(
+                        f"Nuvio: {self.addon.manifest.name or self.addon.manifest.id}"
+                        if self.addon.transport_name == "nuvio"
+                        else self.addon.manifest.name or self.addon.manifest.id
+                    ),
                     addonInstanceLabel=self.instance_label,
                     guid=info_hash_to_magnet(info_hash) if info_hash else "",
                     infoHash=info_hash if info_hash else "",

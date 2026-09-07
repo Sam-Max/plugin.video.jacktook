@@ -4801,4 +4801,24 @@ msgstr "Nuvio watch-progress sync connected."
 msgctxt "#91017"
 msgid "Choose Nuvio profile"
 msgstr "Choose Nuvio profile"
+
+msgctxt "#91018"
+msgid "Nuvio: Addons"
+msgstr "Nuvio: Addons"
+
+msgctxt "#91019"
+msgid "Select Nuvio Addons"
+msgstr "Select Nuvio Addons"
+
+msgctxt "#91020"
+msgid "Select the enabled Nuvio addons to use for stream searches."
+msgstr "Select the enabled Nuvio addons to use for stream searches."
+
+msgctxt "#91021"
+msgid "No usable Nuvio addons are available."
+msgstr "No usable Nuvio addons are available."
+
+msgctxt "#91022"
+msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
+msgstr "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "Continue Watching cleared"

@@ -357,3 +357,58 @@ def test_sync_requires_enabled_authenticated_session_and_profile(monkeypatch):
     assert is_nuvio_progress_sync_enabled() is True
     values["nuvio_profile_id"] = "7"
     assert is_nuvio_progress_sync_enabled() is False
+
+
+def test_get_addons_uses_selected_profile_headers_and_safe_validation(monkeypatch):
+    get = MagicMock(
+        return_value=_response(
+            200,
+            [
+                {"url": "https://second.example/manifest.json", "enabled": True, "sort_order": 2},
+                {
+                    "url": "https://first.example/private/manifest.json",
+                    "name": "First",
+                    "enabled": True,
+                    "sort_order": 1,
+                },
+                {
+                    "url": "https://disabled.example/manifest.json",
+                    "enabled": False,
+                    "sort_order": 0,
+                },
+                {
+                    "url": "https://invalid.example/manifest.json",
+                    "enabled": "true",
+                    "sort_order": 3,
+                },
+            ],
+        )
+    )
+    monkeypatch.setattr("lib.api.nuvio.requests.get", get)
+
+    rows = NuvioClient(
+        access_token="access", refresh_token="refresh", expires_at="", profile_id=2
+    ).get_addons()
+
+    assert [row["name"] for row in rows] == ["First", ""]
+    get.assert_called_once_with(
+        "https://api.nuvio.tv/rest/v1/addons",
+        params={"select": "*", "profile_id": "eq.2", "order": "sort_order"},
+        headers={"Authorization": "Bearer access", "apikey": NuvioClient.PUBLISHABLE_KEY},
+        timeout=5,
+    )
+
+
+def test_get_addons_rejects_missing_profile_and_redacts_transport_errors(monkeypatch):
+    get = MagicMock(side_effect=requests.Timeout("https://addon.example/private-token"))
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.get", get)
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+
+    assert NuvioClient(access_token="access", profile_id=None).get_addons() is None
+    get.assert_not_called()
+
+    assert NuvioClient(access_token="access", profile_id=1).get_addons() is None
+    logged = " ".join(str(call) for call in log.call_args_list)
+    assert "private-token" not in logged
+    assert "addon.example" not in logged

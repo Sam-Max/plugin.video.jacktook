@@ -7,8 +7,6 @@ from lib.utils.kodi.settings import get_setting
 from lib.utils.kodi.utils import ADDON_PATH, kodilog, translation
 from lib.utils.source_manager import (
     BUILTIN_SOURCE_SETTINGS,
-    CACHE_KEY,
-    KNOWN_CACHE_KEY,
     persist_source_selection,
     reconcile_source_selection,
 )
@@ -36,6 +34,17 @@ def _load_stremio_addons():
         return None
 
 
+def _load_nuvio_addons():
+    """Import and return the Nuvio-specific addon selector, or None on failure."""
+    try:
+        from lib.clients.nuvio.helpers import get_selected_stream_addon_records
+
+        return get_selected_stream_addon_records
+    except Exception as e:
+        kodilog(f"Failed to import Nuvio addon selector: {e}")
+        return None
+
+
 def _add_stremio_sources(items, cache_keys, get_selected_stream_addons):
     """Append enabled Stremio addon entries to items/cache_keys."""
     if get_selected_stream_addons is None:
@@ -54,9 +63,27 @@ def _add_stremio_sources(items, cache_keys, get_selected_stream_addons):
         kodilog(f"Error loading Stremio addons: {e}")
 
 
+def _add_nuvio_sources(items, cache_keys, get_selected_stream_addons):
+    if get_selected_stream_addons is None:
+        return
+    try:
+        for addon in get_selected_stream_addons():
+            if not isinstance(addon, dict) or not addon.get("key"):
+                continue
+            key = f"Nuvio:{addon['key']}"
+            addon_name = addon.get("name") or "Nuvio Addon"
+            li_addon = xbmcgui.ListItem(label=f"Nuvio: {addon_name}")
+            li_addon.setArt({"icon": _get_icon_path(addon_name)})
+            items.append(li_addon)
+            cache_keys.append(key)
+    except Exception as e:
+        kodilog(f"Error loading Nuvio addons: {e}")
+
+
 def _build_source_items():
     """Return (ListItem list, cache key list) for enabled sources."""
     get_selected_stream_addons = _load_stremio_addons()
+    get_selected_nuvio_stream_addon_records = _load_nuvio_addons()
     items = []
     cache_keys = []
 
@@ -71,6 +98,10 @@ def _build_source_items():
 
         if setting_key == "stremio_enabled":
             _add_stremio_sources(items, cache_keys, get_selected_stream_addons)
+            continue
+
+        if setting_key == "nuvio_enabled":
+            _add_nuvio_sources(items, cache_keys, get_selected_nuvio_stream_addon_records)
             continue
 
         icon_path = _get_icon_path(display_name)

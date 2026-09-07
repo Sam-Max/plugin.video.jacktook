@@ -12,6 +12,7 @@ BUILTIN_SOURCE_SETTINGS = [
     ("jackgram_enabled", "Jackgram"),
     ("easynews_enabled", "Easynews"),
     ("stremio_enabled", "Stremio"),
+    ("nuvio_enabled", "Nuvio"),
     ("external_scraper_enabled", "External Scraper"),
 ]
 
@@ -37,12 +38,18 @@ def parse_source_selection(raw):
         return None
 
 
-def get_enabled_source_keys(settings_getter=get_setting, stremio_addons_getter=None):
+def get_enabled_source_keys(
+    settings_getter=get_setting, stremio_addons_getter=None, nuvio_addons_getter=None
+):
     """Return the Manage Sources keys for providers currently enabled in Settings."""
     if stremio_addons_getter is None:
         from lib.clients.stremio.helpers import get_selected_stream_addons
 
         stremio_addons_getter = get_selected_stream_addons
+    if nuvio_addons_getter is None:
+        from lib.clients.nuvio.helpers import get_selected_stream_addon_records
+
+        nuvio_addons_getter = get_selected_stream_addon_records
 
     cache_keys = []
     for setting_key, display_name in BUILTIN_SOURCE_SETTINGS:
@@ -59,6 +66,17 @@ def get_enabled_source_keys(settings_getter=get_setting, stremio_addons_getter=N
                 kodilog(f"Error loading Stremio addons: {e}")
             continue
 
+        if setting_key == "nuvio_enabled":
+            try:
+                cache_keys.extend(
+                    f"Nuvio:{addon['key']}"
+                    for addon in nuvio_addons_getter()
+                    if isinstance(addon, dict) and addon.get("key")
+                )
+            except Exception as e:
+                kodilog(f"Error loading Nuvio addons: {e}")
+            continue
+
         cache_keys.append(str(display_name))
     return cache_keys
 
@@ -68,10 +86,13 @@ def reconcile_source_selection(
     cache_backend=cache,
     settings_getter=get_setting,
     stremio_addons_getter=None,
+    nuvio_addons_getter=None,
 ):
     """Auto-select new Settings sources without re-enabling known deselections."""
     if cache_keys is None:
-        cache_keys = get_enabled_source_keys(settings_getter, stremio_addons_getter)
+        cache_keys = get_enabled_source_keys(
+            settings_getter, stremio_addons_getter, nuvio_addons_getter
+        )
     current_selection = parse_source_selection(cache_backend.get(CACHE_KEY))
     known_keys = parse_source_selection(cache_backend.get(KNOWN_CACHE_KEY)) or []
 

@@ -705,6 +705,13 @@
                     <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
                 </setting>
             </group>
+            <group id="nuvio_addons" label="91018">
+                <setting id="nuvio_toggle_addons" type="action" label="91019" help="91020">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=nuvio_toggle_addons)</data>
+                    <control type="button" format="action"><close>false</close></control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
+                </setting>
+            </group>
             <group id="stremio_addons_management" label="90832">
                 <setting id="stremio_toggle_addons" type="action" label="30870" help="90337">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_addons)</data>

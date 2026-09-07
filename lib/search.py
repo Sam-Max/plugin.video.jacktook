@@ -6,6 +6,13 @@ from typing import Any, List, Mapping, Optional
 import xbmc
 from xbmcgui import Dialog
 
+from lib.clients.nuvio.constants import NUVIO_ADDONS_KEY
+from lib.clients.nuvio.helpers import (
+    get_selected_stream_addon_records,
+)
+from lib.clients.nuvio.helpers import (
+    get_selected_stream_addons as get_selected_nuvio_stream_addons,
+)
 from lib.clients.stremio.addon_client import StremioAddonClient
 from lib.clients.stremio.constants import STREMIO_ADDON_ALIASES_KEY, STREMIO_ADDONS_KEY
 from lib.clients.stremio.helpers import (
@@ -96,6 +103,7 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "jackgram": bool(get_setting("jackgram_enabled")),
         "external_scraper": bool(get_setting("external_scraper_enabled")),
         "stremio": bool(get_setting("stremio_enabled")),
+        "nuvio": bool(get_setting("nuvio_enabled")),
         "rd": bool(get_setting("real_debrid_enabled")),
         "ad": bool(get_setting("alldebrid_enabled")),
         "tb": bool(get_setting("torbox_enabled")),
@@ -105,12 +113,14 @@ def _build_search_cache_scope(scoped_addon_url: str = "") -> str:
         "ed": bool(get_setting("easydebrid_enabled")),
     }
     selected_stream_addons = str(cache.get(STREMIO_ADDONS_KEY) or "")
+    selected_nuvio_addons = str(cache.get(NUVIO_ADDONS_KEY) or "")
     stremio_addon_aliases = json.dumps(cache.get(STREMIO_ADDON_ALIASES_KEY) or {}, sort_keys=True)
     source_manager_selection = str(cache.get("source_manager_selection") or "")
     external_scraper_module = str(get_setting("external_scraper_module") or "")
-    raw_scope = "{}|{}|{}|{}|{}|{}".format(
+    raw_scope = "{}|{}|{}|{}|{}|{}|{}".format(
         "|".join([f"{key}:{int(value)}" for key, value in sorted(flags.items())]),
         selected_stream_addons,
+        selected_nuvio_addons,
         stremio_addon_aliases,
         source_manager_selection,
         external_scraper_module,
@@ -161,16 +171,16 @@ def _get_source_manager_selection() -> Optional[set]:
     return set(parsed) if parsed is not None else None
 
 
-def _is_source_enabled(indexer_key, stremio_addon_key=None):
+def _is_source_enabled(indexer_key, stremio_addon_key=None, addon_origin="Stremio"):
     selected = _get_source_manager_selection()
 
     # Missing or corrupt cache → everything is enabled (no whitelist restriction)
     if selected is None:
         return True
 
-    # Stremio addons are keyed with a "Stremio:" prefix
+    # Compatible stream addons are keyed by their independent account origin.
     if stremio_addon_key:
-        return f"Stremio:{stremio_addon_key}" in selected
+        return f"{addon_origin}:{stremio_addon_key}" in selected
 
     # External scraper uses its configured module name as the cache key.
     # The fallback literal "External Scraper" supports older caches.
@@ -182,6 +192,19 @@ def _is_source_enabled(indexer_key, stremio_addon_key=None):
 
     # Managed builtin sources are enabled only when explicitly selected.
     return str(indexer_key) in selected
+
+
+def _is_enabled(setting_id):
+    value = get_setting(setting_id)
+    return value is True or str(value).lower() == "true"
+
+
+def _get_selected_nuvio_stream_addons_safe():
+    try:
+        return get_selected_nuvio_stream_addons()
+    except Exception as error:
+        kodilog(f"Unable to load selected Nuvio addons ({type(error).__name__})")
+        return []
 
 
 def _clean_title_candidate(value) -> str:
@@ -540,10 +563,7 @@ def _resolve_cached_source(source: Any, params: Mapping[str, Any]):
     if resolved is None:
         from lib.utils.player.utils import resolve_failure_reason
 
-        kodilog(
-            "resolve_cached_source_failed reason="
-            f"{resolve_failure_reason(legacy_source)}"
-        )
+        kodilog(f"resolve_cached_source_failed reason={resolve_failure_reason(legacy_source)}")
     return resolved
 
 
@@ -849,10 +869,11 @@ def run_search_entry(params: dict):
 def _perform_search(indexer_key, dialog, *args, **kwargs):
     show_dialog = kwargs.pop("show_dialog", True)
     scoped_addon_url = kwargs.pop("scoped_addon_url", "")
+    addon_override = kwargs.pop("addon_override", None)
 
     if indexer_key == Indexer.STREMIO:
         if scoped_addon_url:
-            addon = get_addon_by_base_url(scoped_addon_url)
+            addon = addon_override or get_addon_by_base_url(scoped_addon_url)
             stremio_addons = [addon] if addon else []
         else:
             stremio_addons = get_selected_stream_addons()[:MAX_STREMIO_ADDONS_PER_SEARCH]
@@ -1114,6 +1135,24 @@ def _submit_search_tasks(
                             scoped_addon_url=addon.url(),
                         )
                     )
+        if _is_enabled("nuvio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ):
+            for addon in _get_selected_nuvio_stream_addons_safe()[:MAX_STREMIO_ADDONS_PER_SEARCH]:
+                if _is_source_enabled(Indexer.STREMIO, addon.key(), addon_origin="Nuvio"):
+                    tasks.append(
+                        submit_performer(
+                            Indexer.STREMIO,
+                            dialog,
+                            ids,
+                            mode,
+                            media_type,
+                            season,
+                            episode,
+                            scoped_addon_url=addon.url(),
+                            addon_override=addon,
+                        )
+                    )
 
 
 def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]:
@@ -1352,6 +1391,24 @@ def _submit_search_tasks_managed(
                     episode,
                     scoped_addon_url=addon.url(),
                 )
+        if _is_enabled("nuvio_enabled") and (
+            ids.get("imdb_id") or ids.get("original_id") or ids.get("tmdb_id")
+        ):
+            nuvio_addons = _get_selected_nuvio_stream_addons_safe()[:MAX_STREMIO_ADDONS_PER_SEARCH]
+            for addon in nuvio_addons:
+                if _is_source_enabled(Indexer.STREMIO, addon.key(), addon_origin="Nuvio"):
+                    submit_performer_managed(
+                        f"Nuvio: {addon.manifest.name or addon.manifest.id}",
+                        Indexer.STREMIO,
+                        dialog,
+                        ids,
+                        mode,
+                        media_type,
+                        season,
+                        episode,
+                        scoped_addon_url=addon.url(),
+                        addon_override=addon,
+                    )
 
 
 def _check_search_caches(
@@ -1551,6 +1608,7 @@ def search_client(
         cache_backend=cache,
         settings_getter=get_setting,
         stremio_addons_getter=get_selected_stream_addons,
+        nuvio_addons_getter=get_selected_stream_addon_records,
     )
     if year is None:
         year = _infer_tmdb_year(ids, mode)

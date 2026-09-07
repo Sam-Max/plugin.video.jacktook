@@ -20,6 +20,11 @@ PROFILE_FETCH_HTTP = "http"
 PROFILE_FETCH_INVALID_JSON = "invalid_json"
 PROFILE_FETCH_NON_LIST = "non_list"
 PROFILE_FETCH_INVALID_ROWS = "invalid_rows"
+ADDONS_FETCH_AUTH = "auth"
+ADDONS_FETCH_TRANSPORT = "transport"
+ADDONS_FETCH_HTTP = "http"
+ADDONS_FETCH_INVALID_JSON = "invalid_json"
+ADDONS_FETCH_NON_LIST = "non_list"
 
 
 class NuvioClient:
@@ -222,6 +227,92 @@ class NuvioClient:
             self._log_profile_fetch_failure(PROFILE_FETCH_INVALID_ROWS)
             return None, PROFILE_FETCH_INVALID_ROWS
         return [available[index] for index in sorted(available)], None
+
+    @staticmethod
+    def _log_addons_fetch_failure(failure, status_code=None):
+        status = f", HTTP {status_code}" if status_code is not None else ""
+        kodilog(f"[NUVIO] addon list fetch failed ({failure}{status})")
+
+    def get_addons(self):
+        """Return valid enabled addon rows for the selected Nuvio profile.
+
+        The remote URL values can contain private addon configuration, so this
+        method deliberately logs only failure categories and never response data.
+        """
+        if not self.profile_id:
+            self._log_addons_fetch_failure("invalid_profile")
+            return None
+        if not self._ensure_access_token():
+            self._log_addons_fetch_failure(ADDONS_FETCH_AUTH, self._last_token_failure_status)
+            return None
+
+        params = {
+            "select": "*",
+            "profile_id": f"eq.{self.profile_id}",
+            "order": "sort_order",
+        }
+        url = f"{self.BASE_URL}/rest/v1/addons"
+        response = None
+        for attempt in range(2):
+            try:
+                response = requests.get(
+                    url,
+                    params=params,
+                    headers=self._auth_headers,
+                    timeout=self.REQUEST_TIMEOUT,
+                )
+            except requests.RequestException as error:
+                self._log_addons_fetch_failure(f"{ADDONS_FETCH_TRANSPORT}:{type(error).__name__}")
+                return None
+            if response.status_code != 401 or attempt:
+                break
+            if not self.refresh_access_token():
+                self._log_addons_fetch_failure(ADDONS_FETCH_AUTH, self._last_token_failure_status)
+                return None
+
+        if response is None or response.status_code >= 400:
+            self._log_addons_fetch_failure(
+                ADDONS_FETCH_HTTP, response.status_code if response else None
+            )
+            return None
+        try:
+            rows = response.json()
+        except ValueError:
+            self._log_addons_fetch_failure(ADDONS_FETCH_INVALID_JSON)
+            return None
+        if not isinstance(rows, list):
+            self._log_addons_fetch_failure(ADDONS_FETCH_NON_LIST)
+            return None
+
+        valid_rows = []
+        for index, row in enumerate(rows):
+            if not isinstance(row, dict):
+                continue
+            addon_url = row.get("url")
+            name = row.get("name")
+            sort_order = self._finite_number(row.get("sort_order"))
+            if (
+                not isinstance(addon_url, str)
+                or not addon_url.strip()
+                or (name is not None and not isinstance(name, str))
+                or not isinstance(row.get("enabled"), bool)
+                or sort_order is None
+            ):
+                continue
+            if row["enabled"]:
+                valid_rows.append(
+                    {
+                        "url": addon_url.strip(),
+                        "name": name.strip() if isinstance(name, str) else "",
+                        "enabled": True,
+                        "sort_order": sort_order,
+                        "_index": index,
+                    }
+                )
+        valid_rows.sort(key=lambda row: (row["sort_order"], row["_index"]))
+        for row in valid_rows:
+            row.pop("_index", None)
+        return valid_rows
 
     @staticmethod
     def _device_nonce():

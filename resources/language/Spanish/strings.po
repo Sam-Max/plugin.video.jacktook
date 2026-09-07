@@ -4590,3 +4590,23 @@ msgstr "Sincronización de progreso de Nuvio conectada."
 msgctxt "#91017"
 msgid "Choose Nuvio profile"
 msgstr "Elegir perfil de Nuvio"
+
+msgctxt "#91018"
+msgid "Nuvio: Addons"
+msgstr "Nuvio: Complementos"
+
+msgctxt "#91019"
+msgid "Select Nuvio Addons"
+msgstr "Seleccionar complementos de Nuvio"
+
+msgctxt "#91020"
+msgid "Select the enabled Nuvio addons to use for stream searches."
+msgstr "Selecciona los complementos de Nuvio habilitados para usarlos en las búsquedas de fuentes."
+
+msgctxt "#91021"
+msgid "No usable Nuvio addons are available."
+msgstr "No hay complementos de Nuvio utilizables disponibles."
+
+msgctxt "#91022"
+msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
+msgstr "No se pudieron cargar los complementos de Nuvio. La selección guardada no se modificó."

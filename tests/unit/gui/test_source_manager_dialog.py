@@ -101,6 +101,35 @@ class TestOpenSourceManagerDialog:
     @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
     @patch("lib.gui.source_manager_dialog.xbmcgui.ListItem")
     @patch("lib.gui.source_manager_dialog.cache")
+    @patch(
+        "lib.clients.nuvio.helpers.get_selected_stream_addon_records",
+        return_value=[{"key": "nuvio1|url1", "name": "Nuvio Addon"}],
+    )
+    def test_nuvio_addons_use_a_separate_source_manager_label(
+        self,
+        _mock_get_addons,
+        _mock_cache,
+        mock_listitem,
+        mock_dialog_cls,
+        mock_get_setting,
+    ):
+        mock_get_setting.side_effect = lambda key: key == "nuvio_enabled"
+        mock_dialog_cls.return_value.multiselect.return_value = None
+
+        from lib.gui.source_manager_dialog import open_source_manager_dialog
+
+        open_source_manager_dialog()
+
+        labels = [
+            call.kwargs.get("label", call.args[0] if call.args else "")
+            for call in mock_listitem.call_args_list
+        ]
+        assert labels == ["Nuvio: Nuvio Addon"]
+
+    @patch("lib.gui.source_manager_dialog.get_setting")
+    @patch("lib.gui.source_manager_dialog.xbmcgui.Dialog")
+    @patch("lib.gui.source_manager_dialog.xbmcgui.ListItem")
+    @patch("lib.gui.source_manager_dialog.cache")
     def test_preselect_uses_cache_selection(
         self, mock_cache, mock_listitem, mock_dialog_cls, mock_get_setting
     ):
