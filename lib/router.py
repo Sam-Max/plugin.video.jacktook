@@ -310,16 +310,18 @@ def _route_stremio(action, params):
 
         torrentio_toggle_providers(params)
     else:
-        from lib.clients.stremio.catalog_menus import (
-            clear_stremio_search_history,
+        from lib.clients.catalog_hub import (
             list_catalog,
             list_catalog_genres,
+            search_catalog,
+        )
+        from lib.clients.stremio.catalog_menus import (
+            clear_stremio_search_history,
             list_stremio_episodes,
             list_stremio_movie,
             list_stremio_seasons,
             list_stremio_tv,
             list_stremio_tv_streams,
-            search_catalog,
         )
 
         actions = {

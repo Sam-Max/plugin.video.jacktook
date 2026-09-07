@@ -8,6 +8,14 @@ from lib.db.cached import cache
 from lib.utils.kodi.utils import kodilog
 
 
+def _safe_cache_get(key):
+    """Return ``cache.get(key)`` tolerating unavailable/broken cache backends."""
+    try:
+        return cache.get(key)
+    except Exception:
+        return None
+
+
 def _resolve_selected_addons(catalog: AddonManager, selected_ids: List[str]) -> List[Addon]:
     addons_by_key = {addon.key(): addon for addon in catalog.addons}
     addons_by_key.update(
@@ -50,8 +58,8 @@ def _has_stream_resource(manifest):
 
 def get_selected_stream_addon_records():
     """Return Nuvio-owned display records without invoking the Stremio parser."""
-    records = cache.get(NUVIO_USER_ADDONS) or []
-    selected = set(decode_selected_ids(cache.get(NUVIO_ADDONS_KEY)))
+    records = _safe_cache_get(NUVIO_USER_ADDONS) or []
+    selected = set(decode_selected_ids(_safe_cache_get(NUVIO_ADDONS_KEY)))
     if not isinstance(records, list) or not selected:
         return []
     selected_records = []
@@ -74,11 +82,13 @@ def get_selected_stream_addon_records():
 
 def get_selected_stream_addons() -> List[Addon]:
     """Load only Nuvio-owned selected manifests for Stremio protocol execution."""
-    records = cache.get(NUVIO_USER_ADDONS) or []
+    records = _safe_cache_get(NUVIO_USER_ADDONS) or []
     if not isinstance(records, list):
         return []
     catalog = AddonManager(records)
-    selected = _resolve_selected_addons(catalog, decode_selected_ids(cache.get(NUVIO_ADDONS_KEY)))
+    selected = _resolve_selected_addons(
+        catalog, decode_selected_ids(_safe_cache_get(NUVIO_ADDONS_KEY))
+    )
     stream_addons = [
         addon
         for addon in selected
@@ -86,3 +96,70 @@ def get_selected_stream_addons() -> List[Addon]:
     ]
     kodilog(f"Loaded {len(stream_addons)} selected Nuvio stream addons")
     return stream_addons
+
+
+def _has_catalog_resource(addon: Addon) -> bool:
+    for resource in addon.manifest.resources:
+        name = resource if isinstance(resource, str) else resource.name
+        if name == "catalog":
+            return True
+    return False
+
+
+def _is_tv_stream_addon(addon: Addon) -> bool:
+    manifest_types = addon.manifest.types or []
+    for resource in addon.manifest.resources:
+        if isinstance(resource, str):
+            if resource == "stream" and ("tv" in manifest_types or "channel" in manifest_types):
+                return True
+        elif resource.name == "stream" and ("tv" in resource.types or "channel" in resource.types):
+            return True
+    return False
+
+
+def get_selected_catalogs_addons() -> List[Addon]:
+    """Load Nuvio-owned selected manifests exposing a catalog resource."""
+    records = _safe_cache_get(NUVIO_USER_ADDONS) or []
+    if not isinstance(records, list):
+        return []
+    catalog = AddonManager(records)
+    selected = _resolve_selected_addons(
+        catalog, decode_selected_ids(_safe_cache_get(NUVIO_ADDONS_KEY))
+    )
+    catalog_addons = [addon for addon in selected if _has_catalog_resource(addon)]
+    kodilog(f"Loaded {len(catalog_addons)} selected Nuvio catalog addons")
+    return catalog_addons
+
+
+def get_selected_tv_addons() -> List[Addon]:
+    """Load Nuvio-owned selected manifests exposing tv/channel streams."""
+    records = _safe_cache_get(NUVIO_USER_ADDONS) or []
+    if not isinstance(records, list):
+        return []
+    catalog = AddonManager(records)
+    selected = _resolve_selected_addons(
+        catalog, decode_selected_ids(_safe_cache_get(NUVIO_ADDONS_KEY))
+    )
+    tv_addons = [addon for addon in selected if _is_tv_stream_addon(addon)]
+    kodilog(f"Loaded {len(tv_addons)} selected Nuvio TV addons")
+    return tv_addons
+
+
+def _get_nuvio_addon_pool() -> AddonManager:
+    records = _safe_cache_get(NUVIO_USER_ADDONS) or []
+    if not isinstance(records, list):
+        return AddonManager([])
+    return AddonManager(records)
+
+
+def get_nuvio_addon_by_key(addon_key):
+    """Resolve a Nuvio-owned Addon from its instance key or legacy key."""
+    return _get_nuvio_addon_pool().get_addon_by_key(addon_key)
+
+
+def get_nuvio_addon_by_base_url(addon_url):
+    """Resolve a Nuvio-owned Addon object from its base URL."""
+    for addon in _get_nuvio_addon_pool().addons:
+        if addon.url() == addon_url:
+            return addon
+    return None

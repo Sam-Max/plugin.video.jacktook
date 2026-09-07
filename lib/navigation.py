@@ -11,7 +11,7 @@ import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
 from lib.api.trakt.trakt import ProviderException, TraktAPI
 from lib.api.trakt.trakt_utils import is_trakt_auth
-from lib.clients.stremio.catalog_menus import list_stremio_catalogs
+from lib.clients.catalog_hub import list_merged_catalogs
 from lib.clients.stremio.playback import resolve_stremio_playback_url
 from lib.clients.tmdb.tmdb import (
     TmdbClient,
@@ -518,7 +518,7 @@ def tv_shows_items(params):
                 _tv_menu_entries,
             )
         )
-    list_stremio_catalogs(menu_type="series", sub_menu_type="series")
+    list_merged_catalogs(menu_type="series", sub_menu_type="series")
     end_of_directory()
     apply_section_view("view.main")
 
@@ -534,7 +534,7 @@ def movies_items(params):
                 _movie_menu_entries,
             )
         )
-    list_stremio_catalogs(menu_type="movie", sub_menu_type="movie")
+    list_merged_catalogs(menu_type="movie", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main")
 
@@ -740,7 +740,7 @@ def anime_item(params):
                     mode,
                 )
             )
-        list_stremio_catalogs(menu_type="anime", sub_menu_type="series")
+        list_merged_catalogs(menu_type="anime", sub_menu_type="series")
     if mode == "movies":
         if not stremio_only:
             _render_cached_menu_entries(
@@ -750,14 +750,14 @@ def anime_item(params):
                     mode,
                 )
             )
-        list_stremio_catalogs(menu_type="anime", sub_menu_type="movie")
+        list_merged_catalogs(menu_type="anime", sub_menu_type="movie")
     end_of_directory()
     apply_section_view("view.main")
 
 
 def tv_menu(params):
     set_pluging_category(translation(90010))
-    list_stremio_catalogs(menu_type="tv")
+    list_merged_catalogs(menu_type="tv")
     end_of_directory()
     apply_section_view("view.main")
 
