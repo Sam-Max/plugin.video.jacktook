@@ -164,6 +164,10 @@ def _is_simkl_action(action):
     )
 
 
+def _is_nuvio_action(action):
+    return action in ("nuvio_auth", "nuvio_logout")
+
+
 def _is_debrid_action(action):
     return action in _DEBRID_ACTIONS
 
@@ -574,6 +578,12 @@ def _route_simkl(action, params):
     actions[action](params)
 
 
+def _route_nuvio(action, params):
+    from lib.navigation import nuvio_auth, nuvio_logout
+
+    {"nuvio_auth": nuvio_auth, "nuvio_logout": nuvio_logout}[action](params)
+
+
 def _route_torrserver(action, params):
     if action in ("torrent_action", "torrent_files", "display_picture", "display_text"):
         from lib.utils.torrent.torrserver_utils import (
@@ -928,6 +938,7 @@ ROUTE_GROUPS = (
     (_is_tmdb_action, _route_tmdb),
     (_is_trakt_action, _route_trakt),
     (_is_simkl_action, _route_simkl),
+    (_is_nuvio_action, _route_nuvio),
     (_is_debrid_action, _route_debrid),
     (_is_telegram_action, _route_telegram),
     (_is_torrserver_action, _route_torrserver),

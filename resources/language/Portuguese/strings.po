@@ -4522,3 +4522,67 @@ msgstr "Limpar Continuar a Ver"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continuar a Ver limpo"
+
+msgctxt "#91002"
+msgid "Nuvio: Account"
+msgstr "Nuvio: Conta"
+
+msgctxt "#91003"
+msgid "Enable"
+msgstr "Ativar"
+
+msgctxt "#91005"
+msgid "Connect Nuvio with QR Code"
+msgstr "Ligar o Nuvio com código QR"
+
+msgctxt "#91004"
+msgid "Push your Jacktook movie and TV episode watch progress to Nuvio when playback stops."
+msgstr "Envie o progresso de visualização de filmes e episódios de TV do Jacktook para o Nuvio quando a reprodução parar."
+
+msgctxt "#91006"
+msgid "Scan the QR code with a signed-in Nuvio device, then select the profile that receives watch-progress updates."
+msgstr "Leia o código QR com um dispositivo com sessão iniciada no Nuvio e, em seguida, selecione o perfil que recebe as atualizações de progresso."
+
+msgctxt "#91007"
+msgid "Sign Out of Nuvio"
+msgstr "Terminar sessão no Nuvio"
+
+msgctxt "#91008"
+msgid "Remove the saved Nuvio session and selected profile from Jacktook."
+msgstr "Remova do Jacktook a sessão Nuvio guardada e o perfil selecionado."
+
+msgctxt "#91009"
+msgid "Nuvio connection cancelled."
+msgstr "Ligação ao Nuvio cancelada."
+
+msgctxt "#91010"
+msgid "Nuvio authorization expired. Start the QR connection again."
+msgstr "A autorização do Nuvio expirou. Inicie novamente a ligação por QR."
+
+msgctxt "#91011"
+msgid "Nuvio authorization was already used or cancelled. Start the QR connection again."
+msgstr "A autorização do Nuvio já foi utilizada ou cancelada. Inicie novamente a ligação por QR."
+
+msgctxt "#91012"
+msgid "Nuvio could not start QR authorization. Please try again."
+msgstr "Não foi possível iniciar a autorização QR do Nuvio. Tente novamente."
+
+msgctxt "#91013"
+msgid "Nuvio authorization check failed. Please try again."
+msgstr "Não foi possível verificar a autorização do Nuvio. Tente novamente."
+
+msgctxt "#91014"
+msgid "Nuvio authorization exchange failed. Please try again."
+msgstr "Não foi possível concluir a troca de autorização do Nuvio. Tente novamente."
+
+msgctxt "#91015"
+msgid "Unable to load Nuvio profiles. Please try again."
+msgstr "Não foi possível carregar os perfis do Nuvio. Tente novamente."
+
+msgctxt "#91016"
+msgid "Nuvio watch-progress sync connected."
+msgstr "Sincronização de progresso do Nuvio ligada."
+
+msgctxt "#91017"
+msgid "Choose Nuvio profile"
+msgstr "Selecionar perfil do Nuvio"

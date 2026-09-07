@@ -1489,6 +1489,18 @@ def simkl_logout(params):
     SimklClient().logout()
 
 
+def nuvio_auth(params):
+    from lib.api.nuvio import NuvioClient
+
+    NuvioClient().authenticate()
+
+
+def nuvio_logout(params):
+    from lib.api.nuvio import NuvioClient
+
+    NuvioClient().logout()
+
+
 def simkl_continue_watching(params):
     from lib.utils.views.simkl_continue_watching import show_simkl_continue_watching
 

@@ -4533,3 +4533,67 @@ msgstr "Golește continuarea vizionării"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continuarea vizionării a fost ștearsă"
+
+msgctxt "#91002"
+msgid "Nuvio: Account"
+msgstr "Nuvio: Cont"
+
+msgctxt "#91003"
+msgid "Enable"
+msgstr "Activează"
+
+msgctxt "#91005"
+msgid "Connect Nuvio with QR Code"
+msgstr "Conectează Nuvio cu cod QR"
+
+msgctxt "#91004"
+msgid "Push your Jacktook movie and TV episode watch progress to Nuvio when playback stops."
+msgstr "Trimite progresul de vizionare pentru filmele și episoadele TV din Jacktook către Nuvio când redarea se oprește."
+
+msgctxt "#91006"
+msgid "Scan the QR code with a signed-in Nuvio device, then select the profile that receives watch-progress updates."
+msgstr "Scanează codul QR cu un dispozitiv conectat la Nuvio, apoi selectează profilul care primește actualizările progresului de vizionare."
+
+msgctxt "#91007"
+msgid "Sign Out of Nuvio"
+msgstr "Deconectare din Nuvio"
+
+msgctxt "#91008"
+msgid "Remove the saved Nuvio session and selected profile from Jacktook."
+msgstr "Elimină din Jacktook sesiunea Nuvio salvată și profilul selectat."
+
+msgctxt "#91009"
+msgid "Nuvio connection cancelled."
+msgstr "Conexiunea la Nuvio a fost anulată."
+
+msgctxt "#91010"
+msgid "Nuvio authorization expired. Start the QR connection again."
+msgstr "Autorizarea Nuvio a expirat. Pornește din nou conexiunea QR."
+
+msgctxt "#91011"
+msgid "Nuvio authorization was already used or cancelled. Start the QR connection again."
+msgstr "Autorizarea Nuvio a fost deja utilizată sau anulată. Pornește din nou conexiunea QR."
+
+msgctxt "#91012"
+msgid "Nuvio could not start QR authorization. Please try again."
+msgstr "Nuvio nu a putut porni autorizarea QR. Încearcă din nou."
+
+msgctxt "#91013"
+msgid "Nuvio authorization check failed. Please try again."
+msgstr "Verificarea autorizării Nuvio a eșuat. Încearcă din nou."
+
+msgctxt "#91014"
+msgid "Nuvio authorization exchange failed. Please try again."
+msgstr "Schimbul de autorizare Nuvio a eșuat. Încearcă din nou."
+
+msgctxt "#91015"
+msgid "Unable to load Nuvio profiles. Please try again."
+msgstr "Profilurile Nuvio nu au putut fi încărcate. Încearcă din nou."
+
+msgctxt "#91016"
+msgid "Nuvio watch-progress sync connected."
+msgstr "Sincronizarea progresului de vizionare Nuvio este conectată."
+
+msgctxt "#91017"
+msgid "Choose Nuvio profile"
+msgstr "Alege profilul Nuvio"

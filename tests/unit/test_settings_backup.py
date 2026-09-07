@@ -85,6 +85,41 @@ def test_build_backup_payload_skips_action_settings_and_scrubs_sensitive_data(
     assert payload["custom_stremio_addons_included"] is False
 
 
+def test_backup_scrubs_nuvio_session_and_profile_selection(monkeypatch, tmp_path):
+    settings_path = _write_settings_xml(
+        tmp_path,
+        """
+    <category id='general'>
+      <group id='backup'>
+        <setting id='safe_value' type='string'><default /></setting>
+        <setting id='nuvio_access_token' type='string'><default /></setting>
+        <setting id='nuvio_refresh_token' type='string'><default /></setting>
+        <setting id='nuvio_expires_at' type='string'><default /></setting>
+        <setting id='nuvio_authenticated' type='boolean'><default>false</default></setting>
+        <setting id='nuvio_profile_id' type='string'><default /></setting>
+      </group>
+    </category>
+    """,
+    )
+    values = {
+        "safe_value": "safe",
+        "nuvio_access_token": "access",
+        "nuvio_refresh_token": "refresh",
+        "nuvio_expires_at": "123",
+        "nuvio_authenticated": "true",
+        "nuvio_profile_id": "2",
+    }
+    monkeypatch.setattr(settings_backup.ADDON, "getSetting", values.get)
+    monkeypatch.setattr(settings_backup, "cache", FakeCache())
+    monkeypatch.setattr(settings_backup, "get_cached_setting_property", lambda _setting_id: "")
+
+    payload = settings_backup.build_backup_payload(
+        strip_sensitive=True, settings_xml_path=settings_path
+    )
+
+    assert payload["settings"] == {"safe_value": "safe"}
+
+
 def test_build_backup_payload_includes_custom_stremio_addons(monkeypatch, tmp_path):
     settings_path = _write_settings_xml(
         tmp_path,

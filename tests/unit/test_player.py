@@ -392,6 +392,42 @@ def test_simkl_scrobbling_queues_start_pause_resume_and_stop(monkeypatch):
     assert test_player._is_simkl_scrobble_active is False
 
 
+def test_nuvio_progress_sync_is_queued_only_from_playback_stop(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"current_time": 30, "total_time": 60})
+    test_player._is_trakt_scrobble_active = False
+    test_player._is_simkl_scrobble_active = False
+    queued = MagicMock()
+    monkeypatch.setattr(test_player, "_sync_yamtrack_watched", MagicMock())
+    monkeypatch.setattr(test_player, "_queue_nuvio_progress_sync", queued)
+    monkeypatch.setattr(player_module, "set_watched_file", MagicMock())
+    monkeypatch.setattr(player_module, "close_busy_dialog", MagicMock())
+    monkeypatch.setattr(player_module, "clear_property", MagicMock())
+
+    test_player.handle_playback_stop()
+
+    queued.assert_called_once_with()
+
+
+def test_nuvio_progress_sync_uses_a_daemon_worker_and_snapshot(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.data.update({"current_time": 30, "total_time": 60})
+    thread = MagicMock()
+    monkeypatch.setattr(player_module, "is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr(player_module, "Thread", MagicMock(return_value=thread))
+
+    test_player._queue_nuvio_progress_sync()
+
+    snapshot = player_module.Thread.call_args.kwargs["args"][0]
+    assert snapshot == test_player.data
+    assert snapshot is not test_player.data
+    assert snapshot["ids"] is not test_player.data["ids"]
+    assert thread.daemon is True
+    thread.start.assert_called_once_with()
+
+
 @pytest.mark.parametrize(
     "data",
     [

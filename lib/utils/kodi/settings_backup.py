@@ -76,6 +76,9 @@ SENSITIVE_SETTING_IDS = {
     "mdblist_api_key",
     "trakt_secret",
     "simkl_access_token",
+    "nuvio_access_token",
+    "nuvio_refresh_token",
+    "nuvio_expires_at",
     "webdav_password",
 }
 
@@ -97,6 +100,8 @@ AUTH_STATE_SETTING_IDS = {
     "stremio_loggedin",
     "is_trakt_auth",
     "simkl_authenticated",
+    "nuvio_authenticated",
+    "nuvio_profile_id",
 }
 
 SCRUBBED_SETTING_IDS = SENSITIVE_SETTING_IDS | IDENTITY_SETTING_IDS | AUTH_STATE_SETTING_IDS

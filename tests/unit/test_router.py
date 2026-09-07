@@ -111,6 +111,15 @@ def test_route_simkl_dispatches_auth_action():
     simkl_auth.assert_called_once_with({})
 
 
+def test_route_nuvio_dispatches_auth_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.nuvio_auth") as nuvio_auth:
+        router._route_nuvio("nuvio_auth", {})
+
+    nuvio_auth.assert_called_once_with({})
+
+
 def test_route_simkl_dispatches_resume_action():
     router = _load_router_module()
 
@@ -150,6 +159,13 @@ def test_get_route_handler_returns_simkl_dispatcher():
     assert router._get_route_handler("simkl_library") is router._route_simkl
     assert router._get_route_handler("simkl_move_to_status") is router._route_simkl
     assert router._get_route_handler("simkl_update_history") is router._route_simkl
+
+
+def test_get_route_handler_returns_nuvio_dispatcher():
+    router = _load_router_module()
+
+    assert router._get_route_handler("nuvio_auth") is router._route_nuvio
+    assert router._get_route_handler("nuvio_logout") is router._route_nuvio
 
 
 def test_route_downloads_dispatches_handle_download_file():
