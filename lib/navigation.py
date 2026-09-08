@@ -1617,6 +1617,38 @@ def trakt_discard_playback(params):
     discard_trakt_playback(params)
 
 
+def nuvio_continue_watching(params):
+    from lib.utils.views.nuvio_continue_watching import show_nuvio_continue_watching
+
+    show_nuvio_continue_watching()
+
+
+def nuvio_history(params):
+    from lib.utils.views.nuvio_history import show_nuvio_history
+
+    show_nuvio_history()
+
+
+def nuvio_remove_progress(params):
+    from lib.api.nuvio import NuvioClient
+
+    if NuvioClient().delete_watch_progress(params.get("progress_key")):
+        notification(translation(91028), time=3000)
+        execute_builtin("Container.Refresh")
+        return
+    notification(translation(91029), time=3000)
+
+
+def nuvio_resume(params):
+    from lib.search import run_search_entry
+
+    search_params = _prepare_resume_search_params(params)
+    percent = search_params.pop("nuvio_resume_percent", "")
+    if percent not in ("", None):
+        search_params["nuvio_resume_percent"] = percent
+    run_search_entry(search_params)
+
+
 def tb_auth(params):
     return debrid_navigation.tb_auth(params)
 

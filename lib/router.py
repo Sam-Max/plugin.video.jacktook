@@ -165,7 +165,15 @@ def _is_simkl_action(action):
 
 
 def _is_nuvio_action(action):
-    return action in ("nuvio_auth", "nuvio_logout", "nuvio_toggle_addons")
+    return action in (
+        "nuvio_auth",
+        "nuvio_logout",
+        "nuvio_toggle_addons",
+        "nuvio_continue_watching",
+        "nuvio_history",
+        "nuvio_remove_progress",
+        "nuvio_resume",
+    )
 
 
 def _is_debrid_action(action):
@@ -581,12 +589,24 @@ def _route_simkl(action, params):
 
 
 def _route_nuvio(action, params):
-    from lib.navigation import nuvio_auth, nuvio_logout, nuvio_toggle_addons
+    from lib.navigation import (
+        nuvio_auth,
+        nuvio_continue_watching,
+        nuvio_history,
+        nuvio_logout,
+        nuvio_remove_progress,
+        nuvio_resume,
+        nuvio_toggle_addons,
+    )
 
     {
         "nuvio_auth": nuvio_auth,
         "nuvio_logout": nuvio_logout,
         "nuvio_toggle_addons": nuvio_toggle_addons,
+        "nuvio_continue_watching": nuvio_continue_watching,
+        "nuvio_history": nuvio_history,
+        "nuvio_remove_progress": nuvio_remove_progress,
+        "nuvio_resume": nuvio_resume,
     }[action](params)
 
 

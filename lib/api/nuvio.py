@@ -668,6 +668,167 @@ class NuvioClient:
             return False
         return True
 
+    @staticmethod
+    def _tmdb_id_from_content_id(content_id):
+        """Parse "tmdb:550" into 550; return None for anything else."""
+        if not isinstance(content_id, str):
+            return None
+        prefix, _, raw_id = content_id.strip().partition(":")
+        if prefix.lower() != "tmdb":
+            return None
+        try:
+            tmdb_id = int(raw_id.strip())
+        except ValueError:
+            return None
+        return tmdb_id if tmdb_id > 0 else None
+
+    def get_watch_progress(self, limit=200):
+        """Pull remote watch-progress entries for the selected Nuvio profile."""
+        if not self.profile_id:
+            kodilog("[NUVIO] watch-progress pull failed (invalid_profile)")
+            return []
+        response = self._post_authenticated(
+            "sync_pull_watch_progress",
+            {
+                "p_profile_id": self.profile_id,
+                "p_since_last_watched": None,
+                "p_limit": limit,
+            },
+        )
+        if response is None or response.status_code >= 400:
+            status = response.status_code if response is not None else None
+            kodilog(f"[NUVIO] watch-progress pull failed (HTTP {status})")
+            return []
+        try:
+            entries = response.json()
+        except ValueError:
+            kodilog("[NUVIO] watch-progress pull failed (invalid_json)")
+            return []
+        if not isinstance(entries, list):
+            kodilog("[NUVIO] watch-progress pull failed (non_list)")
+            return []
+
+        items = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            tmdb_id = self._tmdb_id_from_content_id(entry.get("content_id"))
+            if not tmdb_id:
+                continue
+            content_type = entry.get("content_type")
+            if content_type not in ("movie", "series"):
+                continue
+            duration_ms = self._non_negative_integer(entry.get("duration"))
+            if not duration_ms:
+                continue
+            position_ms = self._non_negative_integer(entry.get("position"))
+            if position_ms is None:
+                position_ms = 0
+            last_watched_ms = self._non_negative_integer(entry.get("last_watched"))
+            if last_watched_ms is None:
+                continue
+            season = episode = None
+            if content_type == "series":
+                season = self._non_negative_integer(entry.get("season"))
+                episode = self._positive_integer(entry.get("episode"))
+                if season is None or not episode:
+                    continue
+            progress_key = str(entry.get("progress_key") or "").strip()
+            if not progress_key:
+                continue
+            items.append(
+                {
+                    "tmdb_id": tmdb_id,
+                    "mode": "tv" if content_type == "series" else "movies",
+                    "season": season,
+                    "episode": episode,
+                    "position_ms": position_ms,
+                    "duration_ms": duration_ms,
+                    "percent": round(min(position_ms / duration_ms * 100, 100.0), 2),
+                    "last_watched_ms": last_watched_ms,
+                    "progress_key": progress_key,
+                }
+            )
+        return items
+
+    def delete_watch_progress(self, progress_key):
+        """Delete a single remote watch-progress entry for the selected profile."""
+        progress_key = str(progress_key or "").strip()
+        if not progress_key:
+            kodilog("[NUVIO] watch-progress delete failed (invalid_progress_key)")
+            return False
+        if not self.profile_id:
+            kodilog("[NUVIO] watch-progress delete failed (invalid_profile)")
+            return False
+        response = self._post_authenticated(
+            "sync_delete_watch_progress",
+            {"p_progress_key": progress_key, "p_profile_id": self.profile_id},
+        )
+        if response is None or response.status_code >= 400:
+            if response is not None:
+                kodilog(f"[NUVIO] watch-progress delete rejected (HTTP {response.status_code})")
+            return False
+        return True
+
+    def get_watched_history(self, page=1, page_size=500):
+        """Pull remote watched-history items for the selected Nuvio profile."""
+        if not self.profile_id:
+            kodilog("[NUVIO] watched-history pull failed (invalid_profile)")
+            return []
+        response = self._post_authenticated(
+            "sync_pull_watched_items",
+            {
+                "p_profile_id": self.profile_id,
+                "p_page": page,
+                "p_page_size": page_size,
+            },
+        )
+        if response is None or response.status_code >= 400:
+            status = response.status_code if response is not None else None
+            kodilog(f"[NUVIO] watched-history pull failed (HTTP {status})")
+            return []
+        try:
+            rows = response.json()
+        except ValueError:
+            kodilog("[NUVIO] watched-history pull failed (invalid_json)")
+            return []
+        if not isinstance(rows, list):
+            kodilog("[NUVIO] watched-history pull failed (non_list)")
+            return []
+
+        items = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            tmdb_id = self._tmdb_id_from_content_id(row.get("content_id"))
+            if not tmdb_id:
+                continue
+            content_type = row.get("content_type")
+            if content_type not in ("movie", "series"):
+                continue
+            title = row.get("title")
+            title = title.strip() if isinstance(title, str) else ""
+            watched_at_ms = self._non_negative_integer(row.get("watched_at"))
+            if watched_at_ms is None:
+                continue
+            season = episode = None
+            if content_type == "series":
+                season = self._non_negative_integer(row.get("season"))
+                episode = self._positive_integer(row.get("episode"))
+                if season is None or not episode:
+                    continue
+            items.append(
+                {
+                    "tmdb_id": tmdb_id,
+                    "mode": "tv" if content_type == "series" else "movies",
+                    "season": season,
+                    "episode": episode,
+                    "title": title,
+                    "watched_at_ms": watched_at_ms,
+                }
+            )
+        return items
+
     def logout(self):
         if self.access_token:
             try:

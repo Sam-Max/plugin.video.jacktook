@@ -4606,6 +4606,34 @@ msgctxt "#91022"
 msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "Não foi possível carregar os complementos Nuvio. Sua seleção salva não foi alterada."
 
+msgctxt "#91023"
+msgid "Nuvio: Watch Progress"
+msgstr "Nuvio: Progresso de exibição"
+
+msgctxt "#91024"
+msgid "Nuvio: Watch History"
+msgstr "Nuvio: Histórico de exibição"
+
+msgctxt "#91025"
+msgid "No Nuvio watch progress available."
+msgstr "Não há progresso de exibição Nuvio disponível."
+
+msgctxt "#91026"
+msgid "No Nuvio watch history available."
+msgstr "Não há histórico de exibição Nuvio disponível."
+
+msgctxt "#91027"
+msgid "Remove from Nuvio"
+msgstr "Remover de Nuvio"
+
+msgctxt "#91028"
+msgid "Removed from Nuvio Continue Watching"
+msgstr "Removido de Nuvio Continuar assistindo"
+
+msgctxt "#91029"
+msgid "Could not remove Nuvio watch progress."
+msgstr "Não foi possível remover o progresso de exibição Nuvio."
+
 msgctxt "#91030"
 msgid "About"
 msgstr "Sobre"

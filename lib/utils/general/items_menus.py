@@ -1,5 +1,7 @@
 from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
+from lib.utils.views.nuvio_continue_watching import has_nuvio_continue_watching_items
+from lib.utils.views.nuvio_history import has_nuvio_history_items
 from lib.utils.views.simkl_continue_watching import has_simkl_continue_watching_items
 from lib.utils.views.trakt_continue_watching import has_trakt_continue_watching_items
 
@@ -528,6 +530,18 @@ root_menu_items = [
         "icon": "continue_watching.png",
         "action": "trakt_continue_watching",
         "condition": has_trakt_continue_watching_items,
+    },
+    {
+        "name": "Nuvio Continue Watching",
+        "icon": "continue_watching.png",
+        "action": "nuvio_continue_watching",
+        "condition": has_nuvio_continue_watching_items,
+    },
+    {
+        "name": "Nuvio History",
+        "icon": "history.png",
+        "action": "nuvio_history",
+        "condition": has_nuvio_history_items,
     },
     {"name": 90007, "icon": "tv.png", "action": "tv_shows_items"},
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},

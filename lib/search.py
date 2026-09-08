@@ -600,6 +600,7 @@ def _handle_super_quick_play(params: dict) -> bool:
                 "simkl_resume_progress",
                 "trakt_playback_id",
                 "trakt_resume_progress",
+                "nuvio_resume_percent",
             ):
                 if key in params:
                     data[key] = params[key]
@@ -726,6 +727,7 @@ def run_search_entry(params: dict):
             "simkl_resume_progress",
             "trakt_playback_id",
             "trakt_resume_progress",
+            "nuvio_resume_percent",
         )
         if key in params
     }

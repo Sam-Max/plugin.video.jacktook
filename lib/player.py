@@ -536,6 +536,7 @@ class JacktookPLayer(xbmc.Player):
             ):
                 self._apply_simkl_resume()
                 self._apply_trakt_resume()
+                self._apply_nuvio_resume()
                 if self.on_started:
                     self.on_started()
         except Exception as e:
@@ -1019,6 +1020,23 @@ class JacktookPLayer(xbmc.Player):
             NuvioClient().push_watch_progress(data)
         except Exception as error:
             kodilog(f"[NUVIO] playback sync failed; continuing playback ({type(error).__name__})")
+
+    def _apply_nuvio_resume(self):
+        if getattr(self, "_nuvio_resume_applied", False):
+            return
+        try:
+            progress = float(self.data.get("nuvio_resume_percent"))
+            total_time = float(self.getTotalTime())
+        except (TypeError, ValueError):
+            return
+        if progress <= 0 or progress >= 95 or total_time <= 0:
+            return
+        try:
+            self.seekTime(total_time * progress / 100)
+            self.playback_started_properly = True
+            self._nuvio_resume_applied = True
+        except Exception as error:
+            kodilog(f"[NUVIO] resume seek failed; continuing playback ({type(error).__name__})")
 
     def _apply_simkl_resume(self):
         if getattr(self, "_simkl_resume_applied", False):
