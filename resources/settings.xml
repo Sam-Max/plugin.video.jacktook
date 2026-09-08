@@ -114,6 +114,16 @@
                         </dependencies>
                     </setting>
                 </group>
+            <group id="about" label="91030">
+                <setting id="addon_version" type="string" label="91031" help="">
+                    <default />
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <enable>false</enable>
+                    <control type="edit" format="string" />
+                </setting>
+            </group>
         </category>
         <category id="services_category" label="30150">
             <group id="torrents" label="30862">

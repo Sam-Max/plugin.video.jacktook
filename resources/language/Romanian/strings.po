@@ -4533,3 +4533,11 @@ msgstr "Golește continuarea vizionării"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continuarea vizionării a fost ștearsă"
+
+msgctxt "#91030"
+msgid "Despre"
+msgstr "Despre"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Versiune"

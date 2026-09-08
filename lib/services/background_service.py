@@ -14,6 +14,7 @@ from lib.services.trakt_sync import TraktSyncService
 from lib.updater import updates_check_addon
 from lib.utils.kodi.settings import update_delay
 from lib.utils.kodi.utils import (
+    ADDON_VERSION,
     clear_cached_settings,
     clear_property,
     dialog_ok,
@@ -22,6 +23,7 @@ from lib.utils.kodi.utils import (
     get_setting,
     kodilog,
     set_property_no_fallback,
+    set_setting,
     translatePath,
     translation,
 )
@@ -216,6 +218,7 @@ class JacktookMOnitor(xbmc.Monitor):
         self.startServices()
 
     def startServices(self):
+        set_setting("addon_version", ADDON_VERSION)
         CheckKodiVersion().run()
         DatabaseSetup().run()
         run_migrations()

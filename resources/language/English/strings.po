@@ -4738,3 +4738,11 @@ msgstr "Clear Continue Watching"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continue Watching cleared"
+
+msgctxt "#91030"
+msgid "About"
+msgstr "About"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Version"

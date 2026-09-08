@@ -4526,3 +4526,11 @@ msgstr "Borrar Continue Watching"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continue Watching borrado"
+
+msgctxt "#91030"
+msgid "Acerca de"
+msgstr "Acerca de"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Versión"

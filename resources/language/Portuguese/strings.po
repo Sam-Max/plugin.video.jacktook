@@ -4522,3 +4522,11 @@ msgstr "Limpar Continuar a Ver"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continuar a Ver limpo"
+
+msgctxt "#91030"
+msgid "Sobre"
+msgstr "Sobre"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Versão"

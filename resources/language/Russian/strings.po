@@ -4521,3 +4521,11 @@ msgstr "Очистить «Продолжить просмотр»"
 msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "«Продолжить просмотр» очищен"
+
+msgctxt "#91030"
+msgid "О программе"
+msgstr "О программе"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Версия"

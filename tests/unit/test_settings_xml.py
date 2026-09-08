@@ -2,6 +2,16 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 SETTINGS_XML = Path(__file__).resolve().parents[2] / "resources" / "settings.xml"
+ENGLISH_STRINGS = (
+    Path(__file__).resolve().parents[2] / "resources" / "language" / "English" / "strings.po"
+)
+
+
+def _english_label(label_id):
+    entry = f'msgctxt "#{label_id}"\n'
+    start = ENGLISH_STRINGS.read_text().index(entry)
+    lines = ENGLISH_STRINGS.read_text()[start:].splitlines()
+    return lines[1].removeprefix('msgid "').removesuffix('"')
 
 
 def test_settings_xml_parses():
@@ -72,3 +82,27 @@ def test_simkl_client_id_is_an_empty_optional_advanced_override():
     assert client_id.findtext("default", "") == ""
     assert client_id.get("label") == "90973"
     assert client_id.get("help") == "90974"
+
+
+def test_addon_version_setting_is_readonly_in_general_category():
+    tree = ET.parse(SETTINGS_XML)
+
+    general = tree.find(".//category[@id='general_category']")
+    about_group = general.find("group[@id='about']")
+    version = tree.find(".//setting[@id='addon_version']")
+
+    assert about_group is not None
+    assert version is not None
+    assert version.findtext("enable") == "false"
+    assert version.find("control[@type='edit'][@format='string']") is not None
+    assert _english_label(about_group.get("label")) == "About"
+    assert _english_label(version.get("label")) == "Version"
+
+
+def test_about_strings_are_defined_in_every_supported_catalogue():
+    language_root = ENGLISH_STRINGS.parent.parent
+
+    for catalogue in language_root.glob("*/strings.po"):
+        content = catalogue.read_text()
+        for string_id in (91030, 91031):
+            assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue
