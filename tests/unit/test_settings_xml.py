@@ -163,3 +163,27 @@ def test_nuvio_strings_are_defined_in_every_supported_catalogue():
         content = catalogue.read_text()
         for string_id in range(91002, 91023):
             assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue
+
+
+def test_addon_version_setting_is_readonly_in_general_category():
+    tree = ET.parse(SETTINGS_XML)
+
+    general = tree.find(".//category[@id='general_category']")
+    about_group = general.find("group[@id='about']")
+    version = tree.find(".//setting[@id='addon_version']")
+
+    assert about_group is not None
+    assert version is not None
+    assert version.findtext("enable") == "false"
+    assert version.find("control[@type='edit'][@format='string']") is not None
+    assert _english_label(about_group.get("label")) == "About"
+    assert _english_label(version.get("label")) == "Version"
+
+
+def test_about_strings_are_defined_in_every_supported_catalogue():
+    language_root = ENGLISH_STRINGS.parent.parent
+
+    for catalogue in language_root.glob("*/strings.po"):
+        content = catalogue.read_text()
+        for string_id in (91030, 91031):
+            assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue

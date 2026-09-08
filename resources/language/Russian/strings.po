@@ -4605,3 +4605,11 @@ msgstr "Нет доступных совместимых дополнений Nu
 msgctxt "#91022"
 msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "Не удалось загрузить дополнения Nuvio. Сохраненный выбор не изменен."
+
+msgctxt "#91030"
+msgid "About"
+msgstr "О программе"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Версия"

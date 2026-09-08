@@ -4617,3 +4617,11 @@ msgstr "Nu sunt disponibile suplimente Nuvio utilizabile."
 msgctxt "#91022"
 msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "Suplimentele Nuvio nu au putut fi încărcate. Selecția salvată nu a fost modificată."
+
+msgctxt "#91030"
+msgid "About"
+msgstr "Despre"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Versiune"

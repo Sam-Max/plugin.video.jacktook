@@ -4821,4 +4821,11 @@ msgstr "No usable Nuvio addons are available."
 msgctxt "#91022"
 msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "Nuvio addons could not be loaded. Your saved selection was not changed."
-msgstr "Continue Watching cleared"
+
+msgctxt "#91030"
+msgid "About"
+msgstr "About"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Version"

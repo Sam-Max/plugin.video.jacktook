@@ -4610,3 +4610,11 @@ msgstr "No hay complementos de Nuvio utilizables disponibles."
 msgctxt "#91022"
 msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
 msgstr "No se pudieron cargar los complementos de Nuvio. La selección guardada no se modificó."
+
+msgctxt "#91030"
+msgid "About"
+msgstr "Acerca de"
+
+msgctxt "#91031"
+msgid "Version"
+msgstr "Versión"
