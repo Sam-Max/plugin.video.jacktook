@@ -287,7 +287,17 @@ def resolve_stremio_playback_url(data: Dict[str, Any]) -> Optional[Dict[str, Any
 
     from lib.utils.player.utils import resolve_playback_url
 
-    return resolve_playback_url(canonical_data)
+    resolved = resolve_playback_url(canonical_data)
+    if (
+        resolved
+        and canonical_data.get("_stremio_debrid_intent")
+        and _valid_http_url(resolved.get("url", ""))
+    ):
+        # Once a debrid torrent becomes a direct URL the file index is
+        # meaningless. Strip it so cached playback payloads are not rejected
+        # as indexed non-torrent sources on replay.
+        return strip_stremio_file_index(resolved)
+    return resolved
 
 
 def strip_stremio_file_index(data: Mapping[str, Any]) -> Dict[str, Any]:
