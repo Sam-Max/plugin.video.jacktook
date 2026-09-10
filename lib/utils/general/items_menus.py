@@ -1,3 +1,4 @@
+from lib.api.nuvio import is_nuvio_progress_sync_enabled
 from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
 from lib.utils.views.nuvio_continue_watching import has_nuvio_continue_watching_items
@@ -533,30 +534,10 @@ root_menu_items = [
         "condition": has_trakt_continue_watching_items,
     },
     {
-        "name": "Nuvio Continue Watching",
-        "icon": "continue_watching.png",
-        "action": "nuvio_continue_watching",
-        "condition": has_nuvio_continue_watching_items,
-    },
-    {
-        "name": "Nuvio History",
-        "icon": "history.png",
-        "action": "nuvio_history",
-        "condition": has_nuvio_history_items,
-    },
-    {
-        "name": translation(91032),
-        "icon": "movies.png",
-        "action": "nuvio_library",
-        "params": {"mode": "movies"},
-        "condition": has_nuvio_library_items,
-    },
-    {
-        "name": translation(91033),
-        "icon": "tv.png",
-        "action": "nuvio_library",
-        "params": {"mode": "tv"},
-        "condition": has_nuvio_library_items,
+        "name": translation(91038),
+        "icon": "nuvio.png",
+        "action": "nuvio_menu",
+        "condition": is_nuvio_progress_sync_enabled,
     },
     {"name": 90007, "icon": "tv.png", "action": "tv_shows_items"},
     {"name": 90008, "icon": "movies.png", "action": "movies_items"},
@@ -583,6 +564,35 @@ history_menu_items = [
     {"name": 90019, "icon": "history.png", "action": "files_history"},
     {"name": 90020, "icon": "history.png", "action": "titles_history"},
     {"name": 90021, "icon": "history.png", "action": "titles_calendar"},
+]
+
+nuvio_menu_items = [
+    {
+        "name": 90200,
+        "icon": "continue_watching.png",
+        "action": "nuvio_continue_watching",
+        "condition": has_nuvio_continue_watching_items,
+    },
+    {
+        "name": 90017,
+        "icon": "history.png",
+        "action": "nuvio_history",
+        "condition": has_nuvio_history_items,
+    },
+    {
+        "name": 91032,
+        "icon": "movies.png",
+        "action": "nuvio_library",
+        "params": {"mode": "movies"},
+        "condition": has_nuvio_library_items,
+    },
+    {
+        "name": 91033,
+        "icon": "tv.png",
+        "action": "nuvio_library",
+        "params": {"mode": "tv"},
+        "condition": has_nuvio_library_items,
+    },
 ]
 
 library_menu_items = [

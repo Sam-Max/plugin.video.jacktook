@@ -35,6 +35,7 @@ from lib.utils.general.items_menus import (
     animation_items,
     anime_items,
     movie_items,
+    nuvio_menu_items,
     root_menu_items,
     trakt_movie_discovery_items,
     trakt_movie_library_items,
@@ -1615,6 +1616,12 @@ def trakt_discard_playback(params):
     from lib.utils.views.trakt_continue_watching import discard_trakt_playback
 
     discard_trakt_playback(params)
+
+
+def nuvio_menu(params):
+    set_pluging_category(translation(91038))
+    render_menu(nuvio_menu_items, cache=False)
+    apply_section_view("view.main")
 
 
 def nuvio_continue_watching(params):

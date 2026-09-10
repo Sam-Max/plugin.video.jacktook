@@ -2,8 +2,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from lib.api.nuvio import NuvioClient
-from lib.utils.general.items_menus import root_menu_items
+from lib.api.nuvio import NuvioClient, is_nuvio_progress_sync_enabled
+from lib.utils.general.items_menus import nuvio_menu_items, root_menu_items
 
 
 def _client():
@@ -353,30 +353,38 @@ def test_watch_pull_invalid_json_and_non_list_return_empty(monkeypatch):
 
 
 def test_nuvio_root_menu_entries_are_visible_only_when_sync_is_enabled(monkeypatch):
-    continue_watching = next(
-        item for item in root_menu_items if item["action"] == "nuvio_continue_watching"
-    )
-    history = next(item for item in root_menu_items if item["action"] == "nuvio_history")
+    root_entries = [item for item in root_menu_items if item["action"] == "nuvio_menu"]
+    assert len(root_entries) == 1
+    nuvio_root = root_entries[0]
+    assert nuvio_root["condition"] is is_nuvio_progress_sync_enabled
 
-    monkeypatch.setattr(
-        "lib.utils.views.nuvio_continue_watching.is_nuvio_progress_sync_enabled",
-        lambda: False,
-    )
-    monkeypatch.setattr(
-        "lib.utils.views.nuvio_history.is_nuvio_progress_sync_enabled", lambda: False
-    )
-    assert continue_watching["condition"]() is False
-    assert history["condition"]() is False
+    monkeypatch.setattr("lib.api.nuvio.get_setting", {}.get)
+    assert nuvio_root["condition"]() is False
 
-    monkeypatch.setattr(
-        "lib.utils.views.nuvio_continue_watching.is_nuvio_progress_sync_enabled",
-        lambda: True,
-    )
-    monkeypatch.setattr(
-        "lib.utils.views.nuvio_history.is_nuvio_progress_sync_enabled", lambda: True
-    )
-    assert continue_watching["condition"]() is True
-    assert history["condition"]() is True
+    enabled = {
+        "nuvio_enabled": "true",
+        "nuvio_authenticated": "true",
+        "nuvio_access_token": "access",
+        "nuvio_profile_id": "2",
+    }
+    monkeypatch.setattr("lib.api.nuvio.get_setting", enabled.get)
+    assert nuvio_root["condition"]() is True
+
+    assert [(item["action"], item.get("params")) for item in nuvio_menu_items] == [
+        ("nuvio_continue_watching", None),
+        ("nuvio_history", None),
+        ("nuvio_library", {"mode": "movies"}),
+        ("nuvio_library", {"mode": "tv"}),
+    ]
+    assert all(callable(item["condition"]) for item in nuvio_menu_items)
+
+    monkeypatch.setattr("lib.api.nuvio.get_setting", {}.get)
+    assert nuvio_menu_items[0]["condition"]() is False
+    assert nuvio_menu_items[1]["condition"]() is False
+
+    monkeypatch.setattr("lib.api.nuvio.get_setting", enabled.get)
+    assert nuvio_menu_items[0]["condition"]() is True
+    assert nuvio_menu_items[1]["condition"]() is True
 
 
 # ---------------------------------------------------------------------------
@@ -968,8 +976,8 @@ def test_show_nuvio_library_notifies_when_empty(monkeypatch):
     view.notification.assert_called_once_with("text-91034")
 
 
-def test_nuvio_library_root_menu_entries_are_condition_gated(monkeypatch):
-    library_entries = [item for item in root_menu_items if item["action"] == "nuvio_library"]
+def test_nuvio_library_menu_entries_are_condition_gated(monkeypatch):
+    library_entries = [item for item in nuvio_menu_items if item["action"] == "nuvio_library"]
 
     assert len(library_entries) == 2
     assert {entry["params"]["mode"] for entry in library_entries} == {"movies", "tv"}

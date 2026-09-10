@@ -4881,3 +4881,7 @@ msgstr "Sync interval (minutes)"
 msgctxt "#91037"
 msgid "How often Nuvio library changes are pulled, in minutes (minimum 1)."
 msgstr "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+
+msgctxt "#91038"
+msgid "Nuvio"
+msgstr "Nuvio"
