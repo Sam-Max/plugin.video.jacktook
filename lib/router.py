@@ -171,6 +171,7 @@ def _is_nuvio_action(action):
         "nuvio_toggle_addons",
         "nuvio_continue_watching",
         "nuvio_history",
+        "nuvio_library",
         "nuvio_remove_progress",
         "nuvio_resume",
     )
@@ -593,6 +594,7 @@ def _route_nuvio(action, params):
         nuvio_auth,
         nuvio_continue_watching,
         nuvio_history,
+        nuvio_library,
         nuvio_logout,
         nuvio_remove_progress,
         nuvio_resume,
@@ -605,6 +607,7 @@ def _route_nuvio(action, params):
         "nuvio_toggle_addons": nuvio_toggle_addons,
         "nuvio_continue_watching": nuvio_continue_watching,
         "nuvio_history": nuvio_history,
+        "nuvio_library": nuvio_library,
         "nuvio_remove_progress": nuvio_remove_progress,
         "nuvio_resume": nuvio_resume,
     }[action](params)

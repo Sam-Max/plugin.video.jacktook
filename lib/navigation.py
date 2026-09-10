@@ -1629,6 +1629,12 @@ def nuvio_history(params):
     show_nuvio_history()
 
 
+def nuvio_library(params):
+    from lib.utils.views.nuvio_library import show_nuvio_library
+
+    show_nuvio_library(params)
+
+
 def nuvio_remove_progress(params):
     from lib.api.nuvio import NuvioClient
 

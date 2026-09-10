@@ -733,7 +733,7 @@ def test_nuvio_remove_progress_notifies_without_refresh_on_failure(monkeypatch):
 
 @pytest.mark.parametrize(
     "action",
-    ["nuvio_continue_watching", "nuvio_history", "nuvio_remove_progress"],
+    ["nuvio_continue_watching", "nuvio_history", "nuvio_library", "nuvio_remove_progress"],
 )
 def test_get_route_handler_returns_nuvio_dispatcher_for_watch_actions(action):
     import importlib
@@ -749,7 +749,7 @@ def test_get_route_handler_returns_nuvio_dispatcher_for_watch_actions(action):
 
 @pytest.mark.parametrize(
     "action",
-    ["nuvio_continue_watching", "nuvio_history", "nuvio_remove_progress"],
+    ["nuvio_continue_watching", "nuvio_history", "nuvio_library", "nuvio_remove_progress"],
 )
 def test_route_nuvio_dispatches_watch_actions(action):
     import importlib
@@ -766,3 +766,227 @@ def test_route_nuvio_dispatches_watch_actions(action):
         router._route_nuvio(action, params)
 
     handler.assert_called_once_with(params)
+
+
+# ---------------------------------------------------------------------------
+# Library view (offline, database-only)
+# ---------------------------------------------------------------------------
+
+
+class _FakeNuvioStore:
+    """In-memory NuvioStore double keyed by profile_id."""
+
+    def __init__(self, rows_by_profile=None):
+        self._rows = rows_by_profile or {}
+        self.calls = []
+        self.closed = False
+
+    def list_items(self, profile_id, content_type):
+        self.calls.append((profile_id, content_type))
+        return [
+            row for row in self._rows.get(profile_id, []) if row.get("content_type") == content_type
+        ]
+
+    def count(self, profile_id):
+        return len(self._rows.get(profile_id, []))
+
+    def close(self):
+        self.closed = True
+
+
+def _movie_row(tmdb_id=550, title="Fight Club"):
+    return {
+        "content_type": "movie",
+        "content_id": f"tmdb:{tmdb_id}",
+        "tmdb_id": tmdb_id,
+        "title": title,
+        "poster": "poster.jpg",
+        "background": "fanart.jpg",
+        "description": "A movie description",
+        "release_info": "1999",
+        "genres": ["Drama"],
+    }
+
+
+def _series_row(tmdb_id=1396, title="Breaking Bad"):
+    return {
+        "content_type": "series",
+        "content_id": f"tmdb:{tmdb_id}",
+        "tmdb_id": tmdb_id,
+        "title": title,
+        "poster": "poster.jpg",
+        "background": "fanart.jpg",
+        "description": "A series description",
+        "genres": ["Drama"],
+    }
+
+
+def _no_construct_client():
+    class _NoConstructNuvioClient(NuvioClient):
+        def __init__(self, *args, **kwargs):
+            raise AssertionError("NuvioClient must not be constructed by the library view")
+
+    return _NoConstructNuvioClient
+
+
+def _settings(values):
+    return lambda key, default=None: values.get(key, default)
+
+
+def _patch_library_settings(monkeypatch, view, profile_id="2"):
+    monkeypatch.setattr(view, "NuvioClient", _no_construct_client())
+    monkeypatch.setattr(view, "get_setting", _settings({"nuvio_profile_id": profile_id}))
+
+
+def test_has_nuvio_library_items_false_when_disabled(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    monkeypatch.setattr(view, "is_nuvio_progress_sync_enabled", lambda: False)
+    nuvio_store = MagicMock(return_value=_FakeNuvioStore({2: [_movie_row()]}))
+    monkeypatch.setattr(view, "NuvioStore", nuvio_store)
+
+    assert view.has_nuvio_library_items() is False
+    nuvio_store.assert_not_called()
+
+
+def test_has_nuvio_library_items_false_when_mirror_empty(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    monkeypatch.setattr(view, "is_nuvio_progress_sync_enabled", lambda: True)
+    _patch_library_settings(monkeypatch, view)
+    store = _FakeNuvioStore({2: []})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+
+    assert view.has_nuvio_library_items() is False
+    assert store.closed is True
+
+
+def test_has_nuvio_library_items_true_when_populated(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    monkeypatch.setattr(view, "is_nuvio_progress_sync_enabled", lambda: True)
+    _patch_library_settings(monkeypatch, view)
+    store = _FakeNuvioStore({2: [_movie_row(), _series_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+
+    assert view.has_nuvio_library_items() is True
+    assert store.closed is True
+
+
+def test_library_view_never_constructs_nuvio_client(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    monkeypatch.setattr(view, "NuvioClient", _no_construct_client())
+
+    with pytest.raises(AssertionError):
+        view.NuvioClient()
+
+
+def test_show_nuvio_library_builds_movie_search_without_network(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    store = _FakeNuvioStore({2: [_movie_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    set_media_info_tag = MagicMock()
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
+    _patch_library_settings(monkeypatch, view)
+
+    view.show_nuvio_library({"mode": "movies"})
+
+    assert store.calls == [(2, "movie")]
+    directory_items = add_items.call_args.args[0]
+    assert len(directory_items) == 1
+    url, _list_item, is_folder = directory_items[0]
+    assert "action=search" in url
+    assert "mode=movies" in url
+    assert "tmdb_id" in url
+    assert is_folder is False
+
+    view.apply_section_view.assert_called_once_with("view.library", content_type="movies")
+    kwargs = set_media_info_tag.call_args.kwargs
+    assert kwargs["mode"] == "movies"
+    assert kwargs["data"]["title"] == "Fight Club"
+    assert kwargs["data"]["poster"] == "poster.jpg"
+    assert kwargs["data"]["fanart"] == "fanart.jpg"
+    assert kwargs["data"]["id"] == 550
+    view.notification.assert_not_called()
+
+
+def test_show_nuvio_library_builds_series_season_details(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    store = _FakeNuvioStore({2: [_series_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    set_media_info_tag = MagicMock()
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
+    _patch_library_settings(monkeypatch, view)
+
+    view.show_nuvio_library({"mode": "tv"})
+
+    assert store.calls == [(2, "series")]
+    directory_items = add_items.call_args.args[0]
+    assert len(directory_items) == 1
+    url, _list_item, is_folder = directory_items[0]
+    assert "action=show_seasons_details" in url
+    assert "mode=tv" in url
+    assert "tmdb_id" in url
+    assert is_folder is True
+    view.apply_section_view.assert_called_once_with("view.library", content_type="tvshows")
+    assert set_media_info_tag.call_args.kwargs["mode"] == "tv"
+
+
+def test_show_nuvio_library_is_profile_scoped(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    store = _FakeNuvioStore({1: [_movie_row()], 2: [_series_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _patch_library_settings(monkeypatch, view, profile_id="2")
+
+    view.show_nuvio_library({"mode": "movies"})
+
+    assert store.calls == [(2, "movie")]
+    assert add_items.call_args.args[0] == []
+    view.notification.assert_called_once_with("text-91034")
+
+
+def test_show_nuvio_library_notifies_when_empty(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    store = _FakeNuvioStore({2: []})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _patch_library_settings(monkeypatch, view)
+
+    view.show_nuvio_library({"mode": "movies"})
+
+    assert add_items.call_args.args[0] == []
+    view.notification.assert_called_once_with("text-91034")
+
+
+def test_nuvio_library_root_menu_entries_are_condition_gated(monkeypatch):
+    library_entries = [item for item in root_menu_items if item["action"] == "nuvio_library"]
+
+    assert len(library_entries) == 2
+    assert {entry["params"]["mode"] for entry in library_entries} == {"movies", "tv"}
+
+    monkeypatch.setattr(
+        "lib.utils.views.nuvio_library.is_nuvio_progress_sync_enabled", lambda: False
+    )
+    assert all(entry["condition"]() is False for entry in library_entries)
+
+    monkeypatch.setattr(
+        "lib.utils.views.nuvio_library.is_nuvio_progress_sync_enabled", lambda: True
+    )
+    monkeypatch.setattr("lib.utils.views.nuvio_library.NuvioClient", _no_construct_client())
+    monkeypatch.setattr(
+        "lib.utils.views.nuvio_library.get_setting", _settings({"nuvio_profile_id": "2"})
+    )
+    store = _FakeNuvioStore({2: [_movie_row()]})
+    monkeypatch.setattr("lib.utils.views.nuvio_library.NuvioStore", MagicMock(return_value=store))
+
+    assert all(entry["condition"]() is True for entry in library_entries)
