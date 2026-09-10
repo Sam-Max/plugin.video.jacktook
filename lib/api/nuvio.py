@@ -25,6 +25,25 @@ ADDONS_FETCH_TRANSPORT = "transport"
 ADDONS_FETCH_HTTP = "http"
 ADDONS_FETCH_INVALID_JSON = "invalid_json"
 ADDONS_FETCH_NON_LIST = "non_list"
+LIBRARY_RPC_CURSOR = "sync_get_library_delta_cursor"
+LIBRARY_RPC_SNAPSHOT = "sync_pull_library"
+LIBRARY_RPC_DELTA = "sync_pull_library_delta"
+LIBRARY_FETCH_AUTH = "auth"
+LIBRARY_FETCH_TRANSPORT = "transport"
+LIBRARY_FETCH_HTTP = "http"
+LIBRARY_FETCH_INVALID_JSON = "invalid_json"
+LIBRARY_FETCH_NON_LIST = "non_list"
+LIBRARY_FETCH_INVALID_CURSOR = "invalid_cursor"
+
+# Sentinel returned by _parse_library_row when a delta event carries an
+# unrecognized operation. The caller must abort the whole batch so the cursor
+# never advances past an event that could not be applied.
+_LIBRARY_BATCH_ABORT = object()
+
+# Sentinel returned by _library_rpc when the request itself failed. It is
+# distinct from a parsed JSON null body, which callers must treat as an
+# invalid/non-list payload rather than a transport failure.
+_LIBRARY_RPC_FAILED = object()
 
 
 class NuvioClient:
@@ -313,6 +332,182 @@ class NuvioClient:
         for row in valid_rows:
             row.pop("_index", None)
         return valid_rows
+
+    @staticmethod
+    def _log_library_fetch_failure(label, failure, status_code=None):
+        status = f", HTTP {status_code}" if status_code is not None else ""
+        kodilog(f"[NUVIO] {label} fetch failed ({failure}{status})")
+
+    def _library_profile_id(self, profile_id):
+        if profile_id is None:
+            return self.profile_id
+        return self._profile_index(profile_id)
+
+    def _library_rpc(self, endpoint, payload, label):
+        """Run a read-only library RPC and return parsed JSON or a sentinel.
+
+        Failures are reported by category only and return
+        ``_LIBRARY_RPC_FAILED``; response data is never logged.
+        """
+        response, failure = self._post_authenticated(endpoint, payload, include_failure=True)
+        if failure:
+            status_code = self._last_token_failure_status if failure == LIBRARY_FETCH_AUTH else None
+            self._log_library_fetch_failure(label, failure, status_code)
+            return _LIBRARY_RPC_FAILED
+        if response is None or response.status_code >= 400:
+            self._log_library_fetch_failure(
+                label, LIBRARY_FETCH_HTTP, response.status_code if response else None
+            )
+            return _LIBRARY_RPC_FAILED
+        try:
+            return response.json()
+        except ValueError:
+            self._log_library_fetch_failure(label, LIBRARY_FETCH_INVALID_JSON)
+            return _LIBRARY_RPC_FAILED
+
+    @classmethod
+    def _clamp_library_limit(cls, value, default):
+        parsed = cls._non_negative_integer(value)
+        if parsed is None:
+            return default
+        return max(1, min(parsed, 1000))
+
+    @staticmethod
+    def _optional_string(value):
+        return value.strip() if isinstance(value, str) else ""
+
+    @staticmethod
+    def _string_list(value):
+        if not isinstance(value, list):
+            return []
+        return [entry.strip() for entry in value if isinstance(entry, str) and entry.strip()]
+
+    @classmethod
+    def _parse_library_row(cls, row, include_event=False):
+        """Normalize a library row; return None to skip or the abort sentinel.
+
+        Identity must be a positive ``tmdb:`` content id with a known
+        ``content_type``. Delta rows must carry a recognized ``operation``;
+        any other value aborts the whole batch so the cursor cannot skip it.
+        """
+        if not isinstance(row, dict):
+            return None
+        if include_event and row.get("operation") not in ("upsert", "delete"):
+            return _LIBRARY_BATCH_ABORT
+        content_type = row.get("content_type")
+        if content_type not in ("movie", "series"):
+            return None
+        content_id = row.get("content_id")
+        tmdb_id = cls._tmdb_id_from_content_id(content_id)
+        if not tmdb_id:
+            return None
+        parsed = {
+            "content_type": content_type,
+            "content_id": content_id.strip(),
+            "tmdb_id": tmdb_id,
+            "title": cls._optional_string(row.get("name")),
+            "poster": cls._optional_string(row.get("poster")),
+            "background": cls._optional_string(row.get("background")),
+            "description": cls._optional_string(row.get("description")),
+            "release_info": cls._optional_string(row.get("release_info")),
+            "imdb_rating": cls._finite_number(row.get("imdb_rating")),
+            "genres": cls._string_list(row.get("genres")),
+            "addon_base_url": cls._optional_string(row.get("addon_base_url")),
+            "added_at_ms": cls._non_negative_integer(row.get("added_at")) or 0,
+        }
+        if include_event:
+            event_id = cls._positive_integer(row.get("event_id"))
+            if event_id is None:
+                return None
+            parsed["event_id"] = event_id
+            parsed["operation"] = row["operation"]
+        return parsed
+
+    def get_library_delta_cursor(self, profile_id=None):
+        """Return the highest library event id for the profile, or None.
+
+        The RPC responds with a bare JSON integer; ``0`` is a valid cursor.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_fetch_failure("library cursor", "invalid_profile")
+            return None
+        data = self._library_rpc(
+            LIBRARY_RPC_CURSOR, {"p_profile_id": resolved_profile}, "library cursor"
+        )
+        if data is _LIBRARY_RPC_FAILED:
+            return None
+        if isinstance(data, bool) or not isinstance(data, int):
+            self._log_library_fetch_failure("library cursor", LIBRARY_FETCH_INVALID_CURSOR)
+            return None
+        return data
+
+    def get_library(self, profile_id=None, limit=500, offset=0):
+        """Pull one snapshot page of the profile library, or None on failure."""
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_fetch_failure("library snapshot", "invalid_profile")
+            return None
+        page_limit = self._non_negative_integer(limit)
+        page_offset = self._non_negative_integer(offset)
+        data = self._library_rpc(
+            LIBRARY_RPC_SNAPSHOT,
+            {
+                "p_profile_id": resolved_profile,
+                "p_limit": 500 if page_limit is None else page_limit,
+                "p_offset": 0 if page_offset is None else page_offset,
+            },
+            "library snapshot",
+        )
+        if data is _LIBRARY_RPC_FAILED:
+            return None
+        if not isinstance(data, list):
+            self._log_library_fetch_failure("library snapshot", LIBRARY_FETCH_NON_LIST)
+            return None
+        items = []
+        for row in data:
+            parsed = self._parse_library_row(row)
+            if parsed is None:
+                continue
+            items.append(parsed)
+        return items
+
+    def get_library_delta(self, profile_id=None, since_event_id=0, limit=1000):
+        """Pull library change events since a cursor, ordered by event id.
+
+        An unrecognized ``operation`` aborts the batch (returns None) so the
+        cursor never advances past an event that could not be applied.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_fetch_failure("library delta", "invalid_profile")
+            return None
+        since = self._non_negative_integer(since_event_id)
+        data = self._library_rpc(
+            LIBRARY_RPC_DELTA,
+            {
+                "p_profile_id": resolved_profile,
+                "p_since_event_id": 0 if since is None else since,
+                "p_limit": self._clamp_library_limit(limit, 1000),
+            },
+            "library delta",
+        )
+        if data is _LIBRARY_RPC_FAILED:
+            return None
+        if not isinstance(data, list):
+            self._log_library_fetch_failure("library delta", LIBRARY_FETCH_NON_LIST)
+            return None
+        events = []
+        for row in data:
+            parsed = self._parse_library_row(row, include_event=True)
+            if parsed is _LIBRARY_BATCH_ABORT:
+                self._log_library_fetch_failure("library delta", "invalid_operation")
+                return None
+            if parsed is None:
+                continue
+            events.append(parsed)
+        events.sort(key=lambda event: event["event_id"])
+        return events
 
     @staticmethod
     def _device_nonce():
