@@ -6,6 +6,7 @@
 tmp/
 *.py[cod]
 *.egg
+*.pi/
 build
 htmlcov
 venv/
@@ -20,4 +21,5 @@ docs/
 skills-lock.json
 .engram/
 .atl/
+.mcp.json
 repos_md/

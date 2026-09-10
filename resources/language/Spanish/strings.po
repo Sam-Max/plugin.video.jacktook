@@ -4640,7 +4640,7 @@ msgid "Could not remove Nuvio watch progress."
 msgstr "No se pudo eliminar el progreso de Nuvio."
 
 msgctxt "#91030"
-msgid "About"
+msgid "Acerca de"
 msgstr "Acerca de"
 
 msgctxt "#91031"

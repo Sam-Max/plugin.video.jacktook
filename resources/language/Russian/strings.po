@@ -4635,7 +4635,7 @@ msgid "Could not remove Nuvio watch progress."
 msgstr "Не удалось удалить прогресс просмотра Nuvio."
 
 msgctxt "#91030"
-msgid "About"
+msgid "О программе"
 msgstr "О программе"
 
 msgctxt "#91031"

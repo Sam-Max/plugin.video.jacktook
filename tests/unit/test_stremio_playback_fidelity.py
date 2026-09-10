@@ -632,6 +632,48 @@ def test_indexed_debrid_torrent_resume_uses_direct_url_without_file_index(monkey
     assert len(debrid_payloads) == 1
 
 
+def test_resolver_window_debrid_resolution_strips_file_index_before_replay(monkeypatch):
+    prepared = {
+        "type": IndexerType.TORRENT,
+        "indexer": "Stremio",
+        "url": f"magnet:?xt=urn:btih:{INFO_HASH}",
+        "magnet": f"magnet:?xt=urn:btih:{INFO_HASH}",
+        "info_hash": INFO_HASH,
+        "debrid_type": DebridType.RD,
+        "is_torrent": False,
+        "is_pack": True,
+        "stremio_metadata": {"fileIdx": 3, "debridType": DebridType.RD},
+    }
+    debrid_payloads = []
+
+    def resolve_debrid(data):
+        debrid_payloads.append(data)
+        data["url"] = "https://debrid.example/movie.mkv"
+        return data
+
+    monkeypatch.setattr(player_utils, "resolve_playback_url", resolve_debrid)
+
+    resolved = stremio_playback.resolve_stremio_playback_url(prepared)
+
+    assert resolved["url"] == "https://debrid.example/movie.mkv"
+    assert "file_idx" not in resolved
+    assert "fileIdx" not in resolved
+    assert "file_idx" not in resolved["stremio_metadata"]
+    assert "fileIdx" not in resolved["stremio_metadata"]
+
+    replay_resolvers = []
+    monkeypatch.setattr(
+        search,
+        "resolve_playback_url",
+        lambda data: replay_resolvers.append(data) or data,
+    )
+
+    resumed = search._resolve_stremio_source(resolved)
+
+    assert resumed["url"] == "https://debrid.example/movie.mkv"
+    assert replay_resolvers == []
+
+
 @pytest.mark.parametrize("debrid_type", [[], {}], ids=["list", "mapping"])
 def test_malformed_stremio_debrid_type_does_not_fall_back_to_torrent_client(
     monkeypatch, debrid_type
