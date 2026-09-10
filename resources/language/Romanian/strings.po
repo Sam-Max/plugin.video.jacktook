@@ -4729,3 +4729,27 @@ msgstr "Elimini din istoricul Nuvio?"
 msgctxt "#91050"
 msgid "This removes the item from your Nuvio watch history. Continue?"
 msgstr "Aceasta elimină elementul din istoricul tău de vizionare Nuvio. Continui?"
+
+msgctxt "#91051"
+msgid "Colecții"
+msgstr "Colecții"
+
+msgctxt "#91052"
+msgid "Nu există colecții Nuvio disponibile."
+msgstr "Nu există colecții Nuvio disponibile."
+
+msgctxt "#91053"
+msgid "Supliment neinstalat"
+msgstr "Supliment neinstalat"
+
+msgctxt "#91054"
+msgid "Suplimentul acestui catalog nu este instalat în Nuvio."
+msgstr "Suplimentul acestui catalog nu este instalat în Nuvio."
+
+msgctxt "#91055"
+msgid "Această sursă de colecție nu este încă acceptată."
+msgstr "Această sursă de colecție nu este încă acceptată."
+
+msgctxt "#91056"
+msgid "Nu s-au găsit rezultate."
+msgstr "Nu s-au găsit rezultate."

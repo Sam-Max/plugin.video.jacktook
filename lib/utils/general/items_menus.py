@@ -1,6 +1,7 @@
 from lib.api.nuvio import is_nuvio_progress_sync_enabled
 from lib.utils.kodi.utils import get_setting, translation
 from lib.utils.views.continue_watching import has_continue_watching_items
+from lib.utils.views.nuvio_collections import has_nuvio_collections
 from lib.utils.views.nuvio_continue_watching import has_nuvio_continue_watching_items
 from lib.utils.views.nuvio_history import has_nuvio_history_items
 from lib.utils.views.nuvio_library import has_nuvio_library_items
@@ -592,6 +593,12 @@ nuvio_menu_items = [
         "action": "nuvio_library",
         "params": {"mode": "tv"},
         "condition": has_nuvio_library_items,
+    },
+    {
+        "name": 91051,
+        "icon": "movies.png",
+        "action": "nuvio_collections",
+        "condition": has_nuvio_collections,
     },
 ]
 

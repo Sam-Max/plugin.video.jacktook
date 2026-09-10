@@ -32,6 +32,7 @@ LIBRARY_RPC_PUSH_ITEMS = "sync_push_library_items"
 LIBRARY_RPC_DELETE_ITEMS = "sync_delete_library_items"
 WATCHED_RPC_PUSH = "sync_push_watched_items"
 WATCHED_RPC_DELETE = "sync_delete_watched_items"
+COLLECTIONS_RPC_PULL = "sync_pull_collections"
 LIBRARY_FETCH_AUTH = "auth"
 LIBRARY_FETCH_TRANSPORT = "transport"
 LIBRARY_FETCH_HTTP = "http"
@@ -1346,6 +1347,139 @@ class NuvioClient:
                 }
             )
         return items
+
+    def get_collections(self, profile_id=None):
+        """Pull the profile's collections, or None on failure.
+
+        Returns a normalized list of collections. Failure is ``None`` and a real
+        empty collection set is ``[]`` so the caller can tell them apart. Only
+        failure categories are logged; response data is never logged.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_fetch_failure("collections", "invalid_profile")
+            return None
+        data = self._library_rpc(
+            COLLECTIONS_RPC_PULL, {"p_profile_id": resolved_profile}, "collections"
+        )
+        if data is _LIBRARY_RPC_FAILED:
+            return None
+        if not isinstance(data, list):
+            self._log_library_fetch_failure("collections", LIBRARY_FETCH_NON_LIST)
+            return None
+        collections = []
+        for row in data:
+            if not isinstance(row, dict):
+                continue
+            raw_collections = row.get("collections_json")
+            if not isinstance(raw_collections, list):
+                continue
+            for entry in raw_collections:
+                normalized = self._normalize_collection(entry)
+                if normalized is not None:
+                    collections.append(normalized)
+        return collections
+
+    @staticmethod
+    def _normalize_collection(entry):
+        """Normalize one collection object; ``None`` when it has no usable id."""
+        if not isinstance(entry, dict):
+            return None
+        collection_id = NuvioClient._optional_string(entry.get("id"))
+        if not collection_id:
+            return None
+        folders = []
+        raw_folders = entry.get("folders")
+        if isinstance(raw_folders, list):
+            for folder in raw_folders:
+                normalized = NuvioClient._normalize_collection_folder(folder)
+                if normalized is not None:
+                    folders.append(normalized)
+        return {
+            "id": collection_id,
+            "title": NuvioClient._optional_string(entry.get("title")),
+            "backdrop": NuvioClient._optional_string(entry.get("backdropImageUrl")),
+            "view_mode": NuvioClient._optional_string(entry.get("viewMode")),
+            "folders": folders,
+        }
+
+    @staticmethod
+    def _normalize_collection_folder(folder):
+        """Normalize one folder object; ``None`` when it has no usable id."""
+        if not isinstance(folder, dict):
+            return None
+        folder_id = NuvioClient._optional_string(folder.get("id"))
+        if not folder_id:
+            return None
+        raw_sources = folder.get("sources")
+        if not isinstance(raw_sources, list):
+            raw_sources = folder.get("catalogSources")
+        sources = []
+        if isinstance(raw_sources, list):
+            for source in raw_sources:
+                normalized = NuvioClient._normalize_collection_source(source)
+                if normalized is not None:
+                    sources.append(normalized)
+        return {
+            "id": folder_id,
+            "title": NuvioClient._optional_string(folder.get("title")),
+            "cover": NuvioClient._optional_string(folder.get("coverImageUrl")),
+            "emoji": NuvioClient._optional_string(folder.get("coverEmoji")),
+            "sources": sources,
+        }
+
+    @staticmethod
+    def _normalize_collection_source(source):
+        """Normalize one source object; ``None`` only for non-dict entries.
+
+        Two source families coexist. Catalog sources carry both ``type`` and
+        ``catalogId`` and are routed to the existing addon catalog viewer.
+        TMDB discover sources carry a provider of tmdb (and/or a filters dict)
+        and are routed to the discover view. Anything else is kept as unknown
+        so the UI can surface an unsupported notice instead of silently
+        dropping the source.
+        """
+        if not isinstance(source, dict):
+            return None
+        source_type = NuvioClient._optional_string(source.get("type"))
+        catalog_id = NuvioClient._optional_string(source.get("catalogId"))
+
+        label = NuvioClient._optional_string(source.get("title"))
+        if not label:
+            label = NuvioClient._optional_string(source.get("name"))
+        if not label:
+            label = NuvioClient._optional_string(source.get("catalogName"))
+        catalog = source.get("catalog")
+        if not label and isinstance(catalog, dict):
+            label = NuvioClient._optional_string(catalog.get("name"))
+        display = source.get("display")
+        if not label and isinstance(display, dict):
+            label = NuvioClient._optional_string(display.get("name"))
+
+        provider = NuvioClient._optional_string(source.get("provider"))
+        raw_filters = source.get("filters")
+        filters = raw_filters if isinstance(raw_filters, dict) else {}
+
+        if source_type and catalog_id:
+            kind = "addon"
+        elif provider.lower() == "tmdb" or isinstance(raw_filters, dict):
+            kind = "tmdb"
+        else:
+            kind = "unknown"
+
+        return {
+            "id": NuvioClient._optional_string(source.get("id")),
+            "kind": kind,
+            "label": label,
+            "provider": provider,
+            "type": source_type,
+            "catalog_id": catalog_id,
+            "addon_id": NuvioClient._optional_string(source.get("addonId")),
+            "media_type": NuvioClient._optional_string(source.get("mediaType")).lower(),
+            "sort_by": NuvioClient._optional_string(source.get("sortBy")),
+            "tmdb_source_type": NuvioClient._optional_string(source.get("tmdbSourceType")),
+            "filters": filters,
+        }
 
     def logout(self):
         if self.access_token:

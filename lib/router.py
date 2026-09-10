@@ -178,6 +178,11 @@ def _is_nuvio_action(action):
         "nuvio_add_to_library",
         "nuvio_remove_from_library",
         "nuvio_update_history",
+        "nuvio_collections",
+        "nuvio_collection_folders",
+        "nuvio_collection_sources",
+        "nuvio_collection_discover",
+        "nuvio_collection_source_unavailable",
     )
 
 
@@ -597,6 +602,11 @@ def _route_nuvio(action, params):
     from lib.navigation import (
         nuvio_add_to_library,
         nuvio_auth,
+        nuvio_collection_discover,
+        nuvio_collection_folders,
+        nuvio_collection_source_unavailable,
+        nuvio_collection_sources,
+        nuvio_collections,
         nuvio_continue_watching,
         nuvio_history,
         nuvio_library,
@@ -622,6 +632,11 @@ def _route_nuvio(action, params):
         "nuvio_add_to_library": nuvio_add_to_library,
         "nuvio_remove_from_library": nuvio_remove_from_library,
         "nuvio_update_history": nuvio_update_history,
+        "nuvio_collections": nuvio_collections,
+        "nuvio_collection_folders": nuvio_collection_folders,
+        "nuvio_collection_sources": nuvio_collection_sources,
+        "nuvio_collection_discover": nuvio_collection_discover,
+        "nuvio_collection_source_unavailable": nuvio_collection_source_unavailable,
     }[action](params)
 
 

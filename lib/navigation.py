@@ -1644,6 +1644,30 @@ def nuvio_library(params):
     show_nuvio_library(params)
 
 
+def nuvio_collections(params):
+    from lib.utils.views.nuvio_collections import show_nuvio_collections
+
+    show_nuvio_collections(params)
+
+
+def nuvio_collection_folders(params):
+    from lib.utils.views.nuvio_collections import show_nuvio_collection_folders
+
+    show_nuvio_collection_folders(params)
+
+
+def nuvio_collection_sources(params):
+    from lib.utils.views.nuvio_collections import show_nuvio_collection_sources
+
+    show_nuvio_collection_sources(params)
+
+
+def nuvio_collection_discover(params):
+    from lib.utils.views.nuvio_collections import show_nuvio_collection_discover
+
+    show_nuvio_collection_discover(params)
+
+
 def nuvio_update_history(params):
     from lib.utils.views.nuvio_history import update_nuvio_history
 
@@ -1658,6 +1682,14 @@ def nuvio_remove_progress(params):
         execute_builtin("Container.Refresh")
         return
     notification(translation(91029), time=3000)
+
+
+def nuvio_collection_source_unavailable(params):
+    params = params or {}
+    if params.get("reason") == "unsupported":
+        notification(translation(91055), time=3000)
+        return
+    notification(translation(91053), time=3000)
 
 
 _NUVIO_LIBRARY_POSTER_SIZE = "w500"

@@ -4722,3 +4722,27 @@ msgstr "¿Eliminar del historial de Nuvio?"
 msgctxt "#91050"
 msgid "This removes the item from your Nuvio watch history. Continue?"
 msgstr "Esto elimina el elemento de tu historial de visualización de Nuvio. ¿Continuar?"
+
+msgctxt "#91051"
+msgid "Colecciones"
+msgstr "Colecciones"
+
+msgctxt "#91052"
+msgid "No hay colecciones de Nuvio disponibles."
+msgstr "No hay colecciones de Nuvio disponibles."
+
+msgctxt "#91053"
+msgid "Complemento no instalado"
+msgstr "Complemento no instalado"
+
+msgctxt "#91054"
+msgid "El complemento de este catálogo no está instalado en Nuvio."
+msgstr "El complemento de este catálogo no está instalado en Nuvio."
+
+msgctxt "#91055"
+msgid "Esta fuente de colección aún no es compatible."
+msgstr "Esta fuente de colección aún no es compatible."
+
+msgctxt "#91056"
+msgid "No se encontraron resultados."
+msgstr "No se encontraron resultados."

@@ -376,6 +376,7 @@ def test_nuvio_root_menu_entries_are_visible_only_when_sync_is_enabled(monkeypat
         ("nuvio_history", None),
         ("nuvio_library", {"mode": "movies"}),
         ("nuvio_library", {"mode": "tv"}),
+        ("nuvio_collections", None),
     ]
     assert all(callable(item["condition"]) for item in nuvio_menu_items)
 

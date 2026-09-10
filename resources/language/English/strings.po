@@ -4933,3 +4933,27 @@ msgstr "Remove from Nuvio History?"
 msgctxt "#91050"
 msgid "This removes the item from your Nuvio watch history. Continue?"
 msgstr "This removes the item from your Nuvio watch history. Continue?"
+
+msgctxt "#91051"
+msgid "Collections"
+msgstr "Collections"
+
+msgctxt "#91052"
+msgid "No Nuvio collections available."
+msgstr "No Nuvio collections available."
+
+msgctxt "#91053"
+msgid "Addon not installed"
+msgstr "Addon not installed"
+
+msgctxt "#91054"
+msgid "This catalog's addon is not installed in Nuvio."
+msgstr "This catalog's addon is not installed in Nuvio."
+
+msgctxt "#91055"
+msgid "This collection source is not supported yet."
+msgstr "This collection source is not supported yet."
+
+msgctxt "#91056"
+msgid "No results found."
+msgstr "No results found."
