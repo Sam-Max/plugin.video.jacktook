@@ -714,6 +714,18 @@
                     <control type="button" format="action"><close>false</close></control>
                     <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
                 </setting>
+                <setting id="nuvio_sync_interval" type="integer" label="91036" help="91037">
+                    <default>15</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>1440</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
+                </setting>
             </group>
             <group id="nuvio_addons" label="91018">
                 <setting id="nuvio_toggle_addons" type="action" label="91019" help="91020">

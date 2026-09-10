@@ -4646,3 +4646,27 @@ msgstr "Acerca de"
 msgctxt "#91031"
 msgid "Version"
 msgstr "Versión"
+
+msgctxt "#91032"
+msgid "My Nuvio Movies"
+msgstr "Mis películas de Nuvio"
+
+msgctxt "#91033"
+msgid "My Nuvio Shows"
+msgstr "Mis series de Nuvio"
+
+msgctxt "#91034"
+msgid "No Nuvio library items available."
+msgstr "No hay elementos de la biblioteca de Nuvio disponibles."
+
+msgctxt "#91035"
+msgid "Nuvio: Library Sync"
+msgstr "Nuvio: Sincronización de la biblioteca"
+
+msgctxt "#91036"
+msgid "Sync interval (minutes)"
+msgstr "Intervalo de sincronización (minutos)"
+
+msgctxt "#91037"
+msgid "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+msgstr "Con qué frecuencia se obtienen los cambios de la biblioteca de Nuvio, en minutos (mínimo 1)."

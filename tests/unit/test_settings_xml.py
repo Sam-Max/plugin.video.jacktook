@@ -165,6 +165,42 @@ def test_nuvio_strings_are_defined_in_every_supported_catalogue():
             assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue
 
 
+def test_nuvio_sync_interval_is_a_number_setting_default_15_min_1():
+    tree = ET.parse(SETTINGS_XML)
+
+    setting = tree.find(".//group[@id='nuvio']/setting[@id='nuvio_sync_interval']")
+
+    assert setting is not None
+    assert setting.get("type") == "integer"
+    assert setting.get("label") == "91036"
+    assert setting.get("help") == "91037"
+    assert setting.findtext("default") == "15"
+    assert setting.find("constraints/minimum").text == "1"
+    assert setting.find("control[@type='slider'][@format='integer']") is not None
+    assert _english_label("91036") == "Sync interval (minutes)"
+    assert "minimum 1" in _english_label("91037")
+
+
+def test_nuvio_sync_interval_is_visible_only_when_authenticated():
+    tree = ET.parse(SETTINGS_XML)
+
+    setting = tree.find(".//group[@id='nuvio']/setting[@id='nuvio_sync_interval']")
+    condition = setting.find("dependencies/dependency[@type='visible']/condition")
+
+    assert condition.get("setting") == "nuvio_authenticated"
+    assert condition.get("operator") == "is"
+    assert condition.text == "true"
+
+
+def test_nuvio_library_strings_are_defined_in_every_supported_catalogue():
+    language_root = ENGLISH_STRINGS.parent.parent
+
+    for catalogue in language_root.glob("*/strings.po"):
+        content = catalogue.read_text()
+        for string_id in range(91032, 91038):
+            assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue
+
+
 def test_addon_version_setting_is_readonly_in_general_category():
     tree = ET.parse(SETTINGS_XML)
 

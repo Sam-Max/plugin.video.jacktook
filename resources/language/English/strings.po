@@ -4857,3 +4857,27 @@ msgstr "About"
 msgctxt "#91031"
 msgid "Version"
 msgstr "Version"
+
+msgctxt "#91032"
+msgid "My Nuvio Movies"
+msgstr "My Nuvio Movies"
+
+msgctxt "#91033"
+msgid "My Nuvio Shows"
+msgstr "My Nuvio Shows"
+
+msgctxt "#91034"
+msgid "No Nuvio library items available."
+msgstr "No Nuvio library items available."
+
+msgctxt "#91035"
+msgid "Nuvio: Library Sync"
+msgstr "Nuvio: Library Sync"
+
+msgctxt "#91036"
+msgid "Sync interval (minutes)"
+msgstr "Sync interval (minutes)"
+
+msgctxt "#91037"
+msgid "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+msgstr "How often Nuvio library changes are pulled, in minutes (minimum 1)."
