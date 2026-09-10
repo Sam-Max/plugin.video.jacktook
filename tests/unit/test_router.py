@@ -234,7 +234,9 @@ def test_route_torrserver_download_and_play_subtitles():
     mock_dl.assert_called_once_with(params)
 
 
-@pytest.mark.parametrize("action", ["nuvio_add_to_library", "nuvio_remove_from_library"])
+@pytest.mark.parametrize(
+    "action", ["nuvio_add_to_library", "nuvio_remove_from_library", "nuvio_update_history"]
+)
 def test_get_route_handler_returns_nuvio_dispatcher_for_write_actions(action):
     router = _load_router_module()
 
@@ -242,7 +244,9 @@ def test_get_route_handler_returns_nuvio_dispatcher_for_write_actions(action):
     assert router._get_route_handler(action) is router._route_nuvio
 
 
-@pytest.mark.parametrize("action", ["nuvio_add_to_library", "nuvio_remove_from_library"])
+@pytest.mark.parametrize(
+    "action", ["nuvio_add_to_library", "nuvio_remove_from_library", "nuvio_update_history"]
+)
 def test_route_nuvio_dispatches_write_actions(action):
     router = _load_router_module()
 

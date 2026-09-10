@@ -678,6 +678,38 @@ def test_show_nuvio_history_falls_back_when_tmdb_fails(monkeypatch):
     set_media_info_tag.assert_not_called()
 
 
+def test_show_nuvio_history_falls_back_to_tmdb_title_when_missing(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _item, _add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"title": "Fight Club"}))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    monkeypatch.setattr(
+        view,
+        "NuvioClient",
+        MagicMock(
+            return_value=MagicMock(
+                get_watched_history=MagicMock(
+                    return_value=[
+                        {
+                            "tmdb_id": 550,
+                            "mode": "movies",
+                            "season": None,
+                            "episode": None,
+                            "title": "",
+                            "watched_at_ms": 1711600000000,
+                        }
+                    ]
+                )
+            )
+        ),
+    )
+
+    view.show_nuvio_history()
+
+    assert view.make_list_item.call_args.kwargs["label"] == "Fight Club"
+
+
 def test_show_nuvio_history_notifies_when_empty(monkeypatch):
     from lib.utils.views import nuvio_history as view
 
@@ -742,7 +774,13 @@ def test_nuvio_remove_progress_notifies_without_refresh_on_failure(monkeypatch):
 
 @pytest.mark.parametrize(
     "action",
-    ["nuvio_continue_watching", "nuvio_history", "nuvio_library", "nuvio_remove_progress"],
+    [
+        "nuvio_continue_watching",
+        "nuvio_history",
+        "nuvio_library",
+        "nuvio_remove_progress",
+        "nuvio_update_history",
+    ],
 )
 def test_get_route_handler_returns_nuvio_dispatcher_for_watch_actions(action):
     import importlib
@@ -758,7 +796,13 @@ def test_get_route_handler_returns_nuvio_dispatcher_for_watch_actions(action):
 
 @pytest.mark.parametrize(
     "action",
-    ["nuvio_continue_watching", "nuvio_history", "nuvio_library", "nuvio_remove_progress"],
+    [
+        "nuvio_continue_watching",
+        "nuvio_history",
+        "nuvio_library",
+        "nuvio_remove_progress",
+        "nuvio_update_history",
+    ],
 )
 def test_route_nuvio_dispatches_watch_actions(action):
     import importlib
@@ -1227,3 +1271,295 @@ def test_nuvio_remove_from_library_rejects_invalid_params(monkeypatch):
     client.remove_library_items.assert_not_called()
     invalidate.assert_not_called()
     assert notification.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Nuvio history context menu
+# ---------------------------------------------------------------------------
+
+
+def test_nuvio_history_context_menu_requires_sync_and_valid_identity(monkeypatch):
+    from lib.utils import nuvio_context
+
+    action_url_run = MagicMock(return_value="RunPlugin(command)")
+    monkeypatch.setattr(nuvio_context, "action_url_run", action_url_run)
+    monkeypatch.setattr(nuvio_context, "translation", lambda value: f"label-{value}")
+    monkeypatch.setattr(nuvio_context, "is_nuvio_progress_sync_enabled", lambda: False)
+
+    assert nuvio_context.add_nuvio_history_context_menu("movie", 42) == []
+
+    monkeypatch.setattr(nuvio_context, "is_nuvio_progress_sync_enabled", lambda: True)
+    assert nuvio_context.add_nuvio_history_context_menu("movie", "bad") == []
+    assert nuvio_context.add_nuvio_history_context_menu("person", 42) == []
+    assert nuvio_context.add_nuvio_history_context_menu("episode", 42, None, 1) == []
+    assert nuvio_context.add_nuvio_history_context_menu("episode", 42, 1, 0) == []
+
+
+def test_nuvio_history_context_menu_builds_add_and_remove_entries(monkeypatch):
+    from lib.utils import nuvio_context
+
+    action_url_run = MagicMock(return_value="RunPlugin(command)")
+    monkeypatch.setattr(nuvio_context, "action_url_run", action_url_run)
+    monkeypatch.setattr(nuvio_context, "translation", lambda value: f"label-{value}")
+    monkeypatch.setattr(nuvio_context, "is_nuvio_progress_sync_enabled", lambda: True)
+
+    movie_menu = nuvio_context.add_nuvio_history_context_menu("movie", "42")
+    assert [label for label, _command in movie_menu] == ["label-91044", "label-91045"]
+    assert action_url_run.call_args_list[0].kwargs == {
+        "operation": "add",
+        "media_type": "movie",
+        "tmdb_id": "42",
+    }
+    assert action_url_run.call_args_list[1].kwargs == {
+        "operation": "remove",
+        "media_type": "movie",
+        "tmdb_id": "42",
+    }
+
+    action_url_run.reset_mock()
+    episode_menu = nuvio_context.add_nuvio_history_context_menu("episode", "42", 1, "2")
+    assert [label for label, _command in episode_menu] == ["label-91044", "label-91045"]
+    assert action_url_run.call_args_list[0].kwargs == {
+        "operation": "add",
+        "media_type": "episode",
+        "tmdb_id": "42",
+        "season": 1,
+        "episode": "2",
+    }
+
+
+def test_nuvio_history_context_menu_carries_display_title(monkeypatch):
+    from lib.utils import nuvio_context
+
+    action_url_run = MagicMock(return_value="RunPlugin(command)")
+    monkeypatch.setattr(nuvio_context, "action_url_run", action_url_run)
+    monkeypatch.setattr(nuvio_context, "translation", lambda value: f"label-{value}")
+    monkeypatch.setattr(nuvio_context, "is_nuvio_progress_sync_enabled", lambda: True)
+
+    nuvio_context.add_nuvio_history_context_menu("movie", "42", title="Fight Club")
+
+    assert action_url_run.call_args_list[0].kwargs["title"] == "Fight Club"
+    assert action_url_run.call_args_list[1].kwargs["title"] == "Fight Club"
+
+    # A blank/absent title is simply omitted, never sent as an empty string.
+    action_url_run.reset_mock()
+    nuvio_context.add_nuvio_history_context_menu("movie", "42", title="   ")
+    assert "title" not in action_url_run.call_args_list[0].kwargs
+
+
+# ---------------------------------------------------------------------------
+# Nuvio history handler
+# ---------------------------------------------------------------------------
+
+
+def _patch_history_handler(monkeypatch, push_result=True, delete_result=True, confirm=True):
+    from lib.utils.views import nuvio_history as view
+
+    calls = {"push": [], "delete": []}
+
+    class _HistoryClient(NuvioClient):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def push_watched_items(self, profile_id=None, items=None):
+            calls["push"].append({"profile_id": profile_id, "items": items})
+            return push_result
+
+        def delete_watched_items(self, profile_id=None, keys=None):
+            calls["delete"].append({"profile_id": profile_id, "keys": keys})
+            return delete_result
+
+    monkeypatch.setattr(view, "NuvioClient", _HistoryClient)
+    notification = MagicMock()
+    refresh = MagicMock()
+    confirmation = MagicMock(return_value=confirm)
+    monkeypatch.setattr(view, "notification", notification)
+    monkeypatch.setattr(view, "refresh", refresh)
+    monkeypatch.setattr(view, "dialogyesno", confirmation)
+    monkeypatch.setattr(view, "translation", lambda value: f"text-{value}")
+    monkeypatch.setattr(view, "Thread", _SyncThread)
+    return view, calls, notification, refresh, confirmation
+
+
+def test_update_nuvio_history_add_pushes_item_and_notifies(monkeypatch):
+    view, calls, notification, refresh, _confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history({"operation": "add", "media_type": "movie", "tmdb_id": "550"})
+
+    assert len(calls["push"]) == 1
+    item = calls["push"][0]["items"][0]
+    assert item["content_id"] == "tmdb:550"
+    assert item["content_type"] == "movie"
+    assert item["watched_at"] > 0
+    notification.assert_called_once_with("text-91046", time=3000)
+    refresh.assert_called_once()
+
+
+def test_update_nuvio_history_add_carries_provided_title(monkeypatch):
+    view, calls, _notification, _refresh, _confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history(
+        {"operation": "add", "media_type": "movie", "tmdb_id": "550", "title": "Fight Club"}
+    )
+
+    assert calls["push"][0]["items"][0]["title"] == "Fight Club"
+
+
+def test_update_nuvio_history_add_episode_includes_season_and_episode(monkeypatch):
+    view, calls, _notification, _refresh, _confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history(
+        {"operation": "add", "media_type": "episode", "tmdb_id": 1396, "season": 2, "episode": 5}
+    )
+
+    item = calls["push"][0]["items"][0]
+    assert item["content_type"] == "series"
+    assert item["season"] == 2
+    assert item["episode"] == 5
+
+
+def test_update_nuvio_history_remove_confirms_then_deletes(monkeypatch):
+    view, calls, notification, refresh, confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history({"operation": "remove", "media_type": "movie", "tmdb_id": 550})
+
+    confirmation.assert_called_once_with("text-91049", "text-91050")
+    assert calls["delete"] == [{"profile_id": None, "keys": [{"content_id": "tmdb:550"}]}]
+    notification.assert_called_once_with("text-91047", time=3000)
+    refresh.assert_called_once()
+
+
+def test_update_nuvio_history_remove_episode_deletes_with_season_and_episode(monkeypatch):
+    view, calls, _notification, _refresh, _confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history(
+        {
+            "operation": "remove",
+            "media_type": "episode",
+            "tmdb_id": "1396",
+            "season": 2,
+            "episode": 5,
+        }
+    )
+
+    assert calls["delete"][0]["keys"] == [{"content_id": "tmdb:1396", "season": 2, "episode": 5}]
+
+
+def test_update_nuvio_history_remove_declined_makes_no_request(monkeypatch):
+    view, calls, notification, refresh, _confirmation = _patch_history_handler(
+        monkeypatch, confirm=False
+    )
+
+    view.update_nuvio_history({"operation": "remove", "media_type": "movie", "tmdb_id": 550})
+
+    assert calls["delete"] == []
+    notification.assert_not_called()
+    refresh.assert_not_called()
+
+
+def test_update_nuvio_history_add_failure_notifies_error(monkeypatch):
+    view, calls, notification, refresh, _confirmation = _patch_history_handler(
+        monkeypatch, push_result=False
+    )
+
+    view.update_nuvio_history({"operation": "add", "media_type": "movie", "tmdb_id": 550})
+
+    assert len(calls["push"]) == 1
+    notification.assert_called_once_with("text-91048", time=3000)
+    refresh.assert_not_called()
+
+
+def test_update_nuvio_history_remove_failure_notifies_error(monkeypatch):
+    view, calls, notification, refresh, _confirmation = _patch_history_handler(
+        monkeypatch, delete_result=False
+    )
+
+    view.update_nuvio_history({"operation": "remove", "media_type": "movie", "tmdb_id": 550})
+
+    assert len(calls["delete"]) == 1
+    notification.assert_called_once_with("text-91048", time=3000)
+    refresh.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        None,
+        "not-a-dict",
+        {},
+        {"operation": "add"},
+        {"operation": "add", "media_type": "person", "tmdb_id": 550},
+        {"operation": "delete", "media_type": "movie", "tmdb_id": 550},
+        {"operation": "add", "media_type": "movie", "tmdb_id": 0},
+        {"operation": "add", "media_type": "movie", "tmdb_id": "bad"},
+        {"operation": "add", "media_type": "episode", "tmdb_id": 1396, "season": 2},
+        {
+            "operation": "add",
+            "media_type": "episode",
+            "tmdb_id": 1396,
+            "season": 2,
+            "episode": 0,
+        },
+    ],
+)
+def test_update_nuvio_history_invalid_params_make_no_request(monkeypatch, params):
+    view, calls, notification, refresh, _confirmation = _patch_history_handler(monkeypatch)
+
+    view.update_nuvio_history(params)
+
+    assert calls["push"] == []
+    assert calls["delete"] == []
+    notification.assert_not_called()
+    refresh.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# History view: Remove from Nuvio History context menu
+# ---------------------------------------------------------------------------
+
+
+def test_show_nuvio_history_adds_remove_context_menu(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+
+    class _HistoryViewClient(NuvioClient):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_watched_history(self, page=1, page_size=500):
+            return [
+                {
+                    "tmdb_id": 550,
+                    "mode": "movies",
+                    "season": None,
+                    "episode": None,
+                    "title": "Fight Club",
+                    "watched_at_ms": 1711600000000,
+                },
+                {
+                    "tmdb_id": 1396,
+                    "mode": "tv",
+                    "season": 2,
+                    "episode": 5,
+                    "title": "Breaking Bad",
+                    "watched_at_ms": 1711600001000,
+                },
+            ]
+
+    monkeypatch.setattr(view, "NuvioClient", _HistoryViewClient)
+
+    view.show_nuvio_history()
+
+    assert add_items.call_args.args[0] != []
+    movie_menu = item.addContextMenuItems.call_args_list[0].args[0]
+    assert movie_menu[0][0] == "text-91045"
+    assert movie_menu[0][1] == (
+        f"RunPlugin({view.build_url('nuvio_update_history', operation='remove', media_type='movie', tmdb_id=550)})"
+    )
+    tv_menu = item.addContextMenuItems.call_args_list[1].args[0]
+    assert "media_type=episode" in tv_menu[0][1]
+    assert "season=2" in tv_menu[0][1]
+    assert "episode=5" in tv_menu[0][1]

@@ -30,6 +30,8 @@ LIBRARY_RPC_SNAPSHOT = "sync_pull_library"
 LIBRARY_RPC_DELTA = "sync_pull_library_delta"
 LIBRARY_RPC_PUSH_ITEMS = "sync_push_library_items"
 LIBRARY_RPC_DELETE_ITEMS = "sync_delete_library_items"
+WATCHED_RPC_PUSH = "sync_push_watched_items"
+WATCHED_RPC_DELETE = "sync_delete_watched_items"
 LIBRARY_FETCH_AUTH = "auth"
 LIBRARY_FETCH_TRANSPORT = "transport"
 LIBRARY_FETCH_HTTP = "http"
@@ -429,6 +431,78 @@ class NuvioClient:
             normalized.append({"content_id": content_id, "content_type": content_type})
         return normalized
 
+    @classmethod
+    def _normalize_watched_write_items(cls, items):
+        """Return validated watched-history items, or None.
+
+        Every item must carry a non-empty string ``content_id``, a known
+        ``content_type``, and a positive integer ``watched_at`` (epoch ms).
+        Only documented API fields are forwarded; local-only keys such as
+        ``tmdb_id`` or ``mode`` are stripped. ``season``/``episode`` are only
+        forwarded for series and must be supplied together.
+        """
+        if not isinstance(items, (list, tuple)) or not items:
+            return None
+        normalized = []
+        for item in items:
+            if not isinstance(item, dict):
+                return None
+            content_type = item.get("content_type")
+            content_id = item.get("content_id")
+            if content_type not in ("movie", "series"):
+                return None
+            if not isinstance(content_id, str) or not content_id.strip():
+                return None
+            watched_at = cls._positive_integer(item.get("watched_at"))
+            if watched_at is None:
+                return None
+            entry = {
+                "content_id": content_id.strip(),
+                "content_type": content_type,
+                "watched_at": watched_at,
+            }
+            title = item.get("title")
+            if isinstance(title, str) and title.strip():
+                entry["title"] = title.strip()
+            if content_type == "series" and (
+                item.get("season") is not None or item.get("episode") is not None
+            ):
+                season = cls._non_negative_integer(item.get("season"))
+                episode = cls._positive_integer(item.get("episode"))
+                if season is None or episode is None:
+                    return None
+                entry["season"] = season
+                entry["episode"] = episode
+            normalized.append(entry)
+        return normalized
+
+    @classmethod
+    def _normalize_watched_write_keys(cls, keys):
+        """Return validated ``{"content_id", "season"?, "episode"?}`` keys, or None.
+
+        Season and episode are optional (movies omit both) but must be supplied
+        together when present, mirroring the API requirement for series episodes.
+        """
+        if not isinstance(keys, (list, tuple)) or not keys:
+            return None
+        normalized = []
+        for key in keys:
+            if not isinstance(key, dict):
+                return None
+            content_id = key.get("content_id")
+            if not isinstance(content_id, str) or not content_id.strip():
+                return None
+            entry = {"content_id": content_id.strip()}
+            if key.get("season") is not None or key.get("episode") is not None:
+                season = cls._non_negative_integer(key.get("season"))
+                episode = cls._positive_integer(key.get("episode"))
+                if season is None or episode is None:
+                    return None
+                entry["season"] = season
+                entry["episode"] = episode
+            normalized.append(entry)
+        return normalized
+
     def _library_write(self, endpoint, payload, label):
         """Run one incremental library write RPC; return True on 2xx/3xx.
 
@@ -673,6 +747,42 @@ class NuvioClient:
             if not self._library_write(LIBRARY_RPC_DELETE_ITEMS, payload, "library delete"):
                 return False
         return True
+
+    def push_watched_items(self, profile_id=None, items=None) -> bool:
+        """Upsert watched-history items for the profile.
+
+        Uses only ``sync_push_watched_items`` (a non-destructive merge). The
+        response is ``204 No Content``, so the body is never parsed. Invalid or
+        empty input is rejected before any request is made.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_write_failure("watched push", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        normalized = self._normalize_watched_write_items(items)
+        if not normalized:
+            self._log_library_write_failure("watched push", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        payload = {"p_profile_id": resolved_profile, "p_items": normalized}
+        return self._library_write(WATCHED_RPC_PUSH, payload, "watched push")
+
+    def delete_watched_items(self, profile_id=None, keys=None) -> bool:
+        """Delete explicit watched-history keys for the profile.
+
+        Uses only ``sync_delete_watched_items``. The response is
+        ``204 No Content``, so the body is never parsed. Invalid or empty input
+        is rejected before any request is made.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_write_failure("watched delete", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        normalized = self._normalize_watched_write_keys(keys)
+        if not normalized:
+            self._log_library_write_failure("watched delete", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        payload = {"p_profile_id": resolved_profile, "p_keys": normalized}
+        return self._library_write(WATCHED_RPC_DELETE, payload, "watched delete")
 
     @staticmethod
     def _device_nonce():

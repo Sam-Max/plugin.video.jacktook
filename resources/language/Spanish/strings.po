@@ -4694,3 +4694,31 @@ msgstr "Eliminado de la biblioteca de Nuvio"
 msgctxt "#91043"
 msgid "Could not update the Nuvio library."
 msgstr "No se pudo actualizar la biblioteca de Nuvio."
+
+msgctxt "#91044"
+msgid "Mark as Watched on Nuvio"
+msgstr "Marcar como visto en Nuvio"
+
+msgctxt "#91045"
+msgid "Mark as Unwatched on Nuvio"
+msgstr "Marcar como no visto en Nuvio"
+
+msgctxt "#91046"
+msgid "Marked as watched on Nuvio."
+msgstr "Marcado como visto en Nuvio."
+
+msgctxt "#91047"
+msgid "Removed from Nuvio history."
+msgstr "Eliminado del historial de Nuvio."
+
+msgctxt "#91048"
+msgid "Could not update Nuvio history."
+msgstr "No se pudo actualizar el historial de Nuvio."
+
+msgctxt "#91049"
+msgid "Remove from Nuvio History?"
+msgstr "¿Eliminar del historial de Nuvio?"
+
+msgctxt "#91050"
+msgid "This removes the item from your Nuvio watch history. Continue?"
+msgstr "Esto elimina el elemento de tu historial de visualización de Nuvio. ¿Continuar?"

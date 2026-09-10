@@ -17,6 +17,8 @@ from lib.api.nuvio import (
     LIBRARY_RPC_DELTA,
     LIBRARY_RPC_PUSH_ITEMS,
     LIBRARY_RPC_SNAPSHOT,
+    WATCHED_RPC_DELETE,
+    WATCHED_RPC_PUSH,
     NuvioClient,
 )
 from lib.api.nuvio_store import (
@@ -1078,6 +1080,209 @@ def test_add_library_items_stops_on_second_chunk_failure(monkeypatch):
 
     assert _client(profile_id=2).add_library_items(items=items) is False
     assert post.call_count == 2
+
+
+# --- Watch history writes: client ---------------------------------------------
+
+
+def _watched_item(content_id="tmdb:550", content_type="movie", **overrides):
+    item = {
+        "content_id": content_id,
+        "content_type": content_type,
+        "title": "Fight Club",
+        "watched_at": 1711600000000,
+    }
+    item.update(overrides)
+    return item
+
+
+def test_push_watched_items_sends_incremental_items_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [
+        _watched_item(),
+        _watched_item(
+            content_id="tmdb:1396",
+            content_type="series",
+            title="Breaking Bad",
+            season=2,
+            episode=5,
+        ),
+    ]
+
+    assert _client(profile_id=2).push_watched_items(items=items) is True
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{WATCHED_RPC_PUSH}")
+    assert post.call_args.kwargs["json"] == {"p_profile_id": 2, "p_items": items}
+    post.return_value.json.assert_not_called()
+
+
+def test_push_watched_items_strips_local_only_fields(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _watched_item(tmdb_id=550, mode="movies", ids={"tmdb_id": 550})
+
+    assert _client(profile_id=2).push_watched_items(items=[item]) is True
+
+    pushed = post.call_args.kwargs["json"]["p_items"][0]
+    assert "tmdb_id" not in pushed
+    assert "mode" not in pushed
+    assert "ids" not in pushed
+    assert set(pushed) == {"content_id", "content_type", "title", "watched_at"}
+
+
+def test_push_watched_items_forwards_series_season_and_episode(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _watched_item(content_id="tmdb:1396", content_type="series", season=2, episode=5)
+
+    assert _client(profile_id=1).push_watched_items(items=[item]) is True
+
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 1,
+        "p_items": [
+            {
+                "content_id": "tmdb:1396",
+                "content_type": "series",
+                "title": "Fight Club",
+                "watched_at": 1711600000000,
+                "season": 2,
+                "episode": 5,
+            }
+        ],
+    }
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_push_watched_items_returns_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client(profile_id=2).push_watched_items(items=[_watched_item()]) is False
+    assert "watched push write failed" in _logged(log)
+
+
+def test_push_watched_items_returns_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    assert _client(profile_id=2).push_watched_items(items=[_watched_item()]) is False
+    assert "transport" in _logged(log)
+    assert "private-token" not in _logged(log)
+
+
+@pytest.mark.parametrize(
+    "items",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [_watched_item(content_type="person")],
+        [_watched_item(content_id="")],
+        [_watched_item(content_id=550)],
+        [_watched_item(watched_at=None)],
+        [_watched_item(watched_at=0)],
+        ["not-a-dict"],
+        [_watched_item(content_type="series", season=1)],
+        [_watched_item(content_type="series", season=None, episode=1)],
+    ],
+)
+def test_push_watched_items_rejects_invalid_input_without_request(monkeypatch, items):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).push_watched_items(items=items) is False
+    post.assert_not_called()
+
+
+def test_push_watched_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").push_watched_items(items=[_watched_item()]) is False
+    post.assert_not_called()
+
+
+def test_delete_watched_items_sends_incremental_keys_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": "tmdb:550"}]
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is True
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{WATCHED_RPC_DELETE}")
+    assert post.call_args.kwargs["json"] == {"p_profile_id": 2, "p_keys": keys}
+    post.return_value.json.assert_not_called()
+
+
+def test_delete_watched_items_forwards_episode_key(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": "tmdb:1396", "season": 2, "episode": 5}]
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is True
+
+    assert post.call_args.kwargs["json"]["p_keys"] == keys
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_delete_watched_items_returns_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client(profile_id=2).delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    assert "watched delete write failed" in _logged(log)
+
+
+def test_delete_watched_items_returns_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    assert _client(profile_id=2).delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    assert "transport" in _logged(log)
+    assert "private-token" not in _logged(log)
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [{"content_id": ""}],
+        [{"content_id": 550}],
+        [{"content_id": "tmdb:1396", "season": 1}],
+        [{"content_id": "tmdb:1396", "episode": 1}],
+        [{"content_id": "tmdb:1396", "season": 1, "episode": 0}],
+        ["not-a-dict"],
+    ],
+)
+def test_delete_watched_items_rejects_invalid_input_without_request(monkeypatch, keys):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is False
+    post.assert_not_called()
+
+
+def test_delete_watched_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    post.assert_not_called()
 
 
 # --- Library writes: store -----------------------------------------------------

@@ -177,6 +177,7 @@ def _is_nuvio_action(action):
         "nuvio_resume",
         "nuvio_add_to_library",
         "nuvio_remove_from_library",
+        "nuvio_update_history",
     )
 
 
@@ -605,6 +606,7 @@ def _route_nuvio(action, params):
         nuvio_remove_progress,
         nuvio_resume,
         nuvio_toggle_addons,
+        nuvio_update_history,
     )
 
     {
@@ -619,6 +621,7 @@ def _route_nuvio(action, params):
         "nuvio_resume": nuvio_resume,
         "nuvio_add_to_library": nuvio_add_to_library,
         "nuvio_remove_from_library": nuvio_remove_from_library,
+        "nuvio_update_history": nuvio_update_history,
     }[action](params)
 
 

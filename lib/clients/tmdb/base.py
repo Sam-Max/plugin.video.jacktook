@@ -25,6 +25,7 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+from lib.utils.nuvio_context import add_nuvio_history_context_menu
 from lib.utils.simkl_context import add_simkl_history_context_menu
 
 
@@ -42,6 +43,9 @@ class BaseTmdbClient:
                     + add_trakt_custom_list_context_menu("movies", ids)
                 )
             context_menu += add_simkl_history_context_menu("movie", ids.get("tmdb_id"))
+            context_menu += add_nuvio_history_context_menu(
+                "movie", ids.get("tmdb_id"), title=title
+            )
             list_item.addContextMenuItems(context_menu)
             list_item.setProperty("IsPlayable", "true")
             is_folder = False

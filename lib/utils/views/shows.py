@@ -22,6 +22,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     make_list_item,
 )
+from lib.utils.nuvio_context import add_nuvio_history_context_menu
 from lib.utils.simkl_context import add_simkl_history_context_menu
 
 
@@ -189,6 +190,9 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
         )
     context_menu += add_simkl_history_context_menu(
         "episode", ids.get("tmdb_id"), season, episode_number
+    )
+    context_menu += add_nuvio_history_context_menu(
+        "episode", ids.get("tmdb_id"), season, episode_number, title=tv_name
     )
     list_item.addContextMenuItems(context_menu)
 
