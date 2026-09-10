@@ -93,7 +93,7 @@ def show_nuvio_history():
     apply_section_view("view.history", content_type="videos")
 
     if not directory_items:
-        notification(translation(91025), time=3000)
+        notification(translation(91026), time=3000)
 
 
 def _nuvio_history_remove_context_menu(item):

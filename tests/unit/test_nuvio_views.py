@@ -724,7 +724,7 @@ def test_show_nuvio_history_notifies_when_empty(monkeypatch):
     view.show_nuvio_history()
 
     assert add_items.call_args.args[0] == []
-    view.notification.assert_called_once_with("text-91025", time=3000)
+    view.notification.assert_called_once_with("text-91026", time=3000)
 
 
 # ---------------------------------------------------------------------------
