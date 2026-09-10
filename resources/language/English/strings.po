@@ -4803,8 +4803,8 @@ msgid "Choose Nuvio profile"
 msgstr "Choose Nuvio profile"
 
 msgctxt "#91018"
-msgid "Nuvio: Addons"
-msgstr "Nuvio: Addons"
+msgid "Nuvio: Addons Management"
+msgstr "Nuvio: Addons Management"
 
 msgctxt "#91019"
 msgid "Select Nuvio Addons"

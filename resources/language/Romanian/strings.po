@@ -4599,8 +4599,8 @@ msgid "Choose Nuvio profile"
 msgstr "Alege profilul Nuvio"
 
 msgctxt "#91018"
-msgid "Nuvio: Addons"
-msgstr "Nuvio: Suplimente"
+msgid "Nuvio: Addons Management"
+msgstr "Nuvio: Gestionarea addonurilor"
 
 msgctxt "#91019"
 msgid "Select Nuvio Addons"
