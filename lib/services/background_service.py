@@ -6,8 +6,10 @@ import xbmc
 import xbmcaddon
 import xbmcvfs
 
+from lib.api.nuvio_store import setup_nuvio_database
 from lib.api.trakt.base_cache import setup_databases
 from lib.services.migrations import run_migrations
+from lib.services.nuvio_sync import NuvioSyncService
 from lib.services.preloader import StartupPreloader
 from lib.services.simkl_sync import SimklSyncService
 from lib.services.trakt_sync import TraktSyncService
@@ -45,6 +47,7 @@ class CheckKodiVersion:
 class DatabaseSetup:
     def run(self):
         setup_databases()
+        setup_nuvio_database()
 
 
 class UpdateCheck:
@@ -225,6 +228,7 @@ class JacktookMOnitor(xbmc.Monitor):
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
         Thread(target=SimklSyncService().run).start()
+        Thread(target=NuvioSyncService().run).start()
         Thread(target=DebridExpirationCheck().run).start()
         StartupPreloader().run()
         DownloaderSetup().run()

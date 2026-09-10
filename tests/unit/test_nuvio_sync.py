@@ -1,7 +1,8 @@
-"""Unit tests for the Nuvio library read client and SQLite mirror store.
+"""Unit tests for the Nuvio library read client, SQLite mirror store, and sync service.
 
-These tests mock ``requests`` only; no network access happens. The sync
-service, view, and wiring are out of scope for these slices.
+These tests mock ``requests`` only; no network access happens and no real
+database file is created (the store tests inject a real in-memory connection).
+The offline view and its wiring are out of scope for these slices.
 """
 
 import sqlite3
@@ -21,6 +22,7 @@ from lib.api.nuvio_store import (
     invalidate_nuvio_library_cache,
     setup_nuvio_database,
 )
+from lib.services.nuvio_sync import NuvioSyncService
 
 
 def _response(status_code, payload=None, json_error=None):
@@ -547,3 +549,244 @@ def test_invalidate_nuvio_library_cache_uses_store_prefix(monkeypatch):
     invalidate_nuvio_library_cache()
 
     delete_like.assert_called_once_with("nuvio.library.%")
+
+
+# --- NuvioSyncService ---------------------------------------------------------
+
+
+class _FakeApi:
+    """Scriptable stand-in for ``NuvioClient`` that records every call."""
+
+    def __init__(self, profile_id=1, cursor=0):
+        self.profile_id = profile_id
+        self.cursor = cursor
+        self.calls = []
+        self.snapshot_responses = []
+        self.delta_responses = []
+
+    def get_library_delta_cursor(self, profile_id=None):
+        self.calls.append("cursor")
+        return self.cursor
+
+    def get_library(self, profile_id=None, limit=500, offset=0):
+        self.calls.append(("snapshot", offset))
+        if self.snapshot_responses:
+            return self.snapshot_responses.pop(0)
+        return None
+
+    def get_library_delta(self, profile_id=None, since_event_id=0, limit=1000):
+        self.calls.append(("delta", since_event_id))
+        if self.delta_responses:
+            return self.delta_responses.pop(0)
+        return []
+
+
+class _FakeMonitor:
+    def __init__(self, abort=False, wait_returns=False):
+        self._abort = abort
+        self.wait_returns = wait_returns
+        self.wait_calls = []
+
+    def abortRequested(self):
+        return self._abort
+
+    def waitForAbort(self, seconds):
+        self.wait_calls.append(seconds)
+        return self.wait_returns
+
+
+def _service(api=None, monitor=None, store=None):
+    return NuvioSyncService(
+        api=api or _FakeApi(),
+        monitor=monitor or _FakeMonitor(),
+        store=store or _store(),
+    )
+
+
+def test_service_run_returns_immediately_on_abort(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    api = _FakeApi()
+
+    _service(api=api, monitor=_FakeMonitor(abort=True)).run()
+
+    assert api.calls == []
+
+
+def test_service_run_returns_without_requests_when_disabled(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: False)
+    api = _FakeApi()
+
+    _service(api=api).run()
+
+    assert api.calls == []
+
+
+def test_service_run_skips_cycles_while_services_are_paused(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_property_no_fallback", lambda _prop: "true")
+    api = _FakeApi()
+    store = _store()
+
+    _service(api=api, store=store).run()
+
+    assert api.calls == []
+    assert store.get_cursor_event_id(1) == 0
+
+
+def test_service_bootstrap_orders_cursor_snapshot_then_delta():
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[_event(event_id=11)]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls[0] == "cursor"
+    assert api.calls[1] == ("snapshot", 0)
+    assert api.calls[2] == ("delta", 10)
+    meta = store.get_meta(1)
+    assert meta["snapshot_done"] == 1
+    assert meta["cursor_event_id"] == 11
+    assert store.count(1) == 1
+    assert store.list_items(1, "movie")[0]["tmdb_id"] == 550
+
+
+def test_service_bootstrap_pages_snapshot_until_a_short_page(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.SNAPSHOT_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1, cursor=5)
+    api.snapshot_responses = [
+        [_client_item(content_id="tmdb:550"), _client_item(content_id="tmdb:551")],
+        [_client_item(content_id="tmdb:552")],
+    ]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    snapshot_calls = [call for call in api.calls if call[0] == "snapshot"]
+    assert snapshot_calls == [("snapshot", 0), ("snapshot", 2)]
+    assert store.count(1) == 3
+
+
+def test_service_bootstrap_retries_when_cursor_unavailable():
+    api = _FakeApi(profile_id=1, cursor=None)
+    api.snapshot_responses = [[_client_item()]]
+    store = _store()
+    service = _service(api=api, store=store)
+
+    service._bootstrap_if_needed()
+
+    assert api.calls == ["cursor"]
+    assert store.get_meta(1)["snapshot_done"] == 0
+    assert store.count(1) == 0
+
+    # Next cycle: the cursor is available, so the snapshot proceeds.
+    api.cursor = 7
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+
+    assert store.get_meta(1)["snapshot_done"] == 1
+    assert store.count(1) == 1
+
+
+def test_service_bootstrap_aborts_when_a_snapshot_page_fails():
+    api = _FakeApi(profile_id=1, cursor=3)
+    api.snapshot_responses = [None]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    meta = store.get_meta(1)
+    assert meta["snapshot_done"] == 0
+    assert store.count(1) == 0
+
+
+def test_service_bootstrap_uses_delta_when_snapshot_already_done():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+    store = _store()
+    assert store.finish_snapshot(1, 5) is True
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls == [("delta", 5)]
+    assert store.get_cursor_event_id(1) == 11
+
+
+def test_service_delta_pages_until_a_short_page(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [
+        [_event(event_id=11), _event(event_id=12, content_id="tmdb:552")],
+        [_event(event_id=13)],
+    ]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    delta_calls = [call for call in api.calls if call[0] == "delta"]
+    assert delta_calls == [("delta", 0), ("delta", 12)]
+    assert store.get_cursor_event_id(1) == 13
+
+
+def test_service_delta_applies_ascending_and_handles_delete():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=12, operation="delete"), _event(event_id=11)]]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    assert store.count(1) == 0
+    assert store.list_items(1, "movie") == []
+    assert store.get_cursor_event_id(1) == 12
+
+
+def test_service_delta_invalidates_library_cache_on_change(monkeypatch):
+    invalidate = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.invalidate_nuvio_library_cache", invalidate)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._delta_once()
+
+    invalidate.assert_called_once_with()
+
+
+def test_service_delta_leaves_cache_untouched_without_changes(monkeypatch):
+    invalidate = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.invalidate_nuvio_library_cache", invalidate)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[]]
+
+    _service(api=api)._delta_once()
+
+    invalidate.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("configured", "expected_minutes"),
+    [(30, 30), (0, 1), (-4, 1), ("bad", 15)],
+)
+def test_service_clamps_interval_to_at_least_one_minute(monkeypatch, configured, expected_minutes):
+    monkeypatch.setattr(
+        "lib.services.nuvio_sync.get_setting", lambda _setting_id, _default=None: configured
+    )
+
+    assert _service()._get_sync_interval_seconds() == expected_minutes * 60
+
+
+def test_service_run_bootstraps_then_returns_when_the_waiter_aborts(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_property_no_fallback", lambda _prop: "")
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _id, _default=None: 15)
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    store = _store()
+    monitor = _FakeMonitor(wait_returns=True)
+
+    _service(api=api, monitor=monitor, store=store).run()
+
+    assert store.get_meta(1)["snapshot_done"] == 1
+    assert store.count(1) == 1
+    assert monitor.wait_calls == [5]
