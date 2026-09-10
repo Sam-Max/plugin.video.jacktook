@@ -1070,10 +1070,16 @@ def test_show_nuvio_library_builds_movie_search_without_network(monkeypatch):
     directory_items = add_items.call_args.args[0]
     assert len(directory_items) == 1
     url, _list_item, is_folder = directory_items[0]
-    assert "action=search" in url
+    # A bare tmdb_id search returns nothing from IMDB-matching sources, so
+    # movies route through nuvio_resume (resolves imdb/tvdb + rescrapes).
+    assert "action=nuvio_resume" in url
     assert "mode=movies" in url
+    assert "media_type=movies" in url
     assert "tmdb_id" in url
     assert is_folder is False
+    # Kodi only resolves the plugin URL (setResolvedUrl) when the row is a
+    # playback item; without IsPlayable a chosen source never plays.
+    _list_item.setProperty.assert_any_call("IsPlayable", "true")
 
     view.apply_section_view.assert_called_once_with("view.library", content_type="movies")
     kwargs = set_media_info_tag.call_args.kwargs
@@ -1103,8 +1109,13 @@ def test_show_nuvio_library_builds_series_season_details(monkeypatch):
     url, _list_item, is_folder = directory_items[0]
     assert "action=show_seasons_details" in url
     assert "mode=tv" in url
+    assert "media_type=tv" in url
     assert "tmdb_id" in url
     assert is_folder is True
+    # Series browse to the season list, so they must NOT be playback items.
+    assert not any(
+        call.args == ("IsPlayable", "true") for call in _list_item.setProperty.call_args_list
+    )
     view.apply_section_view.assert_called_once_with("view.library", content_type="tvshows")
     assert set_media_info_tag.call_args.kwargs["mode"] == "tv"
 

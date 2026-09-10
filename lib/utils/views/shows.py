@@ -48,9 +48,21 @@ def show_season_info(ids, mode, media_type):
         if res and res.get("tv_results"):
             tmdb_id = res["tv_results"][0]["id"]
 
+    details = tmdb_get("tv_details", tmdb_id)
+
+    # Callers such as the Nuvio library only know the tmdb_id. Resolve the
+    # missing external ids from the details we already fetched, otherwise the
+    # episode search carries a bare tmdb_id and sources that match by IMDB
+    # (e.g. Torrentio) find nothing. No extra request: "tv_details" already
+    # asks TMDB for external_ids.
+    external_ids = getattr(details, "external_ids", None) or {}
+    if not tvdb_id:
+        tvdb_id = external_ids.get("tvdb_id") or tvdb_id
+    if not imdb_id:
+        imdb_id = external_ids.get("imdb_id") or imdb_id
+
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-    details = tmdb_get("tv_details", tmdb_id)
     name = details.name
     seasons = details.seasons
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)

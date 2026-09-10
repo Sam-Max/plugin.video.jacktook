@@ -93,15 +93,25 @@ def _details_from_item(item):
 
 
 def _item_url(mode, tmdb_id, label):
+    """Build the click URL for one mirror row.
+
+    Movies play through "nuvio_resume", which resolves the imdb/tvdb ids from
+    TMDB and forces a rescrape. A plain "search" carrying only a tmdb_id makes
+    sources that match by IMDB (e.g. Torrentio) return nothing. Series stay a
+    browse folder (show -> seasons -> episodes); "media_type" must be carried
+    through so the episode search matches the normal TMDB flow.
+    """
     if mode == "tv":
         return build_url(
             "show_seasons_details",
             ids={"tmdb_id": str(tmdb_id)},
             mode="tv",
+            media_type="tv",
         )
     return build_url(
-        "search",
+        "nuvio_resume",
         mode="movies",
+        media_type="movies",
         query=label,
         ids={"tmdb_id": str(tmdb_id)},
     )
@@ -151,6 +161,13 @@ def show_nuvio_library(params):
                 ]
             )
         is_folder = mode == "tv"
+        if not is_folder:
+            # Movies are played from this view, so Kodi must treat the row as a
+            # playback item. Without this the plugin is invoked as a plain
+            # action and setResolvedUrl (used by JacktookPLayer.play_video) is a
+            # no-op, so selecting a source never starts playback. Series stay
+            # folders: they open the season list instead.
+            list_item.setProperty("IsPlayable", "true")
         directory_items.append((_item_url(mode, tmdb_id, label), list_item, is_folder))
 
     add_directory_items_batch(directory_items)
