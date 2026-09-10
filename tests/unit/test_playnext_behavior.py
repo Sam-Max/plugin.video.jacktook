@@ -307,6 +307,54 @@ def test_play_window_background_tasks_ignores_missing_progress_bar(monkeypatch):
     assert window.smart_play_called is True
 
 
+def test_play_window_init_shapes_state_when_player_cannot_report_file(monkeypatch):
+    from lib.gui.play_window import PlayWindow
+
+    class FakePlayer:
+        def getPlayingFile(self):
+            raise RuntimeError("Kodi: Player is not playing")
+
+        def isPlaying(self):
+            return False
+
+    monkeypatch.setattr("lib.gui.play_window.xbmc.Player", FakePlayer)
+
+    window = PlayWindow("playing_next.xml", "")
+
+    # A failed/missing playback must still leave a fully shaped window.
+    assert window.action is None
+    assert window.closed is False
+    assert window.playing_file is None
+    assert window.getPlayingFile() == ""
+
+
+def test_play_window_background_tasks_closes_without_advancing_when_player_missing(
+    monkeypatch,
+):
+    from lib.gui.play_window import PlayWindow
+
+    class TestPlayWindow(PlayWindow):
+        def smart_play_action(self):
+            self.smart_play_called = True
+
+    window = object.__new__(TestPlayWindow)
+    window.player = None
+    window.closed = False
+    window.playing_file = None
+    window.duration = 0
+    window.action = None
+    window.smart_play_called = False
+    window.setProperty = MagicMock()
+    window.close = MagicMock()
+    window.getControl = MagicMock(side_effect=RuntimeError("missing"))
+    monkeypatch.setattr("lib.gui.play_window.xbmc.sleep", MagicMock())
+
+    window.background_tasks()
+
+    assert window.smart_play_called is False
+    window.close.assert_called_once_with()
+
+
 def test_playnext_timeout_uses_neutral_copy_when_global_autoplay_is_disabled(monkeypatch):
     from lib.gui.play_next_window import PlayNext
 

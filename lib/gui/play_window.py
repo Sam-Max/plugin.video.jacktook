@@ -8,13 +8,21 @@ from lib.utils.kodi.utils import kodilog
 
 class PlayWindow(BaseWindow):
     def __init__(self, xml_file, xml_location, item_information=None):
+        # Shape the full lifecycle state before anything that can fail. Opening
+        # the next-episode dialog right after playback stopped is normal, and
+        # Kodi's player raises in that window; a partial construction must never
+        # leave `action`, `closed`, or `playing_file` undefined, because both
+        # background_tasks() and the run_next_dialog() handoff read them.
+        self.player = None
+        self.playing_file = None
+        self.duration = 0
+        self.closed = False
+        self.action = None
         try:
             super().__init__(xml_file, xml_location, item_information=item_information)
             self.player = xbmc.Player()
-            self.playing_file = self.getPlayingFile()
+            self.playing_file = self.getPlayingFile() or None
             self.duration = self.getTotalTime() - self.getTime()
-            self.closed = False
-            self.action = None
         except Exception as e:
             kodilog(f"Error PlayWindow: {e}")
             self.player = None
@@ -30,10 +38,15 @@ class PlayWindow(BaseWindow):
         return self.player.getTime() if self.isPlaying() else 0
 
     def isPlaying(self):
-        return self.player.isPlaying()
+        return self.player.isPlaying() if self.player else False
 
     def getPlayingFile(self):
-        return self.player.getPlayingFile()
+        if self.player is None:
+            return ""
+        try:
+            return self.player.getPlayingFile()
+        except Exception:
+            return ""
 
     def seekTime(self, seekTime):
         self.player.seekTime(seekTime)

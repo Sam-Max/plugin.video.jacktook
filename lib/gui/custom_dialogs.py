@@ -165,7 +165,10 @@ def run_next_dialog(params):
         )
         window.doModal()
     finally:
-        action = window.action if window else None
+        # Never let this cleanup raise: a partially constructed window (player
+        # unavailable) may not expose `action`, and that must not turn into an
+        # unhandled exception that kills the handoff.
+        action = getattr(window, "action", None) if window else None
         if window is not None:
             del window
 

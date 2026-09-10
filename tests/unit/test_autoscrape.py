@@ -408,6 +408,33 @@ def test_run_next_dialog_sets_pending_action_without_direct_playback():
         assert created_item_info["next_label"] == "1x2. Next Episode"
 
 
+def test_run_next_dialog_does_not_crash_when_window_has_no_action(monkeypatch):
+    from lib.gui import custom_dialogs
+
+    class WindowWithoutAction:
+        def doModal(self):
+            pass
+
+    fake_playlist = MagicMock()
+    fake_playlist.size.return_value = 1
+    fake_playlist.getposition.return_value = 0
+    set_property = MagicMock()
+
+    monkeypatch.setattr(custom_dialogs, "PLAYLIST", fake_playlist)
+    monkeypatch.setattr(
+        custom_dialogs, "PlayNext", lambda *args, **kwargs: WindowWithoutAction()
+    )
+    monkeypatch.setattr(custom_dialogs, "set_property", set_property)
+
+    # A partially constructed window may not expose `action`; the finally block
+    # must not turn that into an unhandled AttributeError.
+    custom_dialogs.run_next_dialog(
+        {"item_info": json.dumps({"playback_session_id": "owner-session"})}
+    )
+
+    set_property.assert_not_called()
+
+
 def test_run_next_dialog_does_not_publish_action_when_dialog_not_accepted():
     from lib.gui.custom_dialogs import run_next_dialog
 
