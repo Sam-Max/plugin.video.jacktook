@@ -4669,3 +4669,23 @@ msgstr "Как часто загружаются изменения библио
 msgctxt "#91038"
 msgid "Nuvio"
 msgstr "Nuvio"
+
+msgctxt "#91039"
+msgid "Add to Nuvio Library"
+msgstr "Добавить в библиотеку Nuvio"
+
+msgctxt "#91040"
+msgid "Remove from Nuvio Library"
+msgstr "Удалить из библиотеки Nuvio"
+
+msgctxt "#91041"
+msgid "Added to Nuvio Library"
+msgstr "Добавлено в библиотеку Nuvio"
+
+msgctxt "#91042"
+msgid "Removed from Nuvio Library"
+msgstr "Удалено из библиотеки Nuvio"
+
+msgctxt "#91043"
+msgid "Could not update the Nuvio library."
+msgstr "Не удалось обновить библиотеку Nuvio."

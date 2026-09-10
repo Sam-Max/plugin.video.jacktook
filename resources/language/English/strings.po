@@ -4885,3 +4885,23 @@ msgstr "How often Nuvio library changes are pulled, in minutes (minimum 1)."
 msgctxt "#91038"
 msgid "Nuvio"
 msgstr "Nuvio"
+
+msgctxt "#91039"
+msgid "Add to Nuvio Library"
+msgstr "Add to Nuvio Library"
+
+msgctxt "#91040"
+msgid "Remove from Nuvio Library"
+msgstr "Remove from Nuvio Library"
+
+msgctxt "#91041"
+msgid "Added to Nuvio Library"
+msgstr "Added to Nuvio Library"
+
+msgctxt "#91042"
+msgid "Removed from Nuvio Library"
+msgstr "Removed from Nuvio Library"
+
+msgctxt "#91043"
+msgid "Could not update the Nuvio library."
+msgstr "Could not update the Nuvio library."

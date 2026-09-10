@@ -1,5 +1,7 @@
 import json
 import os
+import time
+from threading import Thread
 
 import xbmcgui
 from xbmcgui import ListItem
@@ -1650,6 +1652,247 @@ def nuvio_remove_progress(params):
         execute_builtin("Container.Refresh")
         return
     notification(translation(91029), time=3000)
+
+
+_NUVIO_LIBRARY_POSTER_SIZE = "w500"
+_NUVIO_LIBRARY_BACKGROUND_SIZE = "original"
+
+
+def _refresh_nuvio_library():
+    execute_builtin("Container.Refresh")
+
+
+def _enrich_nuvio_library_item(item, data):
+    """Best-effort TMDB enrichment; keeps the provided context fields on failure."""
+    try:
+        from lib.api.nuvio import NuvioClient
+        from lib.clients.tmdb.utils.utils import tmdb_get
+        from lib.utils.general.utils import tmdb_url
+
+        tmdb_id = None
+        ids = data.get("ids")
+        if isinstance(ids, dict):
+            tmdb_id = ids.get("tmdb_id")
+        if tmdb_id in (None, ""):
+            tmdb_id = NuvioClient._tmdb_id_from_content_id(item["content_id"])
+        tmdb_id = NuvioClient._positive_integer(tmdb_id)
+        if not tmdb_id:
+            return
+
+        details = tmdb_get(
+            "tv_details" if item["content_type"] == "series" else "movie_details",
+            tmdb_id,
+        )
+        if not details:
+            return
+
+        name = details.get("name") or details.get("title")
+        if name:
+            item["name"] = str(name)
+        overview = details.get("overview")
+        if overview:
+            item["description"] = str(overview)
+        poster = tmdb_url(details.get("poster_path"), _NUVIO_LIBRARY_POSTER_SIZE)
+        if poster:
+            item["poster"] = poster
+        background = tmdb_url(details.get("backdrop_path"), _NUVIO_LIBRARY_BACKGROUND_SIZE)
+        if background:
+            item["background"] = background
+        release = details.get("release_date") or details.get("first_air_date")
+        if isinstance(release, str) and len(release) >= 4:
+            item["release_info"] = release[:4]
+        rating = details.get("vote_average")
+        if isinstance(rating, (int, float)) and not isinstance(rating, bool) and rating:
+            item["imdb_rating"] = float(rating)
+        genres = details.get("genres")
+        if isinstance(genres, list):
+            names = [
+                str(genre.get("name"))
+                for genre in genres
+                if isinstance(genre, dict) and genre.get("name")
+            ]
+            if names:
+                item["genres"] = names
+    except Exception as error:
+        kodilog(f"[NUVIO] library enrichment skipped ({type(error).__name__})")
+
+
+def _nuvio_tmdb_id(data, content_id):
+    """Resolve the TMDB id for an added library item, or None when unusable."""
+    ids = data.get("ids") if isinstance(data, dict) else None
+    candidate = ids.get("tmdb_id") if isinstance(ids, dict) else None
+    if candidate in (None, ""):
+        prefix, _, raw = str(content_id).partition(":")
+        candidate = raw if prefix.lower() == "tmdb" else None
+    try:
+        value = int(candidate)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
+
+
+def _build_nuvio_library_item(data):
+    """Build the API-shaped library item from a context-menu JSON payload."""
+    if not isinstance(data, dict):
+        return None
+    content_id = data.get("content_id")
+    content_type = data.get("content_type")
+    if content_type not in ("movie", "series"):
+        return None
+    if not isinstance(content_id, str) or not content_id.strip():
+        return None
+
+    item = {"content_id": content_id.strip(), "content_type": content_type}
+    # The mirror routes by tmdb_id, so persist it alongside the API fields;
+    # otherwise an added item would never render in the offline library view.
+    item["tmdb_id"] = _nuvio_tmdb_id(data, item["content_id"])
+    title = data.get("title")
+    if isinstance(title, str) and title.strip():
+        item["name"] = title.strip()
+    for field in ("poster", "background", "description", "release_info"):
+        value = data.get(field)
+        if isinstance(value, str) and value.strip():
+            item[field] = value.strip()
+    rating = data.get("imdb_rating")
+    if isinstance(rating, (int, float)) and not isinstance(rating, bool) and rating:
+        item["imdb_rating"] = float(rating)
+    genres = data.get("genres")
+    if isinstance(genres, list):
+        cleaned = [entry.strip() for entry in genres if isinstance(entry, str) and entry.strip()]
+        if cleaned:
+            item["genres"] = cleaned
+    added_at = data.get("added_at")
+    item["added_at"] = (
+        int(added_at)
+        if isinstance(added_at, (int, float)) and not isinstance(added_at, bool) and added_at > 0
+        else int(time.time() * 1000)
+    )
+    _enrich_nuvio_library_item(item, data)
+    return item
+
+
+def _to_nuvio_mirror_item(item):
+    """Map an API-shaped item onto the mirror column shape."""
+    return {
+        "content_type": item.get("content_type"),
+        "content_id": item.get("content_id"),
+        "tmdb_id": item.get("tmdb_id"),
+        "title": item.get("name"),
+        "poster": item.get("poster"),
+        "background": item.get("background"),
+        "description": item.get("description"),
+        "release_info": item.get("release_info"),
+        "imdb_rating": item.get("imdb_rating"),
+        "genres": item.get("genres") or [],
+        "added_at_ms": item.get("added_at"),
+    }
+
+
+def _apply_nuvio_add_result(data):
+    """Push one library item then update the local mirror on success.
+
+    Runs on a daemon thread; failures never touch the mirror and never raise.
+    """
+    from lib.api.nuvio import NuvioClient
+    from lib.api.nuvio_store import NuvioStore, invalidate_nuvio_library_cache
+
+    item = _build_nuvio_library_item(data)
+    if item is None:
+        notification(translation(91043), time=3000)
+        return
+
+    store = None
+    try:
+        client = NuvioClient()
+        profile_id = client.profile_id
+        if not profile_id:
+            notification(translation(91043), time=3000)
+            return
+        store = NuvioStore()
+        store.setup_nuvio_database()
+        origin_client_id = store.get_or_create_origin_client_id()
+        if not client.add_library_items(
+            profile_id=profile_id,
+            items=[item],
+            origin_client_id=origin_client_id,
+        ):
+            notification(translation(91043), time=3000)
+            return
+        store.upsert_items(profile_id, [_to_nuvio_mirror_item(item)])
+        invalidate_nuvio_library_cache()
+        _refresh_nuvio_library()
+        notification(translation(91041), time=3000)
+    except Exception as error:
+        kodilog(f"[NUVIO] add to library failed ({type(error).__name__})")
+        notification(translation(91043), time=3000)
+    finally:
+        if store is not None:
+            store.close()
+
+
+def _apply_nuvio_remove_result(content_id, content_type):
+    """Push one library delete then update the local mirror on success.
+
+    Runs on a daemon thread; failures never touch the mirror and never raise.
+    """
+    from lib.api.nuvio import NuvioClient
+    from lib.api.nuvio_store import NuvioStore, invalidate_nuvio_library_cache
+
+    key = {"content_id": content_id, "content_type": content_type}
+    store = None
+    try:
+        client = NuvioClient()
+        profile_id = client.profile_id
+        if not profile_id:
+            notification(translation(91043), time=3000)
+            return
+        store = NuvioStore()
+        store.setup_nuvio_database()
+        origin_client_id = store.get_or_create_origin_client_id()
+        if not client.remove_library_items(
+            profile_id=profile_id,
+            keys=[key],
+            origin_client_id=origin_client_id,
+        ):
+            notification(translation(91043), time=3000)
+            return
+        store.delete_items(profile_id, [key])
+        invalidate_nuvio_library_cache()
+        _refresh_nuvio_library()
+        notification(translation(91042), time=3000)
+    except Exception as error:
+        kodilog(f"[NUVIO] remove from library failed ({type(error).__name__})")
+        notification(translation(91043), time=3000)
+    finally:
+        if store is not None:
+            store.close()
+
+
+def nuvio_add_to_library(params):
+    from lib.utils.general.utils import safe_json_loads
+
+    data = safe_json_loads((params or {}).get("data"), {})
+    if not isinstance(data, dict):
+        data = {}
+    thread = Thread(target=_apply_nuvio_add_result, args=(data,))
+    thread.daemon = True
+    thread.start()
+
+
+def nuvio_remove_from_library(params):
+    params = params or {}
+    content_id = params.get("content_id")
+    content_type = params.get("content_type")
+    if (
+        content_type not in ("movie", "series")
+        or not isinstance(content_id, str)
+        or not content_id.strip()
+    ):
+        notification(translation(91043), time=3000)
+        return
+    thread = Thread(target=_apply_nuvio_remove_result, args=(content_id.strip(), content_type))
+    thread.daemon = True
+    thread.start()
 
 
 def nuvio_resume(params):

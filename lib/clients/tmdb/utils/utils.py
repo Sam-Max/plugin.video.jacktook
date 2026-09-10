@@ -1,6 +1,7 @@
 import json
 import os
 import threading
+import time
 from datetime import datetime, timedelta
 from typing import List, Optional
 from urllib import parse
@@ -30,6 +31,7 @@ from lib.utils.kodi.utils import (
     ADDON_HANDLE,
     ADDON_PATH,
     action_url_run,
+    build_url,
     container_update,
     get_setting,
     kodi_play_media,
@@ -461,6 +463,35 @@ def build_play_trailer_context_menu_item(ids, media_type, title=None, title_key=
     )
 
 
+def _build_nuvio_add_context_menu_item(content_type, title, ids, mode):
+    """Return the "Add to Nuvio Library" context entry, or None when unavailable.
+
+    Gated by Nuvio availability and a usable TMDB id; a missing or disabled
+    Nuvio session yields no entry rather than an error.
+    """
+    tmdb_id = ids.get("tmdb_id") if isinstance(ids, dict) else None
+    if tmdb_id in (None, ""):
+        return None
+    try:
+        from lib.api.nuvio import is_nuvio_progress_sync_enabled
+
+        if not is_nuvio_progress_sync_enabled():
+            return None
+    except Exception:
+        return None
+    data = json.dumps(
+        {
+            "content_id": f"tmdb:{tmdb_id}",
+            "content_type": content_type,
+            "title": title,
+            "ids": ids,
+            "mode": mode,
+            "added_at": int(time.time() * 1000),
+        }
+    )
+    return (translation(91039), f"RunPlugin({build_url('nuvio_add_to_library', data=data)})")
+
+
 def add_tmdb_movie_context_menu(mode, media_type, title=None, ids=None):
     if ids is None:
         ids = {}
@@ -574,6 +605,9 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids=None):
             container_update(name="settings"),
         ),
     ]
+    nuvio_item = _build_nuvio_add_context_menu_item("movie", title, ids, mode)
+    if nuvio_item:
+        context_menu.append(nuvio_item)
     return context_menu
 
 
@@ -642,6 +676,11 @@ def add_tmdb_show_context_menu(mode, ids=None, title=None):
             container_update(name="settings"),
         ),
     ]
+    nuvio_item = _build_nuvio_add_context_menu_item(
+        "series", title or ids.get("name") or ids.get("title"), ids, mode
+    )
+    if nuvio_item:
+        context_menu.append(nuvio_item)
     return context_menu
 
 

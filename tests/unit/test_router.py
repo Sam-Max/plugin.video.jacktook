@@ -232,3 +232,22 @@ def test_route_torrserver_download_and_play_subtitles():
         router._route_torrserver("download_and_play_subtitles", params)
 
     mock_dl.assert_called_once_with(params)
+
+
+@pytest.mark.parametrize("action", ["nuvio_add_to_library", "nuvio_remove_from_library"])
+def test_get_route_handler_returns_nuvio_dispatcher_for_write_actions(action):
+    router = _load_router_module()
+
+    assert router._is_nuvio_action(action) is True
+    assert router._get_route_handler(action) is router._route_nuvio
+
+
+@pytest.mark.parametrize("action", ["nuvio_add_to_library", "nuvio_remove_from_library"])
+def test_route_nuvio_dispatches_write_actions(action):
+    router = _load_router_module()
+
+    params = {"content_id": "tmdb:550", "content_type": "movie"}
+    with patch(f"lib.navigation.{action}") as handler:
+        router._route_nuvio(action, params)
+
+    handler.assert_called_once_with(params)

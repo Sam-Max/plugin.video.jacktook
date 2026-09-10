@@ -5,11 +5,20 @@ from urllib.parse import parse_qs, urlparse
 
 from lib.clients.tmdb.people_client import PeopleClient
 from lib.clients.tmdb.tmdb import TmdbClient
-from lib.clients.tmdb.utils.utils import add_tmdb_movie_context_menu
+from lib.clients.tmdb.utils.utils import (
+    add_tmdb_movie_context_menu,
+    add_tmdb_show_context_menu,
+)
 
 
 def _parse_container_update_command(command):
     url = command[len("Container.Update(") : -1]
+    query = parse_qs(urlparse(url).query)
+    return {key: values[0] for key, values in query.items()}
+
+
+def _parse_runplugin_command(command):
+    url = command[len("RunPlugin(") : -1]
     query = parse_qs(urlparse(url).query)
     return {key: values[0] for key, values in query.items()}
 
@@ -142,3 +151,89 @@ def test_search_people_by_id_uses_movie_credits_for_multi_movie():
 
     assert tmdb_get.call_args[0][0] == "movie_credits"
     assert tmdb_get.call_args.kwargs["params"] == 550
+
+
+# ---------------------------------------------------------------------------
+# Add to Nuvio Library context menu
+# ---------------------------------------------------------------------------
+
+
+def test_movie_context_menu_includes_nuvio_add_when_available(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.is_nuvio_progress_sync_enabled", lambda: True)
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: f"t-{value}",
+    ):
+        menu = add_tmdb_movie_context_menu(
+            mode="movies",
+            media_type="movie",
+            title="Demo Movie",
+            ids={"tmdb_id": 550},
+        )
+
+    entry = _get_menu_item(menu, "t-91039")
+    assert entry is not None
+    query = _parse_runplugin_command(entry[1])
+    assert query["action"] == "nuvio_add_to_library"
+    data = json.loads(query["data"])
+    assert data["content_id"] == "tmdb:550"
+    assert data["content_type"] == "movie"
+    assert data["title"] == "Demo Movie"
+    assert data["ids"] == {"tmdb_id": 550}
+    assert data["mode"] == "movies"
+    assert isinstance(data["added_at"], int)
+
+
+def test_show_context_menu_includes_nuvio_add_as_series(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.is_nuvio_progress_sync_enabled", lambda: True)
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: f"t-{value}",
+    ):
+        menu = add_tmdb_show_context_menu(
+            mode="tv",
+            ids={"tmdb_id": 1396},
+            title="Demo Show",
+        )
+
+    entry = _get_menu_item(menu, "t-91039")
+    assert entry is not None
+    data = json.loads(_parse_runplugin_command(entry[1])["data"])
+    assert data["content_id"] == "tmdb:1396"
+    assert data["content_type"] == "series"
+
+
+def test_context_menu_omits_nuvio_add_when_disabled(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.is_nuvio_progress_sync_enabled", lambda: False)
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: f"t-{value}",
+    ):
+        menu = add_tmdb_movie_context_menu(
+            mode="movies",
+            media_type="movie",
+            title="Demo Movie",
+            ids={"tmdb_id": 550},
+        )
+
+    assert _get_menu_item(menu, "t-91039") is None
+
+
+def test_context_menu_omits_nuvio_add_without_tmdb_id(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.is_nuvio_progress_sync_enabled", lambda: True)
+
+    with patch(
+        "lib.clients.tmdb.utils.utils.translation",
+        side_effect=lambda value: f"t-{value}",
+    ):
+        menu = add_tmdb_movie_context_menu(
+            mode="movies",
+            media_type="movie",
+            title="Demo Movie",
+            ids={"imdb_id": "tt00550"},
+        )
+
+    assert _get_menu_item(menu, "t-91039") is None

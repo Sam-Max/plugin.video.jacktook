@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -998,3 +999,231 @@ def test_nuvio_library_menu_entries_are_condition_gated(monkeypatch):
     monkeypatch.setattr("lib.utils.views.nuvio_library.NuvioStore", MagicMock(return_value=store))
 
     assert all(entry["condition"]() is True for entry in library_entries)
+
+
+# ---------------------------------------------------------------------------
+# Library view: Remove from Nuvio Library context menu
+# ---------------------------------------------------------------------------
+
+
+def test_show_nuvio_library_adds_remove_context_menu(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    item, add_items = _patch_view_shell(monkeypatch, view)
+    store = _FakeNuvioStore({2: [_movie_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _patch_library_settings(monkeypatch, view)
+
+    view.show_nuvio_library({"mode": "movies"})
+
+    menu = item.addContextMenuItems.call_args.args[0]
+    assert menu[0][0] == "text-91040"
+    assert menu[0][1] == (
+        f"RunPlugin({view.build_url('nuvio_remove_from_library', content_id='tmdb:550', content_type='movie')})"
+    )
+    assert add_items.call_args.args[0] != []
+
+
+# ---------------------------------------------------------------------------
+# Navigation: nuvio_add_to_library / nuvio_remove_from_library
+# ---------------------------------------------------------------------------
+
+
+class _SyncThread:
+    """Thread double that runs the target synchronously on ``start()``."""
+
+    def __init__(self, target=None, args=(), kwargs=None):
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs or {}
+        self.daemon = False
+        self.started = False
+
+    def start(self):
+        self.started = True
+        self._target(*self._args, **self._kwargs)
+
+
+class _FakeWriteStore:
+    def __init__(self, *args, **kwargs):
+        self.upserted = []
+        self.deleted = []
+        self.closed = False
+        self.setup_called = False
+
+    def setup_nuvio_database(self):
+        self.setup_called = True
+        return True
+
+    def get_or_create_origin_client_id(self):
+        return "origin-1"
+
+    def upsert_items(self, profile_id, items):
+        self.upserted.append((profile_id, items))
+        return True
+
+    def delete_items(self, profile_id, keys):
+        self.deleted.append((profile_id, keys))
+        return True
+
+    def close(self):
+        self.closed = True
+
+
+def _patch_write_handler(monkeypatch, navigation, push_result):
+    client = MagicMock(profile_id=2)
+    client.add_library_items = MagicMock(return_value=push_result)
+    client.remove_library_items = MagicMock(return_value=push_result)
+    monkeypatch.setattr("lib.api.nuvio.NuvioClient", MagicMock(return_value=client))
+
+    stores = []
+
+    def _store_factory(*args, **kwargs):
+        store = _FakeWriteStore()
+        stores.append(store)
+        return store
+
+    monkeypatch.setattr("lib.api.nuvio_store.NuvioStore", _store_factory)
+    invalidate = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio_store.invalidate_nuvio_library_cache", invalidate)
+    notification = MagicMock()
+    execute_builtin = MagicMock()
+    monkeypatch.setattr(navigation, "notification", notification)
+    monkeypatch.setattr(navigation, "execute_builtin", execute_builtin)
+    monkeypatch.setattr(navigation, "translation", lambda string_id: f"text-{string_id}")
+    monkeypatch.setattr(navigation, "Thread", _SyncThread)
+    monkeypatch.setattr(navigation, "_enrich_nuvio_library_item", lambda item, data: None)
+    return client, stores, invalidate, notification, execute_builtin
+
+
+def _payload():
+    return json.dumps(
+        {
+            "content_id": "tmdb:550",
+            "content_type": "movie",
+            "title": "Fight Club",
+            "ids": {"tmdb_id": 550},
+            "mode": "movies",
+            "added_at": 1711600000000,
+        }
+    )
+
+
+def test_nuvio_add_to_library_pushes_and_updates_mirror(monkeypatch):
+    import lib.navigation as navigation
+
+    client, stores, invalidate, notification, execute_builtin = _patch_write_handler(
+        monkeypatch, navigation, push_result=True
+    )
+
+    navigation.nuvio_add_to_library({"data": _payload()})
+
+    client.add_library_items.assert_called_once()
+    kwargs = client.add_library_items.call_args.kwargs
+    assert kwargs["profile_id"] == 2
+    assert kwargs["origin_client_id"] == "origin-1"
+    assert kwargs["items"][0]["content_id"] == "tmdb:550"
+    assert kwargs["items"][0]["content_type"] == "movie"
+    assert kwargs["items"][0]["name"] == "Fight Club"
+
+    assert len(stores) == 1
+    store = stores[0]
+    assert store.setup_called is True
+    assert len(store.upserted) == 1
+    profile_id, mirror_items = store.upserted[0]
+    assert profile_id == 2
+    assert mirror_items[0]["content_id"] == "tmdb:550"
+    assert mirror_items[0]["tmdb_id"] == 550
+    assert mirror_items[0]["title"] == "Fight Club"
+    assert mirror_items[0]["added_at_ms"] == 1711600000000
+    assert store.closed is True
+
+    invalidate.assert_called_once_with()
+    execute_builtin.assert_called_once_with("Container.Refresh")
+    notification.assert_called_once_with("text-91041", time=3000)
+
+
+def test_nuvio_add_to_library_notifies_and_leaves_mirror_on_failure(monkeypatch):
+    import lib.navigation as navigation
+
+    client, stores, invalidate, notification, execute_builtin = _patch_write_handler(
+        monkeypatch, navigation, push_result=False
+    )
+
+    navigation.nuvio_add_to_library({"data": _payload()})
+
+    client.add_library_items.assert_called_once()
+    assert stores[0].upserted == []
+    assert stores[0].closed is True
+    invalidate.assert_not_called()
+    execute_builtin.assert_not_called()
+    notification.assert_called_once_with("text-91043", time=3000)
+
+
+def test_nuvio_remove_from_library_pushes_and_updates_mirror(monkeypatch):
+    import lib.navigation as navigation
+
+    client, stores, invalidate, notification, execute_builtin = _patch_write_handler(
+        monkeypatch, navigation, push_result=True
+    )
+
+    navigation.nuvio_remove_from_library({"content_id": "tmdb:550", "content_type": "movie"})
+
+    client.remove_library_items.assert_called_once()
+    kwargs = client.remove_library_items.call_args.kwargs
+    assert kwargs["profile_id"] == 2
+    assert kwargs["origin_client_id"] == "origin-1"
+    assert kwargs["keys"] == [{"content_id": "tmdb:550", "content_type": "movie"}]
+
+    assert stores[0].deleted == [(2, [{"content_id": "tmdb:550", "content_type": "movie"}])]
+    assert stores[0].closed is True
+    invalidate.assert_called_once_with()
+    execute_builtin.assert_called_once_with("Container.Refresh")
+    notification.assert_called_once_with("text-91042", time=3000)
+
+
+def test_nuvio_remove_from_library_notifies_and_leaves_mirror_on_failure(monkeypatch):
+    import lib.navigation as navigation
+
+    client, stores, invalidate, notification, execute_builtin = _patch_write_handler(
+        monkeypatch, navigation, push_result=False
+    )
+
+    navigation.nuvio_remove_from_library({"content_id": "tmdb:550", "content_type": "movie"})
+
+    client.remove_library_items.assert_called_once()
+    assert stores[0].deleted == []
+    assert stores[0].closed is True
+    invalidate.assert_not_called()
+    execute_builtin.assert_not_called()
+    notification.assert_called_once_with("text-91043", time=3000)
+
+
+def test_nuvio_add_to_library_rejects_invalid_payload(monkeypatch):
+    import lib.navigation as navigation
+
+    client, _stores, invalidate, notification, _execute = _patch_write_handler(
+        monkeypatch, navigation, push_result=True
+    )
+
+    navigation.nuvio_add_to_library({"data": "not-json"})
+
+    client.add_library_items.assert_not_called()
+    invalidate.assert_not_called()
+    notification.assert_called_once_with("text-91043", time=3000)
+
+
+def test_nuvio_remove_from_library_rejects_invalid_params(monkeypatch):
+    import lib.navigation as navigation
+
+    client, _stores, invalidate, notification, _execute = _patch_write_handler(
+        monkeypatch, navigation, push_result=True
+    )
+
+    navigation.nuvio_remove_from_library({"content_id": "", "content_type": "movie"})
+    navigation.nuvio_remove_from_library({"content_id": "tmdb:550", "content_type": "person"})
+
+    client.remove_library_items.assert_not_called()
+    invalidate.assert_not_called()
+    assert notification.call_count == 2

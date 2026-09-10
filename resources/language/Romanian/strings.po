@@ -4681,3 +4681,23 @@ msgstr "Cât de des sunt preluate modificările bibliotecii Nuvio, în minute (m
 msgctxt "#91038"
 msgid "Nuvio"
 msgstr "Nuvio"
+
+msgctxt "#91039"
+msgid "Add to Nuvio Library"
+msgstr "Adaugă în biblioteca Nuvio"
+
+msgctxt "#91040"
+msgid "Remove from Nuvio Library"
+msgstr "Elimină din biblioteca Nuvio"
+
+msgctxt "#91041"
+msgid "Added to Nuvio Library"
+msgstr "Adăugat în biblioteca Nuvio"
+
+msgctxt "#91042"
+msgid "Removed from Nuvio Library"
+msgstr "Eliminat din biblioteca Nuvio"
+
+msgctxt "#91043"
+msgid "Could not update the Nuvio library."
+msgstr "Biblioteca Nuvio nu a putut fi actualizată."

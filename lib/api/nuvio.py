@@ -28,12 +28,20 @@ ADDONS_FETCH_NON_LIST = "non_list"
 LIBRARY_RPC_CURSOR = "sync_get_library_delta_cursor"
 LIBRARY_RPC_SNAPSHOT = "sync_pull_library"
 LIBRARY_RPC_DELTA = "sync_pull_library_delta"
+LIBRARY_RPC_PUSH_ITEMS = "sync_push_library_items"
+LIBRARY_RPC_DELETE_ITEMS = "sync_delete_library_items"
 LIBRARY_FETCH_AUTH = "auth"
 LIBRARY_FETCH_TRANSPORT = "transport"
 LIBRARY_FETCH_HTTP = "http"
 LIBRARY_FETCH_INVALID_JSON = "invalid_json"
 LIBRARY_FETCH_NON_LIST = "non_list"
 LIBRARY_FETCH_INVALID_CURSOR = "invalid_cursor"
+LIBRARY_WRITE_AUTH = "auth"
+LIBRARY_WRITE_TRANSPORT = "transport"
+LIBRARY_WRITE_HTTP = "http"
+LIBRARY_WRITE_INVALID_INPUT = "invalid_input"
+# Nuvio clients send at most 500 library items/keys per request.
+LIBRARY_WRITE_BATCH_SIZE = 500
 
 # Sentinel returned by _parse_library_row when a delta event carries an
 # unrecognized operation. The caller must abort the whole batch so the cursor
@@ -352,6 +360,98 @@ class NuvioClient:
         status = f", HTTP {status_code}" if status_code is not None else ""
         kodilog(f"[NUVIO] {label} fetch failed ({failure}{status})")
 
+    @staticmethod
+    def _log_library_write_failure(label, failure, status_code=None):
+        status = f", HTTP {status_code}" if status_code is not None else ""
+        kodilog(f"[NUVIO] {label} write failed ({failure}{status})")
+
+    @staticmethod
+    def _iter_batches(entries, size):
+        for index in range(0, len(entries), size):
+            yield entries[index : index + size]
+
+    # API fields accepted by sync_push_library_items (Nuvio public API v1.3).
+    LIBRARY_WRITE_FIELDS = (
+        "content_id",
+        "content_type",
+        "name",
+        "poster",
+        "poster_shape",
+        "background",
+        "description",
+        "release_info",
+        "imdb_rating",
+        "genres",
+        "addon_base_url",
+        "added_at",
+    )
+
+    @classmethod
+    def _normalize_library_write_items(cls, items):
+        """Return the validated API-shaped items to push, or None.
+
+        Every item must carry a known ``content_type`` and a non-empty string
+        ``content_id``. Only documented API fields are forwarded; local-only
+        keys (``tmdb_id``, ``ids``, ``mode``, …) are stripped so they are never
+        sent to the server.
+        """
+        if not isinstance(items, (list, tuple)) or not items:
+            return None
+        normalized = []
+        for item in items:
+            if not isinstance(item, dict):
+                return None
+            if item.get("content_type") not in ("movie", "series"):
+                return None
+            content_id = item.get("content_id")
+            if not isinstance(content_id, str) or not content_id.strip():
+                return None
+            normalized.append(
+                {field: item[field] for field in cls.LIBRARY_WRITE_FIELDS if field in item}
+            )
+        return normalized
+
+    @classmethod
+    def _normalize_library_write_keys(cls, keys):
+        """Return validated ``{"content_id", "content_type"}`` keys, or None."""
+        if not isinstance(keys, (list, tuple)) or not keys:
+            return None
+        normalized = []
+        for key in keys:
+            if not isinstance(key, dict):
+                return None
+            content_type = key.get("content_type")
+            content_id = key.get("content_id")
+            if content_type not in ("movie", "series"):
+                return None
+            if not isinstance(content_id, str) or not content_id.strip():
+                return None
+            normalized.append({"content_id": content_id, "content_type": content_type})
+        return normalized
+
+    def _library_write(self, endpoint, payload, label):
+        """Run one incremental library write RPC; return True on 2xx/3xx.
+
+        Responses are ``204 No Content``, so the body is never parsed. Failures
+        are reported by category only, response data is never logged, and no
+        exception escapes to the caller.
+        """
+        try:
+            response, failure = self._post_authenticated(endpoint, payload, include_failure=True)
+        except Exception as error:
+            self._log_library_write_failure(label, f"unexpected:{type(error).__name__}")
+            return False
+        if failure:
+            status_code = self._last_token_failure_status if failure == LIBRARY_WRITE_AUTH else None
+            self._log_library_write_failure(label, failure, status_code)
+            return False
+        if response is None or response.status_code >= 400:
+            self._log_library_write_failure(
+                label, LIBRARY_WRITE_HTTP, response.status_code if response else None
+            )
+            return False
+        return True
+
     def _library_profile_id(self, profile_id):
         if profile_id is None:
             return self.profile_id
@@ -522,6 +622,57 @@ class NuvioClient:
             events.append(parsed)
         events.sort(key=lambda event: event["event_id"])
         return events
+
+    def add_library_items(self, profile_id=None, items=None, origin_client_id=None) -> bool:
+        """Incrementally upsert library items for the profile.
+
+        Uses only ``sync_push_library_items`` (never the destructive full
+        replace). Items are chunked to the documented 500-per-request client
+        limit; any failed chunk makes the whole call return ``False``.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_write_failure("library push", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        normalized = self._normalize_library_write_items(items)
+        if not normalized:
+            self._log_library_write_failure("library push", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        origin = self._optional_string(origin_client_id) or None
+        for batch in self._iter_batches(normalized, LIBRARY_WRITE_BATCH_SIZE):
+            payload = {
+                "p_profile_id": resolved_profile,
+                "p_items": batch,
+                "p_origin_client_id": origin,
+            }
+            if not self._library_write(LIBRARY_RPC_PUSH_ITEMS, payload, "library push"):
+                return False
+        return True
+
+    def remove_library_items(self, profile_id=None, keys=None, origin_client_id=None) -> bool:
+        """Incrementally delete explicit ``(content_id, content_type)`` keys.
+
+        Uses only ``sync_delete_library_items`` (never the destructive full
+        replace). Keys are chunked to the documented 500-per-request limit.
+        """
+        resolved_profile = self._library_profile_id(profile_id)
+        if not resolved_profile:
+            self._log_library_write_failure("library delete", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        normalized = self._normalize_library_write_keys(keys)
+        if not normalized:
+            self._log_library_write_failure("library delete", LIBRARY_WRITE_INVALID_INPUT)
+            return False
+        origin = self._optional_string(origin_client_id) or None
+        for batch in self._iter_batches(normalized, LIBRARY_WRITE_BATCH_SIZE):
+            payload = {
+                "p_profile_id": resolved_profile,
+                "p_keys": batch,
+                "p_origin_client_id": origin,
+            }
+            if not self._library_write(LIBRARY_RPC_DELETE_ITEMS, payload, "library delete"):
+                return False
+        return True
 
     @staticmethod
     def _device_nonce():

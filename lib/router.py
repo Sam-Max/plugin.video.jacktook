@@ -175,6 +175,8 @@ def _is_nuvio_action(action):
         "nuvio_library",
         "nuvio_remove_progress",
         "nuvio_resume",
+        "nuvio_add_to_library",
+        "nuvio_remove_from_library",
     )
 
 
@@ -592,12 +594,14 @@ def _route_simkl(action, params):
 
 def _route_nuvio(action, params):
     from lib.navigation import (
+        nuvio_add_to_library,
         nuvio_auth,
         nuvio_continue_watching,
         nuvio_history,
         nuvio_library,
         nuvio_logout,
         nuvio_menu,
+        nuvio_remove_from_library,
         nuvio_remove_progress,
         nuvio_resume,
         nuvio_toggle_addons,
@@ -613,6 +617,8 @@ def _route_nuvio(action, params):
         "nuvio_library": nuvio_library,
         "nuvio_remove_progress": nuvio_remove_progress,
         "nuvio_resume": nuvio_resume,
+        "nuvio_add_to_library": nuvio_add_to_library,
+        "nuvio_remove_from_library": nuvio_remove_from_library,
     }[action](params)
 
 

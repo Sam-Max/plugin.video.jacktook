@@ -13,7 +13,9 @@ import requests
 
 from lib.api.nuvio import (
     LIBRARY_RPC_CURSOR,
+    LIBRARY_RPC_DELETE_ITEMS,
     LIBRARY_RPC_DELTA,
+    LIBRARY_RPC_PUSH_ITEMS,
     LIBRARY_RPC_SNAPSHOT,
     NuvioClient,
 )
@@ -374,14 +376,14 @@ def test_store_setup_is_idempotent_and_sets_schema_version():
     assert store.setup_nuvio_database() is True
     assert store.setup_nuvio_database() is True
 
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
 
 
 def test_module_setup_accepts_injected_connection():
     connection = _memory_connection()
 
     assert setup_nuvio_database(connection) is True
-    assert connection.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
 
     tables = {
         row[0]
@@ -389,7 +391,7 @@ def test_module_setup_accepts_injected_connection():
             "SELECT name FROM sqlite_master WHERE type = 'table'"
         ).fetchall()
     }
-    assert {"nuvio_library", "nuvio_library_meta"} <= tables
+    assert {"nuvio_library", "nuvio_library_meta", "nuvio_client_meta"} <= tables
 
 
 def test_store_defaults_meta_and_cursor_when_absent():
@@ -874,3 +876,277 @@ def test_service_follows_profile_switch_without_restart():
     assert store.count(2) == 1
     assert store.get_meta(1)["snapshot_done"] == 1  # profile 1 left intact
     assert store.count(1) == 1
+
+
+# --- Library writes: client ----------------------------------------------------
+
+
+def _api_item(content_id="tmdb:550", content_type="movie", **overrides):
+    item = {
+        "content_id": content_id,
+        "content_type": content_type,
+        "name": "Fight Club",
+        "poster": "https://image.tmdb.org/t/p/w500/fightclub.jpg",
+        "background": "https://image.tmdb.org/t/p/original/fightclub.jpg",
+        "description": "An insomniac office worker.",
+        "release_info": "1999",
+        "imdb_rating": 8.8,
+        "genres": ["Drama", "Thriller"],
+        "added_at": 1711600000000,
+    }
+    item.update(overrides)
+    return item
+
+
+def test_add_library_items_pushes_incremental_items_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _api_item()
+
+    assert (
+        _client(profile_id=2).add_library_items(items=[item], origin_client_id="origin-1") is True
+    )
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_PUSH_ITEMS}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 2,
+        "p_items": [item],
+        "p_origin_client_id": "origin-1",
+    }
+    post.return_value.json.assert_not_called()
+
+
+def test_add_library_items_strips_local_only_fields(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _api_item(tmdb_id=550, ids={"tmdb_id": 550}, mode="movies")
+
+    assert _client(profile_id=2).add_library_items(items=[item], origin_client_id="o") is True
+
+    pushed = post.call_args.kwargs["json"]["p_items"][0]
+    assert "tmdb_id" not in pushed
+    assert "ids" not in pushed
+    assert "mode" not in pushed
+    assert pushed["content_id"] == "tmdb:550"
+    assert pushed["content_type"] == "movie"
+
+
+def test_remove_library_items_pushes_incremental_keys_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    key = {"content_id": "tmdb:550", "content_type": "movie"}
+
+    assert (
+        _client(profile_id=2).remove_library_items(keys=[key], origin_client_id="origin-1") is True
+    )
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_DELETE_ITEMS}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 2,
+        "p_keys": [key],
+        "p_origin_client_id": "origin-1",
+    }
+    post.return_value.json.assert_not_called()
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_add_and_remove_return_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    client = _client(profile_id=2)
+    assert client.add_library_items(items=[_api_item()], origin_client_id="origin-1") is False
+    assert (
+        client.remove_library_items(
+            keys=[{"content_id": "tmdb:550", "content_type": "movie"}], origin_client_id="origin-1"
+        )
+        is False
+    )
+
+    assert "library push write failed" in _logged(log)
+    assert "library delete write failed" in _logged(log)
+
+
+def test_add_and_remove_return_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    client = _client(profile_id=2)
+    assert client.add_library_items(items=[_api_item()]) is False
+    assert (
+        client.remove_library_items(keys=[{"content_id": "tmdb:550", "content_type": "movie"}])
+        is False
+    )
+
+    logged = _logged(log)
+    assert "transport" in logged
+    assert "private-token" not in logged
+
+
+@pytest.mark.parametrize(
+    "items",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [_api_item(content_type="person")],
+        [_api_item(content_id="")],
+        [_api_item(content_id=550)],
+        ["not-a-dict"],
+    ],
+)
+def test_add_library_items_rejects_invalid_input_without_request(monkeypatch, items):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).add_library_items(items=items) is False
+    post.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [{"content_id": "tmdb:550", "content_type": "person"}],
+        [{"content_id": "", "content_type": "movie"}],
+        [{"content_id": "tmdb:550"}],
+        ["not-a-dict"],
+    ],
+)
+def test_remove_library_items_rejects_invalid_input_without_request(monkeypatch, keys):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).remove_library_items(keys=keys) is False
+    post.assert_not_called()
+
+
+def test_add_library_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").add_library_items(items=[_api_item()]) is False
+    post.assert_not_called()
+
+
+def test_add_library_items_chunks_at_500(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [_api_item(content_id=f"tmdb:{index}") for index in range(501)]
+
+    assert _client(profile_id=2).add_library_items(items=items) is True
+
+    assert post.call_count == 2
+    first = post.call_args_list[0].kwargs["json"]["p_items"]
+    second = post.call_args_list[1].kwargs["json"]["p_items"]
+    assert [len(first), len(second)] == [500, 1]
+    assert first[0]["content_id"] == "tmdb:0"
+    assert second[0]["content_id"] == "tmdb:500"
+
+
+def test_remove_library_items_chunks_at_500(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": f"tmdb:{index}", "content_type": "movie"} for index in range(600)]
+
+    assert _client(profile_id=3).remove_library_items(keys=keys) is True
+
+    assert post.call_count == 2
+    first = post.call_args_list[0].kwargs["json"]["p_keys"]
+    second = post.call_args_list[1].kwargs["json"]["p_keys"]
+    assert [len(first), len(second)] == [500, 100]
+    assert all(
+        batch["p_profile_id"] == 3
+        for batch in [post.call_args_list[0].kwargs["json"], post.call_args_list[1].kwargs["json"]]
+    )
+
+
+def test_add_library_items_stops_on_second_chunk_failure(monkeypatch):
+    post = MagicMock(side_effect=[_response(204), _response(500)])
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [_api_item(content_id=f"tmdb:{index}") for index in range(501)]
+
+    assert _client(profile_id=2).add_library_items(items=items) is False
+    assert post.call_count == 2
+
+
+# --- Library writes: store -----------------------------------------------------
+
+
+def test_store_origin_client_id_is_stable_across_calls():
+    store = _store()
+
+    first = store.get_or_create_origin_client_id()
+    second = store.get_or_create_origin_client_id()
+
+    assert isinstance(first, str) and len(first) == 32
+    assert first == second
+
+
+def test_store_origin_client_id_is_shared_across_store_instances():
+    connection = _memory_connection()
+    first_store = NuvioStore(connection=connection)
+    assert first_store.setup_nuvio_database() is True
+    origin = first_store.get_or_create_origin_client_id()
+
+    second_store = NuvioStore(connection=connection)
+    assert second_store.get_or_create_origin_client_id() == origin
+
+
+def test_store_upsert_items_mutates_mirror_without_moving_cursor():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    added = _client_item(content_id="tmdb:680", content_type="movie", title="Pulp Fiction")
+    assert store.upsert_items(1, [added]) is True
+
+    assert store.count(1) == 2
+    assert store.get_cursor_event_id(1) == 5
+    new_item = next(item for item in store.list_items(1, "movie") if item["tmdb_id"] == 680)
+    assert new_item["title"] == "Pulp Fiction"
+    assert new_item["last_event_id"] == 5
+
+
+def test_store_upsert_items_refreshes_existing_row_without_cursor_move():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    updated = _client_item(content_id="tmdb:550", title="Fight Club (Updated)")
+    assert store.upsert_items(1, [updated]) is True
+
+    assert store.count(1) == 1
+    assert store.list_items(1, "movie")[0]["title"] == "Fight Club (Updated)"
+    assert store.get_cursor_event_id(1) == 5
+
+
+def test_store_delete_items_removes_row_without_moving_cursor():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "movie"}]) is True
+
+    assert store.count(1) == 0
+    assert store.list_items(1, "movie") == []
+    assert store.get_cursor_event_id(1) == 5
+
+
+def test_store_delete_items_returns_false_for_invalid_keys():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "person"}]) is False
+    assert store.delete_items(1, ["not-a-dict"]) is False
+    # ``None`` is treated as an empty batch by the existing normalizer.
+    assert store.delete_items(1, None) is True
+    assert store.count(1) == 1
+    assert store.get_cursor_event_id(1) == 5

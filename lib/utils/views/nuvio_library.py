@@ -128,6 +128,22 @@ def show_nuvio_library(params):
             data=_details_from_item(item),
             mode="tv" if mode == "tv" else "movies",
         )
+        content_id = item.get("content_id")
+        content_type = item.get("content_type")
+        if content_id and content_type:
+            remove_url = build_url(
+                "nuvio_remove_from_library",
+                content_id=content_id,
+                content_type=content_type,
+            )
+            list_item.addContextMenuItems(
+                [
+                    (
+                        translation(91040),
+                        f"RunPlugin({remove_url})",
+                    )
+                ]
+            )
         is_folder = mode == "tv"
         directory_items.append((_item_url(mode, tmdb_id, label), list_item, is_folder))
 

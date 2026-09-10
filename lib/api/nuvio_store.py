@@ -15,17 +15,21 @@ import json
 import os
 import sqlite3
 import time
+import uuid
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from lib.api.trakt.base_cache import database_timeout, databases_path
 from lib.db.cached import cache
 from lib.utils.kodi.utils import kodilog
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DATABASE_FILENAME = "nuvio.db"
 
 LIBRARY_TABLE = "nuvio_library"
 META_TABLE = "nuvio_library_meta"
+CLIENT_META_TABLE = "nuvio_client_meta"
+
+ORIGIN_CLIENT_ID_KEY = "origin_client_id"
 
 _CREATE_LIBRARY_TABLE = f"""
 CREATE TABLE IF NOT EXISTS {LIBRARY_TABLE} (
@@ -60,6 +64,15 @@ CREATE TABLE IF NOT EXISTS {META_TABLE} (
     cursor_event_id INTEGER NOT NULL DEFAULT 0,
     snapshot_done INTEGER NOT NULL DEFAULT 0,
     last_sync_ms INTEGER
+)
+"""
+
+# Install-scoped metadata (e.g. the stable origin client id attached to library
+# writes). It is global rather than per-profile, so it has no profile column.
+_CREATE_CLIENT_META_TABLE = f"""
+CREATE TABLE IF NOT EXISTS {CLIENT_META_TABLE} (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
 )
 """
 
@@ -208,6 +221,7 @@ def _create_schema(connection: Any) -> None:
     connection.execute(_CREATE_LIBRARY_TABLE)
     connection.execute(_CREATE_LIBRARY_INDEX)
     connection.execute(_CREATE_META_TABLE)
+    connection.execute(_CREATE_CLIENT_META_TABLE)
     connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
 
 
@@ -366,6 +380,96 @@ class NuvioStore:
             with contextlib.suppress(Exception):
                 connection.execute("ROLLBACK")
             kodilog(f"[NUVIO] mirror finish_snapshot failed ({type(error).__name__})")
+            return False
+
+    def get_or_create_origin_client_id(self) -> str:
+        """Return the stable per-install origin client id, generating once.
+
+        The value is persisted in the mirror database so every library write
+        from this installation carries the same identity.
+        """
+        connection = self._connection
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            row = connection.execute(
+                f"SELECT value FROM {CLIENT_META_TABLE} WHERE key = ?",
+                (ORIGIN_CLIENT_ID_KEY,),
+            ).fetchone()
+            if row is not None and isinstance(row[0], str) and row[0].strip():
+                connection.execute("COMMIT")
+                return row[0]
+            origin_client_id = uuid.uuid4().hex
+            connection.execute(
+                f"INSERT INTO {CLIENT_META_TABLE} (key, value) VALUES (?, ?) "
+                f"ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                (ORIGIN_CLIENT_ID_KEY, origin_client_id),
+            )
+            connection.execute("COMMIT")
+            return origin_client_id
+        except Exception as error:
+            with contextlib.suppress(Exception):
+                connection.execute("ROLLBACK")
+            kodilog(f"[NUVIO] origin client id failed ({type(error).__name__})")
+            return ""
+
+    def upsert_items(self, profile_id: Any, items: Any) -> bool:
+        """Write normalized mirror items locally after a successful push.
+
+        The profile cursor is left untouched: ``last_event_id`` is set to the
+        current cursor so a later remote delta event (a higher id) still wins.
+        """
+        profile = _coerce_profile_id(profile_id)
+        if profile is None:
+            return False
+        normalized = self._normalize_snapshot_items(items)
+        if normalized is None:
+            return False
+        if not normalized:
+            return True
+        connection = self._connection
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            cursor = self._read_cursor(connection, profile)
+            now_ms = _now_ms()
+            rows = [
+                self._item_values(profile, item_key, item, cursor, now_ms)
+                for item_key, item in normalized
+            ]
+            connection.executemany(_UPSERT_SNAPSHOT_ITEM, rows)
+            connection.execute("COMMIT")
+            return True
+        except Exception as error:
+            with contextlib.suppress(Exception):
+                connection.execute("ROLLBACK")
+            kodilog(f"[NUVIO] mirror upsert_items failed ({type(error).__name__})")
+            return False
+
+    def delete_items(self, profile_id: Any, keys: Any) -> bool:
+        """Delete explicit mirror rows by ``content_type:content_id`` item key.
+
+        The profile cursor is left untouched. Returns ``False`` on any failure.
+        """
+        profile = _coerce_profile_id(profile_id)
+        if profile is None:
+            return False
+        normalized = self._normalize_snapshot_items(keys)
+        if normalized is None:
+            return False
+        if not normalized:
+            return True
+        connection = self._connection
+        try:
+            connection.execute("BEGIN IMMEDIATE")
+            connection.executemany(
+                f"DELETE FROM {LIBRARY_TABLE} WHERE profile_id = ? AND item_key = ?",
+                [(profile, item_key) for item_key, _item in normalized],
+            )
+            connection.execute("COMMIT")
+            return True
+        except Exception as error:
+            with contextlib.suppress(Exception):
+                connection.execute("ROLLBACK")
+            kodilog(f"[NUVIO] mirror delete_items failed ({type(error).__name__})")
             return False
 
     def get_meta(self, profile_id: Any) -> Optional[Dict[str, Any]]:
