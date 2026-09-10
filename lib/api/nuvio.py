@@ -62,7 +62,15 @@ class NuvioClient:
     REQUEST_TIMEOUT = 5
     REFRESH_LEEWAY_SECONDS = 60
 
-    def __init__(self, access_token=None, refresh_token=None, expires_at=None, profile_id=None):
+    def __init__(
+        self,
+        access_token=None,
+        refresh_token=None,
+        expires_at=None,
+        profile_id=None,
+        request_timeout=None,
+        deadline=None,
+    ):
         access_token = get_setting("nuvio_access_token") if access_token is None else access_token
         refresh_token = (
             get_setting("nuvio_refresh_token") if refresh_token is None else refresh_token
@@ -75,6 +83,10 @@ class NuvioClient:
         self.profile_id = self._profile_index(
             get_setting("nuvio_profile_id") if profile_id is None else profile_id
         )
+        self.request_timeout = (
+            self.REQUEST_TIMEOUT if request_timeout is None else request_timeout
+        )
+        self.deadline = deadline
         self._last_token_failure_status = None
 
     def reload_session(self):
@@ -90,6 +102,20 @@ class NuvioClient:
         self.expires_at = self._finite_number(get_setting("nuvio_expires_at"))
         self.profile_id = self._profile_index(get_setting("nuvio_profile_id"))
         return self.profile_id
+
+    def _effective_request_timeout(self):
+        """Per-request timeout, clamped to the optional wall-clock deadline.
+
+        A deadline-bounded caller (the view sync) gets the smaller of its
+        per-request cap and the time it has left, so no single request can
+        outlast its budget.
+        """
+        if self.deadline is None:
+            return self.request_timeout
+        remaining = self.deadline - time.monotonic()
+        if remaining <= 0:
+            return 0.001
+        return min(self.request_timeout, remaining)
 
     @staticmethod
     def _finite_number(value):
@@ -182,7 +208,7 @@ class NuvioClient:
                 f"{self.BASE_URL}/auth/v1/token?grant_type={grant_type}",
                 headers=self._json_headers,
                 json=payload,
-                timeout=self.REQUEST_TIMEOUT,
+                timeout=self._effective_request_timeout(),
             )
             if response.status_code >= 400:
                 self._last_token_failure_status = response.status_code
@@ -219,7 +245,10 @@ class NuvioClient:
         url = f"{self.BASE_URL}/rest/v1/rpc/{endpoint}"
         for attempt in range(2):
             try:
-                request_args = {"headers": self._auth_headers, "timeout": self.REQUEST_TIMEOUT}
+                request_args = {
+                    "headers": self._auth_headers,
+                    "timeout": self._effective_request_timeout(),
+                }
                 if payload is not None:
                     headers = dict(request_args["headers"])
                     headers["Content-Type"] = "application/json"
@@ -302,7 +331,7 @@ class NuvioClient:
                     url,
                     params=params,
                     headers=self._auth_headers,
-                    timeout=self.REQUEST_TIMEOUT,
+                    timeout=self._effective_request_timeout(),
                 )
             except requests.RequestException as error:
                 self._log_addons_fetch_failure(f"{ADDONS_FETCH_TRANSPORT}:{type(error).__name__}")
@@ -630,15 +659,42 @@ class NuvioClient:
             return None
         return data
 
-    def get_library(self, profile_id=None, limit=500, offset=0):
-        """Pull one snapshot page of the profile library, or None on failure."""
+    def _pull_library_page(self, endpoint, payload, label, include_event=False):
+        """Run one read-only page RPC; return (items, raw_row_count) or None.
+
+        The raw row count is returned alongside the parsed items so callers can
+        apply the documented "stop when the page is shorter than the limit" rule
+        against the server's actual page size, not the count of rows that
+        survived parsing.
+        """
+        data = self._library_rpc(endpoint, payload, label)
+        if data is _LIBRARY_RPC_FAILED:
+            return None
+        if not isinstance(data, list):
+            self._log_library_fetch_failure(label, LIBRARY_FETCH_NON_LIST)
+            return None
+        items = []
+        for row in data:
+            parsed = self._parse_library_row(row, include_event=include_event)
+            if parsed is _LIBRARY_BATCH_ABORT:
+                self._log_library_fetch_failure(label, "invalid_operation")
+                return None
+            if parsed is None:
+                continue
+            items.append(parsed)
+        if include_event:
+            items.sort(key=lambda event: event["event_id"])
+        return items, len(data)
+
+    def get_library_page(self, profile_id=None, limit=500, offset=0):
+        """Pull one snapshot page; return ``(items, raw_row_count)`` or None."""
         resolved_profile = self._library_profile_id(profile_id)
         if not resolved_profile:
             self._log_library_fetch_failure("library snapshot", "invalid_profile")
             return None
         page_limit = self._non_negative_integer(limit)
         page_offset = self._non_negative_integer(offset)
-        data = self._library_rpc(
+        return self._pull_library_page(
             LIBRARY_RPC_SNAPSHOT,
             {
                 "p_profile_id": resolved_profile,
@@ -646,22 +702,16 @@ class NuvioClient:
                 "p_offset": 0 if page_offset is None else page_offset,
             },
             "library snapshot",
+            include_event=False,
         )
-        if data is _LIBRARY_RPC_FAILED:
-            return None
-        if not isinstance(data, list):
-            self._log_library_fetch_failure("library snapshot", LIBRARY_FETCH_NON_LIST)
-            return None
-        items = []
-        for row in data:
-            parsed = self._parse_library_row(row)
-            if parsed is None:
-                continue
-            items.append(parsed)
-        return items
 
-    def get_library_delta(self, profile_id=None, since_event_id=0, limit=1000):
-        """Pull library change events since a cursor, ordered by event id.
+    def get_library(self, profile_id=None, limit=500, offset=0):
+        """Pull one snapshot page of the profile library, or None on failure."""
+        page = self.get_library_page(profile_id=profile_id, limit=limit, offset=offset)
+        return None if page is None else page[0]
+
+    def get_library_delta_page(self, profile_id=None, since_event_id=0, limit=1000):
+        """Pull one delta page; return ``(events, raw_row_count)`` or None.
 
         An unrecognized ``operation`` aborts the batch (returns None) so the
         cursor never advances past an event that could not be applied.
@@ -671,7 +721,7 @@ class NuvioClient:
             self._log_library_fetch_failure("library delta", "invalid_profile")
             return None
         since = self._non_negative_integer(since_event_id)
-        data = self._library_rpc(
+        return self._pull_library_page(
             LIBRARY_RPC_DELTA,
             {
                 "p_profile_id": resolved_profile,
@@ -679,23 +729,21 @@ class NuvioClient:
                 "p_limit": self._clamp_library_limit(limit, 1000),
             },
             "library delta",
+            include_event=True,
         )
-        if data is _LIBRARY_RPC_FAILED:
-            return None
-        if not isinstance(data, list):
-            self._log_library_fetch_failure("library delta", LIBRARY_FETCH_NON_LIST)
-            return None
-        events = []
-        for row in data:
-            parsed = self._parse_library_row(row, include_event=True)
-            if parsed is _LIBRARY_BATCH_ABORT:
-                self._log_library_fetch_failure("library delta", "invalid_operation")
-                return None
-            if parsed is None:
-                continue
-            events.append(parsed)
-        events.sort(key=lambda event: event["event_id"])
-        return events
+
+    def get_library_delta(self, profile_id=None, since_event_id=0, limit=1000):
+        """Pull library change events since a cursor, ordered by event id.
+
+        An unrecognized ``operation`` aborts the batch (returns None) so the
+        cursor never advances past an event that could not be applied.
+        """
+        page = self.get_library_delta_page(
+            profile_id=profile_id,
+            since_event_id=since_event_id,
+            limit=limit,
+        )
+        return None if page is None else page[0]
 
     def add_library_items(self, profile_id=None, items=None, origin_client_id=None) -> bool:
         """Incrementally upsert library items for the profile.
@@ -838,7 +886,7 @@ class NuvioClient:
                 f"{self.BASE_URL}{endpoint}",
                 headers=self._device_login_headers,
                 json=payload,
-                timeout=self.REQUEST_TIMEOUT,
+                timeout=self._effective_request_timeout(),
             )
         except requests.RequestException as error:
             kodilog(
@@ -1305,7 +1353,7 @@ class NuvioClient:
                 requests.post(
                     f"{self.BASE_URL}/auth/v1/logout",
                     headers=self._auth_headers,
-                    timeout=self.REQUEST_TIMEOUT,
+                    timeout=self._effective_request_timeout(),
                 )
             except requests.RequestException as error:
                 kodilog(f"[NUVIO] logout request failed ({type(error).__name__})")

@@ -1,11 +1,15 @@
 """Unit tests for the Nuvio library read client, SQLite mirror store, and sync service.
 
-These tests mock ``requests`` only; no network access happens and no real
-database file is created (the store tests inject a real in-memory connection).
-The offline view and its wiring are out of scope for these slices.
+These tests mock ``requests`` only and never reach the network. Most store tests
+inject a real in-memory connection; the default-store tests exercise the real
+file-backed path under ``tmp_path`` instead. The offline view and its wiring are
+out of scope for these slices.
 """
 
+import os
 import sqlite3
+import threading
+from time import monotonic
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,11 +26,18 @@ from lib.api.nuvio import (
     NuvioClient,
 )
 from lib.api.nuvio_store import (
+    SCHEMA_VERSION,
+    UI_READ_TIMEOUT_SECONDS,
     NuvioStore,
     invalidate_nuvio_library_cache,
+    nuvio_database_path,
     setup_nuvio_database,
 )
-from lib.services.nuvio_sync import NuvioSyncService
+from lib.services.nuvio_sync import (
+    VIEW_SYNC_REQUEST_TIMEOUT_SECONDS,
+    NuvioSyncService,
+    sync_library_if_stale,
+)
 
 
 def _response(status_code, payload=None, json_error=None):
@@ -126,6 +137,28 @@ def test_get_library_delta_cursor_skips_request_without_a_profile(monkeypatch):
 
     assert _client(profile_id="").get_library_delta_cursor() is None
     post.assert_not_called()
+
+
+def test_client_forwards_instance_request_timeout(monkeypatch):
+    post = MagicMock(return_value=_response(200, 481))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    client = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+    )
+
+    assert client.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] == 2.0
+
+    default_post = MagicMock(return_value=_response(200, 0))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", default_post)
+
+    assert _client().get_library_delta_cursor() == 0
+    assert default_post.call_args.kwargs["timeout"] == NuvioClient.REQUEST_TIMEOUT
 
 
 # --- get_library --------------------------------------------------------------
@@ -396,6 +429,50 @@ def test_module_setup_accepts_injected_connection():
     assert {"nuvio_library", "nuvio_library_meta", "nuvio_client_meta"} <= tables
 
 
+def test_default_store_creates_real_database_file_and_round_trips(monkeypatch, tmp_path):
+    monkeypatch.setattr(sqlite3, "connect", sqlite3.dbapi2.connect)
+    monkeypatch.setattr("lib.api.nuvio_store.databases_path", str(tmp_path))
+
+    assert setup_nuvio_database() is True
+
+    database_path = nuvio_database_path()
+    assert os.path.isfile(database_path)
+
+    probe = sqlite3.dbapi2.connect(database_path)
+    try:
+        assert probe.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    finally:
+        probe.close()
+
+    store = NuvioStore()
+    try:
+        assert store.count(1) == 0
+        assert store.upsert_items(1, [_client_item(content_id="tmdb:550")]) is True
+        assert store.count(1) == 1
+        assert [item["tmdb_id"] for item in store.list_items(1, "movie")] == [550]
+
+        assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "movie"}]) is True
+        assert store.count(1) == 0
+        assert store.list_items(1, "movie") == []
+    finally:
+        store.close()
+
+
+def test_default_store_creates_missing_database_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(sqlite3, "connect", sqlite3.dbapi2.connect)
+    missing_directory = tmp_path / "missing" / "nested"
+    monkeypatch.setattr("lib.api.nuvio_store.databases_path", str(missing_directory))
+
+    assert not missing_directory.exists()
+
+    store = NuvioStore()
+    try:
+        assert missing_directory.is_dir()
+        assert setup_nuvio_database() is True
+    finally:
+        store.close()
+
+
 def test_store_defaults_meta_and_cursor_when_absent():
     store = _store()
 
@@ -567,22 +644,40 @@ class _FakeApi:
         self.calls = []
         self.snapshot_responses = []
         self.delta_responses = []
+        # Optional per-page wire row counts. When set, they let a test make the
+        # server's raw page fuller than the rows that survive parsing.
+        self.snapshot_raw_counts = []
+        self.delta_raw_counts = []
 
     def get_library_delta_cursor(self, profile_id=None):
         self.calls.append("cursor")
         return self.cursor
 
-    def get_library(self, profile_id=None, limit=500, offset=0):
+    def get_library_page(self, profile_id=None, limit=500, offset=0):
         self.calls.append(("snapshot", offset))
         if self.snapshot_responses:
-            return self.snapshot_responses.pop(0)
+            items = self.snapshot_responses.pop(0)
+            if items is None:
+                return None
+            raw_count = (
+                self.snapshot_raw_counts.pop(0)
+                if self.snapshot_raw_counts
+                else len(items)
+            )
+            return items, raw_count
         return None
 
-    def get_library_delta(self, profile_id=None, since_event_id=0, limit=1000):
+    def get_library_delta_page(self, profile_id=None, since_event_id=0, limit=1000):
         self.calls.append(("delta", since_event_id))
         if self.delta_responses:
-            return self.delta_responses.pop(0)
-        return []
+            events = self.delta_responses.pop(0)
+            if events is None:
+                return None
+            raw_count = (
+                self.delta_raw_counts.pop(0) if self.delta_raw_counts else len(events)
+            )
+            return events, raw_count
+        return [], 0
 
 
 class _FakeMonitor:
@@ -672,6 +767,27 @@ def test_service_bootstrap_pages_snapshot_until_a_short_page(monkeypatch):
     assert store.count(1) == 3
 
 
+def test_service_bootstrap_keeps_paging_when_a_full_raw_page_drops_rows(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.SNAPSHOT_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1, cursor=5)
+    # The first wire page is full (2 rows) but only one row is usable, so the
+    # parsed page looks short. Paging must follow the raw count, not the parsed
+    # count, or the second page is silently skipped.
+    api.snapshot_responses = [
+        [_client_item(content_id="tmdb:550")],
+        [_client_item(content_id="tmdb:552")],
+    ]
+    api.snapshot_raw_counts = [2, 1]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    snapshot_calls = [call for call in api.calls if call[0] == "snapshot"]
+    assert snapshot_calls == [("snapshot", 0), ("snapshot", 2)]
+    assert store.count(1) == 2
+
+
 def test_service_bootstrap_retries_when_cursor_unavailable():
     api = _FakeApi(profile_id=1, cursor=None)
     api.snapshot_responses = [[_client_item()]]
@@ -731,6 +847,40 @@ def test_service_delta_pages_until_a_short_page(monkeypatch):
     delta_calls = [call for call in api.calls if call[0] == "delta"]
     assert delta_calls == [("delta", 0), ("delta", 12)]
     assert store.get_cursor_event_id(1) == 13
+
+
+def test_service_delta_keeps_paging_when_a_full_raw_page_drops_events(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    # Same rule as the snapshot loop: a full wire page whose events partly fail
+    # to parse must still trigger the next page.
+    api.delta_responses = [
+        [_event(event_id=11)],
+        [_event(event_id=13)],
+    ]
+    api.delta_raw_counts = [2, 1]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    delta_calls = [call for call in api.calls if call[0] == "delta"]
+    assert delta_calls == [("delta", 0), ("delta", 11)]
+    assert store.get_cursor_event_id(1) == 13
+
+
+def test_service_delta_holds_cursor_when_a_full_page_has_no_parsable_events(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    # A full wire page whose events all failed to parse cannot advance the
+    # cursor, so the loop must stop instead of re-fetching forever.
+    api.delta_responses = [[]]
+    api.delta_raw_counts = [2]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    assert api.calls == [("delta", 0)]
+    assert store.get_cursor_event_id(1) == 0
 
 
 def test_service_delta_applies_ascending_and_handles_delete():
@@ -1355,3 +1505,171 @@ def test_store_delete_items_returns_false_for_invalid_keys():
     assert store.delete_items(1, None) is True
     assert store.count(1) == 1
     assert store.get_cursor_event_id(1) == 5
+
+
+# --- View sync helper ---------------------------------------------------------
+
+
+def _reset_view_sync(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync._LAST_VIEW_SYNC_AT", 0.0)
+    monkeypatch.setattr("lib.services.nuvio_sync._VIEW_SYNC_THREAD", None)
+
+
+def test_sync_library_if_stale_skips_and_builds_no_store_when_disabled(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: False)
+    store_cls = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+
+    assert sync_library_if_stale() is False
+    store_cls.assert_not_called()
+
+
+def test_sync_library_if_stale_skips_without_a_profile(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "")
+    store_cls = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+
+    assert sync_library_if_stale() is False
+    store_cls.assert_not_called()
+
+
+def test_sync_library_if_stale_runs_bounded_sync_and_closes_store(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    service_cls = MagicMock(return_value=service)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", service_cls)
+    store = MagicMock()
+    store_cls = MagicMock(return_value=store)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+    api = MagicMock()
+    api_cls = MagicMock(return_value=api)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", api_cls)
+
+    assert sync_library_if_stale() is True
+
+    store_cls.assert_called_once_with(timeout=UI_READ_TIMEOUT_SECONDS)
+    assert api_cls.call_args.kwargs["request_timeout"] == VIEW_SYNC_REQUEST_TIMEOUT_SECONDS
+    assert "deadline" in api_cls.call_args.kwargs
+    service_cls.assert_called_once_with(api=api, store=store)
+    assert service._bootstrap_if_needed.call_count == 1
+    assert "deadline" in service._bootstrap_if_needed.call_args.kwargs
+    store.close.assert_called_once_with()
+
+
+def test_sync_library_if_stale_debounces_back_to_back_calls(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+    store = MagicMock()
+    store_cls = MagicMock(return_value=store)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+    api = MagicMock()
+    api_cls = MagicMock(return_value=api)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", api_cls)
+
+    assert sync_library_if_stale() is True
+    assert sync_library_if_stale() is False
+
+    store_cls.assert_called_once_with(timeout=UI_READ_TIMEOUT_SECONDS)
+    assert api_cls.call_args.kwargs["request_timeout"] == VIEW_SYNC_REQUEST_TIMEOUT_SECONDS
+    assert "deadline" in api_cls.call_args.kwargs
+    assert service._bootstrap_if_needed.call_count == 1
+    assert store.close.call_count == 1
+
+
+def test_sync_library_if_stale_swallows_failure_and_closes_store(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    service._bootstrap_if_needed.side_effect = RuntimeError("boom")
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+    store = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", MagicMock(return_value=store))
+    log = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.kodilog", log)
+
+    # The worker swallows the failure, still closes the store, and reports an
+    # unsuccessful run so a failure is never mistaken for a completed sync.
+    assert sync_library_if_stale() is False
+
+    store.close.assert_called_once_with()
+    assert "view sync failed" in _logged(log)
+
+
+def test_sync_library_if_stale_returns_within_budget_when_sync_hangs(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", MagicMock(return_value=MagicMock()))
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", MagicMock())
+    release = threading.Event()
+
+    def _hang(deadline=None):
+        release.wait(5.0)
+
+    service = MagicMock()
+    service._bootstrap_if_needed.side_effect = _hang
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+
+    started = monotonic()
+    try:
+        result = sync_library_if_stale(max_seconds=0.2)
+    finally:
+        release.set()
+
+    assert result is False
+    assert monotonic() - started < 1.0
+
+
+def test_client_clamps_request_timeout_to_deadline(monkeypatch):
+    post = MagicMock(return_value=_response(200, 481))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    expired = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+        deadline=monotonic() - 1,
+    )
+    assert expired.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] <= 0.01
+
+    future = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+        deadline=monotonic() + 100,
+    )
+    assert future.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] == 2.0
+
+
+def test_service_bootstrap_honors_an_elapsed_deadline():
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._bootstrap_if_needed(deadline=monotonic() - 1)
+
+    assert api.calls == []
+
+
+def test_service_delta_honors_an_elapsed_deadline():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._delta_once(deadline=monotonic() - 1)
+
+    assert api.calls == []

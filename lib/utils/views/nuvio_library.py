@@ -1,14 +1,17 @@
-"""Offline, database-only Nuvio library view.
+"""Database-backed Nuvio library view.
 
-"My Movies" and "My Shows" render exclusively from the per-profile SQLite
-mirror written by ``NuvioSyncService``. The view performs no network I/O and
-never blocks on sync; item routing uses only the stored ``tmdb_id``.
+"My Movies" and "My Shows" render from the per-profile SQLite mirror written by
+``NuvioSyncService``. Opening the view first runs one bounded, best-effort delta
+refresh so recent web-side changes appear without waiting for the next
+background cycle; rendering itself reads only the mirror. Item routing uses
+only the stored ``tmdb_id``.
 """
 
 from xbmcplugin import setContent
 
 from lib.api.nuvio import NuvioClient, is_nuvio_progress_sync_enabled
-from lib.api.nuvio_store import NuvioStore
+from lib.api.nuvio_store import UI_READ_TIMEOUT_SECONDS, NuvioStore
+from lib.services.nuvio_sync import sync_library_if_stale
 from lib.utils.general.utils import set_media_infoTag, set_pluging_category
 from lib.utils.kodi.utils import (
     ADDON_HANDLE,
@@ -42,7 +45,7 @@ def _load_items(profile_id, content_type):
     if profile_id is None:
         return []
     try:
-        store = NuvioStore()
+        store = NuvioStore(timeout=UI_READ_TIMEOUT_SECONDS)
         try:
             return store.list_items(profile_id, content_type)
         finally:
@@ -60,7 +63,7 @@ def has_nuvio_library_items() -> bool:
     if profile_id is None:
         return False
     try:
-        store = NuvioStore()
+        store = NuvioStore(timeout=UI_READ_TIMEOUT_SECONDS)
         try:
             return store.count(profile_id) > 0
         finally:
@@ -114,6 +117,9 @@ def show_nuvio_library(params):
     set_pluging_category(translation(category_id))
     setContent(ADDON_HANDLE, kodi_content_type)
 
+    # Best-effort refresh so web-side changes show without waiting for the
+    # background cycle; failures are swallowed and never block the render.
+    sync_library_if_stale()
     items = _load_items(_selected_profile_id(), content_type)
 
     directory_items = []

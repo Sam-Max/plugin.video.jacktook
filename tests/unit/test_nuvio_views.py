@@ -889,6 +889,7 @@ def _settings(values):
 def _patch_library_settings(monkeypatch, view, profile_id="2"):
     monkeypatch.setattr(view, "NuvioClient", _no_construct_client())
     monkeypatch.setattr(view, "get_setting", _settings({"nuvio_profile_id": profile_id}))
+    monkeypatch.setattr(view, "sync_library_if_stale", MagicMock())
 
 
 def test_has_nuvio_library_items_false_when_disabled(monkeypatch):
@@ -988,6 +989,28 @@ def test_show_nuvio_library_builds_series_season_details(monkeypatch):
     assert is_folder is True
     view.apply_section_view.assert_called_once_with("view.library", content_type="tvshows")
     assert set_media_info_tag.call_args.kwargs["mode"] == "tv"
+
+
+def test_show_nuvio_library_syncs_before_reading_the_mirror(monkeypatch):
+    from lib.utils.views import nuvio_library as view
+
+    events = []
+
+    class _OrderedStore(_FakeNuvioStore):
+        def list_items(self, profile_id, content_type):
+            events.append("read")
+            return super().list_items(profile_id, content_type)
+
+    _item, _add_items = _patch_view_shell(monkeypatch, view)
+    store = _OrderedStore({2: [_movie_row()]})
+    monkeypatch.setattr(view, "NuvioStore", MagicMock(return_value=store))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _patch_library_settings(monkeypatch, view)
+    monkeypatch.setattr(view, "sync_library_if_stale", lambda: events.append("sync"))
+
+    view.show_nuvio_library({"mode": "movies"})
+
+    assert events == ["sync", "read"]
 
 
 def test_show_nuvio_library_is_profile_scoped(monkeypatch):

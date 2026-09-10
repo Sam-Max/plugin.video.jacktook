@@ -25,6 +25,11 @@ from lib.utils.kodi.utils import kodilog
 SCHEMA_VERSION = 2
 DATABASE_FILENAME = "nuvio.db"
 
+# Reads from the Kodi UI thread must not block behind a background writer, so
+# the offline library view opens the mirror with a short busy timeout instead
+# of the full background-writer timeout.
+UI_READ_TIMEOUT_SECONDS = 1.0
+
 LIBRARY_TABLE = "nuvio_library"
 META_TABLE = "nuvio_library_meta"
 CLIENT_META_TABLE = "nuvio_client_meta"
@@ -200,14 +205,14 @@ def _decode_genres(value: Any) -> List[str]:
     return [entry for entry in decoded if isinstance(entry, str)]
 
 
-def _open_connection() -> Any:
+def _open_connection(timeout: Optional[float] = None) -> Any:
     database_path = nuvio_database_path()
     directory = os.path.dirname(database_path)
     if directory and not os.path.isdir(directory):
         os.makedirs(directory, exist_ok=True)
     connection = sqlite3.connect(
         database_path,
-        timeout=database_timeout,
+        timeout=database_timeout if timeout is None else timeout,
         isolation_level=None,
         check_same_thread=False,
     )
@@ -245,12 +250,16 @@ def setup_nuvio_database(connection: Any = None) -> bool:
 class NuvioStore:
     """Per-profile SQLite mirror of the Nuvio library."""
 
-    def __init__(self, connection: Union[Any, Callable[[], Any], None] = None):
+    def __init__(
+        self,
+        connection: Union[Any, Callable[[], Any], None] = None,
+        timeout: Optional[float] = None,
+    ) -> None:
         self._owns_connection = connection is None
         # ``sqlite3.Connection`` is callable in modern CPython, so detect a live
         # DB-API connection by capability before treating the value as a factory.
         if connection is None:
-            self._connection = _open_connection()
+            self._connection = _open_connection(timeout)
         elif hasattr(connection, "execute"):
             self._connection = connection
         elif callable(connection):
