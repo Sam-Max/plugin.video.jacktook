@@ -54,10 +54,14 @@ class NuvioSyncService:
     def _bootstrap_if_needed(self):
         """Snapshot once, then fall through to delta; retry when not ready.
 
-        The cursor is captured before the first snapshot page so changes made
-        during the snapshot are replayed by the delta that follows. A failed
-        cursor or snapshot page leaves ``snapshot_done`` at 0 for the next cycle.
+        The session is reloaded from settings first so the service follows the
+        currently selected profile and credentials across login, logout, token
+        refresh, and profile switches without a restart. The cursor is captured
+        before the first snapshot page so changes made during the snapshot are
+        replayed by the delta that follows. A failed cursor or snapshot page
+        leaves ``snapshot_done`` at 0 for the next cycle.
         """
+        self._reload_session()
         profile_id = self._profile_id()
         if profile_id is None:
             return
@@ -111,6 +115,16 @@ class NuvioSyncService:
 
     def _is_nuvio_available(self):
         return is_nuvio_progress_sync_enabled()
+
+    def _reload_session(self):
+        """Re-read the live session so a long-lived client follows settings.
+
+        Injection-safe: clients that do not expose ``reload_session`` (test
+        doubles) are left untouched.
+        """
+        reload_session = getattr(self.api, "reload_session", None)
+        if callable(reload_session):
+            reload_session()
 
     def _services_paused(self):
         return get_property_no_fallback(PAUSE_SERVICES_PROP) == "true"

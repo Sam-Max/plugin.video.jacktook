@@ -790,3 +790,87 @@ def test_service_run_bootstraps_then_returns_when_the_waiter_aborts(monkeypatch)
     assert store.get_meta(1)["snapshot_done"] == 1
     assert store.count(1) == 1
     assert monitor.wait_calls == [5]
+
+
+# --- Live session reload ------------------------------------------------------
+
+
+def test_client_reload_session_reads_live_settings(monkeypatch):
+    settings = {
+        "nuvio_access_token": "new-access",
+        "nuvio_refresh_token": "new-refresh",
+        "nuvio_expires_at": "1234",
+        "nuvio_profile_id": "3",
+    }
+    monkeypatch.setattr(
+        "lib.api.nuvio.get_setting", lambda key, default=None: settings.get(key, "")
+    )
+    client = _client(profile_id=1)
+
+    assert client.reload_session() == 3
+
+    assert client.profile_id == 3
+    assert client.access_token == "new-access"
+    assert client.refresh_token == "new-refresh"
+    assert client.expires_at == 1234.0
+
+
+def test_client_reload_session_clears_session_when_settings_empty(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.get_setting", lambda key, default=None: "")
+    client = _client(profile_id=2)
+
+    assert client.reload_session() is None
+
+    assert client.profile_id is None
+    assert client.access_token == ""
+    assert client.refresh_token == ""
+    assert client.expires_at is None
+
+
+class _ReloadingFakeApi(_FakeApi):
+    """Fake whose ``profile_id`` follows a mutable "selected" setting."""
+
+    def __init__(self, profile_id=1, cursor=0):
+        super().__init__(profile_id=profile_id, cursor=cursor)
+        self.selected = profile_id
+
+    def reload_session(self):
+        self.calls.append("reload")
+        self.profile_id = self.selected
+        return self.profile_id
+
+
+def test_service_reloads_session_before_resolving_profile():
+    api = _ReloadingFakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls[0] == "reload"
+    assert api.calls[1] == "cursor"
+    assert store.get_meta(1)["snapshot_done"] == 1
+
+
+def test_service_follows_profile_switch_without_restart():
+    api = _ReloadingFakeApi(profile_id=1, cursor=4)
+    store = _store()
+    service = _service(api=api, store=store)
+
+    # First cycle mirrors profile 1.
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+    assert store.count(1) == 1
+
+    # The user switches profile; the same service instance must follow it.
+    api.selected = 2
+    api.snapshot_responses = [[_client_item(content_id="tmdb:680")]]
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+
+    assert store.get_meta(2)["snapshot_done"] == 1
+    assert store.count(2) == 1
+    assert store.get_meta(1)["snapshot_done"] == 1  # profile 1 left intact
+    assert store.count(1) == 1

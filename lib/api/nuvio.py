@@ -67,6 +67,20 @@ class NuvioClient:
         )
         self._last_token_failure_status = None
 
+    def reload_session(self):
+        """Refresh the session (tokens and selected profile) from settings.
+
+        Long-lived callers such as the background sync service hold one client
+        across cycles, so they must re-read the session to follow login,
+        logout, token refresh, and profile switches without a restart.
+        Returns the resolved profile index (or ``None`` when no profile is set).
+        """
+        self.access_token = str(get_setting("nuvio_access_token") or "").strip()
+        self.refresh_token = str(get_setting("nuvio_refresh_token") or "").strip()
+        self.expires_at = self._finite_number(get_setting("nuvio_expires_at"))
+        self.profile_id = self._profile_index(get_setting("nuvio_profile_id"))
+        return self.profile_id
+
     @staticmethod
     def _finite_number(value):
         if isinstance(value, bool):
