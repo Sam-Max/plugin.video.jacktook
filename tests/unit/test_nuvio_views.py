@@ -1,5 +1,6 @@
 import json
 from unittest.mock import MagicMock
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -576,7 +577,7 @@ def test_show_nuvio_continue_watching_notifies_when_empty(monkeypatch):
 # ---------------------------------------------------------------------------
 
 
-def test_show_nuvio_history_builds_folder_urls_for_tv_and_search_for_movies(monkeypatch):
+def test_show_nuvio_history_plays_items_directly(monkeypatch):
     from lib.utils.views import nuvio_history as view
 
     item, add_items = _patch_view_shell(monkeypatch, view)
@@ -623,19 +624,30 @@ def test_show_nuvio_history_builds_folder_urls_for_tv_and_search_for_movies(monk
     assert len(directory_items) == 2
 
     movie_url, _movie_item, movie_is_folder = directory_items[0]
-    assert "action=search" in movie_url
+    assert "action=nuvio_resume" in movie_url
     assert "mode=movies" in movie_url
     assert movie_is_folder is False
+    movie_params = parse_qs(urlparse(movie_url).query)
+    assert movie_params["ids"] == [json.dumps({"tmdb_id": "550"})]
+    assert "tv_data" not in movie_params
 
     tv_url, _tv_item, tv_is_folder = directory_items[1]
-    assert "action=show_seasons_details" in tv_url
+    assert "action=nuvio_resume" in tv_url
     assert "mode=tv" in tv_url
-    assert tv_is_folder is True
+    assert tv_is_folder is False
+    tv_params = parse_qs(urlparse(tv_url).query)
+    assert tv_params["ids"] == [json.dumps({"tmdb_id": "1396"})]
+    assert json.loads(tv_params["tv_data"][0]) == {
+        "season": 2,
+        "episode": 5,
+        "name": "Breaking Bad S02E05",
+    }
 
     assert view.make_list_item.call_args_list[0].kwargs["label"] == "Fight Club"
     assert view.make_list_item.call_args_list[1].kwargs["label"] == "Breaking Bad S02E05"
     set_media_info_tag.assert_any_call(item, data={"title": "Fight Club"}, mode="movies")
     set_media_info_tag.assert_any_call(item, data={"name": "Breaking Bad"}, mode="tv")
+    item.setProperty.assert_any_call("IsPlayable", "true")
     view.notification.assert_not_called()
 
 
@@ -670,8 +682,8 @@ def test_show_nuvio_history_falls_back_when_tmdb_fails(monkeypatch):
     view.show_nuvio_history()
 
     url, _list_item, is_folder = add_items.call_args.args[0][0]
-    assert "action=show_seasons_details" in url
-    assert is_folder is True
+    assert "action=nuvio_resume" in url
+    assert is_folder is False
     assert view.make_list_item.call_args.kwargs["label"] == "S02E05"
     assert item.setArt.call_args.args[0] == {
         "icon": view.os.path.join(view.ADDON_PATH, "resources", "img", "magnet.png")
@@ -711,6 +723,49 @@ def test_show_nuvio_history_falls_back_to_tmdb_title_when_missing(monkeypatch):
     assert view.make_list_item.call_args.kwargs["label"] == "Fight Club"
 
 
+def test_show_nuvio_history_titleless_episode_keeps_show_name(monkeypatch):
+    """A series entry with no stored title must still show the show name:
+    falling back to TMDB before composing the label, not a bare "S03E02"."""
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"name": "Silo"}))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    monkeypatch.setattr(
+        view,
+        "NuvioClient",
+        MagicMock(
+            return_value=MagicMock(
+                get_watched_history=MagicMock(
+                    return_value=[
+                        {
+                            "tmdb_id": 125988,
+                            "mode": "tv",
+                            "season": 3,
+                            "episode": 2,
+                            "title": "",
+                            "watched_at_ms": 1711600001000,
+                        }
+                    ]
+                )
+            )
+        ),
+    )
+
+    view.show_nuvio_history()
+
+    url, _list_item, is_folder = add_items.call_args.args[0][0]
+    assert view.make_list_item.call_args.kwargs["label"] == "Silo S03E02"
+    assert is_folder is False
+    params = parse_qs(urlparse(url).query)
+    assert params["query"] == ["Silo S03E02"]
+    assert json.loads(params["tv_data"][0]) == {
+        "season": 3,
+        "episode": 2,
+        "name": "Silo S03E02",
+    }
+
+
 def test_show_nuvio_history_notifies_when_empty(monkeypatch):
     from lib.utils.views import nuvio_history as view
 
@@ -725,6 +780,68 @@ def test_show_nuvio_history_notifies_when_empty(monkeypatch):
 
     assert add_items.call_args.args[0] == []
     view.notification.assert_called_once_with("text-91026", time=3000)
+
+
+def test_nuvio_history_play_url_reaches_direct_search(monkeypatch):
+    """A history row must reach run_search_entry with resolved imdb/tvdb ids
+    and a forced rescrape, exactly like a Continue Watching row does."""
+    from lib import navigation
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"name": "Breaking Bad"}))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    monkeypatch.setattr(
+        view,
+        "NuvioClient",
+        MagicMock(
+            return_value=MagicMock(
+                get_watched_history=MagicMock(
+                    return_value=[
+                        {
+                            "tmdb_id": 1396,
+                            "mode": "tv",
+                            "season": 2,
+                            "episode": 5,
+                            "title": "Breaking Bad",
+                            "watched_at_ms": 1711600001000,
+                        }
+                    ]
+                )
+            )
+        ),
+    )
+
+    view.show_nuvio_history()
+    url, _list_item, _is_folder = add_items.call_args.args[0][0]
+
+    # Replay the exact plugin URL the way Kodi would dispatch it.
+    params = {key: values[0] for key, values in parse_qs(urlparse(url).query).items()}
+
+    run_search_entry = MagicMock()
+    tmdb_metadata = MagicMock(
+        return_value={"external_ids": {"imdb_id": "tt0903747", "tvdb_id": 81189}}
+    )
+    monkeypatch.setattr("lib.search.run_search_entry", run_search_entry)
+    monkeypatch.setattr(navigation.TmdbClient, "_get_tmdb_metadata", tmdb_metadata)
+
+    navigation.nuvio_resume(params)
+
+    tmdb_metadata.assert_called_once_with("tv", "tv", "1396")
+    search_params = run_search_entry.call_args.args[0]
+    assert search_params["rescrape"] is True
+    assert search_params["mode"] == "tv"
+    assert json.loads(search_params["ids"]) == {
+        "tmdb_id": "1396",
+        "imdb_id": "tt0903747",
+        "tvdb_id": 81189,
+    }
+    assert json.loads(search_params["tv_data"]) == {
+        "season": 2,
+        "episode": 5,
+        "name": "Breaking Bad S02E05",
+    }
+    assert "nuvio_resume_percent" not in search_params
 
 
 # ---------------------------------------------------------------------------

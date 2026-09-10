@@ -138,6 +138,19 @@ def test_route_nuvio_dispatches_menu_action():
     nuvio_menu.assert_called_once_with({})
 
 
+def test_route_nuvio_dispatches_resume_action():
+    """A history/continue-watching row dispatches through the real router."""
+    router = _load_router_module()
+
+    params = {"mode": "tv", "ids": '{"tmdb_id": "125988"}'}
+    with patch("lib.navigation.nuvio_resume") as nuvio_resume:
+        router._route_nuvio("nuvio_resume", params)
+
+    nuvio_resume.assert_called_once_with(params)
+    assert router._is_nuvio_action("nuvio_resume") is True
+    assert router._get_route_handler("nuvio_resume") is router._route_nuvio
+
+
 def test_route_simkl_dispatches_resume_action():
     router = _load_router_module()
 

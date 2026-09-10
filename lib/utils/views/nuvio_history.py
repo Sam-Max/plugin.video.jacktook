@@ -38,11 +38,9 @@ def show_nuvio_history():
     directory_items = []
     for item in NuvioClient().get_watched_history():
         title = item["title"]
-        label = title
+        episode_label = ""
         if item["mode"] == "tv":
             episode_label = format_season_episode(item["season"], item["episode"])
-            if episode_label:
-                label = f"{title} {episode_label}" if title else episode_label
 
         try:
             details = tmdb_get(
@@ -52,12 +50,17 @@ def show_nuvio_history():
         except Exception:
             details = None
 
-        # Some entries carry no title (pushed from here or another device), so
-        # fall back to the TMDB name before rendering a blank row.
+        # Resolve the fallback name *before* composing the label: some entries
+        # carry no title (pushed from here or another device). Composing first
+        # would leave a titleless episode as a bare "S03E02" with no show name,
+        # and the fallback below would never fire because the label is not empty.
+        label = title
         if not label and details:
             fallback = details.get("name") or details.get("title")
             if fallback:
                 label = str(fallback)
+        if episode_label:
+            label = f"{label} {episode_label}" if label else episode_label
 
         list_item = make_list_item(label=label)
         if details:
@@ -66,24 +69,30 @@ def show_nuvio_history():
             list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "magnet.png")})
         info_tag = list_item.getVideoInfoTag()
         info_tag.setTitle(label)
+        # Mark the row playable, exactly like the other playback views
+        # (Continue Watching, Last Files, ...). Without this Kodi treats the
+        # click as a plain plugin run instead of a playback item.
+        list_item.setProperty("IsPlayable", "true")
 
+        # Play straight from history, the same way Continue Watching does:
+        # route through "nuvio_resume" so the imdb/tvdb ids are resolved from
+        # TMDB and the search rescrapes. A bare "search"/"show_seasons_details"
+        # either opened the season list (tv) or searched with only a tmdb_id,
+        # which some indexers match poorly.
+        url_kwargs = {
+            "mode": item["mode"],
+            "media_type": "tv" if item["mode"] == "tv" else "movies",
+            "query": label,
+            "ids": {"tmdb_id": str(item["tmdb_id"])},
+        }
         if item["mode"] == "tv":
-            url = build_url(
-                "show_seasons_details",
-                ids={"tmdb_id": str(item["tmdb_id"])},
-                mode="tv",
-                media_type="tv",
-            )
-            is_folder = True
-        else:
-            url = build_url(
-                "search",
-                mode="movies",
-                media_type="movies",
-                query=label,
-                ids={"tmdb_id": str(item["tmdb_id"])},
-            )
-            is_folder = False
+            url_kwargs["tv_data"] = {
+                "season": item["season"],
+                "episode": item["episode"],
+                "name": label,
+            }
+        url = build_url("nuvio_resume", **url_kwargs)
+        is_folder = False
         context_menu = _nuvio_history_remove_context_menu(item)
         if context_menu:
             list_item.addContextMenuItems(context_menu)
