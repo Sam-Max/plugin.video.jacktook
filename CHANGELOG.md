@@ -1,3 +1,28 @@
+## 1.20.0
+- Nuvio: Add full Nuvio account integration with QR/device login, per-profile library sync, My Movies / My Shows, Watch History with pagination, Continue Watching, a read-only Collections browser, and Nuvio addon management.
+- Nuvio: Sync watch progress and history with Nuvio, including add/remove library writes and mark watched/unwatched.
+- Settings: Show the addon version in General settings.
+- Playback: Fix Stremio debrid direct-URL replay by stripping the file index after resolution.
+- Playback: Make the next-episode dialog resilient to playback that starts half-initialized.
+
+Spanish:
+- Nuvio: Añadida la integración completa de la cuenta de Nuvio con inicio de sesión por QR/dispositivo, sincronización de la biblioteca por perfil, Mis películas / Mis series, Historial de visualización con paginación, Continuar viendo, un navegador de colecciones de solo lectura y la gestión de addons de Nuvio.
+- Nuvio: Sincronizados el progreso y el historial de visualización con Nuvio, incluidas las escrituras de alta/baja en la biblioteca y el marcado como visto/no visto.
+- Ajustes: Mostrada la versión del addon en los ajustes generales.
+- Reproducción: Corregida la repetición de URLs directas de debrid de Stremio eliminando el índice de archivo tras la resolución.
+- Reproducción: Hecho resistente el diálogo del siguiente episodio frente a una reproducción que arranca a medio inicializar.
+
+Note:
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions help keep improving and maintaining it. Thank you!
+
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+Dacă îți place acest add-on, te rog să iei în considerare susținerea proiectului printr-o donație. Contribuțiile tale ajută la îmbunătățirea și menținerea acestuia. Mulțumesc!
+
+Если вам нравится этот аддон, пожалуйста, подумайте о поддержке проекта пожертвованием. Ваш вклад помогает улучшать и поддерживать его. Спасибо!
+
+Se você gosta deste addon, considere apoiar o projeto com uma doação. As suas contribuições ajudam a continuar melhorando e mantendo-o. Obrigado!
+
 ## 1.19.0
 - Continue Watching: Paginate the menu with 10 items per page, show the source label in item names, and add a clear-all context action.
 - Playback: Fix resume from Trakt/Simkl Continue Watching by resolving the missing imdb_id and forcing a rescrape, prevent Super Quick Play from overriding an already-resolved source selection and fall back to source select instead of failing silently on auto play
