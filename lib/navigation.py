@@ -1635,7 +1635,7 @@ def nuvio_continue_watching(params):
 def nuvio_history(params):
     from lib.utils.views.nuvio_history import show_nuvio_history
 
-    show_nuvio_history()
+    show_nuvio_history(params)
 
 
 def nuvio_library(params):

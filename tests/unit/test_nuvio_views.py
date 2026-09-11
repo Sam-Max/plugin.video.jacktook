@@ -37,8 +37,8 @@ def test_get_watch_progress_returns_empty_list_without_profile():
     assert NuvioClient(access_token="access", profile_id=None).get_watch_progress() == []
 
 
-def test_get_watched_history_returns_empty_list_without_profile():
-    assert NuvioClient(access_token="access", profile_id=None).get_watched_history() == []
+def test_get_watched_history_page_returns_none_without_profile():
+    assert NuvioClient(access_token="access", profile_id=None).get_watched_history_page() is None
 
 
 def test_get_watch_progress_normalizes_and_filters_api_entries(monkeypatch):
@@ -246,7 +246,7 @@ def test_delete_watch_progress_rejects_blank_progress_key(monkeypatch):
     post.assert_not_called()
 
 
-def test_get_watched_history_normalizes_and_filters_api_entries(monkeypatch):
+def test_get_watched_history_page_normalizes_and_filters_api_entries(monkeypatch):
     post = MagicMock(
         return_value=_response(
             200,
@@ -291,7 +291,7 @@ def test_get_watched_history_normalizes_and_filters_api_entries(monkeypatch):
     )
     monkeypatch.setattr("lib.api.nuvio.requests.post", post)
 
-    items = _client().get_watched_history(page=2, page_size=100)
+    items, raw_row_count = _client().get_watched_history_page(page=2, page_size=100)
 
     assert items == [
         {
@@ -311,6 +311,8 @@ def test_get_watched_history_normalizes_and_filters_api_entries(monkeypatch):
             "watched_at_ms": 1711600001000,
         },
     ]
+    # Raw row count, not the parsed count, drives page termination.
+    assert raw_row_count == 5
     assert post.call_args.args[0].endswith("/rest/v1/rpc/sync_pull_watched_items")
     assert post.call_args.kwargs["json"] == {
         "p_profile_id": 2,
@@ -327,7 +329,7 @@ def test_watch_pull_failures_log_failure_category_and_return_empty_list(monkeypa
     client = _client()
 
     assert client.get_watch_progress() == []
-    assert client.get_watched_history() == []
+    assert client.get_watched_history_page() is None
 
     logged = " ".join(str(call) for call in log.call_args_list)
     assert "watch-progress pull failed" in logged
@@ -342,11 +344,11 @@ def test_watch_pull_invalid_json_and_non_list_return_empty(monkeypatch):
 
     monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=invalid_json))
     assert client.get_watch_progress() == []
-    assert client.get_watched_history() == []
+    assert client.get_watched_history_page() is None
 
     monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=non_list))
     assert client.get_watch_progress() == []
-    assert client.get_watched_history() == []
+    assert client.get_watched_history_page() is None
 
 
 # ---------------------------------------------------------------------------
@@ -420,6 +422,21 @@ def _stub_nuvio_client(monkeypatch, view, method_name, items):
             raise AttributeError(name)
 
     monkeypatch.setattr(view, "NuvioClient", _StubNuvioClient)
+
+
+def _stub_history_page(monkeypatch, view, items, raw_row_count=None):
+    """Stub ``NuvioClient.get_watched_history_page`` with a single page.
+
+    ``raw_row_count`` defaults to the item count; pass it explicitly to model a
+    full server page (so the view appends a Next Page row) or rows the parser
+    dropped.
+    """
+    if raw_row_count is None:
+        raw_row_count = len(items)
+    client = MagicMock()
+    client.get_watched_history_page = MagicMock(return_value=(items, raw_row_count))
+    monkeypatch.setattr(view, "NuvioClient", MagicMock(return_value=client))
+    return client
 
 
 def test_show_nuvio_continue_watching_builds_search_actions(monkeypatch):
@@ -589,33 +606,27 @@ def test_show_nuvio_history_plays_items_directly(monkeypatch):
     )
     monkeypatch.setattr(view, "tmdb_get", tmdb_get)
     monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
-    monkeypatch.setattr(
+    _stub_history_page(
+        monkeypatch,
         view,
-        "NuvioClient",
-        MagicMock(
-            return_value=MagicMock(
-                get_watched_history=MagicMock(
-                    return_value=[
-                        {
-                            "tmdb_id": 550,
-                            "mode": "movies",
-                            "season": None,
-                            "episode": None,
-                            "title": "Fight Club",
-                            "watched_at_ms": 1711600000000,
-                        },
-                        {
-                            "tmdb_id": 1396,
-                            "mode": "tv",
-                            "season": 2,
-                            "episode": 5,
-                            "title": "Breaking Bad",
-                            "watched_at_ms": 1711600001000,
-                        },
-                    ]
-                )
-            )
-        ),
+        [
+            {
+                "tmdb_id": 550,
+                "mode": "movies",
+                "season": None,
+                "episode": None,
+                "title": "Fight Club",
+                "watched_at_ms": 1711600000000,
+            },
+            {
+                "tmdb_id": 1396,
+                "mode": "tv",
+                "season": 2,
+                "episode": 5,
+                "title": "Breaking Bad",
+                "watched_at_ms": 1711600001000,
+            },
+        ],
     )
 
     view.show_nuvio_history()
@@ -658,25 +669,19 @@ def test_show_nuvio_history_falls_back_when_tmdb_fails(monkeypatch):
     set_media_info_tag = MagicMock()
     monkeypatch.setattr(view, "tmdb_get", MagicMock(side_effect=RuntimeError("offline")))
     monkeypatch.setattr(view, "set_media_infoTag", set_media_info_tag)
-    monkeypatch.setattr(
+    _stub_history_page(
+        monkeypatch,
         view,
-        "NuvioClient",
-        MagicMock(
-            return_value=MagicMock(
-                get_watched_history=MagicMock(
-                    return_value=[
-                        {
-                            "tmdb_id": 1396,
-                            "mode": "tv",
-                            "season": 2,
-                            "episode": 5,
-                            "title": "",
-                            "watched_at_ms": 1711600001000,
-                        }
-                    ]
-                )
-            )
-        ),
+        [
+            {
+                "tmdb_id": 1396,
+                "mode": "tv",
+                "season": 2,
+                "episode": 5,
+                "title": "",
+                "watched_at_ms": 1711600001000,
+            }
+        ],
     )
 
     view.show_nuvio_history()
@@ -697,25 +702,19 @@ def test_show_nuvio_history_falls_back_to_tmdb_title_when_missing(monkeypatch):
     _item, _add_items = _patch_view_shell(monkeypatch, view)
     monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"title": "Fight Club"}))
     monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
-    monkeypatch.setattr(
+    _stub_history_page(
+        monkeypatch,
         view,
-        "NuvioClient",
-        MagicMock(
-            return_value=MagicMock(
-                get_watched_history=MagicMock(
-                    return_value=[
-                        {
-                            "tmdb_id": 550,
-                            "mode": "movies",
-                            "season": None,
-                            "episode": None,
-                            "title": "",
-                            "watched_at_ms": 1711600000000,
-                        }
-                    ]
-                )
-            )
-        ),
+        [
+            {
+                "tmdb_id": 550,
+                "mode": "movies",
+                "season": None,
+                "episode": None,
+                "title": "",
+                "watched_at_ms": 1711600000000,
+            }
+        ],
     )
 
     view.show_nuvio_history()
@@ -731,25 +730,19 @@ def test_show_nuvio_history_titleless_episode_keeps_show_name(monkeypatch):
     _item, add_items = _patch_view_shell(monkeypatch, view)
     monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"name": "Silo"}))
     monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
-    monkeypatch.setattr(
+    _stub_history_page(
+        monkeypatch,
         view,
-        "NuvioClient",
-        MagicMock(
-            return_value=MagicMock(
-                get_watched_history=MagicMock(
-                    return_value=[
-                        {
-                            "tmdb_id": 125988,
-                            "mode": "tv",
-                            "season": 3,
-                            "episode": 2,
-                            "title": "",
-                            "watched_at_ms": 1711600001000,
-                        }
-                    ]
-                )
-            )
-        ),
+        [
+            {
+                "tmdb_id": 125988,
+                "mode": "tv",
+                "season": 3,
+                "episode": 2,
+                "title": "",
+                "watched_at_ms": 1711600001000,
+            }
+        ],
     )
 
     view.show_nuvio_history()
@@ -770,16 +763,116 @@ def test_show_nuvio_history_notifies_when_empty(monkeypatch):
     from lib.utils.views import nuvio_history as view
 
     _item, add_items = _patch_view_shell(monkeypatch, view)
-    monkeypatch.setattr(
-        view,
-        "NuvioClient",
-        MagicMock(return_value=MagicMock(get_watched_history=MagicMock(return_value=[]))),
-    )
+    _stub_history_page(monkeypatch, view, [])
 
     view.show_nuvio_history()
 
     assert add_items.call_args.args[0] == []
     view.notification.assert_called_once_with("text-91026", time=3000)
+
+
+def _history_items(count, start=0):
+    return [
+        {
+            "tmdb_id": start + n,
+            "mode": "movies",
+            "season": None,
+            "episode": None,
+            "title": f"Movie {start + n}",
+            "watched_at_ms": 1711600000000 + n,
+        }
+        for n in range(count)
+    ]
+
+
+def test_show_nuvio_history_requests_only_the_current_page(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    client = _stub_history_page(monkeypatch, view, _history_items(2))
+
+    view.show_nuvio_history({"page": "3"})
+
+    client.get_watched_history_page.assert_called_once_with(
+        page=3, page_size=view.HISTORY_PAGE_SIZE
+    )
+
+
+def test_show_nuvio_history_defaults_an_invalid_page_to_the_first(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    client = _stub_history_page(monkeypatch, view, [])
+
+    view.show_nuvio_history({"page": "nonsense"})
+
+    client.get_watched_history_page.assert_called_once_with(
+        page=1, page_size=view.HISTORY_PAGE_SIZE
+    )
+
+
+def test_show_nuvio_history_appends_next_page_on_a_full_page(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _stub_history_page(monkeypatch, view, _history_items(view.HISTORY_PAGE_SIZE))
+
+    view.show_nuvio_history()
+
+    directory_items = add_items.call_args.args[0]
+    assert len(directory_items) == view.HISTORY_PAGE_SIZE + 1
+    next_url, _next_item, next_is_folder = directory_items[-1]
+    assert next_is_folder is True
+    assert parse_qs(urlparse(next_url).query) == {"action": ["nuvio_history"], "page": ["2"]}
+    assert view.make_list_item.call_args_list[-1].kwargs["label"] == "text-90515"
+    view.notification.assert_not_called()
+
+
+def test_show_nuvio_history_next_page_advances_from_the_current_page(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _stub_history_page(monkeypatch, view, _history_items(view.HISTORY_PAGE_SIZE))
+
+    view.show_nuvio_history({"page": "4"})
+
+    next_url = add_items.call_args.args[0][-1][0]
+    assert parse_qs(urlparse(next_url).query)["page"] == ["5"]
+
+
+def test_show_nuvio_history_omits_next_page_on_a_short_page(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
+    monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
+    _stub_history_page(monkeypatch, view, _history_items(view.HISTORY_PAGE_SIZE - 1))
+
+    view.show_nuvio_history()
+
+    directory_items = add_items.call_args.args[0]
+    assert len(directory_items) == view.HISTORY_PAGE_SIZE - 1
+    assert all(is_folder is False for _, _, is_folder in directory_items)
+
+
+def test_show_nuvio_history_does_not_notify_on_an_empty_later_page(monkeypatch):
+    from lib.utils.views import nuvio_history as view
+
+    _item, add_items = _patch_view_shell(monkeypatch, view)
+    _stub_history_page(monkeypatch, view, [])
+
+    view.show_nuvio_history({"page": "2"})
+
+    assert add_items.call_args.args[0] == []
+    view.notification.assert_not_called()
 
 
 def test_nuvio_history_play_url_reaches_direct_search(monkeypatch):
@@ -791,25 +884,19 @@ def test_nuvio_history_play_url_reaches_direct_search(monkeypatch):
     _item, add_items = _patch_view_shell(monkeypatch, view)
     monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value={"name": "Breaking Bad"}))
     monkeypatch.setattr(view, "set_media_infoTag", MagicMock())
-    monkeypatch.setattr(
+    _stub_history_page(
+        monkeypatch,
         view,
-        "NuvioClient",
-        MagicMock(
-            return_value=MagicMock(
-                get_watched_history=MagicMock(
-                    return_value=[
-                        {
-                            "tmdb_id": 1396,
-                            "mode": "tv",
-                            "season": 2,
-                            "episode": 5,
-                            "title": "Breaking Bad",
-                            "watched_at_ms": 1711600001000,
-                        }
-                    ]
-                )
-            )
-        ),
+        [
+            {
+                "tmdb_id": 1396,
+                "mode": "tv",
+                "season": 2,
+                "episode": 5,
+                "title": "Breaking Bad",
+                "watched_at_ms": 1711600001000,
+            }
+        ],
     )
 
     view.show_nuvio_history()
@@ -1681,25 +1768,28 @@ def test_show_nuvio_history_adds_remove_context_menu(monkeypatch):
         def __init__(self, *args, **kwargs):
             pass
 
-        def get_watched_history(self, page=1, page_size=500):
-            return [
-                {
-                    "tmdb_id": 550,
-                    "mode": "movies",
-                    "season": None,
-                    "episode": None,
-                    "title": "Fight Club",
-                    "watched_at_ms": 1711600000000,
-                },
-                {
-                    "tmdb_id": 1396,
-                    "mode": "tv",
-                    "season": 2,
-                    "episode": 5,
-                    "title": "Breaking Bad",
-                    "watched_at_ms": 1711600001000,
-                },
-            ]
+        def get_watched_history_page(self, page=1, page_size=500):
+            return (
+                [
+                    {
+                        "tmdb_id": 550,
+                        "mode": "movies",
+                        "season": None,
+                        "episode": None,
+                        "title": "Fight Club",
+                        "watched_at_ms": 1711600000000,
+                    },
+                    {
+                        "tmdb_id": 1396,
+                        "mode": "tv",
+                        "season": 2,
+                        "episode": 5,
+                        "title": "Breaking Bad",
+                        "watched_at_ms": 1711600001000,
+                    },
+                ],
+                2,
+            )
 
     monkeypatch.setattr(view, "NuvioClient", _HistoryViewClient)
 

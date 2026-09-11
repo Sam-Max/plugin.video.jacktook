@@ -32,11 +32,32 @@ def has_nuvio_history_items():
     return is_nuvio_progress_sync_enabled()
 
 
-def show_nuvio_history():
+# Kodi renders one directory listing at a time, so the view asks the server for
+# exactly one page and appends a "Next Page" row instead of pulling everything.
+HISTORY_PAGE_SIZE = 20
+
+
+def _page_number(value):
+    """Coerce a ``page`` query param into a 1-based page number."""
+    try:
+        page = int(value)
+    except (TypeError, ValueError):
+        return 1
+    return page if page > 0 else 1
+
+
+def show_nuvio_history(params=None):
+    params = params or {}
+    page = _page_number(params.get("page"))
+
     set_pluging_category("Nuvio History")
     setContent(ADDON_HANDLE, "videos")
+
+    page_result = NuvioClient().get_watched_history_page(page=page, page_size=HISTORY_PAGE_SIZE)
+    items, raw_row_count = ([], 0) if page_result is None else page_result
+
     directory_items = []
-    for item in NuvioClient().get_watched_history():
+    for item in items:
         title = item["title"]
         episode_label = ""
         if item["mode"] == "tv":
@@ -97,11 +118,22 @@ def show_nuvio_history():
         if context_menu:
             list_item.addContextMenuItems(context_menu)
         directory_items.append((url, list_item, is_folder))
+
+    # A full page means the server may hold more; a short page is the last one.
+    # Use the raw row count so rows filtered out during parsing cannot hide a
+    # following page.
+    if items and raw_row_count >= HISTORY_PAGE_SIZE:
+        next_item = make_list_item(label=translation(90515))
+        next_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
+        directory_items.append((build_url("nuvio_history", page=page + 1), next_item, True))
+
     add_directory_items_batch(directory_items)
     end_of_directory(cache=False)
     apply_section_view("view.history", content_type="videos")
 
-    if not directory_items:
+    # Only the first page represents "no history at all"; an empty later page
+    # just means the list shifted back after the Next link was rendered.
+    if not directory_items and page == 1:
         notification(translation(91026), time=3000)
 
 

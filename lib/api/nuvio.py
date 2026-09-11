@@ -30,6 +30,7 @@ LIBRARY_RPC_SNAPSHOT = "sync_pull_library"
 LIBRARY_RPC_DELTA = "sync_pull_library_delta"
 LIBRARY_RPC_PUSH_ITEMS = "sync_push_library_items"
 LIBRARY_RPC_DELETE_ITEMS = "sync_delete_library_items"
+WATCHED_RPC_PULL = "sync_pull_watched_items"
 WATCHED_RPC_PUSH = "sync_push_watched_items"
 WATCHED_RPC_DELETE = "sync_delete_watched_items"
 COLLECTIONS_RPC_PULL = "sync_pull_collections"
@@ -84,9 +85,7 @@ class NuvioClient:
         self.profile_id = self._profile_index(
             get_setting("nuvio_profile_id") if profile_id is None else profile_id
         )
-        self.request_timeout = (
-            self.REQUEST_TIMEOUT if request_timeout is None else request_timeout
-        )
+        self.request_timeout = self.REQUEST_TIMEOUT if request_timeout is None else request_timeout
         self.deadline = deadline
         self._last_token_failure_status = None
 
@@ -1289,13 +1288,19 @@ class NuvioClient:
             return False
         return True
 
-    def get_watched_history(self, page=1, page_size=500):
-        """Pull remote watched-history items for the selected Nuvio profile."""
+    def get_watched_history_page(self, page=1, page_size=500):
+        """Pull one page of watched history; return ``(items, raw_row_count)``.
+
+        Returns ``None`` when the request or payload failed. The raw row count
+        is returned alongside the parsed items so callers can apply the "stop
+        when the page is shorter than the limit" rule against the server's
+        actual page size, not the count of rows that survived parsing.
+        """
         if not self.profile_id:
             kodilog("[NUVIO] watched-history pull failed (invalid_profile)")
-            return []
+            return None
         response = self._post_authenticated(
-            "sync_pull_watched_items",
+            WATCHED_RPC_PULL,
             {
                 "p_profile_id": self.profile_id,
                 "p_page": page,
@@ -1305,15 +1310,15 @@ class NuvioClient:
         if response is None or response.status_code >= 400:
             status = response.status_code if response is not None else None
             kodilog(f"[NUVIO] watched-history pull failed (HTTP {status})")
-            return []
+            return None
         try:
             rows = response.json()
         except ValueError:
             kodilog("[NUVIO] watched-history pull failed (invalid_json)")
-            return []
+            return None
         if not isinstance(rows, list):
             kodilog("[NUVIO] watched-history pull failed (non_list)")
-            return []
+            return None
 
         items = []
         for row in rows:
@@ -1346,7 +1351,7 @@ class NuvioClient:
                     "watched_at_ms": watched_at_ms,
                 }
             )
-        return items
+        return items, len(rows)
 
     def get_collections(self, profile_id=None):
         """Pull the profile's collections, or None on failure.
