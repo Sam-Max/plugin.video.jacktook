@@ -4737,7 +4737,118 @@ msgstr "Clear Continue Watching"
 
 msgctxt "#91001"
 msgid "Continue Watching cleared"
-msgstr "Continue Watching cleared"
+
+msgctxt "#91002"
+msgid "Nuvio: Account"
+msgstr "Nuvio: Account"
+
+msgctxt "#91003"
+msgid "Enable"
+msgstr "Enable"
+
+msgctxt "#91004"
+msgid "Push your Jacktook movie and TV episode watch progress to Nuvio when playback stops."
+msgstr "Push your Jacktook movie and TV episode watch progress to Nuvio when playback stops."
+
+msgctxt "#91005"
+msgid "Connect Nuvio with QR Code"
+msgstr "Connect Nuvio with QR Code"
+
+msgctxt "#91006"
+msgid "Scan the QR code with a signed-in Nuvio device, then select the profile that receives watch-progress updates."
+msgstr "Scan the QR code with a signed-in Nuvio device, then select the profile that receives watch-progress updates."
+
+msgctxt "#91007"
+msgid "Sign Out of Nuvio"
+msgstr "Sign Out of Nuvio"
+
+msgctxt "#91008"
+msgid "Remove the saved Nuvio session and selected profile from Jacktook."
+msgstr "Remove the saved Nuvio session and selected profile from Jacktook."
+
+msgctxt "#91009"
+msgid "Nuvio connection cancelled."
+msgstr "Nuvio connection cancelled."
+
+msgctxt "#91010"
+msgid "Nuvio authorization expired. Start the QR connection again."
+msgstr "Nuvio authorization expired. Start the QR connection again."
+
+msgctxt "#91011"
+msgid "Nuvio authorization was already used or cancelled. Start the QR connection again."
+msgstr "Nuvio authorization was already used or cancelled. Start the QR connection again."
+
+msgctxt "#91012"
+msgid "Nuvio could not start QR authorization. Please try again."
+msgstr "Nuvio could not start QR authorization. Please try again."
+
+msgctxt "#91013"
+msgid "Nuvio authorization check failed. Please try again."
+msgstr "Nuvio authorization check failed. Please try again."
+
+msgctxt "#91014"
+msgid "Nuvio authorization exchange failed. Please try again."
+msgstr "Nuvio authorization exchange failed. Please try again."
+
+msgctxt "#91015"
+msgid "Unable to load Nuvio profiles. Please try again."
+msgstr "Unable to load Nuvio profiles. Please try again."
+
+msgctxt "#91016"
+msgid "Nuvio watch-progress sync connected."
+msgstr "Nuvio watch-progress sync connected."
+
+msgctxt "#91017"
+msgid "Choose Nuvio profile"
+msgstr "Choose Nuvio profile"
+
+msgctxt "#91018"
+msgid "Nuvio: Addons Management"
+msgstr "Nuvio: Addons Management"
+
+msgctxt "#91019"
+msgid "Select Nuvio Addons"
+msgstr "Select Nuvio Addons"
+
+msgctxt "#91020"
+msgid "Select the enabled Nuvio addons to use for stream searches."
+msgstr "Select the enabled Nuvio addons to use for stream searches."
+
+msgctxt "#91021"
+msgid "No usable Nuvio addons are available."
+msgstr "No usable Nuvio addons are available."
+
+msgctxt "#91022"
+msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
+msgstr "Nuvio addons could not be loaded. Your saved selection was not changed."
+
+msgctxt "#91023"
+msgid "Nuvio: Watch Progress"
+msgstr "Nuvio: Watch Progress"
+
+msgctxt "#91024"
+msgid "Nuvio: Watch History"
+msgstr "Nuvio: Watch History"
+
+msgctxt "#91025"
+msgid "No Nuvio watch progress available."
+msgstr "No Nuvio watch progress available."
+
+msgctxt "#91026"
+msgid "No Nuvio watch history available."
+msgstr "No Nuvio watch history available."
+
+msgctxt "#91027"
+msgid "Remove from Nuvio"
+msgstr "Remove from Nuvio"
+
+msgctxt "#91028"
+msgid "Removed from Nuvio Continue Watching"
+msgstr "Removed from Nuvio Continue Watching"
+
+msgctxt "#91029"
+msgid "Could not remove Nuvio watch progress."
+msgstr "Could not remove Nuvio watch progress."
 
 msgctxt "#91030"
 msgid "About"
@@ -4746,3 +4857,103 @@ msgstr "About"
 msgctxt "#91031"
 msgid "Version"
 msgstr "Version"
+
+msgctxt "#91032"
+msgid "My Nuvio Movies"
+msgstr "My Nuvio Movies"
+
+msgctxt "#91033"
+msgid "My Nuvio Shows"
+msgstr "My Nuvio Shows"
+
+msgctxt "#91034"
+msgid "No Nuvio library items available."
+msgstr "No Nuvio library items available."
+
+msgctxt "#91035"
+msgid "Nuvio: Library Sync"
+msgstr "Nuvio: Library Sync"
+
+msgctxt "#91036"
+msgid "Sync interval (minutes)"
+msgstr "Sync interval (minutes)"
+
+msgctxt "#91037"
+msgid "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+msgstr "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+
+msgctxt "#91038"
+msgid "Nuvio"
+msgstr "Nuvio"
+
+msgctxt "#91039"
+msgid "Add to Nuvio Library"
+msgstr "Add to Nuvio Library"
+
+msgctxt "#91040"
+msgid "Remove from Nuvio Library"
+msgstr "Remove from Nuvio Library"
+
+msgctxt "#91041"
+msgid "Added to Nuvio Library"
+msgstr "Added to Nuvio Library"
+
+msgctxt "#91042"
+msgid "Removed from Nuvio Library"
+msgstr "Removed from Nuvio Library"
+
+msgctxt "#91043"
+msgid "Could not update the Nuvio library."
+msgstr "Could not update the Nuvio library."
+
+msgctxt "#91044"
+msgid "Mark as Watched on Nuvio"
+msgstr "Mark as Watched on Nuvio"
+
+msgctxt "#91045"
+msgid "Mark as Unwatched on Nuvio"
+msgstr "Mark as Unwatched on Nuvio"
+
+msgctxt "#91046"
+msgid "Marked as watched on Nuvio."
+msgstr "Marked as watched on Nuvio."
+
+msgctxt "#91047"
+msgid "Removed from Nuvio history."
+msgstr "Removed from Nuvio history."
+
+msgctxt "#91048"
+msgid "Could not update Nuvio history."
+msgstr "Could not update Nuvio history."
+
+msgctxt "#91049"
+msgid "Remove from Nuvio History?"
+msgstr "Remove from Nuvio History?"
+
+msgctxt "#91050"
+msgid "This removes the item from your Nuvio watch history. Continue?"
+msgstr "This removes the item from your Nuvio watch history. Continue?"
+
+msgctxt "#91051"
+msgid "Collections"
+msgstr "Collections"
+
+msgctxt "#91052"
+msgid "No Nuvio collections available."
+msgstr "No Nuvio collections available."
+
+msgctxt "#91053"
+msgid "Addon not installed"
+msgstr "Addon not installed"
+
+msgctxt "#91054"
+msgid "This catalog's addon is not installed in Nuvio."
+msgstr "This catalog's addon is not installed in Nuvio."
+
+msgctxt "#91055"
+msgid "This collection source is not supported yet."
+msgstr "This collection source is not supported yet."
+
+msgctxt "#91056"
+msgid "No results found."
+msgstr "No results found."

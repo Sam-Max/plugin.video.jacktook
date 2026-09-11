@@ -7,7 +7,6 @@ import socket
 from typing import Any, Callable, Mapping, Optional
 from urllib.parse import quote, urljoin, urlsplit
 
-
 MAX_RESOURCE_JSON_BYTES = 1024 * 1024
 MIN_CACHE_TTL_SECONDS = 60
 MAX_CACHE_TTL_SECONDS = 24 * 60 * 60
@@ -96,6 +95,10 @@ def build_resource_url(
     extras: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """Build an official Stremio HTTP resource route."""
+    # Some manifests carry a query string (e.g. Bingecat ".../manifest.json?bcv=54").
+    # The resource path must be appended to the path component, never after the
+    # query, or the resulting URL 404s.
+    base, _, base_query = str(base_url or "").partition("?")
     components = [resource, resource_type, resource_id]
     path = "/".join(quote(str(component), safe="") for component in components)
     extra_pairs = []
@@ -106,4 +109,7 @@ def build_resource_url(
         extra_pairs.append("{}={}".format(quote(str(key), safe=""), quote(str(value), safe="")))
     if extra_pairs:
         path += "/" + "&".join(extra_pairs)
-    return "{}/{}.json".format((base_url or "").rstrip("/"), path)
+    url = "{}/{}.json".format(base.rstrip("/"), path)
+    if base_query:
+        url = f"{url}?{base_query}"
+    return url

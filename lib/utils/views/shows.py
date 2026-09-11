@@ -22,6 +22,7 @@ from lib.utils.kodi.utils import (
     kodilog,
     make_list_item,
 )
+from lib.utils.nuvio_context import add_nuvio_history_context_menu
 from lib.utils.simkl_context import add_simkl_history_context_menu
 
 
@@ -47,9 +48,21 @@ def show_season_info(ids, mode, media_type):
         if res and res.get("tv_results"):
             tmdb_id = res["tv_results"][0]["id"]
 
+    details = tmdb_get("tv_details", tmdb_id)
+
+    # Callers such as the Nuvio library only know the tmdb_id. Resolve the
+    # missing external ids from the details we already fetched, otherwise the
+    # episode search carries a bare tmdb_id and sources that match by IMDB
+    # (e.g. Torrentio) find nothing. No extra request: "tv_details" already
+    # asks TMDB for external_ids.
+    external_ids = getattr(details, "external_ids", None) or {}
+    if not tvdb_id:
+        tvdb_id = external_ids.get("tvdb_id") or tvdb_id
+    if not imdb_id:
+        imdb_id = external_ids.get("imdb_id") or imdb_id
+
     ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
 
-    details = tmdb_get("tv_details", tmdb_id)
     name = details.name
     seasons = details.seasons
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
@@ -189,6 +202,9 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
         )
     context_menu += add_simkl_history_context_menu(
         "episode", ids.get("tmdb_id"), season, episode_number
+    )
+    context_menu += add_nuvio_history_context_menu(
+        "episode", ids.get("tmdb_id"), season, episode_number, title=tv_name
     )
     list_item.addContextMenuItems(context_menu)
 

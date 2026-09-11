@@ -670,6 +670,70 @@
                     </control>
                 </setting>
             </group>
+            <group id="nuvio" label="91002">
+                <setting id="nuvio_enabled" type="boolean" label="91003" help="91004">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+                <setting id="nuvio_access_token" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <constraints><allowempty>true</allowempty></constraints>
+                    <control type="edit" format="string"><hidden>true</hidden></control>
+                </setting>
+                <setting id="nuvio_refresh_token" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <constraints><allowempty>true</allowempty></constraints>
+                    <control type="edit" format="string"><hidden>true</hidden></control>
+                </setting>
+                <setting id="nuvio_expires_at" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <constraints><allowempty>true</allowempty></constraints>
+                    <control type="edit" format="string"><hidden>true</hidden></control>
+                </setting>
+                <setting id="nuvio_authenticated" type="boolean">
+                    <default>false</default>
+                    <visible>false</visible>
+                    <control type="toggle" />
+                </setting>
+                <setting id="nuvio_profile_id" type="string">
+                    <default />
+                    <visible>false</visible>
+                    <constraints><allowempty>true</allowempty></constraints>
+                    <control type="edit" format="string"><hidden>true</hidden></control>
+                </setting>
+                <setting id="nuvio_auth" type="action" label="91005" help="91006">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=nuvio_auth)</data>
+                    <control type="button" format="action"><close>false</close></control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_enabled">true</condition></dependency></dependencies>
+                </setting>
+                <setting id="nuvio_logout" type="action" label="91007" help="91008">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=nuvio_logout)</data>
+                    <control type="button" format="action"><close>false</close></control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
+                </setting>
+                <setting id="nuvio_sync_interval" type="integer" label="91036" help="91037">
+                    <default>15</default>
+                    <constraints>
+                        <minimum>1</minimum>
+                        <maximum>1440</maximum>
+                        <step>1</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
+                </setting>
+            </group>
+            <group id="nuvio_addons" label="91018">
+                <setting id="nuvio_toggle_addons" type="action" label="91019" help="91020">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=nuvio_toggle_addons)</data>
+                    <control type="button" format="action"><close>false</close></control>
+                    <dependencies><dependency type="visible"><condition operator="is" setting="nuvio_authenticated">true</condition></dependency></dependencies>
+                </setting>
+            </group>
             <group id="stremio_addons_management" label="90832">
                 <setting id="stremio_toggle_addons" type="action" label="30870" help="90337">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=stremio_toggle_addons)</data>

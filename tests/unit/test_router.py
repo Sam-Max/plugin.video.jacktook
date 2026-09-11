@@ -111,6 +111,46 @@ def test_route_simkl_dispatches_auth_action():
     simkl_auth.assert_called_once_with({})
 
 
+def test_route_nuvio_dispatches_auth_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.nuvio_auth") as nuvio_auth:
+        router._route_nuvio("nuvio_auth", {})
+
+    nuvio_auth.assert_called_once_with({})
+
+
+def test_route_nuvio_dispatches_addon_selection_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.nuvio_toggle_addons") as nuvio_toggle_addons:
+        router._route_nuvio("nuvio_toggle_addons", {})
+
+    nuvio_toggle_addons.assert_called_once_with({})
+
+
+def test_route_nuvio_dispatches_menu_action():
+    router = _load_router_module()
+
+    with patch("lib.navigation.nuvio_menu") as nuvio_menu:
+        router._route_nuvio("nuvio_menu", {})
+
+    nuvio_menu.assert_called_once_with({})
+
+
+def test_route_nuvio_dispatches_resume_action():
+    """A history/continue-watching row dispatches through the real router."""
+    router = _load_router_module()
+
+    params = {"mode": "tv", "ids": '{"tmdb_id": "125988"}'}
+    with patch("lib.navigation.nuvio_resume") as nuvio_resume:
+        router._route_nuvio("nuvio_resume", params)
+
+    nuvio_resume.assert_called_once_with(params)
+    assert router._is_nuvio_action("nuvio_resume") is True
+    assert router._get_route_handler("nuvio_resume") is router._route_nuvio
+
+
 def test_route_simkl_dispatches_resume_action():
     router = _load_router_module()
 
@@ -150,6 +190,16 @@ def test_get_route_handler_returns_simkl_dispatcher():
     assert router._get_route_handler("simkl_library") is router._route_simkl
     assert router._get_route_handler("simkl_move_to_status") is router._route_simkl
     assert router._get_route_handler("simkl_update_history") is router._route_simkl
+
+
+def test_get_route_handler_returns_nuvio_dispatcher():
+    router = _load_router_module()
+
+    assert router._get_route_handler("nuvio_auth") is router._route_nuvio
+    assert router._get_route_handler("nuvio_logout") is router._route_nuvio
+    assert router._get_route_handler("nuvio_toggle_addons") is router._route_nuvio
+    assert router._get_route_handler("nuvio_menu") is router._route_nuvio
+    assert router._is_nuvio_action("nuvio_menu") is True
 
 
 def test_route_downloads_dispatches_handle_download_file():
@@ -195,3 +245,26 @@ def test_route_torrserver_download_and_play_subtitles():
         router._route_torrserver("download_and_play_subtitles", params)
 
     mock_dl.assert_called_once_with(params)
+
+
+@pytest.mark.parametrize(
+    "action", ["nuvio_add_to_library", "nuvio_remove_from_library", "nuvio_update_history"]
+)
+def test_get_route_handler_returns_nuvio_dispatcher_for_write_actions(action):
+    router = _load_router_module()
+
+    assert router._is_nuvio_action(action) is True
+    assert router._get_route_handler(action) is router._route_nuvio
+
+
+@pytest.mark.parametrize(
+    "action", ["nuvio_add_to_library", "nuvio_remove_from_library", "nuvio_update_history"]
+)
+def test_route_nuvio_dispatches_write_actions(action):
+    router = _load_router_module()
+
+    params = {"content_id": "tmdb:550", "content_type": "movie"}
+    with patch(f"lib.navigation.{action}") as handler:
+        router._route_nuvio(action, params)
+
+    handler.assert_called_once_with(params)

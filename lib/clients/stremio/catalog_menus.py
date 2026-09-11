@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import re
 from collections.abc import Mapping
 from dataclasses import asdict
 from datetime import datetime, timedelta
@@ -16,6 +17,7 @@ from lib.clients.stremio.helpers import (
     get_catalog_display_name,
     get_selected_catalogs_addons,
     get_selected_tv_addons,
+    merge_addons_lists,
 )
 from lib.clients.stremio.playback import (
     canonicalize_stremio_playback_payload,
@@ -240,13 +242,43 @@ def _param_truthy(value):
     return str(value).lower() in ("1", "true", "yes")
 
 
-def _resolve_addon_params(params):
+def _resolver_kwargs(addon_resolver):
+    return {"resolver": addon_resolver} if addon_resolver is not None else {}
+
+
+def _resolve_addon_params(params, addon_resolver=None):
     params = dict(params)
     if not params.get("addon_url") and params.get("addon_key"):
-        addon = get_addon_by_key(params["addon_key"])
+        addon = _get_catalog_addon_by_key(params["addon_key"], resolver=addon_resolver)
         if addon:
             params["addon_url"] = addon.url()
     return params
+
+
+def _get_catalog_addon_by_key(addon_key, resolver=None):
+    try:
+        addon = get_addon_by_key(addon_key)
+    except Exception:
+        addon = None
+    if addon is None and resolver is not None:
+        try:
+            addon = resolver("key", addon_key)
+        except Exception:
+            addon = None
+    return addon
+
+
+def _get_catalog_addon_by_base_url(addon_url, resolver=None):
+    try:
+        addon = get_addon_by_base_url(addon_url)
+    except Exception:
+        addon = None
+    if addon is None and resolver is not None:
+        try:
+            addon = resolver("url", addon_url)
+        except Exception:
+            addon = None
+    return addon
 
 
 def _addon_route_reference(addon):
@@ -256,11 +288,15 @@ def _addon_route_reference(addon):
         return {"addon_url": addon.url()}
 
 
-def _get_stremio_catalogs(menu_type="", sub_menu_type=""):
+def _get_stremio_catalogs(menu_type="", sub_menu_type="", extra_addons=None):
     if menu_type == "tv":
-        selected_addons = get_selected_tv_addons()
+        stremio_addons = get_selected_tv_addons()
     else:
-        selected_addons = get_selected_catalogs_addons()
+        stremio_addons = get_selected_catalogs_addons()
+    if extra_addons:
+        selected_addons = merge_addons_lists(stremio_addons, extra_addons)
+    else:
+        selected_addons = list(stremio_addons or [])
 
     if not selected_addons:
         kodilog(f"No addons found for menu_type={menu_type}")
@@ -294,8 +330,8 @@ def _get_stremio_catalogs(menu_type="", sub_menu_type=""):
     return catalogs
 
 
-def list_stremio_catalogs(menu_type="", sub_menu_type=""):
-    catalogs = _get_stremio_catalogs(menu_type, sub_menu_type)
+def list_stremio_catalogs(menu_type="", sub_menu_type="", extra_addons=None):
+    catalogs = _get_stremio_catalogs(menu_type, sub_menu_type, extra_addons=extra_addons)
     search_items = []
     catalog_items = []
 
@@ -374,9 +410,13 @@ def list_stremio_catalogs(menu_type="", sub_menu_type=""):
     add_directory_items_batch(directory_items)
 
 
-def _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key=""):
+def _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key="", resolver=None):
     try:
-        addon = get_addon_by_key(addon_key) if addon_key else get_addon_by_base_url(addon_url)
+        addon = (
+            _get_catalog_addon_by_key(addon_key, resolver=resolver)
+            if addon_key
+            else _get_catalog_addon_by_base_url(addon_url, resolver=resolver)
+        )
     except Exception:
         return None
     if not addon:
@@ -396,11 +436,11 @@ def _catalog_genres(catalog):
     return []
 
 
-def list_catalog_genres(params):
+def list_catalog_genres(params, addon_resolver=None, extra_addons=None):
     directory_items = []
     seen_genres = set()
     for addon, catalog in _get_stremio_catalogs(
-        params["menu_type"], params.get("sub_menu_type", "")
+        params["menu_type"], params.get("sub_menu_type", ""), extra_addons=extra_addons
     ):
         for genre in _catalog_genres(catalog):
             genre_key = genre.casefold()
@@ -430,17 +470,47 @@ def list_catalog_genres(params):
     end_of_directory()
 
 
-def _catalog_supports_extra(addon_url, catalog_type, catalog_id, extra_name, addon_key=""):
-    catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key)
+def _extra_display_name(extra):
+    """Pick a friendly dialog title for a catalog extra.
+
+    Cinemeta's "New" catalog reuses the ``genre`` extra with year values, so
+    an all-numeric 4-digit option list reads as years, not genres.
+    """
+    name = extra.get("name") or ""
+    options = [str(option) for option in (extra.get("options") or [])]
+    if (
+        name.casefold() == "genre"
+        and options
+        and all(re.fullmatch(r"\d{4}", option) for option in options)
+    ):
+        return translation(90027)  # "Years"
+    return name
+
+
+def _is_no_filter_options(options):
+    """Return True when every option is a no-op placeholder ("None", blank)."""
+    return bool(options) and all(
+        str(option).strip().casefold() == "none" or not str(option).strip() for option in options
+    )
+
+
+def _catalog_supports_extra(
+    addon_url, catalog_type, catalog_id, extra_name, addon_key="", resolver=None
+):
+    catalog = _get_manifest_catalog(
+        addon_url, catalog_type, catalog_id, addon_key, **_resolver_kwargs(resolver)
+    )
     if not catalog:
         return False
 
     return any(extra.get("name") == extra_name for extra in (catalog.extra or []))
 
 
-def _catalog_extra_names(addon_url, catalog_type, catalog_id, addon_key=""):
+def _catalog_extra_names(addon_url, catalog_type, catalog_id, addon_key="", resolver=None):
     try:
-        catalog = _get_manifest_catalog(addon_url, catalog_type, catalog_id, addon_key)
+        catalog = _get_manifest_catalog(
+            addon_url, catalog_type, catalog_id, addon_key, **_resolver_kwargs(resolver)
+        )
     except Exception:
         return set()
     if not catalog:
@@ -448,8 +518,8 @@ def _catalog_extra_names(addon_url, catalog_type, catalog_id, addon_key=""):
     return {extra.get("name") for extra in catalog.extra if extra.get("name")}
 
 
-def list_catalog(params):
-    params = _resolve_addon_params(params)
+def list_catalog(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     if not params.get("addon_url"):
         end_of_directory()
         return
@@ -463,6 +533,7 @@ def list_catalog(params):
         params["catalog_type"],
         params["catalog_id"],
         params.get("addon_key", ""),
+        **_resolver_kwargs(addon_resolver),
     )
     extras = {
         key: params[key]
@@ -474,6 +545,7 @@ def list_catalog(params):
         params["catalog_type"],
         params["catalog_id"],
         params.get("addon_key", ""),
+        **_resolver_kwargs(addon_resolver),
     )
     if catalog:
         for extra in catalog.extra:
@@ -486,8 +558,12 @@ def list_catalog(params):
             limit = extra.get("optionsLimit")
             if isinstance(limit, int) and limit >= 0:
                 options = options[:limit]
+            if _is_no_filter_options(options):
+                # Nothing meaningful to choose (e.g. Bingecat "None"); request
+                # the catalog without this extra instead of prompting.
+                continue
             if options:
-                selected = xbmcgui.Dialog().select(name, options)
+                selected = xbmcgui.Dialog().select(_extra_display_name(extra), options)
                 if selected < 0:
                     end_of_directory()
                     return
@@ -504,6 +580,7 @@ def list_catalog(params):
         params["catalog_id"],
         "skip",
         params.get("addon_key", ""),
+        **_resolver_kwargs(addon_resolver),
     )
 
     request_kwargs = dict(extras)
@@ -526,7 +603,7 @@ def list_catalog(params):
         end_of_directory()
         return
 
-    add_meta_items(metas, params)
+    add_meta_items(metas, params, **_resolver_kwargs(addon_resolver))
 
     has_next_page = False
     if supports_skip:
@@ -558,8 +635,8 @@ def list_catalog(params):
     end_of_directory()
 
 
-def search_catalog(params):
-    params = _resolve_addon_params(params)
+def search_catalog(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     if not params.get("addon_url"):
         return
     page = int(params["page"])
@@ -594,6 +671,7 @@ def search_catalog(params):
         params["catalog_type"],
         params["catalog_id"],
         params.get("addon_key", ""),
+        **_resolver_kwargs(addon_resolver),
     )
     request_extras = {
         key: params[key] for key in declared_extras if params.get(key) not in (None, "")
@@ -604,6 +682,7 @@ def search_catalog(params):
         params["catalog_type"],
         params["catalog_id"],
         params.get("addon_key", ""),
+        **_resolver_kwargs(addon_resolver),
     )
     if catalog:
         for extra in catalog.extra:
@@ -614,10 +693,13 @@ def search_catalog(params):
             limit = extra.get("optionsLimit")
             if isinstance(limit, int) and limit >= 0:
                 options = options[:limit]
+            if _is_no_filter_options(options):
+                # Nothing meaningful to choose (e.g. Bingecat "None").
+                continue
             if not options:
                 kodilog(f"Stremio catalog search skipped: missing required extra '{name}'")
                 return
-            selected = xbmcgui.Dialog().select(name, options)
+            selected = xbmcgui.Dialog().select(_extra_display_name(extra), options)
             if selected < 0:
                 return
             request_extras[name] = options[selected]
@@ -632,7 +714,7 @@ def search_catalog(params):
     metas = response.get("metas", [])
     if not supports_skip:
         metas = metas[skip : skip + CATALOG_PAGE_SIZE]
-    add_meta_items(metas, params)
+    add_meta_items(metas, params, **_resolver_kwargs(addon_resolver))
 
     if len(metas) >= CATALOG_PAGE_SIZE:
         next_params = {
@@ -664,19 +746,19 @@ def _addon_has_resource(addon, resource_name, content_type):
     return False
 
 
-def addon_has_meta(addon_url, content_type, addon=None):
+def addon_has_meta(addon_url, content_type, addon=None, resolver=None):
     """Check if the addon serves its own meta (seasons/episodes) for the given type."""
-    addon = addon or get_addon_by_base_url(addon_url)
+    addon = addon or _get_catalog_addon_by_base_url(addon_url, resolver=resolver)
     return _addon_has_resource(addon, "meta", content_type)
 
 
-def addon_has_stream(addon_url, content_type, addon=None):
+def addon_has_stream(addon_url, content_type, addon=None, resolver=None):
     """Check if the addon serves its own streams for the given type."""
-    addon = addon or get_addon_by_base_url(addon_url)
+    addon = addon or _get_catalog_addon_by_base_url(addon_url, resolver=resolver)
     return _addon_has_resource(addon, "stream", content_type)
 
 
-def add_meta_items(metas, params):
+def add_meta_items(metas, params, resolver=None):
     catalog_type = params["catalog_type"]
     menu_type = params.get("menu_type", catalog_type)
     sub_menu_type = params.get("sub_menu_type", "")
@@ -705,9 +787,11 @@ def add_meta_items(metas, params):
     has_meta_resource = _param_truthy(params.get("has_meta_resource"))
     has_stream_resource = _param_truthy(params.get("has_stream_resource"))
     if not has_meta_resource and not has_stream_resource:
-        addon = get_addon_by_base_url(addon_url)
-        has_meta_resource = addon_has_meta(addon_url, catalog_type, addon=addon)
-        has_stream_resource = addon_has_stream(addon_url, catalog_type, addon=addon)
+        addon = _get_catalog_addon_by_base_url(addon_url, resolver=resolver)
+        has_meta_resource = addon_has_meta(addon_url, catalog_type, addon=addon, resolver=resolver)
+        has_stream_resource = addon_has_stream(
+            addon_url, catalog_type, addon=addon, resolver=resolver
+        )
 
     for meta in metas:
         name = meta.name or ""
@@ -874,8 +958,8 @@ def add_meta_items(metas, params):
         addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder)
 
 
-def list_stremio_seasons(params):
-    params = _resolve_addon_params(params)
+def list_stremio_seasons(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     kodilog("list_stremio_seasons")
     response = catalogs_get_cache("list_stremio_seasons", params)
     if not response:
@@ -929,8 +1013,8 @@ def list_stremio_seasons(params):
     end_of_directory()
 
 
-def list_stremio_episodes(params):
-    params = _resolve_addon_params(params)
+def list_stremio_episodes(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     kodilog("list_stremio_episodes")
     response = catalogs_get_cache("list_stremio_episodes", params)
     if not response:
@@ -979,8 +1063,10 @@ def list_stremio_episodes(params):
     if default_video_id:
         videos = sorted(videos, key=lambda video: video.id != default_video_id)
 
-    addon = get_addon_by_base_url(params["addon_url"])
-    has_stream_resource = addon_has_stream(params["addon_url"], params["catalog_type"], addon=addon)
+    addon = _get_catalog_addon_by_base_url(params["addon_url"], resolver=addon_resolver)
+    has_stream_resource = addon_has_stream(
+        params["addon_url"], params["catalog_type"], addon=addon, resolver=addon_resolver
+    )
     items = []
     for video in videos:
         try:
@@ -1325,8 +1411,8 @@ def _stremio_catalog_playback_data(stream, params):
     return playback_data, candidate
 
 
-def list_stremio_movie(params):
-    params = _resolve_addon_params(params)
+def list_stremio_movie(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     params["media_kind"] = "movie"
     response = catalogs_get_cache("list_stremio_movie", params)
     if not response:
@@ -1359,8 +1445,8 @@ def list_stremio_movie(params):
     end_of_directory()
 
 
-def list_stremio_tv(params):
-    params = _resolve_addon_params(params)
+def list_stremio_tv(params, addon_resolver=None):
+    params = _resolve_addon_params(params, addon_resolver=addon_resolver)
     response = catalogs_get_cache("list_stremio_tv", params)
     if not response:
         end_of_directory()

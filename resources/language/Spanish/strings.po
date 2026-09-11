@@ -4527,6 +4527,118 @@ msgctxt "#91001"
 msgid "Continue Watching cleared"
 msgstr "Continue Watching borrado"
 
+msgctxt "#91002"
+msgid "Nuvio: Account"
+msgstr "Nuvio: Cuenta"
+
+msgctxt "#91003"
+msgid "Enable"
+msgstr "Habilitar"
+
+msgctxt "#91005"
+msgid "Connect Nuvio with QR Code"
+msgstr "Conectar Nuvio con código QR"
+
+msgctxt "#91004"
+msgid "Push your Jacktook movie and TV episode watch progress to Nuvio when playback stops."
+msgstr "Envía el progreso de visualización de películas y episodios de TV de Jacktook a Nuvio al detener la reproducción."
+
+msgctxt "#91006"
+msgid "Scan the QR code with a signed-in Nuvio device, then select the profile that receives watch-progress updates."
+msgstr "Escanea el código QR con un dispositivo que haya iniciado sesión en Nuvio y, a continuación, selecciona el perfil que recibirá las actualizaciones de progreso."
+
+msgctxt "#91007"
+msgid "Sign Out of Nuvio"
+msgstr "Cerrar sesión en Nuvio"
+
+msgctxt "#91008"
+msgid "Remove the saved Nuvio session and selected profile from Jacktook."
+msgstr "Elimina de Jacktook la sesión guardada de Nuvio y el perfil seleccionado."
+
+msgctxt "#91009"
+msgid "Nuvio connection cancelled."
+msgstr "Conexión con Nuvio cancelada."
+
+msgctxt "#91010"
+msgid "Nuvio authorization expired. Start the QR connection again."
+msgstr "La autorización de Nuvio ha caducado. Inicia de nuevo la conexión con código QR."
+
+msgctxt "#91011"
+msgid "Nuvio authorization was already used or cancelled. Start the QR connection again."
+msgstr "La autorización de Nuvio ya se utilizó o se canceló. Inicia de nuevo la conexión con código QR."
+
+msgctxt "#91012"
+msgid "Nuvio could not start QR authorization. Please try again."
+msgstr "No se pudo iniciar la autorización con QR de Nuvio. Inténtalo de nuevo."
+
+msgctxt "#91013"
+msgid "Nuvio authorization check failed. Please try again."
+msgstr "No se pudo comprobar la autorización de Nuvio. Inténtalo de nuevo."
+
+msgctxt "#91014"
+msgid "Nuvio authorization exchange failed. Please try again."
+msgstr "No se pudo completar el intercambio de autorización de Nuvio. Inténtalo de nuevo."
+
+msgctxt "#91015"
+msgid "Unable to load Nuvio profiles. Please try again."
+msgstr "No se pudieron cargar los perfiles de Nuvio. Inténtalo de nuevo."
+
+msgctxt "#91016"
+msgid "Nuvio watch-progress sync connected."
+msgstr "Sincronización de progreso de Nuvio conectada."
+
+msgctxt "#91017"
+msgid "Choose Nuvio profile"
+msgstr "Elegir perfil de Nuvio"
+
+msgctxt "#91018"
+msgid "Nuvio: Addons Management"
+msgstr "Nuvio: Gestión de complementos"
+
+msgctxt "#91019"
+msgid "Select Nuvio Addons"
+msgstr "Seleccionar complementos de Nuvio"
+
+msgctxt "#91020"
+msgid "Select the enabled Nuvio addons to use for stream searches."
+msgstr "Selecciona los complementos de Nuvio habilitados para usarlos en las búsquedas de fuentes."
+
+msgctxt "#91021"
+msgid "No usable Nuvio addons are available."
+msgstr "No hay complementos de Nuvio utilizables disponibles."
+
+msgctxt "#91022"
+msgid "Nuvio addons could not be loaded. Your saved selection was not changed."
+msgstr "No se pudieron cargar los complementos de Nuvio. La selección guardada no se modificó."
+
+msgctxt "#91023"
+msgid "Nuvio: Watch Progress"
+msgstr "Nuvio: Progreso de reproducción"
+
+msgctxt "#91024"
+msgid "Nuvio: Watch History"
+msgstr "Nuvio: Historial de reproducción"
+
+msgctxt "#91025"
+msgid "No Nuvio watch progress available."
+msgstr "No hay progreso de reproducción de Nuvio disponible."
+
+msgctxt "#91026"
+msgid "No Nuvio watch history available."
+msgstr "No hay historial de reproducción de Nuvio disponible."
+
+msgctxt "#91027"
+msgid "Remove from Nuvio"
+msgstr "Eliminar de Nuvio"
+
+msgctxt "#91028"
+msgid "Removed from Nuvio Continue Watching"
+msgstr "Eliminado de Nuvio Continuar viendo"
+
+msgctxt "#91029"
+msgid "Could not remove Nuvio watch progress."
+msgstr "No se pudo eliminar el progreso de Nuvio."
+
 msgctxt "#91030"
 msgid "Acerca de"
 msgstr "Acerca de"
@@ -4534,3 +4646,103 @@ msgstr "Acerca de"
 msgctxt "#91031"
 msgid "Version"
 msgstr "Versión"
+
+msgctxt "#91032"
+msgid "My Nuvio Movies"
+msgstr "Mis películas de Nuvio"
+
+msgctxt "#91033"
+msgid "My Nuvio Shows"
+msgstr "Mis series de Nuvio"
+
+msgctxt "#91034"
+msgid "No Nuvio library items available."
+msgstr "No hay elementos de la biblioteca de Nuvio disponibles."
+
+msgctxt "#91035"
+msgid "Nuvio: Library Sync"
+msgstr "Nuvio: Sincronización de la biblioteca"
+
+msgctxt "#91036"
+msgid "Sync interval (minutes)"
+msgstr "Intervalo de sincronización (minutos)"
+
+msgctxt "#91037"
+msgid "How often Nuvio library changes are pulled, in minutes (minimum 1)."
+msgstr "Con qué frecuencia se obtienen los cambios de la biblioteca de Nuvio, en minutos (mínimo 1)."
+
+msgctxt "#91038"
+msgid "Nuvio"
+msgstr "Nuvio"
+
+msgctxt "#91039"
+msgid "Add to Nuvio Library"
+msgstr "Añadir a la biblioteca de Nuvio"
+
+msgctxt "#91040"
+msgid "Remove from Nuvio Library"
+msgstr "Eliminar de la biblioteca de Nuvio"
+
+msgctxt "#91041"
+msgid "Added to Nuvio Library"
+msgstr "Añadido a la biblioteca de Nuvio"
+
+msgctxt "#91042"
+msgid "Removed from Nuvio Library"
+msgstr "Eliminado de la biblioteca de Nuvio"
+
+msgctxt "#91043"
+msgid "Could not update the Nuvio library."
+msgstr "No se pudo actualizar la biblioteca de Nuvio."
+
+msgctxt "#91044"
+msgid "Mark as Watched on Nuvio"
+msgstr "Marcar como visto en Nuvio"
+
+msgctxt "#91045"
+msgid "Mark as Unwatched on Nuvio"
+msgstr "Marcar como no visto en Nuvio"
+
+msgctxt "#91046"
+msgid "Marked as watched on Nuvio."
+msgstr "Marcado como visto en Nuvio."
+
+msgctxt "#91047"
+msgid "Removed from Nuvio history."
+msgstr "Eliminado del historial de Nuvio."
+
+msgctxt "#91048"
+msgid "Could not update Nuvio history."
+msgstr "No se pudo actualizar el historial de Nuvio."
+
+msgctxt "#91049"
+msgid "Remove from Nuvio History?"
+msgstr "¿Eliminar del historial de Nuvio?"
+
+msgctxt "#91050"
+msgid "This removes the item from your Nuvio watch history. Continue?"
+msgstr "Esto elimina el elemento de tu historial de visualización de Nuvio. ¿Continuar?"
+
+msgctxt "#91051"
+msgid "Colecciones"
+msgstr "Colecciones"
+
+msgctxt "#91052"
+msgid "No hay colecciones de Nuvio disponibles."
+msgstr "No hay colecciones de Nuvio disponibles."
+
+msgctxt "#91053"
+msgid "Complemento no instalado"
+msgstr "Complemento no instalado"
+
+msgctxt "#91054"
+msgid "El complemento de este catálogo no está instalado en Nuvio."
+msgstr "El complemento de este catálogo no está instalado en Nuvio."
+
+msgctxt "#91055"
+msgid "Esta fuente de colección aún no es compatible."
+msgstr "Esta fuente de colección aún no es compatible."
+
+msgctxt "#91056"
+msgid "No se encontraron resultados."
+msgstr "No se encontraron resultados."

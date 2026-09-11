@@ -1,0 +1,1675 @@
+"""Unit tests for the Nuvio library read client, SQLite mirror store, and sync service.
+
+These tests mock ``requests`` only and never reach the network. Most store tests
+inject a real in-memory connection; the default-store tests exercise the real
+file-backed path under ``tmp_path`` instead. The offline view and its wiring are
+out of scope for these slices.
+"""
+
+import os
+import sqlite3
+import threading
+from time import monotonic
+from unittest.mock import MagicMock
+
+import pytest
+import requests
+
+from lib.api.nuvio import (
+    LIBRARY_RPC_CURSOR,
+    LIBRARY_RPC_DELETE_ITEMS,
+    LIBRARY_RPC_DELTA,
+    LIBRARY_RPC_PUSH_ITEMS,
+    LIBRARY_RPC_SNAPSHOT,
+    WATCHED_RPC_DELETE,
+    WATCHED_RPC_PUSH,
+    NuvioClient,
+)
+from lib.api.nuvio_store import (
+    SCHEMA_VERSION,
+    UI_READ_TIMEOUT_SECONDS,
+    NuvioStore,
+    invalidate_nuvio_library_cache,
+    nuvio_database_path,
+    setup_nuvio_database,
+)
+from lib.services.nuvio_sync import (
+    VIEW_SYNC_REQUEST_TIMEOUT_SECONDS,
+    NuvioSyncService,
+    sync_library_if_stale,
+)
+
+
+def _response(status_code, payload=None, json_error=None):
+    response = MagicMock(status_code=status_code)
+    if json_error is not None:
+        response.json.side_effect = json_error
+    else:
+        response.json.return_value = payload
+    return response
+
+
+def _client(profile_id=1):
+    return NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=profile_id,
+    )
+
+
+def _library_row(**overrides):
+    row = {
+        "content_id": "tmdb:550",
+        "content_type": "movie",
+        "name": "Fight Club",
+        "poster": "https://image.tmdb.org/t/p/w500/fightclub.jpg",
+        "poster_shape": "POSTER",
+        "background": "https://image.tmdb.org/t/p/original/fightclub.jpg",
+        "description": "An insomniac office worker.",
+        "release_info": "1999",
+        "imdb_rating": 8.8,
+        "genres": ["Drama", "Thriller"],
+        "addon_base_url": "https://catalog.example.com",
+        "added_at": 1711600000000,
+    }
+    row.update(overrides)
+    return row
+
+
+def _logged(log):
+    return " ".join(str(call) for call in log.call_args_list)
+
+
+# --- get_library_delta_cursor -------------------------------------------------
+
+
+def test_get_library_delta_cursor_accepts_zero(monkeypatch):
+    post = MagicMock(return_value=_response(200, 0))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).get_library_delta_cursor() == 0
+
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_CURSOR}")
+    assert post.call_args.kwargs["json"] == {"p_profile_id": 2}
+
+
+@pytest.mark.parametrize("payload", [True, False, "481", [], {"cursor": 1}, None, 481.0])
+def test_get_library_delta_cursor_rejects_non_integer(monkeypatch, payload):
+    log = MagicMock()
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, payload))
+    )
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+
+    assert _client().get_library_delta_cursor() is None
+    assert "invalid_cursor" in _logged(log)
+
+
+def test_get_library_delta_cursor_none_on_transport_http_and_invalid_json(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+    assert _client().get_library_delta_cursor() is None
+
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=_response(500)))
+    assert _client().get_library_delta_cursor() is None
+
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post",
+        MagicMock(return_value=_response(200, json_error=ValueError("bad"))),
+    )
+    assert _client().get_library_delta_cursor() is None
+
+    logged = _logged(log)
+    assert "transport" in logged
+    assert "http" in logged
+    assert "invalid_json" in logged
+    assert "private-token" not in logged
+
+
+def test_get_library_delta_cursor_skips_request_without_a_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").get_library_delta_cursor() is None
+    post.assert_not_called()
+
+
+def test_client_forwards_instance_request_timeout(monkeypatch):
+    post = MagicMock(return_value=_response(200, 481))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    client = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+    )
+
+    assert client.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] == 2.0
+
+    default_post = MagicMock(return_value=_response(200, 0))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", default_post)
+
+    assert _client().get_library_delta_cursor() == 0
+    assert default_post.call_args.kwargs["timeout"] == NuvioClient.REQUEST_TIMEOUT
+
+
+# --- get_library --------------------------------------------------------------
+
+
+def test_get_library_normalizes_rows_and_skips_malformed(monkeypatch):
+    payload = [
+        _library_row(),
+        "not-a-row",
+        _library_row(content_id="imdb:tt0137523"),
+        _library_row(content_type="person"),
+        _library_row(content_id="tmdb:1396", content_type="series", name="Breaking Bad"),
+    ]
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, payload))
+    )
+
+    rows = _client().get_library()
+
+    assert [row["tmdb_id"] for row in rows] == [550, 1396]
+    assert rows[0] == {
+        "content_type": "movie",
+        "content_id": "tmdb:550",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "poster": "https://image.tmdb.org/t/p/w500/fightclub.jpg",
+        "background": "https://image.tmdb.org/t/p/original/fightclub.jpg",
+        "description": "An insomniac office worker.",
+        "release_info": "1999",
+        "imdb_rating": 8.8,
+        "genres": ["Drama", "Thriller"],
+        "addon_base_url": "https://catalog.example.com",
+        "added_at_ms": 1711600000000,
+    }
+
+
+def test_get_library_empty_list_is_a_verified_empty(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, [])))
+
+    assert _client().get_library() == []
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        _response(500),
+        _response(200, json_error=ValueError("bad")),
+        _response(200, {"rows": []}),
+    ],
+)
+def test_get_library_returns_none_for_http_json_and_non_list(monkeypatch, response):
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client().get_library() is None
+
+
+def test_get_library_returns_none_on_transport_failure(monkeypatch):
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+
+    assert _client().get_library() is None
+    assert "transport" in _logged(log)
+    assert "private-token" not in _logged(log)
+
+
+def test_get_library_skips_request_without_a_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").get_library() is None
+    post.assert_not_called()
+
+
+def test_get_library_forwards_explicit_profile_and_pagination(monkeypatch):
+    post = MagicMock(return_value=_response(200, []))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=1).get_library(profile_id=2, limit=250, offset=500) == []
+
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_SNAPSHOT}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 2,
+        "p_limit": 250,
+        "p_offset": 500,
+    }
+
+
+# --- get_library_delta --------------------------------------------------------
+
+
+def test_get_library_delta_sorts_events_ascending(monkeypatch):
+    payload = [
+        _library_row(
+            event_id=12, operation="delete", content_id="tmdb:1396", content_type="series"
+        ),
+        _library_row(event_id=11, operation="upsert"),
+    ]
+    post = MagicMock(return_value=_response(200, payload))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    events = _client(profile_id=3).get_library_delta(since_event_id=10, limit=500)
+
+    assert [event["event_id"] for event in events] == [11, 12]
+    assert [event["operation"] for event in events] == ["upsert", "delete"]
+    assert events[0]["tmdb_id"] == 550
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_DELTA}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 3,
+        "p_since_event_id": 10,
+        "p_limit": 500,
+    }
+
+
+def test_get_library_delta_skips_malformed_rows(monkeypatch):
+    payload = [
+        "not-a-row",
+        _library_row(event_id=7, operation="upsert", content_id="imdb:tt0137523"),
+        _library_row(event_id=8, operation="delete", content_type="person"),
+        _library_row(event_id=9, operation="upsert"),
+    ]
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, payload))
+    )
+
+    events = _client().get_library_delta()
+
+    assert [event["event_id"] for event in events] == [9]
+
+
+def test_get_library_delta_drops_events_without_a_positive_event_id(monkeypatch):
+    payload = [
+        _library_row(event_id=0, operation="upsert"),
+        _library_row(operation="delete"),
+        _library_row(event_id=5, operation="upsert"),
+    ]
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, payload))
+    )
+
+    events = _client().get_library_delta()
+
+    assert [event["event_id"] for event in events] == [5]
+
+
+def test_get_library_delta_aborts_on_unknown_operation(monkeypatch):
+    payload = [
+        _library_row(event_id=11, operation="upsert"),
+        _library_row(event_id=12, operation="replace"),
+    ]
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, payload))
+    )
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+
+    assert _client().get_library_delta() is None
+    assert "invalid_operation" in _logged(log)
+
+
+def test_get_library_delta_empty_list_is_a_verified_empty(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=_response(200, [])))
+
+    assert _client().get_library_delta() == []
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        _response(500),
+        _response(200, json_error=ValueError("bad")),
+        _response(200, {"events": []}),
+    ],
+)
+def test_get_library_delta_returns_none_for_http_json_and_non_list(monkeypatch, response):
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client().get_library_delta() is None
+
+
+@pytest.mark.parametrize(
+    ("requested", "forwarded"),
+    [(0, 1), (5000, 1000), (None, 1000), (250, 250)],
+)
+def test_get_library_delta_clamps_page_limit(monkeypatch, requested, forwarded):
+    post = MagicMock(return_value=_response(200, []))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client().get_library_delta(limit=requested) == []
+    assert post.call_args.kwargs["json"]["p_limit"] == forwarded
+
+
+# --- NuvioStore ---------------------------------------------------------------
+
+
+def _memory_connection():
+    """Real in-memory connection; ``sqlite3.connect`` is mocked by conftest."""
+    return sqlite3.dbapi2.connect(":memory:")
+
+
+def _store():
+    connection = _memory_connection()
+    store = NuvioStore(connection=connection)
+    assert store.setup_nuvio_database() is True
+    return store
+
+
+def _event(
+    event_id,
+    operation="upsert",
+    content_type="movie",
+    content_id="tmdb:550",
+    **overrides,
+):
+    tmdb_id = int(content_id.split(":", 1)[1]) if content_id.startswith("tmdb:") else None
+    event = {
+        "content_type": content_type,
+        "content_id": content_id,
+        "tmdb_id": tmdb_id,
+        "title": "Fight Club",
+        "poster": "https://image.tmdb.org/t/p/w500/fightclub.jpg",
+        "background": "https://image.tmdb.org/t/p/original/fightclub.jpg",
+        "description": "An insomniac office worker.",
+        "release_info": "1999",
+        "imdb_rating": 8.8,
+        "genres": ["Drama", "Thriller"],
+        "addon_base_url": "https://catalog.example.com",
+        "added_at_ms": 1711600000000,
+        "event_id": event_id,
+        "operation": operation,
+    }
+    event.update(overrides)
+    return event
+
+
+def _client_item(content_id="tmdb:550", content_type="movie", **overrides):
+    item = _event(0, content_type=content_type, content_id=content_id)
+    item.pop("event_id", None)
+    item.pop("operation", None)
+    item.update(overrides)
+    return item
+
+
+def test_store_setup_is_idempotent_and_sets_schema_version():
+    connection = _memory_connection()
+    store = NuvioStore(connection=connection)
+
+    assert store.setup_nuvio_database() is True
+    assert store.setup_nuvio_database() is True
+
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+
+
+def test_module_setup_accepts_injected_connection():
+    connection = _memory_connection()
+
+    assert setup_nuvio_database(connection) is True
+    assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+
+    tables = {
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table'"
+        ).fetchall()
+    }
+    assert {"nuvio_library", "nuvio_library_meta", "nuvio_client_meta"} <= tables
+
+
+def test_default_store_creates_real_database_file_and_round_trips(monkeypatch, tmp_path):
+    monkeypatch.setattr(sqlite3, "connect", sqlite3.dbapi2.connect)
+    monkeypatch.setattr("lib.api.nuvio_store.databases_path", str(tmp_path))
+
+    assert setup_nuvio_database() is True
+
+    database_path = nuvio_database_path()
+    assert os.path.isfile(database_path)
+
+    probe = sqlite3.dbapi2.connect(database_path)
+    try:
+        assert probe.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+    finally:
+        probe.close()
+
+    store = NuvioStore()
+    try:
+        assert store.count(1) == 0
+        assert store.upsert_items(1, [_client_item(content_id="tmdb:550")]) is True
+        assert store.count(1) == 1
+        assert [item["tmdb_id"] for item in store.list_items(1, "movie")] == [550]
+
+        assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "movie"}]) is True
+        assert store.count(1) == 0
+        assert store.list_items(1, "movie") == []
+    finally:
+        store.close()
+
+
+def test_default_store_creates_missing_database_directory(monkeypatch, tmp_path):
+    monkeypatch.setattr(sqlite3, "connect", sqlite3.dbapi2.connect)
+    missing_directory = tmp_path / "missing" / "nested"
+    monkeypatch.setattr("lib.api.nuvio_store.databases_path", str(missing_directory))
+
+    assert not missing_directory.exists()
+
+    store = NuvioStore()
+    try:
+        assert missing_directory.is_dir()
+        assert setup_nuvio_database() is True
+    finally:
+        store.close()
+
+
+def test_store_defaults_meta_and_cursor_when_absent():
+    store = _store()
+
+    assert store.count(1) == 0
+    assert store.get_cursor_event_id(1) == 0
+    assert store.get_meta(1) == {
+        "profile_id": 1,
+        "cursor_event_id": 0,
+        "snapshot_done": 0,
+        "last_sync_ms": None,
+    }
+
+
+def test_store_re_sync_is_idempotent_and_refreshes_fields():
+    store = _store()
+
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+    assert store.apply_delta(1, [_event(event_id=6, title="Fight Club (Updated)")], 6) is True
+
+    items = store.list_items(1, "movie")
+    assert store.count(1) == 1
+    assert len(items) == 1
+    assert items[0]["title"] == "Fight Club (Updated)"
+    assert items[0]["last_event_id"] == 6
+    assert store.get_cursor_event_id(1) == 6
+
+    # Replaying an already-applied event changes nothing.
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+    assert store.count(1) == 1
+    assert store.get_cursor_event_id(1) == 6
+
+
+def test_store_applies_out_of_order_events_ascending_with_later_winning():
+    store = _store()
+    earlier = _event(event_id=11, title="First")
+    later = _event(event_id=12, title="Second")
+
+    assert store.apply_delta(1, [later, earlier], 12) is True
+
+    items = store.list_items(1, "movie")
+    assert len(items) == 1
+    assert items[0]["title"] == "Second"
+    assert items[0]["last_event_id"] == 12
+    assert store.get_cursor_event_id(1) == 12
+
+
+def test_store_delete_removes_by_item_key_and_advances_cursor():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+    assert store.count(1) == 1
+
+    assert store.apply_delta(1, [_event(event_id=6, operation="delete")], 6) is True
+
+    assert store.count(1) == 0
+    assert store.list_items(1, "movie") == []
+    assert store.get_cursor_event_id(1) == 6
+
+
+def test_store_rolls_back_rows_and_cursor_when_apply_fails():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+    assert store.count(1) == 1
+
+    # An out-of-range SQLite integer on the meta write fails after the delete
+    # has executed inside the transaction, forcing a genuine rollback.
+    oversized_cursor = 2**63
+    assert store.apply_delta(1, [_event(event_id=6, operation="delete")], oversized_cursor) is False
+
+    assert store.count(1) == 1
+    assert store.list_items(1, "movie")[0]["tmdb_id"] == 550
+    assert store.get_cursor_event_id(1) == 5
+
+
+def test_store_snapshot_writers_clear_and_finalize():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    assert store.begin_snapshot(1) is True
+    assert store.count(1) == 0
+    assert store.get_meta(1)["snapshot_done"] == 0
+
+    items = [
+        _client_item(content_id="tmdb:550", content_type="movie"),
+        _client_item(content_id="tmdb:1396", content_type="series", title="Breaking Bad"),
+    ]
+    assert store.write_snapshot_items(1, items) is True
+    assert store.count(1) == 2
+
+    assert store.finish_snapshot(1, 10) is True
+    meta = store.get_meta(1)
+    assert meta["snapshot_done"] == 1
+    assert meta["cursor_event_id"] == 10
+    assert meta["last_sync_ms"] is not None
+
+
+def test_store_scopes_rows_by_profile():
+    store = _store()
+
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+    assert (
+        store.apply_delta(
+            2,
+            [_event(event_id=6, content_id="tmdb:1396", title="Breaking Bad")],
+            6,
+        )
+        is True
+    )
+
+    assert store.count(1) == 1
+    assert store.count(2) == 1
+    assert [item["tmdb_id"] for item in store.list_items(1, "movie")] == [550]
+    assert [item["tmdb_id"] for item in store.list_items(2, "movie")] == [1396]
+    assert store.get_cursor_event_id(1) == 5
+    assert store.get_cursor_event_id(2) == 6
+
+
+def test_store_list_items_filters_by_content_type():
+    store = _store()
+    events = [
+        _event(event_id=5),
+        _event(
+            event_id=6,
+            content_id="tmdb:1396",
+            content_type="series",
+            title="Breaking Bad",
+        ),
+    ]
+    assert store.apply_delta(1, events, 6) is True
+
+    assert [item["tmdb_id"] for item in store.list_items(1, "movie")] == [550]
+    assert [item["tmdb_id"] for item in store.list_items(1, "series")] == [1396]
+    assert store.list_items(1, "person") == []
+
+
+def test_store_round_trips_genres_and_display_fields():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    item = store.list_items(1, "movie")[0]
+    assert item["genres"] == ["Drama", "Thriller"]
+    assert item["title"] == "Fight Club"
+    assert item["poster"] == "https://image.tmdb.org/t/p/w500/fightclub.jpg"
+    assert item["background"] == "https://image.tmdb.org/t/p/original/fightclub.jpg"
+    assert item["description"] == "An insomniac office worker."
+    assert item["release_info"] == "1999"
+    assert item["imdb_rating"] == 8.8
+    assert item["addon_base_url"] == "https://catalog.example.com"
+    assert item["added_at_ms"] == 1711600000000
+
+
+def test_invalidate_nuvio_library_cache_uses_store_prefix(monkeypatch):
+    delete_like = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio_store.cache", MagicMock(delete_like=delete_like))
+
+    invalidate_nuvio_library_cache()
+
+    delete_like.assert_called_once_with("nuvio.library.%")
+
+
+# --- NuvioSyncService ---------------------------------------------------------
+
+
+class _FakeApi:
+    """Scriptable stand-in for ``NuvioClient`` that records every call."""
+
+    def __init__(self, profile_id=1, cursor=0):
+        self.profile_id = profile_id
+        self.cursor = cursor
+        self.calls = []
+        self.snapshot_responses = []
+        self.delta_responses = []
+        # Optional per-page wire row counts. When set, they let a test make the
+        # server's raw page fuller than the rows that survive parsing.
+        self.snapshot_raw_counts = []
+        self.delta_raw_counts = []
+
+    def get_library_delta_cursor(self, profile_id=None):
+        self.calls.append("cursor")
+        return self.cursor
+
+    def get_library_page(self, profile_id=None, limit=500, offset=0):
+        self.calls.append(("snapshot", offset))
+        if self.snapshot_responses:
+            items = self.snapshot_responses.pop(0)
+            if items is None:
+                return None
+            raw_count = (
+                self.snapshot_raw_counts.pop(0)
+                if self.snapshot_raw_counts
+                else len(items)
+            )
+            return items, raw_count
+        return None
+
+    def get_library_delta_page(self, profile_id=None, since_event_id=0, limit=1000):
+        self.calls.append(("delta", since_event_id))
+        if self.delta_responses:
+            events = self.delta_responses.pop(0)
+            if events is None:
+                return None
+            raw_count = (
+                self.delta_raw_counts.pop(0) if self.delta_raw_counts else len(events)
+            )
+            return events, raw_count
+        return [], 0
+
+
+class _FakeMonitor:
+    def __init__(self, abort=False, wait_returns=False):
+        self._abort = abort
+        self.wait_returns = wait_returns
+        self.wait_calls = []
+
+    def abortRequested(self):
+        return self._abort
+
+    def waitForAbort(self, seconds):
+        self.wait_calls.append(seconds)
+        return self.wait_returns
+
+
+def _service(api=None, monitor=None, store=None):
+    return NuvioSyncService(
+        api=api or _FakeApi(),
+        monitor=monitor or _FakeMonitor(),
+        store=store or _store(),
+    )
+
+
+def test_service_run_returns_immediately_on_abort(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    api = _FakeApi()
+
+    _service(api=api, monitor=_FakeMonitor(abort=True)).run()
+
+    assert api.calls == []
+
+
+def test_service_run_returns_without_requests_when_disabled(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: False)
+    api = _FakeApi()
+
+    _service(api=api).run()
+
+    assert api.calls == []
+
+
+def test_service_run_skips_cycles_while_services_are_paused(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_property_no_fallback", lambda _prop: "true")
+    api = _FakeApi()
+    store = _store()
+
+    _service(api=api, store=store).run()
+
+    assert api.calls == []
+    assert store.get_cursor_event_id(1) == 0
+
+
+def test_service_bootstrap_orders_cursor_snapshot_then_delta():
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[_event(event_id=11)]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls[0] == "cursor"
+    assert api.calls[1] == ("snapshot", 0)
+    assert api.calls[2] == ("delta", 10)
+    meta = store.get_meta(1)
+    assert meta["snapshot_done"] == 1
+    assert meta["cursor_event_id"] == 11
+    assert store.count(1) == 1
+    assert store.list_items(1, "movie")[0]["tmdb_id"] == 550
+
+
+def test_service_bootstrap_pages_snapshot_until_a_short_page(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.SNAPSHOT_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1, cursor=5)
+    api.snapshot_responses = [
+        [_client_item(content_id="tmdb:550"), _client_item(content_id="tmdb:551")],
+        [_client_item(content_id="tmdb:552")],
+    ]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    snapshot_calls = [call for call in api.calls if call[0] == "snapshot"]
+    assert snapshot_calls == [("snapshot", 0), ("snapshot", 2)]
+    assert store.count(1) == 3
+
+
+def test_service_bootstrap_keeps_paging_when_a_full_raw_page_drops_rows(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.SNAPSHOT_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1, cursor=5)
+    # The first wire page is full (2 rows) but only one row is usable, so the
+    # parsed page looks short. Paging must follow the raw count, not the parsed
+    # count, or the second page is silently skipped.
+    api.snapshot_responses = [
+        [_client_item(content_id="tmdb:550")],
+        [_client_item(content_id="tmdb:552")],
+    ]
+    api.snapshot_raw_counts = [2, 1]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    snapshot_calls = [call for call in api.calls if call[0] == "snapshot"]
+    assert snapshot_calls == [("snapshot", 0), ("snapshot", 2)]
+    assert store.count(1) == 2
+
+
+def test_service_bootstrap_retries_when_cursor_unavailable():
+    api = _FakeApi(profile_id=1, cursor=None)
+    api.snapshot_responses = [[_client_item()]]
+    store = _store()
+    service = _service(api=api, store=store)
+
+    service._bootstrap_if_needed()
+
+    assert api.calls == ["cursor"]
+    assert store.get_meta(1)["snapshot_done"] == 0
+    assert store.count(1) == 0
+
+    # Next cycle: the cursor is available, so the snapshot proceeds.
+    api.cursor = 7
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+
+    assert store.get_meta(1)["snapshot_done"] == 1
+    assert store.count(1) == 1
+
+
+def test_service_bootstrap_aborts_when_a_snapshot_page_fails():
+    api = _FakeApi(profile_id=1, cursor=3)
+    api.snapshot_responses = [None]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    meta = store.get_meta(1)
+    assert meta["snapshot_done"] == 0
+    assert store.count(1) == 0
+
+
+def test_service_bootstrap_uses_delta_when_snapshot_already_done():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+    store = _store()
+    assert store.finish_snapshot(1, 5) is True
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls == [("delta", 5)]
+    assert store.get_cursor_event_id(1) == 11
+
+
+def test_service_delta_pages_until_a_short_page(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [
+        [_event(event_id=11), _event(event_id=12, content_id="tmdb:552")],
+        [_event(event_id=13)],
+    ]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    delta_calls = [call for call in api.calls if call[0] == "delta"]
+    assert delta_calls == [("delta", 0), ("delta", 12)]
+    assert store.get_cursor_event_id(1) == 13
+
+
+def test_service_delta_keeps_paging_when_a_full_raw_page_drops_events(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    # Same rule as the snapshot loop: a full wire page whose events partly fail
+    # to parse must still trigger the next page.
+    api.delta_responses = [
+        [_event(event_id=11)],
+        [_event(event_id=13)],
+    ]
+    api.delta_raw_counts = [2, 1]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    delta_calls = [call for call in api.calls if call[0] == "delta"]
+    assert delta_calls == [("delta", 0), ("delta", 11)]
+    assert store.get_cursor_event_id(1) == 13
+
+
+def test_service_delta_holds_cursor_when_a_full_page_has_no_parsable_events(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.DELTA_PAGE_LIMIT", 2)
+    api = _FakeApi(profile_id=1)
+    # A full wire page whose events all failed to parse cannot advance the
+    # cursor, so the loop must stop instead of re-fetching forever.
+    api.delta_responses = [[]]
+    api.delta_raw_counts = [2]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    assert api.calls == [("delta", 0)]
+    assert store.get_cursor_event_id(1) == 0
+
+
+def test_service_delta_applies_ascending_and_handles_delete():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=12, operation="delete"), _event(event_id=11)]]
+    store = _store()
+
+    _service(api=api, store=store)._delta_once()
+
+    assert store.count(1) == 0
+    assert store.list_items(1, "movie") == []
+    assert store.get_cursor_event_id(1) == 12
+
+
+def test_service_delta_invalidates_library_cache_on_change(monkeypatch):
+    invalidate = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.invalidate_nuvio_library_cache", invalidate)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._delta_once()
+
+    invalidate.assert_called_once_with()
+
+
+def test_service_delta_leaves_cache_untouched_without_changes(monkeypatch):
+    invalidate = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.invalidate_nuvio_library_cache", invalidate)
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[]]
+
+    _service(api=api)._delta_once()
+
+    invalidate.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("configured", "expected_minutes"),
+    [(30, 30), (0, 1), (-4, 1), ("bad", 15)],
+)
+def test_service_clamps_interval_to_at_least_one_minute(monkeypatch, configured, expected_minutes):
+    monkeypatch.setattr(
+        "lib.services.nuvio_sync.get_setting", lambda _setting_id, _default=None: configured
+    )
+
+    assert _service()._get_sync_interval_seconds() == expected_minutes * 60
+
+
+def test_service_run_bootstraps_then_returns_when_the_waiter_aborts(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_property_no_fallback", lambda _prop: "")
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _id, _default=None: 15)
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    store = _store()
+    monitor = _FakeMonitor(wait_returns=True)
+
+    _service(api=api, monitor=monitor, store=store).run()
+
+    assert store.get_meta(1)["snapshot_done"] == 1
+    assert store.count(1) == 1
+    assert monitor.wait_calls == [5]
+
+
+# --- Live session reload ------------------------------------------------------
+
+
+def test_client_reload_session_reads_live_settings(monkeypatch):
+    settings = {
+        "nuvio_access_token": "new-access",
+        "nuvio_refresh_token": "new-refresh",
+        "nuvio_expires_at": "1234",
+        "nuvio_profile_id": "3",
+    }
+    monkeypatch.setattr(
+        "lib.api.nuvio.get_setting", lambda key, default=None: settings.get(key, "")
+    )
+    client = _client(profile_id=1)
+
+    assert client.reload_session() == 3
+
+    assert client.profile_id == 3
+    assert client.access_token == "new-access"
+    assert client.refresh_token == "new-refresh"
+    assert client.expires_at == 1234.0
+
+
+def test_client_reload_session_clears_session_when_settings_empty(monkeypatch):
+    monkeypatch.setattr("lib.api.nuvio.get_setting", lambda key, default=None: "")
+    client = _client(profile_id=2)
+
+    assert client.reload_session() is None
+
+    assert client.profile_id is None
+    assert client.access_token == ""
+    assert client.refresh_token == ""
+    assert client.expires_at is None
+
+
+class _ReloadingFakeApi(_FakeApi):
+    """Fake whose ``profile_id`` follows a mutable "selected" setting."""
+
+    def __init__(self, profile_id=1, cursor=0):
+        super().__init__(profile_id=profile_id, cursor=cursor)
+        self.selected = profile_id
+
+    def reload_session(self):
+        self.calls.append("reload")
+        self.profile_id = self.selected
+        return self.profile_id
+
+
+def test_service_reloads_session_before_resolving_profile():
+    api = _ReloadingFakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    store = _store()
+
+    _service(api=api, store=store)._bootstrap_if_needed()
+
+    assert api.calls[0] == "reload"
+    assert api.calls[1] == "cursor"
+    assert store.get_meta(1)["snapshot_done"] == 1
+
+
+def test_service_follows_profile_switch_without_restart():
+    api = _ReloadingFakeApi(profile_id=1, cursor=4)
+    store = _store()
+    service = _service(api=api, store=store)
+
+    # First cycle mirrors profile 1.
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+    assert store.count(1) == 1
+
+    # The user switches profile; the same service instance must follow it.
+    api.selected = 2
+    api.snapshot_responses = [[_client_item(content_id="tmdb:680")]]
+    api.delta_responses = [[]]
+    service._bootstrap_if_needed()
+
+    assert store.get_meta(2)["snapshot_done"] == 1
+    assert store.count(2) == 1
+    assert store.get_meta(1)["snapshot_done"] == 1  # profile 1 left intact
+    assert store.count(1) == 1
+
+
+# --- Library writes: client ----------------------------------------------------
+
+
+def _api_item(content_id="tmdb:550", content_type="movie", **overrides):
+    item = {
+        "content_id": content_id,
+        "content_type": content_type,
+        "name": "Fight Club",
+        "poster": "https://image.tmdb.org/t/p/w500/fightclub.jpg",
+        "background": "https://image.tmdb.org/t/p/original/fightclub.jpg",
+        "description": "An insomniac office worker.",
+        "release_info": "1999",
+        "imdb_rating": 8.8,
+        "genres": ["Drama", "Thriller"],
+        "added_at": 1711600000000,
+    }
+    item.update(overrides)
+    return item
+
+
+def test_add_library_items_pushes_incremental_items_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _api_item()
+
+    assert (
+        _client(profile_id=2).add_library_items(items=[item], origin_client_id="origin-1") is True
+    )
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_PUSH_ITEMS}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 2,
+        "p_items": [item],
+        "p_origin_client_id": "origin-1",
+    }
+    post.return_value.json.assert_not_called()
+
+
+def test_add_library_items_strips_local_only_fields(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _api_item(tmdb_id=550, ids={"tmdb_id": 550}, mode="movies")
+
+    assert _client(profile_id=2).add_library_items(items=[item], origin_client_id="o") is True
+
+    pushed = post.call_args.kwargs["json"]["p_items"][0]
+    assert "tmdb_id" not in pushed
+    assert "ids" not in pushed
+    assert "mode" not in pushed
+    assert pushed["content_id"] == "tmdb:550"
+    assert pushed["content_type"] == "movie"
+
+
+def test_remove_library_items_pushes_incremental_keys_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    key = {"content_id": "tmdb:550", "content_type": "movie"}
+
+    assert (
+        _client(profile_id=2).remove_library_items(keys=[key], origin_client_id="origin-1") is True
+    )
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{LIBRARY_RPC_DELETE_ITEMS}")
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 2,
+        "p_keys": [key],
+        "p_origin_client_id": "origin-1",
+    }
+    post.return_value.json.assert_not_called()
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_add_and_remove_return_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    client = _client(profile_id=2)
+    assert client.add_library_items(items=[_api_item()], origin_client_id="origin-1") is False
+    assert (
+        client.remove_library_items(
+            keys=[{"content_id": "tmdb:550", "content_type": "movie"}], origin_client_id="origin-1"
+        )
+        is False
+    )
+
+    assert "library push write failed" in _logged(log)
+    assert "library delete write failed" in _logged(log)
+
+
+def test_add_and_remove_return_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    client = _client(profile_id=2)
+    assert client.add_library_items(items=[_api_item()]) is False
+    assert (
+        client.remove_library_items(keys=[{"content_id": "tmdb:550", "content_type": "movie"}])
+        is False
+    )
+
+    logged = _logged(log)
+    assert "transport" in logged
+    assert "private-token" not in logged
+
+
+@pytest.mark.parametrize(
+    "items",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [_api_item(content_type="person")],
+        [_api_item(content_id="")],
+        [_api_item(content_id=550)],
+        ["not-a-dict"],
+    ],
+)
+def test_add_library_items_rejects_invalid_input_without_request(monkeypatch, items):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).add_library_items(items=items) is False
+    post.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [{"content_id": "tmdb:550", "content_type": "person"}],
+        [{"content_id": "", "content_type": "movie"}],
+        [{"content_id": "tmdb:550"}],
+        ["not-a-dict"],
+    ],
+)
+def test_remove_library_items_rejects_invalid_input_without_request(monkeypatch, keys):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).remove_library_items(keys=keys) is False
+    post.assert_not_called()
+
+
+def test_add_library_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").add_library_items(items=[_api_item()]) is False
+    post.assert_not_called()
+
+
+def test_add_library_items_chunks_at_500(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [_api_item(content_id=f"tmdb:{index}") for index in range(501)]
+
+    assert _client(profile_id=2).add_library_items(items=items) is True
+
+    assert post.call_count == 2
+    first = post.call_args_list[0].kwargs["json"]["p_items"]
+    second = post.call_args_list[1].kwargs["json"]["p_items"]
+    assert [len(first), len(second)] == [500, 1]
+    assert first[0]["content_id"] == "tmdb:0"
+    assert second[0]["content_id"] == "tmdb:500"
+
+
+def test_remove_library_items_chunks_at_500(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": f"tmdb:{index}", "content_type": "movie"} for index in range(600)]
+
+    assert _client(profile_id=3).remove_library_items(keys=keys) is True
+
+    assert post.call_count == 2
+    first = post.call_args_list[0].kwargs["json"]["p_keys"]
+    second = post.call_args_list[1].kwargs["json"]["p_keys"]
+    assert [len(first), len(second)] == [500, 100]
+    assert all(
+        batch["p_profile_id"] == 3
+        for batch in [post.call_args_list[0].kwargs["json"], post.call_args_list[1].kwargs["json"]]
+    )
+
+
+def test_add_library_items_stops_on_second_chunk_failure(monkeypatch):
+    post = MagicMock(side_effect=[_response(204), _response(500)])
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [_api_item(content_id=f"tmdb:{index}") for index in range(501)]
+
+    assert _client(profile_id=2).add_library_items(items=items) is False
+    assert post.call_count == 2
+
+
+# --- Watch history writes: client ---------------------------------------------
+
+
+def _watched_item(content_id="tmdb:550", content_type="movie", **overrides):
+    item = {
+        "content_id": content_id,
+        "content_type": content_type,
+        "title": "Fight Club",
+        "watched_at": 1711600000000,
+    }
+    item.update(overrides)
+    return item
+
+
+def test_push_watched_items_sends_incremental_items_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    items = [
+        _watched_item(),
+        _watched_item(
+            content_id="tmdb:1396",
+            content_type="series",
+            title="Breaking Bad",
+            season=2,
+            episode=5,
+        ),
+    ]
+
+    assert _client(profile_id=2).push_watched_items(items=items) is True
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{WATCHED_RPC_PUSH}")
+    assert post.call_args.kwargs["json"] == {"p_profile_id": 2, "p_items": items}
+    post.return_value.json.assert_not_called()
+
+
+def test_push_watched_items_strips_local_only_fields(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _watched_item(tmdb_id=550, mode="movies", ids={"tmdb_id": 550})
+
+    assert _client(profile_id=2).push_watched_items(items=[item]) is True
+
+    pushed = post.call_args.kwargs["json"]["p_items"][0]
+    assert "tmdb_id" not in pushed
+    assert "mode" not in pushed
+    assert "ids" not in pushed
+    assert set(pushed) == {"content_id", "content_type", "title", "watched_at"}
+
+
+def test_push_watched_items_forwards_series_season_and_episode(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    item = _watched_item(content_id="tmdb:1396", content_type="series", season=2, episode=5)
+
+    assert _client(profile_id=1).push_watched_items(items=[item]) is True
+
+    assert post.call_args.kwargs["json"] == {
+        "p_profile_id": 1,
+        "p_items": [
+            {
+                "content_id": "tmdb:1396",
+                "content_type": "series",
+                "title": "Fight Club",
+                "watched_at": 1711600000000,
+                "season": 2,
+                "episode": 5,
+            }
+        ],
+    }
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_push_watched_items_returns_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client(profile_id=2).push_watched_items(items=[_watched_item()]) is False
+    assert "watched push write failed" in _logged(log)
+
+
+def test_push_watched_items_returns_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    assert _client(profile_id=2).push_watched_items(items=[_watched_item()]) is False
+    assert "transport" in _logged(log)
+    assert "private-token" not in _logged(log)
+
+
+@pytest.mark.parametrize(
+    "items",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [_watched_item(content_type="person")],
+        [_watched_item(content_id="")],
+        [_watched_item(content_id=550)],
+        [_watched_item(watched_at=None)],
+        [_watched_item(watched_at=0)],
+        ["not-a-dict"],
+        [_watched_item(content_type="series", season=1)],
+        [_watched_item(content_type="series", season=None, episode=1)],
+    ],
+)
+def test_push_watched_items_rejects_invalid_input_without_request(monkeypatch, items):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).push_watched_items(items=items) is False
+    post.assert_not_called()
+
+
+def test_push_watched_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").push_watched_items(items=[_watched_item()]) is False
+    post.assert_not_called()
+
+
+def test_delete_watched_items_sends_incremental_keys_on_no_content(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": "tmdb:550"}]
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is True
+
+    assert post.call_count == 1
+    assert post.call_args.args[0].endswith(f"/rest/v1/rpc/{WATCHED_RPC_DELETE}")
+    assert post.call_args.kwargs["json"] == {"p_profile_id": 2, "p_keys": keys}
+    post.return_value.json.assert_not_called()
+
+
+def test_delete_watched_items_forwards_episode_key(monkeypatch):
+    post = MagicMock(return_value=_response(204))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+    keys = [{"content_id": "tmdb:1396", "season": 2, "episode": 5}]
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is True
+
+    assert post.call_args.kwargs["json"]["p_keys"] == keys
+
+
+@pytest.mark.parametrize("response", [_response(400), _response(500)])
+def test_delete_watched_items_returns_false_on_http_failure(monkeypatch, response):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr("lib.api.nuvio.requests.post", MagicMock(return_value=response))
+
+    assert _client(profile_id=2).delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    assert "watched delete write failed" in _logged(log)
+
+
+def test_delete_watched_items_returns_false_on_transport_failure(monkeypatch):
+    log = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.kodilog", log)
+    monkeypatch.setattr(
+        "lib.api.nuvio.requests.post", MagicMock(side_effect=requests.Timeout("private-token"))
+    )
+
+    assert _client(profile_id=2).delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    assert "transport" in _logged(log)
+    assert "private-token" not in _logged(log)
+
+
+@pytest.mark.parametrize(
+    "keys",
+    [
+        [],
+        None,
+        "not-a-list",
+        [{}],
+        [{"content_id": ""}],
+        [{"content_id": 550}],
+        [{"content_id": "tmdb:1396", "season": 1}],
+        [{"content_id": "tmdb:1396", "episode": 1}],
+        [{"content_id": "tmdb:1396", "season": 1, "episode": 0}],
+        ["not-a-dict"],
+    ],
+)
+def test_delete_watched_items_rejects_invalid_input_without_request(monkeypatch, keys):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id=2).delete_watched_items(keys=keys) is False
+    post.assert_not_called()
+
+
+def test_delete_watched_items_returns_false_without_profile(monkeypatch):
+    post = MagicMock()
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    assert _client(profile_id="").delete_watched_items(keys=[{"content_id": "tmdb:550"}]) is False
+    post.assert_not_called()
+
+
+# --- Library writes: store -----------------------------------------------------
+
+
+def test_store_origin_client_id_is_stable_across_calls():
+    store = _store()
+
+    first = store.get_or_create_origin_client_id()
+    second = store.get_or_create_origin_client_id()
+
+    assert isinstance(first, str) and len(first) == 32
+    assert first == second
+
+
+def test_store_origin_client_id_is_shared_across_store_instances():
+    connection = _memory_connection()
+    first_store = NuvioStore(connection=connection)
+    assert first_store.setup_nuvio_database() is True
+    origin = first_store.get_or_create_origin_client_id()
+
+    second_store = NuvioStore(connection=connection)
+    assert second_store.get_or_create_origin_client_id() == origin
+
+
+def test_store_upsert_items_mutates_mirror_without_moving_cursor():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    added = _client_item(content_id="tmdb:680", content_type="movie", title="Pulp Fiction")
+    assert store.upsert_items(1, [added]) is True
+
+    assert store.count(1) == 2
+    assert store.get_cursor_event_id(1) == 5
+    new_item = next(item for item in store.list_items(1, "movie") if item["tmdb_id"] == 680)
+    assert new_item["title"] == "Pulp Fiction"
+    assert new_item["last_event_id"] == 5
+
+
+def test_store_upsert_items_refreshes_existing_row_without_cursor_move():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    updated = _client_item(content_id="tmdb:550", title="Fight Club (Updated)")
+    assert store.upsert_items(1, [updated]) is True
+
+    assert store.count(1) == 1
+    assert store.list_items(1, "movie")[0]["title"] == "Fight Club (Updated)"
+    assert store.get_cursor_event_id(1) == 5
+
+
+def test_store_delete_items_removes_row_without_moving_cursor():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "movie"}]) is True
+
+    assert store.count(1) == 0
+    assert store.list_items(1, "movie") == []
+    assert store.get_cursor_event_id(1) == 5
+
+
+def test_store_delete_items_returns_false_for_invalid_keys():
+    store = _store()
+    assert store.apply_delta(1, [_event(event_id=5)], 5) is True
+
+    assert store.delete_items(1, [{"content_id": "tmdb:550", "content_type": "person"}]) is False
+    assert store.delete_items(1, ["not-a-dict"]) is False
+    # ``None`` is treated as an empty batch by the existing normalizer.
+    assert store.delete_items(1, None) is True
+    assert store.count(1) == 1
+    assert store.get_cursor_event_id(1) == 5
+
+
+# --- View sync helper ---------------------------------------------------------
+
+
+def _reset_view_sync(monkeypatch):
+    monkeypatch.setattr("lib.services.nuvio_sync._LAST_VIEW_SYNC_AT", 0.0)
+    monkeypatch.setattr("lib.services.nuvio_sync._VIEW_SYNC_THREAD", None)
+
+
+def test_sync_library_if_stale_skips_and_builds_no_store_when_disabled(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: False)
+    store_cls = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+
+    assert sync_library_if_stale() is False
+    store_cls.assert_not_called()
+
+
+def test_sync_library_if_stale_skips_without_a_profile(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "")
+    store_cls = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+
+    assert sync_library_if_stale() is False
+    store_cls.assert_not_called()
+
+
+def test_sync_library_if_stale_runs_bounded_sync_and_closes_store(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    service_cls = MagicMock(return_value=service)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", service_cls)
+    store = MagicMock()
+    store_cls = MagicMock(return_value=store)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+    api = MagicMock()
+    api_cls = MagicMock(return_value=api)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", api_cls)
+
+    assert sync_library_if_stale() is True
+
+    store_cls.assert_called_once_with(timeout=UI_READ_TIMEOUT_SECONDS)
+    assert api_cls.call_args.kwargs["request_timeout"] == VIEW_SYNC_REQUEST_TIMEOUT_SECONDS
+    assert "deadline" in api_cls.call_args.kwargs
+    service_cls.assert_called_once_with(api=api, store=store)
+    assert service._bootstrap_if_needed.call_count == 1
+    assert "deadline" in service._bootstrap_if_needed.call_args.kwargs
+    store.close.assert_called_once_with()
+
+
+def test_sync_library_if_stale_debounces_back_to_back_calls(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+    store = MagicMock()
+    store_cls = MagicMock(return_value=store)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", store_cls)
+    api = MagicMock()
+    api_cls = MagicMock(return_value=api)
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", api_cls)
+
+    assert sync_library_if_stale() is True
+    assert sync_library_if_stale() is False
+
+    store_cls.assert_called_once_with(timeout=UI_READ_TIMEOUT_SECONDS)
+    assert api_cls.call_args.kwargs["request_timeout"] == VIEW_SYNC_REQUEST_TIMEOUT_SECONDS
+    assert "deadline" in api_cls.call_args.kwargs
+    assert service._bootstrap_if_needed.call_count == 1
+    assert store.close.call_count == 1
+
+
+def test_sync_library_if_stale_swallows_failure_and_closes_store(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    service = MagicMock()
+    service._bootstrap_if_needed.side_effect = RuntimeError("boom")
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+    store = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", MagicMock(return_value=store))
+    log = MagicMock()
+    monkeypatch.setattr("lib.services.nuvio_sync.kodilog", log)
+
+    # The worker swallows the failure, still closes the store, and reports an
+    # unsuccessful run so a failure is never mistaken for a completed sync.
+    assert sync_library_if_stale() is False
+
+    store.close.assert_called_once_with()
+    assert "view sync failed" in _logged(log)
+
+
+def test_sync_library_if_stale_returns_within_budget_when_sync_hangs(monkeypatch):
+    _reset_view_sync(monkeypatch)
+    monkeypatch.setattr("lib.services.nuvio_sync.is_nuvio_progress_sync_enabled", lambda: True)
+    monkeypatch.setattr("lib.services.nuvio_sync.get_setting", lambda _key, _default=None: "2")
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioStore", MagicMock(return_value=MagicMock()))
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioClient", MagicMock())
+    release = threading.Event()
+
+    def _hang(deadline=None):
+        release.wait(5.0)
+
+    service = MagicMock()
+    service._bootstrap_if_needed.side_effect = _hang
+    monkeypatch.setattr("lib.services.nuvio_sync.NuvioSyncService", MagicMock(return_value=service))
+
+    started = monotonic()
+    try:
+        result = sync_library_if_stale(max_seconds=0.2)
+    finally:
+        release.set()
+
+    assert result is False
+    assert monotonic() - started < 1.0
+
+
+def test_client_clamps_request_timeout_to_deadline(monkeypatch):
+    post = MagicMock(return_value=_response(200, 481))
+    monkeypatch.setattr("lib.api.nuvio.requests.post", post)
+
+    expired = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+        deadline=monotonic() - 1,
+    )
+    assert expired.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] <= 0.01
+
+    future = NuvioClient(
+        access_token="access",
+        refresh_token="refresh",
+        expires_at="",
+        profile_id=1,
+        request_timeout=2.0,
+        deadline=monotonic() + 100,
+    )
+    assert future.get_library_delta_cursor() == 481
+    assert post.call_args.kwargs["timeout"] == 2.0
+
+
+def test_service_bootstrap_honors_an_elapsed_deadline():
+    api = _FakeApi(profile_id=1, cursor=10)
+    api.snapshot_responses = [[_client_item()]]
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._bootstrap_if_needed(deadline=monotonic() - 1)
+
+    assert api.calls == []
+
+
+def test_service_delta_honors_an_elapsed_deadline():
+    api = _FakeApi(profile_id=1)
+    api.delta_responses = [[_event(event_id=11)]]
+
+    _service(api=api)._delta_once(deadline=monotonic() - 1)
+
+    assert api.calls == []

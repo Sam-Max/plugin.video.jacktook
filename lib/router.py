@@ -164,6 +164,28 @@ def _is_simkl_action(action):
     )
 
 
+def _is_nuvio_action(action):
+    return action in (
+        "nuvio_auth",
+        "nuvio_logout",
+        "nuvio_toggle_addons",
+        "nuvio_menu",
+        "nuvio_continue_watching",
+        "nuvio_history",
+        "nuvio_library",
+        "nuvio_remove_progress",
+        "nuvio_resume",
+        "nuvio_add_to_library",
+        "nuvio_remove_from_library",
+        "nuvio_update_history",
+        "nuvio_collections",
+        "nuvio_collection_folders",
+        "nuvio_collection_sources",
+        "nuvio_collection_discover",
+        "nuvio_collection_source_unavailable",
+    )
+
+
 def _is_debrid_action(action):
     return action in _DEBRID_ACTIONS
 
@@ -306,16 +328,18 @@ def _route_stremio(action, params):
 
         torrentio_toggle_providers(params)
     else:
-        from lib.clients.stremio.catalog_menus import (
-            clear_stremio_search_history,
+        from lib.clients.catalog_hub import (
             list_catalog,
             list_catalog_genres,
+            search_catalog,
+        )
+        from lib.clients.stremio.catalog_menus import (
+            clear_stremio_search_history,
             list_stremio_episodes,
             list_stremio_movie,
             list_stremio_seasons,
             list_stremio_tv,
             list_stremio_tv_streams,
-            search_catalog,
         )
 
         actions = {
@@ -572,6 +596,48 @@ def _route_simkl(action, params):
         "simkl_discard_playback": simkl_discard_playback,
     }
     actions[action](params)
+
+
+def _route_nuvio(action, params):
+    from lib.navigation import (
+        nuvio_add_to_library,
+        nuvio_auth,
+        nuvio_collection_discover,
+        nuvio_collection_folders,
+        nuvio_collection_source_unavailable,
+        nuvio_collection_sources,
+        nuvio_collections,
+        nuvio_continue_watching,
+        nuvio_history,
+        nuvio_library,
+        nuvio_logout,
+        nuvio_menu,
+        nuvio_remove_from_library,
+        nuvio_remove_progress,
+        nuvio_resume,
+        nuvio_toggle_addons,
+        nuvio_update_history,
+    )
+
+    {
+        "nuvio_auth": nuvio_auth,
+        "nuvio_logout": nuvio_logout,
+        "nuvio_toggle_addons": nuvio_toggle_addons,
+        "nuvio_menu": nuvio_menu,
+        "nuvio_continue_watching": nuvio_continue_watching,
+        "nuvio_history": nuvio_history,
+        "nuvio_library": nuvio_library,
+        "nuvio_remove_progress": nuvio_remove_progress,
+        "nuvio_resume": nuvio_resume,
+        "nuvio_add_to_library": nuvio_add_to_library,
+        "nuvio_remove_from_library": nuvio_remove_from_library,
+        "nuvio_update_history": nuvio_update_history,
+        "nuvio_collections": nuvio_collections,
+        "nuvio_collection_folders": nuvio_collection_folders,
+        "nuvio_collection_sources": nuvio_collection_sources,
+        "nuvio_collection_discover": nuvio_collection_discover,
+        "nuvio_collection_source_unavailable": nuvio_collection_source_unavailable,
+    }[action](params)
 
 
 def _route_torrserver(action, params):
@@ -928,6 +994,7 @@ ROUTE_GROUPS = (
     (_is_tmdb_action, _route_tmdb),
     (_is_trakt_action, _route_trakt),
     (_is_simkl_action, _route_simkl),
+    (_is_nuvio_action, _route_nuvio),
     (_is_debrid_action, _route_debrid),
     (_is_telegram_action, _route_telegram),
     (_is_torrserver_action, _route_torrserver),

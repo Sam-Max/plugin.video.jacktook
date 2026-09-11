@@ -10,6 +10,7 @@ from xbmc import getCondVisibility as get_visibility
 from xbmcgui import Dialog, ListItem
 from xbmcplugin import setResolvedUrl
 
+from lib.api.nuvio import NuvioClient, is_nuvio_progress_sync_enabled
 from lib.api.simkl import SimklClient, is_simkl_scrobbling_enabled
 from lib.api.trakt.trakt import TraktAPI, TraktLists, TraktScrobble
 from lib.api.trakt.trakt_utils import is_trakt_auth
@@ -535,6 +536,7 @@ class JacktookPLayer(xbmc.Player):
             ):
                 self._apply_simkl_resume()
                 self._apply_trakt_resume()
+                self._apply_nuvio_resume()
                 if self.on_started:
                     self.on_started()
         except Exception as e:
@@ -976,6 +978,7 @@ class JacktookPLayer(xbmc.Player):
     def handle_playback_stop(self):
         kodilog("[PLAYER] handle_playback_stop entered")
         self._sync_yamtrack_watched()
+        self._queue_nuvio_progress_sync()
         if self._is_trakt_scrobble_enabled():
             try:
                 TraktAPI().scrobble.trakt_stop_scrobble(self.data)
@@ -995,6 +998,45 @@ class JacktookPLayer(xbmc.Player):
         close_busy_dialog()
         clear_property("jacktook_next_dialog_action")
         kodilog("[PLAYER] handle_playback_stop completed")
+
+    def _queue_nuvio_progress_sync(self):
+        try:
+            if not is_nuvio_progress_sync_enabled():
+                return
+            data = dict(self.data)
+            data["ids"] = dict(self.data.get("ids") or {})
+            data["tv_data"] = dict(self.data.get("tv_data") or {})
+            thread = Thread(target=self._send_nuvio_progress, args=(data,))
+            thread.daemon = True
+            thread.start()
+        except Exception as error:
+            kodilog(
+                f"[NUVIO] playback sync queue failed; continuing playback ({type(error).__name__})"
+            )
+
+    @staticmethod
+    def _send_nuvio_progress(data):
+        try:
+            NuvioClient().push_watch_progress(data)
+        except Exception as error:
+            kodilog(f"[NUVIO] playback sync failed; continuing playback ({type(error).__name__})")
+
+    def _apply_nuvio_resume(self):
+        if getattr(self, "_nuvio_resume_applied", False):
+            return
+        try:
+            progress = float(self.data.get("nuvio_resume_percent"))
+            total_time = float(self.getTotalTime())
+        except (TypeError, ValueError):
+            return
+        if progress <= 0 or progress >= 95 or total_time <= 0:
+            return
+        try:
+            self.seekTime(total_time * progress / 100)
+            self.playback_started_properly = True
+            self._nuvio_resume_applied = True
+        except Exception as error:
+            kodilog(f"[NUVIO] resume seek failed; continuing playback ({type(error).__name__})")
 
     def _apply_simkl_resume(self):
         if getattr(self, "_simkl_resume_applied", False):
