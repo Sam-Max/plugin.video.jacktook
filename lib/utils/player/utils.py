@@ -281,6 +281,7 @@ def get_elementum_url(
                 f"&show={quote(str(tmdb_id))}"
                 f"&season={quote(str(season))}"
                 f"&episode={quote(str(episode))}"
+                "&skip_file_dialog=true"
             )
     elif mode in ("movie", "movies"):
         file_match = _build_elementum_movie_file_match((data or {}).get("title"))
