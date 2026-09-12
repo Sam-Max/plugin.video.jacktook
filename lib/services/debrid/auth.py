@@ -1,5 +1,6 @@
 import contextlib
 from time import time
+from typing import Any, Dict
 
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import ADDON_PATH
@@ -17,16 +18,43 @@ from lib.utils.kodi.utils import (
 )
 
 
+def parse_positive_int(value: Any, default: int) -> int:
+    """Parses a positive integer from a device response, falling back on bad input."""
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError):
+        return default
+    return parsed if parsed > 0 else default
+
+
+def resolve_device_verification_url(response: Dict[str, Any]) -> str:
+    """Returns the best verification URL for a Real-Debrid device flow.
+
+    The documented device/code response carries ``verification_url``. Some
+    deployments also return ``direct_verification_url``, which pre-fills the
+    user code, so prefer it when present and fall back otherwise.
+    """
+    direct = response.get("direct_verification_url")
+    if isinstance(direct, str) and direct:
+        return direct
+    fallback = response.get("verification_url")
+    return fallback if isinstance(fallback, str) else ""
+
+
 def run_realdebrid_auth(client):
     response = client.get_device_code()
     if not response:
         return
 
-    sleep_interval = int(response["interval"])
-    expires_in = int(response["expires_in"])
-    device_code = response["device_code"]
-    user_code = response["user_code"]
-    auth_url = response["direct_verification_url"]
+    sleep_interval = parse_positive_int(response.get("interval"), 5)
+    expires_in = parse_positive_int(response.get("expires_in"), 1800)
+    device_code = response.get("device_code")
+    user_code = response.get("user_code")
+    if not device_code or not user_code:
+        return
+    auth_url = resolve_device_verification_url(response)
+    if not auth_url:
+        return
 
     qr_code = make_qrcode(auth_url)
     copy2clip(auth_url)

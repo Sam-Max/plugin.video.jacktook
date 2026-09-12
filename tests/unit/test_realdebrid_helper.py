@@ -216,3 +216,91 @@ def test_get_info_without_fractional_seconds_renders():
     body = mock_dialog_text.call_args[0][1]
     assert "2023-01-01 00:00:00" in body
     assert "Unknown" not in body
+
+
+def test_get_pack_link_rejects_non_numeric_file_position():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.client.get_torrent_info.return_value = {"links": ["link-a", "link-b"]}
+
+    data = {"pack_info": {"file_position": "", "torrent_id": "torrent-1"}}
+
+    with pytest.raises(ProviderException, match="Could not map the selected pack file"):
+        helper.get_pack_link(data)
+
+
+def test_get_pack_link_rejects_out_of_range_file_position():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.client.get_torrent_info.return_value = {"links": ["link-a"]}
+
+    data = {"pack_info": {"file_position": 7, "torrent_id": "torrent-1"}}
+
+    with pytest.raises(ProviderException, match="no longer available"):
+        helper.get_pack_link(data)
+
+
+def test_get_pack_link_returns_url_for_valid_file_position():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.client.get_torrent_info.return_value = {"links": ["link-a", "link-b"]}
+    helper.client.create_download_link.return_value = {"download": "https://download/b"}
+
+    data = {"pack_info": {"file_position": 1, "torrent_id": "torrent-1"}}
+    result = helper.get_pack_link(data)
+
+    assert result is not None
+    assert result["url"] == "https://download/b"
+    helper.client.create_download_link.assert_called_once_with("link-b")
+
+
+def test_get_link_unselected_episode_raises_provider_exception():
+    """A matched episode that Real-Debrid has not selected must not raise ValueError."""
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.add_magnet = MagicMock(return_value="torrent-id")
+    helper.client.get_torrent_info.return_value = {
+        "links": ["link-1", "link-2"],
+        "files": [
+            {"path": "/Show/S01E03.mkv", "selected": 0, "bytes": 100},
+            {"path": "/Show/S01E04.mkv", "selected": 0, "bytes": 200},
+        ],
+    }
+
+    with pytest.raises(ProviderException, match="File is not cached"):
+        helper.get_link("info-hash", {"tv_data": {"season": 1, "episode": 3}})
+
+
+def test_get_pack_info_tolerates_path_without_slash():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.add_magnet = MagicMock(return_value="torrent-id")
+    helper.client.get_torrent_info.return_value = {
+        "id": "torrent-id",
+        "files": [
+            {"id": 1, "path": "/Show/S01E01.mkv", "selected": 1},
+            {"id": 2, "path": "FlatFile.mkv", "selected": 1},
+        ],
+    }
+
+    with patch("lib.clients.debrid.realdebrid.get_cached", return_value=None), patch(
+        "lib.clients.debrid.realdebrid.set_cached"
+    ):
+        info = helper.get_pack_info("info-hash")
+
+    assert info is not None
+    assert info["files"] == [(1, "Show/S01E01.mkv"), (2, "FlatFile.mkv")]
+
+
+def test_get_pack_info_skips_single_file_torrents():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.add_magnet = MagicMock(return_value="torrent-id")
+    helper.client.get_torrent_info.return_value = {
+        "id": "torrent-id",
+        "files": [{"id": 1, "path": "/Only.mkv", "selected": 1}],
+    }
+
+    with patch("lib.clients.debrid.realdebrid.get_cached", return_value=None):
+        with pytest.raises(ProviderException, match="No files on the current source"):
+            helper.get_pack_info("info-hash")

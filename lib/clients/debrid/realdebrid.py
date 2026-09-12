@@ -189,7 +189,7 @@ class RealDebridHelper:
 
             match_file = next((f for f in possible_matches if f.get("selected") == 1), None)
             if not match_file:
-                raise ValueError("File is not cached")
+                raise ProviderException("File is not cached")
 
             ensure_direct_playable_file_for_provider(get_file_name(match_file), "Real-Debrid")
 
@@ -227,7 +227,21 @@ class RealDebridHelper:
         torrent_info = self.client.get_torrent_info(torrent_id)
         links = torrent_info.get("links", [])
 
-        response = self.client.create_download_link(links[file_position])
+        # The cached pack index can go stale when file selection changes, so
+        # validate it instead of trusting it as a list subscript.
+        try:
+            position = int(file_position)
+        except (TypeError, ValueError) as exc:
+            raise ProviderException(
+                "Could not map the selected pack file to a Real-Debrid link."
+            ) from exc
+
+        if not isinstance(links, list) or not 0 <= position < len(links):
+            raise ProviderException(
+                "The selected pack file is no longer available in this torrent."
+            )
+
+        response = self.client.create_download_link(links[position])
         url = response.get("download")
         if not url:
             raise ProviderException("Failed to retrieve download link")
@@ -251,7 +265,8 @@ class RealDebridHelper:
             raise ProviderException("No files on the current source")
 
         torr_items = [item for item in torrent_files if item["selected"] == 1]
-        files = [(item["id"], item["path"].split("/", 1)[1]) for item in torr_items]
+        # The documented path starts with "/"; stay safe when it does not.
+        files = [(item["id"], item["path"].split("/", 1)[-1]) for item in torr_items]
 
         info = {"torrent_id": torr_info["id"], "files": files}
         set_cached(info, info_hash)
