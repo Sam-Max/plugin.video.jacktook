@@ -304,3 +304,79 @@ def test_get_pack_info_skips_single_file_torrents():
     with patch("lib.clients.debrid.realdebrid.get_cached", return_value=None):
         with pytest.raises(ProviderException, match="No files on the current source"):
             helper.get_pack_info("info-hash")
+
+
+def test_get_link_single_link_validates_the_selected_file_not_the_first_file():
+    """links maps onto selected files, so files[0] may be an unselected sidecar."""
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.add_magnet = MagicMock(return_value="torrent-id")
+    helper.client.get_torrent_info.return_value = {
+        "links": ["link-movie"],
+        "files": [
+            {"path": "/Movie.nfo", "selected": 0, "bytes": 1},
+            {"path": "/Movie.2025.1080p.mkv", "selected": 1, "bytes": 1000},
+        ],
+    }
+    helper.client.create_download_link.return_value = {"download": "https://download/movie"}
+
+    result = helper.get_link("info-hash", {})
+
+    assert result is not None
+    assert result["url"] == "https://download/movie"
+
+
+def test_check_cached_walks_every_page():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.CACHED_TORRENT_PAGE_SIZE = 2
+    helper.client = MagicMock()
+    helper.client.get_user_torrent_list.side_effect = [
+        [
+            {"hash": "in-flight", "status": "downloading"},
+            {"hash": "queued", "status": "queued"},
+        ],
+        [{"hash": "beyond-first-page", "status": "downloaded"}],
+    ]
+
+    cached_results = []
+    uncached_results = []
+    results = [TorrentStream(infoHash="beyond-first-page")]
+
+    with patch("lib.clients.debrid.realdebrid.get_setting", return_value=False):
+        helper.check_cached(
+            results,
+            cached_results,
+            uncached_results,
+            1,
+            MagicMock(),
+            threading.Lock(),
+        )
+
+    assert helper.client.get_user_torrent_list.call_count == 2
+    assert [res.infoHash for res in cached_results] == ["beyond-first-page"]
+
+
+def test_check_cached_stops_after_a_short_page():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.CACHED_TORRENT_PAGE_SIZE = 2
+    helper.client = MagicMock()
+    helper.client.get_user_torrent_list.return_value = [
+        {"hash": "only-one", "status": "downloaded"}
+    ]
+
+    cached_results = []
+    uncached_results = []
+    results = [TorrentStream(infoHash="only-one")]
+
+    with patch("lib.clients.debrid.realdebrid.get_setting", return_value=False):
+        helper.check_cached(
+            results,
+            cached_results,
+            uncached_results,
+            1,
+            MagicMock(),
+            threading.Lock(),
+        )
+
+    assert helper.client.get_user_torrent_list.call_count == 1
+    assert [res.infoHash for res in cached_results] == ["only-one"]

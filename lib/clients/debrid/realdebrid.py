@@ -33,8 +33,27 @@ class LinkNotFoundError(Exception):
 
 
 class RealDebridHelper:
+    # GET /torrents returns 100 entries by default and 5000 at most, so a single
+    # call silently truncates larger accounts.
+    CACHED_TORRENT_PAGE_SIZE: int = 1000
+    CACHED_TORRENT_MAX_PAGES: int = 10
+
     def __init__(self) -> None:
         self.client = RealDebrid(token=str(get_setting("real_debrid_token", "")))
+
+    def _iter_user_torrents(self) -> List[Dict[str, Any]]:
+        """Collects the user's torrents across pages, stopping after the last one."""
+        collected: List[Dict[str, Any]] = []
+        for page in range(1, self.CACHED_TORRENT_MAX_PAGES + 1):
+            batch = self.client.get_user_torrent_list(
+                page=page, limit=self.CACHED_TORRENT_PAGE_SIZE
+            )
+            if not isinstance(batch, list) or not batch:
+                break
+            collected.extend(item for item in batch if isinstance(item, dict))
+            if len(batch) < self.CACHED_TORRENT_PAGE_SIZE:
+                break
+        return collected
 
     def check_cached(
         self,
@@ -45,14 +64,14 @@ class RealDebridHelper:
         dialog: object,
         lock: threading.Lock,
     ) -> None:
-        # Checks if torrents are cached in Real-Debrid.
-        torr_available = self.client.get_user_torrent_list()
+        # Checks if torrents are cached in Real-Debrid. GET /torrents is paginated,
+        # so walk every page instead of trusting the first one only.
         # Only finished torrents are instant-available; a torrent still in
         # magnet_conversion/queued/downloading/error/... is not cached.
         torr_available_hashes = [
-            t.get("hash")
-            for t in torr_available
-            if isinstance(t, dict) and t.get("status") == "downloaded" and t.get("hash")
+            t["hash"]
+            for t in self._iter_user_torrents()
+            if t.get("status") == "downloaded" and t.get("hash")
         ]
 
         for res in copy.deepcopy(results):
@@ -171,8 +190,11 @@ class RealDebridHelper:
             return url
 
         # --- Single-file torrent ---
+        # `links` maps positionally onto the files Real-Debrid selected, so a single
+        # link means one selected file - not that files[0] is that file.
         if len(links) == 1:
-            single_file = files[0] if files else {}
+            selected = [f for f in files if f.get("selected") == 1]
+            single_file = selected[0] if selected else {}
             ensure_direct_playable_file_for_provider(get_file_name(single_file), "Real-Debrid")
             data["url"] = create_download_for_link(links[0])
             return data
