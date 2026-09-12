@@ -242,8 +242,15 @@ class RealDebrid(DebridClient):
             for item in payload:
                 yield from self._iter_host_candidates(item)
 
-    def get_user_torrent_list(self):
-        return self._make_request("GET", f"{self.BASE_URL}/torrents")
+    def get_user_torrent_list(self, filter=None, page=None, limit=None):
+        params = {}
+        if filter is not None:
+            params["filter"] = filter
+        if page is not None:
+            params["page"] = page
+        if limit is not None:
+            params["limit"] = limit
+        return self._make_request("GET", f"{self.BASE_URL}/torrents", params=params)
 
     def get_user_downloads_list(self, page=1):
         return self._make_request("GET", f"{self.BASE_URL}/downloads", params={"page": page})

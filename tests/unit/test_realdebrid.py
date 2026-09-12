@@ -45,3 +45,27 @@ def test_realdebrid_api(rd_client):
     torrents = rd_client.get_user_torrent_list()
     assert len(torrents) == 1
     assert torrents[0]["status"] == "downloaded"
+
+
+def test_get_user_torrent_list_passes_filter_param(rd_client):
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = JSON_DATA["torrents"]
+    rd_client.session.request.return_value = mock_response
+
+    rd_client.get_user_torrent_list(filter="active")
+
+    _, request_kwargs = rd_client.session.request.call_args
+    assert request_kwargs["params"] == {"filter": "active"}
+
+
+def test_get_user_torrent_list_without_filter_omits_param(rd_client):
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = JSON_DATA["torrents"]
+    rd_client.session.request.return_value = mock_response
+
+    rd_client.get_user_torrent_list()
+
+    _, request_kwargs = rd_client.session.request.call_args
+    assert "filter" not in request_kwargs["params"]

@@ -1,8 +1,7 @@
 import copy
 import threading
-import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, cast
 
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
@@ -48,8 +47,12 @@ class RealDebridHelper:
     ) -> None:
         # Checks if torrents are cached in Real-Debrid.
         torr_available = self.client.get_user_torrent_list()
+        # Only finished torrents are instant-available; a torrent still in
+        # magnet_conversion/queued/downloading/error/... is not cached.
         torr_available_hashes = [
-            t.get("hash") for t in torr_available if isinstance(t, dict) and t.get("hash")
+            t.get("hash")
+            for t in torr_available
+            if isinstance(t, dict) and t.get("status") == "downloaded" and t.get("hash")
         ]
 
         for res in copy.deepcopy(results):
@@ -259,17 +262,30 @@ class RealDebridHelper:
         user = self.client.get_user()
         expiration = user["expiration"]
 
-        try:
-            expires = datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")
-        except ValueError:
-            expires = datetime(*(time.strptime(expiration, "%Y-%m-%dT%H:%M:%S.%fZ")[0:6]))
+        # Real-Debrid may return the expiration with or without fractional
+        # seconds; try both before degrading gracefully.
+        expires = None
+        for date_format in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                expires = datetime.strptime(expiration, date_format)
+                break
+            except ValueError:
+                continue
 
-        days_remaining = (expires - datetime.today()).days
+        if expires is not None:
+            # Both operands are naive UTC (expiration carries a trailing Z).
+            days_remaining: Any = (expires - datetime.utcnow()).days
+            expires_display: Any = expires
+        else:
+            kodilog(f"RealDebridHelper.get_info: could not parse expiration {expiration!r}")
+            days_remaining = "Unknown"
+            expires_display = expiration
+
         body = [
             f"[B]Account:[/B] {user['email']}",
             f"[B]Username:[/B] {user['username']}",
             f"[B]Status:[/B] {user['type'].capitalize()}",
-            f"[B]Expires:[/B] {expires}",
+            f"[B]Expires:[/B] {expires_display}",
             f"[B]Days Remaining:[/B] {days_remaining}",
             f"[B]Fidelity Points:[/B] {user['points']}",
         ]
@@ -279,18 +295,58 @@ class RealDebridHelper:
         """Ensures Real-Debrid does not exceed active torrent limit."""
         active_count = self.client.get_torrent_active_count()
 
-        if active_count.get("nb", 0) >= active_count.get("limit", 0):
-            hashes = active_count.get("list", [])
-            if hashes:
-                torrents = self.client.get_user_torrent_list()
-                torrent_info = next(
-                    (
-                        item
-                        for item in torrents
-                        if isinstance(item, dict) and item.get("hash", "") == hashes[0]
-                    ),
-                    None,
-                )
+        if not isinstance(active_count, dict):
+            kodilog("RealDebridHelper.check_max_active_count: malformed active count response")
+            return
 
-                if torrent_info:
-                    self.client.delete_torrent(torrent_info.get("id"))
+        try:
+            nb = int(active_count.get("nb", 0))
+            limit = int(active_count.get("limit", 0))
+        except (TypeError, ValueError):
+            kodilog("RealDebridHelper.check_max_active_count: malformed active count response")
+            return
+
+        # Only act at the boundary; never make torrent addition fail harder.
+        if limit <= 0 or nb < limit:
+            return
+
+        torrents = self.client.get_user_torrent_list(filter="active")
+        if not isinstance(torrents, list) or not torrents:
+            kodilog("RealDebridHelper.check_max_active_count: no active torrents to delete")
+            return
+
+        dated_torrents: List[Tuple[datetime, Dict]] = []
+        for torrent in torrents:
+            if not isinstance(torrent, dict):
+                continue
+            added = self._parse_torrent_added(torrent)
+            if added is not None:
+                dated_torrents.append((added, torrent))
+        if not dated_torrents:
+            kodilog(
+                "RealDebridHelper.check_max_active_count: active torrents "
+                "have no parsable 'added' date"
+            )
+            return
+
+        oldest = min(dated_torrents, key=lambda item: item[0])[1]
+        torrent_id = oldest.get("id")
+        if torrent_id is None:
+            kodilog("RealDebridHelper.check_max_active_count: oldest active torrent has no id")
+            return
+
+        # One deletion frees one slot.
+        self.client.delete_torrent(torrent_id)
+
+    @staticmethod
+    def _parse_torrent_added(torrent: Dict) -> Optional[datetime]:
+        """Parses a torrent 'added' ISO-8601 date, returning None when unparsable."""
+        added = torrent.get("added")
+        if not added:
+            return None
+        for date_format in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+            try:
+                return datetime.strptime(added, date_format)
+            except ValueError:
+                continue
+        return None
