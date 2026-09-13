@@ -35,12 +35,12 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     action_url_run,
     apply_section_view,
     build_url,
     end_of_directory,
     finish_action,
+    get_addon_handle,
     get_setting,
     kodilog,
     notification,
@@ -121,7 +121,7 @@ def cloud_details(params):
         return
 
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(downloads_action),
         build_list_item("Downloads", "download.png"),
         isFolder=True,
@@ -140,14 +140,14 @@ def cloud(params):
         if info_action:
             torrent_li.addContextMenuItems([("Account Info", action_url_run(info_action))])
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url("cloud_details", debrid_name=debrid),
             torrent_li,
             isFolder=True,
         )
 
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("list_webdav"),
         build_list_item("Webdav", "download.png"),
         isFolder=True,
@@ -224,7 +224,7 @@ def get_rd_downloads(params):
         ]
         torrent_li.addContextMenuItems(context_menu)
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url(
                 "play_info_hash",
                 url=direct_url,
@@ -237,7 +237,7 @@ def get_rd_downloads(params):
 
     if downloads:
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url("get_rd_downloads", page=page + 1),
             build_list_item("Next Page", "next.png"),
             isFolder=True,
@@ -296,7 +296,7 @@ def get_tb_downloads(params):
         ]
         torrent_li.addContextMenuItems(context_menu)
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url(
                 "play_media",
                 data={
@@ -356,7 +356,7 @@ def get_oc_downloads(params):
             ]
         )
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url(
                 "play_media",
                 data={

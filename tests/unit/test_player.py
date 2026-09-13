@@ -52,7 +52,7 @@ def test_cancel_playback_signals_kodi_and_stops_player():
     cancel_body = cancel_match.group("body")
     assert "self._cleanup_playback_session()" in cancel_body
     # Must signal Kodi to avoid spinners (setResolvedUrl with False)
-    assert "setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))" in cancel_body
+    assert "setResolvedUrl(get_addon_handle(), False, ListItem(offscreen=True))" in cancel_body
     # Must actually stop playback started by Player.play()
     assert "self.stop()" in cancel_body
 
@@ -79,7 +79,7 @@ def test_play_video_resolves_direct_url_without_a_second_launch(monkeypatch, url
     test_player.play_video(list_item)
 
     assert events == [("setPath", url), "setResolvedUrl"]
-    set_resolved_url.assert_called_once_with(player_module.ADDON_HANDLE, True, list_item)
+    set_resolved_url.assert_called_once_with(player_module.get_addon_handle(), True, list_item)
     test_player.play.assert_not_called()
     test_player.monitor.assert_called_once_with()
 
@@ -130,7 +130,7 @@ def test_play_video_keeps_plugin_url_on_resolved_url_path(monkeypatch):
     test_player.play_video(list_item)
 
     list_item.setPath.assert_not_called()
-    set_resolved_url.assert_called_once_with(player_module.ADDON_HANDLE, True, list_item)
+    set_resolved_url.assert_called_once_with(player_module.get_addon_handle(), True, list_item)
     test_player.play.assert_not_called()
     test_player.monitor.assert_called_once_with()
 

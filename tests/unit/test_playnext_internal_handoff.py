@@ -65,7 +65,7 @@ def test_internal_playnext_handoff_uses_player_play(monkeypatch):
 
 
 def test_normal_plugin_playback_keeps_setresolvedurl(monkeypatch):
-    from lib.player import ADDON_HANDLE
+    from lib.player import get_addon_handle
 
     player = _play_video_player()
     list_item = MagicMock()
@@ -76,7 +76,7 @@ def test_normal_plugin_playback_keeps_setresolvedurl(monkeypatch):
 
     player.play_video(list_item)
 
-    set_resolved_url.assert_called_once_with(ADDON_HANDLE, True, list_item)
+    set_resolved_url.assert_called_once_with(get_addon_handle(), True, list_item)
     player.play.assert_not_called()
     player.monitor.assert_called_once_with()
 

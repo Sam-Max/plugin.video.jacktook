@@ -14,11 +14,11 @@ from lib.api.nuvio_store import UI_READ_TIMEOUT_SECONDS, NuvioStore
 from lib.services.nuvio_sync import sync_library_if_stale
 from lib.utils.general.utils import set_media_infoTag, set_pluging_category
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     get_setting,
     kodilog,
     make_list_item,
@@ -125,7 +125,7 @@ def show_nuvio_library(params):
     content_type, kodi_content_type, category_id = _MODE_CONTENT[mode]
 
     set_pluging_category(translation(category_id))
-    setContent(ADDON_HANDLE, kodi_content_type)
+    setContent(get_addon_handle(), kodi_content_type)
 
     # Best-effort refresh so web-side changes show without waiting for the
     # background cycle; failures are swallowed and never block the render.

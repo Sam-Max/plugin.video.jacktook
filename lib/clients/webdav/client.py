@@ -9,10 +9,10 @@ from xbmcplugin import (
 
 from lib.api.webdav.webdav import WebDAVClient
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     build_url,
     dialog_ok,
     end_of_directory,
+    get_addon_handle,
     get_setting,
     kodilog,
     make_list_item,
@@ -84,10 +84,10 @@ def list_webdav(params):
             url = item["url"]
             is_folder = False
 
-        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder)
+        addDirectoryItem(handle=get_addon_handle(), url=url, listitem=list_item, isFolder=is_folder)
 
-    addSortMethod(ADDON_HANDLE, SORT_METHOD_LABEL_IGNORE_THE)
-    addSortMethod(ADDON_HANDLE, SORT_METHOD_FILE)
+    addSortMethod(get_addon_handle(), SORT_METHOD_LABEL_IGNORE_THE)
+    addSortMethod(get_addon_handle(), SORT_METHOD_FILE)
 
     end_of_directory()
 

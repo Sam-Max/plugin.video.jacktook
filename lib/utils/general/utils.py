@@ -40,7 +40,6 @@ from lib.utils.debrid.qrcode_utils import make_qrcode
 from lib.utils.general.processors import PostProcessBuilder, PreProcessBuilder
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     EPISODES_TYPE,
     MOVIES_TYPE,
@@ -51,6 +50,7 @@ from lib.utils.kodi.utils import (
     container_refresh,
     copy2clip,
     dialog_text,
+    get_addon_handle,
     get_jacktorr_setting,
     get_setting,
     get_setting_fresh,
@@ -1078,22 +1078,22 @@ def tvdb_get(path, params=None):
 
 
 def set_pluging_category(heading: str):
-    setPluginCategory(ADDON_HANDLE, heading)
+    setPluginCategory(get_addon_handle(), heading)
 
 
 def set_content_type(mode, media_type="movies"):
     if mode == "season":
-        setContent(ADDON_HANDLE, SEASONS_TYPE)
+        setContent(get_addon_handle(), SEASONS_TYPE)
     elif mode == "episode":
-        setContent(ADDON_HANDLE, EPISODES_TYPE)
+        setContent(get_addon_handle(), EPISODES_TYPE)
     elif mode == "files":
-        setContent(ADDON_HANDLE, "files")
+        setContent(get_addon_handle(), "files")
     elif mode in ("tv", "anime") or media_type == "tv":
-        setContent(ADDON_HANDLE, SHOWS_TYPE)
+        setContent(get_addon_handle(), SHOWS_TYPE)
     elif mode == "movies" or media_type == "movies":
-        setContent(ADDON_HANDLE, MOVIES_TYPE)
+        setContent(get_addon_handle(), MOVIES_TYPE)
     else:
-        setContent(ADDON_HANDLE, TITLES_TYPE)
+        setContent(get_addon_handle(), TITLES_TYPE)
 
 
 def get_provider_color(provider_name, formatted=True):
@@ -1444,7 +1444,7 @@ def add_next_button(func_name, page=1, **kwargs):
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "nextpage.png")})
 
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(func_name, page=page, **kwargs),
         list_item,
         isFolder=True,

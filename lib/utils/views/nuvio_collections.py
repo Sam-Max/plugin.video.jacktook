@@ -16,11 +16,11 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     kodilog,
     make_list_item,
     notification,
@@ -126,7 +126,7 @@ def _set_art(list_item, image):
 def show_nuvio_collections(params):
     collections = _load_collections()
     set_pluging_category(translation(91051))
-    setContent(ADDON_HANDLE, "files")
+    setContent(get_addon_handle(), "files")
 
     directory_items = []
     for collection in collections:
@@ -157,7 +157,7 @@ def show_nuvio_collection_folders(params):
         return
 
     set_pluging_category(collection.get("title") or translation(91051))
-    setContent(ADDON_HANDLE, "files")
+    setContent(get_addon_handle(), "files")
 
     directory_items = []
     for folder in collection.get("folders") or []:
@@ -197,7 +197,7 @@ def show_nuvio_collection_sources(params):
         return
 
     set_pluging_category(folder.get("title") or translation(91051))
-    setContent(ADDON_HANDLE, "files")
+    setContent(get_addon_handle(), "files")
 
     directory_items = []
     for source in folder.get("sources") or []:
@@ -282,7 +282,7 @@ def show_nuvio_collection_discover(params):
 
     mode = "tv" if source.get("media_type") == "tv" else "movies"
     set_pluging_category(source.get("label") or translation(91051))
-    setContent(ADDON_HANDLE, "tvshows" if mode == "tv" else "movies")
+    setContent(get_addon_handle(), "tvshows" if mode == "tv" else "movies")
 
     from lib.clients.tmdb.utils.utils import tmdb_get
 

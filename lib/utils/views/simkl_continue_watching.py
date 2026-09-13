@@ -11,12 +11,12 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     make_list_item,
 )
 
@@ -27,7 +27,7 @@ def has_simkl_continue_watching_items():
 
 def show_simkl_continue_watching():
     set_pluging_category("Simkl Continue Watching")
-    setContent(ADDON_HANDLE, "videos")
+    setContent(get_addon_handle(), "videos")
     directory_items = []
     for item in SimklClient().get_playback():
         label = item["query"]

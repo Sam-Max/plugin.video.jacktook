@@ -18,10 +18,10 @@ from lib.utils.general.utils import (
     set_watched_title,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     get_setting,
     kodilog,
     make_list_item,
@@ -168,7 +168,7 @@ def add_jackgram_raw_file_item(item):
     item["indexer"] = Indexer.JACKGRAM  # needed for resolve_playback_url
 
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("play_media", data=item),
         list_item,
         isFolder=False,
@@ -201,7 +201,7 @@ def add_jackgram_title_item(entry):
     list_item = make_list_item(label=title)
     set_media_infoTag(list_item, data=details, mode=mode)
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("list_jackgram_title_sources", data=json.dumps(entry)),
         list_item,
         isFolder=True,
@@ -268,7 +268,7 @@ def add_jackgram_source_item(file_entry, parent_data):
     merged_data["indexer"] = Indexer.JACKGRAM
 
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("play_media", data=json.dumps(merged_data)),
         list_item,
         isFolder=False,

@@ -4,12 +4,12 @@ from xbmcplugin import setContent
 from lib.api.simkl import SimklClient, is_simkl_authenticated
 from lib.utils.general.utils import build_list_item
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     action_url_run,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     make_list_item,
     notification,
     translation,
@@ -91,7 +91,7 @@ def show_simkl_library_items(params):
     media_type, status = params.get("media_type"), params.get("status")
     if status not in SimklClient.allowed_library_statuses(media_type):
         return
-    setContent(ADDON_HANDLE, "movies" if media_type == "movies" else "tvshows")
+    setContent(get_addon_handle(), "movies" if media_type == "movies" else "tvshows")
     directory_items = []
     for item in SimklClient().get_library_items(media_type, status):
         list_item = make_list_item(label=item["query"])

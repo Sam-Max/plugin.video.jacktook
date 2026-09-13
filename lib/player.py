@@ -23,7 +23,6 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.settings import subtitle_automation_enabled
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     PLAYLIST,
     action_url_run,
     build_url,
@@ -31,6 +30,7 @@ from lib.utils.kodi.utils import (
     close_all_dialog,
     close_busy_dialog,
     execute_builtin,
+    get_addon_handle,
     get_property,
     get_setting,
     kodilog,
@@ -231,7 +231,7 @@ class JacktookPLayer(xbmc.Player):
             else:
                 # Normal plugin entry point: answer Kodi's pending resolution.
                 # Calling Player.play() here as well would open the stream twice.
-                setResolvedUrl(ADDON_HANDLE, True, list_item)
+                setResolvedUrl(get_addon_handle(), True, list_item)
                 kodilog("[PLAYER] play_video: calling setResolvedUrl only")
             self.monitor()
             kodilog("[PLAYER] play_video: monitor() returned")
@@ -1480,7 +1480,7 @@ class JacktookPLayer(xbmc.Player):
         kodilog("[PLAYER] cancel_playback called")
         self._cleanup_playback_session()
         try:
-            setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+            setResolvedUrl(get_addon_handle(), False, ListItem(offscreen=True))
         except Exception as e:
             kodilog(
                 f"setResolvedUrl failed in cancel_playback (expected when using direct play): {e}"

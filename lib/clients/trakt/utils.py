@@ -1,6 +1,6 @@
 from xbmcplugin import addDirectoryItem
 
-from lib.utils.kodi.utils import ADDON_HANDLE
+from lib.utils.kodi.utils import get_addon_handle
 
 
 def add_kodi_dir_item(
@@ -11,7 +11,7 @@ def add_kodi_dir_item(
 ):
     if is_playable:
         list_item.setProperty("IsPlayable", "true")
-    addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=is_folder)
+    addDirectoryItem(get_addon_handle(), url, list_item, isFolder=is_folder)
 
 
 def extract_ids(res, mode="tv"):

@@ -61,40 +61,25 @@ JACKTORR_ADDON = _get_jacktorr_addon()
 ADDON = xbmcaddon.Addon()
 
 
-class _AddonHandle:
-    """Dynamically resolves the Kodi plugin handle at call time.
+def get_addon_handle() -> int:
+    """Return the Kodi plugin handle of the *current* invocation.
 
-    With ``reuselanguageinvoker=true`` the Python interpreter is reused
-    across plugin invocations, so ``sys.argv[1]`` (set once at module
-    import) becomes stale.  This class resolves ``int(sys.argv[1])``
-    *every time* ``__index__`` is called — Kodi's C extension calls
-    ``__index__`` when it receives this object where an ``int`` is
-    expected (e.g. ``addDirectoryItems``, ``endOfDirectory``).
+    With ``reuselanguageinvoker=true`` the Python interpreter is reused across
+    plugin invocations, so a module level ``int(sys.argv[1])`` captured at
+    import time goes stale and points at a handle Kodi already closed.  Kodi
+    rewrites ``sys.argv`` on every invocation, so the handle must be resolved
+    at call time and passed to ``xbmcplugin`` as a real ``int`` (Kodi 22's
+    SWIG bindings no longer coerce objects through ``__index__``).
 
     Example
     -------
-    >>> from lib.utils.kodi.utils import ADDON_HANDLE
-    >>> addDirectoryItems(ADDON_HANDLE, items)   # resolves correctly
+    >>> from lib.utils.kodi.utils import get_addon_handle
+    >>> addDirectoryItems(get_addon_handle(), items)
     """
-
-    @staticmethod
-    def _resolve():
-        try:
-            return int(sys.argv[1])
-        except (IndexError, ValueError):
-            return 0
-
-    def __index__(self):
-        return self._resolve()
-
-    def __int__(self):
-        return self._resolve()
-
-    def __eq__(self, other):
-        return self._resolve() == int(other)
-
-
-ADDON_HANDLE = _AddonHandle()
+    try:
+        return int(sys.argv[1])
+    except (IndexError, ValueError):
+        return 0
 
 
 ADDON_PATH = ADDON.getAddonInfo("path")
@@ -787,11 +772,11 @@ def cancel_playback():
         xbmc.Player().stop()
     # Gracefully handle the "no handle" case (background/monitor contexts)
     with contextlib.suppress(RuntimeError, SystemExit):
-        setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+        setResolvedUrl(get_addon_handle(), False, ListItem(offscreen=True))
 
 
 def finish_action():
-    setResolvedUrl(ADDON_HANDLE, False, ListItem(offscreen=True))
+    setResolvedUrl(get_addon_handle(), False, ListItem(offscreen=True))
 
 
 def make_list_item(label="", path="", offscreen=True):
@@ -808,7 +793,7 @@ def add_directory_items_batch(items):
         from lib.utils.simkl_indicators import apply_simkl_indicators
 
         apply_simkl_indicators(items)
-        addDirectoryItems(ADDON_HANDLE, items)
+        addDirectoryItems(get_addon_handle(), items)
 
 
 def is_widget():
@@ -816,4 +801,4 @@ def is_widget():
 
 
 def end_of_directory(cache=True):
-    endOfDirectory(ADDON_HANDLE, cacheToDisc=not (is_widget() or not cache))
+    endOfDirectory(get_addon_handle(), cacheToDisc=not (is_widget() or not cache))

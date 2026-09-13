@@ -84,7 +84,6 @@ from lib.utils.kodi.settings_backup import (
     restore_settings_backup as kodi_restore_settings_backup,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     ADDON_VERSION,
     CHANGELOG_PATH,
@@ -100,6 +99,7 @@ from lib.utils.kodi.utils import (
     end_of_directory,
     execute_builtin,
     finish_action,
+    get_addon_handle,
     get_setting,
     is_youtube_addon_enabled,
     kodilog,
@@ -304,7 +304,7 @@ def choose_view(params):
     label = _translate_view_label(params.get("label", "90712"))
     set_pluging_category(label)
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "save_view",
             view_key=view_key,
@@ -322,19 +322,19 @@ def choose_view(params):
 def settings_menu(params):
     set_pluging_category(translation(90016))
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("settings"),
         build_list_item(translation(90742), "settings.png"),
         isFolder=False,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("views_menu"),
         build_list_item(translation(90743), "settings.png"),
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("donate"),
         build_list_item(translation(90815), "donate.png"),
         isFolder=False,
@@ -357,7 +357,7 @@ def views_menu(params):
     )
     for view_key, content_type, label in view_items:
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url(
                 "choose_view",
                 view_key=view_key,
@@ -368,7 +368,7 @@ def views_menu(params):
             isFolder=True,
         )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("reset_views"),
         build_list_item(translation(90725), "settings.png"),
         isFolder=False,
@@ -909,7 +909,7 @@ def _add_torrent_items(torrent_list):
             torrent_li.setInfo("video", {"title": display_title, "plot": display_plot})
         torrent_li.addContextMenuItems(context_menu_items)
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url("torrent_files", info_hash=info_hash),
             torrent_li,
             isFolder=True,
@@ -951,7 +951,7 @@ def torrents(params):
             torrent_li = build_list_item(label, "magnet.png")
             params = {"uncategorized": True} if category is None else {"category": category}
             addDirectoryItem(
-                ADDON_HANDLE, build_url("torrents", **params), torrent_li, isFolder=True
+                get_addon_handle(), build_url("torrents", **params), torrent_li, isFolder=True
             )
     end_of_directory()
     apply_section_view("view.downloads", content_type="files")
@@ -1133,7 +1133,7 @@ def play_from_pack(params):
 def people_menu(mode):
     set_pluging_category(translation(90078))
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "search_item",
             mode=mode,
@@ -1145,7 +1145,7 @@ def people_menu(mode):
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "search_item",
             mode=mode,
@@ -1157,7 +1157,7 @@ def people_menu(mode):
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "search_item",
             mode=mode,
@@ -1175,7 +1175,7 @@ def people_menu(mode):
 def mdblist_menu(mode):
     set_pluging_category(translation(90372))
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "search_mdbd_lists",
             mode=mode,
@@ -1185,7 +1185,7 @@ def mdblist_menu(mode):
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "top_mdbd_lists",
             mode=mode,
@@ -1195,7 +1195,7 @@ def mdblist_menu(mode):
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "user_mdbd_lists",
             mode=mode,
@@ -1312,13 +1312,13 @@ def download(magnet, type):
 def downloads_menu(params):
     set_pluging_category(translation(90015))
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("downloads_viewer"),
         build_list_item(translation(90806), "download2.png"),
         isFolder=True,
     )
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("open_download_manager"),
         build_list_item(translation(90805), "download2.png"),
         isFolder=False,

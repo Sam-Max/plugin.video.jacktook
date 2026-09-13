@@ -13,12 +13,12 @@ from lib.utils.general.utils import (
     truncate_text,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     get_setting,
     make_list_item,
 )
@@ -30,7 +30,7 @@ def has_trakt_continue_watching_items():
 
 def show_trakt_continue_watching():
     set_pluging_category("Trakt Continue Watching")
-    setContent(ADDON_HANDLE, "videos")
+    setContent(get_addon_handle(), "videos")
     directory_items = []
     for item in TraktScrobble().get_playback():
         label = item["query"]

@@ -186,7 +186,7 @@ class TestTorrentFilesContextMenu:
             mock_video_tag.setTitle.assert_called_once_with("Test Movie")
             jacktorr_url = "plugin://plugin.video.jacktorr/buffer_and_play?info_hash=abc123&file_id=1&path=movie.mkv"
             mock_list_item.setPath.assert_any_call(jacktorr_url)
-            mock_add_dir.assert_called_once_with(utils.ADDON_HANDLE, jacktorr_url, mock_list_item)
+            mock_add_dir.assert_called_once_with(utils.get_addon_handle(), jacktorr_url, mock_list_item)
 
     def test_uses_torrent_title_when_data_missing(self):
         utils = _load_torrserver_utils()

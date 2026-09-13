@@ -24,12 +24,12 @@ from lib.gui.custom_progress import CustomProgressDialog
 from lib.nav.debrid import resolve_cloud_download_url
 from lib.utils.general.utils import set_pluging_category, supported_video_extensions
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     action_url_run,
     apply_section_view,
     build_url,
     bytes_to_human_readable,
+    get_addon_handle,
     get_setting,
     kodilog,
     notification,
@@ -636,7 +636,7 @@ def downloads_viewer(params):
     item_list = []
 
     try:
-        setContent(ADDON_HANDLE, "files")
+        setContent(get_addon_handle(), "files")
         directories, files = xbmcvfs.listdir(translated_path)
         # At root level, count active downloads recursively across all subfolders
         is_root = translated_path.rstrip(os.sep) == download_dir.rstrip(os.sep)
@@ -751,12 +751,12 @@ def downloads_viewer(params):
                     listing_url = item_path
             item_list.append((listing_url, list_item, is_folder))
 
-        addDirectoryItems(ADDON_HANDLE, item_list)
-        endOfDirectory(ADDON_HANDLE)
+        addDirectoryItems(get_addon_handle(), item_list)
+        endOfDirectory(get_addon_handle())
         apply_section_view("view.downloads", content_type="files")
     except Exception as e:
         notification(f"Error: {e!s}", translation(90662))
-        endOfDirectory(ADDON_HANDLE, succeeded=False)
+        endOfDirectory(get_addon_handle(), succeeded=False)
 
 
 def is_active_download(path):

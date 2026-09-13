@@ -28,11 +28,11 @@ from lib.db.cached import cache
 from lib.utils.general.utils import execute_thread_pool
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     action_url_run,
     build_url,
     container_update,
+    get_addon_handle,
     get_setting,
     kodi_play_media,
     kodilog,
@@ -242,7 +242,7 @@ def add_kodi_dir_item(
         list_item.setProperty("IsPlayable", "true")
     if batch:
         return (url, list_item, is_folder)
-    addDirectoryItem(ADDON_HANDLE, url, list_item, isFolder=is_folder)
+    addDirectoryItem(get_addon_handle(), url, list_item, isFolder=is_folder)
 
 
 def add_icon_genre(item, icon_path="tmdb.png"):

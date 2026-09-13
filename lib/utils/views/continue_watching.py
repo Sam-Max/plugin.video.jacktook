@@ -15,12 +15,12 @@ from lib.utils.general.utils import (
     truncate_text,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     make_list_item,
     notification,
     translation,
@@ -81,7 +81,7 @@ def show_continue_watching(params=None):
         params = {}
 
     set_pluging_category(translation(90200))
-    setContent(ADDON_HANDLE, "videos")
+    setContent(get_addon_handle(), "videos")
 
     per_page = 10
     page = int(params.get("page", 1))

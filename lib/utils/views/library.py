@@ -11,12 +11,12 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
     build_url,
     end_of_directory,
+    get_addon_handle,
     make_list_item,
     notification,
     translation,
@@ -155,7 +155,7 @@ def _get_library_item_url(entry, mode):
 def show_library_items(mode="tv"):
     category = translation(90202) if mode == "tv" else translation(90203)
     set_pluging_category(category)
-    setContent(ADDON_HANDLE, mode)
+    setContent(get_addon_handle(), mode)
 
     all_items = list(reversed(PickleDatabase().get_key("jt:lib").items()))
     items = []

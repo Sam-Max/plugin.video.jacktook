@@ -29,13 +29,13 @@ from lib.utils.kodi.kodi_formats import (
     strip_common_folder_prefix,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PROFILE_PATH,
     JACKTORR_ADDON,
     action_url_run,
     buffer_and_play,
     build_url,
     end_of_directory,
+    get_addon_handle,
     get_setting,  # noqa: F401 — imported for test mocking
     kodilog,
     notification,
@@ -199,12 +199,12 @@ def torrent_files(params):
 
         if info_type is not None:
             addDirectoryItem(
-                ADDON_HANDLE,
+                get_addon_handle(),
                 jacktorr_url,
                 file_li,
             )
         else:
-            addDirectoryItem(ADDON_HANDLE, url, file_li)
+            addDirectoryItem(get_addon_handle(), url, file_li)
     end_of_directory()
 
 

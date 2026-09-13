@@ -41,12 +41,12 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     build_url,
     container_update,
     end_of_directory,
+    get_addon_handle,
     is_youtube_addon_enabled,
     kodi_play_media,
     kodilog,
@@ -85,7 +85,7 @@ def _show_search_catalog_history(params):
     list_item = make_list_item(label=translation(90006))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "search_catalog",
             page=1,
@@ -101,7 +101,7 @@ def _show_search_catalog_history(params):
         list_item = make_list_item(label=f"[I]{text}[/I]")
         list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url(
                 "search_catalog",
                 page=1,
@@ -118,7 +118,7 @@ def _show_search_catalog_history(params):
     list_item = make_list_item(label=translation(90210))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url(
             "clear_stremio_search_history",
             addon_url=params.get("addon_url", ""),
@@ -524,7 +524,7 @@ def list_catalog(params, addon_resolver=None):
         end_of_directory()
         return
     content_type = "movies" if params["menu_type"] == "movie" else "tvshows"
-    setContent(ADDON_HANDLE, content_type)
+    setContent(get_addon_handle(), content_type)
 
     skip = int(params.get("skip", 0))
 
@@ -630,7 +630,7 @@ def list_catalog(params, addon_resolver=None):
             next_page_params["addon_url"] = params["addon_url"]
         next_url = build_url("list_catalog", **next_page_params)
         list_item = make_list_item(label=translation(90515))
-        addDirectoryItem(handle=ADDON_HANDLE, url=next_url, listitem=list_item, isFolder=True)
+        addDirectoryItem(handle=get_addon_handle(), url=next_url, listitem=list_item, isFolder=True)
 
     end_of_directory()
 
@@ -729,7 +729,7 @@ def search_catalog(params, addon_resolver=None):
             {key: value for key, value in request_extras.items() if key not in {"search", "skip"}}
         )
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url("search_catalog", **next_params),
             make_list_item(label=translation(90515)),
             isFolder=True,
@@ -765,7 +765,7 @@ def add_meta_items(metas, params, resolver=None):
     addon_url = params["addon_url"]
 
     content_type = "movies" if menu_type == "movie" else "tvshows"
-    setContent(ADDON_HANDLE, content_type)
+    setContent(get_addon_handle(), content_type)
 
     def should_include(meta):
         meta_type = meta.type
@@ -955,7 +955,7 @@ def add_meta_items(metas, params, resolver=None):
 
         _append_context_menu_items(list_item, context_menu)
 
-        addDirectoryItem(handle=ADDON_HANDLE, url=url, listitem=list_item, isFolder=is_folder)
+        addDirectoryItem(handle=get_addon_handle(), url=url, listitem=list_item, isFolder=is_folder)
 
 
 def list_stremio_seasons(params, addon_resolver=None):

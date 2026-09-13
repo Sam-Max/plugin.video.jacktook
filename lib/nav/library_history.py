@@ -13,7 +13,6 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     add_directory_items_batch,
     apply_section_view,
@@ -21,6 +20,7 @@ from lib.utils.kodi.utils import (
     container_update,
     end_of_directory,
     finish_action,
+    get_addon_handle,
     kodi_play_media,
     kodilog,
     make_list_item,
@@ -200,7 +200,7 @@ def search_direct(params):
     list_item = make_list_item(label=translation(label_id))
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "search.png")})
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("search_direct", mode=mode, **history_params),
         list_item,
         isFolder=True,
@@ -239,7 +239,7 @@ def search_direct(params):
             ]
         )
         addDirectoryItem(
-            ADDON_HANDLE,
+            get_addon_handle(),
             build_url("search", mode=item_mode, query=text, direct=True, **history_params),
             list_item,
             isFolder=False,
@@ -248,12 +248,12 @@ def search_direct(params):
     list_item = make_list_item(label="Clear Searches")
     list_item.setArt({"icon": os.path.join(ADDON_PATH, "resources", "img", "clear.png")})
     addDirectoryItem(
-        ADDON_HANDLE,
+        get_addon_handle(),
         build_url("search_direct", mode=mode, is_clear=True, **history_params),
         list_item,
         isFolder=True,
     )
-    endOfDirectory(ADDON_HANDLE, updateListing=update_listing)
+    endOfDirectory(get_addon_handle(), updateListing=update_listing)
     apply_section_view("view.main")
 
 

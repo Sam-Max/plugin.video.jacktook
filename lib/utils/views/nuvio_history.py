@@ -12,7 +12,6 @@ from lib.utils.general.utils import (
     set_pluging_category,
 )
 from lib.utils.kodi.utils import (
-    ADDON_HANDLE,
     ADDON_PATH,
     action_url_run,
     add_directory_items_batch,
@@ -20,6 +19,7 @@ from lib.utils.kodi.utils import (
     build_url,
     dialogyesno,
     end_of_directory,
+    get_addon_handle,
     kodilog,
     make_list_item,
     notification,
@@ -51,7 +51,7 @@ def show_nuvio_history(params=None):
     page = _page_number(params.get("page"))
 
     set_pluging_category("Nuvio History")
-    setContent(ADDON_HANDLE, "videos")
+    setContent(get_addon_handle(), "videos")
 
     page_result = NuvioClient().get_watched_history_page(page=page, page_size=HISTORY_PAGE_SIZE)
     items, raw_row_count = ([], 0) if page_result is None else page_result
