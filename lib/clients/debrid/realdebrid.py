@@ -1,6 +1,6 @@
 import copy
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, cast
 
 from lib.api.debrid.base import ProviderException
@@ -304,15 +304,16 @@ class RealDebridHelper:
         expires = None
         for date_format in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
             try:
-                expires = datetime.strptime(expiration, date_format)
+                # RD timestamps carry a trailing Z, so anchor them explicitly.
+                expires = datetime.strptime(expiration, date_format).replace(tzinfo=timezone.utc)
                 break
             except ValueError:
                 continue
 
         if expires is not None:
-            # Both operands are naive UTC (expiration carries a trailing Z).
-            days_remaining: Any = (expires - datetime.utcnow()).days
-            expires_display: Any = expires
+            days_remaining: Any = (expires - datetime.now(timezone.utc)).days
+            # Keep the UTC wall-clock display without the "+00:00" suffix.
+            expires_display: Any = expires.replace(tzinfo=None)
         else:
             kodilog(f"RealDebridHelper.get_info: could not parse expiration {expiration!r}")
             days_remaining = "Unknown"

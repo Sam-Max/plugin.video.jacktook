@@ -83,27 +83,6 @@ class RealDebrid(DebridClient):
             raise ProviderException(f"{err} (code {error_code})")
         raise ProviderException(f"Real-Debrid error (code {error_code})")
 
-    def _make_request(
-        self,
-        method,
-        url,
-        data=None,
-        params=None,
-        json=None,
-        is_return_none=False,
-        is_expected_to_fail=False,
-    ):
-        params = params or {}
-        return super()._make_request(
-            method,
-            url,
-            data=data,
-            params=params,
-            json=json,
-            is_return_none=is_return_none,
-            is_expected_to_fail=is_expected_to_fail,
-        )
-
     @staticmethod
     def encode_token_data(client_id, client_secret, code):
         token = f"{client_id}:{client_secret}:{code}"
@@ -112,7 +91,10 @@ class RealDebrid(DebridClient):
     @staticmethod
     def decode_token_str(token):
         try:
-            decoded = b64decode(token)
+            # Tolerate a token whose base64 padding was stripped or that was
+            # pasted with stray whitespace/newlines: both break the padding math.
+            raw = "".join(str(token).split())
+            decoded = b64decode(raw + "=" * (-len(raw) % 4))
             decoded_str = decoded.decode()
             parts = decoded_str.split(":")
             if len(parts) != 3:
@@ -275,7 +257,9 @@ class RealDebrid(DebridClient):
             except ValueError:
                 expires = datetime.datetime.strptime(expiration, "%Y-%m-%dT%H:%M:%SZ")
 
-            days = (expires - datetime.datetime.utcnow()).days
+            # RD timestamps carry a trailing Z, so keep both sides aware.
+            expires = expires.replace(tzinfo=datetime.timezone.utc)
+            days = (expires - datetime.datetime.now(datetime.timezone.utc)).days
             return days
         except Exception as e:
             kodilog(f"Error calculating RealDebrid days remaining: {e}")
@@ -286,11 +270,6 @@ class RealDebrid(DebridClient):
 
     def get_torrent_info(self, torrent_id):
         return self._make_request("GET", f"{self.BASE_URL}/torrents/info/{torrent_id}")
-
-    def get_torrent_instant_availability(self, torrent_hash):
-        return self._make_request(
-            "GET", f"{self.BASE_URL}/torrents/instantAvailability/{torrent_hash}"
-        )
 
     def disable_access_token(self):
         pass
@@ -318,8 +297,11 @@ class RealDebrid(DebridClient):
         if "download" in response:
             return response
 
-        if "error_code" in response and response["error_code"] == 23:
-            raise ProviderException("Exceed remote traffic limit")
+        # Errors normally arrive with an HTTP error status, so the base client
+        # already raised through _handle_service_specific_errors. Keep a
+        # defensive path for a 2xx body that still carries an error_code.
+        if response.get("error_code") is not None:
+            self._handle_service_specific_errors(response, 200)
         raise ProviderException(f"Failed to create download link. response: {response}")
 
     def delete_torrent(self, torrent_id):

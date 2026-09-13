@@ -195,6 +195,7 @@ def test_get_info_with_fractional_seconds_renders():
     mock_dialog_text.assert_called_once()
     body = mock_dialog_text.call_args[0][1]
     assert "2023-01-01 00:00:00" in body
+    assert "+00:00" not in body
     assert "Days Remaining" in body
 
 
@@ -215,6 +216,7 @@ def test_get_info_without_fractional_seconds_renders():
     mock_dialog_text.assert_called_once()
     body = mock_dialog_text.call_args[0][1]
     assert "2023-01-01 00:00:00" in body
+    assert "+00:00" not in body
     assert "Unknown" not in body
 
 
