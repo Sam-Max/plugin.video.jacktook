@@ -36,7 +36,13 @@ class AllDebrid(DebridClient):
             self.BASE_URL = "https://api.alldebrid.com/v4.0"
         url = f"{self.BASE_URL}{url}"
         return super()._make_request(
-            method, url, data, json, params, is_return_none, is_expected_to_fail
+            method,
+            url,
+            data=data,
+            params=params,
+            json=json,
+            is_return_none=is_return_none,
+            is_expected_to_fail=is_expected_to_fail,
         )
 
     def auth(self):
