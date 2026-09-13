@@ -708,4 +708,3 @@ def test_resolve_identity_cache_separates_tv_and_movie_hints(monkeypatch):
     assert movie.title_en == "Movie Title"
     assert tv is not movie
     assert fake_cache.set_calls == 2
-
