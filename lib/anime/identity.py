@@ -12,11 +12,12 @@ CACHE_TTL = timedelta(hours=24)
 _CACHE = MemoryCache(database="jacktook.anime.identity")
 
 _SIMKL_PROVIDER_MAP: Tuple[Tuple[str, str], ...] = (
-    ("tmdb_id", "tmdb"),
+    # tvdb/imdb are unambiguous; tmdb needs the type hint, so it goes last.
     ("tvdb_id", "tvdb"),
     ("imdb_id", "imdb"),
     ("mal_id", "mal"),
     ("anilist_id", "anilist"),
+    ("tmdb_id", "tmdb"),
 )
 
 
@@ -38,6 +39,8 @@ def resolve_identity(ids: Optional[Dict[str, Any]]) -> Optional[AnimeRecord]:
 
         from lib.anime.providers import anilist, anizip, simkl
 
+        media_type = _seed_media_type(source)
+
         anilist_payload: Optional[Dict[str, Any]] = None
         if source.get("anilist_id") is not None:
             anilist_payload = anilist.fetch_by_anilist_id(source["anilist_id"])
@@ -50,20 +53,37 @@ def resolve_identity(ids: Optional[Dict[str, Any]]) -> Optional[AnimeRecord]:
         simkl_payload: Optional[Dict[str, Any]] = None
         if source.get("simkl_id") is not None:
             simkl_payload = simkl.anime_detail(source["simkl_id"])
-        if simkl_payload is None and not _has_anilist_source(source):
+        # Also try Simkl when the seed had an AniList/MAL source but the initial
+        # AniList fetch failed: Simkl may still carry the title.
+        if simkl_payload is None and (not _has_anilist_source(source) or anilist_payload is None):
             provider, value = _pick_simkl_provider(resolved)
             if provider is not None:
-                simkl_payload = simkl.resolve_ids(provider, value)
+                if media_type:
+                    simkl_payload = simkl.resolve_ids(provider, value, media_type=media_type)
+                else:
+                    simkl_payload = simkl.resolve_ids(provider, value)
+                # ``resolve_ids`` only carries ids; fetch the detail entry so
+                # titles are available without a later AniList round-trip.
+                if not _simkl_has_title(simkl_payload):
+                    _merge_ids(resolved, _simkl_payload_ids(simkl_payload))
+                    if resolved.get("simkl_id") is not None:
+                        detail = simkl.anime_detail(resolved["simkl_id"])
+                        if detail is not None:
+                            simkl_payload = detail
         _merge_ids(resolved, _simkl_payload_ids(simkl_payload))
 
         anizip_payload: Optional[Dict[str, Any]] = None
         anilist_id = resolved.get("anilist_id")
         mal_id = resolved.get("mal_id")
-        if anilist_id is not None or mal_id is not None:
+        if (anilist_id is not None or mal_id is not None) and not _simkl_covers_anizip(
+            simkl_payload
+        ):
             anizip_payload = anizip.mappings(anilist_id=anilist_id, mal_id=mal_id)
         _merge_ids(resolved, _anizip_ids(anizip_payload))
 
-        if anilist_payload is None:
+        # Simkl titles are sufficient for the menu; only pay for AniList when
+        # Simkl had no usable title (or the seed already required AniList).
+        if anilist_payload is None and not _simkl_has_title(simkl_payload):
             if resolved.get("anilist_id") is not None:
                 anilist_payload = anilist.fetch_by_anilist_id(resolved["anilist_id"])
             elif resolved.get("mal_id") is not None:
@@ -75,15 +95,84 @@ def resolve_identity(ids: Optional[Dict[str, Any]]) -> Optional[AnimeRecord]:
             anizip=anizip_payload,
             seed=resolved,
         )
-        _CACHE.set(cache_key, record, expires=CACHE_TTL)
+        if _has_usable_title(record):
+            _CACHE.set(cache_key, record, expires=CACHE_TTL)
         return record
     except Exception as error:
         kodilog(f"anime identity resolution failed: {error}")
         return None
 
 
+def _has_usable_title(record: AnimeRecord) -> bool:
+    """Return True when the record carries at least one non-empty title.
+
+    A record without titles only holds seed ids: caching it would pin a
+    degraded result for the whole TTL and prevent provider retries.
+    """
+    return bool(
+        record.title_en or record.title_romaji or record.title_native or record.title_default
+    )
+
+
 def _has_anilist_source(source: Dict[str, Any]) -> bool:
     return source.get("anilist_id") is not None or source.get("mal_id") is not None
+
+
+def _seed_media_type(source: Dict[str, Any]) -> Optional[str]:
+    """Return the optional ``media_type``/``type`` hint from a seed dict.
+
+    Only ``tv`` and ``movie`` are recognized; anything else degrades to None so
+    the Simkl lookup keeps its untyped behavior.
+    """
+    value = source.get("media_type")
+    if value is None:
+        value = source.get("type")
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ("tv", "movie"):
+            return normalized
+    return None
+
+
+def _simkl_has_title(payload: Optional[Dict[str, Any]]) -> bool:
+    """Return True when the Simkl payload carries a usable title."""
+    if not isinstance(payload, dict):
+        return False
+    for key in ("en_title", "romaji", "title"):
+        value = payload.get(key)
+        if value is not None and str(value).strip():
+            return True
+    return False
+
+
+def _simkl_covers_anizip(payload: Optional[Dict[str, Any]]) -> bool:
+    """Return True when Simkl already carries every id AniZip would provide.
+
+    AniZip only adds anilist/mal/tvdb/tmdb/imdb ids (its episode map is not
+    consumed by the normalizer). When Simkl supplied all of them, the extra
+    AniZip request is redundant and can be skipped safely.
+    """
+    if not isinstance(payload, dict):
+        return False
+    nested = payload.get("ids")
+    ids = nested if isinstance(nested, dict) else payload
+    field_pairs: Tuple[Tuple[str, ...], ...] = (
+        ("anilist", "anilist_id"),
+        ("mal", "mal_id"),
+        ("tvdb", "tvdb_id"),
+        ("tmdb", "tmdb_id"),
+        ("imdb", "imdb_id"),
+    )
+    for keys in field_pairs:
+        value = None
+        for key in keys:
+            candidate = ids.get(key)
+            if candidate is not None and candidate != "":
+                value = candidate
+                break
+        if value is None:
+            return False
+    return True
 
 
 def _pick_simkl_provider(resolved: Dict[str, Any]) -> Tuple[Optional[str], Any]:

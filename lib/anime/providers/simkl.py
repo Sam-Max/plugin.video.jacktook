@@ -16,15 +16,27 @@ CACHE_TTL = timedelta(hours=24)
 _CACHE = MemoryCache(database="jacktook.anime.simkl")
 
 
-def resolve_ids(provider: str, value: Any) -> Optional[Dict[str, Any]]:
-    """Resolve a normalized id block for a provider/value pair."""
+def resolve_ids(
+    provider: str, value: Any, media_type: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Resolve a normalized id block for a provider/value pair.
+
+    When ``provider`` is ``tmdb`` and ``media_type`` is ``tv`` or ``movie`` the
+    lookup is disambiguated with Simkl's ``type`` parameter: a TMDB series id
+    can collide with a movie that shares the same numeric id.
+    """
     if not provider or value is None:
         return None
     key = f"simkl:search:{provider}:{value}"
+    if media_type:
+        # Keep tv/movie resolutions in separate cache entries.
+        key = f"{key}:{media_type}"
     cached = _CACHE.get(key)
     if isinstance(cached, dict):
         return cached
     params = {provider: value, "client_id": SIMKL_CLIENT_ID}
+    if provider == "tmdb" and media_type in ("tv", "movie"):
+        params["type"] = media_type
     data = _request("search/id", params)
     ids = _extract_ids(data)
     if ids is None:
@@ -44,7 +56,11 @@ def resolve_ids(provider: str, value: Any) -> Optional[Dict[str, Any]]:
 
 
 def anime_detail(simkl_id: Any) -> Optional[Dict[str, Any]]:
-    """Fetch the raw ``ids`` block for a Simkl anime entry."""
+    """Fetch and normalize a Simkl anime entry.
+
+    Returns a shape consumed by ``record_from_payloads`` (nested ``ids`` plus
+    the romaji/english titles) or ``None`` on any failure.
+    """
     if simkl_id is None:
         return None
     key = f"simkl:anime:{simkl_id}"
@@ -53,11 +69,38 @@ def anime_detail(simkl_id: Any) -> Optional[Dict[str, Any]]:
         return cached
     params = {"extended": "full", "client_id": SIMKL_CLIENT_ID}
     data = _request(f"anime/{simkl_id}", params)
-    ids = _extract_ids(data)
-    if ids is None:
+    result = _normalize_detail(data)
+    if result is None:
         return None
-    _CACHE.set(key, ids, expires=CACHE_TTL)
-    return ids
+    _CACHE.set(key, result, expires=CACHE_TTL)
+    return result
+
+
+def _normalize_detail(data: Any) -> Optional[Dict[str, Any]]:
+    """Normalize a Simkl anime detail payload into the shared record shape.
+
+    Returns ``None`` for a payload with neither a usable title nor any ids so
+    an empty HTTP-200 body is never cached as an all-``None`` detail.
+    """
+    if not isinstance(data, dict):
+        return None
+    ids = data.get("ids")
+    if not isinstance(ids, dict):
+        ids = {}
+    title = _to_str(data.get("title"))
+    en_title = _to_str(data.get("en_title"))
+    has_ids = any(value is not None and value != "" for value in ids.values())
+    if not title and not en_title and not has_ids:
+        return None
+    return {
+        "ids": ids,
+        "en_title": en_title,
+        "romaji": title,
+        "title": title,
+        "overview": _to_str(data.get("overview")),
+        "year": _to_int(data.get("year")),
+        "episodes": _to_int(data.get("total_episodes")),
+    }
 
 
 def _request(endpoint: str, params: Dict[str, Any]) -> Any:

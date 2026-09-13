@@ -181,10 +181,18 @@ def record_from_payloads(
         )
     )
 
-    record.episodes = _to_int(_first_value(anilist_data.get("episodes"), seed_data.get("episodes")))
+    record.episodes = _to_int(
+        _first_value(
+            anilist_data.get("episodes"),
+            simkl_data.get("episodes"),
+            seed_data.get("episodes"),
+        )
+    )
     record.format = _to_str(_first_value(anilist_data.get("format"), seed_data.get("format")))
     record.status = _to_str(_first_value(anilist_data.get("status"), seed_data.get("status")))
-    record.year = _to_int(_first_value(start_date.get("year"), seed_data.get("year")))
+    record.year = _to_int(
+        _first_value(start_date.get("year"), simkl_data.get("year"), seed_data.get("year"))
+    )
     record.description = _to_str(
         _first_value(
             anilist_data.get("description"),
