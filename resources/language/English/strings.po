@@ -4957,3 +4957,19 @@ msgstr "This collection source is not supported yet."
 msgctxt "#91056"
 msgid "No results found."
 msgstr "No results found."
+
+msgctxt "#91060"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#91061"
+msgid "Anime title language"
+msgstr "Anime title language"
+
+msgctxt "#91062"
+msgid "Preferred language for anime titles."
+msgstr "Preferred language for anime titles."
+
+msgctxt "#91063"
+msgid "Romaji"
+msgstr "Romaji"
