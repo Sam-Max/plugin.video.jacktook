@@ -1,3 +1,6 @@
+from typing import Any
+
+from lib.anime.display import pick_original_title, resolve_menu_record, resolve_menu_title
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.utils import (
     get_tmdb_movie_details,
@@ -15,6 +18,7 @@ from lib.utils.general.utils import (
 )
 from lib.utils.kodi.utils import (
     end_of_directory,
+    get_setting,
     kodilog,
     make_list_item,
     notification,
@@ -97,6 +101,51 @@ class TmdbAnimeClient(BaseTmdbClient):
             return None
 
         ids = {"tmdb_id": tmdb_id, "tvdb_id": tvdb_id, "imdb_id": imdb_id}
+        # Previewing a TMDB-only seed can collide with a movie of the same
+        # numeric id; carry the unambiguous ids plus a type hint for Simkl.
+        seed = {
+            "tmdb_id": tmdb_id,
+            "tvdb_id": tvdb_id,
+            "imdb_id": imdb_id,
+            "media_type": "tv" if mode == "tv" else "movie",
+        }
         list_item = make_list_item(label=title)
         set_media_infoTag(list_item, data=res, mode=mode)
-        TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids)
+
+        menu_title = None
+        record = None
+        original_title = None
+        try:
+            language = _coerce_title_language(get_setting("anime_title_language", 0))
+            menu_title = resolve_menu_title(seed, language)
+            if menu_title:
+                record = resolve_menu_record(seed)
+                original_title = pick_original_title(record, language)
+        except Exception as error:
+            kodilog(f"anime menu title resolution failed: {error}")
+            menu_title, record, original_title = None, None, None
+
+        if menu_title:
+            title = menu_title
+            list_item.setLabel(menu_title)
+            try:
+                info_tag = list_item.getVideoInfoTag()
+                info_tag.setTitle(menu_title)
+                if original_title:
+                    info_tag.setOriginalTitle(original_title)
+            except Exception as error:
+                kodilog(f"anime info tag update failed: {error}")
+            if record is not None:
+                if record.mal_id is not None:
+                    list_item.setProperty("jacktook.anime.mal_id", str(record.mal_id))
+                if record.anilist_id is not None:
+                    list_item.setProperty("jacktook.anime.anilist_id", str(record.anilist_id))
+
+        TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids, anime=True)
+
+
+def _coerce_title_language(value: Any) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return 0

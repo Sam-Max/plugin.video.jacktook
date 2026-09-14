@@ -4746,3 +4746,19 @@ msgstr "Esta fuente de colección aún no es compatible."
 msgctxt "#91056"
 msgid "No se encontraron resultados."
 msgstr "No se encontraron resultados."
+
+msgctxt "#91060"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#91061"
+msgid "Idioma del título de anime"
+msgstr "Idioma del título de anime"
+
+msgctxt "#91062"
+msgid "Idioma preferido para los títulos de anime."
+msgstr "Idioma preferido para los títulos de anime."
+
+msgctxt "#91063"
+msgid "Romaji"
+msgstr "Romaji"

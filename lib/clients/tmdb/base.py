@@ -31,7 +31,9 @@ from lib.utils.simkl_context import add_simkl_history_context_menu
 
 class BaseTmdbClient:
     @staticmethod
-    def add_media_directory_item(list_item, mode, title, ids, media_type="", batch=False):
+    def add_media_directory_item(
+        list_item, mode, title, ids, media_type="", batch=False, anime=False
+    ):
         if mode == "movies" or (mode == "multi" and media_type == "movie"):
             context_menu = add_tmdb_movie_context_menu(mode, media_type, title=title, ids=ids)
             if is_trakt_auth():
@@ -71,6 +73,7 @@ class BaseTmdbClient:
             id=ids.get("tmdb_id"),
             title=title,
             media_type=media_type,
+            anime="1" if anime else "0",
         )
         if batch:
             return (url, list_item, is_folder)
