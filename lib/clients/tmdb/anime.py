@@ -141,7 +141,7 @@ class TmdbAnimeClient(BaseTmdbClient):
                 if record.anilist_id is not None:
                     list_item.setProperty("jacktook.anime.anilist_id", str(record.anilist_id))
 
-        TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids)
+        TmdbAnimeClient.add_media_directory_item(list_item, mode, title, ids, anime=True)
 
 
 def _coerce_title_language(value: Any) -> int:

@@ -26,6 +26,7 @@ from lib.utils.general.utils import (
     set_media_infoTag,
     set_pluging_category,
     translate_weekday,
+    truthy_param,
 )
 from lib.utils.kodi.utils import (
     ADDON_PATH,
@@ -593,6 +594,7 @@ class TmdbClient(BaseTmdbClient):
         tmdb_id = params.get("id", "")
         media_type = params.get("media_type", "")
         title = params.get("title", "") or params.get("name", "")
+        anime = truthy_param(params.get("anime"))
 
         # Adjust mode for anime
         if mode == "anime":
@@ -605,7 +607,7 @@ class TmdbClient(BaseTmdbClient):
         if mode == "movies" or (mode == "multi" and media_type == "movie"):
             TmdbClient._show_tmdb_movie(tmdb_obj, mode, title, tmdb_id)
         elif mode == "tv" or (mode == "multi" and media_type == "tv"):
-            TmdbClient._show_tmdb_shows(tmdb_obj, mode, title, tmdb_id, media_type)
+            TmdbClient._show_tmdb_shows(tmdb_obj, mode, title, tmdb_id, media_type, anime)
         else:
             notification(translation(90401))
 
@@ -620,7 +622,7 @@ class TmdbClient(BaseTmdbClient):
         run_search_entry({"query": title, "mode": mode, "ids": json.dumps(ids)})
 
     @staticmethod
-    def _show_tmdb_shows(tmdb_obj, mode, title, tmdb_id, media_type):
+    def _show_tmdb_shows(tmdb_obj, mode, title, tmdb_id, media_type, anime=False):
         mode = "tv" if mode == "multi" else mode
         ids = {"tmdb_id": tmdb_id}
         ids["imdb_id"] = tmdb_obj.get("external_ids", {}).get("imdb_id", "")
@@ -634,21 +636,22 @@ class TmdbClient(BaseTmdbClient):
                 mode=mode,
                 media_type=media_type,
                 season=number_of_seasons,
+                anime=anime,
             )
         else:
-            TmdbClient.show_seasons_details(ids=ids, mode=mode, media_type=media_type)
+            TmdbClient.show_seasons_details(ids=ids, mode=mode, media_type=media_type, anime=anime)
 
     @staticmethod
-    def show_seasons_details(ids, mode, media_type):
+    def show_seasons_details(ids, mode, media_type, anime=False):
         set_content_type("season")
-        show_season_info(ids, mode, media_type)
+        show_season_info(ids, mode, media_type, anime)
         end_of_directory()
         _apply_tmdb_view("season")
 
     @staticmethod
-    def show_episodes_details(tv_name, ids, mode, media_type, season):
+    def show_episodes_details(tv_name, ids, mode, media_type, season, anime=False):
         set_content_type("episode")
-        show_episode_info(tv_name, season, ids, mode, media_type)
+        show_episode_info(tv_name, season, ids, mode, media_type, anime)
         end_of_directory()
         _apply_tmdb_view("episode")
 

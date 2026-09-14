@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from enum import Enum
-from typing import Dict, List
+from typing import Any, Dict, List, Optional
 from urllib.parse import unquote
 from zipfile import ZipFile
 
@@ -1321,6 +1321,19 @@ def unzip(zip_location, destination_location, destination_check):
     return status
 
 
+def truthy_param(value: Any) -> bool:
+    """Return True only for a marker query parameter that was explicitly enabled.
+
+    ``build_url`` round-trips every value through ``urlencode``, so a marker written as
+    ``"1"`` comes back as the string ``"1"``. Everything else -- an absent key, ``None``,
+    ``""``, ``"0"`` or ``"false"`` -- means "not set", which keeps every caller that
+    never emits the marker on its existing path.
+    """
+    if value is True:
+        return True
+    return str(value or "").strip().lower() in ("1", "true")
+
+
 def pre_process(
     results: List[TorrentStream],
     mode: str,
@@ -1328,13 +1341,15 @@ def pre_process(
     episode: int,
     season: int,
     skip_episode_filter: bool = False,
+    absolute_episode: Optional[int] = None,
 ) -> List[TorrentStream]:
     builder = PreProcessBuilder(results).remove_duplicates()
     builder.extract_codec_hdr()
     builder.filter_by_codec()
     builder.filter_by_hdr()
     if mode == "tv" and not skip_episode_filter:
-        builder.filter_sources(episode_name, episode, season)
+        # None for every non-anime caller, which adds no absolute patterns.
+        builder.filter_sources(episode_name, episode, season, absolute_episode)
     builder.filter_by_source()
     builder.filter_by_quality()
     if get_setting("filter_size_enabled"):
