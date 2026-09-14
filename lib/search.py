@@ -774,14 +774,39 @@ def run_search_entry(params: dict):
     # feeds cache keys, and a falsy marker does no provider work of any kind.
     anime_target = None
     absolute_episode = None
-    if truthy_param(params.get("anime")):
+    anime_marker = truthy_param(params.get("anime"))
+    kodilog(
+        f"[ANIME] search_entry marker={anime_marker} mode={mode} media_type={media_type} "
+        f"season={season} episode={episode}",
+        xbmc.LOGINFO,
+    )
+    if anime_marker:
         try:
             route = resolve_anime_route(ids, season, episode)
+            kodilog(
+                f"[ANIME] route resolved={route is not None} "
+                f"kitsu_id={getattr(route, 'kitsu_id', None)} "
+                f"absolute={getattr(route, 'absolute', None)} "
+                f"matched_by={getattr(route, 'matched_by', None)} "
+                f"anilist_id={getattr(route, 'anilist_id', None)} "
+                f"mal_id={getattr(route, 'mal_id', None)}",
+                xbmc.LOGINFO,
+            )
             anime_target = pick_kitsu_target(route, season, episode)
             absolute_episode = anime_target.episode if anime_target is not None else None
+            if anime_target is not None:
+                kodilog(
+                    f"[ANIME] target picked video_id={anime_target.video_id} "
+                    f"episode={anime_target.episode}",
+                    xbmc.LOGINFO,
+                )
+            else:
+                kodilog("[ANIME] target not_picked keeping existing id chain", xbmc.LOGINFO)
         except Exception as error:
-            kodilog(f"anime route resolution failed: {error}")
+            kodilog(f"[ANIME] route resolution failed: {error}", xbmc.LOGINFO)
             anime_target, absolute_episode = None, None
+    else:
+        kodilog("[ANIME] route skipped marker_absent", xbmc.LOGINFO)
     preferred_stremio_streams = safe_json_loads(params.get("preferred_stremio_streams") or "[]")
     preferred_results = _preferred_stremio_results(preferred_stremio_streams)
 
@@ -924,7 +949,17 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             # A resolved anime route outranks every fallback below: the Kitsu id already
             # carries the absolute episode number, so the addon receives that number in
             # place of the season/episode pair. Addons without kitsu keep the chain below.
-            if anime_target is not None and addon.isSupported("stream", media_kind, "kitsu"):
+            kitsu_supported = (
+                addon.isSupported("stream", media_kind, "kitsu")
+                if anime_target is not None
+                else False
+            )
+            if anime_target is not None:
+                kodilog(
+                    f"[ANIME] addon name={addon.manifest.name} kitsu_supported={kitsu_supported}",
+                    xbmc.LOGINFO,
+                )
+            if anime_target is not None and kitsu_supported:
                 video_id = anime_target.video_id
                 addon_args = (rest_args[0], rest_args[1], rest_args[2], anime_target.episode)
 
@@ -947,6 +982,12 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             ):
                 video_id = f"tmdb:{ids_dict['tmdb_id']}"
 
+            if anime_target is not None:
+                kodilog(
+                    f"[ANIME] request addon={addon.manifest.name} video_id={video_id} "
+                    f"args={addon_args}",
+                    xbmc.LOGINFO,
+                )
             if video_id:
                 try:
                     client = StremioAddonClient(addon)

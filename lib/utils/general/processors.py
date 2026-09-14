@@ -2,6 +2,8 @@ import re
 from enum import Enum
 from typing import Dict, List, Optional
 
+import xbmc
+
 from lib.clients.base import TorrentStream
 from lib.utils.kodi.utils import get_setting, kodilog
 from lib.utils.parsers.title_parser import extract_codec_hdr
@@ -222,10 +224,18 @@ class PreProcessBuilder(BaseProcessBuilder):
         if episode_name:
             patterns.append(re.escape(episode_name))
 
+        candidates_in = len(self.results)
         episode_results = [
             res for res in self.results if re.search("|".join(patterns), res.title, re.IGNORECASE)
         ]
         self.results = season_pack_results + episode_results
+        # Absolute-episode filtering is anime-only evidence: the absolute number used and the
+        # survival count are what a live Kodi log needs to explain the retention decision.
+        kodilog(
+            f"[ANIME] episode_filter absolute_episode={absolute_episode} "
+            f"candidates={candidates_in} kept={len(self.results)}",
+            xbmc.LOGINFO,
+        )
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":

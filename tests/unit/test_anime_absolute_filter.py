@@ -13,6 +13,8 @@ from typing import List, Optional
 from unittest.mock import patch
 from urllib.parse import parse_qs, urlparse
 
+import xbmc
+
 from lib.domain.torrent import TorrentStream
 from lib.utils.general.processors import PreProcessBuilder
 from lib.utils.general.utils import truthy_param
@@ -95,6 +97,36 @@ def test_resolution_and_codec_noise_is_not_matched():
     # Every candidate number below only exists inside the noise above.
     for noisy_absolute in (5, 8, 10, 26, 65, 108):
         assert _kept_titles([title], absolute_episode=noisy_absolute) == []
+
+
+def test_episode_filter_logs_absolute_episode_and_kept_count():
+    titles = ["Show - 05 (1080p).mkv", "Show.S01E01.1080p-GROUP.mkv"]
+
+    builder = PreProcessBuilder([TorrentStream(title=title) for title in titles])
+    with patch("lib.utils.general.processors.get_setting") as get_setting, patch(
+        "lib.utils.general.processors.kodilog"
+    ) as kodilog:
+        get_setting.side_effect = lambda key, default=None: {"include_season_packs": False}.get(
+            key, default
+        )
+        builder.filter_sources("", 5, 1, 5)
+
+    # The filter behaves exactly as before; only its evidence is new.
+    assert [result.title for result in builder.results] == [titles[0]]
+
+    anime_calls = [
+        call for call in kodilog.call_args_list if call.args and "[ANIME]" in str(call.args[0])
+    ]
+    assert len(anime_calls) == 1
+    message = str(anime_calls[0].args[0])
+    assert "absolute_episode=5" in message
+    assert "candidates=2" in message
+    assert "kept=1" in message
+
+    # Production Kodi runs with debug logging off, so a message left at the kodilog default
+    # (LOGDEBUG) never reaches kodi.log. The filter must pin its own INFO level.
+    levels = [call.args[1] if len(call.args) > 1 else None for call in anime_calls]
+    assert levels == [xbmc.LOGINFO]
 
 
 def test_unusable_absolute_values_add_no_patterns():
