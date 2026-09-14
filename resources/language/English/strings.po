@@ -2324,8 +2324,8 @@ msgid "Check availability of addons and show only reachable ones"
 msgstr "Check availability of addons and show only reachable ones"
 
 msgctxt "#90164"
-msgid "Skip Intro / Recap"
-msgstr "Skip Intro / Recap"
+msgid "Skip Intro / Recap / Ending"
+msgstr "Skip Intro / Recap / Ending"
 
 msgctxt "#90165"
 msgid "Enable Skip Intro"
@@ -2342,6 +2342,18 @@ msgstr "Auto-skip"
 msgctxt "#90168"
 msgid "Automatically skip intros and recaps without showing the button"
 msgstr "Automatically skip intros and recaps without showing the button"
+
+msgctxt "#90169"
+msgid "Skip Ending"
+msgstr "Skip Ending"
+
+msgctxt "#90170"
+msgid "Enable Skip Ending"
+msgstr "Enable Skip Ending"
+
+msgctxt "#90184"
+msgid "Detect and offer to skip the ending (credits) during playback"
+msgstr "Detect and offer to skip the ending (credits) during playback"
 
 msgctxt "#90160"
 msgid "Skip Intro"

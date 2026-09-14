@@ -1281,6 +1281,15 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="skip_credits_enabled" type="boolean" label="90170" help="90184">
+                    <default>false</default>
+                    <control type="toggle" />
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="skip_intro_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
             <group id="stinger" label="90179">
                 <setting id="stinger_notifications_enabled" type="boolean" label="90179" help="90180">
