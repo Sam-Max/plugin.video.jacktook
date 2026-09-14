@@ -229,6 +229,69 @@ def test_match_skips_positional_fallback_for_multi_season_index():
     assert match_coordinates(index, 3, 2) is None
 
 
+def test_match_rejects_positional_fallback_for_an_absent_season():
+    index = build_index(SINGLE_SEASON)
+
+    # Regression: the index only holds season 1, so a season 3 request must not be
+    # answered by position. It must not surface the first entry of the index either.
+    result = match_coordinates(index, 3, 1)
+
+    assert result is not index[0]
+    assert result is None
+
+
+def test_match_rejects_positional_fallback_for_every_absent_season_episode():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 1, "episodeNumber": 1, "absoluteEpisodeNumber": 1},
+            "2": {"seasonNumber": 1, "episodeNumber": 2, "absoluteEpisodeNumber": 2},
+            "3": {"seasonNumber": 1, "episodeNumber": 3, "absoluteEpisodeNumber": 3},
+        }
+    )
+
+    assert [match_coordinates(index, 3, episode) for episode in (1, 2, 3)] == [None, None, None]
+
+
+def test_match_keeps_positional_fallback_for_a_present_requested_season():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 7, "episodeNumber": 11, "absoluteEpisodeNumber": 11},
+            "2": {"seasonNumber": 7, "episodeNumber": 12, "absoluteEpisodeNumber": 12},
+            "3": {"seasonNumber": 7, "episodeNumber": 13, "absoluteEpisodeNumber": 13},
+        }
+    )
+
+    result = match_coordinates(index, 7, 2)
+
+    assert result is not None
+    assert result.absolute == 12
+    assert result.episode == 12
+    assert result.matched_by == "position"
+
+    # The range guard still applies for a season the index actually holds.
+    assert match_coordinates(index, 7, 0) is None
+    assert match_coordinates(index, 7, 4) is None
+
+
+def test_match_prefers_season_episode_over_position_when_both_could_apply():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 1, "episodeNumber": 1, "absoluteEpisodeNumber": 100},
+            "2": {"seasonNumber": 1, "episodeNumber": 5, "absoluteEpisodeNumber": 200},
+            "3": {"seasonNumber": 1, "episodeNumber": 9, "absoluteEpisodeNumber": 300},
+        }
+    )
+
+    # Position 5 does not exist in a three-entry index, so only ``season_episode``
+    # can answer this request: strategy order must stay air_date -> season_episode
+    # -> position.
+    result = match_coordinates(index, 1, 5)
+
+    assert result is not None
+    assert result.absolute == 200
+    assert result.matched_by == "season_episode"
+
+
 def test_match_skips_positional_fallback_out_of_range():
     index = build_index(SINGLE_SEASON)
 
