@@ -53,6 +53,57 @@ SEARCH_QUERY = (
     "media(search: $query, type: ANIME) { " + ANIME_FIELDS + " } } }"
 )
 
+# The detail payload is fetched only from the anime detail view, never from the
+# listing or playback paths. Its ``perPage`` values must stay in sync with the
+# limits below; the normalizer also truncates so a drifted query cannot bloat a
+# cached result.
+CAST_LIMIT = 8
+STAFF_LIMIT = 6
+
+DETAIL_FIELDS = """
+    studios(isMain: true) {
+        edges {
+            isMain
+            node {
+                id
+                name
+            }
+        }
+    }
+    characters(sort: [ROLE, RELEVANCE, ID], perPage: 8) {
+        edges {
+            role
+            node {
+                id
+                name {
+                    full
+                }
+                image {
+                    medium
+                }
+            }
+        }
+    }
+    staff(sort: [RELEVANCE, ID], perPage: 6) {
+        edges {
+            role
+            node {
+                id
+                name {
+                    full
+                }
+            }
+        }
+    }
+"""
+
+MEDIA_BY_ID_DETAIL_QUERY = (
+    "query ($id: Int) { Media(id: $id, type: ANIME) { " + DETAIL_FIELDS + " } }"
+)
+MEDIA_BY_MAL_DETAIL_QUERY = (
+    "query ($idMal: Int) { Media(idMal: $idMal, type: ANIME) { " + DETAIL_FIELDS + " } }"
+)
+
 
 def fetch_by_anilist_id(anilist_id: Optional[int]) -> Optional[Dict[str, Any]]:
     """Fetch a single anime by its AniList id."""
@@ -98,6 +149,40 @@ def search_anime(query: str, page: int = 1, per_page: int = 15) -> Optional[List
     if results is not None:
         _CACHE.set(key, results, expires=CACHE_TTL)
     return results
+
+
+def media_cast_and_studio(
+    anilist_id: Optional[int] = None, mal_id: Optional[int] = None
+) -> Optional[Dict[str, Any]]:
+    """Fetch cast, staff and main studios for a single anime.
+
+    This is deliberately separate from ``ANIME_FIELDS``: it runs once per opened
+    title from the detail view and is cached under its own namespace, so the
+    listing cache and the small identity record stay untouched. Returns ``None``
+    when no id is given or the payload cannot be used.
+    """
+    if anilist_id is not None:
+        key = f"anilist:cast:id:{anilist_id}"
+        query = MEDIA_BY_ID_DETAIL_QUERY
+        variables: Dict[str, Any] = {"id": anilist_id}
+    elif mal_id is not None:
+        key = f"anilist:cast:mal:{mal_id}"
+        query = MEDIA_BY_MAL_DETAIL_QUERY
+        variables = {"idMal": mal_id}
+    else:
+        return None
+    cached = _CACHE.get(key)
+    if isinstance(cached, dict):
+        return cached
+    try:
+        payload = _post(query, variables)
+        extras = _normalize_cast_and_studio(_extract_media(payload))
+    except Exception as error:
+        kodilog(f"anilist: cast fetch failed: {error}")
+        return None
+    if extras is not None:
+        _CACHE.set(key, extras, expires=CACHE_TTL)
+    return extras
 
 
 def _throttle() -> None:
@@ -164,3 +249,99 @@ def _extract_search(payload: Optional[Dict[str, Any]]) -> Optional[List[Dict[str
     if not isinstance(media, list):
         return None
     return [item for item in media if isinstance(item, dict)]
+
+
+def _normalize_cast_and_studio(media: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Normalize a detail payload into cast, staff and main studio names."""
+    if not isinstance(media, dict):
+        return None
+    return {
+        "cast": _normalize_cast(media),
+        "staff": _normalize_staff(media),
+        "studios": _normalize_studios(media),
+    }
+
+
+def _normalize_cast(media: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return at most ``CAST_LIMIT`` cast entries in AniList order."""
+    cast: List[Dict[str, Any]] = []
+    for edge in _edges(media, "characters"):
+        node = _as_dict(edge.get("node"))
+        name = _node_name(node)
+        if not name:
+            continue
+        cast.append(
+            {
+                "name": name,
+                "role": _to_text(edge.get("role")) or "",
+                "image": _node_image(node),
+            }
+        )
+        if len(cast) >= CAST_LIMIT:
+            break
+    return cast
+
+
+def _normalize_staff(media: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Return at most ``STAFF_LIMIT`` staff entries in AniList order."""
+    staff: List[Dict[str, Any]] = []
+    for edge in _edges(media, "staff"):
+        node = _as_dict(edge.get("node"))
+        name = _node_name(node)
+        if not name:
+            continue
+        staff.append({"name": name, "role": _to_text(edge.get("role")) or ""})
+        if len(staff) >= STAFF_LIMIT:
+            break
+    return staff
+
+
+def _normalize_studios(media: Dict[str, Any]) -> List[str]:
+    """Return the non-empty main studio names."""
+    studios: List[str] = []
+    for edge in _edges(media, "studios"):
+        node = _as_dict(edge.get("node"))
+        name = _to_text(node.get("name"))
+        if name:
+            studios.append(name)
+    return studios
+
+
+def _edges(media: Dict[str, Any], field: str) -> List[Dict[str, Any]]:
+    """Return the ``edges`` list of a connection field, ignoring bad shapes."""
+    block = media.get(field)
+    if not isinstance(block, dict):
+        return []
+    edges = block.get("edges")
+    if not isinstance(edges, list):
+        return []
+    return [edge for edge in edges if isinstance(edge, dict)]
+
+
+def _as_dict(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    return {}
+
+
+def _node_name(node: Dict[str, Any]) -> Optional[str]:
+    """Return ``node.name.full`` as text, or None."""
+    name = node.get("name")
+    if isinstance(name, dict):
+        return _to_text(name.get("full"))
+    return None
+
+
+def _node_image(node: Dict[str, Any]) -> str:
+    """Return ``node.image.medium`` as text, or an empty string."""
+    image = node.get("image")
+    if isinstance(image, dict):
+        return _to_text(image.get("medium")) or ""
+    return ""
+
+
+def _to_text(value: Any) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    return text or None

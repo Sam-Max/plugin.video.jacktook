@@ -1,6 +1,7 @@
 import json
 from urllib.parse import quote
 
+from lib.anime.display import apply_anime_extras, resolve_menu_extras
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
@@ -25,6 +26,41 @@ from lib.utils.kodi.utils import (
 )
 from lib.utils.nuvio_context import add_nuvio_history_context_menu
 from lib.utils.simkl_context import add_simkl_history_context_menu
+
+
+def _anime_extras(ids, mode, media_type):
+    """Resolve anime cast/staff/studio extras once for the opened title.
+
+    The seed mirrors the one the anime menus already use so this lookup hits the
+    same cached identity record. Never raises.
+    """
+    try:
+        seed = dict(ids) if isinstance(ids, dict) else {}
+        hint = media_type if media_type in ("tv", "movie") else None
+        if hint is None:
+            hint = "movie" if mode in ("movie", "movies") else "tv"
+        seed["media_type"] = hint
+        return resolve_menu_extras(seed)
+    except Exception as error:
+        kodilog(f"[ANIME] extras resolution failed: {error}")
+        return None
+
+
+def _apply_anime_extras(results, extras):
+    """Apply the pre-resolved anime extras to every built list item.
+
+    ``extras`` is resolved once per opened title; a failure on one item must
+    leave the others, and the item itself, untouched.
+    """
+    if not extras or not results:
+        return
+    for result in results:
+        try:
+            if not isinstance(result, tuple) or len(result) < 3:
+                continue
+            apply_anime_extras(result[2], extras)
+        except Exception as error:
+            kodilog(f"[ANIME] extras apply failed: {error}")
 
 
 def show_seasons_details(params):
@@ -69,6 +105,10 @@ def show_season_info(ids, mode, media_type, anime=False):
     seasons = details.seasons
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
+    # Anime extras cost one AniList request per opened title. Resolved once here
+    # and reused for every season item; failures leave the items untouched.
+    extras = _anime_extras(ids, mode, media_type) if anime else None
+
     results = execute_thread_pool_collection(
         seasons,
         _process_season,
@@ -83,6 +123,7 @@ def show_season_info(ids, mode, media_type, anime=False):
 
     # Sort by season number
     results.sort(key=lambda x: x[0])
+    _apply_anime_extras(results, extras)
 
     add_directory_items_batch(
         [(url, list_item, True) for _, url, list_item in results if list_item is not None]
@@ -161,6 +202,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
     )
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
+    # Resolved once before the per-episode work and reused for every episode.
+    extras = _anime_extras(ids, mode, media_type) if anime else None
+
     results = execute_thread_pool_collection(
         episodes,
         _process_episode,
@@ -180,6 +224,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
         f"[EPISODES] show_episode_info: processed results_count={len(results)}, "
         f"item_count={item_count}"
     )
+    _apply_anime_extras(results, extras)
 
     add_directory_items_batch(
         [(url, list_item, False) for _, url, list_item in results if list_item is not None]
