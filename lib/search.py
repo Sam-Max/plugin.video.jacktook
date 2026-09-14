@@ -6,6 +6,7 @@ from typing import Any, List, Mapping, Optional
 import xbmc
 from xbmcgui import Dialog
 
+from lib.anime.stream_target import pick_kitsu_target, resolve_anime_route
 from lib.clients.nuvio.constants import NUVIO_ADDONS_KEY
 from lib.clients.nuvio.helpers import (
     get_selected_stream_addon_records,
@@ -53,6 +54,7 @@ from lib.utils.general.utils import (
     safe_json_loads,
     set_content_type,
     set_watched_title,
+    truthy_param,
 )
 from lib.utils.kodi.settings import auto_play_enabled, get_setting
 from lib.utils.kodi.utils import (
@@ -658,6 +660,7 @@ def _process_search_results(
     rescrape,
     suppress_debrid_dialog=False,
     suppress_busy_dialog=False,
+    absolute_episode=None,
 ):
     bypassed_streams = []
     other_results = results
@@ -685,6 +688,7 @@ def _process_search_results(
             episode,
             season,
             skip_episode_filter=bool(scoped_addon_url),
+            absolute_episode=absolute_episode,
         )
 
     post_results = []
@@ -765,6 +769,19 @@ def run_search_entry(params: dict):
     scoped_addon_url = params.get("scoped_addon_url", "")
     if jackgram_only and scoped_addon_url:
         scoped_addon_url = ""
+
+    # Dedicated anime marker, read once per search. It never travels inside "ids", which
+    # feeds cache keys, and a falsy marker does no provider work of any kind.
+    anime_target = None
+    absolute_episode = None
+    if truthy_param(params.get("anime")):
+        try:
+            route = resolve_anime_route(ids, season, episode)
+            anime_target = pick_kitsu_target(route, season, episode)
+            absolute_episode = anime_target.episode if anime_target is not None else None
+        except Exception as error:
+            kodilog(f"anime route resolution failed: {error}")
+            anime_target, absolute_episode = None, None
     preferred_stremio_streams = safe_json_loads(params.get("preferred_stremio_streams") or "[]")
     preferred_results = _preferred_stremio_results(preferred_stremio_streams)
 
@@ -783,6 +800,7 @@ def run_search_entry(params: dict):
             title_language_mode=title_language_mode,
             year=year,
             jackgram_only=jackgram_only,
+            anime_target=anime_target,
         )
     except SearchCancelled as exc:
         kodilog("Search cancelled from detailed status window")
@@ -819,6 +837,7 @@ def run_search_entry(params: dict):
         media_type,
         rescrape,
         suppress_debrid_dialog=suppress_debrid_dialog,
+        absolute_episode=absolute_episode,
     )
 
     if not final_results:
@@ -872,6 +891,7 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
     show_dialog = kwargs.pop("show_dialog", True)
     scoped_addon_url = kwargs.pop("scoped_addon_url", "")
     addon_override = kwargs.pop("addon_override", None)
+    anime_target = kwargs.pop("anime_target", None)
 
     if indexer_key == Indexer.STREMIO:
         if scoped_addon_url:
@@ -894,11 +914,19 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             video_id = None
             original_id = ids_dict.get("original_id")
             media_kind = "series" if args[1] == "tv" or args[2] == "tv" else "movie"
+            addon_args = rest_args
 
             if original_id:
                 prefix = original_id.split(":")[0]
                 if addon.isSupported("stream", media_kind, prefix):
                     video_id = original_id
+
+            # A resolved anime route outranks every fallback below: the Kitsu id already
+            # carries the absolute episode number, so the addon receives that number in
+            # place of the season/episode pair. Addons without kitsu keep the chain below.
+            if anime_target is not None and addon.isSupported("stream", media_kind, "kitsu"):
+                video_id = anime_target.video_id
+                addon_args = (rest_args[0], rest_args[1], rest_args[2], anime_target.episode)
 
             # Try IMDb ID for addons that declare tt: prefix
             if (
@@ -922,7 +950,7 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             if video_id:
                 try:
                     client = StremioAddonClient(addon)
-                    results.extend(client.search(video_id, *rest_args))
+                    results.extend(client.search(video_id, *addon_args))
                 except Exception as e:
                     kodilog(f"Error searching {addon.manifest.name}: {e}")
 
@@ -957,6 +985,7 @@ def _submit_search_tasks(
     year: Optional[int] = None,
     title_aliases: Optional[List[str]] = None,
     jackgram_only: bool = False,
+    anime_target=None,
 ):
     def submit_performer(*args, **kwargs):
         if "show_dialog" not in kwargs:
@@ -969,6 +998,10 @@ def _submit_search_tasks(
             kwargs["title_language_mode"] = title_language_mode
         if "year" not in kwargs:
             kwargs["year"] = year
+        # Only a resolved route is forwarded, so every non-anime search keeps the exact
+        # kwargs it submits today.
+        if anime_target is not None and "anime_target" not in kwargs:
+            kwargs["anime_target"] = anime_target
         return executor.submit(
             _perform_search,
             *args,
@@ -1204,6 +1237,7 @@ def _submit_search_tasks_managed(
     year: Optional[int] = None,
     title_aliases: Optional[List[str]] = None,
     jackgram_only: bool = False,
+    anime_target=None,
 ):
     def submit_performer_managed(name, indexer_key, *args, **kwargs):
         kwargs["show_dialog"] = False
@@ -1215,6 +1249,10 @@ def _submit_search_tasks_managed(
             kwargs["title_language_mode"] = title_language_mode
         if "year" not in kwargs:
             kwargs["year"] = year
+        # Only a resolved route is forwarded, so every non-anime search keeps the exact
+        # kwargs it submits today.
+        if anime_target is not None and "anime_target" not in kwargs:
+            kwargs["anime_target"] = anime_target
         return manager.submit_task(
             name,
             indexer_key,
@@ -1485,6 +1523,7 @@ def _run_detailed_search(
     year: Optional[int],
     title_aliases: List[str],
     jackgram_only: bool = False,
+    anime_target=None,
 ) -> List[TorrentStream]:
     """Search with SearchStatusWindow (``search_dialog_style=1``)."""
     if jackgram_only:
@@ -1509,6 +1548,7 @@ def _run_detailed_search(
             year=year,
             title_aliases=title_aliases,
             jackgram_only=jackgram_only,
+            anime_target=anime_target,
         )
 
         item_info = {"ids": ids, "mode": mode}
@@ -1555,6 +1595,7 @@ def _run_simple_search(
     year: Optional[int],
     title_aliases: List[str],
     jackgram_only: bool = False,
+    anime_target=None,
 ) -> List[TorrentStream]:
     """Search with a simple progress dialog (``search_dialog_style=0``)."""
     if jackgram_only:
@@ -1584,6 +1625,7 @@ def _run_simple_search(
                 year=year,
                 title_aliases=title_aliases,
                 jackgram_only=jackgram_only,
+                anime_target=anime_target,
             )
             total_results = _collect_search_results(tasks, listener, show_dialog)
 
@@ -1604,6 +1646,7 @@ def search_client(
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
     year: Optional[int] = None,
     jackgram_only: bool = False,
+    anime_target=None,
 ) -> List[TorrentStream]:
     close_busy_dialog()
     reconcile_source_selection(
@@ -1664,6 +1707,7 @@ def search_client(
                 year,
                 title_aliases,
                 jackgram_only=jackgram_only,
+                anime_target=anime_target,
             )
         except SearchCancelled:
             raise
@@ -1685,6 +1729,7 @@ def search_client(
                 year,
                 title_aliases,
                 jackgram_only=jackgram_only,
+                anime_target=anime_target,
             )
     else:
         total_results = _run_simple_search(
@@ -1703,6 +1748,7 @@ def search_client(
             year,
             title_aliases,
             jackgram_only=jackgram_only,
+            anime_target=anime_target,
         )
 
     cache_results(
@@ -1724,8 +1770,11 @@ def pre_process_results(
     episode: int,
     season: int,
     skip_episode_filter: bool = False,
+    absolute_episode: Optional[int] = None,
 ) -> List[TorrentStream]:
-    return pre_process(results, mode, ep_name, episode, season, skip_episode_filter)
+    return pre_process(
+        results, mode, ep_name, episode, season, skip_episode_filter, absolute_episode
+    )
 
 
 def process_results(

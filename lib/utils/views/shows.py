@@ -12,6 +12,7 @@ from lib.utils.general.utils import (
     get_fanart_details,
     set_content_type,
     set_media_infoTag,
+    truthy_param,
 )
 from lib.utils.kodi.utils import (
     add_directory_items_batch,
@@ -32,13 +33,14 @@ def show_seasons_details(params):
     ids = json.loads(params.get("ids", "{}"))
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
+    anime = truthy_param(params.get("anime"))
 
-    show_season_info(ids, mode, media_type)
+    show_season_info(ids, mode, media_type, anime)
     end_of_directory()
     apply_section_view("view.seasons", content_type="seasons")
 
 
-def show_season_info(ids, mode, media_type):
+def show_season_info(ids, mode, media_type, anime=False):
     tmdb_id = ids.get("tmdb_id")
     tvdb_id = ids.get("tvdb_id")
     imdb_id = ids.get("imdb_id")
@@ -76,6 +78,7 @@ def show_season_info(ids, mode, media_type):
         mode,
         media_type,
         fanart_details,
+        anime,
     )
 
     # Sort by season number
@@ -86,7 +89,7 @@ def show_season_info(ids, mode, media_type):
     )
 
 
-def _process_season(season, details, name, ids, mode, media_type, fanart_details):
+def _process_season(season, details, name, ids, mode, media_type, fanart_details, anime=False):
     season_name = season.name
     overview = season.overview
     if not overview:
@@ -115,6 +118,7 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
         mode=mode,
         media_type=media_type,
         season=season_number,
+        anime="1" if anime else "0",
     )
 
     return (season_number, url, list_item)
@@ -128,19 +132,20 @@ def show_episodes_details(params):
     ids = json.loads(params.get("ids", "{}"))
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
+    anime = truthy_param(params.get("anime"))
 
     kodilog(
         f"[EPISODES] show_episodes_details: tv_name={tv_name!r}, season={season}, "
         f"mode={mode!r}, media_type={media_type!r}, ids={ids}"
     )
-    item_count = show_episode_info(tv_name, season, ids, mode, media_type)
+    item_count = show_episode_info(tv_name, season, ids, mode, media_type, anime)
     kodilog(f"[EPISODES] show_episodes_details: added item_count={item_count}")
     end_of_directory()
     kodilog("[EPISODES] show_episodes_details: end_of_directory called")
     apply_section_view("view.episodes", content_type="episodes")
 
 
-def show_episode_info(tv_name, season, ids, mode, media_type):
+def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
     season_details = tmdb_get("season_details", {"id": ids.get("tmdb_id"), "season": season})
     if not season_details:
         kodilog(
@@ -165,6 +170,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         mode,
         media_type,
         fanart_details,
+        anime,
     )
 
     # Sort by episode number
@@ -181,7 +187,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     return item_count
 
 
-def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details):
+def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details, anime=False):
     ep_name = episode.name
     episode_number = episode.episode_number
 
@@ -215,6 +221,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
         query=tv_name,
         ids=ids,
         tv_data=tv_data,
+        anime="1" if anime else "0",
     )
 
     return (episode_number, url, list_item)

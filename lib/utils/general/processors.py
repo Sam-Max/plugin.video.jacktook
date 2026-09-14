@@ -60,6 +60,18 @@ class SortField(Enum):
     CACHED = "isCached"
 
 
+def _absolute_episode_number(value: Optional[int]) -> Optional[int]:
+    """Return the absolute episode number worth matching, or None.
+
+    The episode filter is a title-shape heuristic, so only real positive integers are
+    trusted: None, a bool, a string, a float, zero or a negative number all mean "add
+    no absolute patterns" and keep the filter exactly as it was.
+    """
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if value > 0 else None
+
+
 class BaseProcessBuilder:
     def __init__(self, results: List[TorrentStream]):
         self.results: List[TorrentStream] = results
@@ -170,7 +182,11 @@ class PreProcessBuilder(BaseProcessBuilder):
         return [res for res in self.results if re.search("|".join(season_patterns), res.title)]
 
     def filter_sources(
-        self, episode_name: str, episode_num: int, season_num: int
+        self,
+        episode_name: str,
+        episode_num: int,
+        season_num: int,
+        absolute_episode: Optional[int] = None,
     ) -> "PreProcessBuilder":
 
         include_season_packs = get_setting("include_season_packs")
@@ -191,6 +207,18 @@ class PreProcessBuilder(BaseProcessBuilder):
             rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
             r"Cap\.",  # match "Cap."
         ]
+        # Absolute numbering ("Show - 05", "Show [07]", "Show E12") is only added when
+        # the caller resolved an absolute episode. The digit guards keep a bare number
+        # from matching inside resolution, codec or other numeric noise (1080, x265).
+        absolute_number = _absolute_episode_number(absolute_episode)
+        if absolute_number is not None:
+            absolute_str = str(absolute_number)
+            absolute_pad = f"{absolute_number:02}"
+            patterns += [
+                rf"[\s\-_\.](?:{absolute_pad}|{absolute_str})(?!\d)",
+                rf"[\[\(](?:{absolute_pad}|{absolute_str})[\]\)]",
+                rf"(?<!\d)[Ee](?:{absolute_pad}|{absolute_str})(?!\d)",
+            ]
         if episode_name:
             patterns.append(re.escape(episode_name))
 
