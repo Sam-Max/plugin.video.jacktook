@@ -81,7 +81,10 @@ def match_coordinates(
        only safe signal, because the index carries TVDB numbering.
     2. ``"season_episode"``: TVDB ``(season, episode)`` equality.
     3. ``"position"``: 1-based position of ``episode`` inside the index, applied
-       only when the index holds a single distinct season.
+       only when the index holds a single distinct season **and** the requested
+       season, when it is provided, is present in the index. Positions only line up
+       for the season the index actually describes, so a requested season absent
+       from the index yields ``None`` instead of a fabricated coordinate.
 
     ``season``, ``episode`` and ``air_date`` are coerced defensively, so raw
     string values are accepted. The index is never mutated. Returns ``None`` when
@@ -105,7 +108,7 @@ def match_coordinates(
             if entry.season == target_season and entry.episode == target_episode:
                 return _matched(entry, _MATCH_SEASON_EPISODE)
 
-    if target_episode is not None and _has_single_season(entries):
+    if target_episode is not None and _allows_position_fallback(entries, target_season):
         position = target_episode - 1
         if 0 <= position < len(entries):
             return _matched(entries[position], _MATCH_POSITION)
@@ -158,10 +161,21 @@ def _matched(entry: EpisodeCoordinates, reason: str) -> EpisodeCoordinates:
     return replace(entry, matched_by=reason)
 
 
-def _has_single_season(entries: List[EpisodeCoordinates]) -> bool:
-    """Return True when the index holds exactly one distinct TVDB season."""
+def _allows_position_fallback(
+    entries: List[EpisodeCoordinates], target_season: Optional[int]
+) -> bool:
+    """Return True when ``entries`` may answer a request by episode position.
+
+    The 1-based position mapping is only meaningful for the single season the index
+    describes, and the requested season must not contradict it: when a season is
+    requested it has to be one the index actually holds. Answering anyway would
+    fabricate plausible coordinates for a season the index does not contain, where
+    the honest answer is no match.
+    """
     seasons = {entry.season for entry in entries if entry.season is not None}
-    return len(seasons) == 1
+    if len(seasons) != 1:
+        return False
+    return target_season is None or target_season in seasons
 
 
 def _first_int(*values: Optional[int]) -> Optional[int]:
