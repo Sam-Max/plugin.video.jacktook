@@ -2205,7 +2205,7 @@ msgstr "Comprueba la disponibilidad de los addons y muestra solo los accesibles"
 
 msgctxt "#90164"
 msgid "Skip Intro / Recap / Ending"
-msgstr "Saltar intro / recap / final"
+msgstr "Saltar Intro / Recap / Final"
 
 msgctxt "#90165"
 msgid "Enable Skip Intro"
@@ -2220,12 +2220,12 @@ msgid "Auto-skip"
 msgstr "Auto-saltar"
 
 msgctxt "#90168"
-msgid "Automatically skip intros and recaps without showing the button"
-msgstr "Saltar automáticamente intros y recaps sin mostrar el botón"
+msgid "Automatically skip intros, recaps and endings without showing the button"
+msgstr "Saltar automáticamente intros, recaps y finales sin mostrar el botón"
 
 msgctxt "#90169"
 msgid "Skip Ending"
-msgstr "Saltar final"
+msgstr "Saltar Final"
 
 msgctxt "#90170"
 msgid "Enable Skip Ending"

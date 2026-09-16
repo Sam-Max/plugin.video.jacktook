@@ -2340,8 +2340,8 @@ msgid "Auto-skip"
 msgstr "Auto-skip"
 
 msgctxt "#90168"
-msgid "Automatically skip intros and recaps without showing the button"
-msgstr "Automatically skip intros and recaps without showing the button"
+msgid "Automatically skip intros, recaps and endings without showing the button"
+msgstr "Automatically skip intros, recaps and endings without showing the button"
 
 msgctxt "#90169"
 msgid "Skip Ending"
