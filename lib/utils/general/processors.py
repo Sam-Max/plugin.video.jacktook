@@ -212,12 +212,16 @@ class PreProcessBuilder(BaseProcessBuilder):
         # Absolute numbering ("Show - 05", "Show [07]", "Show E12") is only added when
         # the caller resolved an absolute episode. The digit guards keep a bare number
         # from matching inside resolution, codec or other numeric noise (1080, x265).
+        # Audio-channel notation ("DDP 5.1", "[EAC3 2.0]") is guarded on both sides of
+        # the bare number: it must not continue into a single decimal digit (".1"), and
+        # it must not be the whole part of such a fraction ("5" in front of ".1"). The
+        # trailing \b keeps scene-style dotted names ("Show.05.1080p") matching.
         absolute_number = _absolute_episode_number(absolute_episode)
         if absolute_number is not None:
             absolute_str = str(absolute_number)
             absolute_pad = f"{absolute_number:02}"
             patterns += [
-                rf"[\s\-_\.](?:{absolute_pad}|{absolute_str})(?!\d)",
+                rf"(?<!\d)[\s\-_\.](?:{absolute_pad}|{absolute_str})(?!\d)(?!\.\d\b)",
                 rf"[\[\(](?:{absolute_pad}|{absolute_str})[\]\)]",
                 rf"(?<!\d)[Ee](?:{absolute_pad}|{absolute_str})(?!\d)",
             ]
@@ -270,7 +274,6 @@ class PreProcessBuilder(BaseProcessBuilder):
         depending on Kodi settings (quality_filter group).
         """
         source_buckets: Dict[SourceCategory, List[TorrentStream]] = {
-
             cat: [] for cat in SourceCategory
         }
 

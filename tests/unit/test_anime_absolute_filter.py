@@ -99,6 +99,29 @@ def test_resolution_and_codec_noise_is_not_matched():
         assert _kept_titles([title], absolute_episode=noisy_absolute) == []
 
 
+def test_audio_channel_notation_is_not_matched_as_absolute_episode():
+    # Audio-channel pairs ("5.1", "7.1", "2.0") must not match on either side: the
+    # episode side must not swallow a trailing ".1", and the channel side must not
+    # match as a bare number just because the decimal point acts as a separator.
+    for title, episode_side, channel_side in (
+        ("Show Special [EAC3 2.0].mkv", 2, None),
+        ("DDP 5.1", 5, 1),
+        ("AAC 5.1", 5, 1),
+        ("FLAC 7.1", 7, 1),
+        ("Show - 5.1 Audio Track", 5, 1),
+    ):
+        assert _kept_titles([title], absolute_episode=episode_side) == []
+        if channel_side is not None:
+            assert _kept_titles([title], absolute_episode=channel_side) == []
+
+
+def test_bare_absolute_numbers_after_separators_still_match():
+    # The audio-channel guard must not cost the plain bare-number matches.
+    assert _kept_titles(["Show - 05"], absolute_episode=5) == ["Show - 05"]
+    assert _kept_titles(["Show S1 - 01"], absolute_episode=1) == ["Show S1 - 01"]
+    assert _kept_titles(["Show - 5"], absolute_episode=5) == ["Show - 5"]
+
+
 def test_episode_filter_logs_absolute_episode_and_kept_count():
     titles = ["Show - 05 (1080p).mkv", "Show.S01E01.1080p-GROUP.mkv"]
 

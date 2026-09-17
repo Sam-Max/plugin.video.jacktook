@@ -108,7 +108,7 @@ def _build_actors(extras: Dict[str, Any]) -> List[Any]:
     ``order`` follows the provider's own relevance ordering, matching the
     convention ``build_actor`` already uses for TMDB cast.
     """
-    actors = []
+    actors: List[Any] = []
     for field in ("cast", "staff"):
         for entry in _clean_entries(extras.get(field)):
             actors.append(_build_actor(entry, len(actors)))
