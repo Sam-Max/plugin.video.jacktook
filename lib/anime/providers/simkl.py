@@ -1,7 +1,7 @@
 """Simkl public client used to resolve external anime ids."""
 
 from datetime import timedelta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -101,6 +101,102 @@ def _normalize_detail(data: Any) -> Optional[Dict[str, Any]]:
         "year": _to_int(data.get("year")),
         "episodes": _to_int(data.get("total_episodes")),
     }
+
+
+def fetch_entry(simkl_id: Any) -> Optional[Dict[str, Any]]:
+    """Fetch the per-cour identity fields of one Simkl anime entry.
+
+    Simkl carries one entry per cour of a multi-cour anime. Besides the id
+    block, each entry publishes the seasons it covers (``mapped_tvdb_seasons``)
+    and the ``sequel`` relations needed to walk to the entry covering another
+    season. The normalized shape is consumed by
+    :func:`lib.anime.season_entry.resolve_season_entry`; ``None`` is returned
+    on any network or shape failure. Failed parses are not cached so a later
+    playback attempt can retry.
+    """
+    if simkl_id is None:
+        return None
+    key = f"simkl:entry:{simkl_id}"
+    cached = _CACHE.get(key)
+    if isinstance(cached, dict):
+        return cached
+    params = {"extended": "full", "client_id": SIMKL_CLIENT_ID}
+    data = _request(f"anime/{simkl_id}", params)
+    result = _normalize_entry(data)
+    if result is None:
+        return None
+    _CACHE.set(key, result, expires=CACHE_TTL)
+    return result
+
+
+def _normalize_entry(data: Any) -> Optional[Dict[str, Any]]:
+    """Normalize a Simkl detail payload into the per-cour entry shape.
+
+    Returns ``None`` unless the payload carries a usable ``ids`` block: without
+    ids the entry can neither route playback nor anchor the sequel walk.
+    """
+    if not isinstance(data, dict):
+        return None
+    ids = data.get("ids")
+    if not isinstance(ids, dict):
+        return None
+    simkl_id = _to_int(ids.get("simkl"))
+    if simkl_id is None:
+        return None
+    return {
+        "simkl_id": simkl_id,
+        "anilist_id": _to_int(ids.get("anilist")),
+        "mal_id": _to_int(ids.get("mal")),
+        "kitsu_id": _to_int(ids.get("kitsu")),
+        "mapped_seasons": _normalize_mapped_seasons(data.get("mapped_tvdb_seasons")),
+        "relations": _normalize_relations(data.get("relations")),
+        "total_episodes": _to_int(data.get("total_episodes")),
+    }
+
+
+def _normalize_mapped_seasons(value: Any) -> List[int]:
+    """Coerce ``mapped_tvdb_seasons`` into a list of ints, dropping garbage."""
+    seasons: List[int] = []
+    if isinstance(value, list):
+        for item in value:
+            season = _to_int(item)
+            if season is not None:
+                seasons.append(season)
+    return seasons
+
+
+def _normalize_relations(value: Any) -> List[Dict[str, Any]]:
+    """Normalize the ``relations`` list into the shape the season walk reads.
+
+    Every dict-shaped relation is kept (whatever its type): the season walk is
+    responsible for filtering to ``sequel`` entries. Relations without a Simkl
+    id keep ``None`` so the walk can skip them defensively.
+    """
+    relations: List[Dict[str, Any]] = []
+    if not isinstance(value, list):
+        return relations
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        ids = item.get("ids")
+        ids = ids if isinstance(ids, dict) else {}
+        relations.append(
+            {
+                "simkl_id": _to_int(ids.get("simkl")),
+                "relation_type": _to_str(item.get("relation_type")),
+                "year": _to_int(item.get("year")),
+                "title": _first_str(item.get("en_title"), item.get("title")),
+            }
+        )
+    return relations
+
+
+def _first_str(*values: Any) -> Optional[str]:
+    for value in values:
+        text = _to_str(value)
+        if text:
+            return text
+    return None
 
 
 def _request(endpoint: str, params: Dict[str, Any]) -> Any:
