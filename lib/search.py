@@ -938,14 +938,30 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
                 update_dialog(addon.manifest.name, "Searching...", dialog)
 
             video_id = None
-            original_id = ids_dict.get("original_id")
             media_kind = "series" if args[1] == "tv" or args[2] == "tv" else "movie"
             addon_args = rest_args
 
-            if original_id:
-                prefix = original_id.split(":")[0]
-                if addon.isSupported("stream", media_kind, prefix):
-                    video_id = original_id
+            def _chain_video_id(addon, media_kind):
+                """Return the id this addon would get without an anime target.
+
+                The original id when its prefix is supported, then IMDb, then
+                TMDB — the exact chain a not_picked route would have used.
+                """
+                original_id = ids_dict.get("original_id")
+                if original_id:
+                    prefix = original_id.split(":")[0]
+                    if addon.isSupported("stream", media_kind, prefix):
+                        return original_id
+                if ids_dict.get("imdb_id") and addon.isSupported("stream", media_kind, "tt"):
+                    return ids_dict.get("imdb_id")
+                if ids_dict.get("tmdb_id") and (
+                    addon.isSupported("stream", media_kind, "tmdb:")
+                    or addon.isSupported("stream", media_kind, "tmdb")
+                ):
+                    return f"tmdb:{ids_dict['tmdb_id']}"
+                return None
+
+            video_id = _chain_video_id(addon, media_kind)
 
             # A resolved anime route outranks every fallback below: the Kitsu id already
             # carries the absolute episode number, so the addon receives that number in
@@ -960,28 +976,11 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
                     f"[ANIME] addon name={addon.manifest.name} kitsu_supported={kitsu_supported}",
                     xbmc.LOGINFO,
                 )
+            kitsu_used = False
             if anime_target is not None and kitsu_supported:
                 video_id = anime_target.video_id
                 addon_args = (rest_args[0], rest_args[1], rest_args[2], anime_target.episode)
-
-            # Try IMDb ID for addons that declare tt: prefix
-            if (
-                not video_id
-                and ids_dict.get("imdb_id")
-                and addon.isSupported("stream", media_kind, "tt")
-            ):
-                video_id = ids_dict.get("imdb_id")
-
-            # Try TMDB ID for addons that declare tmdb: prefix
-            if (
-                not video_id
-                and ids_dict.get("tmdb_id")
-                and (
-                    addon.isSupported("stream", media_kind, "tmdb:")
-                    or addon.isSupported("stream", media_kind, "tmdb")
-                )
-            ):
-                video_id = f"tmdb:{ids_dict['tmdb_id']}"
+                kitsu_used = True
 
             if anime_target is not None:
                 kodilog(
@@ -992,7 +991,22 @@ def _perform_search(indexer_key, dialog, *args, **kwargs):
             if video_id:
                 try:
                     client = StremioAddonClient(addon)
-                    results.extend(client.search(video_id, *addon_args))
+                    addon_results = client.search(video_id, *addon_args)
+                    if not addon_results and kitsu_used:
+                        # The addon declares kitsu support but holds nothing for this id
+                        # (newer cour entries are often unmapped in its metadata sync).
+                        # Re-search the exact id chain a not_picked route would have
+                        # used, so an empty native route never costs the user the
+                        # results the old path still delivers.
+                        fallback_video_id = _chain_video_id(addon, media_kind)
+                        if fallback_video_id:
+                            kodilog(
+                                f"[ANIME] kitsu route empty on {addon.manifest.name}, "
+                                "falling back to the id chain",
+                                xbmc.LOGINFO,
+                            )
+                            addon_results = client.search(fallback_video_id, *rest_args)
+                    results.extend(addon_results)
                 except Exception as e:
                     kodilog(f"Error searching {addon.manifest.name}: {e}")
 
