@@ -10,7 +10,7 @@ worker-thread exception.
 
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call
 
 from lib.anime.stream_target import AnimeRoute
 from lib.search import run_search_entry
@@ -50,12 +50,14 @@ def _anime_route():
     )
 
 
-def _run_anime_search(monkeypatch, addon, route, anime_marker="1"):
+def _run_anime_search(monkeypatch, addon, route, anime_marker="1", search_results=None):
     """Run one scoped tv search through the real pipeline with a single addon.
 
     ``anime_marker`` mirrors the plugin-url values: ``"1"``, ``"0"``, or ``None``
     for a search without the key at all. ``route`` is what the anime gate resolves
-    (or ``None``). Returns ``(route_calls, addon_client)`` for seam assertions.
+    (or ``None``). ``search_results`` optionally feeds the addon-client seam a
+    sequence of per-call results. Returns ``(route_calls, addon_client)`` for seam
+    assertions.
     """
     params = {
         "query": "Attack on Titan",
@@ -76,7 +78,10 @@ def _run_anime_search(monkeypatch, addon, route, anime_marker="1"):
         return route
 
     addon_client = MagicMock()
-    addon_client.return_value.search.return_value = []
+    if search_results is None:
+        addon_client.return_value.search.return_value = []
+    else:
+        addon_client.return_value.search.side_effect = search_results
 
     monkeypatch.setattr("lib.search._handle_super_quick_play", lambda params: False)
     monkeypatch.setattr("lib.search.resolve_anime_route", resolve_route_spy)
@@ -117,14 +122,18 @@ def test_marker_absent_skips_the_anime_gate_and_keeps_the_imdb_search(monkeypatc
 
 def test_kitsu_addon_receives_the_kitsu_video_id_and_absolute_episode(monkeypatch):
     addon = _AddonStub({"tt", "kitsu"})
+    monkeypatch.setattr("lib.search._process_search_results", lambda *args, **kwargs: [])
 
-    route_calls, addon_client = _run_anime_search(monkeypatch, addon, route=_anime_route())
+    route_calls, addon_client = _run_anime_search(
+        monkeypatch, addon, route=_anime_route(), search_results=[[object()]]
+    )
 
     assert route_calls == [({"original_id": IMDB_ID, "imdb_id": IMDB_ID}, SEASON, EPISODE)]
     addon_client.assert_called_once_with(addon)
     # Pin the 4-tuple rebuild: the season is kept and the episode slot carries the
     # absolute number, so a call-site regression fails here instead of silently
-    # searching with the wrong episode inside a worker thread.
+    # searching with the wrong episode inside a worker thread. With streams found
+    # there is no fallback: the addon is searched exactly once.
     addon_client.return_value.search.assert_called_once_with(
         f"kitsu:{KITSU_ID}", "tv", "tv", SEASON, ABSOLUTE_EPISODE
     )
@@ -149,3 +158,43 @@ def test_unresolved_route_keeps_the_original_imdb_id(monkeypatch):
     search = addon_client.return_value.search
     search.assert_called_once_with(IMDB_ID, "tv", "tv", SEASON, EPISODE)
     assert "absolute_episode" not in search.call_args.kwargs
+
+
+def test_empty_kitsu_route_falls_back_to_the_id_chain(monkeypatch):
+    addon = _AddonStub({"tt", "kitsu"})
+
+    _, addon_client = _run_anime_search(
+        monkeypatch, addon, route=_anime_route(), search_results=[[], []]
+    )
+
+    search = addon_client.return_value.search
+    assert search.call_count == 2
+    # First the native route with the absolute episode, then the exact request a
+    # not_picked route would have made: same id chain, same season/episode args.
+    assert search.call_args_list[0] == call(
+        f"kitsu:{KITSU_ID}", "tv", "tv", SEASON, ABSOLUTE_EPISODE
+    )
+    assert search.call_args_list[1] == call(IMDB_ID, "tv", "tv", SEASON, EPISODE)
+
+
+def test_kitsu_addon_without_a_chain_id_does_not_retry(monkeypatch):
+    addon = _AddonStub({"kitsu"})
+
+    _, addon_client = _run_anime_search(monkeypatch, addon, route=_anime_route())
+
+    addon_client.return_value.search.assert_called_once_with(
+        f"kitsu:{KITSU_ID}", "tv", "tv", SEASON, ABSOLUTE_EPISODE
+    )
+
+
+def test_nonempty_kitsu_route_does_not_retry(monkeypatch):
+    addon = _AddonStub({"tt", "kitsu"})
+    monkeypatch.setattr("lib.search._process_search_results", lambda *args, **kwargs: [])
+
+    _, addon_client = _run_anime_search(
+        monkeypatch, addon, route=_anime_route(), search_results=[[object()]]
+    )
+
+    addon_client.return_value.search.assert_called_once_with(
+        f"kitsu:{KITSU_ID}", "tv", "tv", SEASON, ABSOLUTE_EPISODE
+    )
