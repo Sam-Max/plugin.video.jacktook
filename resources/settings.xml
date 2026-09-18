@@ -1653,6 +1653,18 @@
             </group>
         </category>
         <category id="metadata_category" label="90073">
+            <group id="anime" label="91060">
+                <setting id="anime_title_language" type="integer" label="91061" help="91062">
+                    <default>0</default>
+                    <constraints>
+                        <options>
+                            <option label="English">0</option>
+                            <option label="91063">1</option>
+                        </options>
+                    </constraints>
+                    <control type="spinner" format="integer" />
+                </setting>
+            </group>
             <group id="fanart_tv" label="90222">
                 <setting id="fanart_client_key" type="string" label="90223" help="90224">
                     <default/>

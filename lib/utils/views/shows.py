@@ -1,6 +1,7 @@
 import json
 from urllib.parse import quote
 
+from lib.anime.display import apply_anime_extras, resolve_menu_extras
 from lib.api.trakt.trakt_utils import add_trakt_watched_context_menu, is_trakt_auth
 from lib.clients.tmdb.utils.utils import (
     add_tmdb_episode_context_menu,
@@ -12,6 +13,7 @@ from lib.utils.general.utils import (
     get_fanart_details,
     set_content_type,
     set_media_infoTag,
+    truthy_param,
 )
 from lib.utils.kodi.utils import (
     add_directory_items_batch,
@@ -26,19 +28,55 @@ from lib.utils.nuvio_context import add_nuvio_history_context_menu
 from lib.utils.simkl_context import add_simkl_history_context_menu
 
 
+def _anime_extras(ids, mode, media_type):
+    """Resolve anime cast/staff/studio extras once for the opened title.
+
+    The seed mirrors the one the anime menus already use so this lookup hits the
+    same cached identity record. Never raises.
+    """
+    try:
+        seed = dict(ids) if isinstance(ids, dict) else {}
+        hint = media_type if media_type in ("tv", "movie") else None
+        if hint is None:
+            hint = "movie" if mode in ("movie", "movies") else "tv"
+        seed["media_type"] = hint
+        return resolve_menu_extras(seed)
+    except Exception as error:
+        kodilog(f"[ANIME] extras resolution failed: {error}")
+        return None
+
+
+def _apply_anime_extras(results, extras):
+    """Apply the pre-resolved anime extras to every built list item.
+
+    ``extras`` is resolved once per opened title; a failure on one item must
+    leave the others, and the item itself, untouched.
+    """
+    if not extras or not results:
+        return
+    for result in results:
+        try:
+            if not isinstance(result, tuple) or len(result) < 3:
+                continue
+            apply_anime_extras(result[2], extras)
+        except Exception as error:
+            kodilog(f"[ANIME] extras apply failed: {error}")
+
+
 def show_seasons_details(params):
     set_content_type("season")
 
     ids = json.loads(params.get("ids", "{}"))
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
+    anime = truthy_param(params.get("anime"))
 
-    show_season_info(ids, mode, media_type)
+    show_season_info(ids, mode, media_type, anime)
     end_of_directory()
     apply_section_view("view.seasons", content_type="seasons")
 
 
-def show_season_info(ids, mode, media_type):
+def show_season_info(ids, mode, media_type, anime=False):
     tmdb_id = ids.get("tmdb_id")
     tvdb_id = ids.get("tvdb_id")
     imdb_id = ids.get("imdb_id")
@@ -67,6 +105,10 @@ def show_season_info(ids, mode, media_type):
     seasons = details.seasons
     fanart_details = get_fanart_details(tvdb_id=tvdb_id, mode=mode)
 
+    # Anime extras cost one AniList request per opened title. Resolved once here
+    # and reused for every season item; failures leave the items untouched.
+    extras = _anime_extras(ids, mode, media_type) if anime else None
+
     results = execute_thread_pool_collection(
         seasons,
         _process_season,
@@ -76,17 +118,19 @@ def show_season_info(ids, mode, media_type):
         mode,
         media_type,
         fanart_details,
+        anime,
     )
 
     # Sort by season number
     results.sort(key=lambda x: x[0])
+    _apply_anime_extras(results, extras)
 
     add_directory_items_batch(
         [(url, list_item, True) for _, url, list_item in results if list_item is not None]
     )
 
 
-def _process_season(season, details, name, ids, mode, media_type, fanart_details):
+def _process_season(season, details, name, ids, mode, media_type, fanart_details, anime=False):
     season_name = season.name
     overview = season.overview
     if not overview:
@@ -115,6 +159,7 @@ def _process_season(season, details, name, ids, mode, media_type, fanart_details
         mode=mode,
         media_type=media_type,
         season=season_number,
+        anime="1" if anime else "0",
     )
 
     return (season_number, url, list_item)
@@ -128,19 +173,20 @@ def show_episodes_details(params):
     ids = json.loads(params.get("ids", "{}"))
     mode = params.get("mode", "")
     media_type = params.get("media_type", "")
+    anime = truthy_param(params.get("anime"))
 
     kodilog(
         f"[EPISODES] show_episodes_details: tv_name={tv_name!r}, season={season}, "
         f"mode={mode!r}, media_type={media_type!r}, ids={ids}"
     )
-    item_count = show_episode_info(tv_name, season, ids, mode, media_type)
+    item_count = show_episode_info(tv_name, season, ids, mode, media_type, anime)
     kodilog(f"[EPISODES] show_episodes_details: added item_count={item_count}")
     end_of_directory()
     kodilog("[EPISODES] show_episodes_details: end_of_directory called")
     apply_section_view("view.episodes", content_type="episodes")
 
 
-def show_episode_info(tv_name, season, ids, mode, media_type):
+def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
     season_details = tmdb_get("season_details", {"id": ids.get("tmdb_id"), "season": season})
     if not season_details:
         kodilog(
@@ -156,6 +202,9 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     )
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
+    # Resolved once before the per-episode work and reused for every episode.
+    extras = _anime_extras(ids, mode, media_type) if anime else None
+
     results = execute_thread_pool_collection(
         episodes,
         _process_episode,
@@ -165,6 +214,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         mode,
         media_type,
         fanart_details,
+        anime,
     )
 
     # Sort by episode number
@@ -174,6 +224,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
         f"[EPISODES] show_episode_info: processed results_count={len(results)}, "
         f"item_count={item_count}"
     )
+    _apply_anime_extras(results, extras)
 
     add_directory_items_batch(
         [(url, list_item, False) for _, url, list_item in results if list_item is not None]
@@ -181,7 +232,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type):
     return item_count
 
 
-def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details):
+def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details, anime=False):
     ep_name = episode.name
     episode_number = episode.episode_number
 
@@ -215,6 +266,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
         query=tv_name,
         ids=ids,
         tv_data=tv_data,
+        anime="1" if anime else "0",
     )
 
     return (episode_number, url, list_item)

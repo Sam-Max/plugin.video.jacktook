@@ -2,6 +2,8 @@ import re
 from enum import Enum
 from typing import Dict, List, Optional
 
+import xbmc
+
 from lib.clients.base import TorrentStream
 from lib.utils.kodi.utils import get_setting, kodilog
 from lib.utils.parsers.title_parser import extract_codec_hdr
@@ -58,6 +60,18 @@ class SortField(Enum):
     DATE = "publishDate"
     QUALITY = "quality"
     CACHED = "isCached"
+
+
+def _absolute_episode_number(value: Optional[int]) -> Optional[int]:
+    """Return the absolute episode number worth matching, or None.
+
+    The episode filter is a title-shape heuristic, so only real positive integers are
+    trusted: None, a bool, a string, a float, zero or a negative number all mean "add
+    no absolute patterns" and keep the filter exactly as it was.
+    """
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if value > 0 else None
 
 
 class BaseProcessBuilder:
@@ -170,7 +184,11 @@ class PreProcessBuilder(BaseProcessBuilder):
         return [res for res in self.results if re.search("|".join(season_patterns), res.title)]
 
     def filter_sources(
-        self, episode_name: str, episode_num: int, season_num: int
+        self,
+        episode_name: str,
+        episode_num: int,
+        season_num: int,
+        absolute_episode: Optional[int] = None,
     ) -> "PreProcessBuilder":
 
         include_season_packs = get_setting("include_season_packs")
@@ -191,13 +209,37 @@ class PreProcessBuilder(BaseProcessBuilder):
             rf"\sS{season_fill}E{episode_fill}\s",  # season and episode surrounded by spaces
             r"Cap\.",  # match "Cap."
         ]
+        # Absolute numbering ("Show - 05", "Show [07]", "Show E12") is only added when
+        # the caller resolved an absolute episode. The digit guards keep a bare number
+        # from matching inside resolution, codec or other numeric noise (1080, x265).
+        # Audio-channel notation ("DDP 5.1", "[EAC3 2.0]") is guarded on both sides of
+        # the bare number: it must not continue into a single decimal digit (".1"), and
+        # it must not be the whole part of such a fraction ("5" in front of ".1"). The
+        # trailing \b keeps scene-style dotted names ("Show.05.1080p") matching.
+        absolute_number = _absolute_episode_number(absolute_episode)
+        if absolute_number is not None:
+            absolute_str = str(absolute_number)
+            absolute_pad = f"{absolute_number:02}"
+            patterns += [
+                rf"(?<!\d)[\s\-_\.](?:{absolute_pad}|{absolute_str})(?!\d)(?!\.\d\b)",
+                rf"[\[\(](?:{absolute_pad}|{absolute_str})[\]\)]",
+                rf"(?<!\d)[Ee](?:{absolute_pad}|{absolute_str})(?!\d)",
+            ]
         if episode_name:
             patterns.append(re.escape(episode_name))
 
+        candidates_in = len(self.results)
         episode_results = [
             res for res in self.results if re.search("|".join(patterns), res.title, re.IGNORECASE)
         ]
         self.results = season_pack_results + episode_results
+        # Absolute-episode filtering is anime-only evidence: the absolute number used and the
+        # survival count are what a live Kodi log needs to explain the retention decision.
+        kodilog(
+            f"[ANIME] episode_filter absolute_episode={absolute_episode} "
+            f"candidates={candidates_in} kept={len(self.results)}",
+            xbmc.LOGINFO,
+        )
         return self
 
     def filter_by_quality(self) -> "PreProcessBuilder":
@@ -232,7 +274,6 @@ class PreProcessBuilder(BaseProcessBuilder):
         depending on Kodi settings (quality_filter group).
         """
         source_buckets: Dict[SourceCategory, List[TorrentStream]] = {
-
             cat: [] for cat in SourceCategory
         }
 
