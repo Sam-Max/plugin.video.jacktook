@@ -13,8 +13,13 @@ playback.
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
+import xbmc
+
 from lib.anime.episode_map import resolve_episode
 from lib.anime.identity import resolve_identity
+from lib.anime.normalize import AnimeRecord
+from lib.anime.season_entry import resolve_season_entry
+from lib.utils.kodi.logging import kodilog
 
 # Ids that make an identity lookup worth its provider round-trips.
 _USABLE_ID_KEYS = ("tmdb_id", "tvdb_id", "imdb_id", "anilist_id", "mal_id")
@@ -55,7 +60,10 @@ def resolve_anime_route(
     an uncoercible ``season``/``episode``. A ``None`` result is also a normal
     outcome when identity, the Kitsu id or the episode map cannot be resolved,
     and ``absolute`` may legitimately stay ``None`` even for a matched episode:
-    callers decide through :func:`pick_kitsu_target`. This function never raises.
+    callers decide through :func:`pick_kitsu_target`. When the base entry cannot
+    produce an absolute, the season may belong to a later Simkl cour entry (see
+    :func:`_season_entry_route`); that fallback either returns the cour entry's
+    route or leaves the base route untouched. This function never raises.
     """
     try:
         source = ids if isinstance(ids, dict) else None
@@ -74,15 +82,78 @@ def resolve_anime_route(
             episode,
             air_date,
         )
+        absolute = _to_int(getattr(coordinates, "absolute", None))
+        if absolute is None:
+            # Multi-cour anime carry one Simkl entry per cour: when the base
+            # entry cannot place this episode, the season may belong to a
+            # sequel entry with its own ids and numbering. A fallback failure
+            # degrades to the base route, never to ``None``.
+            try:
+                season_route = _season_entry_route(record, season, episode, air_date)
+            except Exception as error:
+                kodilog(f"[ANIME] season route fallback failed: {error}")
+                season_route = None
+            if season_route is not None:
+                return season_route
         return AnimeRoute(
             kitsu_id=record.kitsu_id,
-            absolute=_to_int(getattr(coordinates, "absolute", None)),
+            absolute=absolute,
             matched_by=_to_str(getattr(coordinates, "matched_by", None)),
             anilist_id=record.anilist_id,
             mal_id=record.mal_id,
         )
     except Exception:
         return None
+
+
+def _season_entry_route(
+    record: AnimeRecord, season: Any, episode: Any, air_date: Any
+) -> Optional[AnimeRoute]:
+    """Re-match the episode through the Simkl entry covering this season.
+
+    Runs only when the identity record carries a Simkl id and the season is
+    usable. The per-season entry is matched only when it is a different cour
+    (its AniList/MAL ids differ from the record's): re-matching the base entry's
+    own ids cannot produce different coordinates. On a match the entry's route
+    is returned; every other outcome degrades to ``None`` and the caller keeps
+    the base record's route, so the pre-existing behavior is untouched.
+    """
+    simkl_id = _to_positive_int(getattr(record, "simkl_id", None))
+    season_number = _to_positive_int(season)
+    if simkl_id is None or season_number is None:
+        return None
+    entry = resolve_season_entry(simkl_id, season_number)
+    if not isinstance(entry, dict):
+        return None
+    anilist_id = _to_int(entry.get("anilist_id"))
+    mal_id = _to_int(entry.get("mal_id"))
+    if anilist_id == record.anilist_id and mal_id == record.mal_id:
+        return None
+    kitsu_id = _to_positive_int(entry.get("kitsu_id"))
+    coordinates = resolve_episode(
+        {"anilist_id": anilist_id, "mal_id": mal_id}, season, episode, air_date
+    )
+    entry_absolute = _to_int(getattr(coordinates, "absolute", None))
+    if kitsu_id is None or entry_absolute is None:
+        kodilog(
+            f"[ANIME] season route not_usable entry={entry.get('simkl_id')} "
+            f"season={season_number} kitsu_id={entry.get('kitsu_id')} absolute={entry_absolute}"
+        )
+        return None
+    kodilog(
+        f"[ANIME] season route entry={entry.get('simkl_id')} season={season_number} "
+        f"kitsu_id={kitsu_id} absolute={entry_absolute} "
+        f"matched_by={_to_str(getattr(coordinates, 'matched_by', None))} "
+        f"anilist_id={anilist_id} mal_id={mal_id}",
+        xbmc.LOGINFO,
+    )
+    return AnimeRoute(
+        kitsu_id=kitsu_id,
+        absolute=entry_absolute,
+        matched_by=_to_str(getattr(coordinates, "matched_by", None)),
+        anilist_id=anilist_id,
+        mal_id=mal_id,
+    )
 
 
 def pick_kitsu_target(

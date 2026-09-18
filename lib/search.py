@@ -765,6 +765,7 @@ def run_search_entry(params: dict):
     ep_name = tv_data.get("name", "")
     episode = tv_data.get("episode", 1)
     season = tv_data.get("season", 1)
+    air_date = tv_data.get("air_date")
 
     scoped_addon_url = params.get("scoped_addon_url", "")
     if jackgram_only and scoped_addon_url:
@@ -782,7 +783,7 @@ def run_search_entry(params: dict):
     )
     if anime_marker:
         try:
-            route = resolve_anime_route(ids, season, episode)
+            route = resolve_anime_route(ids, season, episode, air_date)
             kodilog(
                 f"[ANIME] route resolved={route is not None} "
                 f"kitsu_id={getattr(route, 'kitsu_id', None)} "
