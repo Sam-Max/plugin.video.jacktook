@@ -3,9 +3,12 @@
 from datetime import timedelta
 
 import requests
+import xbmc
 
 from lib.db.cached import MemoryCache
 from lib.utils.kodi.utils import kodilog
+
+LOG = xbmc.LOGINFO
 
 INTRODB_BASE_URL = "https://api.theintrodb.org/v3"
 INTRODB_SEGMENTS_PATH = "/media"
@@ -81,36 +84,60 @@ def _segment_score(candidate):
     return confidence + _SUBMISSION_COUNT_WEIGHT * submission_count
 
 
+def _coerce_boundary_ms(value):
+    """Return value as a non-negative int millisecond boundary, or None."""
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number >= 0 else None
+
+
 def _normalize_candidate(candidate):
     """
     Normalize a single IntroDB segment entry.
 
+    The v3 API uses null as an open boundary: a null start_ms means "from the
+    beginning" and a null end_ms means "until the end of the video". Open
+    boundaries are preserved as None so the player can resolve them against
+    the runtime video duration.
+
     Returns:
-        dict with millisecond and second boundaries, or None when the entry is
-        unusable (not an object, missing boundaries or an empty range).
+        dict with millisecond and second boundaries, where "end_ms"/"end_sec"
+        are None for open-ended segments, or None when the entry is unusable
+        (not an object, non-numeric or negative boundaries, an empty or
+        reversed range, or a segment open on both sides).
     """
     if not isinstance(candidate, dict):
         return None
 
-    start_ms = candidate.get("start_ms")
-    end_ms = candidate.get("end_ms")
-    if start_ms is None or end_ms is None:
+    raw_start = candidate.get("start_ms")
+    raw_end = candidate.get("end_ms")
+
+    # A segment with no boundaries at all spans the whole video.
+    if raw_start is None and raw_end is None:
         return None
 
-    try:
-        start_ms = int(start_ms)
-        end_ms = int(end_ms)
-    except (TypeError, ValueError):
-        return None
+    start_ms = 0
+    if raw_start is not None:
+        start_ms = _coerce_boundary_ms(raw_start)
+        if start_ms is None:
+            return None
 
-    if end_ms <= start_ms:
+    end_ms = None
+    if raw_end is not None:
+        end_ms = _coerce_boundary_ms(raw_end)
+        if end_ms is None:
+            return None
+
+    if end_ms is not None and end_ms <= start_ms:
         return None
 
     return {
         "start_ms": start_ms,
         "end_ms": end_ms,
         "start_sec": start_ms / 1000.0,
-        "end_sec": end_ms / 1000.0,
+        "end_sec": end_ms / 1000.0 if end_ms is not None else None,
     }
 
 
@@ -159,18 +186,21 @@ def get_segments(ids, season, episode):
 
     Returns:
         dict keyed by 'intro', 'recap' or 'outro', each value carrying
-        'start_ms', 'end_ms', 'start_sec' and 'end_sec'. Types without usable
-        segments are omitted, and None is returned when nothing is usable.
+        'start_ms', 'end_ms', 'start_sec' and 'end_sec'. Open v3 boundaries
+        (null) are preserved: 'end_ms'/'end_sec' are None for segments that
+        run until the end of the video, and the player resolves them against
+        the runtime duration. Types without usable segments are omitted, and
+        None is returned when nothing is usable.
     """
     selected_id = _select_id(ids)
     if selected_id is None:
-        kodilog("IntroDB: No usable media id, skipping request")
+        kodilog("IntroDB: No usable media id, skipping request", level=LOG)
         return None
 
     season_number = _coerce_positive_int(season)
     episode_number = _coerce_positive_int(episode)
     if season_number is None or episode_number is None:
-        kodilog("IntroDB: Missing or invalid season/episode, skipping request")
+        kodilog("IntroDB: Missing or invalid season/episode, skipping request", level=LOG)
         return None
 
     id_key, id_value = selected_id
@@ -179,9 +209,9 @@ def get_segments(ids, season, episode):
     cached = _cache.get(cache_key)
     if cached is not None:
         if cached == _SENTINEL:
-            kodilog(f"IntroDB: Cache hit (no data) for {cache_key}")
+            kodilog(f"IntroDB: Cache hit (no data) for {cache_key}", level=LOG)
             return None
-        kodilog(f"IntroDB: Cache hit for {cache_key}")
+        kodilog(f"IntroDB: Cache hit for {cache_key}", level=LOG)
         return cached
 
     request_params = {
@@ -191,7 +221,8 @@ def get_segments(ids, season, episode):
     }
 
     kodilog(
-        f"IntroDB: Requesting {INTRODB_SEGMENTS_PATH} for {cache_key} with params {request_params}"
+        f"IntroDB: Requesting {INTRODB_SEGMENTS_PATH} for {cache_key} with params {request_params}",
+        level=LOG,
     )
 
     try:
@@ -201,45 +232,48 @@ def get_segments(ids, season, episode):
             timeout=INTRODB_TIMEOUT,
         )
     except requests.exceptions.Timeout:
-        kodilog(f"IntroDB: Request timed out for {cache_key}")
+        kodilog(f"IntroDB: Request timed out for {cache_key}", level=LOG)
         return None
     except requests.exceptions.RequestException as e:
-        kodilog(f"IntroDB: Request failed for {cache_key}: {e}")
+        kodilog(f"IntroDB: Request failed for {cache_key}: {e}", level=LOG)
         return None
 
     status_code = response.status_code
-    kodilog(f"IntroDB: Response status {status_code} for {cache_key} body={response.text}")
+    kodilog(
+        f"IntroDB: Response status {status_code} for {cache_key} body={response.text}",
+        level=LOG,
+    )
 
     if status_code == 404:
-        kodilog(f"IntroDB: No segments found for {cache_key}")
+        kodilog(f"IntroDB: No segments found for {cache_key}", level=LOG)
         _cache.set(cache_key, _SENTINEL, expires=INTRODB_CACHE_EXPIRY)
         return None
 
     if status_code != 200:
-        kodilog(f"IntroDB: Unexpected status {status_code} for {cache_key}")
+        kodilog(f"IntroDB: Unexpected status {status_code} for {cache_key}", level=LOG)
         return None
 
     try:
         data = response.json()
     except ValueError as e:
-        kodilog(f"IntroDB: Failed to parse response for {cache_key}: {e}")
+        kodilog(f"IntroDB: Failed to parse response for {cache_key}: {e}", level=LOG)
         return None
 
     if not isinstance(data, dict):
-        kodilog(f"IntroDB: Unexpected response payload for {cache_key} body={data}")
+        kodilog(f"IntroDB: Unexpected response payload for {cache_key} body={data}", level=LOG)
         return None
 
     if data.get("error"):
-        kodilog(f"IntroDB: No media found for {cache_key} error={data.get('error')}")
+        kodilog(f"IntroDB: No media found for {cache_key} error={data.get('error')}", level=LOG)
         _cache.set(cache_key, _SENTINEL, expires=INTRODB_CACHE_EXPIRY)
         return None
 
     segments = _extract_segments(data)
     if not segments:
-        kodilog(f"IntroDB: No usable segments for {cache_key} body={data}")
+        kodilog(f"IntroDB: No usable segments for {cache_key} body={data}", level=LOG)
         _cache.set(cache_key, _SENTINEL, expires=INTRODB_CACHE_EXPIRY)
         return None
 
-    kodilog(f"IntroDB: Got segments for {cache_key}: {sorted(segments)}")
+    kodilog(f"IntroDB: Got segments for {cache_key}: {sorted(segments)}", level=LOG)
     _cache.set(cache_key, segments, expires=INTRODB_CACHE_EXPIRY)
     return segments

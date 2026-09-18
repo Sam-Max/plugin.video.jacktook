@@ -295,8 +295,11 @@ def test_candidates_without_a_valid_range_are_dropped(http):
         FakeResponse(
             body=payload(
                 intro=[
-                    {"start_ms": None, "end_ms": 100},
-                    {"start_ms": 100, "end_ms": None},
+                    {"start_ms": None, "end_ms": None},
+                    {"start_ms": "abc", "end_ms": 100},
+                    {"start_ms": 100, "end_ms": "abc"},
+                    {"start_ms": -5, "end_ms": 100},
+                    {"start_ms": 100, "end_ms": -1},
                     {"start_ms": 200, "end_ms": 200},
                     {"start_ms": 300, "end_ms": 250},
                 ],
@@ -309,6 +312,36 @@ def test_candidates_without_a_valid_range_are_dropped(http):
 
     assert "intro" not in result
     assert result["recap"]["start_ms"] == 10
+
+
+def test_null_start_means_from_the_beginning(http):
+    # Real v3 payload shape: The Office S1E1 reports its cold open intro as
+    # {"start_ms": null, "end_ms": 31000}.
+    http.queue(FakeResponse(body=payload(intro=[{"start_ms": None, "end_ms": 31000}])))
+
+    result = introdb.get_segments({"tmdb_id": 1}, 1, 1)
+
+    assert result["intro"] == {
+        "start_ms": 0,
+        "end_ms": 31000,
+        "start_sec": 0.0,
+        "end_sec": 31.0,
+    }
+
+
+def test_null_end_is_kept_open_for_the_player(http):
+    # Real v3 payload shape: credits consistently report {"end_ms": null},
+    # meaning the segment runs until the end of the video.
+    http.queue(FakeResponse(body=payload(credits=[{"start_ms": 1746000, "end_ms": None}])))
+
+    result = introdb.get_segments({"tmdb_id": 1}, 1, 1)
+
+    assert result["outro"] == {
+        "start_ms": 1746000,
+        "end_ms": None,
+        "start_sec": 1746.0,
+        "end_sec": None,
+    }
 
 
 def test_preview_only_response_is_negatively_cached(http, cache):

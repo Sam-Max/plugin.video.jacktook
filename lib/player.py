@@ -389,6 +389,12 @@ class JacktookPLayer(xbmc.Player):
                 introdb_thread = Thread(target=self.fetch_introdb_segments)
                 introdb_thread.daemon = True
                 introdb_thread.start()
+            else:
+                kodilog(
+                    "Skip intro: background fetch not started "
+                    f"(enabled={self.skip_intro_enabled}, mode={self.data.get('mode')})",
+                    level=xbmc.LOGINFO,
+                )
 
             # Fetch stinger info in background if enabled
             if get_setting("stinger_notifications_enabled") and self.data.get("mode") == "movies":
@@ -582,6 +588,56 @@ class JacktookPLayer(xbmc.Player):
         except Exception as e:
             kodilog(f"Error in check_autoscrape_threshold: {e}")
 
+    def _skip_segment_types(self):
+        segment_types = ["recap", "intro"]
+        if self.skip_credits_enabled:
+            segment_types.append("outro")
+        return segment_types
+
+    def _skip_segment_window_active(self):
+        """True while playback sits inside a skip segment window.
+
+        With manual skip (auto off) the skip dialog owns the screen for the
+        whole window, so end-of-episode dialogs must defer to it. All skip
+        state is read defensively: players built outside ``set_constants``
+        (tests, alternative constructors) never had skip state.
+        """
+        if getattr(self, "skip_intro_auto", True) or not getattr(
+            self, "skip_intro_segments", None
+        ):
+            return False
+        handled = getattr(self, "skip_intro_handled", None) or {}
+        segments = self.skip_intro_segments
+
+        current_ms = int((getattr(self, "current_time", 0) or 0) * 1000)
+        if not current_ms:
+            return False
+
+        segment_types = ["recap", "intro"]
+        if getattr(self, "skip_credits_enabled", False):
+            segment_types.append("outro")
+
+        for segment_type in segment_types:
+            if handled.get(segment_type):
+                continue
+
+            segment = segments.get(segment_type)
+            if not segment:
+                continue
+
+            start_ms = segment.get("start_ms") or 0
+            end_ms = segment.get("end_ms")
+            if end_ms is None:
+                total_time = getattr(self, "total_time", 0) or 0
+                if total_time <= 0:
+                    continue
+                end_ms = int(total_time * 1000)
+
+            if start_ms <= current_ms <= end_ms:
+                return True
+
+        return False
+
     def check_next_dialog(self):
         try:
             # Only show PlayNext for TV series, never for movies
@@ -598,6 +654,11 @@ class JacktookPLayer(xbmc.Player):
                 else:
                     return
             if self.current_time < (self.total_time * 0.5):
+                return
+            if self._skip_segment_window_active():
+                # The skip dialog owns the screen while its window is active;
+                # PlayNext fires once the window resolves (skip clicked,
+                # auto-closed or passed).
                 return
 
             use_percentage = get_setting("playnext_use_percentage", False)
@@ -1240,16 +1301,16 @@ class JacktookPLayer(xbmc.Player):
             episode = tv_data.get("episode")
 
             if not any(ids.get(key) for key in ("tmdb_id", "tvdb_id", "imdb_id")):
-                kodilog("Skip intro: Missing media IDs for IntroDB lookup")
+                kodilog("Skip intro: Missing media IDs for IntroDB lookup", level=xbmc.LOGINFO)
                 return
             if not season or not episode:
-                kodilog("Skip intro: Missing season or episode")
+                kodilog("Skip intro: Missing season or episode", level=xbmc.LOGINFO)
                 return
 
             from lib.clients.introdb import get_segments
 
             self.skip_intro_segments = get_segments(ids, season, episode)
-            kodilog(f"IntroDB segments: {self.skip_intro_segments}")
+            kodilog(f"IntroDB segments: {self.skip_intro_segments}", level=xbmc.LOGINFO)
         except Exception as e:
             kodilog(f"Error fetching IntroDB segments: {e}")
 
@@ -1262,9 +1323,7 @@ class JacktookPLayer(xbmc.Player):
 
             current_ms = int(self.current_time * 1000)
 
-            segment_types = ["recap", "intro"]
-            if self.skip_credits_enabled:
-                segment_types.append("outro")
+            segment_types = self._skip_segment_types()
 
             for segment_type in segment_types:
                 if self.skip_intro_handled.get(segment_type):
@@ -1274,26 +1333,54 @@ class JacktookPLayer(xbmc.Player):
                 if not segment:
                     continue
 
-                start_ms = segment.get("start_ms", 0)
-                end_ms = segment.get("end_ms", 0)
-                end_sec = segment.get("end_sec", end_ms / 1000)
+                start_ms = segment.get("start_ms") or 0
+                end_ms = segment.get("end_ms")
+
+                # v3 open boundary: a null end_ms means "until the end of the
+                # video"; resolve it against the runtime duration.
+                if end_ms is None:
+                    total_time = getattr(self, "total_time", 0) or 0
+                    if total_time <= 0:
+                        # Duration not known yet; retry on the next cycle.
+                        continue
+                    end_ms = int(total_time * 1000)
+
+                end_sec = end_ms / 1000.0
 
                 if start_ms <= current_ms <= end_ms:
                     self.skip_intro_handled[segment_type] = True
 
                     if self.skip_intro_auto:
+                        kodilog(
+                            f"Skip intro: auto-skipping {segment_type} at "
+                            f"{current_ms / 1000:.1f}s "
+                            f"(segment {start_ms / 1000:.1f}-{end_ms / 1000:.1f}s)",
+                            level=xbmc.LOGINFO,
+                        )
                         self.seekTime(end_sec)
                     else:
+                        kodilog(
+                            f"Skip intro: showing {segment_type} skip dialog at "
+                            f"{current_ms / 1000:.1f}s "
+                            f"(segment {start_ms / 1000:.1f}-{end_ms / 1000:.1f}s)",
+                            level=xbmc.LOGINFO,
+                        )
                         label = translation(SKIP_SEGMENT_LABEL_IDS.get(segment_type, 90160))
+                        resolved_segment = dict(segment)
+                        resolved_segment["end_ms"] = end_ms
+                        resolved_segment["end_sec"] = end_sec
                         xbmc.executebuiltin(
                             action_url_run(
                                 name="run_skip_intro_dialog",
-                                segment_data=json_dumps(segment),
+                                segment_data=json_dumps(resolved_segment),
                                 skip_label=label,
                             )
                         )
-                elif current_ms > end_ms:
-                    self.skip_intro_handled[segment_type] = True
+                # Deliberate: no "window already passed" lock. A playback that
+                # resumes past a segment must be able to re-arm its button
+                # when the user seeks back into the window; interactions that
+                # consume the window (skip, dismiss, auto-seek) already mark
+                # it handled above.
         except Exception as e:
             kodilog(f"Error in check_skip_intro: {e}")
 

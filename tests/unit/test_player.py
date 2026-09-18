@@ -1370,3 +1370,190 @@ def test_handle_next_dialog_action_fallback_uses_season_boundary_episode(monkeyp
     item_data, next_tv_data = args
     assert item_data["mode"] == "tv"
     assert next_tv_data == {"name": "Season Two Premiere", "episode": 1, "season": 2}
+
+
+# --- skip intro/outro segment handling --------------------------------------
+
+
+def _player_for_skip_segments(player_module):
+    test_player = _player_for_episode(player_module)
+    test_player.skip_intro_enabled = True
+    test_player.skip_intro_auto = True
+    test_player.skip_credits_enabled = True
+    test_player.skip_intro_segments = None
+    test_player.skip_intro_handled = {"intro": False, "recap": False, "outro": False}
+    test_player.current_time = 0
+    test_player.total_time = 0
+    test_player.seekTime = MagicMock()
+    return test_player
+
+
+def test_check_skip_intro_resolves_open_ended_outro_to_total_duration(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 1746000, "end_ms": None, "start_sec": 1746.0, "end_sec": None}
+    }
+    test_player.current_time = 1747.0
+    test_player.total_time = 1800.0
+
+    test_player.check_skip_intro()
+
+    test_player.seekTime.assert_called_once_with(1800.0)
+    assert test_player.skip_intro_handled["outro"] is True
+
+
+def test_check_skip_intro_waits_for_duration_before_open_ended_trigger(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 1746000, "end_ms": None, "start_sec": 1746.0, "end_sec": None}
+    }
+    test_player.current_time = 1747.0
+    test_player.total_time = 0
+
+    test_player.check_skip_intro()
+
+    test_player.seekTime.assert_not_called()
+    assert test_player.skip_intro_handled["outro"] is False
+
+
+def test_check_skip_intro_passes_resolved_open_end_to_the_dialog(monkeypatch):
+    import json as test_json
+
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.skip_intro_auto = False
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 1746000, "end_ms": None, "start_sec": 1746.0, "end_sec": None}
+    }
+    test_player.current_time = 1747.0
+    test_player.total_time = 1800.0
+    monkeypatch.setattr(player_module, "translation", lambda _id: "Skip Credits")
+    monkeypatch.setattr(player_module, "action_url_run", lambda **kwargs: kwargs)
+    execute_builtin = MagicMock()
+    monkeypatch.setattr(player_module.xbmc, "executebuiltin", execute_builtin)
+
+    test_player.check_skip_intro()
+
+    assert execute_builtin.call_count == 1
+    payload = execute_builtin.call_args[0][0]
+    segment_data = test_json.loads(payload["segment_data"])
+    assert segment_data["end_ms"] == 1800000
+    assert segment_data["end_sec"] == 1800.0
+    assert payload["skip_label"] == "Skip Credits"
+
+
+def test_check_skip_intro_skips_closed_intro_window_normally(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.skip_intro_segments = {
+        "intro": {"start_ms": 228664, "end_ms": 246143, "start_sec": 228.664, "end_sec": 246.143}
+    }
+    test_player.current_time = 100.0
+    test_player.total_time = 1800.0
+
+    test_player.check_skip_intro()
+
+    test_player.seekTime.assert_not_called()
+    assert test_player.skip_intro_handled["intro"] is False
+
+
+def test_check_next_dialog_defers_while_skip_window_is_active(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.data["mode"] = "tv"
+    test_player.total_time = 2900.0
+    test_player.current_time = 2860.0
+    test_player.playback_started_properly = True
+    test_player.watched_percentage = 98.0
+    test_player.next_dialog = True
+    test_player.playing_next_time = 50
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 2806000, "end_ms": 2866900, "start_sec": 2806.0, "end_sec": 2866.9}
+    }
+    test_player.skip_intro_auto = False
+    open_next = MagicMock()
+    monkeypatch.setattr(test_player, "_open_next_dialog", open_next)
+    monkeypatch.setattr(player_module, "get_setting", lambda *_args, **_kw: "")
+
+    test_player.check_next_dialog()
+
+    open_next.assert_not_called()
+
+
+def test_check_next_dialog_opens_after_skip_window_resolves(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.data["mode"] = "tv"
+    test_player.total_time = 2900.0
+    test_player.current_time = 2870.0
+    test_player.playback_started_properly = True
+    test_player.watched_percentage = 99.0
+    test_player.next_dialog = True
+    test_player.playing_next_time = 50
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 2806000, "end_ms": 2866900, "start_sec": 2806.0, "end_sec": 2866.9}
+    }
+    test_player.skip_intro_handled["outro"] = True
+    test_player.skip_intro_auto = False
+    open_next = MagicMock()
+    monkeypatch.setattr(test_player, "_open_next_dialog", open_next)
+    monkeypatch.setattr(player_module, "get_setting", lambda *_args, **_kw: "")
+
+    test_player.check_next_dialog()
+
+    open_next.assert_called_once()
+
+
+def test_check_next_dialog_does_not_defer_in_auto_skip_mode(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.data["mode"] = "tv"
+    test_player.total_time = 2900.0
+    test_player.current_time = 2860.0
+    test_player.playback_started_properly = True
+    test_player.watched_percentage = 98.0
+    test_player.next_dialog = True
+    test_player.playing_next_time = 50
+    test_player.skip_intro_segments = {
+        "outro": {"start_ms": 2806000, "end_ms": 2866900, "start_sec": 2806.0, "end_sec": 2866.9}
+    }
+    test_player.skip_intro_auto = True
+    open_next = MagicMock()
+    monkeypatch.setattr(test_player, "_open_next_dialog", open_next)
+    monkeypatch.setattr(player_module, "get_setting", lambda *_args, **_kw: "")
+
+    test_player.check_next_dialog()
+
+    open_next.assert_called_once()
+
+
+def test_check_skip_intro_rearms_window_after_resume_past_it(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_skip_segments(player_module)
+    test_player.skip_intro_segments = {
+        "intro": {"start_ms": 152199, "end_ms": 243468, "start_sec": 152.199, "end_sec": 243.468}
+    }
+    # Resume at 28:11: the intro window is long gone, nothing must fire and
+    # the segment must stay re-armable.
+    test_player.current_time = 1691.0
+    test_player.total_time = 2900.0
+
+    test_player.check_skip_intro()
+
+    assert test_player.skip_intro_handled["intro"] is False
+
+    # Seeking back into the window must (re)arm the skip dialog.
+    test_player.skip_intro_auto = False
+    monkeypatch.setattr(player_module, "translation", lambda _id: "Skip Intro")
+    monkeypatch.setattr(player_module, "action_url_run", lambda **kwargs: kwargs)
+    execute_builtin = MagicMock()
+    monkeypatch.setattr(player_module.xbmc, "executebuiltin", execute_builtin)
+    test_player.current_time = 200.0
+
+    test_player.check_skip_intro()
+
+    assert test_player.skip_intro_handled["intro"] is True
+    assert execute_builtin.call_count == 1
+    assert execute_builtin.call_args[0][0]["skip_label"] == "Skip Intro"
