@@ -413,3 +413,265 @@ def test_resolve_episode_uses_mal_id_when_anilist_id_missing(monkeypatch):
     assert result is not None
     assert result.absolute == 1
     assert result.matched_by == "air_date"
+
+
+# ── AniZip's second entry shape (AniDB) ──────────────────────
+
+# AniZip mixes two entry shapes in one ``episodes`` mapping. TVDB entries carry a
+# season, an ``absoluteEpisodeNumber`` and a camelCase ``airDate``; AniDB entries
+# carry no season at all, keep the number in the string ``episode`` field and the
+# date in the lowercase ``airdate`` field. One Piece (kitsu 12) is the live case:
+# TMDB asks for season 23 episode 1160, and the only entry carrying that episode's
+# 2026-05-03 air date is AniDB-shaped.
+ONE_PIECE = {
+    "1": {
+        "tvdbShowId": 81797,
+        "tvdbId": 361887,
+        "seasonNumber": 0,
+        "episodeNumber": 1,
+        "absoluteEpisodeNumber": 1,
+        "title": "Special",
+        "airDate": "1999-10-20",
+        "episode": "1",
+        "airdate": "1999-10-20",
+    },
+    "2": {
+        "tvdbShowId": 81797,
+        "tvdbId": 361888,
+        "seasonNumber": 1,
+        "episodeNumber": 1,
+        "absoluteEpisodeNumber": 2,
+        "title": "I'm Luffy!",
+        "airDate": "1999-10-20",
+        "episode": "2",
+        "airdate": "1999-10-20",
+    },
+    "3": {
+        "tvdbShowId": 81797,
+        "tvdbId": 361889,
+        "seasonNumber": 2,
+        "episodeNumber": 1,
+        "absoluteEpisodeNumber": 62,
+        "title": "Episode of Arabasta",
+        "airDate": "2001-01-10",
+        "episode": "62",
+        "airdate": "2001-01-10",
+    },
+    "1159": {
+        "episode": "1159",
+        "anidbEid": 306178,
+        "length": 25,
+        "airdate": "2026-04-26",
+        "rating": "7.98",
+        "title": {"en": "The Giant Warrior Pirates"},
+    },
+    "1160": {
+        "episode": "1160",
+        "anidbEid": 306179,
+        "length": 25,
+        "airdate": "2026-05-03",
+        "rating": "8.22",
+        "title": {"en": "An Encounter on a Snowfield - Loki, the Accursed Prince"},
+    },
+}
+
+
+def test_build_index_indexes_an_anidb_shaped_entry():
+    index = build_index(
+        {
+            "1160": {
+                "episode": "1160",
+                "airdate": "2026-05-03",
+                "title": {"en": "An Encounter on a Snowfield"},
+            }
+        }
+    )
+
+    entry = index[0]
+    assert entry.absolute == 1160
+    assert entry.air_date == "2026-05-03"
+    assert entry.season is None
+    assert entry.episode is None
+
+
+def test_build_index_keeps_the_tvdb_shaped_entry_unchanged():
+    index = build_index(
+        {
+            "1": {
+                "tvdbShowId": 81797,
+                "tvdbId": 361887,
+                "seasonNumber": 1,
+                "episodeNumber": 1,
+                "absoluteEpisodeNumber": 1,
+                "title": "I'm Luffy!",
+                "airDate": "1999-10-20",
+                "episode": "1",
+                "airdate": "1999-10-20",
+            }
+        }
+    )
+
+    entry = index[0]
+    assert entry.absolute == 1
+    assert entry.season == 1
+    assert entry.episode == 1
+    assert entry.tvdb_id == 361887
+    assert entry.air_date == "1999-10-20"
+
+
+def test_build_index_never_takes_a_tvdb_episode_number_as_absolute():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 1, "episodeNumber": 9, "episode": "9"},
+            "2": {"seasonNumber": 2, "episodeNumber": 3, "absoluteEpisodeNumber": 30},
+        }
+    )
+
+    assert [entry.absolute for entry in index] == [None, 30]
+    assert [entry.episode for entry in index] == [9, 3]
+
+
+def test_build_index_accepts_the_lowercase_airdate_field():
+    index = build_index(
+        {
+            "1": {
+                "seasonNumber": 1,
+                "episodeNumber": 1,
+                "absoluteEpisodeNumber": 1,
+                "airdate": "2013-04-07",
+            },
+            "2": {
+                "seasonNumber": 1,
+                "episodeNumber": 2,
+                "absoluteEpisodeNumber": 2,
+                "airdate": "2013-04-07T12:30:00Z",
+            },
+        }
+    )
+
+    assert [entry.air_date for entry in index] == ["2013-04-07", "2013-04-07"]
+
+
+def test_match_resolves_one_piece_season_23_through_the_anidb_air_date():
+    index = build_index(ONE_PIECE)
+
+    result = match_coordinates(index, 23, 1160, "2026-05-03")
+
+    assert result is not None
+    assert result.absolute == 1160
+    assert result.matched_by == "air_date"
+
+
+def test_match_returns_none_for_one_piece_without_an_air_date():
+    index = build_index(ONE_PIECE)
+
+    # Without the air date the request must stay unanswered: neither the season nor
+    # the episode number exist in the index, and nothing may be fabricated.
+    assert match_coordinates(index, 23, 1160, None) is None
+    assert match_coordinates(index, 23, 1160) is None
+
+
+def test_anidb_entries_do_not_widen_the_seasons_the_index_describes():
+    index = build_index(ONE_PIECE)
+
+    # AniDB entries carry no season, so they never join the TVDB season set that gates
+    # the positional fallback: One Piece still describes exactly {0, 1, 2}.
+    assert {entry.season for entry in index if entry.season is not None} == {0, 1, 2}
+    assert [entry.absolute for entry in index] == [1, 2, 62, 1159, 1160]
+
+
+def test_one_piece_index_still_refuses_the_positional_fallback():
+    index = build_index(ONE_PIECE)
+
+    # Regression pin for ce41862e: season 23 is absent from the index, so neither a
+    # season/episode nor a positional answer may be fabricated for it, while the
+    # seasons the index does describe still answer normally.
+    assert match_coordinates(index, 23, 1) is None
+    assert match_coordinates(index, 5, 1) is None
+
+    answered = match_coordinates(index, 1, 1)
+    assert answered is not None
+    assert answered.matched_by == "season_episode"
+
+
+def test_match_keeps_mushoku_tensei_season_3_unanswered():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 1, "episodeNumber": 1, "absoluteEpisodeNumber": 1},
+            "2": {"seasonNumber": 1, "episodeNumber": 2, "absoluteEpisodeNumber": 2},
+            "3": {"seasonNumber": 1, "episodeNumber": 3, "absoluteEpisodeNumber": 3},
+            "4": {"seasonNumber": 1, "episodeNumber": 4, "absoluteEpisodeNumber": 4},
+            "5": {"seasonNumber": 1, "episodeNumber": 5, "absoluteEpisodeNumber": 5},
+            "6": {"seasonNumber": 1, "episodeNumber": 6, "absoluteEpisodeNumber": 6},
+        }
+    )
+
+    assert match_coordinates(index, 3, 1) is None
+    assert match_coordinates(index, 3, 6) is None
+
+
+def test_match_keeps_mushoku_tensei_season_3_unanswered_with_anidb_entries():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 1, "episodeNumber": 1, "absoluteEpisodeNumber": 1},
+            "2": {"seasonNumber": 1, "episodeNumber": 2, "absoluteEpisodeNumber": 2},
+            "3": {"episode": "3", "airdate": "2021-01-10"},
+            "4": {"episode": "4", "airdate": "2021-01-17"},
+            "5": {"episode": "5", "airdate": "2021-01-24"},
+            "6": {"episode": "6", "airdate": "2021-01-31"},
+        }
+    )
+
+    # AniDB entries carry no season, so they must not open the positional fallback for
+    # a season the index does not describe: the ce41862e guard still reads {1} here.
+    assert match_coordinates(index, 3, 1) is None
+    assert match_coordinates(index, 3, 6) is None
+
+    # The same entries stay usable through the season the index does describe and
+    # through the air date.
+    assert match_coordinates(index, 1, 3) is not None
+    dated = match_coordinates(index, 1, 3, "2021-01-10")
+    assert dated is not None
+    assert dated.absolute == 3
+    assert dated.matched_by == "air_date"
+
+
+def test_match_prefers_the_lowercase_airdate_over_season_episode():
+    index = build_index(
+        {
+            "1": {
+                "seasonNumber": 1,
+                "episodeNumber": 1,
+                "absoluteEpisodeNumber": 1,
+                "airdate": "2013-04-07",
+            },
+            "2": {
+                "seasonNumber": 2,
+                "episodeNumber": 2,
+                "absoluteEpisodeNumber": 2,
+                "airdate": "2013-04-14",
+            },
+        }
+    )
+
+    result = match_coordinates(index, 2, 2, air_date="2013-04-07")
+
+    assert result is not None
+    assert result.absolute == 1
+    assert result.matched_by == "air_date"
+
+
+def test_resolve_episode_resolves_one_piece_through_anidb_entries(monkeypatch):
+    monkeypatch.setattr(anizip_provider, "mappings", _payload(ONE_PIECE))
+
+    result = resolve_episode({"anilist_id": 21, "mal_id": 21}, 23, 1160, "2026-05-03")
+
+    assert result is not None
+    assert result.absolute == 1160
+    assert result.matched_by == "air_date"
+
+
+def test_resolve_episode_returns_none_for_one_piece_without_an_air_date(monkeypatch):
+    monkeypatch.setattr(anizip_provider, "mappings", _payload(ONE_PIECE))
+
+    assert resolve_episode({"anilist_id": 21}, 23, 1160) is None

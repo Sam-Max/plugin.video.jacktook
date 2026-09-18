@@ -236,7 +236,14 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
     ep_name = episode.name
     episode_number = episode.episode_number
 
-    tv_data = {"name": quote(ep_name), "episode": episode_number, "season": season}
+    tv_data = {
+        "name": quote(ep_name),
+        "episode": episode_number,
+        "season": season,
+        # Travels with the search request so the anime route can match TMDB numbering
+        # against an episode index that carries original air dates.
+        "air_date": getattr(episode, "air_date", None),
+    }
 
     list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
     list_item.setProperty("IsPlayable", "true")

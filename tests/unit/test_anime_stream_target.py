@@ -1,3 +1,6 @@
+import json
+from unittest.mock import MagicMock
+
 from lib.anime import stream_target
 from lib.anime.episode_map import EpisodeCoordinates
 from lib.anime.normalize import AnimeRecord
@@ -353,3 +356,291 @@ def test_supports_kitsu_target_rejects_missing_or_foreign_targets():
         )
         is False
     )
+
+
+# ── air-date wiring into the search request ──────────────────
+
+# The air date is the only signal that resolves One Piece's TMDB (season 23, episode
+# 1160) against AniZip's AniDB entries, so it has to travel from the episode list into
+# the search request and on to the route resolver. These two tests cover the two hops
+# the anime routing tests above cannot see: the episode view building ``tv_data`` and
+# the search entry forwarding it.
+
+
+class _EpisodeStub:
+    """Minimal TMDB episode stand-in with the attributes the episode view reads."""
+
+    def __init__(self, name, episode_number, air_date):
+        self.name = name
+        self.episode_number = episode_number
+        self.air_date = air_date
+
+
+def _run_process_episode(monkeypatch, air_date):
+    from lib.utils.views import shows
+
+    urls = []
+
+    def fake_build_url(action, **params):
+        urls.append((action, params))
+        return f"plugin://plugin.video.jacktook/?action={action}"
+
+    monkeypatch.setattr(shows, "build_url", fake_build_url)
+    monkeypatch.setattr(shows, "make_list_item", lambda **kwargs: MagicMock())
+    monkeypatch.setattr(shows, "set_media_infoTag", lambda *args, **kwargs: None)
+    monkeypatch.setattr(shows, "add_tmdb_episode_context_menu", lambda *args, **kwargs: [])
+    monkeypatch.setattr(shows, "is_trakt_auth", lambda: False)
+    monkeypatch.setattr(shows, "add_simkl_history_context_menu", lambda *args, **kwargs: [])
+    monkeypatch.setattr(shows, "add_nuvio_history_context_menu", lambda *args, **kwargs: [])
+
+    shows._process_episode(
+        _EpisodeStub("An Encounter on a Snowfield", 1160, air_date),
+        "One Piece",
+        23,
+        {"tmdb_id": 37854},
+        "tv",
+        "tv",
+        None,
+        True,
+    )
+
+    assert len(urls) == 1
+    action, params = urls[0]
+    assert action == "search"
+    return params
+
+
+def test_process_episode_carries_the_air_date_into_tv_data(monkeypatch):
+    params = _run_process_episode(monkeypatch, "2026-05-03")
+
+    assert params["tv_data"]["air_date"] == "2026-05-03"
+    assert params["tv_data"]["season"] == 23
+    assert params["tv_data"]["episode"] == 1160
+
+
+def test_process_episode_tolerates_a_missing_air_date(monkeypatch):
+    params = _run_process_episode(monkeypatch, None)
+
+    assert params["tv_data"]["air_date"] is None
+
+
+def test_run_search_entry_forwards_the_tv_data_air_date_to_the_route(monkeypatch):
+    from lib import search as search_module
+
+    calls = []
+
+    def spy_resolve_anime_route(ids, season, episode, air_date=None):
+        calls.append((ids, season, episode, air_date))
+        return None
+
+    monkeypatch.setattr(search_module, "resolve_anime_route", spy_resolve_anime_route)
+    monkeypatch.setattr(search_module, "get_setting", lambda key, default=None: default)
+    monkeypatch.setattr(search_module, "set_content_type", lambda *args, **kwargs: None)
+    monkeypatch.setattr(search_module, "set_watched_title", lambda *args, **kwargs: None)
+    monkeypatch.setattr(search_module, "search_client", lambda *args, **kwargs: [])
+    monkeypatch.setattr(search_module, "notification", lambda *args, **kwargs: None)
+    monkeypatch.setattr(search_module, "cancel_playback", lambda *args, **kwargs: None)
+
+    search_module.run_search_entry(
+        {
+            "query": "One Piece",
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": json.dumps({"tmdb_id": 37854, "tvdb_id": 81797, "imdb_id": "tt0388629"}),
+            "tv_data": json.dumps(
+                {
+                    "name": "An Encounter on a Snowfield",
+                    "season": 23,
+                    "episode": 1160,
+                    "air_date": "2026-05-03",
+                }
+            ),
+            "anime": "1",
+            "skip_cancel_on_back": True,
+        }
+    )
+
+    assert calls == [
+        (
+            {"tmdb_id": 37854, "tvdb_id": 81797, "imdb_id": "tt0388629"},
+            23,
+            1160,
+            "2026-05-03",
+        )
+    ]
+
+
+# ── resolve_anime_route: per-season (multi-cour) fallback ────
+
+# Live-verified Mushoku Tensei shapes: the identity record is the base cour
+# entry (Simkl 1059371, which covers season 1 only) and season 3 lives in the
+# sequel entry 2832226 with its own AniList/MAL/Kitsu ids.
+
+BASE_SEASON_IDS = {
+    "simkl_id": 1059371,
+    "anilist_id": 108465,
+    "mal_id": 39535,
+    "kitsu_id": 42323,
+}
+SEASON_THREE_IDS = {
+    "simkl_id": 2832226,
+    "anilist_id": 178789,
+    "mal_id": 59193,
+    "kitsu_id": 49002,
+}
+
+
+def _multi_cour_record():
+    return AnimeRecord(anilist_id=108465, mal_id=39535, kitsu_id=42323, simkl_id=1059371)
+
+
+def test_resolve_anime_route_reroutes_through_the_season_entry(monkeypatch):
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+
+    def fake_resolve_episode(ids, season, episode, air_date=None):
+        if ids.get("anilist_id") == 178789:
+            return EpisodeCoordinates(absolute=25, season=3, episode=1, matched_by="season_episode")
+        # The base entry's AniZip index only covers season 1.
+        return None
+
+    monkeypatch.setattr(stream_target, "resolve_episode", fake_resolve_episode)
+
+    season_calls = []
+
+    def fake_resolve_season_entry(base_simkl_id, season):
+        season_calls.append((base_simkl_id, season))
+        return dict(SEASON_THREE_IDS)
+
+    monkeypatch.setattr(stream_target, "resolve_season_entry", fake_resolve_season_entry)
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 3, 1)
+
+    assert season_calls == [(1059371, 3)]
+    assert route == stream_target.AnimeRoute(
+        kitsu_id=49002,
+        absolute=25,
+        matched_by="season_episode",
+        anilist_id=178789,
+        mal_id=59193,
+    )
+    assert stream_target.pick_kitsu_target(route, 3, 1) == stream_target.StreamTarget(
+        video_id="kitsu:49002", episode=25, kind="kitsu", absolute=25
+    )
+
+
+def test_resolve_anime_route_keeps_the_base_route_when_the_season_entry_cannot_match(
+    monkeypatch,
+):
+    # The sequel entry resolves but its index also lacks the episode: the
+    # fallback degrades to None and the base route stays. With absolute None,
+    # pick_kitsu_target yields None, so the caller keeps its existing id chain
+    # (including the imdb seed) — the pre-existing fallback contract.
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+    monkeypatch.setattr(
+        stream_target, "resolve_episode", lambda ids, season, episode, air_date=None: None
+    )
+    monkeypatch.setattr(
+        stream_target,
+        "resolve_season_entry",
+        lambda base_simkl_id, season: dict(SEASON_THREE_IDS),
+    )
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 3, 1)
+
+    assert route == stream_target.AnimeRoute(
+        kitsu_id=42323, absolute=None, matched_by=None, anilist_id=108465, mal_id=39535
+    )
+    assert stream_target.pick_kitsu_target(route, 3, 1) is None
+
+
+def test_resolve_anime_route_does_not_rematch_the_base_entry(monkeypatch):
+    # The season is covered by the base entry, so resolve_season_entry hands
+    # back the base ids: re-running the episode map on them cannot produce
+    # different coordinates and must not happen.
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+    episode_spy = _EpisodeSpy(None)
+    monkeypatch.setattr(stream_target, "resolve_episode", episode_spy)
+    monkeypatch.setattr(
+        stream_target,
+        "resolve_season_entry",
+        lambda base_simkl_id, season: dict(BASE_SEASON_IDS),
+    )
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 3, 1)
+
+    assert len(episode_spy.calls) == 1
+    assert route is not None
+    assert route.kitsu_id == 42323
+    assert route.absolute is None
+
+
+def test_resolve_anime_route_keeps_the_base_route_without_an_entry_kitsu_id(monkeypatch):
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+
+    def fake_resolve_episode(ids, season, episode, air_date=None):
+        if ids.get("anilist_id") == 178789:
+            return EpisodeCoordinates(absolute=25, season=3, episode=1, matched_by="air_date")
+        return None
+
+    monkeypatch.setattr(stream_target, "resolve_episode", fake_resolve_episode)
+    entry = dict(SEASON_THREE_IDS)
+    entry["kitsu_id"] = None
+    monkeypatch.setattr(stream_target, "resolve_season_entry", lambda base_simkl_id, season: entry)
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 3, 1)
+
+    assert route is not None
+    assert route.kitsu_id == 42323
+    assert route.absolute is None
+
+
+def test_resolve_anime_route_skips_the_season_fallback_without_simkl_id(monkeypatch):
+    record = AnimeRecord(anilist_id=ANILIST_ID, mal_id=MAL_ID, kitsu_id=KITSU_ID)
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+    monkeypatch.setattr(stream_target, "resolve_episode", lambda *args, **kwargs: None)
+    monkeypatch.setattr(stream_target, "resolve_season_entry", _fail)
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 85937}, 1, 5)
+
+    assert route is not None
+    assert route.kitsu_id == KITSU_ID
+    assert route.absolute is None
+
+
+def test_resolve_anime_route_skips_the_season_fallback_for_a_non_positive_season(
+    monkeypatch,
+):
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+    monkeypatch.setattr(stream_target, "resolve_episode", lambda *args, **kwargs: None)
+    monkeypatch.setattr(stream_target, "resolve_season_entry", _fail)
+
+    # Season 0 passes the coarse coercibility gate but is not a usable season.
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 0, 1)
+
+    assert route is not None
+    assert route.kitsu_id == 42323
+    assert route.absolute is None
+
+
+def test_resolve_anime_route_keeps_the_base_route_when_the_fallback_raises(monkeypatch):
+    record = _multi_cour_record()
+    monkeypatch.setattr(stream_target, "resolve_identity", _IdentitySpy(record))
+    monkeypatch.setattr(stream_target, "resolve_episode", lambda *args, **kwargs: None)
+
+    def boom(base_simkl_id, season):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(stream_target, "resolve_season_entry", boom)
+
+    route = stream_target.resolve_anime_route({"tmdb_id": 1059371}, 3, 1)
+
+    # A fallback failure must degrade to the base route, never to None: the
+    # base route was exactly what the pre-fallback behavior returned.
+    assert route is not None
+    assert route.kitsu_id == 42323
+    assert route.absolute is None
