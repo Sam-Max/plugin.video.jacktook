@@ -35,11 +35,18 @@ def build_index(episodes: Any) -> List[EpisodeCoordinates]:
     """Build a normalized, absolute-number-ordered index from AniZip episodes.
 
     ``episodes`` is the raw ``episodes`` mapping of an AniZip payload: keys are
-    episode-number strings and values are per-episode dicts. The result is
-    ordered by absolute episode number, falling back to the TVDB episode number
-    and then to the mapping key. Unusable entries (non-dict values, or values
-    without any usable number) are skipped, and garbage input yields an empty
-    list. This function never raises.
+    episode-number strings and values are per-episode dicts. AniZip mixes two entry
+    shapes in that mapping: TVDB entries carry ``seasonNumber``/``episodeNumber`` and
+    the absolute number in ``absoluteEpisodeNumber``, while AniDB entries carry no
+    season at all, keep the number in the string ``episode`` field and the date in the
+    lowercase ``airdate`` field. Both shapes are normalized into the same coordinates:
+    an AniDB entry keeps ``season``/``episode`` unset and takes its ``absolute`` from
+    ``episode``.
+
+    The result is ordered by absolute episode number, falling back to the TVDB episode
+    number and then to the mapping key. Unusable entries (non-dict values, or values
+    without any usable number) are skipped, and garbage input yields an empty list.
+    This function never raises.
     """
     if not isinstance(episodes, dict):
         return []
@@ -47,8 +54,14 @@ def build_index(episodes: Any) -> List[EpisodeCoordinates]:
     for key, raw in episodes.items():
         if not isinstance(raw, dict):
             continue
+        season = _to_int(raw.get("seasonNumber"))
         absolute = _to_int(raw.get("absoluteEpisodeNumber"))
         episode = _to_int(raw.get("episodeNumber"))
+        if absolute is None and season is None:
+            # AniDB-shaped entry: it has no season, so its string ``episode`` field is
+            # the absolute number. A TVDB ``episodeNumber`` is season-relative and is
+            # never allowed to become ``absolute``.
+            absolute = _to_int(raw.get("episode"))
         position = _first_int(absolute, episode, _to_int(key))
         if position is None:
             continue
@@ -57,11 +70,11 @@ def build_index(episodes: Any) -> List[EpisodeCoordinates]:
                 position,
                 EpisodeCoordinates(
                     absolute=absolute,
-                    season=_to_int(raw.get("seasonNumber")),
+                    season=season,
                     episode=episode,
                     tvdb_id=_to_int(raw.get("tvdbId")),
                     title=_to_str(raw.get("title")),
-                    air_date=_normalize_date(raw.get("airDate")),
+                    air_date=_normalize_date(raw.get("airDate") or raw.get("airdate")),
                 ),
             )
         )
