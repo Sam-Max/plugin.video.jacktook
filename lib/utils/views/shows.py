@@ -253,7 +253,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
     list_item.setProperty("jacktook.simkl.episode", str(episode_number))
     set_media_infoTag(list_item, data=episode, fanart_data=fanart_details, mode="episode")
 
-    context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids)
+    context_menu = add_tmdb_episode_context_menu(mode, tv_name, tv_data, ids, anime=anime)
     if is_trakt_auth():
         context_menu += add_trakt_watched_context_menu(
             "shows", season=season, episode=episode_number, ids=ids

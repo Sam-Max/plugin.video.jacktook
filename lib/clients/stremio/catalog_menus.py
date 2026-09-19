@@ -1149,6 +1149,13 @@ def list_stremio_episodes(params, addon_resolver=None):
         ]
         context_menu_ids = _resolve_tmdb_ids_for_context_menu(ids, "series")
         if _has_reliable_tmdb_ids(context_menu_ids):
+            # Kitsu-style anime catalogs expose their episodes under a "series" meta type,
+            # so the catalog/menu type is the anime marker available on this params dict.
+            is_anime = (
+                params.get("catalog_type") == "anime"
+                or params.get("menu_type") == "anime"
+                or getattr(meta_data, "type", "") == "anime"
+            )
             context_menu = (
                 _filter_tmdb_context_menu(
                     add_tmdb_episode_context_menu(
@@ -1156,6 +1163,7 @@ def list_stremio_episodes(params, addon_resolver=None):
                         tv_name=meta_data.name,
                         tv_data=tv_data,
                         ids=context_menu_ids,
+                        anime=is_anime,
                     )
                 )
                 + context_menu

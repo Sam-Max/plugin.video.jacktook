@@ -684,9 +684,13 @@ def add_tmdb_show_context_menu(mode, ids=None, title=None):
     return context_menu
 
 
-def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids=None):
+def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids=None, anime=False):
     if ids is None:
         ids = {}
+    # Anime episodes must keep the anime marker on every re-entry into the search
+    # flow, otherwise run_search_entry skips the Kitsu route and falls back to the
+    # IMDb id with the absolute episode number (0 results for long-running anime).
+    anime_param = "1" if anime else "0"
     return [
         (
             translation(90049),
@@ -697,6 +701,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids=None):
                 ids=ids,
                 tv_data=tv_data,
                 rescrape=True,
+                anime=anime_param,
             ),
         ),
         (
@@ -708,6 +713,7 @@ def add_tmdb_episode_context_menu(mode, tv_name=None, tv_data=None, ids=None):
                 ids=ids,
                 tv_data=tv_data,
                 force_select=True,
+                anime=anime_param,
             ),
         ),
         (
