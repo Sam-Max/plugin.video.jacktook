@@ -28,6 +28,7 @@ class ResolverWindow(BaseWindow):
         close_callback: Optional[Any] = None,
         is_subtitle_download: bool = False,
         local_subtitle_path: Optional[str] = None,
+        direct_playback_handoff: bool = False,
     ) -> None:
         super().__init__(
             xml_file,
@@ -42,6 +43,8 @@ class ResolverWindow(BaseWindow):
         self.pack_select: bool = False
         self.is_subtitle_download = is_subtitle_download
         self.local_subtitle_path = local_subtitle_path
+        self.direct_playback_handoff = direct_playback_handoff
+        self.playback_resolution_attempted = False
         self.item_information: Dict = item_information or {}
         self.close_callback: Optional[Any] = close_callback
         self.playback_info: Optional[Dict[str, Any]] = None
@@ -101,6 +104,15 @@ class ResolverWindow(BaseWindow):
 
             if not self.playback_info:
                 raise Exception("Failed to resolve source")
+
+            if self.direct_playback_handoff:
+                self.playback_info["direct_playback_handoff"] = True
+                kodilog(
+                    "[RESOLVER] Original Kodi resolution already consumed; "
+                    "using explicit Player.play()"
+                )
+
+            self.playback_resolution_attempted = True
 
             player = JacktookPLayer(
                 on_started=self.handle_playback_started,
