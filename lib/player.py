@@ -1,3 +1,4 @@
+import time
 from datetime import date
 from json import dumps as json_dumps
 from json import loads
@@ -602,9 +603,7 @@ class JacktookPLayer(xbmc.Player):
         state is read defensively: players built outside ``set_constants``
         (tests, alternative constructors) never had skip state.
         """
-        if getattr(self, "skip_intro_auto", True) or not getattr(
-            self, "skip_intro_segments", None
-        ):
+        if getattr(self, "skip_intro_auto", True) or not getattr(self, "skip_intro_segments", None):
             return False
         handled = getattr(self, "skip_intro_handled", None) or {}
         segments = self.skip_intro_segments
@@ -1311,8 +1310,67 @@ class JacktookPLayer(xbmc.Player):
 
             self.skip_intro_segments = get_segments(ids, season, episode)
             kodilog(f"IntroDB segments: {self.skip_intro_segments}", level=xbmc.LOGINFO)
+            self._merge_aniskip_segments(ids, season, episode)
         except Exception as e:
             kodilog(f"Error fetching IntroDB segments: {e}")
+
+    def _merge_aniskip_segments(self, ids, season, episode):
+        """Fetch and merge AniSkip intervals into the segments of an anime playback.
+
+        The anime signal is carried in the playback data by the search entry, so
+        non-anime playbacks never resolve an anime route. AniSkip needs the real
+        episode runtime in seconds (its API filters intervals by proximity to
+        it), so the fetch waits bounded for the player duration; without it the
+        IntroDB segments stand. Every step is best-effort: a failure keeps the
+        IntroDB result untouched and never touches playback.
+        """
+        try:
+            from lib.utils.general.utils import truthy_param
+
+            if not truthy_param(self.data.get("anime")):
+                return
+
+            from lib.anime.stream_target import resolve_anime_route
+
+            route = resolve_anime_route(ids, season, episode)
+            mal_id = getattr(route, "mal_id", None)
+            absolute = getattr(route, "absolute", None)
+            try:
+                mal_number = int(mal_id)
+                absolute_episode = int(absolute)
+            except (TypeError, ValueError):
+                mal_number, absolute_episode = 0, 0
+            if mal_number <= 0 or absolute_episode <= 0:
+                kodilog(
+                    "AniSkip: no usable anime route, keeping IntroDB segments",
+                    level=xbmc.LOGINFO,
+                )
+                return
+
+            total_time = 0.0
+            for _ in range(20):
+                total_time = getattr(self, "total_time", 0) or 0
+                if total_time > 0:
+                    break
+                time.sleep(1)
+            if total_time <= 0:
+                kodilog(
+                    "AniSkip: duration never known, keeping IntroDB segments",
+                    level=xbmc.LOGINFO,
+                )
+                return
+
+            from lib.anime.providers.aniskip import get_skip_times, merge_skip_segments
+
+            aniskip_segments = get_skip_times(mal_number, absolute_episode, int(total_time))
+            if not aniskip_segments:
+                return
+
+            merged = merge_skip_segments(self.skip_intro_segments, aniskip_segments)
+            self.skip_intro_segments = merged
+            kodilog(f"AniSkip merged segments: {sorted(merged)}", level=xbmc.LOGINFO)
+        except Exception as e:
+            kodilog(f"AniSkip merge failed: {e}")
 
     def check_skip_intro(self):
         try:

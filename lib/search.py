@@ -808,6 +808,12 @@ def run_search_entry(params: dict):
             anime_target, absolute_episode = None, None
     else:
         kodilog("[ANIME] route skipped marker_absent", xbmc.LOGINFO)
+    if anime_marker:
+        # Carry the anime signal into the playback data: both playback paths
+        # (auto play and source select) merge playback_context into the payload
+        # the player receives, letting the skip fetch resolve the anime route
+        # without any provider work for non-anime playbacks.
+        playback_resume = dict(playback_resume, anime=True)
     preferred_stremio_streams = safe_json_loads(params.get("preferred_stremio_streams") or "[]")
     preferred_results = _preferred_stremio_results(preferred_stremio_streams)
 
