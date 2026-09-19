@@ -24,7 +24,7 @@
 
 ### 🔍 Search & Scraping
 - **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Usenet, Debrid Services.
-- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, OffCloud and Torbox.
+- **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, OffCloud, Torbox.
 - **Torrent Scraping**: Integration with Jackett and Prowlarr for torrent sources.
 - **Usenet Scraping**: EasyNews integration for Usenet sources.
 - **External Scrapers**: Support for external scrapers like Magneto and CocoScrapers.
@@ -34,16 +34,30 @@
 
 ### 🧩 Stremio Ecosystem
 - **Cloud Configuration**: Import and sync your entire configuration, including installed addons and Debrid tokens, directly from your Stremio account.
-- **Catalog Navigation**: Browse and search Stremio's extensive metadata catalogs.
+- **Catalog Navigation**: Browse and search Stremio's extensive metadata catalogs, with channel and genre-based navigation.
 - **Stream Scraper**: Scraping and filtering of Stremio streams by resolution, file size, and quality.
-- **Flexible Management**: Add custom addons via URL, or toggle existing ones on/off on the fly.
+- **Flexible Management**: Add custom addons via URL, configure existing ones, or toggle them on/off on the fly.
+- **Subtitle Discovery**: Discover subtitles from your installed Stremio addons, queried in parallel and integrated into playback.
 - **Web Server Manager**: A local web interface to manage your Stremio sources from your phone or PC.
 
+### 🎌 Anime
+- **Canonical Metadata**: Titles enriched with metadata from AniList and AniZip, and searchable under any of their known identity aliases.
+- **Season-Aware Routing**: Stream routing that understands seasons and episode mappings across providers.
+- **Skip Intros & Endings**: AniSkip skip times merged into the player skip flow.
+- **Dubbed Releases**: Dubbed sources flagged directly in the source-select badges.
+
+### 📚 Library & Tracking
+- **Simkl**: PIN authorization, playback scrobbling, remote Continue Watching, and TV/movie library integration with watched-status controls and incremental activity sync.
+- **Nuvio**: Full account integration with QR/device login, per-profile library sync, My Movies / My Shows, paginated watch history, Continue Watching, a read-only collections browser, and Nuvio addon management.
+- **Trakt**: Device authorization, library synchronization, list management, scrobbling, and Continue Watching.
+
 ### 🎥 Playback & Engines
-- **Torrent Engines**: Integrated support for **Jacktorr**, **Torrest**, and **Elementum** for seamless P2P streaming.
+- **Torrent Engines**: Integrated support for **Jacktorr** (TorrServer), **Torrest**, and **Elementum** for seamless P2P streaming, with TorrServer category browsing and richer torrent metadata.
 - **Debrid Streaming**: Stream directly from your Debrid accounts.
 - **Usenet Support**: Stream from Usenet sources via EasyNews.
 - **Telegram Streaming**: Stream directly from Telegram via Jackgram.
+- **Next Episode Dialog**: Built-in PlayNext dialog with localized labels and safe playback transitions.
+- **Smart Source Select**: Filter results by quality, size, source, and release group.
 
 ### 🛠️ Utilities
 - **Automatic Subtitles**: Download subtitles directly from Stremio OpenSubtitles addon.
@@ -51,7 +65,7 @@
 - **Subtitle Uploader**: Upload your own subtitles from local device or local web server.
 - **TMDB Helper Integration**: Full compatibility with TMDB Helper via custom players.
 - **Backup & Restore**: Easily backup and restore your entire configuration, including Stremio addons and Debrid tokens.
-- **IntroDB**: Integration with IntroDB for automatic movie intros.
+- **IntroDB**: Automatic intro and ending detection (v3) with skip support during playback.
 - **WebDav**: Integration with WebDav for remote file management and streaming.
 - **Youtube Trailer**: Instant access to trailers from YouTube.
 ---
@@ -110,6 +124,8 @@ If you are not using Debrid services, you can use these engines for P2P streamin
 | ![Home](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/home.png) | ![TV](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/tv.png) |
 | **Settings** | **Extras** |
 | ![Settings](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/settings.png) | ![Extras](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/extras.png) |
+| **Web Server** | |
+| ![Web Server](https://raw.githubusercontent.com/Sam-Max/plugin.video.jacktook/master/resources/screenshots/webserver.png) | |
 
 ---
 
@@ -138,6 +154,10 @@ A huge thanks to everyone who has contributed to this project:
   <a href="https://github.com/icarok99"><img src="https://github.com/icarok99.png?size=50" width="50" height="50" alt="Ícaro Maicon" title="Ícaro Maicon"/></a>
   <a href="https://github.com/asylumexp"><img src="https://github.com/asylumexp.png?size=50" width="50" height="50" alt="Sam Heinz" title="Sam Heinz"/></a>
   <a href="https://github.com/saucepanlid"><img src="https://github.com/saucepanlid.png?size=50" width="50" height="50" alt="saucepanlid" title="saucepanlid"/></a>
+  <a href="https://github.com/Therand90"><img src="https://github.com/Therand90.png?size=50" width="50" height="50" alt="Therand90" title="Therand90"/></a>
+  <a href="https://github.com/SolGarlic"><img src="https://github.com/SolGarlic.png?size=50" width="50" height="50" alt="Sol Garlic" title="Sol Garlic"/></a>
+  <a href="https://github.com/VuzzyM"><img src="https://github.com/VuzzyM.png?size=50" width="50" height="50" alt="Vuzzy" title="Vuzzy"/></a>
+  <a href="https://github.com/nat80"><img src="https://github.com/nat80.png?size=50" width="50" height="50" alt="nat80" title="nat80"/></a>
 </p>
 
 ---
