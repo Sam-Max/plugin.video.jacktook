@@ -11,7 +11,7 @@ playback.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import xbmc
 
@@ -185,6 +185,35 @@ def pick_kitsu_target(
 def supports_kitsu_target(target: Optional[StreamTarget]) -> bool:
     """Return True when the target is a usable native Kitsu route."""
     return bool(target is not None and target.kind == "kitsu" and target.episode > 0)
+
+
+def resolve_title_aliases(ids: Any) -> List[str]:
+    """Return the distinct usable titles of the anime identity record.
+
+    Release groups index anime under the romaji or the official English title,
+    which the TMDB candidates may not carry, so callers use these as extra
+    search queries. ``ids`` feeds the same identity seed the routing uses, and
+    every failure degrades to an empty list — this is best-effort enrichment,
+    never a requirement.
+    """
+    try:
+        source = ids if isinstance(ids, dict) else None
+        if not source or not _has_usable_id(source):
+            return []
+        record = resolve_identity(_identity_seed(source))
+        if record is None:
+            return []
+        seen = set()
+        aliases = []
+        for value in (record.title_en, record.title_romaji, record.title_native):
+            title = (value or "").strip()
+            key = title.casefold()
+            if title and key not in seen:
+                seen.add(key)
+                aliases.append(title)
+        return aliases
+    except Exception:
+        return []
 
 
 def _has_usable_id(source: Dict[str, Any]) -> bool:

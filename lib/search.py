@@ -300,6 +300,7 @@ def _build_title_fallback_queries(
     variant: str = SearchVariant.DEFAULT,
     year: Optional[int] = None,
     title_language_mode: Optional[str] = None,
+    anime_target=None,
 ) -> List[str]:
     variant = _normalize_search_variant(variant)
     title_language_mode = _normalize_title_language_mode(
@@ -321,12 +322,25 @@ def _build_title_fallback_queries(
     if localized_candidate:
         candidates.append(localized_candidate)
 
+    anime_aliases: List[str] = []
+    if anime_target is not None:
+        # Anime identity titles (AniList/Simkl) are appended last: release
+        # groups index under the romaji or the official English title, which
+        # the TMDB candidates may not carry. A resolved route means the
+        # identity record is already cached, so this costs no extra call.
+        try:
+            from lib.anime.stream_target import resolve_title_aliases
+
+            anime_aliases = resolve_title_aliases(ids)
+        except Exception as e:
+            kodilog(f"Failed to resolve anime title aliases: {e}")
+
     if not ids:
-        return _unique_title_candidates(candidates)
+        return _unique_title_candidates(candidates + anime_aliases)
 
     tmdb_id = ids.get("tmdb_id")
     if not tmdb_id or mode not in ("movies", "tv"):
-        return _unique_title_candidates(candidates)
+        return _unique_title_candidates(candidates + anime_aliases)
 
     try:
         from lib.clients.tmdb.utils.utils import get_tmdb_media_details
@@ -337,7 +351,7 @@ def _build_title_fallback_queries(
         details = None
 
     if not details:
-        return _unique_title_candidates(candidates)
+        return _unique_title_candidates(candidates + anime_aliases)
 
     english_title = _extract_english_tmdb_title(details, mode)
     original_title = getattr(details, "original_title", "") or getattr(details, "original_name", "")
@@ -377,6 +391,7 @@ def _build_title_fallback_queries(
         elif cleaned_query:
             candidates.append(cleaned_query)
 
+    candidates.extend(anime_aliases)
     return _unique_title_candidates(candidates)
 
 
@@ -390,6 +405,7 @@ def _perform_search_with_title_fallback(
     variant: str = SearchVariant.DEFAULT,
     year: Optional[int] = None,
     title_language_mode: str = TITLE_LANGUAGE_LOCALIZED_FIRST,
+    anime_target=None,
     **kwargs,
 ):
     variant = _normalize_search_variant(variant)
@@ -401,6 +417,7 @@ def _perform_search_with_title_fallback(
         variant,
         year,
         title_language_mode=title_language_mode,
+        anime_target=anime_target,
     )
 
     for attempt, candidate in enumerate(queries, start=1):
@@ -1120,6 +1137,7 @@ def _submit_search_tasks(
                 variant=variant,
                 title_language_mode=title_language_mode,
                 year=year,
+                anime_target=anime_target,
             )
         if _is_source_enabled(Indexer.BURST):
             add_task_if_enabled(
@@ -1156,6 +1174,7 @@ def _submit_search_tasks(
                     variant=variant,
                     title_language_mode=title_language_mode,
                     year=year,
+                    anime_target=anime_target,
                 )
             )
         if _is_source_enabled(Indexer.JACKETT):
@@ -1176,6 +1195,7 @@ def _submit_search_tasks(
                 variant=variant,
                 title_language_mode=title_language_mode,
                 year=year,
+                anime_target=anime_target,
             )
         if _is_source_enabled(Indexer.JACKGRAM):
             add_task_if_enabled(
@@ -1380,6 +1400,7 @@ def _submit_search_tasks_managed(
                 variant=variant,
                 title_language_mode=title_language_mode,
                 year=year,
+                anime_target=anime_target,
             )
         if _is_source_enabled(Indexer.BURST):
             add_task_if_enabled_managed(
@@ -1416,6 +1437,7 @@ def _submit_search_tasks_managed(
                 variant=variant,
                 title_language_mode=title_language_mode,
                 year=year,
+                anime_target=anime_target,
             )
         if _is_source_enabled(Indexer.JACKETT):
             add_task_if_enabled_managed(
@@ -1434,6 +1456,7 @@ def _submit_search_tasks_managed(
                 variant=variant,
                 title_language_mode=title_language_mode,
                 year=year,
+                anime_target=anime_target,
             )
         if _is_source_enabled(Indexer.JACKGRAM):
             add_task_if_enabled_managed(
@@ -1727,6 +1750,7 @@ def search_client(
         SearchVariant.DEFAULT,
         year,
         title_language_mode=title_language_mode,
+        anime_target=anime_target,
     )
     if jackgram_only and scoped_addon_url:
         scoped_addon_url = ""
