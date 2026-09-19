@@ -17,7 +17,6 @@ from lib.api.simkl_cache import (
     set_cached,
     watched_cache_key,
 )
-from lib.clients.simkl import SIMKL_CLIENT_ID
 from lib.gui.qr_progress_dialog import QRProgressDialog
 from lib.jacktook.utils import ADDON_NAME, ADDON_PATH, ADDON_VERSION
 from lib.utils.debrid.qrcode_utils import make_qrcode
@@ -29,6 +28,10 @@ from lib.utils.kodi.utils import (
     set_setting,
     sleep,
 )
+
+# Default public Simkl client id, previously defined in the removed legacy
+# lib/clients/simkl.py client.
+SIMKL_CLIENT_ID = "59dfdc579d244e1edf6f89874d521d37a69a95a1abd349910cb056a1872ba2c8"
 
 
 class SimklClient:

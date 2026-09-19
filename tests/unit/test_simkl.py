@@ -2,15 +2,13 @@ from unittest.mock import MagicMock
 
 import requests
 
-from lib.api.simkl import SimklClient, is_simkl_scrobbling_enabled
-from lib.clients.simkl import SIMKL, SIMKL_CLIENT_ID
+from lib.api.simkl import SIMKL_CLIENT_ID, SimklClient, is_simkl_scrobbling_enabled
 
 
-def test_auth_client_and_legacy_metadata_share_default_client_id(monkeypatch):
+def test_auth_client_uses_the_default_public_client_id(monkeypatch):
     monkeypatch.setattr("lib.api.simkl.get_setting", lambda _key: "")
 
     assert SimklClient().client_id == SIMKL_CLIENT_ID
-    assert SIMKL().ClientID == SIMKL_CLIENT_ID
 
 
 def test_scrobbling_does_not_require_client_id_override(monkeypatch):
