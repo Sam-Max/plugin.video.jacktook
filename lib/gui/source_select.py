@@ -43,6 +43,7 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+from lib.utils.parsers.dub import apply_dub_badge
 from lib.utils.parsers.title_parser import parse_title_info
 from lib.utils.torrent.torrserver_utils import add_source_to_torrserver
 
@@ -344,7 +345,7 @@ class SourceSelect(BaseWindow):
             menu_item.setProperty("display_title", info["clean_title"])
             menu_item.setProperty("codec", info["codec"])
             menu_item.setProperty("audio", info["audio"])
-            menu_item.setProperty("hdr_info", info["badges"])
+            menu_item.setProperty("hdr_info", apply_dub_badge(info["badges"], source.title))
             menu_item.setProperty("release_group", info["release_group"])
             kodilog(f"SourceSelect populate_sources_list: source.type={source.type}")
             if source.type in IndexerType.TORRENT:
