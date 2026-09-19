@@ -16,8 +16,9 @@ _DUB_COLOR = "FF7CFC00"
 _DUB_MARKERS = (
     ("LATINO", re.compile(r"\blatino\b|\blatam\b", re.IGNORECASE)),
     ("CASTELLANO", re.compile(r"\bcastellano\b", re.IGNORECASE)),
-    # dub / dubbed / dubs / dublado / doblada / doblado / doblaje...
-    ("DUB", re.compile(r"\bdub(bed|lado|lada)?s?\b|\bdobl(aje|ada|ado)s?\b", re.IGNORECASE)),
+    ("PT-BR", re.compile(r"\bdubl(ado|ada)s?\b", re.IGNORECASE)),
+    # Generic English/Spanish dub family: dub, dubbed, doblaje, doblada...
+    ("DUB", re.compile(r"\bdub(bed)?s?\b|\bdobl(aje|ada|ado)s?\b", re.IGNORECASE)),
 )
 
 _DUB_BADGE_SEPARATOR = "  [COLOR 80FFFFFF] • [/COLOR]  "

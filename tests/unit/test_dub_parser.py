@@ -12,8 +12,8 @@ from lib.utils.parsers.dub import apply_dub_badge, detect_dub
         ("Anime S01 [LatAm] WEB-DL", "LATINO"),
         ("Anime [Castellano] 1080p", "CASTELLANO"),
         ("One Piece - 1091 [DUBBED]", "DUB"),
-        ("Release DUBLADO 1080p", "DUB"),
-        ("Anime DOBLADAS completas", "DUB"),
+        ("Release DUBLADO 1080p", "PT-BR"),
+        ("Anime DUBLADA completas", "PT-BR"),
         ("Temporada con DOBLAJE oficial", "DUB"),
         ("Show DUB proper", "DUB"),
         # Precedence: the first matching marker names the flavour.
