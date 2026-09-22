@@ -1,5 +1,7 @@
 import os
 import pickle
+import tempfile
+from contextlib import suppress
 
 import xbmcvfs
 
@@ -62,8 +64,22 @@ class PickleDatabase:
 
     def commit(self):
         try:
-            with open(self._database_path, "wb") as f:
-                pickle.dump(self._database, f)
+            directory = os.path.dirname(self._database_path) or "."
+            fd, tmp_path = tempfile.mkstemp(
+                prefix=os.path.basename(self._database_path) + ".",
+                suffix=".tmp",
+                dir=directory,
+            )
+            try:
+                with os.fdopen(fd, "wb") as f:
+                    pickle.dump(self._database, f)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmp_path, self._database_path)
+            except Exception:
+                with suppress(OSError):
+                    os.remove(tmp_path)
+                raise
         except Exception as e:
             kodilog(f"Failed to save database: {e}")
 
