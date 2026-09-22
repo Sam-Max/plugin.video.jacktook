@@ -305,6 +305,43 @@ class TestProviderFiltering:
 
 
 # ---------------------------------------------------------------------------
+# Per-provider data isolation
+# ---------------------------------------------------------------------------
+
+
+class TestProviderDataIsolation:
+    def test_providers_receive_equal_but_not_identical_data(
+        self, external_scraper_client_with_providers
+    ):
+        """Each provider must get its own shallow copy of the data dict.
+
+        A misbehaving provider that mutates its input must not affect the
+        dict observed by concurrently running providers.
+        """
+        client = external_scraper_client_with_providers
+        seen = []
+
+        class MutatingProvider:
+            hasMovies = True
+            hasEpisodes = True
+            pack_capable = False
+
+            def sources(self, data, hostDict):
+                seen.append(data)
+                data["poison"] = True
+                return []
+
+        client._providers = [("p1", MutatingProvider), ("p2", MutatingProvider)]
+        client.search("", "Title", "movies", "movies", season=0, episode=0)
+
+        base = client._build_data(query="Title", mode="movies", season=0, episode=0)
+        assert len(seen) == 2
+        assert seen[0] is not seen[1], "providers must not share the data dict"
+        for provider_data in seen:
+            assert provider_data == {**base, "poison": True}
+
+
+# ---------------------------------------------------------------------------
 # sources_packs integration
 # ---------------------------------------------------------------------------
 

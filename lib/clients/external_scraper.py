@@ -1,7 +1,8 @@
 import json
 import os
 import sys
-from typing import Any, Callable, List, Optional
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Callable, List, Optional, Tuple
 
 from lib.clients.base import BaseClient
 from lib.domain.torrent import TorrentStream
@@ -153,42 +154,66 @@ class ExternalScraperClient(BaseClient):
 
         all_results: List[TorrentStream] = []
 
+        # Filter providers by media-type capability (preserving order)
+        eligible: List[Tuple[str, Any]] = []
         for provider_name, source_class in self._providers:
-            # Filter providers by media-type capability
             if is_tv:
                 if hasattr(source_class, "hasEpisodes") and not source_class.hasEpisodes:
                     continue
             else:
                 if hasattr(source_class, "hasMovies") and not source_class.hasMovies:
                     continue
+            eligible.append((provider_name, source_class))
 
+        def _search_provider(provider_name: str, source_class: Any) -> List[TorrentStream]:
+            """Search a single provider, returning [] on any failure."""
+            # Shallow copy per provider: providers may mutate their input and
+            # run concurrently, so they must not share the same dict object.
+            provider_data = dict(data)
             try:
                 provider_instance = source_class()
+                mapped: List[TorrentStream] = []
 
                 # Single episode / movie results
-                results = provider_instance.sources(data, {})
+                results = provider_instance.sources(provider_data, {})
                 if results:
-                    mapped = self._map_results(results, provider_name)
-                    all_results.extend(mapped)
+                    mapped.extend(self._map_results(results, provider_name))
 
                 # Pack results for TV
                 if is_tv and hasattr(source_class, "pack_capable") and source_class.pack_capable:
                     try:
-                        pack_results = provider_instance.sources_packs(data, {})
+                        pack_results = provider_instance.sources_packs(provider_data, {})
                         if pack_results:
                             mapped_packs = self._map_results(
                                 pack_results, provider_name, is_pack=True
                             )
-                            all_results.extend(mapped_packs)
+                            mapped.extend(mapped_packs)
                     except Exception as exc:
                         kodilog(
                             f"ExternalScraper ({self.module_id}): "
                             f"provider '{provider_name}' packs error: {exc}"
                         )
+                return mapped
             except Exception as exc:
                 kodilog(
                     f"ExternalScraper ({self.module_id}): provider '{provider_name}' error: {exc}"
                 )
+                return []
+
+        if eligible:
+            max_workers = min(len(eligible), 8)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                # Submit in provider order and collect by index so the result
+                # ordering stays deterministic regardless of completion order.
+                futures = [
+                    executor.submit(_search_provider, provider_name, source_class)
+                    for provider_name, source_class in eligible
+                ]
+                for future in futures:
+                    try:
+                        all_results.extend(future.result())
+                    except Exception as exc:
+                        kodilog(f"ExternalScraper ({self.module_id}): provider task failed: {exc}")
 
         kodilog(f"[ExternalScraper ({self.module_id})] returning {len(all_results)} results")
         return all_results
