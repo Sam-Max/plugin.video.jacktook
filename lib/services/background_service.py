@@ -8,7 +8,6 @@ import xbmcvfs
 
 from lib.api.nuvio_store import setup_nuvio_database
 from lib.api.trakt.base_cache import setup_databases
-from lib.services.migrations import run_migrations
 from lib.services.nuvio_sync import NuvioSyncService
 from lib.services.preloader import StartupPreloader
 from lib.services.simkl_sync import SimklSyncService
@@ -224,7 +223,6 @@ class JacktookMOnitor(xbmc.Monitor):
         set_setting("addon_version", ADDON_VERSION)
         CheckKodiVersion().run()
         DatabaseSetup().run()
-        run_migrations()
         Thread(target=UpdateCheck().run).start()
         Thread(target=TraktSyncService().run).start()
         Thread(target=SimklSyncService().run).start()
