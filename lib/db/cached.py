@@ -51,6 +51,18 @@ def pickle_hash(obj):
     return h.hexdigest()
 
 
+def _like_regex(pattern):
+    """Translate a SQL LIKE pattern into an anchored regular expression."""
+    regex_pattern = (
+        re.escape(pattern)
+        .replace(r"\%", ".*")
+        .replace("%", ".*")
+        .replace(r"\_", ".")
+        .replace("_", ".")
+    )
+    return re.compile(f"^{regex_pattern}$")
+
+
 class _BaseCache:
     __instance = None
 
@@ -294,9 +306,9 @@ class SQLiteCache(_BaseCache):
             self._conn.execute(f"PRAGMA {k}={v}")
         self._cleanup_interval = cleanup_interval
         self._last_cleanup = utc_now()
-        self.clean_up()
         self._object_store = {}  # store raw objects that can't be pickled
         self._lock = threading.Lock()
+        self.clean_up()
 
     def _process(self, obj):
         return self._load_func(obj)
@@ -377,7 +389,8 @@ class SQLiteCache(_BaseCache):
                     level=xbmc.LOGERROR,
                 )
                 # fallback to raw in‑memory store
-                self._object_store[key] = (data, expires)
+                expiry_at = expires if isinstance(expires, datetime) else utc_now() + expires
+                self._object_store[key] = (data, expiry_at)
 
     def clear_list(self, key):
         """Clear the list stored under the given key."""
@@ -388,12 +401,18 @@ class SQLiteCache(_BaseCache):
         )
 
     def delete(self, key):
-        """Remove a single key from the SQLite store."""
-        self._conn.execute("DELETE FROM `cached` WHERE key = ?", (key,))
+        """Remove a single key from the SQLite and fallback stores."""
+        with self._lock:
+            self._object_store.pop(key, None)
+            self._conn.execute("DELETE FROM `cached` WHERE key = ?", (key,))
 
     def delete_like(self, pattern):
-        """Remove keys matching a pattern from the SQLite store."""
-        self._conn.execute("DELETE FROM `cached` WHERE key LIKE ?", (pattern,))
+        """Remove keys matching a pattern from the SQLite and fallback stores."""
+        with self._lock:
+            regex = _like_regex(pattern)
+            for store_key in [k for k in self._object_store if regex.match(k)]:
+                del self._object_store[store_key]
+            self._conn.execute("DELETE FROM `cached` WHERE key LIKE ?", (pattern,))
 
     def _set_version(self, version):
         self._conn.execute(f"PRAGMA user_version={version}")
@@ -407,19 +426,27 @@ class SQLiteCache(_BaseCache):
         return self._last_cleanup + self._cleanup_interval < utc_now()
 
     def clean_up(self):
+        """Remove expired rows; acquires ``self._lock``."""
+        with self._lock:
+            self._clean_up_locked()
+
+    def _clean_up_locked(self):
+        """Remove expired rows; the caller must hold ``self._lock``."""
         self._conn.execute(
             "DELETE FROM `cached` WHERE expires <= STRFTIME('%Y-%m-%d %H:%M:%f', 'NOW')"
         )
         self._last_cleanup = utc_now()
 
     def clean_all(self):
-        self._conn.execute("DELETE FROM cached")
-        self._object_store.clear()
+        with self._lock:
+            self._conn.execute("DELETE FROM cached")
+            self._object_store.clear()
 
     def check_clean_up(self):
+        """Run periodic cleanup if due; the caller must hold ``self._lock``."""
         clean_up = self.needs_cleanup
         if clean_up:
-            self.clean_up()
+            self._clean_up_locked()
         return clean_up
 
     def close(self):
