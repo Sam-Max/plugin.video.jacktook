@@ -94,6 +94,22 @@ class SimklClient:
             return False
         return True
 
+    @staticmethod
+    def _library_payload_items(payload, media_type):
+        """Return item rows from a sync/all-items response payload.
+
+        The endpoint returns a top-level object keyed by media type
+        ("movies" or "shows") and {} when the bucket is empty; a bare list
+        is tolerated as a defensive fallback.
+        """
+        if isinstance(payload, list):
+            return payload
+        if isinstance(payload, dict):
+            items = payload.get(media_type)
+            if isinstance(items, list):
+                return items
+        return []
+
     @classmethod
     def scrobble_payload(cls, data):
         if not isinstance(data, dict):
@@ -202,11 +218,10 @@ class SimklClient:
         cached_items = get_cached(cache_key)
         if isinstance(cached_items, list):
             return cached_items
-        params = dict(self._params, extended="full")
         try:
             response = requests.get(
                 f"{self.BASE_URL}/sync/all-items/{media_type}/{status}",
-                params=params,
+                params=self._params,
                 headers=self._headers,
                 timeout=self.REQUEST_TIMEOUT,
             )
@@ -217,11 +232,10 @@ class SimklClient:
         except (requests.RequestException, ValueError) as error:
             kodilog(f"[SIMKL] library retrieval failed ({type(error).__name__})")
             return []
-        if not isinstance(result, list):
-            return []
+        rows = self._library_payload_items(result, media_type)
         items = [
             library_item
-            for library_item in (self.library_item(item, media_type, status) for item in result)
+            for library_item in (self.library_item(item, media_type, status) for item in rows)
             if library_item
         ]
         set_cached(cache_key, items)

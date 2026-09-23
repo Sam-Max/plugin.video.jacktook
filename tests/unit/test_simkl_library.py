@@ -41,7 +41,7 @@ def test_get_library_items_uses_authenticated_full_endpoint_and_skips_bad_entrie
     ]
     get.assert_called_once_with(
         "https://api.simkl.com/sync/all-items/movies/plantowatch",
-        params=dict(client._params, extended="full"),
+        params=client._params,
         headers=client._headers,
         timeout=5,
     )
@@ -56,6 +56,116 @@ def test_get_library_items_blocks_invalid_requests_and_contains_failures(monkeyp
     assert SimklClient("client-id", "").get_library_items("movies", "completed") == []
     assert SimklClient("client-id", "token").get_library_items("shows", "watching") == []
     assert get.call_count == 1
+
+
+def test_get_library_items_unwraps_keyed_movie_payload(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {
+        "movies": [
+            {
+                "status": "plantowatch",
+                "movie": {
+                    "title": "The Matrix",
+                    "year": 1999,
+                    "ids": {
+                        "simkl": 26,
+                        "slug": "the-matrix-1999",
+                        "imdb": "tt0133093",
+                        "tmdb": "603",
+                    },
+                },
+            }
+        ]
+    }
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    assert client.get_library_items("movies", "plantowatch") == [
+        {
+            "query": "The Matrix",
+            "mode": "movies",
+            "media_type": "movie",
+            "ids": {"tmdb_id": 603},
+            "simkl_status": "plantowatch",
+        }
+    ]
+
+
+def test_get_library_items_unwraps_keyed_show_payload_and_parses_string_tmdb_id(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {
+        "shows": [
+            {
+                "status": "plantowatch",
+                "show": {
+                    "title": "Charmed",
+                    "year": 1998,
+                    "ids": {
+                        "simkl": 297,
+                        "slug": "charmed",
+                        "imdb": "tt0158552",
+                        "tvdb": "70626",
+                        "tmdb": "1981",
+                    },
+                },
+            }
+        ]
+    }
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    items = client.get_library_items("shows", "plantowatch")
+    assert items == [
+        {
+            "query": "Charmed",
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": {"tmdb_id": 1981},
+            "simkl_status": "plantowatch",
+        }
+    ]
+    assert isinstance(items[0]["ids"]["tmdb_id"], int)
+
+
+def test_get_library_items_returns_empty_list_for_empty_payload(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {}
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    assert client.get_library_items("movies", "completed") == []
+
+
+def test_get_library_items_returns_empty_list_when_media_key_missing(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {
+        "shows": [{"status": "plantowatch", "show": {"title": "Charmed", "ids": {"tmdb": "1981"}}}]
+    }
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    assert client.get_library_items("movies", "dropped") == []
+
+
+def test_get_library_items_sends_params_without_extended_full(monkeypatch):
+    response = MagicMock(status_code=200)
+    response.json.return_value = {}
+    get = MagicMock(return_value=response)
+    monkeypatch.setattr("lib.api.simkl.requests.get", get)
+    client = SimklClient("client-id", "token")
+
+    assert client.get_library_items("shows", "watching") == []
+    get.assert_called_once_with(
+        "https://api.simkl.com/sync/all-items/shows/watching",
+        params=client._params,
+        headers=client._headers,
+        timeout=5,
+    )
+    assert "extended" not in get.call_args.kwargs["params"]
 
 
 def test_move_to_library_status_sends_canonical_payload_and_returns_resolved_status(monkeypatch):
