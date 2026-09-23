@@ -75,15 +75,37 @@ USER_AGENT_HEADER = {
 
 USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
 
+# TMDB documents still_sizes as w92/w185/w300/original only; undocumented widths
+# (e.g. w500) are website-internal, can stop working at any time, and only
+# "original" delivers real still quality.
 TMDB_IMAGE_SIZES = {
-    "low": {"poster": "w185", "thumb": "w185", "profile": "w185", "fanart": "w300"},
-    "medium": {"poster": "w342", "thumb": "w342", "profile": "w342", "fanart": "w780"},
-    "high": {"poster": "w780", "thumb": "w780", "profile": "w780", "fanart": "w1280"},
+    "low": {
+        "poster": "w185",
+        "thumb": "w185",
+        "profile": "w185",
+        "fanart": "w300",
+        "still": "w185",
+    },
+    "medium": {
+        "poster": "w342",
+        "thumb": "w342",
+        "profile": "w342",
+        "fanart": "w780",
+        "still": "w300",
+    },
+    "high": {
+        "poster": "w780",
+        "thumb": "w780",
+        "profile": "w780",
+        "fanart": "w1280",
+        "still": "original",
+    },
     "original": {
         "poster": "original",
         "thumb": "original",
         "profile": "original",
         "fanart": "original",
+        "still": "original",
     },
 }
 
@@ -741,16 +763,16 @@ def set_listitem_artwork(list_item, data, fanart_data):
     image_sizes = TMDB_IMAGE_SIZES.get(tier, {})
     thumb_sources = [
         (data.get("poster_path"), image_sizes.get("thumb", "")),
-        (data.get("still_path"), image_sizes.get("thumb", "")),
+        (data.get("still_path"), image_sizes.get("still", "")),
     ]
     poster_sources = [
         (data.get("poster_path"), image_sizes.get("poster", "")),
-        (data.get("still_path"), image_sizes.get("poster", "")),
         (data.get("profile_path"), image_sizes.get("profile", "")),
+        (data.get("still_path"), image_sizes.get("still", "")),
     ]
     fanart_sources = [
         (data.get("backdrop_path"), image_sizes.get("fanart", "")),
-        (data.get("still_path"), image_sizes.get("fanart", "")),
+        (data.get("still_path"), image_sizes.get("still", "")),
     ]
 
     clear_logo = [(extract_tmdb_logo_url(data), "original")]
@@ -769,7 +791,7 @@ def set_listitem_artwork(list_item, data, fanart_data):
             "thumb": first_valid(thumb_sources),
             "poster": first_valid(poster_sources, "poster"),
             "fanart": first_valid(fanart_sources, "fanart"),
-            "icon": first_valid(poster_sources),
+            "icon": first_valid(poster_sources) or first_valid(thumb_sources),
             "banner": first_valid(fanart_sources, "banner"),
             "clearart": first_valid(fanart_sources, "clearart"),
             "clearlogo": first_valid(clear_logo, "clearlogo"),
@@ -791,7 +813,7 @@ def extract_tmdb_logo_url(data):
 
 
 def tmdb_url(path, size):
-    return f"http://image.tmdb.org/t/p/{size}{path}" if path else ""
+    return f"https://image.tmdb.org/t/p/{size}{path}" if path else ""
 
 
 def get_rpdb_poster(imdb_id, api_key):

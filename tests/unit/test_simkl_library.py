@@ -1,5 +1,6 @@
 from unittest.mock import MagicMock
 
+import pytest
 import requests
 
 from lib.api.simkl import SimklClient
@@ -258,11 +259,13 @@ def test_simkl_library_items_build_standard_tmdb_destinations_and_context_action
         lambda _self, _media_type, _status: [
             {
                 "query": "Movie",
+                "mode": "movies",
                 "ids": {"tmdb_id": 42},
                 "simkl_status": "plantowatch",
             }
         ],
     )
+    monkeypatch.setattr(view, "tmdb_get", MagicMock(return_value=None))
 
     view.show_simkl_library_items({"media_type": "movies", "status": "plantowatch"})
 
@@ -273,6 +276,87 @@ def test_simkl_library_items_build_standard_tmdb_destinations_and_context_action
     actions = list_item.addContextMenuItems.call_args.args[0]
     assert len(actions) == 2
     assert all("action=simkl_move_to_status" in command for _label, command in actions)
+
+
+@pytest.mark.parametrize(
+    "media_type, mode, detail_endpoint",
+    [
+        ("movies", "movies", "movie_details"),
+        ("shows", "tv", "tv_details"),
+    ],
+)
+def test_simkl_library_items_apply_tmdb_artwork_and_keep_query_title(
+    monkeypatch, media_type, mode, detail_endpoint
+):
+    from lib.utils.views import simkl_library as view
+
+    list_item = MagicMock()
+    add_items = MagicMock()
+    details = {"title": "TMDB Title"}
+    tmdb_get = MagicMock(return_value=details)
+    set_media_infoTag = MagicMock(
+        side_effect=lambda target, data, mode: target.getVideoInfoTag().setTitle(data["title"])
+    )
+    monkeypatch.setattr(view, "is_simkl_authenticated", lambda: True)
+    monkeypatch.setattr(view, "make_list_item", MagicMock(return_value=list_item))
+    monkeypatch.setattr(view, "add_directory_items_batch", add_items)
+    monkeypatch.setattr(view, "setContent", MagicMock())
+    monkeypatch.setattr(view, "end_of_directory", MagicMock())
+    monkeypatch.setattr(view, "apply_section_view", MagicMock())
+    monkeypatch.setattr(
+        view, "translation", lambda value: "Move to %s" if value == 90988 else str(value)
+    )
+    monkeypatch.setattr(view, "tmdb_get", tmdb_get)
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_infoTag)
+    monkeypatch.setattr(
+        view.SimklClient,
+        "get_library_items",
+        lambda _self, _media_type, _status: [
+            {"query": "Row Title", "mode": mode, "ids": {"tmdb_id": 42}}
+        ],
+    )
+
+    view.show_simkl_library_items({"media_type": media_type, "status": "plantowatch"})
+
+    tmdb_get.assert_called_once_with(detail_endpoint, 42)
+    set_media_infoTag.assert_called_once_with(list_item, data=details, mode=mode)
+    # The Simkl query title must win even though details carry a TMDB title.
+    assert list_item.getVideoInfoTag().setTitle.call_args.args == ("Row Title",)
+
+
+def test_simkl_library_items_degrade_to_bare_row_when_tmdb_details_fail(monkeypatch):
+    from lib.utils.views import simkl_library as view
+
+    list_item = MagicMock()
+    add_items = MagicMock()
+    tmdb_get = MagicMock(side_effect=RuntimeError("tmdb unavailable"))
+    set_media_infoTag = MagicMock()
+    monkeypatch.setattr(view, "is_simkl_authenticated", lambda: True)
+    monkeypatch.setattr(view, "make_list_item", MagicMock(return_value=list_item))
+    monkeypatch.setattr(view, "add_directory_items_batch", add_items)
+    monkeypatch.setattr(view, "setContent", MagicMock())
+    monkeypatch.setattr(view, "end_of_directory", MagicMock())
+    monkeypatch.setattr(view, "apply_section_view", MagicMock())
+    monkeypatch.setattr(
+        view, "translation", lambda value: "Move to %s" if value == 90988 else str(value)
+    )
+    monkeypatch.setattr(view, "tmdb_get", tmdb_get)
+    monkeypatch.setattr(view, "set_media_infoTag", set_media_infoTag)
+    monkeypatch.setattr(
+        view.SimklClient,
+        "get_library_items",
+        lambda _self, _media_type, _status: [
+            {"query": "Row Title", "mode": "movies", "ids": {"tmdb_id": 42}}
+        ],
+    )
+
+    view.show_simkl_library_items({"media_type": "movies", "status": "plantowatch"})
+
+    set_media_infoTag.assert_not_called()
+    url, row_item, is_folder = add_items.call_args.args[0][0]
+    assert "action=search" in url
+    assert is_folder is False
+    assert row_item.getVideoInfoTag().setTitle.call_args.args == ("Row Title",)
 
 
 def test_simkl_library_routes_close_directory_when_simkl_is_unavailable(monkeypatch):

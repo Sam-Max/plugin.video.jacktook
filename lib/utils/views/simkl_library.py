@@ -2,7 +2,8 @@ from xbmc import executebuiltin
 from xbmcplugin import setContent
 
 from lib.api.simkl import SimklClient, is_simkl_authenticated
-from lib.utils.general.utils import build_list_item
+from lib.clients.tmdb.utils.utils import tmdb_get
+from lib.utils.general.utils import build_list_item, set_media_infoTag
 from lib.utils.kodi.utils import (
     action_url_run,
     add_directory_items_batch,
@@ -95,8 +96,17 @@ def show_simkl_library_items(params):
     directory_items = []
     for item in SimklClient().get_library_items(media_type, status):
         list_item = make_list_item(label=item["query"])
-        list_item.getVideoInfoTag().setTitle(item["query"])
         tmdb_id = item["ids"]["tmdb_id"]
+        try:
+            details = tmdb_get(
+                "tv_details" if item["mode"] == "tv" else "movie_details",
+                item["ids"]["tmdb_id"],
+            )
+        except Exception:
+            details = None
+        if details:
+            set_media_infoTag(list_item, data=details, mode=item["mode"])
+        list_item.getVideoInfoTag().setTitle(item["query"])
         list_item.addContextMenuItems(_status_context_menu(media_type, tmdb_id, status))
         if media_type == "movies":
             url, is_folder = (

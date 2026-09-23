@@ -7,10 +7,10 @@ from lib.utils.general.utils import (
     TMDB_IMAGE_SIZES,
     add_next_button,
     build_media_metadata,
+    cache_results,
     extract_publish_date,
     extract_release_group,
     format_season_episode,
-    cache_results,
     get_cached_results,
     get_image_size,
     get_random_color,
@@ -22,6 +22,7 @@ from lib.utils.general.utils import (
     normalize_tv_data,
     set_listitem_artwork,
     supported_video_extensions,
+    tmdb_url,
     unicode_flag_to_country_code,
 )
 
@@ -183,7 +184,7 @@ class TestGetImageSize:
     )
     def test_maps_setting_to_tier(self, setting_value, expected_sizes):
         with patch("lib.utils.general.utils.get_setting_fresh", return_value=setting_value):
-            for image_type in ("poster", "thumb", "profile", "fanart"):
+            for image_type in ("poster", "thumb", "profile", "fanart", "still"):
                 assert get_image_size(image_type) == expected_sizes[image_type]
 
     def test_invalid_setting_defaults_to_high(self):
@@ -252,6 +253,87 @@ class TestSetListitemArtwork:
         art_call = item.setArt.call_args
         assert self._extract_url(art_call, "poster") == ""
         assert self._extract_url(art_call, "fanart") == ""
+
+    def test_episode_still_fills_poster_slot_before_fanart_fallback(self):
+        item = self._make_mock_item()
+        data = {"still_path": "/still.jpg"}
+        fanart_data = {"poster": "https://assets.fanart.tv/showposter.jpg"}
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
+            set_listitem_artwork(item, data, fanart_data)
+
+        art_call = item.setArt.call_args
+        poster = self._extract_url(art_call, "poster")
+        thumb = self._extract_url(art_call, "thumb")
+        fanart = self._extract_url(art_call, "fanart")
+        icon = self._extract_url(art_call, "icon")
+        assert "/still.jpg" in poster
+        assert "/still.jpg" in thumb
+        assert "/still.jpg" in fanart
+        assert icon == thumb
+
+    def test_episode_still_preferred_over_fanart_show_poster_fallback(self):
+        item = self._make_mock_item()
+        data = {"still_path": "/still.jpg"}
+        fanart_data = {"poster": "https://assets.fanart.tv/showposter.jpg"}
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
+            set_listitem_artwork(item, data, fanart_data)
+
+        poster = self._extract_url(item.setArt.call_args, "poster")
+        assert poster == "https://image.tmdb.org/t/p/original/still.jpg"
+        assert poster != "https://assets.fanart.tv/showposter.jpg"
+
+    @pytest.mark.parametrize(
+        "setting_value, still_size",
+        [
+            ("0", "w185"),
+            ("1", "w300"),
+            ("2", "original"),
+            ("3", "original"),
+        ],
+    )
+    def test_episode_still_uses_documented_still_sizes(self, setting_value, still_size):
+        item = self._make_mock_item()
+        data = {"still_path": "/still.jpg"}
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value=setting_value):
+            set_listitem_artwork(item, data, {})
+
+        art_call = item.setArt.call_args
+        for key in ("thumb", "fanart"):
+            url = self._extract_url(art_call, key)
+            assert f"/{still_size}/" in url
+            for off_spec_size in ("w342", "w780", "w1280"):
+                assert f"/{off_spec_size}/" not in url
+
+    def test_poster_path_wins_over_still_path_for_poster_slot(self):
+        item = self._make_mock_item()
+        data = {"poster_path": "/poster.jpg", "still_path": "/still.jpg"}
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
+            set_listitem_artwork(item, data, {})
+
+        art_call = item.setArt.call_args
+        poster = self._extract_url(art_call, "poster")
+        assert "/poster.jpg" in poster
+        assert "/w780/" in poster
+        assert "/still.jpg" not in poster
+        assert self._extract_url(art_call, "icon") == poster
+
+    def test_poster_path_wins_over_still_and_fanart_fallback_for_poster_slot(self):
+        item = self._make_mock_item()
+        data = {"poster_path": "/poster.jpg", "still_path": "/still.jpg"}
+        fanart_data = {"poster": "https://assets.fanart.tv/showposter.jpg"}
+        with patch("lib.utils.general.utils.get_setting_fresh", return_value="2"):
+            set_listitem_artwork(item, data, fanart_data)
+
+        poster = self._extract_url(item.setArt.call_args, "poster")
+        assert "/poster.jpg" in poster
+        assert "/still.jpg" not in poster
+        assert "assets.fanart.tv" not in poster
+
+
+def test_tmdb_url_uses_https_image_host():
+    assert tmdb_url("/poster.jpg", "w780") == "https://image.tmdb.org/t/p/w780/poster.jpg"
+    assert tmdb_url("", "w780") == ""
+    assert tmdb_url(None, "w780") == ""
 
 
 class TestGetRpdbPoster:
