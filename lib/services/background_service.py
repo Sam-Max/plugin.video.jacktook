@@ -216,7 +216,10 @@ class DebridExpirationCheck:
 
 class JacktookMOnitor(xbmc.Monitor):
     def __init__(self):
-        xbmc.Monitor.__init__(self)
+        # super() resolves through this class's MRO (base captured at import)
+        # instead of re-reading the xbmc module attribute at call time; on
+        # Kodi 22 beta that attribute was observed corrupted at runtime.
+        super().__init__()
         self.startServices()
 
     def startServices(self):
