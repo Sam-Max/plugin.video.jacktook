@@ -51,13 +51,14 @@ def _fake_kodi(monkeypatch, current):
         events.append(("enabled", enabled))
         state["enabled"] = enabled
 
-    def execute(command, block):
+    def execute(command, block=None):
         marker = current / "marker"
         state["version"] = "1.2.3" if marker.exists() and marker.read_text() == "new" else "1.0.0"
         events.append((command, state["version"]))
 
     monkeypatch.setattr(update_helper, "_set_enabled", set_enabled)
     monkeypatch.setattr(update_helper.xbmc, "executebuiltin", execute)
+    monkeypatch.setattr(update_helper.xbmc, "getCondVisibility", lambda condition: True)
     return state, events
 
 
@@ -79,7 +80,28 @@ def test_apply_update_keeps_backup_until_kodi_confirms_and_reenables(monkeypatch
     assert (current / "marker").read_text() == "new"
     assert ("UpdateLocalAddons", "1.2.3") in events
     assert events[0] == ("enabled", False)
-    assert events[-1] == ("enabled", True)
+    assert events[-2] == ("enabled", True)
+    assert events[-1] == (
+        'Container.Update("plugin://plugin.video.jacktook/",replace)',
+        "1.2.3",
+    )
+    assert not backup.exists()
+    assert not staging_root.exists()
+    assert not plan_path.exists()
+    assert not helper_path.exists()
+
+
+def test_apply_update_opens_video_window_when_it_is_not_active(monkeypatch, tmp_path):
+    plan_path, _, current, staging_root, backup, helper_path, _ = _plan(tmp_path)
+    _, events = _fake_kodi(monkeypatch, current)
+    monkeypatch.setattr(update_helper.xbmc, "getCondVisibility", lambda condition: False)
+
+    assert update_helper.apply_update(str(plan_path)) is True
+
+    assert events[-1] == (
+        'ActivateWindow(10025,"plugin://plugin.video.jacktook/",return)',
+        "1.2.3",
+    )
     assert not backup.exists()
     assert not staging_root.exists()
     assert not plan_path.exists()

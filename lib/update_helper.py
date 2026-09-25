@@ -304,6 +304,15 @@ def apply_update(plan_path):
             )
         xbmcgui.Dialog().notification("Jacktook Updater", "Update complete.")
         xbmc.log("Jacktook update completed", xbmc.LOGINFO)
+        # Land on the add-on's main menu. ActivateWindow is a no-op while
+        # MyVideoNav is already the active window (the common case: the addon
+        # settings dialog closes back onto it after the disable/enable swap),
+        # so the active container is navigated in that case and the window is
+        # opened otherwise.
+        if xbmc.getCondVisibility("Window.IsActive(10025)"):
+            xbmc.executebuiltin(f'Container.Update("plugin://{ADDON_ID}/",replace)')
+        else:
+            xbmc.executebuiltin(f'ActivateWindow(10025,"plugin://{ADDON_ID}/",return)')
         return True
     except Exception as error:
         rollback_complete = False

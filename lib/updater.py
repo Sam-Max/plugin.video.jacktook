@@ -497,7 +497,7 @@ def update_addon(new_version):
         return False
     notification(
         heading=HEADING,
-        message="Update verified and handed off. Jacktook will restart after replacement.",
+        message="Installing update...",
     )
     kodilog("Verified update handed off to standalone helper.")
     return True
