@@ -1,3 +1,27 @@
+## 1.21.0
+- Anime: Overhauled anime support with canonical metadata and native routing, season-aware stream routing, title search under identity aliases, dubbed-release badges in source select, and AniSkip skip times merged into the player skip flow.
+- Playback: Migrated IntroDB to v3 and added ending (credits) skip; fixed skip intro/outro with the new IntroDB v3 format.
+- Scrapers: Provider searches now run concurrently with isolated data copies, speeding up scraping.
+- Real-Debrid: Hardened pack link resolution and device login, select the played file by your Real-Debrid selection instead of list order, and aligned cache state, account info and active-torrent eviction with the API.
+- AllDebrid: Fixed request parameter handling.
+- Trakt: Fixed an inverted credential migration that overwrote custom client settings.
+- Simkl: Fixed keyed sync/all-items payload parsing and improved artwork quality in listings.
+- Updater: Replaced the no-op native delegation with a safe self-update and landed on the main menu after an update.
+- Stability: Made PickleDatabase commits atomic, guarded SQLiteCache mutations with a lock, resolved the plugin handle per invocation, and fixed xbmc.Monitor initialization in background services.
+- Maintenance: Removed the orphaned legacy anime clients.
+
+Spanish:
+- Anime: Renovado el soporte de anime con metadatos canónicos y enrutado nativo, enrutado de streams por temporada, búsqueda de títulos por alias de identidad, insignias de lanzamientos doblados en la selección de fuentes y tiempos de salto de AniSkip integrados en el flujo de salto del reproductor.
+- Reproducción: Migrado IntroDB a v3 con salto al final (créditos); corregido el salto de intro/final con el nuevo formato de IntroDB v3.
+- Scrapers: Las búsquedas de proveedores ahora se ejecutan de forma concurrente con copias de datos aisladas, acelerando el escrapeo.
+- Real-Debrid: Reforzada la resolución de enlaces de paquetes y el inicio de sesión por dispositivo, seleccionado el archivo reproducido según tu selección de Real-Debrid en lugar del orden de la lista, y alineados el estado de caché, la información de cuenta y la expulsión de torrents activos con la API.
+- AllDebrid: Corregido el manejo de parámetros en las peticiones.
+- Trakt: Corregida una migración de credenciales invertida que sobrescribía ajustes personalizados del cliente.
+- Simkl: Corregido el parseo del payload de sincronización/all-items con claves y mejorada la calidad del arte en los listados.
+- Actualizador: Sustituida la delegación nativa nula por una auto-actualización segura y aterrizaje en el menú principal tras una actualización.
+- Estabilidad: Commits de PickleDatabase atómicos, mutaciones de SQLiteCache protegidas con bloqueo, handle del plugin resuelto por invocación y corrección de la inicialización de xbmc.Monitor en los servicios en segundo plano.
+- Mantenimiento: Eliminados los clientes de anime heredados huérfanos.
+
 ## 1.20.0
 - Nuvio: Add full Nuvio account integration with QR/device login, per-profile library sync, My Movies / My Shows, Watch History with pagination, Continue Watching, a read-only Collections browser, and Nuvio addon management.
 - Nuvio: Sync watch progress and history with Nuvio, including add/remove library writes and mark watched/unwatched.
