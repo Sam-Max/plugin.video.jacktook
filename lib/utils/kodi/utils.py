@@ -261,8 +261,24 @@ def get_kodi_version():
     return kodi_version
 
 
+def _is_addon_enabled(addon_id: str) -> bool:
+    """Return True only when the addon is installed *and* enabled.
+
+    ``System.HasAddon`` also matches installed-but-disabled addons, so the
+    explicit ``xbmcaddon.Addon`` lookup is required: it raises ``RuntimeError``
+    when the addon exists but is disabled.
+    """
+    try:
+        if not xbmc.getCondVisibility(f"System.HasAddon({addon_id})"):
+            return False
+        xbmcaddon.Addon(addon_id)
+        return True
+    except RuntimeError:
+        return False
+
+
 def is_torrest_addon():
-    return xbmc.getCondVisibility(f"System.HasAddon({TORREST_ADDON_ID})")
+    return _is_addon_enabled(TORREST_ADDON_ID)
 
 
 def is_jacktorr_addon():
@@ -270,31 +286,15 @@ def is_jacktorr_addon():
 
 
 def is_jacktorr_addon_enabled():
-    try:
-        if not xbmc.getCondVisibility(f"System.HasAddon({JACKTORR_ADDON_ID})"):
-            return False
-        xbmcaddon.Addon(JACKTORR_ADDON_ID)
-        # If the addon is disabled, this will raise RuntimeError
-        return True
-    except RuntimeError:
-        # Addon exists but is disabled
-        return False
+    return _is_addon_enabled(JACKTORR_ADDON_ID)
 
 
 def is_youtube_addon_enabled():
-    try:
-        if not xbmc.getCondVisibility(f"System.HasAddon({YOUTUBE_ADDON_ID})"):
-            return False
-        xbmcaddon.Addon(YOUTUBE_ADDON_ID)
-        # If the addon is disabled, this will raise RuntimeError
-        return True
-    except RuntimeError:
-        # Addon exists but is disabled
-        return False
+    return _is_addon_enabled(YOUTUBE_ADDON_ID)
 
 
 def is_elementum_addon():
-    return xbmc.getCondVisibility(f"System.HasAddon({ELEMENTUM_ADDON_ID})")
+    return _is_addon_enabled(ELEMENTUM_ADDON_ID)
 
 
 def is_burst_addon():
