@@ -32,7 +32,7 @@ from lib.utils.kodi.utils import (
     execute_builtin,
     get_setting,
     is_elementum_addon,
-    is_jacktorr_addon,
+    is_jacktorr_addon_enabled,
     is_torrest_addon,
     notification,
     translation,
@@ -258,9 +258,10 @@ def get_elementum_url(
             nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.elementum)")
+            notification(translation(91058) % "Elementum")
         else:
             notification(translation(30252))
-            return None
+        return None
 
     tmdb_id = ids.get("tmdb_id", "") if isinstance(ids, dict) else ""
     uri = url or magnet
@@ -364,13 +365,16 @@ def build_elementum_pack_next_playback(
 
     magnet = uri if uri.startswith("magnet:") else ""
     torrent_url = "" if magnet else uri
-    next_data["url"] = get_elementum_url(
+    next_url = get_elementum_url(
         magnet,
         torrent_url,
         "tv",
         ids,
         data=next_data,
     )
+    if not next_url:
+        return None
+    next_data["url"] = next_url
     return next_data
 
 
@@ -379,7 +383,7 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
         f"Preparing Jacktorr URL with magnet={summarize_locator_for_log(magnet)!r}, url={summarize_locator_for_log(url)!r}, has_magnet={bool(magnet)}, has_url={bool(url)}",
         level=LOGDEBUG,
     )
-    if not is_jacktorr_addon():
+    if not is_jacktorr_addon_enabled():
         if Dialog().yesno(
             translation(30253),
             translation(30255),
@@ -387,9 +391,10 @@ def get_jacktorr_url(magnet: str, url: str, data: Optional[Dict[str, Any]] = Non
             nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.jacktorr)")
+            notification(translation(91058) % "Jacktorr")
         else:
             notification(translation(30253))
-            return None
+        return None
 
     _save_jacktorr_playback_metadata(magnet, data or {})
     poster = (data or {}).get("poster") or ""
@@ -479,9 +484,10 @@ def get_torrest_url(magnet: str, url: str) -> Optional[str]:
             nolabel=translation(90606),
         ):
             execute_builtin("InstallAddon(plugin.video.torrest)")
+            notification(translation(91058) % "Torrest")
         else:
             notification(translation(30250))
-            return None
+        return None
     if magnet:
         _url = f"plugin://plugin.video.torrest/play_magnet?magnet={quote(magnet)}"
     elif url:

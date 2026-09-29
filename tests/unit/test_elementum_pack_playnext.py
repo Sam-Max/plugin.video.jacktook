@@ -370,6 +370,27 @@ def test_complete_series_without_explicit_range_does_not_cross_boundary():
     assert result is None
 
 
+def test_pack_next_returns_none_when_elementum_url_unresolved():
+    from lib.utils.player import utils
+
+    current = _current_pack_data()
+    current.update(
+        {
+            "source_title": "Show.S05.1080p",
+            "pack_type": "season",
+            "pack_seasons": [5],
+            "tv_data": {"season": 5, "episode": 50},
+        }
+    )
+
+    with patch.object(utils, "get_elementum_url", return_value=None):
+        result = utils.build_elementum_pack_next_playback(
+            current, {"season": 6, "episode": 1}
+        )
+
+    assert result is None
+
+
 def test_forced_manual_search_caches_normal_processed_results(monkeypatch):
     from lib.utils.player import utils
 

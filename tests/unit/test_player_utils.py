@@ -64,6 +64,85 @@ def test_elementum_uses_url_when_only_url_exists():
     assert f"uri={quote(url)}" in torrent_url
 
 
+@pytest.mark.parametrize(
+    ("guard", "addon_id", "call_builder"),
+    [
+        (
+            "is_elementum_addon",
+            "plugin.video.elementum",
+            lambda utils: utils.get_elementum_url("magnet:?xt=urn:btih:HASH", "", "movie", {}),
+        ),
+        (
+            "is_torrest_addon",
+            "plugin.video.torrest",
+            lambda utils: utils.get_torrest_url("magnet:?xt=urn:btih:HASH", ""),
+        ),
+        (
+            "is_jacktorr_addon_enabled",
+            "plugin.video.jacktorr",
+            lambda utils: utils.get_jacktorr_url("magnet:?xt=urn:btih:HASH", ""),
+        ),
+    ],
+)
+def test_torrent_client_guard_returns_none_and_notifies_when_install_declined(
+    guard, addon_id, call_builder
+):
+    from lib.utils.player import utils
+
+    with patch.object(utils, guard, return_value=False), patch.object(
+        utils, "Dialog"
+    ) as dialog_cls, patch.object(utils, "execute_builtin") as builtin, patch.object(
+        utils, "notification"
+    ) as notify, patch.object(utils, "translation", side_effect=lambda i: f"s{i} %s"):
+        dialog_cls.return_value.yesno.return_value = False
+        result = call_builder(utils)
+
+    assert result is None
+    builtin.assert_not_called()
+    notify.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    ("guard", "addon_id", "call_builder"),
+    [
+        (
+            "is_elementum_addon",
+            "plugin.video.elementum",
+            lambda utils: utils.get_elementum_url("magnet:?xt=urn:btih:HASH", "", "movie", {}),
+        ),
+        (
+            "is_torrest_addon",
+            "plugin.video.torrest",
+            lambda utils: utils.get_torrest_url("magnet:?xt=urn:btih:HASH", ""),
+        ),
+        (
+            "is_jacktorr_addon_enabled",
+            "plugin.video.jacktorr",
+            lambda utils: utils.get_jacktorr_url("magnet:?xt=urn:btih:HASH", ""),
+        ),
+    ],
+)
+def test_torrent_client_guard_does_not_play_after_install_accepted(
+    guard, addon_id, call_builder
+):
+    """InstallAddon is async: the guard must not return a playable plugin URL."""
+    from lib.utils.player import utils
+
+    with patch.object(utils, guard, return_value=False), patch.object(
+        utils, "Dialog"
+    ) as dialog_cls, patch.object(
+        utils, "execute_builtin"
+    ) as builtin, patch.object(utils, "notification") as notify, patch.object(
+        utils, "translation", side_effect=lambda i: f"s{i} %s"
+    ):
+        dialog_cls.return_value.yesno.return_value = True
+        result = call_builder(utils)
+
+    assert result is None
+    builtin.assert_called_once_with(f"InstallAddon({addon_id})")
+    notify.assert_called_once()
+
+
 def test_jacktorr_playback_saves_metadata_under_infohash_and_magnet_hash():
     from lib.utils.player import utils
 
@@ -75,7 +154,7 @@ def test_jacktorr_playback_saves_metadata_under_infohash_and_magnet_hash():
         "info_hash": "SOURCEHASH",
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
         url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
@@ -98,7 +177,7 @@ def test_jacktorr_playback_deduplicates_matching_infohash_and_magnet_hash():
         "info_hash": "SAMEHASH",
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="SAMEHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta") as mock_save:
         utils.get_jacktorr_url("magnet:?xt=urn:btih:SAMEHASH", "", data=data)
@@ -120,7 +199,7 @@ def test_jacktorr_url_includes_poster_param_when_poster_in_data():
         "poster": poster,
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
         url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
@@ -140,7 +219,7 @@ def test_jacktorr_url_omits_poster_param_when_poster_absent_from_data():
         "info_hash": "SOURCEHASH",
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
         url = utils.get_jacktorr_url("magnet:?xt=urn:btih:MAGNETHASH", "", data=data)
@@ -162,7 +241,7 @@ def test_jacktorr_url_includes_poster_param_on_play_url_variant():
         "poster": poster,
     }
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
         url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data=data)
@@ -183,7 +262,7 @@ def test_jacktorr_url_forwards_encoded_title_and_description(magnet, url, route)
 
     title = "El titulo & la pelicula"
     description = "Descripcion con espacios, signos & unicode: cafe"
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         jacktorr_url = utils.get_jacktorr_url(
@@ -202,7 +281,7 @@ def test_jacktorr_url_round_trips_unicode_html_description():
     from lib.utils.player import utils
 
     description = "Sinopsis <b>café 東京 & más</b>"
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         jacktorr_url = utils.get_jacktorr_url(
@@ -227,7 +306,7 @@ def test_jacktorr_url_round_trips_unicode_html_description():
 def test_jacktorr_url_forwards_normalized_recognized_category(mode, category):
     from lib.utils.player import utils
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         jacktorr_url = utils.get_jacktorr_url(
@@ -244,7 +323,7 @@ def test_jacktorr_url_forwards_normalized_recognized_category(mode, category):
 def test_jacktorr_url_omits_missing_or_unknown_category(data):
     from lib.utils.player import utils
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         jacktorr_url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data)
@@ -256,7 +335,7 @@ def test_jacktorr_url_forwards_season_and_episode_to_play_magnet():
     from lib.utils.player import utils
 
     magnet = "magnet:?xt=urn:btih:MAGNETHASH"
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.general.utils.get_info_hash_from_magnet", return_value="MAGNETHASH"
     ), patch("lib.utils.torrent.torrserver_utils.save_torrent_meta"):
         url = utils.get_jacktorr_url(magnet, "", {"tv_data": {"season": 4, "episode": 2}})
@@ -270,7 +349,7 @@ def test_jacktorr_url_forwards_season_and_episode_to_play_url():
     from lib.utils.player import utils
 
     torrent_url = "https://example.com/file.torrent?token=abc&name=Episode 2"
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         url = utils.get_jacktorr_url(
@@ -297,7 +376,7 @@ def test_jacktorr_url_forwards_season_and_episode_to_play_url():
 def test_jacktorr_url_omits_invalid_or_incomplete_season_episode(data):
     from lib.utils.player import utils
 
-    with patch.object(utils, "is_jacktorr_addon", return_value=True), patch(
+    with patch.object(utils, "is_jacktorr_addon_enabled", return_value=True), patch(
         "lib.utils.torrent.torrserver_utils.save_torrent_meta"
     ):
         url = utils.get_jacktorr_url("", "https://example.com/file.torrent", data)

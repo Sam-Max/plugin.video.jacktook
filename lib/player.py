@@ -53,6 +53,9 @@ PLAYNEXT_ACTION_PROPERTY = "jacktook_next_dialog_action"
 total_time_errors = ("0.0", "", 0.0, None)
 video_fullscreen_check = "Window.IsActive(fullscreenvideo)"
 SKIP_SEGMENT_LABEL_IDS = {"intro": 90160, "recap": 90161, "outro": 90169}
+# Only a closed busy dialog after this wait counts as a failed plugin:// start.
+PLUGIN_START_FAILURE_TIMEOUT_MS = 15000
+PLUGIN_START_POLL_INTERVAL_MS = 100
 
 
 class JacktookPLayer(xbmc.Player):
@@ -363,6 +366,8 @@ class JacktookPLayer(xbmc.Player):
 
     def monitor(self):
         ensure_dialog_closed = False
+        plugin_start_wait_ms = 0
+        start_failure_notified = False
         kodilog("[PLAYER] monitor() entered")
 
         try:
@@ -376,8 +381,22 @@ class JacktookPLayer(xbmc.Player):
                     return
                 if get_visibility("Window.IsTopMost(okdialog)"):
                     execute_builtin("SendClick(okdialog, 11)")
+                    if self._is_queued_plugin_url():
+                        self.notify_playback_never_started()
                     return
-                sleep(100)
+                plugin_start_wait_ms += PLUGIN_START_POLL_INTERVAL_MS
+                if (
+                    not start_failure_notified
+                    and self._plugin_start_failure_detected(plugin_start_wait_ms)
+                ):
+                    start_failure_notified = True
+                    kodilog(
+                        f"[PLAYER] playback did not start within "
+                        f"{PLUGIN_START_FAILURE_TIMEOUT_MS}ms and no resolution is in progress",
+                        level=xbmc.LOGWARNING,
+                    )
+                    self.notify_playback_never_started()
+                sleep(PLUGIN_START_POLL_INTERVAL_MS)
             kodilog("[PLAYER] monitor: video started playing, entering main loop")
 
             # Once playing, initialize streams and subtitles
@@ -530,6 +549,23 @@ class JacktookPLayer(xbmc.Player):
                     if stream_lang == lang_code:
                         self.setAudioStream(audio_streams.index(stream_lang))
                         break
+
+    def _is_queued_plugin_url(self) -> bool:
+        return str(self.url or "").startswith("plugin://")
+
+    def _plugin_start_failure_detected(self, wait_ms: int) -> bool:
+        """Return True when a queued plugin:// URL has silently failed to start."""
+        if not self._is_queued_plugin_url():
+            return False
+        if wait_ms < PLUGIN_START_FAILURE_TIMEOUT_MS:
+            return False
+        return not get_visibility("Window.IsVisible(busydialog)")
+
+    def notify_playback_never_started(self):
+        try:
+            notification(translation(91059), time=5000)
+        except Exception as e:
+            kodilog(f"Error notifying playback start failure: {e}")
 
     def handle_playback_failure(self):
         self.kill_dialog()

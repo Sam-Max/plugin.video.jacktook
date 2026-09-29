@@ -1557,3 +1557,127 @@ def test_check_skip_intro_rearms_window_after_resume_past_it(monkeypatch):
     assert test_player.skip_intro_handled["intro"] is True
     assert execute_builtin.call_count == 1
     assert execute_builtin.call_args[0][0]["skip_label"] == "Skip Intro"
+
+
+# ---------------------------------------------------------------------------
+# Playback never started: notification paths (missing torrent client feedback)
+# ---------------------------------------------------------------------------
+
+
+def _bare_player(player_module):
+    player = object.__new__(player_module.JacktookPLayer)
+    player.url = ""
+    return player
+
+
+def test_plugin_start_failure_ignored_for_direct_urls(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+    test_player.url = "https://example.com/stream.m3u8"
+    monkeypatch.setattr(player_module, "get_visibility", lambda _cond: False)
+
+    assert (
+        test_player._plugin_start_failure_detected(
+            player_module.PLUGIN_START_FAILURE_TIMEOUT_MS + 1000
+        )
+        is False
+    )
+
+
+def test_plugin_start_failure_ignored_within_timeout(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+    test_player.url = "plugin://plugin.video.elementum/play?uri=x"
+    monkeypatch.setattr(player_module, "get_visibility", lambda _cond: False)
+
+    assert (
+        test_player._plugin_start_failure_detected(
+            player_module.PLUGIN_START_FAILURE_TIMEOUT_MS - 100
+        )
+        is False
+    )
+
+
+def test_plugin_start_failure_ignored_while_busy_dialog_visible(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+    test_player.url = "plugin://plugin.video.elementum/play?uri=x"
+
+    def visibility(condition):
+        if condition == "Window.IsVisible(busydialog)":
+            return True
+        return False
+
+    monkeypatch.setattr(player_module, "get_visibility", visibility)
+
+    assert (
+        test_player._plugin_start_failure_detected(
+            player_module.PLUGIN_START_FAILURE_TIMEOUT_MS + 1000
+        )
+        is False
+    )
+
+
+def test_plugin_start_failure_detected_when_resolution_gave_up(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+    test_player.url = "plugin://plugin.video.elementum/play?uri=x"
+    monkeypatch.setattr(player_module, "get_visibility", lambda _cond: False)
+
+    assert (
+        test_player._plugin_start_failure_detected(
+            player_module.PLUGIN_START_FAILURE_TIMEOUT_MS + 1000
+        )
+        is True
+    )
+
+
+def test_notify_playback_never_started_uses_localized_notification(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+    notifications = []
+    monkeypatch.setattr(
+        player_module, "notification", lambda *a, **kw: notifications.append((a, kw))
+    )
+    monkeypatch.setattr(player_module, "translation", lambda i: f"string-{i}")
+
+    test_player.notify_playback_never_started()
+
+    assert notifications and notifications[0][0][0] == "string-91059"
+
+
+def test_notify_playback_never_started_swallows_errors(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _bare_player(player_module)
+
+    def boom(*_a, **_kw):
+        raise RuntimeError("no UI in this context")
+
+    monkeypatch.setattr(player_module, "notification", boom)
+
+    test_player.notify_playback_never_started()
+
+
+def test_monitor_dismisses_error_dialog_and_notifies_when_playback_never_starts():
+    source = PLAYER_PATH.read_text()
+    monitor_match = re.search(
+        r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S
+    )
+
+    assert monitor_match is not None
+
+    monitor_body = monitor_match.group("body")
+    okdialog_index = monitor_body.find('"Window.IsTopMost(okdialog)"')
+
+    assert okdialog_index != -1
+
+    okdialog_body = monitor_body[okdialog_index : okdialog_index + 600]
+    assert "SendClick(okdialog, 11)" in okdialog_body
+    assert "self.notify_playback_never_started()" in okdialog_body
+    # The silent-failure branch must not abandon monitoring: it only notifies.
+    assert re.search(
+        r"start_failure_notified = True\n.*?self\.notify_playback_never_started\(\)",
+        monitor_body,
+        re.S,
+    )
+    assert "_plugin_start_failure_detected" in monitor_body

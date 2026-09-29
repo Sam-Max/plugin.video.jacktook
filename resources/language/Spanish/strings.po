@@ -4774,3 +4774,11 @@ msgstr "Idioma preferido para los títulos de anime."
 msgctxt "#91063"
 msgid "Romaji"
 msgstr "Romaji"
+
+msgctxt "#91058"
+msgid "Installing %s. Try playback again once it finishes."
+msgstr "Instalando %s. Vuelve a intentar la reproducción cuando termine."
+
+msgctxt "#91059"
+msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
+msgstr "No se pudo iniciar la reproducción. Verifica que el cliente de torrents esté instalado y activado."
