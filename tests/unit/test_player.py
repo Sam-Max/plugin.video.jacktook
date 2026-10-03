@@ -1658,26 +1658,76 @@ def test_notify_playback_never_started_swallows_errors(monkeypatch):
     test_player.notify_playback_never_started()
 
 
-def test_monitor_dismisses_error_dialog_and_notifies_when_playback_never_starts():
-    source = PLAYER_PATH.read_text()
-    monitor_match = re.search(
-        r"def monitor\(self\):(?P<body>.*?)def handle_subtitles", source, re.S
+def _monitor_player(player_module):
+    """Bare player wired so monitor() runs its wait loop without Kodi."""
+    test_player = object.__new__(player_module.JacktookPLayer)
+    test_player.url = "plugin://plugin.video.elementum/play?uri=x"
+    test_player.data = {}
+    test_player.skip_intro_enabled = False
+    test_player.kodi_monitor = MagicMock(abortRequested=MagicMock(return_value=False))
+    for name in (
+        "_owns_playback_session",
+        "select_audio_stream",
+        "handle_subtitle_selection",
+        "handle_playback_start",
+        "handle_playback_stop",
+        "clear_playback_properties",
+        "_release_playback_session",
+    ):
+        setattr(test_player, name, MagicMock(return_value=True))
+    return test_player
+
+
+def _record_notifications(monkeypatch, player_module):
+    notifications = []
+    monkeypatch.setattr(
+        player_module, "notification", lambda *a, **kw: notifications.append((a, kw))
     )
+    monkeypatch.setattr(player_module, "translation", lambda i: f"string-{i}")
+    monkeypatch.setattr(player_module, "sleep", MagicMock())
+    monkeypatch.setattr(player_module, "get_setting", lambda *_a, **_kw: False)
+    return notifications
 
-    assert monitor_match is not None
 
-    monitor_body = monitor_match.group("body")
-    okdialog_index = monitor_body.find('"Window.IsTopMost(okdialog)"')
-
-    assert okdialog_index != -1
-
-    okdialog_body = monitor_body[okdialog_index : okdialog_index + 600]
-    assert "SendClick(okdialog, 11)" in okdialog_body
-    assert "self.notify_playback_never_started()" in okdialog_body
-    # The silent-failure branch must not abandon monitoring: it only notifies.
-    assert re.search(
-        r"start_failure_notified = True\n.*?self\.notify_playback_never_started\(\)",
-        monitor_body,
-        re.S,
+def test_monitor_okdialog_dismissal_notifies_exactly_once(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _monitor_player(player_module)
+    test_player.isPlayingVideo = MagicMock(return_value=False)
+    builtins = []
+    monkeypatch.setattr(player_module, "execute_builtin", lambda *a, **kw: builtins.append(a))
+    monkeypatch.setattr(
+        player_module, "get_visibility", lambda cond: cond == "Window.IsTopMost(okdialog)"
     )
-    assert "_plugin_start_failure_detected" in monitor_body
+    notifications = _record_notifications(monkeypatch, player_module)
+
+    test_player.monitor()
+
+    assert [args[0] for args in builtins] == ["SendClick(okdialog, 11)"]
+    assert len(notifications) == 1
+    assert notifications[0][0][0] == "string-91059"
+    assert notifications[0][1] == {"time": 5000}
+    # A dismissed start dialog ends the wait loop, so monitoring must not fall
+    # through into playback handling (and must not notify a second time).
+    test_player.handle_playback_start.assert_not_called()
+
+
+def test_monitor_timeout_notifies_exactly_once_and_keeps_monitoring(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _monitor_player(player_module)
+    timeout_polls = (
+        player_module.PLUGIN_START_FAILURE_TIMEOUT_MS // player_module.PLUGIN_START_POLL_INTERVAL_MS
+    )
+    # Polling crosses the 15 s threshold and keeps running afterwards; the final
+    # True enters playback handling and the trailing False exits the main loop.
+    test_player.isPlayingVideo = MagicMock(
+        side_effect=[False] * (timeout_polls + 5) + [True, False]
+    )
+    monkeypatch.setattr(player_module, "get_visibility", lambda _cond: False)
+    notifications = _record_notifications(monkeypatch, player_module)
+
+    test_player.monitor()
+
+    assert len(notifications) == 1
+    assert notifications[0][0][0] == "string-91059"
+    # Monitoring continued past the notification into playback handling.
+    test_player.handle_playback_start.assert_called_once_with()
