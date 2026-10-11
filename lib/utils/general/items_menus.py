@@ -422,6 +422,13 @@ movie_items = [
 
 anime_items = [
     {
+        "name": translation(90006),
+        "mode": "anime",
+        "category": "Anime_Search",
+        "api": "tmdb",
+        "icon": "tmdb.png",
+    },
+    {
         "name": translation(90037),
         "mode": "anime",
         "category": "Anime_Popular",

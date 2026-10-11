@@ -83,6 +83,17 @@ class TmdbAnime(TMDb):
             params=f"with_keywords=210024&sort_by=vote_average.desc&vote_count.gte=100&page={page_no}",
         )
 
+    def anime_search(self, query, mode, page_no, adult=False):
+        params = f"query={query}&page={page_no}"
+
+        if adult is not None:
+            params += f"&include_adult={'true' if adult else 'false'}"
+
+        return self._request_obj(
+            self._urls["search_tv"] if mode == "tv" else self._urls["search_movie"],
+            params=params,
+        )
+
     def tmdb_keywords(self, mode, tmdb_id):
         return self._request_obj(
             (self._urls["tv_keywords"] if mode == "tv" else self._urls["movie_keywords"]) % tmdb_id,

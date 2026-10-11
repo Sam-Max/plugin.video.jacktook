@@ -1,11 +1,14 @@
+import threading
 from typing import Any
 
 from lib.anime.display import pick_original_title, resolve_menu_record, resolve_menu_title
+from lib.api.tmdbv3api.objs.anime import TmdbAnime
 from lib.clients.tmdb.base import BaseTmdbClient
 from lib.clients.tmdb.utils.utils import (
     get_tmdb_movie_details,
     get_tmdb_show_details,
 )
+from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     Animation,
     Anime,
@@ -21,11 +24,65 @@ from lib.utils.kodi.utils import (
     kodilog,
     make_list_item,
     notification,
+    show_keyboard,
     translation,
 )
 
+ANIMATION_GENRE_ID = 16
+ANIME_KEYWORD_ID = 210024
+
+
+def _has_anime_keyword(api, mode, tmdb_id):
+    try:
+        data = api.tmdb_keywords(mode, tmdb_id)
+    except Exception as error:
+        kodilog(f"[ANIME] keyword check failed for {tmdb_id}: {error}")
+        return False
+    if data is None:
+        return False
+    keywords = getattr(data, "results" if mode == "tv" else "keywords", None) or []
+    return any(keyword.id == ANIME_KEYWORD_ID for keyword in keywords)
+
 
 class TmdbAnimeClient(BaseTmdbClient):
+    def handle_anime_search_query(self, page):
+        if page == 1:
+            query = show_keyboard(id=30241)
+            if query:
+                PickleDatabase().set_key("anime_query", query)
+                return query
+            return None
+        return PickleDatabase().get_key("anime_query")
+
+    @staticmethod
+    def filter_anime_search_results(data, mode):
+        """Keep only anime among search hits, spending requests only where needed.
+
+        Stage 1 drops hits without the Animation genre using the search payload alone.
+        Stage 2 confirms the anime keyword with one request per remaining hit; a failed
+        check excludes the hit, so an unverified title never reaches the list.
+        """
+        candidates = [
+            item
+            for item in data.results
+            if ANIMATION_GENRE_ID in (getattr(item, "genre_ids", None) or [])
+        ]
+        anime_api = TmdbAnime()
+        confirmed = {}
+        lock = threading.Lock()
+
+        def confirm(indexed_item):
+            index, item = indexed_item
+            if _has_anime_keyword(anime_api, mode, item.id):
+                with lock:
+                    confirmed[index] = item
+
+        execute_thread_pool(list(enumerate(candidates)), confirm)
+        kept = [confirmed[index] for index in sorted(confirmed)]
+        data.results = kept
+        data.total_results = len(kept)
+        return data
+
     def handle_anime_category_query(self, client, category, submode, page):
         if category == Anime.AIRING:
             set_pluging_category(translation(90039))
@@ -46,6 +103,7 @@ class TmdbAnimeClient(BaseTmdbClient):
     def process_anime_results(self, data, submode, page, mode, category):
         if data.total_results == 0:
             notification("No results found")
+            end_of_directory(cache=False)
             return
         execute_thread_pool(data.results, TmdbAnimeClient.show_anime_results, submode)
         add_next_button("next_page_anime", page=page, mode=mode, submode=submode, category=category)

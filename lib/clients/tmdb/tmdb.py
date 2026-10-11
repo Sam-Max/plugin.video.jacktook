@@ -253,6 +253,17 @@ class TmdbClient(BaseTmdbClient):
     def handle_tmdb_anime_query(category, mode, submode, page):
         set_content_type(mode)
 
+        def handle_search():
+            query = TmdbAnimeClient().handle_anime_search_query(page)
+            if not query:
+                end_of_directory(cache=False)
+                return None
+            data = TmdbAnime().anime_search(query, submode, page)
+            if not data:
+                end_of_directory(cache=False)
+                return None
+            return TmdbAnimeClient.filter_anime_search_results(data, submode)
+
         def handle_category():
             return TmdbAnimeClient().handle_anime_category_query(
                 TmdbAnime(), category, submode, page
@@ -262,6 +273,7 @@ class TmdbClient(BaseTmdbClient):
             return TmdbAnimeClient().handle_anime_years_or_genres(category, mode, page, submode)
 
         handlers = {
+            Anime.SEARCH: handle_search,
             Anime.AIRING: handle_category,
             Anime.POPULAR: handle_category,
             Anime.POPULAR_RECENT: handle_category,
