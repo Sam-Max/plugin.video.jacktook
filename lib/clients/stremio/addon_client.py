@@ -195,6 +195,18 @@ class StremioAddonCatalogsClient(BaseClient):
         return data
 
 
+def _redact_addon_url(error, addon):
+    """Return the error text with the addon's private base URL replaced."""
+    message = str(error)
+    try:
+        base_url = addon.url()
+    except Exception:
+        base_url = ""
+    if base_url:
+        message = message.replace(base_url, "<addon-url>")
+    return message
+
+
 class StremioAddonClient(BaseClient):
     def __init__(self, addon: Addon) -> None:
         super().__init__(None, None)
@@ -273,7 +285,12 @@ class StremioAddonClient(BaseClient):
             response = self.parse_response(data)
             kodilog(f"Stremio addon {self.display_name} returned {len(response)} results")
             return response
-        except Exception:
+        except Exception as error:
+            kodilog(
+                f"Stremio stream search failed for {self.display_name}: "
+                f"{type(error).__name__}: {_redact_addon_url(error, self.addon)}",
+                level=xbmc.LOGERROR,
+            )
             self.handle_exception(f"Error in {self.display_name}")
             return []
 
