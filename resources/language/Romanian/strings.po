@@ -503,6 +503,19 @@ msgstr "Autorizează addon-ul să acceseze contul Offcloud."
 msgctxt "#30952"
 msgid "Revoke Offcloud account access."
 msgstr "Revocă accesul contului Offcloud."
+
+msgctxt "#30953"
+msgid "Select subtitle addons"
+msgstr "Selectează add-on-urile pentru subtitrări"
+
+msgctxt "#30954"
+msgid "Choose which installed Stremio addons to query for subtitles."
+msgstr "Alege add-on-urile Stremio instalate care vor fi interogate pentru subtitrări."
+
+msgctxt "#30955"
+msgid "No subtitle-capable addons found."
+msgstr "Nu s-au găsit add-on-uri care acceptă subtitrări."
+
 msgctxt "#30728"
 msgid "Seeds"
 msgstr "Seederi"
@@ -914,6 +927,118 @@ msgstr "Activează sau dezactivează scrobbling-ul Trakt și reluarea de la ulti
 msgctxt "#30937"
 msgid "Clear cached Trakt data and force Jacktook to fetch fresh Trakt results the next time you open a Trakt view."
 msgstr "Șterge datele Trakt din cache și forțează actualizarea la următoarea deschidere."
+
+msgctxt "#90970"
+msgid "Simkl Configuration"
+msgstr "Configurare Simkl"
+
+msgctxt "#90971"
+msgid "Enable Simkl"
+msgstr "Activează Simkl"
+
+msgctxt "#90972"
+msgid "Enable Simkl account integration."
+msgstr "Activează integrarea contului Simkl."
+
+msgctxt "#90973"
+msgid "Advanced Simkl Client ID Override"
+msgstr "Suprascriere avansată a ID-ului client Simkl"
+
+msgctxt "#90974"
+msgid "Optional. Leave empty to use Jacktook's built-in Simkl application."
+msgstr "Opțional. Lasă câmpul gol pentru a utiliza aplicația Simkl integrată în Jacktook."
+
+msgctxt "#90975"
+msgid "Authorize Simkl"
+msgstr "Autorizează Simkl"
+
+msgctxt "#90976"
+msgid "Link your Simkl account using PIN authorization."
+msgstr "Conectează contul Simkl folosind autorizarea prin PIN."
+
+msgctxt "#90977"
+msgid "Reset Simkl Authorization"
+msgstr "Resetează autorizarea Simkl"
+
+msgctxt "#90978"
+msgid "Remove the saved Simkl access token from Jacktook."
+msgstr "Elimină din Jacktook tokenul de acces Simkl salvat."
+
+msgctxt "#90979"
+msgid "Enable Simkl Scrobbling"
+msgstr "Activează scrobbling-ul Simkl"
+
+msgctxt "#90980"
+msgid "Send movie and TV episode playback start, pause, resume, and stop events to Simkl."
+msgstr "Trimite către Simkl evenimentele de pornire, pauză, reluare și oprire a redării filmelor și episoadelor TV."
+
+msgctxt "#90981"
+msgid "Simkl Library"
+msgstr "Biblioteca Simkl"
+
+msgctxt "#90983"
+msgid "Plan to Watch"
+msgstr "De vizionat"
+
+msgctxt "#90984"
+msgid "Watching"
+msgstr "În curs de vizionare"
+
+msgctxt "#90985"
+msgid "Completed"
+msgstr "Finalizat"
+
+msgctxt "#90986"
+msgid "On Hold"
+msgstr "În așteptare"
+
+msgctxt "#90987"
+msgid "Dropped"
+msgstr "Abandonat"
+
+msgctxt "#90988"
+msgid "Move to %s"
+msgstr "Mută la %s"
+
+msgctxt "#90989"
+msgid "Simkl status updated."
+msgstr "Starea Simkl a fost actualizată."
+
+msgctxt "#90990"
+msgid "Unable to update Simkl status."
+msgstr "Nu s-a putut actualiza starea Simkl."
+
+msgctxt "#90991"
+msgid "Mark as Watched on Simkl"
+msgstr "Marchează ca vizionat pe Simkl"
+
+msgctxt "#90992"
+msgid "Mark as Unwatched on Simkl"
+msgstr "Marchează ca nevizionat pe Simkl"
+
+msgctxt "#90993"
+msgid "Remove Movie from Simkl?"
+msgstr "Elimini filmul din Simkl?"
+
+msgctxt "#90994"
+msgid "Removing a movie from its Simkl watch history also removes it from your Simkl library. Continue?"
+msgstr "Eliminarea unui film din istoricul de vizionare Simkl îl elimină și din biblioteca Simkl. Continui?"
+
+msgctxt "#90995"
+msgid "Simkl watch history updated."
+msgstr "Istoricul de vizionare Simkl a fost actualizat."
+
+msgctxt "#90996"
+msgid "Unable to update Simkl watch history."
+msgstr "Nu s-a putut actualiza istoricul de vizionare Simkl."
+
+msgctxt "#90997"
+msgid "Enable and authorize Simkl in settings to access your library."
+msgstr "Activează și autorizează Simkl din setări pentru a accesa biblioteca."
+
+msgctxt "#90998"
+msgid "Enable and authorize Trakt in settings to access your library."
+msgstr "Activează și autorizează Trakt din setări pentru a accesa biblioteca."
 
 msgctxt "#40000"
 msgid "Arabic (United Arab Emirates)"
@@ -2230,6 +2355,18 @@ msgstr "Omite automat"
 msgctxt "#90168"
 msgid "Automatically skip intros and recaps without showing the button"
 msgstr "Omite automat intro-urile și rezumatele, fără afișarea butonului."
+
+msgctxt "#90169"
+msgid "Skip Ending"
+msgstr "Omite finalul"
+
+msgctxt "#90170"
+msgid "Enable Skip Ending"
+msgstr "Activează omiterea finalului"
+
+msgctxt "#90184"
+msgid "Detect and offer to skip the ending (credits) during playback"
+msgstr "Detectează și oferă opțiunea de a sări peste final (genericul de final) în timpul redării."
 
 msgctxt "#90160"
 msgid "Skip Intro"
@@ -4309,7 +4446,7 @@ msgstr "Pornire"
 
 msgctxt "#90784"
 msgid "Auto-start Jacktook on Kodi boot"
-msgstr "Pornire automată Jacktook la boot-ul Kodi"
+msgstr "Pornire automată Jacktook la pornirea Kodi"
 
 msgctxt "#90785"
 msgid "Automatically open Jacktook when Kodi starts"
@@ -4451,6 +4588,66 @@ msgctxt "#90819"
 msgid "Rename Stremio add-on"
 msgstr "Redenumește addonul Stremio"
 
+msgctxt "#90820"
+msgid "Enter add-on alias."
+msgstr "Introdu aliasul add-on-ului."
+
+msgctxt "#90821"
+msgid "Stremio alias"
+msgstr "Alias Stremio"
+
+msgctxt "#90822"
+msgid "Alias saved."
+msgstr "Alias salvat."
+
+msgctxt "#90823"
+msgid "Alias cleared."
+msgstr "Alias șters."
+
+msgctxt "#90825"
+msgid "Select catalog"
+msgstr "Selectează catalogul"
+
+msgctxt "#90826"
+msgid "Enter catalog alias."
+msgstr "Introdu aliasul catalogului"
+
+msgctxt "#90829"
+msgid "Edit"
+msgstr "Editează"
+
+msgctxt "#90830"
+msgid "Clear"
+msgstr "Șterge"
+
+msgctxt "#90831"
+msgid "This item already has an alias. Do you want to clear it?"
+msgstr "Acest element are deja un alias. Vrei să îl ștergi?"
+
+msgctxt "#90836"
+msgid "Configure Stremio Addon"
+msgstr "Configurează add-on-ul Stremio"
+
+msgctxt "#90837"
+msgid "This addon does not expose a standard configuration URL."
+msgstr "Acest add-on nu oferă un URL standard pentru configurare."
+
+msgctxt "#90838"
+msgid "Unable to import the configured manifest. Check the HTTPS manifest URL and try again."
+msgstr "Nu s-a putut importa manifestul configurat. Verifică URL-ul HTTPS al manifestului și încearcă din nou."
+
+msgctxt "#90839"
+msgid "Unable to save the configured addon."
+msgstr "Nu s-a putut salva add-on-ul configurat."
+
+msgctxt "#90840"
+msgid "Unable to open the external configurator."
+msgstr "Nu s-a putut deschide configuratorul extern."
+
+msgctxt "#90841"
+msgid "Open the official addon configurator, then import its configured manifest URL as a custom addon."
+msgstr "Deschide configuratorul oficial al add-on-ului, apoi importă URL-ul manifestului configurat ca add-on personalizat."
+
 msgctxt "#90824"
 msgid "Rename Stremio catalog"
 msgstr "Redenumește catalogul Stremio"
@@ -4485,7 +4682,7 @@ msgstr "Magneto"
 
 msgctxt "#90301"
 msgid "Enable external scraper module integration."
-msgstr "Enable external scraper module integration."
+msgstr "Activează integrarea modulului extern de căutare a torrentelor."
 
 msgctxt "#90302"
 msgid "Choose External Scraper Module"
@@ -4512,19 +4709,39 @@ msgid "Open the settings for the selected external scraper module."
 msgstr "Deschide setările pentru modulul scraper extern selectat."
 msgctxt "#30956"
 msgid "Use integrated OpenSubtitles"
-msgstr ""
+msgstr "Folosește OpenSubtitles integrat"
 
 msgctxt "#30957"
 msgid "Queries the integrated OpenSubtitles service with the current video ID and, when available, filename, size, and video hash. Disable this to prevent those requests."
-msgstr ""
+msgstr "Interoghează serviciul OpenSubtitles integrat folosind ID-ul videoclipului curent și dacă sunt disponibile, numele fișierului, mărimea și hash-ul video. Dezactivează această opțiune pentru a împiedica aceste solicitări."
+
+msgctxt "#90958"
+msgid "Yamtrack"
+msgstr "Yamtrack"
+
+msgctxt "#90959"
+msgid "Sync completed playback to Yamtrack"
+msgstr "Sincronizează redările finalizate cu Yamtrack"
+
+msgctxt "#90960"
+msgid "Yamtrack base URL"
+msgstr "URL de bază Yamtrack"
+
+msgctxt "#90961"
+msgid "Yamtrack webhook token"
+msgstr "Token webhook Yamtrack"
 
 msgctxt "#90962"
 msgid "MDbList"
 msgstr "MDbList"
 
+msgctxt "#90963"
+msgid "Uncategorized"
+msgstr "Fără categorie"
+
 msgctxt "#90964"
 msgid "The installed version is newer than the version published in the repository."
-msgstr "Versiunea instalată este mai nouă decât versiunea publicată în depozit."
+msgstr "Versiunea instalată este mai nouă decât versiunea publicată în repozitoriu."
 
 msgctxt "#90999"
 msgid "Clear Continue Watching"
@@ -4753,3 +4970,27 @@ msgstr "Această sursă de colecție nu este încă acceptată."
 msgctxt "#91056"
 msgid "Nu s-au găsit rezultate."
 msgstr "Nu s-au găsit rezultate."
+
+msgctxt "#91060"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#91061"
+msgid "Anime title language"
+msgstr "Limba titlurilor anime"
+
+msgctxt "#91062"
+msgid "Preferred language for anime titles."
+msgstr "Limba preferată pentru titlurile anime."
+
+msgctxt "#91063"
+msgid "Romaji"
+msgstr "Romaji"
+
+msgctxt "#91058"
+msgid "Installing %s. Try playback again once it finishes."
+msgstr "Se instalează %s. Încercați să redați din nou după finalizarea instalării."
+
+msgctxt "#91059"
+msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
+msgstr "Redarea nu a putut fi pornită. Verificați dacă extensia clientului de torrente este instalată și activată."
