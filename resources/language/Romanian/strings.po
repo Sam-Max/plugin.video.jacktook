@@ -506,15 +506,15 @@ msgstr "Revocă accesul contului Offcloud."
 
 msgctxt "#30953"
 msgid "Select subtitle addons"
-msgstr "Selectează add-on-urile pentru subtitrări"
+msgstr "Selectează suplimentele pentru subtitrări"
 
 msgctxt "#30954"
 msgid "Choose which installed Stremio addons to query for subtitles."
-msgstr "Alege add-on-urile Stremio instalate care vor fi interogate pentru subtitrări."
+msgstr "Alege suplimentele Stremio instalate care vor fi interogate pentru subtitrări."
 
 msgctxt "#30955"
 msgid "No subtitle-capable addons found."
-msgstr "Nu s-au găsit add-on-uri care acceptă subtitrări."
+msgstr "Nu s-au găsit suplimente care acceptă subtitrări."
 
 msgctxt "#30728"
 msgid "Seeds"
@@ -2337,8 +2337,8 @@ msgid "Check availability of addons and show only reachable ones"
 msgstr "Verifică disponibilitatea add-on-urilor și afișează doar cele accesibile"
 
 msgctxt "#90164"
-msgid "Skip Intro / Recap"
-msgstr "Omite intro / recapitulare"
+msgid "Skip Intro / Recap / Ending"
+msgstr "Omite intro / recapitulare / final"
 
 msgctxt "#90165"
 msgid "Enable Skip Intro"
@@ -2353,8 +2353,8 @@ msgid "Auto-skip"
 msgstr "Omite automat"
 
 msgctxt "#90168"
-msgid "Automatically skip intros and recaps without showing the button"
-msgstr "Omite automat intro-urile și rezumatele, fără afișarea butonului."
+msgid "Automatically skip intros, recaps and endings without showing the button"
+msgstr "Omite automat intro-urile, rezumatele și finalurile, fără afișarea butonului."
 
 msgctxt "#90169"
 msgid "Skip Ending"
@@ -4590,7 +4590,7 @@ msgstr "Redenumește addonul Stremio"
 
 msgctxt "#90820"
 msgid "Enter add-on alias."
-msgstr "Introdu aliasul add-on-ului."
+msgstr "Introdu aliasul suplimentului."
 
 msgctxt "#90821"
 msgid "Stremio alias"
@@ -4626,11 +4626,11 @@ msgstr "Acest element are deja un alias. Vrei să îl ștergi?"
 
 msgctxt "#90836"
 msgid "Configure Stremio Addon"
-msgstr "Configurează add-on-ul Stremio"
+msgstr "Configurează suplimentul Stremio"
 
 msgctxt "#90837"
 msgid "This addon does not expose a standard configuration URL."
-msgstr "Acest add-on nu oferă un URL standard pentru configurare."
+msgstr "Acest supliment nu oferă un URL standard pentru configurare."
 
 msgctxt "#90838"
 msgid "Unable to import the configured manifest. Check the HTTPS manifest URL and try again."
@@ -4646,7 +4646,7 @@ msgstr "Nu s-a putut deschide configuratorul extern."
 
 msgctxt "#90841"
 msgid "Open the official addon configurator, then import its configured manifest URL as a custom addon."
-msgstr "Deschide configuratorul oficial al add-on-ului, apoi importă URL-ul manifestului configurat ca add-on personalizat."
+msgstr "Deschide configuratorul oficial al suplimentului, apoi importă URL-ul manifestului configurat ca supliment personalizat."
 
 msgctxt "#90824"
 msgid "Rename Stremio catalog"
