@@ -1,6 +1,8 @@
 import datetime
 
-years_tvshows = [{"name": "2024", "id": 2024}]
+
+def get_current_year():
+    return datetime.date.today().year
 
 
 def get_dates(days, reverse=True):
