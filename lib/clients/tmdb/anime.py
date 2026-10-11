@@ -6,7 +6,6 @@ from lib.clients.tmdb.utils.utils import (
     get_tmdb_movie_details,
     get_tmdb_show_details,
 )
-from lib.db.pickle_db import PickleDatabase
 from lib.utils.general.utils import (
     Animation,
     Anime,
@@ -22,21 +21,11 @@ from lib.utils.kodi.utils import (
     kodilog,
     make_list_item,
     notification,
-    show_keyboard,
     translation,
 )
 
 
 class TmdbAnimeClient(BaseTmdbClient):
-    def handle_anime_search_query(self, page):
-        if page == 1:
-            query = show_keyboard(id=30241)
-            if query:
-                PickleDatabase().set_key("anime_query", query)
-                return query
-            return None
-        return PickleDatabase().get_key("anime_query")
-
     def handle_anime_category_query(self, client, category, submode, page):
         if category == Anime.AIRING:
             set_pluging_category(translation(90039))

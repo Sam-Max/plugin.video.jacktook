@@ -1,6 +1,5 @@
 import json
 import os
-import threading
 import time
 from datetime import datetime, timedelta
 from typing import List, Optional
@@ -25,7 +24,6 @@ from lib.api.tmdbv3api.objs.trending import Trending
 from lib.api.tmdbv3api.objs.tv import TV
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.db.cached import cache
-from lib.utils.general.utils import execute_thread_pool
 from lib.utils.kodi.settings import get_cache_expiration, is_cache_enabled
 from lib.utils.kodi.utils import (
     ADDON_PATH,
@@ -412,26 +410,6 @@ def get_movie_keywords(tmdb_id):
     except Exception as e:
         kodilog(f"Error fetching movie keywords for {tmdb_id}: {e}")
         return []
-
-
-def filter_anime_by_keyword(results, mode):
-    filtered_anime = []
-    anime_api = TmdbAnime()
-    list_lock = threading.Lock()
-
-    def check_and_append(item, filtered_anime, list_lock):
-        keywords_data = anime_api.tmdb_keywords(mode, item["id"])
-        keywords = keywords_data["results"] if mode == "tv" else keywords_data["keywords"]
-        for keyword in keywords:
-            if keyword["id"] == 210024:
-                with list_lock:
-                    filtered_anime.append(item)
-                break
-
-    execute_thread_pool(results["results"], check_and_append, filtered_anime, list_lock)
-    results["results"] = filtered_anime
-    results["total_results"] = len(filtered_anime)
-    return results
 
 
 def _build_trailer_ids(ids, title=None, title_key="title"):

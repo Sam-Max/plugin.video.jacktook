@@ -1286,14 +1286,6 @@ def list_trakt_page(params):
         end_of_directory(cache=False)
 
 
-def anime_search(params):
-    mode = params.get("mode")
-    page = params.get("page", 1)
-    category = params.get("category")
-    set_content_type(mode)
-    TmdbClient.handle_tmdb_anime_query(category, mode, submode=mode, page=page)
-
-
 def next_page_anime(params):
     mode = params.get("mode")
     set_content_type(mode)

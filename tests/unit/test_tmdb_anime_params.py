@@ -114,3 +114,30 @@ def test_top_rated_and_popular_keep_anime_keyword_and_sort(requests_log, mode):
     assert top_rated[1]["with_keywords"] == [ANIME_KEYWORD]
     assert top_rated[1]["sort_by"] == ["vote_average.desc"]
     assert popular[1]["with_keywords"] == [ANIME_KEYWORD]
+
+
+def test_anime_popular_category_dispatches_to_category_client(monkeypatch):
+    from lib.clients.tmdb import tmdb as tmdb_module
+    from lib.clients.tmdb.anime import TmdbAnimeClient
+    from lib.utils.general.utils import Anime
+
+    dispatched = []
+
+    def fake_category(self, client, category, submode, page):
+        dispatched.append((category, submode, page))
+        return None
+
+    monkeypatch.setattr(TmdbAnimeClient, "handle_anime_category_query", fake_category)
+    monkeypatch.setattr(tmdb_module, "set_content_type", lambda mode: None)
+
+    tmdb_module.TmdbClient.handle_tmdb_anime_query(Anime.POPULAR, "anime", "tv", 2)
+
+    assert dispatched == [(Anime.POPULAR, "tv", 2)]
+
+
+def test_dead_anime_search_route_and_keyword_filter_are_removed():
+    from lib import navigation
+    from lib.clients.tmdb.utils import utils as tmdb_utils
+
+    assert not hasattr(navigation, "anime_search")
+    assert not hasattr(tmdb_utils, "filter_anime_by_keyword")
