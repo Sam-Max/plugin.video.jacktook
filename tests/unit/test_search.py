@@ -6,6 +6,7 @@ import pytest
 
 from lib.api.stremio.addon_manager import AddonManager
 from lib.api.tmdbv3api.as_obj import AsObj
+from lib.clients.prowlarr import Prowlarr
 from lib.clients.stremio.playback import StremioPlaybackError
 from lib.domain.torrent import TorrentStream
 from lib.search import (
@@ -1197,6 +1198,66 @@ class TestCheckSearchCaches:
 
 class TestSearchClient:
     """Cover orchestration logic of search_client (branching, cache, search dispatch)."""
+
+    @pytest.mark.parametrize(
+        ("variant", "expected_queries", "finds_movie"),
+        [
+            (SearchVariant.ORIGINAL_TITLE, ["Obsession"], True),
+            (SearchVariant.DEFAULT, ["Obsesion 2026", "Obsession 2026"], False),
+        ],
+    )
+    def test_prowlarr_original_title_search_ignores_tmdb_year(
+        self, monkeypatch, variant, expected_queries, finds_movie
+    ):
+        """Title-only rescrapes find releases whose year differs from TMDB."""
+        client = Prowlarr("http://localhost", "testapikey", "9696", MagicMock())
+        details = AsObj({"original_title": "Obsession", "release_date": "2026-01-01"})
+        release = {"title": "Obsession.2025.1080p", "indexer": "Test indexer"}
+
+        def respond(_url, *, params, **_kwargs):
+            response = MagicMock(status_code=200)
+            response.json.return_value = [release] if params["query"] == "Obsession" else []
+            return response
+
+        request = MagicMock(side_effect=respond)
+        cache_write = MagicMock()
+        monkeypatch.setattr(client.session, "get", request)
+        monkeypatch.setattr("lib.search.get_client", lambda _key: client)
+        monkeypatch.setattr("lib.search.close_busy_dialog", lambda: None)
+        monkeypatch.setattr("lib.search.reconcile_source_selection", lambda **_kwargs: None)
+        monkeypatch.setattr("lib.search._build_search_cache_scope", lambda _url: "scope")
+        monkeypatch.setattr("lib.search.cache_results", cache_write)
+        monkeypatch.setattr("lib.search.get_setting", lambda key, *_args: key == "prowlarr_enabled")
+        monkeypatch.setattr(
+            "lib.search._is_source_enabled", lambda key, *_args: key == Indexer.PROWLARR
+        )
+        monkeypatch.setattr("lib.clients.prowlarr.get_prowlarr_timeout", lambda: 10)
+        monkeypatch.setattr(
+            "lib.clients.tmdb.utils.utils.get_tmdb_media_details", lambda *_args: details
+        )
+
+        results = search_client(
+            "Obsesion",
+            {"tmdb_id": "123"},
+            "movies",
+            "movie",
+            rescrape=True,
+            season=0,
+            episode=0,
+            show_dialog=False,
+            variant=variant,
+        )
+
+        assert [call.kwargs["params"]["query"] for call in request.call_args_list] == (
+            expected_queries
+        )
+        assert all(
+            call.kwargs["params"]["categories"] == [2000, 8000] for call in request.call_args_list
+        )
+        assert [result.title for result in results] == ([release["title"]] if finds_movie else [])
+        cache_write.assert_called_once_with(
+            results, "Obsesion", "movies", "movie", 0, 0, cache_scope="scope"
+        )
 
     def test_rescrape_skips_cache_reads_but_writes_results(self):
         """rescrape=True bypasses cache reads but replaces cached search results."""

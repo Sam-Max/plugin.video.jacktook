@@ -26,6 +26,7 @@
 - **Aggregated Sources**: Stremio Addons, Jacktook Burst, Jackgram, Jackett, Prowlarr, Usenet, Debrid Services.
 - **Debrid Support**: Native support for RealDebrid, AllDebrid, Premiumize, OffCloud, Torbox.
 - **Torrent Scraping**: Integration with Jackett and Prowlarr for torrent sources.
+- **Search Modes**: Use **Search modes → Search with original title** from a movie's context menu to search without the TMDB year when it differs from release titles.
 - **Usenet Scraping**: EasyNews integration for Usenet sources.
 - **External Scrapers**: Support for external scrapers like Magneto and CocoScrapers.
 - **Telegram Scraping**: Jackgram integration for streaming from Telegram channels.

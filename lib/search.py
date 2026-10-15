@@ -1740,7 +1740,7 @@ def search_client(
         stremio_addons_getter=get_selected_stream_addons,
         nuvio_addons_getter=get_selected_stream_addon_records,
     )
-    if year is None:
+    if year is None and variant != SearchVariant.ORIGINAL_TITLE:
         year = _infer_tmdb_year(ids, mode)
 
     title_aliases = _build_title_fallback_queries(
