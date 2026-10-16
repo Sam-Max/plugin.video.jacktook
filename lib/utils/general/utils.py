@@ -1391,8 +1391,13 @@ def post_process(results: List[TorrentStream], season: int = 0) -> List[TorrentS
 
 
 def filter_debrid_episode(
-    files, episode_num: int, season_num: int, strict: bool = True
+    files, episode_num: int, season_num: int, strict: bool = True, exact_match: bool = False
 ) -> List[Dict]:
+    """Filter episode files, optionally requiring complete numeric tokens.
+
+    Exact matching avoids episode-number prefixes and the unnumbered ``cap.``
+    fallback. It is opt-in so existing provider matching stays unchanged.
+    """
     str_season, str_episode = str(season_num), str(episode_num)
     season_fill, episode_fill = str_season.zfill(2), str_episode.zfill(2)
     ep_plus_1 = str(episode_num + 1).zfill(2)
@@ -1436,12 +1441,16 @@ def filter_debrid_episode(
     # Episode-only patterns
     string_list.append(rf"episode[.-]?{episode_fill}")
     string_list.append(rf"[.-]ep[.-]?{episode_fill}")
-    string_list.append(r"cap\.")
+    if not exact_match:
+        string_list.append(r"cap\.")
 
     # Optional strict negative lookahead to avoid false positives like 10x11 matching 1x01
     if strict:
         lookahead = rf"^(?=.*\.e?0*{episode_fill}\.)(?:(?!((?:s|season)[.-]?\d+[.-x]?(?:ep?|episode)[.-]?\d+)|\d+x\d+).)*$"
         string_list.append(lookahead)
+
+    if exact_match:
+        string_list = [rf"(?<![a-z0-9])(?:{pattern})(?!\d)" for pattern in string_list]
 
     combined_pattern = "|".join(string_list)
     try:

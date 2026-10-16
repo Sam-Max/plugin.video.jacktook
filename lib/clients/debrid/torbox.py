@@ -9,6 +9,7 @@ from lib.utils.general.utils import (
     DebridType,
     IndexerType,
     debrid_dialog_update,
+    filter_debrid_episode,
     get_cached,
     get_public_ip,
     info_hash_to_magnet,
@@ -219,6 +220,17 @@ class TorboxHelper:
         ]
         if not video_files:
             raise TorboxException(get_packed_release_message("Torbox"))
+
+        tv_data = data.get("tv_data")
+        if tv_data:
+            video_files = filter_debrid_episode(
+                video_files,
+                episode_num=tv_data.get("episode"),
+                season_num=tv_data.get("season"),
+                exact_match=True,
+            )
+            if not video_files:
+                raise TorboxException("No matching episode found in torrent.")
 
         file = max(video_files, key=lambda x: x.get("size", 0))
         response_data = self.client.create_download_link(
