@@ -198,7 +198,18 @@ class Torbox(DebridClient):
         )
 
     def download(self, magnet_link):
-        pass
+        try:
+            response = self.add_magnet_link(magnet_link)
+        except ProviderException:
+            # ProviderException already displays the failure notification.
+            return False
+
+        if response.get("success"):
+            notification(translation(90362) % "Torbox")
+            return True
+
+        notification(response.get("detail") or "Failed to add torrent to Torbox")
+        return False
 
     def get_device_code(self):
         return self._make_request(

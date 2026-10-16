@@ -248,11 +248,17 @@ def get_rd_downloads(params):
 
 
 def get_tb_downloads(params):
+    try:
+        page = max(1, int(params.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+    page_size = 20
     debrid_type = DebridType.TB
     debrid_color = get_random_color(debrid_type, formatted=False)
     formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
 
-    cache_key = _cloud_downloads_cache_key(DebridType.TB)
+    # Previous cached lists contained only the largest video of each torrent.
+    cache_key = f"{_cloud_downloads_cache_key(DebridType.TB)}|files-v2"
     raw_downloads = cache.get(cache_key)
     if raw_downloads is None:
         raw_downloads = TorboxHelper().get_cloud_downloads()
@@ -277,7 +283,8 @@ def get_tb_downloads(params):
         sound=False,
     ) if params.get("debug") else None
 
-    for download in sorted_downloads:
+    start = (page - 1) * page_size
+    for download in sorted_downloads[start : start + page_size]:
         name = download.get("name", "")
         torrent_li = build_list_item(f"{formatted_type} - {name}", "download.png")
         torrent_li.setProperty("IsPlayable", "true")
@@ -312,6 +319,15 @@ def get_tb_downloads(params):
             ),
             torrent_li,
             isFolder=False,
+        )
+
+    if start + page_size < len(sorted_downloads):
+        total_pages = (len(sorted_downloads) + page_size - 1) // page_size
+        addDirectoryItem(
+            get_addon_handle(),
+            build_url("get_tb_downloads", page=page + 1),
+            build_list_item(f"Next Page ({page + 1}/{total_pages})", "nextpage.png"),
+            isFolder=True,
         )
 
     end_of_directory()

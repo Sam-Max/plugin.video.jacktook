@@ -155,18 +155,17 @@ class TorboxHelper:
                 skipped_no_playable += 1
                 continue
 
-            file_item = max(video_files, key=lambda item: item.get("size", 0))
-
-            downloads.append(
-                {
-                    "name": file_item.get("name") or torrent.get("name") or "Unknown",
-                    "torrent_id": torrent.get("id"),
-                    "file_id": file_item.get("id"),
-                    "info_hash": torrent.get("hash", ""),
-                    "created_at": torrent.get("created_at", ""),
-                    "updated_at": torrent.get("updated_at", ""),
-                }
-            )
+            for file_item in video_files:
+                downloads.append(
+                    {
+                        "name": file_item.get("name") or torrent.get("name") or "Unknown",
+                        "torrent_id": torrent.get("id"),
+                        "file_id": file_item.get("id"),
+                        "info_hash": torrent.get("hash", ""),
+                        "created_at": torrent.get("created_at", ""),
+                        "updated_at": torrent.get("updated_at", ""),
+                    }
+                )
 
         kodilog(
             f"Torbox cloud listing: total={len(torrents)}, playable={len(downloads)}, skipped_not_dict={skipped_not_dict}, skipped_not_present={skipped_not_present}, skipped_no_playable={skipped_no_playable}"
