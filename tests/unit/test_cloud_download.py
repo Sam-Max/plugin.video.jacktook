@@ -250,7 +250,7 @@ class TestDownloadCloudFile:
         mock_helper.client = mock_client
 
         with patch.object(debrid, "TorboxHelper", return_value=mock_helper), patch.object(
-            debrid, "get_public_ip", return_value="1.2.3.4"
+            debrid, "get_torbox_public_ip", return_value="1.2.3.4"
         ), patch.object(debrid.cache, "get", return_value=None), patch.object(debrid.cache, "set"):
             result = debrid.resolve_cloud_download_url(
                 {
@@ -272,7 +272,7 @@ class TestDownloadCloudFile:
         mock_helper.client = mock_client
 
         with patch.object(debrid, "TorboxHelper", return_value=mock_helper), patch.object(
-            debrid, "get_public_ip", return_value="1.2.3.4"
+            debrid, "get_torbox_public_ip", return_value="1.2.3.4"
         ), patch.object(debrid.cache, "get", return_value=None), patch.object(debrid.cache, "set"):
             result = debrid.resolve_cloud_download_url(
                 {
@@ -293,7 +293,7 @@ class TestDownloadCloudFile:
         mock_helper.client = mock_client
 
         with patch.object(debrid, "TorboxHelper", return_value=mock_helper), patch.object(
-            debrid, "get_public_ip", return_value="1.2.3.4"
+            debrid, "get_torbox_public_ip", return_value="1.2.3.4"
         ), patch.object(
             debrid.cache, "get", side_effect=[None, "https://tb.example.com/Movie.mkv"]
         ), patch.object(debrid.cache, "set") as mock_cache_set:

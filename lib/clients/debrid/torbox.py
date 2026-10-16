@@ -1,4 +1,5 @@
 import copy
+from datetime import timedelta
 from typing import Any, Dict, List, Optional
 
 from xbmc import Monitor
@@ -27,6 +28,11 @@ from lib.utils.kodi.utils import (
 )
 
 EXTENSIONS = supported_video_extensions()[:-1]
+
+
+def get_torbox_public_ip():
+    """Use a short, provider-specific IP cache for automatic CDN routing."""
+    return get_public_ip(cache_key="torbox_public_ip", cache_ttl=timedelta(minutes=1))
 
 
 class TorboxException(Exception):
@@ -212,7 +218,9 @@ class TorboxHelper:
         file_id = data.get("file_id", "")
 
         if torrent_id and file_id:
-            response_data = self.client.create_download_link(torrent_id, file_id, get_public_ip())
+            response_data = self.client.create_download_link(
+                torrent_id, file_id, get_torbox_public_ip()
+            )
             if response_data:
                 data["url"] = response_data.get("data", {})
                 return data
@@ -247,7 +255,7 @@ class TorboxHelper:
 
         file = max(video_files, key=lambda x: x.get("size", 0))
         response_data = self.client.create_download_link(
-            torrent_info.get("id"), file.get("id"), get_public_ip()
+            torrent_info.get("id"), file.get("id"), get_torbox_public_ip()
         )
         if response_data:
             data["url"] = response_data.get("data", {})
@@ -258,7 +266,9 @@ class TorboxHelper:
         file_id = pack_info.get("file_id", "")
         torrent_id = pack_info.get("torrent_id", "")
 
-        response_data = self.client.create_download_link(torrent_id, file_id)
+        response_data = self.client.create_download_link(
+            torrent_id, file_id, get_torbox_public_ip()
+        )
         if response_data:
             data["url"] = response_data.get("data", {})
             return data

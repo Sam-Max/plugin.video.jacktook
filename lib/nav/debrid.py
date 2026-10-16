@@ -15,7 +15,7 @@ from lib.clients.debrid.alldebrid import AllDebridHelper
 from lib.clients.debrid.debrider import DebriderHelper
 from lib.clients.debrid.offcloud import OffcloudHelper
 from lib.clients.debrid.realdebrid import RealDebridHelper
-from lib.clients.debrid.torbox import TorboxHelper
+from lib.clients.debrid.torbox import TorboxHelper, get_torbox_public_ip
 from lib.db.cached import cache
 from lib.services.debrid.auth import (
     run_alldebrid_auth,
@@ -31,7 +31,6 @@ from lib.utils.general.utils import (
     IndexerType,
     build_list_item,
     check_debrid_enabled,
-    get_public_ip,
     get_random_color,
     set_pluging_category,
 )
@@ -416,18 +415,19 @@ def resolve_cloud_download_url(data):
         file_id = data.get("file_id", "")
         if not torrent_id or not file_id:
             return None
-        cache_key = f"tb_download_link|{torrent_id}|{file_id}"
-        cached_url = cache.get(cache_key)
-        if cached_url:
-            return cached_url
         try:
-            response = TorboxHelper().client.create_download_link(
-                torrent_id, file_id, get_public_ip()
-            )
+            user_ip = get_torbox_public_ip()
+            cache_key = f"tb_download_link|{torrent_id}|{file_id}|{user_ip}" if user_ip else None
+            if cache_key:
+                cached_url = cache.get(cache_key)
+                if cached_url:
+                    return cached_url
+            response = TorboxHelper().client.create_download_link(torrent_id, file_id, user_ip)
             if response:
                 url = response.get("data", "")
                 if url:
-                    cache.set(cache_key, url, timedelta(minutes=5))
+                    if cache_key:
+                        cache.set(cache_key, url, timedelta(minutes=5))
                     return url
         except Exception as e:
             kodilog(f"[resolve_cloud_download_url] TB link resolution failed: {e}")

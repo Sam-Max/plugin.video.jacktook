@@ -1571,8 +1571,8 @@ def debrid_dialog_update(type, total, dialog, lock):
         )
 
 
-def get_public_ip():
-    public_ip = cache.get("public_ip")
+def get_public_ip(cache_key: str = "public_ip", cache_ttl: Optional[timedelta] = None):
+    public_ip = cache.get(cache_key)
     if public_ip:
         return public_ip
 
@@ -1584,9 +1584,9 @@ def get_public_ip():
             response.raise_for_status()
             public_ip = response.text.strip()
             cache.set(
-                "public_ip",
+                cache_key,
                 public_ip,
-                timedelta(hours=get_cache_expiration()),
+                cache_ttl if cache_ttl is not None else timedelta(hours=get_cache_expiration()),
             )
             return public_ip
         except requests.RequestException as e:

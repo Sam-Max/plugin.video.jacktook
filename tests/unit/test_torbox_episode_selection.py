@@ -89,7 +89,7 @@ def test_manual_pack_selection_keeps_explicit_file_id(helper):
 
     assert result is data
     assert result["url"] == "https://download"
-    helper.client.create_download_link.assert_called_once_with(10, 1)
+    helper.client.create_download_link.assert_called_once_with(10, 1, "192.0.2.1")
     helper.add_torbox_torrent.assert_not_called()
 
 
