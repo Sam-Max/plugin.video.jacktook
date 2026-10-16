@@ -22,6 +22,7 @@ class Torbox(DebridClient):
         super().__init__(token, timeout, session)
 
     BASE_URL = "https://api.torbox.app/v1/api"
+    CLOUD_CACHE_KEY = "cloud_downloads|Torbox|1|files-v2"
 
     def initialize_headers(self):
         self.headers = {
@@ -98,13 +99,33 @@ class Torbox(DebridClient):
 
         return None
 
+    def _validate_response(self, response, data_type=None):
+        if not isinstance(response, dict) or not isinstance(response.get("success"), bool):
+            raise ProviderException("Invalid Torbox response")
+        if not response["success"]:
+            self._handle_service_specific_errors(response, 200)
+            raise ProviderException(response.get("detail") or "Torbox request failed")
+        if data_type is not None and not isinstance(response.get("data"), data_type):
+            raise ProviderException("Invalid Torbox response data")
+        return response
+
+    def _complete_torrent_add(self, response):
+        from lib.db.cached import cache
+
+        self._validate_response(response)
+        if response.get("queued") is not True and not isinstance(response.get("data"), dict):
+            raise ProviderException("Invalid Torbox response data")
+        cache.delete(self.CLOUD_CACHE_KEY)
+        return response
+
     def add_magnet_link(self, magnet_link):
-        return self._make_request(
+        response = self._make_request(
             "POST",
             "/torrents/createtorrent",
             data={"magnet": magnet_link, "seed": 3, "allow_zip": "false"},
             is_expected_to_fail=False,
         )
+        return self._complete_torrent_add(response)
 
     def add_torrent_file(self, torrent_data, torrent_name="torrent.torrent"):
         response = self.session.request(
@@ -126,15 +147,25 @@ class Torbox(DebridClient):
             timeout=self.timeout,
         )
         self._handle_errors(response, is_expected_to_fail=False)
-        return self._parse_response(response, is_return_none=False)
+        return self._complete_torrent_add(self._parse_response(response, is_return_none=False))
 
     def get_user_torrent_list(self):
         try:
-            return self._make_request(
+            response = self._make_request(
                 "GET",
                 "/torrents/mylist",
                 params={"bypass_cache": "true"},
             )
+            self._validate_response(response, list)
+            for torrent in response["data"]:
+                if not isinstance(torrent, dict):
+                    raise ProviderException("Invalid Torbox torrent data")
+                files = torrent.get("files")
+                if files is not None and (
+                    not isinstance(files, list) or any(not isinstance(item, dict) for item in files)
+                ):
+                    raise ProviderException("Invalid Torbox torrent files")
+            return response
         except ProviderException as exc:
             if "Request timed out" in str(exc):
                 raise ProviderException(
@@ -160,12 +191,19 @@ class Torbox(DebridClient):
                 return torrent
 
     def get_torrent_instant_availability(self, torrent_hashes):
-        return self._make_request(
+        response = self._make_request(
             "POST",
             "/torrents/checkcached",
             params={"format": "list"},
             json={"hashes": torrent_hashes},
         )
+        self._validate_response(response, list)
+        for item in response["data"]:
+            if not isinstance(item, str) and not (
+                isinstance(item, dict) and isinstance(item.get("hash"), str)
+            ):
+                raise ProviderException("Invalid Torbox cache data")
+        return response
 
     def create_download_link(self, torrent_id, filename, user_ip=None):
         params = {

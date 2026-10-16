@@ -2,9 +2,10 @@ from datetime import timedelta
 from threading import Thread
 from typing import Any, Dict, List
 
-from xbmcplugin import addDirectoryItem
+from xbmcplugin import addDirectoryItem, endOfDirectory
 
 from lib.api.debrid.alldebrid import AllDebrid
+from lib.api.debrid.base import ProviderException
 from lib.api.debrid.debrider import Debrider
 from lib.api.debrid.offcloud import Offcloud
 from lib.api.debrid.premiumize import Premiumize
@@ -257,11 +258,16 @@ def get_tb_downloads(params):
     debrid_color = get_random_color(debrid_type, formatted=False)
     formatted_type = f"[B][COLOR {debrid_color}]{debrid_type}[/COLOR][/B]"
 
-    # Previous cached lists contained only the largest video of each torrent.
-    cache_key = f"{_cloud_downloads_cache_key(DebridType.TB)}|files-v2"
+    cache_key = Torbox.CLOUD_CACHE_KEY
     raw_downloads = cache.get(cache_key)
     if raw_downloads is None:
-        raw_downloads = TorboxHelper().get_cloud_downloads()
+        try:
+            raw_downloads = TorboxHelper().get_cloud_downloads()
+        except ProviderException:
+            # The exception already notifies; do not cache a failed fetch as an empty library.
+            kodilog("Torbox cloud listing failed")
+            endOfDirectory(get_addon_handle(), succeeded=False, cacheToDisc=False)
+            return
         cache.set(cache_key, raw_downloads, DEBRID_CLOUD_CACHE_EXPIRY)
     downloads: List[Dict[str, Any]] = [item for item in raw_downloads if isinstance(item, dict)]
 

@@ -56,6 +56,7 @@
 - **Torrent Engines**: Integrated support for **Jacktorr** (TorrServer), **Torrest**, and **Elementum** for seamless P2P streaming, with TorrServer category browsing and richer torrent metadata.
 - **Debrid Streaming**: Stream directly from your Debrid accounts.
 - **Torbox Cloud**: Browse playable videos in pages of 20; **Next Page (2/5)** shows the destination page and total page count.
+  Successful magnet or torrent-file uploads refresh the cached listing. Failed API requests are reported rather than cached as an empty library.
 - **Usenet Support**: Stream from Usenet sources via EasyNews.
 - **Telegram Streaming**: Stream directly from Telegram via Jackgram.
 - **Next Episode Dialog**: Built-in PlayNext dialog with localized labels and safe playback transitions.
