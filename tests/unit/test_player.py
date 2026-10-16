@@ -1731,3 +1731,99 @@ def test_monitor_timeout_notifies_exactly_once_and_keeps_monitoring(monkeypatch)
     assert notifications[0][0][0] == "string-91059"
     # Monitoring continued past the notification into playback handling.
     test_player.handle_playback_start.assert_called_once_with()
+
+
+@pytest.mark.parametrize("internal_handoff", [False, True])
+def test_startup_timing_separates_preparation_handoff_and_kodi_wait(monkeypatch, internal_handoff):
+    player_module = _player_module(monkeypatch)
+    test_player = _monitor_player(player_module)
+    test_player.url = "https://private.invalid/video?token=secret-token"
+    test_player.data = {"direct_playback_handoff": internal_handoff, "title": "PRIVATE_TITLE"}
+    test_player.isPlayingVideo = MagicMock(side_effect=[False, True, False])
+    test_player.play = MagicMock()
+    for name in ("_handle_trakt_scrobble", "_handle_simkl_scrobble", "handle_subtitles"):
+        setattr(test_player, name, MagicMock())
+    test_player._check_volume = MagicMock(return_value=True)
+    monkeypatch.setattr(player_module, "get_visibility", lambda _cond: False)
+    _record_notifications(monkeypatch, player_module)
+    logger = MagicMock()
+    monkeypatch.setattr(player_module.xbmc, "log", logger)
+    set_resolved = MagicMock()
+    monkeypatch.setattr(player_module, "setResolvedUrl", set_resolved)
+
+    test_player.play_video(MagicMock())
+
+    lines = [item.args[0] for item in logger.call_args_list if "[PLAYBACK-TIMING]" in item.args[0]]
+    stages = [re.search(r"stage=(\w+)", line).group(1) for line in lines]
+    assert stages == [
+        "volume_check",
+        "trakt",
+        "simkl_queue",
+        "subtitles",
+        "handoff_begin",
+        "kodi_handoff",
+        "kodi_wait_begin",
+        "kodi_playing",
+        "startup_total",
+    ]
+    assert len({re.search(r"trace=(\w+)", line).group(1) for line in lines}) == 1
+    assert all("elapsed_ms=" in line and "total_ms=" in line for line in lines)
+    assert all(
+        item.args[1] == player_module.xbmc.LOGINFO
+        for item in logger.call_args_list
+        if "[PLAYBACK-TIMING]" in item.args[0]
+    )
+    assert not any(
+        secret in "\n".join(lines)
+        for secret in ("private.invalid", "secret-token", "PRIVATE_TITLE")
+    )
+    assert test_player.play.call_count == int(internal_handoff)
+    assert set_resolved.call_count == int(not internal_handoff)
+
+
+def test_startup_timing_does_not_report_playing_when_kodi_aborts(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _monitor_player(player_module)
+    test_player.url = "https://stream"
+    test_player.isPlayingVideo = MagicMock(return_value=False)
+    test_player.kodi_monitor.abortRequested.return_value = True
+    test_player._check_volume = MagicMock(return_value=True)
+    for name in ("_handle_trakt_scrobble", "_handle_simkl_scrobble", "handle_subtitles"):
+        setattr(test_player, name, MagicMock())
+    monkeypatch.setattr(player_module, "setResolvedUrl", MagicMock())
+    logger = MagicMock()
+    monkeypatch.setattr(player_module.xbmc, "log", logger)
+
+    test_player.play_video(MagicMock())
+
+    lines = [item.args[0] for item in logger.call_args_list if "[PLAYBACK-TIMING]" in item.args[0]]
+    assert any("stage=startup_total" in line and "outcome=not_started" in line for line in lines)
+    assert not any("stage=kodi_playing" in line for line in lines)
+
+
+def test_player_run_does_not_log_private_url_fragment(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = _player_for_episode(player_module)
+    test_player.url = "https://private.invalid/video?token=secret-token"
+    test_player.PLAYLIST = MagicMock()
+    test_player._was_superseded = False
+    for name in (
+        "set_constants",
+        "_activate_playback_session",
+        "clear_playback_properties",
+        "mark_watched",
+        "play_video",
+    ):
+        setattr(test_player, name, MagicMock())
+    test_player._is_trakt_tracking_excluded = MagicMock(return_value=True)
+    test_player._drain_nextep_queue = MagicMock(return_value=False)
+    monkeypatch.setattr(player_module, "make_listing", MagicMock())
+    logger = MagicMock()
+    monkeypatch.setattr(player_module.xbmc, "log", logger)
+
+    test_player.run({"mode": "tv", "title": "PRIVATE_TITLE"})
+
+    output = "\n".join(item.args[0] for item in logger.call_args_list)
+    assert "private.invalid" not in output
+    assert "secret-token" not in output
+    assert "PRIVATE_TITLE" not in output

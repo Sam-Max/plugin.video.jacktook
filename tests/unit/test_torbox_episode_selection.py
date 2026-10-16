@@ -102,3 +102,25 @@ def test_cloud_selection_keeps_explicit_file_id(helper):
     assert result["url"] == "https://download"
     helper.client.create_download_link.assert_called_once_with(10, 1, "192.0.2.1")
     helper.add_torbox_torrent.assert_not_called()
+
+
+@pytest.mark.parametrize("route", ["normal", "cloud", "pack"])
+def test_torbox_resolution_logs_timed_stages_without_private_data(helper, route):
+    helper.client.create_download_link.return_value = {
+        "data": "https://private.invalid/secret-token"
+    }
+    with patch("xbmc.log") as logger:
+        if route == "normal":
+            helper.get_link("hash", {"title": "PRIVATE_TITLE"})
+        elif route == "cloud":
+            helper.get_link("hash", {"torrent_id": 10, "file_id": 1})
+        else:
+            helper.get_pack_link({"pack_info": {"torrent_id": 10, "file_id": 1}})
+    lines = [item.args[0] for item in logger.call_args_list if "[PLAYBACK-TIMING]" in item.args[0]]
+    assert any("stage=torbox_public_ip" in line for line in lines)
+    assert any("stage=torbox_download_link" in line for line in lines)
+    assert any("stage=torbox_metadata" in line for line in lines) == (route == "normal")
+    assert not any(
+        secret in "\n".join(lines)
+        for secret in ("private.invalid", "secret-token", "192.0.2.1", "PRIVATE_TITLE")
+    )

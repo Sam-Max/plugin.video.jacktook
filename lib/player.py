@@ -40,6 +40,7 @@ from lib.utils.kodi.utils import (
     sleep,
     translation,
 )
+from lib.utils.player.timing import PlaybackTiming
 from lib.utils.player.utils import (
     autoscrape_next_episode,
     build_elementum_pack_next_playback,
@@ -130,22 +131,22 @@ class JacktookPLayer(xbmc.Player):
     def run(self, data=None):
         if data is None:
             data = {}
-        self.set_constants(data)
-        self._activate_playback_session()
-        self.clear_playback_properties()
-        if not self._is_trakt_tracking_excluded():
-            self.add_external_trakt_scrolling()
-        self.mark_watched(data)
+        timing = self._startup_timing = PlaybackTiming("player")
+        with timing.stage("player_setup"):
+            self.set_constants(data)
+            self._activate_playback_session()
+            self.clear_playback_properties()
+            if not self._is_trakt_tracking_excluded():
+                self.add_external_trakt_scrolling()
+            self.mark_watched(data)
 
         close_busy_dialog()
-        kodilog(
-            f"[PLAYER] run() started: url_type={'plugin' if self.url.startswith('plugin://') else 'direct'}, "
-            f"mode={data.get('mode')}, url_start={self.url[:80]}"
-        )
+        kodilog("[PLAYER] run() started")
 
         try:
-            self.list_item = make_listing(data)
-            self.PLAYLIST.add(self.url, self.list_item)
+            with timing.stage("list_item"):
+                self.list_item = make_listing(data)
+                self.PLAYLIST.add(self.url, self.list_item)
             self.play_video(self.list_item)
         except Exception as e:
             self.run_error(e)
@@ -215,32 +216,44 @@ class JacktookPLayer(xbmc.Player):
         return True
 
     def play_video(self, list_item):
+        timing = getattr(self, "_startup_timing", None)
+        if timing is None or timing.finished:
+            timing = self._startup_timing = PlaybackTiming("player")
         close_busy_dialog()
 
-        if not self._check_volume():
+        with timing.stage("volume_check"):
+            volume_ok = self._check_volume()
+        if not volume_ok:
+            timing.finish("cancelled")
             self.cancel_playback()
             return
 
         try:
-            self._handle_trakt_scrobble(list_item)
-            self._handle_simkl_scrobble()
-            self.handle_subtitles(list_item)
+            with timing.stage("trakt"):
+                self._handle_trakt_scrobble(list_item)
+            with timing.stage("simkl_queue"):
+                self._handle_simkl_scrobble()
+            with timing.stage("subtitles"):
+                self.handle_subtitles(list_item)
             if self.url.startswith(("http://", "https://", "file://")):
                 list_item.setPath(self.url)
-            if self.data.get("direct_playback_handoff"):
-                # The original plugin resolution has already completed. Start
-                # the queued external-plugin URL explicitly instead of trying
-                # to resolve a stale addon handle.
-                kodilog("[PLAYER] play_video: calling Player.play for internal PlayNext handoff")
-                self.play(self.url, list_item)
-            else:
-                # Normal plugin entry point: answer Kodi's pending resolution.
-                # Calling Player.play() here as well would open the stream twice.
-                setResolvedUrl(get_addon_handle(), True, list_item)
-                kodilog("[PLAYER] play_video: calling setResolvedUrl only")
+            timing.mark("handoff_begin")
+            with timing.stage("kodi_handoff"):
+                if self.data.get("direct_playback_handoff"):
+                    # Internal PlayNext handoff has no pending plugin request.
+                    kodilog(
+                        "[PLAYER] play_video: calling Player.play for internal PlayNext handoff"
+                    )
+                    self.play(self.url, list_item)
+                else:
+                    # Answer the plugin request once; do not also call Player.play().
+                    setResolvedUrl(get_addon_handle(), True, list_item)
+                    kodilog("[PLAYER] play_video: calling setResolvedUrl only")
             self.monitor()
+            timing.finish("not_started")
             kodilog("[PLAYER] play_video: monitor() returned")
         except Exception as e:
+            timing.finish("error")
             kodilog(f"Error during play_video: {e}")
             self.run_error(e)
 
@@ -365,12 +378,15 @@ class JacktookPLayer(xbmc.Player):
         self._playback_was_paused = is_paused
 
     def monitor(self):
+        timing = getattr(self, "_startup_timing", None)
         ensure_dialog_closed = False
         plugin_start_wait_ms = 0
         start_failure_notified = False
         kodilog("[PLAYER] monitor() entered")
 
         try:
+            if timing is not None:
+                timing.mark("kodi_wait_begin")
             while not self.isPlayingVideo():
                 if not self._owns_playback_session():
                     self._was_superseded = True
@@ -385,9 +401,8 @@ class JacktookPLayer(xbmc.Player):
                         self.notify_playback_never_started()
                     return
                 plugin_start_wait_ms += PLUGIN_START_POLL_INTERVAL_MS
-                if (
-                    not start_failure_notified
-                    and self._plugin_start_failure_detected(plugin_start_wait_ms)
+                if not start_failure_notified and self._plugin_start_failure_detected(
+                    plugin_start_wait_ms
                 ):
                     start_failure_notified = True
                     kodilog(
@@ -398,6 +413,9 @@ class JacktookPLayer(xbmc.Player):
                     self.notify_playback_never_started()
                 sleep(PLUGIN_START_POLL_INTERVAL_MS)
             kodilog("[PLAYER] monitor: video started playing, entering main loop")
+            if timing is not None:
+                timing.mark("kodi_playing")
+                timing.finish("playing")
 
             # Once playing, initialize streams and subtitles
             self.select_audio_stream()
@@ -452,6 +470,8 @@ class JacktookPLayer(xbmc.Player):
         except Exception:
             self.kill_dialog()
         finally:
+            if timing is not None:
+                timing.finish("not_started")
             if self._owns_playback_session():
                 kodilog("[PLAYER] monitor: owner cleanup for playback session")
                 self.clear_playback_properties()

@@ -1,5 +1,7 @@
 import copy
+from contextlib import suppress
 from datetime import timedelta
+from hashlib import sha256
 from typing import Any, Dict, List, Optional
 
 from xbmc import Monitor
@@ -7,6 +9,7 @@ from xbmcgui import DialogProgress
 
 from lib.api.debrid.torbox import Torbox
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
+from lib.db.cached import cache
 from lib.domain.torrent import TorrentStream
 from lib.utils.general.utils import (
     DebridType,
@@ -19,6 +22,7 @@ from lib.utils.general.utils import (
     set_cached,
     supported_video_extensions,
 )
+from lib.utils.kodi.settings import is_cache_enabled
 from lib.utils.kodi.utils import (
     dialog_text,
     get_setting,
@@ -26,8 +30,10 @@ from lib.utils.kodi.utils import (
     notification,
     translation,
 )
+from lib.utils.player.timing import PlaybackTiming
 
 EXTENSIONS = supported_video_extensions()[:-1]
+METADATA_CACHE_TTL = timedelta(minutes=60)
 
 
 def get_torbox_public_ip():
@@ -181,9 +187,63 @@ class TorboxHelper:
 
         return downloads
 
-    def _get_torrent_metadata(self, info_hash) -> Optional[Dict[str, Any]]:
+    def _metadata_cache_key(self, info_hash):
+        token = getattr(self.client, "token", None)
+        if (
+            not isinstance(token, str)
+            or not token
+            or not isinstance(info_hash, str)
+            or not info_hash
+        ):
+            return None
+        if not is_cache_enabled():
+            return None
+        account_scope = sha256(token.encode("utf-8")).hexdigest()
+        return f"torbox_ready_metadata|{account_scope}|{info_hash.lower()}"
+
+    @staticmethod
+    def _ready_metadata(info):
+        return (
+            isinstance(info, dict)
+            and info.get("id") not in (None, "")
+            and info.get("download_finished") is True
+            and info.get("download_present") is True
+            and isinstance(info.get("files"), list)
+            and bool(info["files"])
+            and all(
+                isinstance(item, dict)
+                and item.get("id") not in (None, "")
+                and isinstance(get_file_name(item), str)
+                and bool(get_file_name(item))
+                for item in info["files"]
+            )
+        )
+
+    def _remember_metadata(self, info_hash, info):
+        key = self._metadata_cache_key(info_hash)
+        if key and self._ready_metadata(info):
+            with suppress(Exception):
+                cache.set(key, copy.deepcopy(info), METADATA_CACHE_TTL)
+
+    def _invalidate_metadata(self, info_hash):
+        key = self._metadata_cache_key(info_hash)
+        if key:
+            with suppress(Exception):
+                cache.delete(key)
+
+    def _get_torrent_metadata(self, info_hash, use_cache=True) -> Optional[Dict[str, Any]]:
+        self._metadata_from_cache = False
+        key = self._metadata_cache_key(info_hash)
+        if use_cache and key:
+            with suppress(Exception):
+                cached = cache.get(key)
+                if self._ready_metadata(cached):
+                    self._metadata_from_cache = True
+                    return copy.deepcopy(cached)
+
         torrent_info = self.add_torbox_torrent(info_hash)
         if torrent_info and torrent_info.get("id") not in (None, "") and torrent_info.get("files"):
+            self._remember_metadata(info_hash, torrent_info)
             return torrent_info
         if not info_hash:
             return None
@@ -206,6 +266,7 @@ class TorboxHelper:
                     and torrent_info.get("id") not in (None, "")
                     and torrent_info.get("files")
                 ):
+                    self._remember_metadata(info_hash, torrent_info)
                     return torrent_info
         finally:
             progress.close()
@@ -214,13 +275,15 @@ class TorboxHelper:
         return None
 
     def get_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
+        return self._resolve_link(info_hash, data, use_cache=True)
+
+    def _resolve_link(self, info_hash, data, use_cache):
+        timing = PlaybackTiming("torbox")
         torrent_id = data.get("torrent_id", "")
         file_id = data.get("file_id", "")
 
         if torrent_id and file_id:
-            response_data = self.client.create_download_link(
-                torrent_id, file_id, get_torbox_public_ip()
-            )
+            response_data = self._create_timed_download_link(torrent_id, file_id, timing)
             if response_data:
                 data["url"] = response_data.get("data", {})
                 return data
@@ -229,7 +292,10 @@ class TorboxHelper:
             )
             return None
 
-        torrent_info = self._get_torrent_metadata(info_hash)
+        with timing.stage("torbox_metadata"):
+            torrent_info = self._get_torrent_metadata(info_hash, use_cache=use_cache)
+        from_cache = self._metadata_from_cache
+        timing.mark("torbox_metadata_cache", outcome="hit" if from_cache else "miss")
         if not torrent_info:
             return None
 
@@ -254,24 +320,33 @@ class TorboxHelper:
                 raise TorboxException("No matching episode found in torrent.")
 
         file = max(video_files, key=lambda x: x.get("size", 0))
-        response_data = self.client.create_download_link(
-            torrent_info.get("id"), file.get("id"), get_torbox_public_ip()
+        response_data = self._create_timed_download_link(
+            torrent_info.get("id"), file.get("id"), timing
         )
         if response_data:
             data["url"] = response_data.get("data", {})
             return data
+        self._invalidate_metadata(info_hash)
+        if from_cache and use_cache:
+            return self._resolve_link(info_hash, data, use_cache=False)
 
     def get_pack_link(self, data) -> Optional[Dict[str, Any]]:
         pack_info = data.get("pack_info", {})
         file_id = pack_info.get("file_id", "")
         torrent_id = pack_info.get("torrent_id", "")
 
-        response_data = self.client.create_download_link(
-            torrent_id, file_id, get_torbox_public_ip()
+        response_data = self._create_timed_download_link(
+            torrent_id, file_id, PlaybackTiming("torbox")
         )
         if response_data:
             data["url"] = response_data.get("data", {})
             return data
+
+    def _create_timed_download_link(self, torrent_id, file_id, timing):
+        with timing.stage("torbox_public_ip"):
+            user_ip = get_torbox_public_ip()
+        with timing.stage("torbox_download_link"):
+            return self.client.create_download_link(torrent_id, file_id, user_ip)
 
     def get_pack_info(self, info_hash):
         info = get_cached(info_hash)
