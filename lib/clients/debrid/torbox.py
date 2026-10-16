@@ -1,6 +1,8 @@
 import copy
-import time
 from typing import Any, Dict, List, Optional
+
+from xbmc import Monitor
+from xbmcgui import DialogProgress
 
 from lib.api.debrid.torbox import Torbox
 from lib.clients.debrid.common import get_file_name, get_packed_release_message
@@ -173,6 +175,38 @@ class TorboxHelper:
 
         return downloads
 
+    def _get_torrent_metadata(self, info_hash) -> Optional[Dict[str, Any]]:
+        torrent_info = self.add_torbox_torrent(info_hash)
+        if torrent_info and torrent_info.get("id") not in (None, "") and torrent_info.get("files"):
+            return torrent_info
+        if not info_hash:
+            return None
+
+        progress = DialogProgress()
+        monitor = Monitor()
+        try:
+            progress.create("Torbox", translation(90554))
+            for attempt in range(3):
+                if progress.iscanceled() or monitor.abortRequested():
+                    return None
+                progress.update(attempt * 100 // 3)
+                if monitor.waitForAbort(1) or progress.iscanceled():
+                    return None
+                torrent_info = self.client.get_available_torrent(info_hash)
+                if progress.iscanceled() or monitor.abortRequested():
+                    return None
+                if (
+                    torrent_info
+                    and torrent_info.get("id") not in (None, "")
+                    and torrent_info.get("files")
+                ):
+                    return torrent_info
+        finally:
+            progress.close()
+
+        notification("Torbox is still processing this torrent. Please try again in a moment.")
+        return None
+
     def get_link(self, info_hash, data) -> Optional[Dict[str, Any]]:
         torrent_id = data.get("torrent_id", "")
         file_id = data.get("file_id", "")
@@ -187,31 +221,11 @@ class TorboxHelper:
             )
             return None
 
-        torrent_info = self.add_torbox_torrent(info_hash)
+        torrent_info = self._get_torrent_metadata(info_hash)
         if not torrent_info:
             return None
 
-        torrent_files = torrent_info.get("files", []) or []
-        if not torrent_files and info_hash:
-            kodilog(
-                f"TorboxHelper.get_link: torrent has no files yet, retrying metadata fetch for hash={str(info_hash).lower()[:12]!r}"
-            )
-            for _ in range(3):
-                time.sleep(1)
-                refreshed_info = self.client.get_available_torrent(info_hash)
-                if refreshed_info:
-                    torrent_info = refreshed_info
-                    torrent_files = refreshed_info.get("files", []) or []
-                    if torrent_files:
-                        break
-
-        if not torrent_files:
-            kodilog(
-                f"TorboxHelper.get_link: no playable files available yet for hash={str(info_hash).lower()[:12]!r}"
-            )
-            notification("Torbox is still processing this torrent. Please try again in a moment.")
-            return None
-
+        torrent_files = torrent_info["files"]
         video_files = [
             item
             for item in torrent_files
@@ -254,7 +268,7 @@ class TorboxHelper:
         if info:
             return info
 
-        torrent_info = self.add_torbox_torrent(info_hash)
+        torrent_info = self._get_torrent_metadata(info_hash)
         if not torrent_info:
             return None
 
@@ -263,11 +277,7 @@ class TorboxHelper:
             "torrent_id": torrent_info["id"],
             "files": [],
         }
-        torrent_files = torrent_info.get("files", [])
-
-        if not torrent_files:
-            notification("No files on the current source")
-            return None
+        torrent_files = torrent_info["files"]
 
         files = [
             (item.get("id"), item["name"])
