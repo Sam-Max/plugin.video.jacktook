@@ -4251,10 +4251,6 @@ msgctxt "#90736"
 msgid "Edit title"
 msgstr "Edit title"
 
-msgctxt "#90512"
-msgid "Season"
-msgstr "Season"
-
 msgctxt "#90737"
 msgid "Invalid season"
 msgstr "Invalid season"
@@ -4749,6 +4745,7 @@ msgstr "Clear Continue Watching"
 
 msgctxt "#91001"
 msgid "Continue Watching cleared"
+msgstr "Continue Watching cleared"
 
 msgctxt "#91002"
 msgid "Nuvio: Account"
@@ -4993,3 +4990,19 @@ msgstr "Installing %s. Try playback again once it finishes."
 msgctxt "#91059"
 msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
 msgstr "Playback could not be started. Check that your torrent client addon is installed and enabled."
+
+msgctxt "#91064"
+msgid "Torznab Search"
+msgstr "Torznab Search"
+
+msgctxt "#91065"
+msgid "Search Torznab"
+msgstr "Search Torznab"
+
+msgctxt "#91066"
+msgid "No results found."
+msgstr "No results found."
+
+msgctxt "#91067"
+msgid "Torznab search is disabled. Enable it in TorrServer settings."
+msgstr "Torznab search is disabled. Enable it in TorrServer settings."

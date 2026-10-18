@@ -34,14 +34,24 @@ def test_torrents_root_lists_category_folders():
         navigation, "build_url", side_effect=lambda action, **params: (action, params)
     ), patch.object(navigation, "addDirectoryItem") as add_directory_item, patch.object(
         navigation, "end_of_directory"
-    ), patch.object(navigation, "apply_section_view"):
+    ), patch.object(
+        navigation, "apply_section_view"
+    ):
         navigation.torrents({})
 
     assert [call.args[1] for call in add_directory_item.call_args_list] == [
+        ("torznab_search", {}),
         ("torrents", {"category": "Custom"}),
         ("torrents", {"category": "movie"}),
         ("torrents", {"uncategorized": True}),
     ]
+
+
+def test_torznab_search_delegates_to_torrserver_navigation_module():
+    with patch.object(navigation, "torrserver_navigation") as torrserver_navigation:
+        navigation.torznab_search({"query": "x"})
+
+    torrserver_navigation.torznab_search.assert_called_once_with({"query": "x"})
 
 
 def test_torrents_category_route_filters_entries_and_preserves_actions():

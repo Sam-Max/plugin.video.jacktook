@@ -4741,3 +4741,43 @@ msgstr "Этот источник коллекции пока не поддер�
 msgctxt "#91056"
 msgid "Результаты не найдены."
 msgstr "Результаты не найдены."
+
+msgctxt "#91058"
+msgid "Installing %s. Try playback again once it finishes."
+msgstr "Установка %s. Повторите попытку воспроизведения после завершения."
+
+msgctxt "#91059"
+msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
+msgstr "Не удалось запустить воспроизведение. Проверьте, что аддон торрент-клиента установлен и включён."
+
+msgctxt "#91060"
+msgid "Anime"
+msgstr "Аниме"
+
+msgctxt "#91061"
+msgid "Anime title language"
+msgstr "Язык названий аниме"
+
+msgctxt "#91062"
+msgid "Preferred language for anime titles."
+msgstr "Предпочитаемый язык названий аниме."
+
+msgctxt "#91063"
+msgid "Romaji"
+msgstr "Ромадзи"
+
+msgctxt "#91064"
+msgid "Torznab Search"
+msgstr "Поиск Torznab"
+
+msgctxt "#91065"
+msgid "Search Torznab"
+msgstr "Искать Torznab"
+
+msgctxt "#91066"
+msgid "No results found."
+msgstr "Результаты не найдены."
+
+msgctxt "#91067"
+msgid "Torznab search is disabled. Enable it in TorrServer settings."
+msgstr "Поиск Torznab отключён. Включите его в настройках TorrServer."
