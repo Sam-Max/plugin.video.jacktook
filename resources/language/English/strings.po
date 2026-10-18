@@ -4994,30 +4994,30 @@ msgctxt "#91059"
 msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
 msgstr "Playback could not be started. Check that your torrent client addon is installed and enabled."
 
-msgctxt "#91064"
+msgctxt "#91068"
 msgid "Clear search cache"
 msgstr "Clear search cache"
 
-msgctxt "#91065"
+msgctxt "#91069"
 msgid "Remove cached torrent search results so the next search queries the indexers again."
 msgstr "Remove cached torrent search results so the next search queries the indexers again."
 
-msgctxt "#91066"
+msgctxt "#91070"
 msgid "Search cache cleared"
 msgstr "Search cache cleared"
 
-msgctxt "#91067"
+msgctxt "#91071"
 msgid "Show bitrate on pause"
 msgstr "Show bitrate on pause"
 
-msgctxt "#91068"
+msgctxt "#91072"
 msgid "While playback is paused, show the average video bitrate and stream details on screen."
 msgstr "While playback is paused, show the average video bitrate and stream details on screen."
 
-msgctxt "#91069"
+msgctxt "#91073"
 msgid "Bitrate"
 msgstr "Bitrate"
 
-msgctxt "#91070"
+msgctxt "#91074"
 msgid "Audio"
 msgstr "Audio"

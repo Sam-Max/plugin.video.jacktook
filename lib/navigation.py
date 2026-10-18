@@ -1384,7 +1384,7 @@ def clear_all_cached(params):
 
 def clear_search_cache(params):
     clear_search_results_cache()
-    notification(translation(91066))
+    notification(translation(91070))
 
 
 def clear_trakt_cache(params):

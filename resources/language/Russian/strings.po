@@ -4742,30 +4742,30 @@ msgctxt "#91056"
 msgid "Результаты не найдены."
 msgstr "Результаты не найдены."
 
-msgctxt "#91064"
+msgctxt "#91068"
 msgid "Clear search cache"
 msgstr "Очистить кэш поиска"
 
-msgctxt "#91065"
+msgctxt "#91069"
 msgid "Remove cached torrent search results so the next search queries the indexers again."
 msgstr "Удалить сохранённые результаты поиска торрентов, чтобы следующий поиск снова обращался к индексаторам."
 
-msgctxt "#91066"
+msgctxt "#91070"
 msgid "Search cache cleared"
 msgstr "Кэш поиска очищен"
 
-msgctxt "#91067"
+msgctxt "#91071"
 msgid "Show bitrate on pause"
 msgstr "Показывать битрейт на паузе"
 
-msgctxt "#91068"
+msgctxt "#91072"
 msgid "While playback is paused, show the average video bitrate and stream details on screen."
 msgstr "Во время паузы показывать на экране средний битрейт видео и параметры потока."
 
-msgctxt "#91069"
+msgctxt "#91073"
 msgid "Bitrate"
 msgstr "Битрейт"
 
-msgctxt "#91070"
+msgctxt "#91074"
 msgid "Audio"
 msgstr "Аудио"

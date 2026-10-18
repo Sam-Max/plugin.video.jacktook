@@ -1313,8 +1313,8 @@
                     </dependencies>
                 </setting>
             </group>
-            <group id="pause_info" label="91067">
-                <setting id="pause_bitrate_overlay" type="boolean" label="91067" help="91068">
+            <group id="pause_info" label="91071">
+                <setting id="pause_bitrate_overlay" type="boolean" label="91071" help="91072">
                     <default>true</default>
                     <control type="toggle" />
                 </setting>
@@ -2250,7 +2250,7 @@
                 </setting>
             </group>
             <group id="cleanup" label="30106">
-                <setting id="clear_search_cache" type="action" label="91064" help="91065">
+                <setting id="clear_search_cache" type="action" label="91068" help="91069">
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_search_cache)</data>
                     <control type="button" format="action">
                         <close>true</close>

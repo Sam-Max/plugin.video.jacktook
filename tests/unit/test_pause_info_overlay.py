@@ -14,7 +14,7 @@ from lib.gui.pause_info_overlay import (
 
 @pytest.fixture(autouse=True)
 def _labels():
-    labels = {91069: "Bitrate", 91070: "Audio"}
+    labels = {91073: "Bitrate", 91074: "Audio"}
     with patch.object(overlay, "translation", side_effect=labels.get):
         yield
 

@@ -232,5 +232,5 @@ def test_clear_search_cache_action_is_routed_and_translated():
     assert action.findtext("data").endswith("action=clear_search_cache)")
     for catalogue in ENGLISH_STRINGS.parent.parent.glob("*/strings.po"):
         content = catalogue.read_text(encoding="utf-8")
-        for string_id in (91064, 91065, 91066):
+        for string_id in (91068, 91069, 91070):
             assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue

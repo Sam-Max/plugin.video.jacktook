@@ -75,7 +75,7 @@ def format_stream_details(video: Optional[Dict], audio: Optional[Dict]) -> str:
     if audio_bitrate:
         audio_parts.append(audio_bitrate)
     if audio_parts:
-        parts.append(f"{translation(91070)}: {' '.join(audio_parts)}")
+        parts.append(f"{translation(91074)}: {' '.join(audio_parts)}")
 
     return " · ".join(parts)
 
@@ -85,7 +85,7 @@ def build_overlay_lines(
 ) -> Tuple[str, str]:
     bits_per_second = average_bitrate(size_bytes, duration_seconds)
     bitrate = format_bitrate(bits_per_second)
-    title = f"{translation(91069)}: ~{bitrate} ({format_byte_rate(bits_per_second)})" if bitrate else ""
+    title = f"{translation(91073)}: ~{bitrate} ({format_byte_rate(bits_per_second)})" if bitrate else ""
     return title, format_stream_details(video, audio)
 
 
