@@ -1598,17 +1598,20 @@ def test_plugin_start_failure_ignored_within_timeout(monkeypatch):
     )
 
 
-def test_plugin_start_failure_ignored_while_busy_dialog_visible(monkeypatch):
+@pytest.mark.parametrize(
+    "pending_condition",
+    [
+        "Window.IsVisible(busydialog)",
+        # Jacktorr buffers behind a DialogProgress for well over the timeout.
+        "Window.IsVisible(progressdialog)",
+        "Player.HasMedia",
+    ],
+)
+def test_plugin_start_failure_ignored_while_resolution_pending(monkeypatch, pending_condition):
     player_module = _player_module(monkeypatch)
     test_player = _bare_player(player_module)
-    test_player.url = "plugin://plugin.video.elementum/play?uri=x"
-
-    def visibility(condition):
-        if condition == "Window.IsVisible(busydialog)":
-            return True
-        return False
-
-    monkeypatch.setattr(player_module, "get_visibility", visibility)
+    test_player.url = "plugin://plugin.video.jacktorr/play_magnet?magnet=x"
+    monkeypatch.setattr(player_module, "get_visibility", lambda cond: cond == pending_condition)
 
     assert (
         test_player._plugin_start_failure_detected(

@@ -57,6 +57,15 @@ SKIP_SEGMENT_LABEL_IDS = {"intro": 90160, "recap": 90161, "outro": 90169}
 # Only a closed busy dialog after this wait counts as a failed plugin:// start.
 PLUGIN_START_FAILURE_TIMEOUT_MS = 15000
 PLUGIN_START_POLL_INTERVAL_MS = 100
+# A visible loading dialog means the torrent client is still resolving: Jacktorr
+# buffers behind a DialogProgress, Kodi itself shows busydialog while opening a stream.
+PLUGIN_START_PENDING_CONDITIONS = (
+    "Window.IsVisible(busydialog)",
+    "Window.IsVisible(busydialognocancel)",
+    "Window.IsVisible(progressdialog)",
+    "Window.IsVisible(extendedprogressdialog)",
+    "Player.HasMedia",
+)
 
 
 class JacktookPLayer(xbmc.Player):
@@ -579,7 +588,7 @@ class JacktookPLayer(xbmc.Player):
             return False
         if wait_ms < PLUGIN_START_FAILURE_TIMEOUT_MS:
             return False
-        return not get_visibility("Window.IsVisible(busydialog)")
+        return not any(get_visibility(condition) for condition in PLUGIN_START_PENDING_CONDITIONS)
 
     def notify_playback_never_started(self):
         try:
