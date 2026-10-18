@@ -48,6 +48,7 @@ from lib.utils.general.items_menus import (
 from lib.utils.general.utils import (
     build_list_item,
     clear_all_cache,
+    clear_search_results_cache,
     clear_trakt_db_cache,
     make_listing,
     set_content_type,
@@ -1379,6 +1380,11 @@ def factory_reset(params):
 def clear_all_cached(params):
     clear_all_cache()
     notification(translation(30244))
+
+
+def clear_search_cache(params):
+    clear_search_results_cache()
+    notification(translation(91066))
 
 
 def clear_trakt_cache(params):

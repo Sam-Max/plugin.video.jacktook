@@ -4741,3 +4741,15 @@ msgstr "Esta fonte de coleção ainda não é suportada."
 msgctxt "#91056"
 msgid "Nenhum resultado encontrado."
 msgstr "Nenhum resultado encontrado."
+
+msgctxt "#91064"
+msgid "Clear search cache"
+msgstr "Limpar cache de busca"
+
+msgctxt "#91065"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Remove os resultados de busca salvos para que a próxima busca consulte os indexadores novamente."
+
+msgctxt "#91066"
+msgid "Search cache cleared"
+msgstr "Cache de busca limpo"

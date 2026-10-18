@@ -4993,3 +4993,15 @@ msgstr "Installing %s. Try playback again once it finishes."
 msgctxt "#91059"
 msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
 msgstr "Playback could not be started. Check that your torrent client addon is installed and enabled."
+
+msgctxt "#91064"
+msgid "Clear search cache"
+msgstr "Clear search cache"
+
+msgctxt "#91065"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Remove cached torrent search results so the next search queries the indexers again."
+
+msgctxt "#91066"
+msgid "Search cache cleared"
+msgstr "Search cache cleared"

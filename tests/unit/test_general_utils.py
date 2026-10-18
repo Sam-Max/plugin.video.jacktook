@@ -164,6 +164,47 @@ def test_episode_result_cache_keys_include_season_and_preserve_movie_key():
     assert get_cached.call_args_list[1].kwargs["params"] == (2, 1, "index", "scope")
 
 
+
+def test_get_cached_results_normalizes_stale_dict_guid():
+    from lib.domain.torrent import TorrentStream
+
+    stale = TorrentStream(title="Dune", guid={"@isPermaLink": "false", "#text": "abc123"})
+    with (
+        patch("lib.utils.general.utils.is_cache_enabled", return_value=True),
+        patch("lib.utils.general.utils.get_cached", return_value=[stale]),
+    ):
+        results = get_cached_results("Dune", "movies", "movie", 0, 0)
+
+    assert results[0].guid == "abc123"
+
+
+def test_get_cached_results_skips_cache_when_disabled():
+    with (
+        patch("lib.utils.general.utils.is_cache_enabled", return_value=False),
+        patch("lib.utils.general.utils.get_cached") as get_cached,
+    ):
+        assert get_cached_results("Dune", "movies", "movie", 0, 0) is None
+
+    get_cached.assert_not_called()
+
+
+def test_clear_search_results_cache_only_targets_search_keys():
+    from lib.utils.general.utils import cache_results, clear_search_results_cache
+
+    with patch("lib.utils.general.utils.set_cached") as set_cached:
+        cache_results([], "Dune", "movies", "movie", 0, 0, cache_scope="s")
+        cache_results([], "Show", "tv", "tv", 1, 2, cache_scope="s")
+    keys = [f"{c.args[1]}|{c.kwargs['params']}" for c in set_cached.call_args_list]
+
+    with patch("lib.utils.general.utils.cache") as cache:
+        clear_search_results_cache()
+    pattern = cache.delete_like.call_args.args[0]
+
+    from lib.db.cached import _like_regex
+
+    assert all(_like_regex(pattern).match(k) for k in keys)
+    assert not _like_regex(pattern).match("stremio_addons")
+
 def test_normalize_tv_data_keeps_decoded_episode_name_stable():
     normalized = normalize_tv_data({"name": "The Scales & the Sword", "season": 2, "episode": 3})
 

@@ -4741,3 +4741,15 @@ msgstr "Этот источник коллекции пока не поддер�
 msgctxt "#91056"
 msgid "Результаты не найдены."
 msgstr "Результаты не найдены."
+
+msgctxt "#91064"
+msgid "Clear search cache"
+msgstr "Очистить кэш поиска"
+
+msgctxt "#91065"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Удалить сохранённые результаты поиска торрентов, чтобы следующий поиск снова обращался к индексаторам."
+
+msgctxt "#91066"
+msgid "Search cache cleared"
+msgstr "Кэш поиска очищен"
