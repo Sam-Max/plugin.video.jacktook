@@ -4753,3 +4753,19 @@ msgstr "Удалить сохранённые результаты поиска 
 msgctxt "#91066"
 msgid "Search cache cleared"
 msgstr "Кэш поиска очищен"
+
+msgctxt "#91067"
+msgid "Show bitrate on pause"
+msgstr "Показывать битрейт на паузе"
+
+msgctxt "#91068"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "Во время паузы показывать на экране средний битрейт видео и параметры потока."
+
+msgctxt "#91069"
+msgid "Bitrate"
+msgstr "Битрейт"
+
+msgctxt "#91070"
+msgid "Audio"
+msgstr "Аудио"

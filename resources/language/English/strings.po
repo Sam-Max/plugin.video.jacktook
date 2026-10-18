@@ -5005,3 +5005,19 @@ msgstr "Remove cached torrent search results so the next search queries the inde
 msgctxt "#91066"
 msgid "Search cache cleared"
 msgstr "Search cache cleared"
+
+msgctxt "#91067"
+msgid "Show bitrate on pause"
+msgstr "Show bitrate on pause"
+
+msgctxt "#91068"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "While playback is paused, show the average video bitrate and stream details on screen."
+
+msgctxt "#91069"
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgctxt "#91070"
+msgid "Audio"
+msgstr "Audio"

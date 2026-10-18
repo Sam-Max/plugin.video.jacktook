@@ -4754,3 +4754,19 @@ msgstr "Remove os resultados de pesquisa guardados para que a próxima pesquisa 
 msgctxt "#91066"
 msgid "Search cache cleared"
 msgstr "Cache de pesquisa limpa"
+
+msgctxt "#91067"
+msgid "Show bitrate on pause"
+msgstr "Mostrar bitrate na pausa"
+
+msgctxt "#91068"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "Durante a pausa, mostra no ecrã o bitrate médio do vídeo e os detalhes do fluxo."
+
+msgctxt "#91069"
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgctxt "#91070"
+msgid "Audio"
+msgstr "Áudio"

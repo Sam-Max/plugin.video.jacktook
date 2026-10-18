@@ -1667,6 +1667,8 @@ def _monitor_player(player_module):
     test_player.url = "plugin://plugin.video.elementum/play?uri=x"
     test_player.data = {}
     test_player.skip_intro_enabled = False
+    test_player.pause_overlay_enabled = False
+    test_player.pause_overlay = MagicMock()
     test_player.kodi_monitor = MagicMock(abortRequested=MagicMock(return_value=False))
     for name in (
         "_owns_playback_session",
@@ -1734,3 +1736,39 @@ def test_monitor_timeout_notifies_exactly_once_and_keeps_monitoring(monkeypatch)
     assert notifications[0][0][0] == "string-91059"
     # Monitoring continued past the notification into playback handling.
     test_player.handle_playback_start.assert_called_once_with()
+
+
+def test_update_pause_overlay_shows_on_pause_and_hides_on_resume(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = object.__new__(player_module.JacktookPLayer)
+    test_player.pause_overlay_enabled = True
+    test_player.pause_overlay = MagicMock(visible=False)
+    test_player.media_size = 9_000_000_000
+    test_player.total_time = 7200
+    monkeypatch.setattr(player_module, "get_current_streams", lambda: ({}, {}))
+    monkeypatch.setattr(
+        player_module, "build_overlay_lines", lambda size, duration, v, a: (f"{size}/{duration}", "")
+    )
+
+    monkeypatch.setattr(player_module, "get_visibility", lambda cond: cond == "Player.Paused")
+    test_player.update_pause_overlay()
+    test_player.pause_overlay.show.assert_called_once_with("9000000000/7200", "")
+
+    monkeypatch.setattr(player_module, "get_visibility", lambda cond: False)
+    test_player.update_pause_overlay()
+    test_player.pause_overlay.hide.assert_called_once()
+
+
+def test_resolve_media_size_falls_back_to_source_size_for_single_files(monkeypatch):
+    player_module = _player_module(monkeypatch)
+    test_player = object.__new__(player_module.JacktookPLayer)
+    test_player.getPlayingFile = MagicMock(return_value="plugin://plugin.video.elementum/play")
+    monkeypatch.setattr(player_module, "get_file_size", lambda path: 0)
+
+    test_player.data = {"source_size": 4_000_000_000, "is_pack": False}
+    test_player._resolve_media_size()
+    assert test_player.media_size == 4_000_000_000
+
+    test_player.data = {"source_size": 40_000_000_000, "is_pack": True}
+    test_player._resolve_media_size()
+    assert test_player.media_size == 0
