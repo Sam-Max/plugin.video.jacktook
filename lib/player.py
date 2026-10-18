@@ -18,6 +18,12 @@ from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.subtitle.utils import get_language_code
 from lib.clients.tmdb.utils.utils import get_movie_keywords, tmdb_get
 from lib.db.cached import cache
+from lib.gui.pause_info_overlay import (
+    PauseInfoOverlay,
+    build_overlay_lines,
+    get_current_streams,
+    get_file_size,
+)
 from lib.utils.general.utils import (
     make_listing,
     set_watched_file,
@@ -100,6 +106,9 @@ class JacktookPLayer(xbmc.Player):
         self._trakt_playback_delete_attempted = False
         self.playback_session_id = ""
         self._was_superseded = False
+        self.pause_overlay_enabled = False
+        self.pause_overlay = PauseInfoOverlay()
+        self.media_size = 0
 
     def _activate_playback_session(self):
         self.playback_session_id = uuid4().hex
@@ -431,6 +440,11 @@ class JacktookPLayer(xbmc.Player):
             self.handle_subtitle_selection()
             self.handle_playback_start()
 
+            if self.pause_overlay_enabled:
+                size_thread = Thread(target=self._resolve_media_size)
+                size_thread.daemon = True
+                size_thread.start()
+
             # Fetch IntroDB segments in background if enabled
             if self.skip_intro_enabled and self.data.get("mode") == "tv":
                 introdb_thread = Thread(target=self.fetch_introdb_segments)
@@ -457,6 +471,7 @@ class JacktookPLayer(xbmc.Player):
                     return
                 self.update_playback_progress()
                 self.handle_trakt_pause_resume()
+                self.update_pause_overlay()
                 self.check_autoscrape_threshold()
 
                 if not ensure_dialog_closed:
@@ -481,6 +496,7 @@ class JacktookPLayer(xbmc.Player):
         finally:
             if timing is not None:
                 timing.finish("not_started")
+            self.pause_overlay.hide()
             if self._owns_playback_session():
                 kodilog("[PLAYER] monitor: owner cleanup for playback session")
                 self.clear_playback_properties()
@@ -614,6 +630,31 @@ class JacktookPLayer(xbmc.Player):
                     self.on_started()
         except Exception as e:
             kodilog(f"Error in handle_playback_start: {e}")
+
+    def _resolve_media_size(self):
+        try:
+            size = get_file_size(self.getPlayingFile())
+        except Exception as e:
+            kodilog(f"Pause overlay: could not get playing file: {e}")
+            size = 0
+        if not size:
+            # Stremio sources carry the exact file size; a torrent size only matches
+            # the played file when the torrent isn't a pack.
+            size = self.data.get("size") or (
+                0 if self.data.get("is_pack") else self.data.get("source_size")
+            )
+        self.media_size = size or 0
+        kodilog(f"Pause overlay: media size={self.media_size}")
+
+    def update_pause_overlay(self):
+        if not self.pause_overlay_enabled:
+            return
+        if not get_visibility("Player.Paused"):
+            self.pause_overlay.hide()
+            return
+        if not self.pause_overlay.visible:
+            video, audio = get_current_streams()
+            self.pause_overlay.show(*build_overlay_lines(self.media_size, self.total_time, video, audio))
 
     def update_playback_progress(self):
         try:
@@ -1350,6 +1391,11 @@ class JacktookPLayer(xbmc.Player):
         self.skip_credits_enabled = get_setting("skip_credits_enabled")
         self.skip_intro_segments = None
         self.skip_intro_handled = {"intro": False, "recap": False, "outro": False}
+
+        # Pause bitrate overlay state
+        self.pause_overlay_enabled = get_setting("pause_bitrate_overlay", True)
+        self.pause_overlay = PauseInfoOverlay()
+        self.media_size = 0
 
         # Stinger notification state
         self.stinger_notified = False

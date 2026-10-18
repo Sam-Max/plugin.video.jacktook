@@ -4782,3 +4782,19 @@ msgstr "Nenhum resultado encontrado."
 msgctxt "#91067"
 msgid "Torznab search is disabled. Enable it in TorrServer settings."
 msgstr "A pesquisa Torznab está desativada. Ative-a nas definições do TorrServer."
+
+msgctxt "#91071"
+msgid "Show bitrate on pause"
+msgstr "Mostrar bitrate na pausa"
+
+msgctxt "#91072"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "Durante a pausa, mostra no ecrã o bitrate médio do vídeo e os detalhes do fluxo."
+
+msgctxt "#91073"
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgctxt "#91074"
+msgid "Audio"
+msgstr "Áudio"

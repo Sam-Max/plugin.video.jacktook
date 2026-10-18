@@ -1313,6 +1313,12 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="pause_info" label="91071">
+                <setting id="pause_bitrate_overlay" type="boolean" label="91071" help="91072">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
         </category>
         <category id="filtering_category" label="30861">
             <group id="filtering_stremio" label="90155">

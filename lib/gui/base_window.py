@@ -264,6 +264,7 @@ class BaseWindow(xbmcgui.WindowXMLDialog):
             or self.item_information.get("query")
             or source.title,
             "source_title": source.title,
+            "source_size": source.size,
             "is_torrent": is_torrent,
             "is_pack": pack_scope["is_pack"],
             "pack_type": pack_scope["pack_type"],
