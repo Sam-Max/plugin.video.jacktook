@@ -1037,13 +1037,8 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     return data or {}
 
 
-def get_cached_results(query, mode, media_type, episode, season, cache_scope=""):
-    if not is_cache_enabled():
-        return None
-    if mode == "tv" or media_type == "tv" or mode == "anime":
-        results = get_cached(query, params=(season, episode, "index", cache_scope))
-    else:
-        results = get_cached(query, params=("index", cache_scope))
+def normalize_cached_results(results):
+    """Normalize stale fields that older parsers stored as xmltodict dicts."""
     # Older Jackett parsing cached <guid isPermaLink="false"> as an xmltodict dict,
     # which Kodi rejects in ListItem.setProperty and leaves the source list empty.
     for result in results or []:
@@ -1051,6 +1046,16 @@ def get_cached_results(query, mode, media_type, episode, season, cache_scope="")
         if isinstance(guid, dict):
             result.guid = str(guid.get("#text", ""))
     return results
+
+
+def get_cached_results(query, mode, media_type, episode, season, cache_scope=""):
+    if not is_cache_enabled():
+        return None
+    if mode == "tv" or media_type == "tv" or mode == "anime":
+        results = get_cached(query, params=(season, episode, "index", cache_scope))
+    else:
+        results = get_cached(query, params=("index", cache_scope))
+    return normalize_cached_results(results)
 
 
 def cache_results(results, query, mode, media_type, episode, season, cache_scope=""):
@@ -1219,6 +1224,8 @@ def clear_all_cache():
 def clear_search_results_cache():
     # Keys are built by cache_results: "<query>|(..., 'index', <scope>)".
     cache.delete_like("%'index'%")
+    # Autoscrape results (PlayNext background scrape) are search results too.
+    cache.delete_like("as_results:%")
 
 
 def clear_trakt_db_cache():

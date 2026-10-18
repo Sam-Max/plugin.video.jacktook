@@ -164,7 +164,6 @@ def test_episode_result_cache_keys_include_season_and_preserve_movie_key():
     assert get_cached.call_args_list[1].kwargs["params"] == (2, 1, "index", "scope")
 
 
-
 def test_get_cached_results_normalizes_stale_dict_guid():
     from lib.domain.torrent import TorrentStream
 
@@ -188,7 +187,8 @@ def test_get_cached_results_skips_cache_when_disabled():
     get_cached.assert_not_called()
 
 
-def test_clear_search_results_cache_only_targets_search_keys():
+def test_clear_search_results_cache_targets_search_and_autoscrape_keys():
+    from lib.db.cached import _like_regex
     from lib.utils.general.utils import cache_results, clear_search_results_cache
 
     with patch("lib.utils.general.utils.set_cached") as set_cached:
@@ -198,12 +198,13 @@ def test_clear_search_results_cache_only_targets_search_keys():
 
     with patch("lib.utils.general.utils.cache") as cache:
         clear_search_results_cache()
-    pattern = cache.delete_like.call_args.args[0]
+    patterns = [call.args[0] for call in cache.delete_like.call_args_list]
 
-    from lib.db.cached import _like_regex
+    assert patterns == ["%'index'%", "as_results:%"]
+    assert all(any(_like_regex(pattern).match(k) for pattern in patterns) for k in keys)
+    assert _like_regex(patterns[1]).match("as_results:123_1_2")
+    assert not any(_like_regex(pattern).match("stremio_addons") for pattern in patterns)
 
-    assert all(_like_regex(pattern).match(k) for k in keys)
-    assert not _like_regex(pattern).match("stremio_addons")
 
 def test_normalize_tv_data_keeps_decoded_episode_name_stable():
     normalized = normalize_tv_data({"name": "The Scales & the Sword", "season": 2, "episode": 3})
