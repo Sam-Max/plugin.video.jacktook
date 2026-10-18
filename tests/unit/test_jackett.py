@@ -211,3 +211,25 @@ def test_extract_result_handles_guid_with_attributes(jackett_client):
 
     assert results[0].guid == "284efe62c04044a0131dd43d5d68f5da83da4ed0"
     assert results[0].provider == "rutracker"
+
+
+def test_build_jackett_client_omits_port_when_setting_is_empty():
+    from lib.utils.clients.utils import build_jackett_client
+
+    settings = {
+        "jackett_host": "https://jac.red",
+        "jackett_apikey": "",
+        "jackett_port": "",
+    }
+
+    def fake_get_setting(key, default=None):
+        # Mirror get_setting: an empty value falls back to the default.
+        value = settings.get(key, "")
+        return value if value else default
+
+    with patch("lib.utils.clients.utils.get_setting", side_effect=fake_get_setting):
+        client = build_jackett_client()
+
+    assert client is not None
+    assert client.base_url.startswith("https://jac.red/api/v2.0/")
+    assert ":9117" not in client.base_url

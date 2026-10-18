@@ -43,7 +43,9 @@ def build_jackett_client() -> Optional[object]:
 
     host = str(get_setting("jackett_host", ""))
     api_key = str(get_setting("jackett_apikey", ""))
-    port = str(get_setting("jackett_port", "9117"))
+    # An empty port means "no port": get_setting returns the default for an
+    # empty value, so the fallback must be empty as well.
+    port = str(get_setting("jackett_port", ""))
 
     # API key is optional: public Jackett-compatible instances (e.g. jac.red) don't need one.
     if not validate_host(host, Indexer.JACKETT):
