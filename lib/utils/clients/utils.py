@@ -45,7 +45,8 @@ def build_jackett_client() -> Optional[object]:
     api_key = str(get_setting("jackett_apikey", ""))
     port = str(get_setting("jackett_port", "9117"))
 
-    if not validate_credentials(Indexer.JACKETT, host, api_key):
+    # API key is optional: public Jackett-compatible instances (e.g. jac.red) don't need one.
+    if not validate_host(host, Indexer.JACKETT):
         return None
     return Jackett(host, api_key, port, notification)
 

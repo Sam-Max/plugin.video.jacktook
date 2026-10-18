@@ -162,3 +162,52 @@ def test_jackett_search_with_year_passes_to_indexer(jackett_client):
     call_args = jackett_client.session.get.call_args
     url = call_args[0][0]
     assert "&year=2010" in url
+
+
+@pytest.mark.parametrize(
+    "host,port,expected",
+    [
+        ("https://jac.red", "", "https://jac.red/api/v2.0/"),
+        ("https://jac.red/", "", "https://jac.red/api/v2.0/"),
+        ("http://localhost:9118", "9117", "http://localhost:9118/api/v2.0/"),
+        ("http://localhost", "9117", "http://localhost:9117/api/v2.0/"),
+    ],
+)
+def test_make_base_url_port_handling(host, port, expected):
+    client = Jackett(host=host, apikey="", port=port, notification=MagicMock(), session=MagicMock())
+    assert client.base_url.startswith(expected)
+    assert client.base_url.endswith("apikey=")
+
+
+@patch("lib.clients.jackett.time.sleep")
+@patch("lib.clients.jackett.get_jackett_timeout", return_value=10)
+def test_get_retries_on_rate_limit(mock_timeout, mock_sleep, jackett_client):
+    limited = MagicMock(status_code=429)
+    ok = MagicMock(status_code=200)
+    jackett_client.session.get.side_effect = [limited, ok]
+
+    assert jackett_client._get("http://x") is ok
+    assert jackett_client.session.get.call_count == 2
+    mock_sleep.assert_called_once()
+
+
+def test_extract_result_handles_guid_with_attributes(jackett_client):
+    response = MagicMock()
+    response.content = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed">
+        <channel>
+            <item>
+                <title>Dune (2021)</title>
+                <guid isPermaLink="false">284efe62c04044a0131dd43d5d68f5da83da4ed0</guid>
+                <jackettindexer id="all">rutracker</jackettindexer>
+                <link>magnet:?xt=urn:btih:284efe62c04044a0131dd43d5d68f5da83da4ed0</link>
+                <size>100</size>
+                <torznab:attr name="infohash" value="284efe62c04044a0131dd43d5d68f5da83da4ed0" />
+            </item>
+        </channel>
+    </rss>"""
+
+    results = jackett_client.parse_response(response)
+
+    assert results[0].guid == "284efe62c04044a0131dd43d5d68f5da83da4ed0"
+    assert results[0].provider == "rutracker"

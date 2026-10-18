@@ -10,7 +10,10 @@ except ImportError:
     from requests.packages.urllib3.util.retry import Retry
 
 from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.logging import kodilog
 from lib.utils.kodi.utils import notification
+
+import xbmc
 
 
 class BaseClient(ABC):
@@ -48,6 +51,8 @@ class BaseClient(ABC):
 
     def handle_exception(self, exception: str) -> None:
         exception_message = str(exception)
+        # The notification is truncated; keep the full error in kodi.log for diagnostics.
+        kodilog(f"{type(self).__name__} error: {exception_message}", level=xbmc.LOGERROR)
         if len(exception_message) > 70:
             exception_message = exception_message[:70] + "..."
         notification(exception_message)

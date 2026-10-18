@@ -1,6 +1,7 @@
 import concurrent
+import time
 from typing import Any, List, Optional
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 import requests
 
@@ -12,6 +13,15 @@ from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.settings import get_jackett_timeout
 from lib.utils.kodi.utils import get_setting, notification, translation
 from lib.utils.parsers import xmltodict
+
+RATE_LIMIT_RETRIES = 3
+RATE_LIMIT_BACKOFF = 1.0
+
+
+def _xml_text(value: Any) -> str:
+    if isinstance(value, dict):
+        value = value.get("#text", "")
+    return str(value or "")
 
 
 class Jackett(BaseClient):
@@ -32,7 +42,23 @@ class Jackett(BaseClient):
         self.session.headers.update(USER_AGENT_HEADER.copy())
 
     def _make_base_url(self, indexer_id: str) -> str:
-        return f"{self.host}:{self.port}/api/v2.0/indexers/{indexer_id}/results/torznab/api?apikey={self.apikey}"
+        host = self.host.strip().rstrip("/")
+        # Public instances (e.g. https://jac.red) are served without a port;
+        # skip it when empty or when the host already carries one.
+        port = str(self.port or "").strip()
+        if port and urlparse(host).port is None:
+            host = f"{host}:{port}"
+        return f"{host}/api/v2.0/indexers/{indexer_id}/results/torznab/api?apikey={self.apikey or ''}"
+
+    def _get(self, url: str) -> requests.Response:
+        # Public Jackett-compatible instances rate limit parallel requests (HTTP 429).
+        response = self.session.get(url, timeout=get_jackett_timeout())
+        for attempt in range(RATE_LIMIT_RETRIES):
+            if response.status_code != 429:
+                break
+            time.sleep(RATE_LIMIT_BACKOFF * (attempt + 1))
+            response = self.session.get(url, timeout=get_jackett_timeout())
+        return response
 
     def _build_url(
         self,
@@ -98,7 +124,7 @@ class Jackett(BaseClient):
                             year=year,
                         )
                         futures.append(
-                            executor.submit(self.session.get, url_ep, timeout=get_jackett_timeout())
+                            executor.submit(self._get, url_ep)
                         )
                     if get_setting("include_season_packs"):
                         url_season = self._build_url(
@@ -113,11 +139,7 @@ class Jackett(BaseClient):
                             year=year,
                         )
                         futures.append(
-                            executor.submit(
-                                self.session.get,
-                                url_season,
-                                timeout=get_jackett_timeout(),
-                            )
+                            executor.submit(self._get, url_season)
                         )
                 else:
                     url = self._build_url(
@@ -131,7 +153,7 @@ class Jackett(BaseClient):
                         year=year,
                     )
                     futures.append(
-                        executor.submit(self.session.get, url, timeout=get_jackett_timeout())
+                        executor.submit(self._get, url)
                     )
 
             for future in concurrent.futures.as_completed(futures):
@@ -198,8 +220,9 @@ class Jackett(BaseClient):
         enclosure = item.get("enclosure", {})
         if not isinstance(enclosure, dict):
             enclosure = {}
-        link = item.get("link", "")
-        guid = item.get("guid", "")
+        link = _xml_text(item.get("link", ""))
+        # <guid isPermaLink="false"> (e.g. jac.red) is parsed into a dict by xmltodict.
+        guid = _xml_text(item.get("guid", ""))
         info_hash = str(attributes.get("infohash", ""))
         enclosure_url = enclosure.get("@url", "")
         provider = item.get("jackettindexer", {}).get("#text", "")
