@@ -7,6 +7,7 @@ from lib.gui.pause_info_overlay import (
     average_bitrate,
     build_overlay_lines,
     format_bitrate,
+    format_byte_rate,
     format_stream_details,
 )
 
@@ -40,6 +41,14 @@ def test_format_bitrate(value, expected):
     assert format_bitrate(value) == expected
 
 
+@pytest.mark.parametrize(
+    "value,expected",
+    [(12_400_000, "1.55 MB/s"), (80_000_000, "10.00 MB/s"), (0, ""), (None, "")],
+)
+def test_format_byte_rate_matches_torrent_speed_units(value, expected):
+    assert format_byte_rate(value) == expected
+
+
 def test_format_stream_details_combines_video_and_audio():
     details = format_stream_details(
         {"width": 1920, "height": 1080, "codec": "hevc"},
@@ -59,7 +68,7 @@ def test_build_overlay_lines_without_size_keeps_only_stream_details():
 def test_build_overlay_lines_with_size():
     title, _ = build_overlay_lines(9_000_000_000, 7200, {}, {})
 
-    assert title == "Bitrate: ~10.0 Mbps"
+    assert title == "Bitrate: ~10.0 Mbps (1.25 MB/s)"
 
 
 @pytest.mark.parametrize("path", ["", "plugin://plugin.video.elementum/play"])

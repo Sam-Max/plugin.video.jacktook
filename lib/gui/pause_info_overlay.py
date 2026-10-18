@@ -44,6 +44,17 @@ def format_bitrate(bits_per_second: Any) -> str:
     return f"{value / 1000:.0f} kbps"
 
 
+def format_byte_rate(bits_per_second: Any) -> str:
+    """Bitrate as a download speed, in decimal MB/s like Jacktorr/TorrServer report it."""
+    try:
+        value = float(bits_per_second)
+    except (TypeError, ValueError):
+        return ""
+    if value <= 0:
+        return ""
+    return f"{value / 8 / 1_000_000:.2f} MB/s"
+
+
 def format_stream_details(video: Optional[Dict], audio: Optional[Dict]) -> str:
     parts: List[str] = []
     video = video or {}
@@ -72,8 +83,9 @@ def format_stream_details(video: Optional[Dict], audio: Optional[Dict]) -> str:
 def build_overlay_lines(
     size_bytes: Any, duration_seconds: Any, video: Optional[Dict], audio: Optional[Dict]
 ) -> Tuple[str, str]:
-    bitrate = format_bitrate(average_bitrate(size_bytes, duration_seconds))
-    title = f"{translation(91073)}: ~{bitrate}" if bitrate else ""
+    bits_per_second = average_bitrate(size_bytes, duration_seconds)
+    bitrate = format_bitrate(bits_per_second)
+    title = f"{translation(91073)}: ~{bitrate} ({format_byte_rate(bits_per_second)})" if bitrate else ""
     return title, format_stream_details(video, audio)
 
 
