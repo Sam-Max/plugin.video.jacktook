@@ -52,6 +52,7 @@ _DEBRID_ACTIONS = frozenset(
 _TORRSERVER_ACTIONS = frozenset(
     {
         "torrents",
+        "torznab_search",
         "torrent_action",
         "torrent_files",
         "torrentio_selection",
@@ -671,6 +672,10 @@ def _route_torrserver(action, params):
         from lib.navigation import torrents
 
         torrents(params)
+    elif action == "torznab_search":
+        from lib.navigation import torznab_search
+
+        torznab_search(params)
     elif action == "torrentio_selection":
         from lib.navigation import torrentio_selection
 

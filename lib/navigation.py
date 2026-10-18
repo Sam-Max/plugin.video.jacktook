@@ -11,6 +11,7 @@ from xbmcplugin import (
 
 import lib.nav.debrid as debrid_navigation
 import lib.nav.library_history as library_history_navigation
+import lib.nav.torrserver as torrserver_navigation
 from lib.api.trakt.trakt import ProviderException, TraktAPI
 from lib.api.trakt.trakt_utils import is_trakt_auth
 from lib.clients.catalog_hub import list_merged_catalogs
@@ -819,6 +820,10 @@ def _normalize_torrent_category(category):
     return category or None
 
 
+def torznab_search(params):
+    return torrserver_navigation.torznab_search(params)
+
+
 def _torrent_categories(torrent_list):
     categories = {_normalize_torrent_category(torrent.get("category")) for torrent in torrent_list}
     return sorted(
@@ -947,6 +952,12 @@ def torrents(params):
         _add_torrent_items(torrent_list)
     else:
         set_pluging_category(translation(90012))
+        addDirectoryItem(
+            get_addon_handle(),
+            build_url("torznab_search"),
+            build_list_item(translation(91064), "search.png"),
+            isFolder=True,
+        )
         for category in _torrent_categories(torrent_list):
             label = category or translation(90963)
             torrent_li = build_list_item(label, "magnet.png")

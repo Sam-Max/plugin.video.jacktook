@@ -4743,6 +4743,46 @@ msgctxt "#91056"
 msgid "Nenhum resultado encontrado."
 msgstr "Nenhum resultado encontrado."
 
+msgctxt "#91058"
+msgid "Installing %s. Try playback again once it finishes."
+msgstr "A instalar %s. Tente novamente a reprodução quando terminar."
+
+msgctxt "#91059"
+msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
+msgstr "Não foi possível iniciar a reprodução. Verifique se a extensão do cliente de torrents está instalada e ativada."
+
+msgctxt "#91060"
+msgid "Anime"
+msgstr "Anime"
+
+msgctxt "#91061"
+msgid "Anime title language"
+msgstr "Idioma do título de anime"
+
+msgctxt "#91062"
+msgid "Preferred language for anime titles."
+msgstr "Idioma preferido para os títulos de anime."
+
+msgctxt "#91063"
+msgid "Romaji"
+msgstr "Romaji"
+
+msgctxt "#91064"
+msgid "Torznab Search"
+msgstr "Pesquisa Torznab"
+
+msgctxt "#91065"
+msgid "Search Torznab"
+msgstr "Pesquisar Torznab"
+
+msgctxt "#91066"
+msgid "No results found."
+msgstr "Nenhum resultado encontrado."
+
+msgctxt "#91067"
+msgid "Torznab search is disabled. Enable it in TorrServer settings."
+msgstr "A pesquisa Torznab está desativada. Ative-a nas definições do TorrServer."
+
 msgctxt "#91068"
 msgid "Clear search cache"
 msgstr "Limpar cache de pesquisa"

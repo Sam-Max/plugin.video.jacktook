@@ -3764,10 +3764,6 @@ msgctxt "#90736"
 msgid "Edit title"
 msgstr "Editar título"
 
-msgctxt "#90512"
-msgid "Season"
-msgstr "Temporada"
-
 msgctxt "#90737"
 msgid "Invalid season"
 msgstr "Temporada no válida"
@@ -4782,6 +4778,22 @@ msgstr "Instalando %s. Vuelve a intentar la reproducción cuando termine."
 msgctxt "#91059"
 msgid "Playback could not be started. Check that your torrent client addon is installed and enabled."
 msgstr "No se pudo iniciar la reproducción. Verifica que el cliente de torrents esté instalado y activado."
+
+msgctxt "#91064"
+msgid "Torznab Search"
+msgstr "Búsqueda Torznab"
+
+msgctxt "#91065"
+msgid "Search Torznab"
+msgstr "Buscar Torznab"
+
+msgctxt "#91066"
+msgid "No results found."
+msgstr "No se encontraron resultados."
+
+msgctxt "#91067"
+msgid "Torznab search is disabled. Enable it in TorrServer settings."
+msgstr "La búsqueda Torznab está desactivada. Actívala en los ajustes de TorrServer."
 
 msgctxt "#91068"
 msgid "Clear search cache"

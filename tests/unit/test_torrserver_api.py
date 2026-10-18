@@ -222,3 +222,47 @@ class TestGetTorrentInfo:
         torrserver._session.request.return_value = _make_response([])
         result = torrserver.torrents()
         assert result == []
+
+
+class TestTorznabSearch:
+    """Tests for TorrServer.search_torznab (GET /torznab/search/)."""
+
+    def test_returns_raw_list_with_query_and_index_params(self, torrserver):
+        """search_torznab issues GET /torznab/search/ and returns the raw list."""
+        expected = [{"Title": "X", "Magnet": "magnet:..."}]
+        torrserver._session.request.return_value = _make_response(expected)
+        result = torrserver.search_torznab("matrix")
+        assert result == expected
+        call = torrserver._session.request.call_args
+        assert call.args[0] == "get"
+        assert "/torznab/search/" in call.args[1]
+        assert call.kwargs["params"] == {"query": "matrix", "index": -1}
+
+    def test_empty_list_does_not_raise(self, torrserver):
+        """search_torznab returns [] without raising (unlike dict normalization)."""
+        torrserver._session.request.return_value = _make_response([])
+        result = torrserver.search_torznab("nothing")
+        assert result == []
+
+    def test_http_400_with_disabled_search_returns_empty_list(self, torrserver):
+        """TorrServer returns HTTP 400 + [] when Torznab search is disabled;
+        treat it as an empty result instead of an error."""
+        torrserver._session.request.return_value = _make_response([], status_code=400)
+        result = torrserver.search_torznab("x")
+        assert result == []
+
+    def test_raises_on_other_http_errors(self, torrserver):
+        """Non-200/400 status raises TorrServerError."""
+        torrserver._session.request.return_value = _make_response({}, status_code=500)
+        with pytest.raises(TorrServerError):
+            torrserver.search_torznab("x")
+
+    def test_raises_on_invalid_json(self, torrserver):
+        """Malformed JSON raises TorrServerError."""
+        response = MagicMock()
+        response.status_code = 200
+        response.json.side_effect = ValueError("bad json")
+        response.text = "not json"
+        torrserver._session.request.return_value = response
+        with pytest.raises(TorrServerError):
+            torrserver.search_torznab("x")

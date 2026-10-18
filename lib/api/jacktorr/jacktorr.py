@@ -97,6 +97,27 @@ class TorrServer:
         """
         return self._post("/torrents", data=dumps({"action": "list"})).json()
 
+    def search_torznab(self, query, index=-1):
+        """Search torrents via Torznab indexers (GET /torznab/search/).
+
+        Requires EnableTorznabSearch=true and configured indexers in TorrServer
+        settings. Returns the raw JSON list from TorrServer — same TorrentDetails
+        shape as TorrServer's own /search/ results (Title, Size, Tracker, Seed,
+        Peer, Magnet, Hash). Empty list when search is disabled or no results.
+
+        TorrServer returns HTTP 400 with body [] when Torznab search is
+        disabled; treat that as an empty result rather than an error.
+        """
+        response = self._get("/torznab/search/", params={"query": query, "index": index})
+        if response.status_code not in (200, 400):
+            raise TorrServerError(
+                f"TorrServer /torznab/search returned HTTP {response.status_code}"
+            )
+        try:
+            return response.json()
+        except ValueError:
+            raise TorrServerError("TorrServer /torznab/search returned invalid JSON") from None
+
     def get_torrent_info_by_hash(self, hash):
         """Not extended info"""
         return self._normalize_json_response(
