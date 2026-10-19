@@ -306,6 +306,8 @@ class PreProcessBuilder(BaseProcessBuilder):
             or cyrillic_episode_coverage(res.title, season_num, episode_num) == "episode"
         ]
         self.results = season_pack_results + episode_results
+        # A title can match both a season-pack pattern and an episode range.
+        self.remove_duplicates()
         # Absolute-episode filtering is anime-only evidence: the absolute number used and the
         # survival count are what a live Kodi log needs to explain the retention decision.
         kodilog(
