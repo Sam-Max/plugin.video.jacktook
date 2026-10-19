@@ -1,13 +1,3 @@
-## 1.21.1
-- Jackett: Support public Jackett-compatible instances such as jac.red: optional port and API key, retry on HTTP 429, and fix the empty source list caused by guid elements with attributes.
-- Cache: Added a "Clear search cache" action, and turning the cache off now also skips cached search results.
-- Diagnostics: Client errors are now logged in full to kodi.log.
-
-Spanish:
-- Jackett: Compatibilidad con instancias públicas compatibles con Jackett como jac.red: puerto y clave API opcionales, reintento ante HTTP 429 y corrección de la lista de fuentes vacía causada por elementos guid con atributos.
-- Caché: Añadida la acción "Borrar caché de búsqueda"; al desactivar la caché ya no se usan los resultados de búsqueda guardados.
-- Diagnóstico: Los errores de los clientes ahora se registran completos en kodi.log.
-
 ## 1.21.0
 - Anime: Overhauled anime support with canonical metadata and native routing, season-aware stream routing, title search under identity aliases, dubbed-release badges in source select, and AniSkip skip times merged into the player skip flow.
 - Playback: Migrated IntroDB to v3 and added ending (credits) skip; fixed skip intro/outro with the new IntroDB v3 format.
