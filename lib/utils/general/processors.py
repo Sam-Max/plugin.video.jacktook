@@ -77,9 +77,13 @@ def _absolute_episode_number(value: Optional[int]) -> Optional[int]:
 # Russian/Ukrainian trackers (JacRed, Rutracker, Kinozal, LostFilm) name packs by the
 # episode range they hold: "[01x01-08 из 10]", "[01-02x01-18 из 19]",
 # "1 сезон: 1-9 серии из 9", "Сезон: 1 / Серии: 1-9 из 9", "Сезон 1, серії 1-8 з 10".
-_DASH = r"\s*[-–—]\s*"
+_DASH = r"\s*[-–—]\s*"  # noqa: RUF001
 _SEASON_EPISODE_RANGE = re.compile(
     rf"(?<!\d)(\d{{1,2}})(?:{_DASH}(\d{{1,2}}))?x(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?(?!\d)",
+    re.IGNORECASE,
+)
+_SCENE_EPISODE_RANGE = re.compile(
+    r"(?<!\d)S(\d{1,2})E(\d{1,3})(?:\s*-\s*E?(\d{1,3}))?(?!\d)",
     re.IGNORECASE,
 )
 _CYRILLIC_SEASON = re.compile(
@@ -88,8 +92,9 @@ _CYRILLIC_SEASON = re.compile(
     re.IGNORECASE,
 )
 _CYRILLIC_EPISODES = re.compile(
-    rf"(?<!\d)(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?\s*(?:сер[иі]|епізод|эпизод)"
-    rf"|(?:сер[иі][яиіїй]?|епізод\w*|эпизод\w*)\s*:?\s*(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?(?!\d)"
+    rf"(?<!\d)(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?\s*(?:сер[иі]|епізод|эпизод)"  # noqa: RUF001
+    rf"|(?:сер[иі][яиіїй]?|епізод\w*|эпизод\w*)"  # noqa: RUF001
+    rf"\s*:?\s*(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?(?!\d)"
     rf"|\(\s*(\d{{1,3}}){_DASH}(\d{{1,3}})\s*(?:из|з|of)\s*\d",
     re.IGNORECASE,
 )
@@ -107,9 +112,9 @@ def _number_range(match: "re.Match") -> Optional[range]:
 def cyrillic_episode_coverage(title: str, season_num: int, episode_num: int) -> Optional[str]:
     """Whether a tracker-style title covers the episode.
 
-    Returns "episode" when the title's episode range (or season range, for multi-season
-    packs numbered across seasons) holds the episode, "season" for a pack of the season
-    that names no episodes, and None when the title excludes the episode or says nothing.
+    Returns "episode" when the title's episode range holds the episode, "season" for a
+    pack that names only the season, and None when the title excludes the episode or
+    says nothing.
     """
     season, episode = int(season_num), int(episode_num)
 
@@ -118,23 +123,28 @@ def cyrillic_episode_coverage(title: str, season_num: int, episode_num: int) -> 
         seasons = range(int(match.group(1)), int(match.group(2) or match.group(1)) + 1)
         if season not in seasons:
             return None
-        if len(seasons) > 1:
-            return "episode"
         episodes = range(int(match.group(3)), int(match.group(4) or match.group(3)) + 1)
+        return "episode" if episode in episodes else None
+
+    match = _SCENE_EPISODE_RANGE.search(title)
+    if match:
+        if season != int(match.group(1)):
+            return None
+        episodes = range(int(match.group(2)), int(match.group(3) or match.group(2)) + 1)
         return "episode" if episode in episodes else None
 
     match = _CYRILLIC_SEASON.search(title)
     seasons = _number_range(match) if match else None
     if not seasons or season not in seasons:
         return None
-    if len(seasons) > 1:
-        return "episode"
 
     # Drop the season marker so "Сезон 1 Серии 01-09" doesn't read "1 Серии" as episode 1.
     rest = title[: match.start()] + " " + title[match.end() :]
     match = _CYRILLIC_EPISODES.search(rest)
     if not match:
-        return "season"
+        # A multi-season pack covers every episode of those seasons, so keep it even
+        # when season packs are disabled.
+        return "episode" if len(seasons) > 1 else "season"
     episodes = _number_range(match)
     return "episode" if episodes and episode in episodes else None
 
@@ -156,7 +166,7 @@ class BaseProcessBuilder:
             r"the\.complete",
             r"complete",
             r"integrale",
-            rf"Saison {season_num}" r"S(\d{2})E(\d{2})-(\d{2})",
+            rf"Saison {season_num}",
             rf"\.season\.{season_num}\.",
             rf"\.season{season_num}\.",
             rf"\.season\.{season_fill}\.",
@@ -169,7 +179,8 @@ class BaseProcessBuilder:
             rf"s01 thru {season_fill}",
             rf"s01 thru s{season_fill}",
             rf"\[S{season_fill}\]",
-            rf"\[S{season_num}\]" rf"\(S{season_fill}\)",
+            rf"\[S{season_num}\]",
+            rf"\(S{season_fill}\)",
             rf"\(S{season_num}\)",
             rf"\[Season {season_num}\]",
             rf"\[Season {season_fill}\]",
@@ -205,7 +216,7 @@ class PostProcessBuilder(BaseProcessBuilder):
     def check_season_pack(self, season: int) -> "PostProcessBuilder":
         season_patterns = self.get_season_pack_patterns(season)
         for res in self.results:
-            res.isPack = bool(re.search("|".join(season_patterns), res.title))
+            res.isPack = bool(re.search("|".join(season_patterns), res.title, re.IGNORECASE))
         return self
 
     def sort_results(self) -> "PostProcessBuilder":
@@ -249,7 +260,7 @@ class PreProcessBuilder(BaseProcessBuilder):
         return [
             res
             for res in self.results
-            if re.search("|".join(season_patterns), res.title)
+            if re.search("|".join(season_patterns), res.title, re.IGNORECASE)
             or cyrillic_episode_coverage(res.title, season_num, 1) == "season"
         ]
 

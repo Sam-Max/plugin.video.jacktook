@@ -78,3 +78,47 @@ def test_season_pack_and_episode_range_are_not_duplicated():
     title = "Tulsa King season 1 [01x01-08 из 10]"
 
     assert _kept_titles([title], episode_num=2, season_packs=True) == [title]
+
+
+def test_multi_season_range_outside_the_episode_range_is_dropped():
+    assert cyrillic_episode_coverage("[01-02x01-18 из 19]", 1, 30) is None
+
+
+def test_multi_season_range_inside_the_episode_range_is_kept():
+    assert cyrillic_episode_coverage("[01-02x01-18 из 19]", 2, 5) == "episode"
+
+
+def test_cyrillic_multi_season_range_outside_the_episode_range_is_dropped():
+    title = "Король Талсы (1-2 сезоны: 1-19 серии из 19) / Tulsa King / WEB-DLRip"
+
+    assert cyrillic_episode_coverage(title, 1, 30) is None
+
+
+def test_scene_episode_range_is_matched():
+    assert cyrillic_episode_coverage("Show S01E01-E08", 1, 5) == "episode"
+    assert cyrillic_episode_coverage("Show S01E01-E08", 1, 9) is None
+
+
+def test_scene_episode_range_keeps_the_pack():
+    title = "Show S01E01-E08 1080p"
+
+    assert _kept_titles([title], episode_num=5) == [title]
+    assert _kept_titles([title], episode_num=9) == []
+
+
+def test_capitalized_season_pack_is_detected():
+    title = "Tulsa King Season 1 1080p"
+
+    assert _kept_titles([title], episode_num=2, season_packs=True) == [title]
+
+
+def test_saison_season_pack_is_detected():
+    title = "Tulsa King Saison 1 1080p"
+
+    assert _kept_titles([title], episode_num=2, season_packs=True) == [title]
+
+
+def test_parenthesized_season_marker_is_detected():
+    title = "Tulsa King (S01) 1080p"
+
+    assert _kept_titles([title], episode_num=2, season_packs=True) == [title]
