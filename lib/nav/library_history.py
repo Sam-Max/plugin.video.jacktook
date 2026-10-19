@@ -149,10 +149,8 @@ def add_to_library(params):
     from lib.utils.general.utils import add_to_library as add_lib
 
     data = params.get("data")
-    if data:
-        add_lib(json.loads(data))
-
-    Dialog().notification(translation(90069), translation(90205))
+    if data and add_lib(json.loads(data)):
+        Dialog().notification(translation(90069), translation(90205))
 
 
 def search_direct(params):
