@@ -74,6 +74,71 @@ def _absolute_episode_number(value: Optional[int]) -> Optional[int]:
     return value if value > 0 else None
 
 
+# Russian/Ukrainian trackers (JacRed, Rutracker, Kinozal, LostFilm) name packs by the
+# episode range they hold: "[01x01-08 из 10]", "[01-02x01-18 из 19]",
+# "1 сезон: 1-9 серии из 9", "Сезон: 1 / Серии: 1-9 из 9", "Сезон 1, серії 1-8 з 10".
+_DASH = r"\s*[-–—]\s*"
+_SEASON_EPISODE_RANGE = re.compile(
+    rf"(?<!\d)(\d{{1,2}})(?:{_DASH}(\d{{1,2}}))?x(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?(?!\d)",
+    re.IGNORECASE,
+)
+_CYRILLIC_SEASON = re.compile(
+    rf"(?<!\d)(\d{{1,2}})(?:{_DASH}(\d{{1,2}}))?\s*сезон"
+    rf"|сезон[ыиі]?\s*:?\s*(\d{{1,2}})(?:{_DASH}(\d{{1,2}}))?(?!\d)",
+    re.IGNORECASE,
+)
+_CYRILLIC_EPISODES = re.compile(
+    rf"(?<!\d)(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?\s*(?:сер[иі]|епізод|эпизод)"
+    rf"|(?:сер[иі][яиіїй]?|епізод\w*|эпизод\w*)\s*:?\s*(\d{{1,3}})(?:{_DASH}(\d{{1,3}}))?(?!\d)"
+    rf"|\(\s*(\d{{1,3}}){_DASH}(\d{{1,3}})\s*(?:из|з|of)\s*\d",
+    re.IGNORECASE,
+)
+
+
+def _number_range(match: "re.Match") -> Optional[range]:
+    """First populated (start, end) group pair of a match as an inclusive range."""
+    groups = match.groups()
+    for start, end in zip(groups[::2], groups[1::2]):
+        if start:
+            return range(int(start), int(end or start) + 1)
+    return None
+
+
+def cyrillic_episode_coverage(title: str, season_num: int, episode_num: int) -> Optional[str]:
+    """Whether a tracker-style title covers the episode.
+
+    Returns "episode" when the title's episode range (or season range, for multi-season
+    packs numbered across seasons) holds the episode, "season" for a pack of the season
+    that names no episodes, and None when the title excludes the episode or says nothing.
+    """
+    season, episode = int(season_num), int(episode_num)
+
+    match = _SEASON_EPISODE_RANGE.search(title)
+    if match:
+        seasons = range(int(match.group(1)), int(match.group(2) or match.group(1)) + 1)
+        if season not in seasons:
+            return None
+        if len(seasons) > 1:
+            return "episode"
+        episodes = range(int(match.group(3)), int(match.group(4) or match.group(3)) + 1)
+        return "episode" if episode in episodes else None
+
+    match = _CYRILLIC_SEASON.search(title)
+    seasons = _number_range(match) if match else None
+    if not seasons or season not in seasons:
+        return None
+    if len(seasons) > 1:
+        return "episode"
+
+    # Drop the season marker so "Сезон 1 Серии 01-09" doesn't read "1 Серии" as episode 1.
+    rest = title[: match.start()] + " " + title[match.end() :]
+    match = _CYRILLIC_EPISODES.search(rest)
+    if not match:
+        return "season"
+    episodes = _number_range(match)
+    return "episode" if episodes and episode in episodes else None
+
+
 class BaseProcessBuilder:
     def __init__(self, results: List[TorrentStream]):
         self.results: List[TorrentStream] = results
@@ -181,7 +246,12 @@ class PreProcessBuilder(BaseProcessBuilder):
 
     def filter_season_packs(self, season_num: int) -> List[TorrentStream]:
         season_patterns = self.get_season_pack_patterns(season_num)
-        return [res for res in self.results if re.search("|".join(season_patterns), res.title)]
+        return [
+            res
+            for res in self.results
+            if re.search("|".join(season_patterns), res.title)
+            or cyrillic_episode_coverage(res.title, season_num, 1) == "season"
+        ]
 
     def filter_sources(
         self,
@@ -230,7 +300,10 @@ class PreProcessBuilder(BaseProcessBuilder):
 
         candidates_in = len(self.results)
         episode_results = [
-            res for res in self.results if re.search("|".join(patterns), res.title, re.IGNORECASE)
+            res
+            for res in self.results
+            if re.search("|".join(patterns), res.title, re.IGNORECASE)
+            or cyrillic_episode_coverage(res.title, season_num, episode_num) == "episode"
         ]
         self.results = season_pack_results + episode_results
         # Absolute-episode filtering is anime-only evidence: the absolute number used and the
