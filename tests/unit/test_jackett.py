@@ -233,3 +233,26 @@ def test_build_jackett_client_omits_port_when_setting_is_empty():
     assert client is not None
     assert client.base_url.startswith("https://jac.red/api/v2.0/")
     assert ":9117" not in client.base_url
+
+
+def test_extract_result_handles_jackettindexer_without_id(jackett_client):
+    response = MagicMock()
+    response.content = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <rss version="2.0" xmlns:torznab="http://torznab.com/schemas/2015/feed">
+        <channel>
+            <item>
+                <title>Dune (2021)</title>
+                <guid isPermaLink="false">284efe62c04044a0131dd43d5d68f5da83da4ed0</guid>
+                <jackettindexer>rutracker</jackettindexer>
+                <link>magnet:?xt=urn:btih:284efe62c04044a0131dd43d5d68f5da83da4ed0</link>
+                <size>100</size>
+                <torznab:attr name="infohash" value="284efe62c04044a0131dd43d5d68f5da83da4ed0" />
+            </item>
+        </channel>
+    </rss>"""
+
+    with patch("lib.clients.base.notification"):
+        results = jackett_client.parse_response(response)
+
+    assert results is not None
+    assert results[0].provider == "rutracker"

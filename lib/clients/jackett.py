@@ -225,7 +225,8 @@ class Jackett(BaseClient):
         guid = _xml_text(item.get("guid", ""))
         info_hash = str(attributes.get("infohash", ""))
         enclosure_url = enclosure.get("@url", "")
-        provider = item.get("jackettindexer", {}).get("#text", "")
+        # <jackettindexer> without an id attribute parses as a plain string.
+        provider = _xml_text(item.get("jackettindexer", ""))
 
         kodilog(
             "Jackett parsed result: title={!r}, provider={!r}, guid={!r}, link={!r}, enclosure={!r}, infohash={!r}, has_magnet={}, has_http_url={}, has_infohash={}".format(
