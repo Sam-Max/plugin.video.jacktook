@@ -994,11 +994,13 @@ def set_watched_title(title, ids, mode, tg_data="", media_type="", library_data=
 def add_to_library(data):
     title = data.get("title")
     if not title:
-        return
+        kodilog(f"Not adding to library: missing title in {data.get('ids')}")
+        return False
 
     pickle_db.set_item(key="jt:lib", subkey=title, value=data)
     cache.delete("library_view|tv")
     cache.delete("library_view|movies")
+    return True
 
 
 def remove_from_library(title):
