@@ -1313,6 +1313,12 @@
                     </dependencies>
                 </setting>
             </group>
+            <group id="pause_info" label="91071">
+                <setting id="pause_bitrate_overlay" type="boolean" label="91071" help="91072">
+                    <default>true</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
         </category>
         <category id="filtering_category" label="30861">
             <group id="filtering_stremio" label="90155">
@@ -2244,6 +2250,12 @@
                 </setting>
             </group>
             <group id="cleanup" label="30106">
+                <setting id="clear_search_cache" type="action" label="91068" help="91069">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_search_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
                 <setting id="clear_database_cache" type="action" label="90342"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_database_cache)</data>
                     <control type="button" format="action">

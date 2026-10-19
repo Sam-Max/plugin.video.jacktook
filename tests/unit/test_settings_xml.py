@@ -223,3 +223,14 @@ def test_about_strings_are_defined_in_every_supported_catalogue():
         content = catalogue.read_text()
         for string_id in (91030, 91031):
             assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue
+
+
+def test_clear_search_cache_action_is_routed_and_translated():
+    tree = ET.parse(SETTINGS_XML)
+    action = tree.find(".//group[@id='cleanup']/setting[@id='clear_search_cache']")
+
+    assert action.findtext("data").endswith("action=clear_search_cache)")
+    for catalogue in ENGLISH_STRINGS.parent.parent.glob("*/strings.po"):
+        content = catalogue.read_text(encoding="utf-8")
+        for string_id in (91068, 91069, 91070):
+            assert content.count(f'msgctxt "#{string_id}"') == 1, catalogue

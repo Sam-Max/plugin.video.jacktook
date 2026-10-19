@@ -1190,6 +1190,31 @@ class TestCheckSearchCaches:
             cache_scope="scope",
         )
 
+    def test_cache_disabled_skips_autoscrape_fallback(self):
+        """Cache off must not reuse autoscrape results."""
+        ids = {"tmdb_id": "123"}
+        with patch("lib.search.get_cached_results", return_value=None), patch(
+            "lib.search.is_cache_enabled", return_value=False
+        ), patch("lib.db.cached.cache.get") as cache_get:
+            result = _check_search_caches("q", ids, "tv", "tv", 2, 1, "scope")
+
+        assert result is None
+        cache_get.assert_not_called()
+
+    def test_autoscrape_hit_normalizes_stale_guid(self):
+        """A stale dict guid from an older cache is normalized before returning."""
+        stale = TorrentStream(title="Dune", guid={"@isPermaLink": "false", "#text": "abc123"})
+        ids = {"imdb_id": "tt999"}
+        with patch("lib.search.get_cached_results", return_value=None), patch(
+            "lib.search.is_cache_enabled", return_value=True
+        ), patch("lib.db.cached.cache.get", return_value=[stale]), patch(
+            "lib.utils.player.utils.get_autoscrape_results_cache_key",
+            return_value="as:tt999_2_3",
+        ), patch("lib.search.cache_results"):
+            result = _check_search_caches("q", ids, "tv", "tv", 3, 2, "scope")
+
+        assert result[0].guid == "abc123"
+
 
 # ---------------------------------------------------------------------------
 # search_client  (orchestration)

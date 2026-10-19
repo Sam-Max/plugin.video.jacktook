@@ -4794,3 +4794,31 @@ msgstr "No se encontraron resultados."
 msgctxt "#91067"
 msgid "Torznab search is disabled. Enable it in TorrServer settings."
 msgstr "La búsqueda Torznab está desactivada. Actívala en los ajustes de TorrServer."
+
+msgctxt "#91068"
+msgid "Clear search cache"
+msgstr "Borrar caché de búsqueda"
+
+msgctxt "#91069"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Elimina los resultados de búsqueda guardados para que la próxima búsqueda vuelva a consultar los indexadores."
+
+msgctxt "#91070"
+msgid "Search cache cleared"
+msgstr "Caché de búsqueda borrada"
+
+msgctxt "#91071"
+msgid "Show bitrate on pause"
+msgstr "Mostrar bitrate en pausa"
+
+msgctxt "#91072"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "Durante la pausa, muestra en pantalla el bitrate medio del vídeo y los detalles del flujo."
+
+msgctxt "#91073"
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgctxt "#91074"
+msgid "Audio"
+msgstr "Audio"

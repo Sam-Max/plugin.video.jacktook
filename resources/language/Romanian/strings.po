@@ -5006,3 +5006,31 @@ msgstr "Nu s-au găsit rezultate."
 msgctxt "#91067"
 msgid "Torznab search is disabled. Enable it in TorrServer settings."
 msgstr "Căutarea Torznab este dezactivată. Activați-o în setările TorrServer."
+
+msgctxt "#91068"
+msgid "Clear search cache"
+msgstr "Golește memoria cache a căutărilor"
+
+msgctxt "#91069"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Șterge rezultatele căutărilor salvate, astfel încât următoarea căutare să interogheze din nou indexerii."
+
+msgctxt "#91070"
+msgid "Search cache cleared"
+msgstr "Memoria cache a căutărilor a fost golită"
+
+msgctxt "#91071"
+msgid "Show bitrate on pause"
+msgstr "Afișează bitrate-ul la pauză"
+
+msgctxt "#91072"
+msgid "While playback is paused, show the average video bitrate and stream details on screen."
+msgstr "Când redarea este în pauză, afișează pe ecran bitrate-ul mediu al videoclipului și detaliile fluxului."
+
+msgctxt "#91073"
+msgid "Bitrate"
+msgstr "Bitrate"
+
+msgctxt "#91074"
+msgid "Audio"
+msgstr "Audio"

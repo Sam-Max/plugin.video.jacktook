@@ -42,6 +42,7 @@ from lib.utils.general.utils import (
 from lib.utils.kodi.settings import get_cache_expiration
 from lib.utils.kodi.utils import (
     ADDON_PATH,
+    action_url_run,
     add_directory_items_batch,
     build_url,
     container_update,
@@ -221,7 +222,7 @@ def _filter_tmdb_context_menu(context_menu):
 def _build_stremio_library_menu_item(payload):
     return (
         translation(90205),
-        kodi_play_media(name="add_to_library", data=json.dumps(payload)),
+        action_url_run(name="add_to_library", data=json.dumps(payload)),
     )
 
 

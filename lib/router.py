@@ -766,6 +766,7 @@ def _route_cache(action, params):
         clear_debrid_cache,
         clear_history,
         clear_mdblist_cache,
+        clear_search_cache,
         clear_search_history,
         clear_stremio_cache,
         clear_tmdb_cache,
@@ -782,6 +783,7 @@ def _route_cache(action, params):
         "clear_database_cache": clear_database_cache,
         "clear_history": clear_history,
         "clear_search_history": clear_search_history,
+        "clear_search_cache": clear_search_cache,
     }
     action_func = actions.get(action)
     if action_func:
