@@ -4782,6 +4782,18 @@ msgctxt "#91067"
 msgid "Torznab search is disabled. Enable it in TorrServer settings."
 msgstr "Поиск Torznab отключён. Включите его в настройках TorrServer."
 
+msgctxt "#91068"
+msgid "Clear search cache"
+msgstr "Очистить кэш поиска"
+
+msgctxt "#91069"
+msgid "Remove cached torrent search results so the next search queries the indexers again."
+msgstr "Удалить сохранённые результаты поиска торрентов, чтобы следующий поиск снова обращался к индексаторам."
+
+msgctxt "#91070"
+msgid "Search cache cleared"
+msgstr "Кэш поиска очищен"
+
 msgctxt "#91071"
 msgid "Show bitrate on pause"
 msgstr "Показывать битрейт на паузе"

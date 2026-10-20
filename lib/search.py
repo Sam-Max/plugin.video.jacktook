@@ -48,6 +48,7 @@ from lib.utils.general.utils import (
     clean_auto_play_undesired,
     get_cached_results,
     info_hash_to_magnet,
+    normalize_cached_results,
     normalize_tv_data,
     post_process,
     pre_process,
@@ -56,7 +57,7 @@ from lib.utils.general.utils import (
     set_watched_title,
     truthy_param,
 )
-from lib.utils.kodi.settings import auto_play_enabled, get_setting
+from lib.utils.kodi.settings import auto_play_enabled, get_setting, is_cache_enabled
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     cancel_playback,
@@ -1564,7 +1565,11 @@ def _check_search_caches(
 
     # Fallback: autoscrape cache (PlayNext background scrape) under
     # ``as_results:{id}_{season}_{episode}``.
-    if not allow_autoscrape_fallback or (mode != "tv" and media_type != "tv"):
+    if (
+        not allow_autoscrape_fallback
+        or not is_cache_enabled()
+        or (mode != "tv" and media_type != "tv")
+    ):
         return None
     id_value = (
         (ids or {}).get("original_id") or (ids or {}).get("imdb_id") or (ids or {}).get("tmdb_id")
@@ -1576,7 +1581,7 @@ def _check_search_caches(
     from lib.utils.player.utils import get_autoscrape_results_cache_key
 
     as_key = get_autoscrape_results_cache_key(id_value, season, episode)
-    as_results = _cache.get(as_key)
+    as_results = normalize_cached_results(_cache.get(as_key))
     if as_results is None:
         return None
 

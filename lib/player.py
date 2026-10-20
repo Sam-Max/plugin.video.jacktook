@@ -498,9 +498,9 @@ class JacktookPLayer(xbmc.Player):
         except Exception:
             self.kill_dialog()
         finally:
+            self.pause_overlay.hide()
             if timing is not None:
                 timing.finish("not_started")
-            self.pause_overlay.hide()
             if self._owns_playback_session():
                 kodilog("[PLAYER] monitor: owner cleanup for playback session")
                 self.clear_playback_properties()

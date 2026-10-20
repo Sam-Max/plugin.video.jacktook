@@ -2250,6 +2250,12 @@
                 </setting>
             </group>
             <group id="cleanup" label="30106">
+                <setting id="clear_search_cache" type="action" label="91068" help="91069">
+                    <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_search_cache)</data>
+                    <control type="button" format="action">
+                        <close>true</close>
+                    </control>
+                </setting>
                 <setting id="clear_database_cache" type="action" label="90342"> 
                     <data>RunPlugin(plugin://plugin.video.jacktook/?action=clear_database_cache)</data>
                     <control type="button" format="action">

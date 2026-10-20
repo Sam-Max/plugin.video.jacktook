@@ -994,11 +994,13 @@ def set_watched_title(title, ids, mode, tg_data="", media_type="", library_data=
 def add_to_library(data):
     title = data.get("title")
     if not title:
-        return
+        kodilog(f"Not adding to library: missing title in {data.get('ids')}")
+        return False
 
     pickle_db.set_item(key="jt:lib", subkey=title, value=data)
     cache.delete("library_view|tv")
     cache.delete("library_view|movies")
+    return True
 
 
 def remove_from_library(title):
@@ -1037,10 +1039,25 @@ def get_fanart_details(tvdb_id="", tmdb_id="", mode="tv"):
     return data or {}
 
 
+def normalize_cached_results(results):
+    """Normalize stale fields that older parsers stored as xmltodict dicts."""
+    # Older Jackett parsing cached <guid isPermaLink="false"> as an xmltodict dict,
+    # which Kodi rejects in ListItem.setProperty and leaves the source list empty.
+    for result in results or []:
+        guid = getattr(result, "guid", None)
+        if isinstance(guid, dict):
+            result.guid = str(guid.get("#text", ""))
+    return results
+
+
 def get_cached_results(query, mode, media_type, episode, season, cache_scope=""):
+    if not is_cache_enabled():
+        return None
     if mode == "tv" or media_type == "tv" or mode == "anime":
-        return get_cached(query, params=(season, episode, "index", cache_scope))
-    return get_cached(query, params=("index", cache_scope))
+        results = get_cached(query, params=(season, episode, "index", cache_scope))
+    else:
+        results = get_cached(query, params=("index", cache_scope))
+    return normalize_cached_results(results)
 
 
 def cache_results(results, query, mode, media_type, episode, season, cache_scope=""):
@@ -1204,6 +1221,13 @@ def clear_cache_on_update():
 
 def clear_all_cache():
     cache.clean_all()
+
+
+def clear_search_results_cache():
+    # Keys are built by cache_results: "<query>|(..., 'index', <scope>)".
+    cache.delete_like("%'index'%")
+    # Autoscrape results (PlayNext background scrape) are search results too.
+    cache.delete_like("as_results:%")
 
 
 def clear_trakt_db_cache():

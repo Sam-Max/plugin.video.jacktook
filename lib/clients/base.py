@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional
 
@@ -9,8 +10,21 @@ try:
 except ImportError:
     from requests.packages.urllib3.util.retry import Retry
 
+import xbmc
+
 from lib.domain.torrent import TorrentStream
+from lib.utils.kodi.logging import kodilog
 from lib.utils.kodi.utils import notification
+
+_SECRET_QUERY_RE = re.compile(
+    r"(?i)([?&](?:apikey|api_key|token|access_token|refresh_token|password|secret|key)=)"
+    r"[^&\s'\"()<>,]+"
+)
+
+
+def _redact_secrets(message: str) -> str:
+    """Hide credentials carried in URL query strings before logging."""
+    return _SECRET_QUERY_RE.sub(r"\1***", message)
 
 
 class BaseClient(ABC):
@@ -47,7 +61,9 @@ class BaseClient(ABC):
         pass
 
     def handle_exception(self, exception: str) -> None:
-        exception_message = str(exception)
+        exception_message = _redact_secrets(str(exception))
+        # The notification is truncated; keep the full error in kodi.log for diagnostics.
+        kodilog(f"{type(self).__name__} error: {exception_message}", level=xbmc.LOGERROR)
         if len(exception_message) > 70:
             exception_message = exception_message[:70] + "..."
         notification(exception_message)

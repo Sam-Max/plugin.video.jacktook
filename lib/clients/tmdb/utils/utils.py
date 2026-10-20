@@ -470,6 +470,25 @@ def _build_nuvio_add_context_menu_item(content_type, title, ids, mode):
     return (translation(91039), f"RunPlugin({build_url('nuvio_add_to_library', data=data)})")
 
 
+def _build_add_to_library_context_menu_item(title, ids, library_mode):
+    # The library lists filter on "movies"/"tv"; list modes like "multi" or an empty
+    # media_type would hide the entry, and an entry without a title is not stored.
+    return (
+        translation(90205),
+        action_url_run(
+            name="add_to_library",
+            data=json.dumps(
+                {
+                    "title": title or ids.get("name") or ids.get("title"),
+                    "ids": ids,
+                    "mode": library_mode,
+                    "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
+                }
+            ),
+        ),
+    )
+
+
 def add_tmdb_movie_context_menu(mode, media_type, title=None, ids=None):
     if ids is None:
         ids = {}
@@ -550,34 +569,7 @@ def add_tmdb_movie_context_menu(mode, media_type, title=None, ids=None):
                 media_type=media_type,
             ),
         ),
-        (
-            translation(90205),
-            kodi_play_media(
-                name="add_to_library",
-                data=json.dumps(
-                    {
-                        "title": title,
-                        "ids": ids,
-                        "mode": media_type,
-                        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
-                    }
-                ),
-            ),
-        ),
-        (
-            translation(90205),
-            kodi_play_media(
-                name="add_to_library",
-                data=json.dumps(
-                    {
-                        "title": ids.get("name") or ids.get("title"),
-                        "ids": ids,
-                        "mode": mode,
-                        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
-                    }
-                ),
-            ),
-        ),
+        _build_add_to_library_context_menu_item(title, ids, "movies"),
         (
             translation(90116),
             container_update(name="settings"),
@@ -631,20 +623,7 @@ def add_tmdb_show_context_menu(mode, ids=None, title=None):
                 ids=ids,
             ),
         ),
-        (
-            translation(90205),
-            kodi_play_media(
-                name="add_to_library",
-                data=json.dumps(
-                    {
-                        "title": ids.get("name") or ids.get("title"),
-                        "ids": ids,
-                        "mode": mode,
-                        "timestamp": datetime.now().strftime("%a, %d %b %Y %I:%M %p"),
-                    }
-                ),
-            ),
-        ),
+        _build_add_to_library_context_menu_item(title, ids, "tv"),
         (
             translation(90755),
             "RunPlugin(plugin://plugin.video.jacktook/?action=source_manager_toggle)",
