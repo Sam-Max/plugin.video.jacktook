@@ -9,12 +9,12 @@ import os
 from json import dumps, loads
 from typing import Any, Dict, List, Optional, Tuple
 
-from lib.utils.kodi.logging import kodilog
-from lib.utils.kodi.utils import ADDON_PATH, translation
-
 import xbmc
 import xbmcgui
 import xbmcvfs
+
+from lib.utils.kodi.logging import kodilog
+from lib.utils.kodi.utils import ADDON_PATH, translation
 
 FULLSCREEN_VIDEO_WINDOW_ID = 12005
 BACKGROUND_TEXTURE = os.path.join(ADDON_PATH, "resources", "skins", "Default", "media", "white.png")
@@ -85,7 +85,9 @@ def build_overlay_lines(
 ) -> Tuple[str, str]:
     bits_per_second = average_bitrate(size_bytes, duration_seconds)
     bitrate = format_bitrate(bits_per_second)
-    title = f"{translation(91073)}: ~{bitrate} ({format_byte_rate(bits_per_second)})" if bitrate else ""
+    title = (
+        f"{translation(91073)}: ~{bitrate} ({format_byte_rate(bits_per_second)})" if bitrate else ""
+    )
     return title, format_stream_details(video, audio)
 
 
@@ -107,9 +109,14 @@ def get_file_size(path: str) -> int:
 
 def get_current_streams() -> Tuple[Dict, Dict]:
     try:
-        players = loads(
-            xbmc.executeJSONRPC(dumps({"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1}))
-        ).get("result") or []
+        players = (
+            loads(
+                xbmc.executeJSONRPC(
+                    dumps({"jsonrpc": "2.0", "method": "Player.GetActivePlayers", "id": 1})
+                )
+            ).get("result")
+            or []
+        )
         player_id = next((p.get("playerid") for p in players if p.get("type") == "video"), None)
         if player_id is None:
             return {}, {}
@@ -157,7 +164,9 @@ class PauseInfoOverlay:
             y = int(150 * scale)
 
             controls: List[xbmcgui.Control] = [
-                xbmcgui.ControlImage(x, y, width, height, BACKGROUND_TEXTURE, colorDiffuse="0xB0000000")
+                xbmcgui.ControlImage(
+                    x, y, width, height, BACKGROUND_TEXTURE, colorDiffuse="0xB0000000"
+                )
             ]
             for index, line in enumerate(lines):
                 controls.append(

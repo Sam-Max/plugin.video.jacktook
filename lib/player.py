@@ -63,15 +63,19 @@ SKIP_SEGMENT_LABEL_IDS = {"intro": 90160, "recap": 90161, "outro": 90169}
 # Only a closed busy dialog after this wait counts as a failed plugin:// start.
 PLUGIN_START_FAILURE_TIMEOUT_MS = 15000
 PLUGIN_START_POLL_INTERVAL_MS = 100
-# A visible loading dialog means the torrent client is still resolving: Jacktorr
-# buffers behind a DialogProgress, Kodi itself shows busydialog while opening a stream.
-PLUGIN_START_PENDING_CONDITIONS = (
+# A visible loading dialog means the client itself is still working: Jacktorr
+# buffers behind a DialogProgress, Kodi itself shows busydialog while opening a
+# stream. This is an explicit "I am working" signal, so it is trusted for as long
+# as it is shown: a cold torrent can legitimately take minutes.
+PLUGIN_START_DIALOG_CONDITIONS = (
     "Window.IsVisible(busydialog)",
     "Window.IsVisible(busydialognocancel)",
     "Window.IsVisible(progressdialog)",
     "Window.IsVisible(extendedprogressdialog)",
-    "Player.HasMedia",
 )
+# Player.HasMedia only proves the file was opened, not that it is progressing.
+# Give Kodi a bounded grace period to start decoding before calling it stuck.
+PLUGIN_START_MEDIA_GRACE_MS = 30000
 
 
 class JacktookPLayer(xbmc.Player):
@@ -604,7 +608,17 @@ class JacktookPLayer(xbmc.Player):
             return False
         if wait_ms < PLUGIN_START_FAILURE_TIMEOUT_MS:
             return False
-        return not any(get_visibility(condition) for condition in PLUGIN_START_PENDING_CONDITIONS)
+        # The client declares it is working: trust it for as long as it says so.
+        if any(get_visibility(condition) for condition in PLUGIN_START_DIALOG_CONDITIONS):
+            return False
+        # Kodi is really buffering, which is progress rather than a stuck open.
+        if get_visibility("Player.Caching"):
+            return False
+        # HasMedia alone is ambiguous: give Kodi a bounded window to start decoding.
+        media_within_grace = get_visibility("Player.HasMedia") and wait_ms < (
+            PLUGIN_START_FAILURE_TIMEOUT_MS + PLUGIN_START_MEDIA_GRACE_MS
+        )
+        return not media_within_grace
 
     def notify_playback_never_started(self):
         try:
@@ -654,7 +668,9 @@ class JacktookPLayer(xbmc.Player):
             return
         if not self.pause_overlay.visible:
             video, audio = get_current_streams()
-            self.pause_overlay.show(*build_overlay_lines(self.media_size, self.total_time, video, audio))
+            self.pause_overlay.show(
+                *build_overlay_lines(self.media_size, self.total_time, video, audio)
+            )
 
     def update_playback_progress(self):
         try:
