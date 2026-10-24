@@ -73,7 +73,7 @@ def _run_anime_search(monkeypatch, addon, route, anime_marker="1", search_result
 
     route_calls = []
 
-    def resolve_route_spy(ids, season, episode, air_date=None):
+    def resolve_route_spy(ids, season, episode, air_date=None, season_name=None):
         route_calls.append((ids, season, episode))
         return route
 
