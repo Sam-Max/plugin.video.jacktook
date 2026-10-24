@@ -315,6 +315,7 @@ class TorboxHelper:
                 episode_num=tv_data.get("episode"),
                 season_num=tv_data.get("season"),
                 exact_match=True,
+                extra_episode_nums=(tv_data.get("anime_episode"),),
             )
             if not video_files:
                 raise TorboxException("No matching episode found in torrent.")
