@@ -5,6 +5,8 @@ import pytest
 
 from lib.utils.general.utils import (
     TMDB_IMAGE_SIZES,
+    _set_rating,
+    _set_rpdb_poster,
     add_next_button,
     build_media_metadata,
     cache_results,
@@ -14,6 +16,7 @@ from lib.utils.general.utils import (
     get_cached_results,
     get_image_size,
     get_random_color,
+    get_rpdb_list_poster,
     get_rpdb_poster,
     info_hash_to_magnet,
     is_magnet_link,
@@ -564,3 +567,102 @@ class TestBuildMediaMetadataRpdb:
                         metadata = build_media_metadata(ids, "movies")
                         mock_get_rpdb.assert_not_called()
                         assert "w780" in metadata["poster"]
+
+
+class TestRpdbListPoster:
+    @staticmethod
+    def _settings(enabled=True, api_key=""):
+        return lambda key, default=None: {
+            "rpdb_enabled": enabled,
+            "rpdb_api_key": api_key,
+        }.get(key, default)
+
+    def test_disabled_returns_empty(self):
+        with patch("lib.utils.general.utils.get_setting", side_effect=self._settings(False)):
+            assert get_rpdb_list_poster(1402, "tv") == ""
+
+    def test_free_key_is_used_without_a_personal_key(self):
+        with patch("lib.utils.general.utils.get_setting", side_effect=self._settings()):
+            assert get_rpdb_list_poster(1402, "tv") == (
+                "https://api.ratingposterdb.com/t0-free-rpdb/tmdb/poster-default/series-1402.jpg"
+            )
+
+    def test_personal_key_and_movie_kind(self):
+        with patch(
+            "lib.utils.general.utils.get_setting", side_effect=self._settings(api_key="t1-key")
+        ):
+            assert get_rpdb_list_poster(278, "movies") == (
+                "https://api.ratingposterdb.com/t1-key/tmdb/poster-default/movie-278.jpg"
+            )
+
+    @pytest.mark.parametrize("tmdb_id, mode", [(None, "tv"), (1402, "season"), (1402, "episode")])
+    def test_not_applicable_returns_empty(self, tmdb_id, mode):
+        with patch("lib.utils.general.utils.get_setting", side_effect=self._settings()):
+            assert get_rpdb_list_poster(tmdb_id, mode) == ""
+
+    def test_list_item_poster_is_replaced(self):
+        list_item = MagicMock()
+        with patch("lib.utils.general.utils.get_setting", side_effect=self._settings()):
+            _set_rpdb_poster(list_item, {"id": 278, "title": "Movie"}, "movies")
+        poster = "https://api.ratingposterdb.com/t0-free-rpdb/tmdb/poster-default/movie-278.jpg"
+        list_item.setArt.assert_called_once_with({"poster": poster})
+
+    def test_collection_keeps_its_poster(self):
+        list_item = MagicMock()
+        with patch("lib.utils.general.utils.get_setting", side_effect=self._settings()):
+            _set_rpdb_poster(list_item, {"id": 10, "name": "Collection"}, "movies")
+        list_item.setArt.assert_not_called()
+
+
+class TestSetRating:
+    @staticmethod
+    def _imdb(enabled):
+        return patch(
+            "lib.utils.general.utils.get_setting",
+            side_effect=lambda key, default=None: {"imdb_ratings_enabled": enabled}.get(
+                key, default
+            ),
+        )
+
+    def test_disabled_shows_tmdb_score_in_label2(self):
+        list_item, info_tag = MagicMock(), MagicMock()
+        data = {"id": 278, "title": "M", "vote_average": 8.12}
+        with self._imdb(False):
+            _set_rating(list_item, info_tag, data, "movies")
+        info_tag.setRating.assert_called_once_with(8.12, 0, "tmdb", True)
+        list_item.setLabel2.assert_called_once_with("8.1")
+        list_item.setProperty.assert_not_called()
+
+    def test_enabled_keeps_tmdb_as_fallback_and_leaves_label2_to_imdb(self):
+        list_item, info_tag = MagicMock(), MagicMock()
+        data = {"id": 278, "title": "M", "vote_average": 8.1, "vote_count": 1500}
+        with self._imdb(True):
+            _set_rating(list_item, info_tag, data, "movies")
+        info_tag.setRating.assert_called_once_with(8.1, 1500, "tmdb", True)
+        list_item.setLabel2.assert_not_called()
+        list_item.setProperty.assert_called_once_with("jacktook.imdb.tmdb_ref", "movie:278")
+
+    @pytest.mark.parametrize("data", [{}, {"vote_average": 0}, {"rating": "PG-13"}])
+    def test_missing_or_invalid_rating_is_skipped(self, data):
+        list_item, info_tag = MagicMock(), MagicMock()
+        with self._imdb(False):
+            _set_rating(list_item, info_tag, data, "video")
+        info_tag.setRating.assert_not_called()
+        list_item.setLabel2.assert_not_called()
+
+    def test_known_imdb_id_is_recorded(self):
+        list_item = MagicMock()
+        with self._imdb(True):
+            _set_rating(list_item, MagicMock(), {"id": 1402, "imdb_id": "tt1520211"}, "tv")
+        list_item.setProperty.assert_any_call("jacktook.imdb.id", "tt1520211")
+        list_item.setProperty.assert_any_call("jacktook.imdb.tmdb_ref", "tv:1402")
+
+    @pytest.mark.parametrize(
+        "data, mode",
+        [({"id": 10, "name": "Collection"}, "movies"), ({"id": 1402}, "season")],
+    )
+    def test_collections_and_seasons_get_no_imdb_identity(self, data, mode):
+        list_item = MagicMock()
+        with self._imdb(True):
+            _set_rating(list_item, MagicMock(), data, mode)
+        list_item.setProperty.assert_not_called()

@@ -4376,7 +4376,7 @@ msgid "RPDB API Key"
 msgstr ""
 
 msgctxt "#90764"
-msgid "Get your API key at ratingposterdb.com"
+msgid "Get your API key at ratingposterdb.com. Leave empty to use the free key."
 msgstr ""
 
 msgctxt "#90765"
@@ -5034,3 +5034,11 @@ msgstr "Bitrate"
 msgctxt "#91074"
 msgid "Audio"
 msgstr "Audio"
+
+msgctxt "#91075"
+msgid "Show IMDb ratings"
+msgstr "Show IMDb ratings"
+
+msgctxt "#91076"
+msgid "Show IMDb ratings instead of TMDB scores in movie and TV show lists and on the details screen. Ratings are cached for 24 hours."
+msgstr "Show IMDb ratings instead of TMDB scores in movie and TV show lists and on the details screen. Ratings are cached for 24 hours."
