@@ -69,6 +69,7 @@ def _normalize_mappings(data: Any) -> Optional[Dict[str, Any]]:
     return {
         "anilist_id": _to_int(raw.get("anilist_id")),
         "mal_id": _to_int(raw.get("mal_id")),
+        "kitsu_id": _to_int(raw.get("kitsu_id")),
         "tvdb_id": _to_int(raw.get("tvdb_id")),
         "thetvdb_id": _to_int(raw.get("thetvdb_id")),
         "imdb_id": _to_str(raw.get("imdb_id")),

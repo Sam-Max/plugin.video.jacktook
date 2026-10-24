@@ -429,7 +429,7 @@ def test_run_search_entry_forwards_the_tv_data_air_date_to_the_route(monkeypatch
 
     calls = []
 
-    def spy_resolve_anime_route(ids, season, episode, air_date=None):
+    def spy_resolve_anime_route(ids, season, episode, air_date=None, season_name=None):
         calls.append((ids, season, episode, air_date))
         return None
 
