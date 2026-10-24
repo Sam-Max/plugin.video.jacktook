@@ -80,7 +80,10 @@ class DebriderHelper:
                 season = data["tv_data"].get("season", "")
                 episode = data["tv_data"].get("episode", "")
                 torrent_files = filter_debrid_episode(
-                    torrent_files, episode_num=episode, season_num=season
+                    torrent_files,
+                    episode_num=episode,
+                    season_num=season,
+                    extra_episode_nums=(data["tv_data"].get("anime_episode"),),
                 )
                 if not torrent_files:
                     return

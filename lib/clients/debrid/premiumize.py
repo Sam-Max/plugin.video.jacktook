@@ -78,7 +78,12 @@ class PremiumizeHelper:
             if data["tv_data"]:
                 season = data["tv_data"].get("season", "")
                 episode = data["tv_data"].get("episode", "")
-                content = filter_debrid_episode(content, episode_num=episode, season_num=season)
+                content = filter_debrid_episode(
+                    content,
+                    episode_num=episode,
+                    season_num=season,
+                    extra_episode_nums=(data["tv_data"].get("anime_episode"),),
+                )
                 if not content:
                     return
                 data["url"] = content[0].get("stream_link")
