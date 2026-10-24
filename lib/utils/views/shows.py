@@ -196,9 +196,10 @@ def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
         return 0
 
     episodes = getattr(season_details, "episodes", []) or []
+    season_name = getattr(season_details, "name", "") or ""
     kodilog(
         f"[EPISODES] show_episode_info: fetched episodes_count={len(episodes)} "
-        f"for tmdb_id={ids.get('tmdb_id')}, season={season}"
+        f"for tmdb_id={ids.get('tmdb_id')}, season={season} season_name={season_name!r}"
     )
     fanart_details = get_fanart_details(tvdb_id=ids.get("tvdb_id"), mode=mode)
 
@@ -215,6 +216,7 @@ def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
         media_type,
         fanart_details,
         anime,
+        season_name,
     )
 
     # Sort by episode number
@@ -232,7 +234,17 @@ def show_episode_info(tv_name, season, ids, mode, media_type, anime=False):
     return item_count
 
 
-def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_details, anime=False):
+def _process_episode(
+    episode,
+    tv_name,
+    season,
+    ids,
+    mode,
+    media_type,
+    fanart_details,
+    anime=False,
+    season_name="",
+):
     ep_name = episode.name
     episode_number = episode.episode_number
 
@@ -243,6 +255,7 @@ def _process_episode(episode, tv_name, season, ids, mode, media_type, fanart_det
         # Travels with the search request so the anime route can match TMDB numbering
         # against an episode index that carries original air dates.
         "air_date": getattr(episode, "air_date", None),
+        "season_name": season_name or "",
     }
 
     list_item = make_list_item(label=f"{season}x{episode_number}. {ep_name}")
