@@ -708,3 +708,53 @@ def test_resolve_identity_cache_separates_tv_and_movie_hints(monkeypatch):
     assert movie.title_en == "Movie Title"
     assert tv is not movie
     assert fake_cache.set_calls == 2
+
+
+def test_resolve_identity_takes_the_kitsu_id_from_anizip(monkeypatch):
+    """AniZip carries a kitsu id; without Simkl it is the only source for it."""
+    monkeypatch.setattr(
+        simkl_provider,
+        "resolve_ids",
+        lambda provider, value: {"simkl": 10, "mal": 20, "anilist": 30},
+    )
+    monkeypatch.setattr(simkl_provider, "anime_detail", lambda simkl_id: None)
+    monkeypatch.setattr(
+        anizip_provider,
+        "mappings",
+        lambda anilist_id=None, mal_id=None: {"kitsu_id": 49444, "tvdb_id": 40},
+    )
+    monkeypatch.setattr(
+        anilist_provider,
+        "fetch_by_anilist_id",
+        lambda anime_id: {"id": anime_id, "idMal": 20, "title": {"english": "Show"}},
+    )
+    monkeypatch.setattr(anilist_provider, "fetch_by_mal_id", lambda mal_id: None)
+
+    record = identity.resolve_identity({"tvdb_id": 40})
+
+    assert record.kitsu_id == 49444
+
+
+def test_resolve_identity_keeps_the_simkl_kitsu_id_over_anizip(monkeypatch):
+    """Simkl is merged first, so AniZip never overwrites its kitsu id."""
+    monkeypatch.setattr(
+        simkl_provider,
+        "resolve_ids",
+        lambda provider, value: {"simkl": 10, "mal": 20, "anilist": 30, "kitsu": 244},
+    )
+    monkeypatch.setattr(simkl_provider, "anime_detail", lambda simkl_id: None)
+    monkeypatch.setattr(
+        anizip_provider,
+        "mappings",
+        lambda anilist_id=None, mal_id=None: {"kitsu_id": 49444, "tvdb_id": 40},
+    )
+    monkeypatch.setattr(
+        anilist_provider,
+        "fetch_by_anilist_id",
+        lambda anime_id: {"id": anime_id, "idMal": 20, "title": {"english": "Show"}},
+    )
+    monkeypatch.setattr(anilist_provider, "fetch_by_mal_id", lambda mal_id: None)
+
+    record = identity.resolve_identity({"tvdb_id": 40})
+
+    assert record.kitsu_id == 244

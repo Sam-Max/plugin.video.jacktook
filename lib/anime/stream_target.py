@@ -10,6 +10,7 @@ Nothing in the addon consumes this module yet: a later phase wires it into anime
 playback.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -41,6 +42,16 @@ class AnimeRoute:
 
 
 @dataclass(frozen=True)
+class SeasonAnchor:
+    """The cour a TMDB season names and the 1-based episode inside that cour."""
+
+    anilist_id: Optional[int]
+    mal_id: Optional[int]
+    local_episode: int
+    matched_by: str
+
+
+@dataclass(frozen=True)
 class StreamTarget:
     """The video id and episode number to send to a stream addon."""
 
@@ -51,7 +62,11 @@ class StreamTarget:
 
 
 def resolve_anime_route(
-    ids: Optional[Dict[str, Any]], season: Any, episode: Any, air_date: Any = None
+    ids: Optional[Dict[str, Any]],
+    season: Any,
+    episode: Any,
+    air_date: Any = None,
+    season_name: Any = None,
 ) -> Optional[AnimeRoute]:
     """Resolve the anime identity and absolute numbering for one episode.
 
@@ -73,7 +88,29 @@ def resolve_anime_route(
             return None
 
         record = resolve_identity(_identity_seed(source))
-        if record is None or record.kitsu_id is None:
+        if record is None:
+            return None
+
+        anchor = resolve_season_anchor(record, season_name, episode)
+        if anchor is not None and (anchor.anilist_id or anchor.mal_id):
+            cour = resolve_identity({"anilist_id": anchor.anilist_id, "mal_id": anchor.mal_id})
+            kitsu_id = _to_positive_int(getattr(cour, "kitsu_id", None))
+            if kitsu_id is not None:
+                kodilog(
+                    f"[ANIME] season anchor name={season_name!r} "
+                    f"cour_anilist={anchor.anilist_id} cour_mal={anchor.mal_id} "
+                    f"kitsu_id={kitsu_id} local_episode={anchor.local_episode}",
+                    xbmc.LOGINFO,
+                )
+                return AnimeRoute(
+                    kitsu_id=kitsu_id,
+                    absolute=anchor.local_episode,
+                    matched_by=anchor.matched_by,
+                    anilist_id=anchor.anilist_id,
+                    mal_id=anchor.mal_id,
+                )
+
+        if record.kitsu_id is None:
             return None
 
         coordinates = resolve_episode(
@@ -104,6 +141,113 @@ def resolve_anime_route(
         )
     except Exception:
         return None
+
+
+_GENERIC_SEASON_NAME = re.compile(r"^(?:season\s*\d+|specials?|extras?|ova|ona)$", re.IGNORECASE)
+_TOKEN_SPLIT = re.compile(r"[^0-9a-z]+")
+_SEASON_STOPWORDS = frozenset({"the", "of", "and", "part", "season", "cour", "for", "with"})
+
+
+def resolve_season_anchor(
+    record: Optional[AnimeRecord], season_name: Any, episode: Any
+) -> Optional[SeasonAnchor]:
+    """Map a TMDB season name to the cour that holds ``episode``, or ``None``."""
+    try:
+        name = _to_str(season_name)
+        if not name or _GENERIC_SEASON_NAME.match(name):
+            return None
+        number = _to_positive_int(episode)
+        show_title = _record_title(record)
+        if number is None or not show_title:
+            return None
+        tokens = _significant_tokens(name)
+        if not tokens:
+            return None
+
+        from lib.anime.providers import anilist
+
+        results = anilist.search_anime(f"{show_title} {name}".strip(), per_page=15)
+        candidates = [
+            candidate
+            for candidate in results or []
+            if isinstance(candidate, dict)
+            and _to_positive_int(candidate.get("episodes")) is not None
+            and _candidate_matches(candidate, tokens)
+        ]
+        if not candidates:
+            return None
+        candidates.sort(
+            key=lambda candidate: (
+                _candidate_year(candidate),
+                _to_positive_int(candidate.get("id")) or 0,
+            )
+        )
+
+        offset = 0
+        for candidate in candidates:
+            count = _to_positive_int(candidate.get("episodes"))
+            if count is None:
+                continue
+            if number <= offset + count:
+                return SeasonAnchor(
+                    anilist_id=_to_positive_int(candidate.get("id")),
+                    mal_id=_to_positive_int(candidate.get("idMal")),
+                    local_episode=number - offset,
+                    matched_by="season_name",
+                )
+            offset += count
+        return None
+    except Exception:
+        return None
+
+
+def _record_title(record: Optional[AnimeRecord]) -> Optional[str]:
+    """Return the most usable title of an identity record, or ``None``."""
+    if record is None:
+        return None
+    for value in (
+        record.title_default,
+        record.title_en,
+        record.title_romaji,
+        record.title_native,
+    ):
+        title = _to_str(value)
+        if title:
+            return title
+    return None
+
+
+def _significant_tokens(value: str) -> List[str]:
+    """Return the distinctive lowercase words of a season name."""
+    tokens = [token for token in _TOKEN_SPLIT.split(value.casefold()) if token]
+    return [token for token in tokens if len(token) >= 3 and token not in _SEASON_STOPWORDS]
+
+
+def _candidate_titles(candidate: Dict[str, Any]) -> str:
+    parts: List[str] = []
+    title = candidate.get("title")
+    if isinstance(title, dict):
+        parts.extend(str(value) for value in title.values() if value)
+    synonyms = candidate.get("synonyms")
+    if isinstance(synonyms, list):
+        parts.extend(str(value) for value in synonyms if value)
+    return " ".join(parts)
+
+
+def _candidate_matches(candidate: Dict[str, Any], tokens: List[str]) -> bool:
+    """Return True when every distinctive season token appears in the candidate."""
+    blob = " " + _TOKEN_SPLIT.sub(" ", _candidate_titles(candidate).casefold()) + " "
+    return all(f" {token} " in blob for token in tokens)
+
+
+def _candidate_year(candidate: Dict[str, Any]) -> int:
+    """Return the AniList start year used to order cours, or 0 when unknown."""
+    start = candidate.get("startDate")
+    if isinstance(start, dict):
+        year = _to_int(start.get("year"))
+        if year is not None:
+            return year
+    return 0
 
 
 def _season_entry_route(

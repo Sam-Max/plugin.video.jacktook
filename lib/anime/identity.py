@@ -223,6 +223,7 @@ def _anizip_ids(payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     field_map: Tuple[Tuple[str, str], ...] = (
         ("anilist_id", "anilist_id"),
         ("mal_id", "mal_id"),
+        ("kitsu_id", "kitsu_id"),
         ("tvdb_id", "tvdb_id"),
         ("thetvdb_id", "tvdb_id"),
         ("imdb_id", "imdb_id"),
