@@ -814,6 +814,13 @@ def run_search_entry(params: dict):
             )
             anime_target = pick_kitsu_target(route, season, episode)
             absolute_episode = anime_target.episode if anime_target is not None else None
+            # Cour-local number: the one debrid packs that ignore the arc use.
+            if (
+                route is not None
+                and getattr(route, "matched_by", None) == "season_name"
+                and getattr(route, "absolute", None)
+            ):
+                tv_data["anime_episode"] = route.absolute
             if anime_target is not None:
                 kodilog(
                     f"[ANIME] target picked video_id={anime_target.video_id} "

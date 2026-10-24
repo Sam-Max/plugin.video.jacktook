@@ -100,7 +100,12 @@ class AllDebridHelper:
         season = data["tv_data"].get("season", "")
         episode = data["tv_data"].get("episode", "")
 
-        matched = filter_debrid_episode(flat_files, episode_num=episode, season_num=season)
+        matched = filter_debrid_episode(
+            flat_files,
+            episode_num=episode,
+            season_num=season,
+            extra_episode_nums=(data["tv_data"].get("anime_episode"),),
+        )
         if not matched:
             raise ProviderException("No matching episode found in torrent.")
 

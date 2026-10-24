@@ -351,3 +351,88 @@ def _coordinates(absolute):
     from lib.anime.episode_map import EpisodeCoordinates
 
     return EpisodeCoordinates(absolute=absolute, season=1, episode=absolute)
+
+
+# ── search wiring: the cour-local number travels to the debrid resolver ──────
+
+
+def _run_search_with_route(monkeypatch, route, tv_data_extra=None):
+    from lib import search as search_module
+    from lib.anime.stream_target import AnimeRoute
+
+    captured = {}
+
+    def spy_show_source_select(results, mode, ids, tv_data, *args, **kwargs):
+        captured["tv_data"] = dict(tv_data)
+        return True
+
+    monkeypatch.setattr(search_module, "resolve_anime_route", lambda *a, **k: route)
+    monkeypatch.setattr(search_module, "auto_play_enabled", lambda: False)
+    monkeypatch.setattr(search_module, "show_source_select", spy_show_source_select)
+    monkeypatch.setattr(search_module, "search_client", lambda *a, **k: [object()])
+    monkeypatch.setattr(search_module, "_process_search_results", lambda *a, **k: [object()])
+    monkeypatch.setattr(search_module, "get_setting", lambda key, default=None: default)
+    monkeypatch.setattr(search_module, "set_content_type", lambda *a, **k: None)
+    monkeypatch.setattr(search_module, "set_watched_title", lambda *a, **k: None)
+    monkeypatch.setattr(search_module, "notification", lambda *a, **k: None)
+    monkeypatch.setattr(search_module, "cancel_playback", lambda *a, **k: None)
+    monkeypatch.setattr(search_module, "_check_search_caches", lambda *a, **k: None)
+
+    tv_data = {
+        "name": "THE BLADE",
+        "season": 2,
+        "episode": 49,
+        "air_date": "2026-10-20",
+        "season_name": "Thousand-Year Blood War",
+    }
+    tv_data.update(tv_data_extra or {})
+
+    search_module.run_search_entry(
+        {
+            "query": "Bleach",
+            "mode": "tv",
+            "media_type": "tv",
+            "ids": json.dumps({"tmdb_id": 30984}),
+            "tv_data": json.dumps(tv_data),
+            "anime": "1",
+            "skip_cancel_on_back": True,
+        }
+    )
+    return captured
+
+
+def test_search_carries_the_cour_local_episode_into_tv_data(monkeypatch):
+    from lib.anime.stream_target import AnimeRoute
+
+    captured = _run_search_with_route(
+        monkeypatch,
+        AnimeRoute(
+            kitsu_id=COUR_KITSU_ID,
+            absolute=9,
+            matched_by="season_name",
+            anilist_id=COUR_ANILIST_ID,
+            mal_id=COUR_MAL_ID,
+        ),
+    )
+
+    assert captured["tv_data"]["anime_episode"] == 9
+    # The TMDB coordinates stay untouched for everything that reads them.
+    assert captured["tv_data"]["episode"] == 49
+    assert captured["tv_data"]["season"] == 2
+
+
+def test_search_does_not_carry_a_franchise_absolute_as_the_cour_episode(monkeypatch):
+    from lib.anime.stream_target import AnimeRoute
+
+    captured = _run_search_with_route(
+        monkeypatch,
+        AnimeRoute(
+            kitsu_id=244,
+            absolute=268,
+            matched_by="air_date",
+            anilist_id=269,
+            mal_id=269,
+        ),
+    )
+
+    assert "anime_episode" not in captured["tv_data"]

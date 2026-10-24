@@ -124,6 +124,7 @@ class OffcloudHelper:
                     files,
                     episode_num=tv_data.get("episode", ""),
                     season_num=tv_data.get("season", ""),
+                    extra_episode_nums=(tv_data.get("anime_episode"),),
                 )
                 if not files:
                     return None
