@@ -15,7 +15,11 @@ from typing import Any, List, Optional, Tuple
 
 _MATCH_AIR_DATE = "air_date"
 _MATCH_SEASON_EPISODE = "season_episode"
+_MATCH_EPISODE_NUMBER = "episode_number"
 _MATCH_POSITION = "position"
+
+# TVDB and TMDB can disagree by a day on timezone-shifted releases.
+_AIR_DATE_TOLERANCE_DAYS = 1
 
 
 @dataclass
@@ -93,7 +97,9 @@ def match_coordinates(
     1. ``"air_date"``: exact normalized ``YYYY-MM-DD`` equality. This is the
        only safe signal, because the index carries TVDB numbering.
     2. ``"season_episode"``: TVDB ``(season, episode)`` equality.
-    3. ``"position"``: 1-based position of ``episode`` inside the index, applied
+    3. ``"episode_number"``: the number is unique in a single-season index, the
+       requested season names a different one, and the air date is within a day.
+    4. ``"position"``: 1-based position of ``episode`` inside the index, applied
        only when the index holds a single distinct season **and** the requested
        season, when it is provided, is present in the index. Positions only line up
        for the season the index actually describes, so a requested season absent
@@ -120,6 +126,13 @@ def match_coordinates(
         for entry in entries:
             if entry.season == target_season and entry.episode == target_episode:
                 return _matched(entry, _MATCH_SEASON_EPISODE)
+
+    if target_episode is not None and target_date is not None:
+        episode_hit = _unique_episode_number_hit(entries, target_episode, target_season)
+        if episode_hit is not None and _air_date_within_tolerance(
+            episode_hit.air_date, target_date
+        ):
+            return _matched(episode_hit, _MATCH_EPISODE_NUMBER)
 
     if target_episode is not None and _allows_position_fallback(entries, target_season):
         position = target_episode - 1
@@ -189,6 +202,33 @@ def _allows_position_fallback(
     if len(seasons) != 1:
         return False
     return target_season is None or target_season in seasons
+
+
+def _unique_episode_number_hit(
+    entries: List[EpisodeCoordinates],
+    target_episode: int,
+    target_season: Optional[int],
+) -> Optional[EpisodeCoordinates]:
+    """Return the single entry carrying ``target_episode`` under another season scheme."""
+    seasons = {entry.season for entry in entries if entry.season is not None}
+    if len(seasons) != 1:
+        return None
+    if target_season is not None and target_season in seasons:
+        return None
+    hits = [entry for entry in entries if entry.episode == target_episode]
+    return hits[0] if len(hits) == 1 else None
+
+
+def _air_date_within_tolerance(entry_date: Optional[str], target_date: str) -> bool:
+    """Return True when both dates parse and differ by at most the tolerance."""
+    if not entry_date:
+        return False
+    try:
+        left = date.fromisoformat(entry_date)
+        right = date.fromisoformat(target_date)
+    except (TypeError, ValueError):
+        return False
+    return abs((left - right).days) <= _AIR_DATE_TOLERANCE_DAYS
 
 
 def _first_int(*values: Optional[int]) -> Optional[int]:

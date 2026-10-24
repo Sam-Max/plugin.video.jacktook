@@ -675,3 +675,98 @@ def test_resolve_episode_returns_none_for_one_piece_without_an_air_date(monkeypa
     monkeypatch.setattr(anizip_provider, "mappings", _payload(ONE_PIECE))
 
     assert resolve_episode({"anilist_id": 21}, 23, 1160) is None
+
+
+# ── episode_number strategy: different season schemes, same cour ──────────────
+
+# BLEACH TYBW The Calamity: TVDB season 17, TMDB arc season 2, arc-wide numbers 41..50.
+CALAMITY = {
+    "8": {
+        "seasonNumber": 17,
+        "episodeNumber": 48,
+        "absoluteEpisodeNumber": 414,
+        "airDate": "2026-09-12",
+        "title": {"en": "The End Two World"},
+    },
+    "9": {
+        "seasonNumber": 17,
+        "episodeNumber": 49,
+        "absoluteEpisodeNumber": 415,
+        "airDate": "2026-10-19",
+        "airdate": "2026-10-20",
+        "title": {"en": "The Blade"},
+    },
+    "10": {
+        "seasonNumber": 17,
+        "episodeNumber": 50,
+        "absoluteEpisodeNumber": 416,
+        "airDate": "2026-10-26",
+        "title": {"en": None},
+    },
+}
+
+
+def test_match_uses_the_episode_number_when_the_season_scheme_differs():
+    index = build_index(CALAMITY)
+
+    result = match_coordinates(index, 2, 49, "2026-10-20")
+
+    assert result is not None
+    assert result.matched_by == "episode_number"
+    assert result.episode == 49
+    assert result.absolute == 415
+
+
+def test_match_prefers_an_exact_air_date_over_the_episode_number():
+    index = build_index(CALAMITY)
+
+    result = match_coordinates(index, 2, 49, "2026-10-19")
+
+    assert result is not None
+    assert result.matched_by == "air_date"
+
+
+def test_match_episode_number_requires_an_air_date():
+    index = build_index(CALAMITY)
+
+    assert match_coordinates(index, 2, 49) is None
+
+
+def test_match_episode_number_rejects_a_distant_air_date():
+    index = build_index(CALAMITY)
+
+    assert match_coordinates(index, 2, 49, "2026-12-01") is None
+
+
+def test_match_episode_number_never_answers_a_present_season():
+    index = build_index(CALAMITY)
+
+    result = match_coordinates(index, 17, 49, "2026-10-20")
+
+    assert result is not None
+    assert result.matched_by == "season_episode"
+
+
+def test_match_episode_number_is_skipped_for_a_multi_season_index():
+    index = build_index(
+        {**CALAMITY, "11": {"seasonNumber": 18, "episodeNumber": 1, "airDate": "2026-11-02"}}
+    )
+
+    assert match_coordinates(index, 2, 49, "2026-10-20") is None
+
+
+def test_match_episode_number_requires_a_unique_hit():
+    index = build_index(
+        {
+            "1": {"seasonNumber": 17, "episodeNumber": 49, "airDate": "2026-10-19"},
+            "2": {"seasonNumber": 17, "episodeNumber": 49, "airDate": "2026-10-21"},
+        }
+    )
+
+    assert match_coordinates(index, 2, 49, "2026-10-20") is None
+
+
+def test_match_episode_number_ignores_an_entry_without_a_date():
+    index = build_index({"1": {"seasonNumber": 17, "episodeNumber": 49}})
+
+    assert match_coordinates(index, 2, 49, "2026-10-20") is None
