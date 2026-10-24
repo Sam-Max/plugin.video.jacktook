@@ -1415,15 +1415,59 @@ def post_process(results: List[TorrentStream], season: int = 0) -> List[TorrentS
 
 
 def filter_debrid_episode(
-    files, episode_num: int, season_num: int, strict: bool = True, exact_match: bool = False
+    files,
+    episode_num: int,
+    season_num: int,
+    strict: bool = True,
+    exact_match: bool = False,
+    extra_episode_nums=None,
 ) -> List[Dict]:
     """Filter episode files, optionally requiring complete numeric tokens.
 
     Exact matching avoids episode-number prefixes and the unnumbered ``cap.``
     fallback. It is opt-in so existing provider matching stays unchanged.
+
+    A season-qualified pass that matches nothing is retried without the season, and
+    ``extra_episode_nums`` adds cour-local alternatives tried after ``episode_num``.
     """
-    str_season, str_episode = str(season_num), str(episode_num)
-    season_fill, episode_fill = str_season.zfill(2), str_episode.zfill(2)
+    for number in _episode_number_candidates(episode_num, extra_episode_nums):
+        matched = _match_debrid_episode(files, number, season_num, strict, exact_match)
+        if matched:
+            return matched
+        if season_num is None:
+            continue
+        matched = _match_debrid_episode(
+            files, number, None, strict, exact_match, season_agnostic=True
+        )
+        if matched:
+            return matched
+    return []
+
+
+def _episode_number_candidates(episode_num, extra_episode_nums) -> List:
+    """Return the caller's number followed by the usable alternatives, deduplicated."""
+    candidates = [episode_num]
+    for value in extra_episode_nums or ():
+        try:
+            number = int(value)
+        except (TypeError, ValueError):
+            continue
+        if number > 0 and number not in candidates:
+            candidates.append(number)
+    return candidates
+
+
+def _match_debrid_episode(
+    files,
+    episode_num: int,
+    season_num,
+    strict: bool,
+    exact_match: bool,
+    season_agnostic: bool = False,
+) -> List[Dict]:
+    """Match episode files for one season/episode pass, or season-less when retried."""
+    str_episode = str(episode_num)
+    episode_fill = str_episode.zfill(2)
     ep_plus_1 = str(episode_num + 1).zfill(2)
     ep_minus_1 = str(episode_num - 1).zfill(2)
 
@@ -1438,29 +1482,33 @@ def filter_debrid_episode(
 
     string_list = []
 
-    # SXXEYY variants and S2 - 11 / S02.11
-    for s, e in [
-        (season_fill, episode_fill),
-        (str_season, episode_fill),
-        (season_fill, str_episode),
-        (str_season, str_episode),
-    ]:
-        string_list.append(rf"s{s}[.-]?e{e}")
-        string_list.append(rf"s{s}[.\s-]?{e}")  # S2 - 11 or S02.11
+    if not season_agnostic:
+        str_season = str(season_num)
+        season_fill = str_season.zfill(2)
 
-    # Season X Episode Y or SxE patterns
-    for s, e in [
-        (season_fill, episode_fill),
-        (str_season, episode_fill),
-        (season_fill, str_episode),
-        (str_season, str_episode),
-    ]:
-        string_list.append(rf"(season[.-]?{s}[.-]?episode[.-]?{e})")
-        string_list.append(rf"{s}[x.]?{e}")  # 2x11 or 02.11
+        # SXXEYY variants and S2 - 11 / S02.11
+        for s, e in [
+            (season_fill, episode_fill),
+            (str_season, episode_fill),
+            (season_fill, str_episode),
+            (str_season, str_episode),
+        ]:
+            string_list.append(rf"s{s}[.-]?e{e}")
+            string_list.append(rf"s{s}[.\s-]?{e}")  # S2 - 11 or S02.11
 
-    # Episode ±1
-    string_list.append(rf"s{season_fill}e{ep_minus_1}[.-]?e{episode_fill}")
-    string_list.append(rf"s{season_fill}e{episode_fill}[.-]?e{ep_plus_1}")
+        # Season X Episode Y or SxE patterns
+        for s, e in [
+            (season_fill, episode_fill),
+            (str_season, episode_fill),
+            (season_fill, str_episode),
+            (str_season, str_episode),
+        ]:
+            string_list.append(rf"(season[.-]?{s}[.-]?episode[.-]?{e})")
+            string_list.append(rf"{s}[x.]?{e}")  # 2x11 or 02.11
+
+        # Episode ±1
+        string_list.append(rf"s{season_fill}e{ep_minus_1}[.-]?e{episode_fill}")
+        string_list.append(rf"s{season_fill}e{episode_fill}[.-]?e{ep_plus_1}")
 
     # Episode-only patterns
     string_list.append(rf"episode[.-]?{episode_fill}")
@@ -1475,6 +1523,12 @@ def filter_debrid_episode(
 
     if exact_match:
         string_list = [rf"(?<![a-z0-9])(?:{pattern})(?!\d)" for pattern in string_list]
+
+    if season_agnostic:
+        # ``S01E48``: the lookbehind above cannot apply, the letter follows a digit.
+        string_list.append(rf"(?<=\d)e{episode_fill}(?!\d)")
+        # ``- 48`` / ``.48`` / `` 48`` / ``_48``
+        string_list.append(rf"(?<![a-z0-9])[.\s_-]{episode_fill}(?!\d)")
 
     combined_pattern = "|".join(string_list)
     try:
