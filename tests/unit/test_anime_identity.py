@@ -758,3 +758,21 @@ def test_resolve_identity_keeps_the_simkl_kitsu_id_over_anizip(monkeypatch):
     record = identity.resolve_identity({"tvdb_id": 40})
 
     assert record.kitsu_id == 244
+
+
+def test_anizip_mappings_normalize_a_string_kitsu_id():
+    normalized = anizip_provider._normalize_mappings({"mappings": {"kitsu_id": "49444"}})
+
+    assert normalized["kitsu_id"] == 49444
+
+
+def test_anizip_mappings_drop_an_unusable_kitsu_id():
+    for value in (None, "", "not-an-id"):
+        normalized = anizip_provider._normalize_mappings({"mappings": {"kitsu_id": value}})
+
+        assert normalized["kitsu_id"] is None
+
+
+def test_anizip_ids_carry_the_kitsu_id_into_the_record_seed():
+    assert identity._anizip_ids({"kitsu_id": 49444})["kitsu_id"] == 49444
+    assert "kitsu_id" not in identity._anizip_ids({"anilist_id": 1})

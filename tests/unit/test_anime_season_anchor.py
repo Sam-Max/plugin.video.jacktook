@@ -214,6 +214,49 @@ def test_anchor_never_raises_when_the_provider_raises(monkeypatch):
     assert stream_target.resolve_season_anchor(BASE_RECORD, "Thousand-Year Blood War", 49) is None
 
 
+def test_anchor_logs_when_the_provider_raises(monkeypatch):
+    from lib.anime.providers import anilist
+
+    logs = []
+    monkeypatch.setattr(stream_target, "kodilog", lambda message, *a, **k: logs.append(message))
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("provider down")
+
+    monkeypatch.setattr(anilist, "search_anime", boom)
+
+    assert stream_target.resolve_season_anchor(BASE_RECORD, "Thousand-Year Blood War", 49) is None
+    assert any("season anchor failed" in str(message) for message in logs)
+
+
+def test_anchor_orders_cours_by_full_start_date_within_a_year(monkeypatch):
+    # The earlier cour carries the HIGHER AniList id, so ordering by id alone
+    # would pick the October cour for an episode that belongs to the January one.
+    same_year = [
+        {
+            "id": 100,
+            "idMal": 101,
+            "episodes": 12,
+            "startDate": {"year": 2024, "month": 10, "day": 1},
+            "title": {"english": "Thousand-Year Blood War - Part Two"},
+        },
+        {
+            "id": 900,
+            "idMal": 901,
+            "episodes": 12,
+            "startDate": {"year": 2024, "month": 1, "day": 5},
+            "title": {"english": "Thousand-Year Blood War - Part One"},
+        },
+    ]
+    _patch_search(monkeypatch, same_year)
+
+    anchor = stream_target.resolve_season_anchor(BASE_RECORD, "Thousand-Year Blood War", 5)
+
+    assert anchor is not None
+    assert anchor.anilist_id == 900
+    assert anchor.local_episode == 5
+
+
 # ── resolve_anime_route: anchoring in the route ──────────────
 
 
@@ -358,7 +401,6 @@ def _coordinates(absolute):
 
 def _run_search_with_route(monkeypatch, route, tv_data_extra=None):
     from lib import search as search_module
-    from lib.anime.stream_target import AnimeRoute
 
     captured = {}
 
@@ -436,3 +478,31 @@ def test_search_does_not_carry_a_franchise_absolute_as_the_cour_episode(monkeypa
     )
 
     assert "anime_episode" not in captured["tv_data"]
+
+
+def test_anchor_sorts_a_year_only_candidate_after_dated_cours(monkeypatch):
+    # An entry with only a year carries no airing order, so it must not jump
+    # ahead of a cours whose full start date is known in that same year.
+    partially_dated = [
+        {
+            "id": 100,
+            "idMal": 101,
+            "episodes": 12,
+            "startDate": {"year": 2024},
+            "title": {"english": "Thousand-Year Blood War - Undated"},
+        },
+        {
+            "id": 900,
+            "idMal": 901,
+            "episodes": 12,
+            "startDate": {"year": 2024, "month": 1, "day": 5},
+            "title": {"english": "Thousand-Year Blood War - Dated"},
+        },
+    ]
+    _patch_search(monkeypatch, partially_dated)
+
+    anchor = stream_target.resolve_season_anchor(BASE_RECORD, "Thousand-Year Blood War", 5)
+
+    assert anchor is not None
+    assert anchor.anilist_id == 900
+    assert anchor.local_episode == 5
