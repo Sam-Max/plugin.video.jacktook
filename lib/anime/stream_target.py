@@ -12,7 +12,7 @@ playback.
 
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import xbmc
 
@@ -178,7 +178,7 @@ def resolve_season_anchor(
             return None
         candidates.sort(
             key=lambda candidate: (
-                _candidate_year(candidate),
+                _candidate_start_date(candidate),
                 _to_positive_int(candidate.get("id")) or 0,
             )
         )
@@ -197,7 +197,8 @@ def resolve_season_anchor(
                 )
             offset += count
         return None
-    except Exception:
+    except Exception as error:
+        kodilog(f"[ANIME] season anchor failed: {error}")
         return None
 
 
@@ -240,14 +241,16 @@ def _candidate_matches(candidate: Dict[str, Any], tokens: List[str]) -> bool:
     return all(f" {token} " in blob for token in tokens)
 
 
-def _candidate_year(candidate: Dict[str, Any]) -> int:
-    """Return the AniList start year used to order cours, or 0 when unknown."""
+def _candidate_start_date(candidate: Dict[str, Any]) -> Tuple[int, int, int]:
+    """Return the AniList start date used to order cours, or zeros when unknown."""
     start = candidate.get("startDate")
     if isinstance(start, dict):
-        year = _to_int(start.get("year"))
-        if year is not None:
-            return year
-    return 0
+        return (
+            _to_int(start.get("year")) or 0,
+            _to_int(start.get("month")) or 0,
+            _to_int(start.get("day")) or 0,
+        )
+    return (0, 0, 0)
 
 
 def _season_entry_route(

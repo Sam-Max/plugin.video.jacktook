@@ -770,3 +770,32 @@ def test_match_episode_number_ignores_an_entry_without_a_date():
     index = build_index({"1": {"seasonNumber": 17, "episodeNumber": 49}})
 
     assert match_coordinates(index, 2, 49, "2026-10-20") is None
+
+
+def test_match_episode_number_wins_over_position_without_a_requested_season():
+    index = build_index(
+        {
+            "1": {
+                "seasonNumber": 1,
+                "episodeNumber": 2,
+                "absoluteEpisodeNumber": 1,
+                "airDate": "2024-01-02",
+            },
+            "2": {
+                "seasonNumber": 1,
+                "episodeNumber": 1,
+                "absoluteEpisodeNumber": 2,
+                "airDate": "2024-01-09",
+            },
+        }
+    )
+
+    dated = match_coordinates(index, None, 2, "2024-01-03")
+    positional = match_coordinates(index, None, 2)
+
+    assert dated is not None
+    assert dated.matched_by == "episode_number"
+    assert dated.absolute == 1
+    assert positional is not None
+    assert positional.matched_by == "position"
+    assert positional.absolute == 2
