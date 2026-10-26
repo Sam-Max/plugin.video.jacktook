@@ -146,6 +146,9 @@ def resolve_anime_route(
 _GENERIC_SEASON_NAME = re.compile(r"^(?:season\s*\d+|specials?|extras?|ova|ona)$", re.IGNORECASE)
 _TOKEN_SPLIT = re.compile(r"[^0-9a-z]+")
 _SEASON_STOPWORDS = frozenset({"the", "of", "and", "part", "season", "cour", "for", "with"})
+# Sort values for a startDate whose month or day is missing: past any real value.
+_UNKNOWN_MONTH = 13
+_UNKNOWN_DAY = 32
 
 
 def resolve_season_anchor(
@@ -242,15 +245,15 @@ def _candidate_matches(candidate: Dict[str, Any], tokens: List[str]) -> bool:
 
 
 def _candidate_start_date(candidate: Dict[str, Any]) -> Tuple[int, int, int]:
-    """Return the AniList start date used to order cours, or zeros when unknown."""
+    """Return the AniList start date used to order cours, unknown parts last."""
     start = candidate.get("startDate")
-    if isinstance(start, dict):
-        return (
-            _to_int(start.get("year")) or 0,
-            _to_int(start.get("month")) or 0,
-            _to_int(start.get("day")) or 0,
-        )
-    return (0, 0, 0)
+    if not isinstance(start, dict):
+        return (0, _UNKNOWN_MONTH, _UNKNOWN_DAY)
+    return (
+        _to_int(start.get("year")) or 0,
+        _to_int(start.get("month")) or _UNKNOWN_MONTH,
+        _to_int(start.get("day")) or _UNKNOWN_DAY,
+    )
 
 
 def _season_entry_route(

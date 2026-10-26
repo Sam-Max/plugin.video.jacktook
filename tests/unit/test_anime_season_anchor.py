@@ -478,3 +478,31 @@ def test_search_does_not_carry_a_franchise_absolute_as_the_cour_episode(monkeypa
     )
 
     assert "anime_episode" not in captured["tv_data"]
+
+
+def test_anchor_sorts_a_year_only_candidate_after_dated_cours(monkeypatch):
+    # An entry with only a year carries no airing order, so it must not jump
+    # ahead of a cours whose full start date is known in that same year.
+    partially_dated = [
+        {
+            "id": 100,
+            "idMal": 101,
+            "episodes": 12,
+            "startDate": {"year": 2024},
+            "title": {"english": "Thousand-Year Blood War - Undated"},
+        },
+        {
+            "id": 900,
+            "idMal": 901,
+            "episodes": 12,
+            "startDate": {"year": 2024, "month": 1, "day": 5},
+            "title": {"english": "Thousand-Year Blood War - Dated"},
+        },
+    ]
+    _patch_search(monkeypatch, partially_dated)
+
+    anchor = stream_target.resolve_season_anchor(BASE_RECORD, "Thousand-Year Blood War", 5)
+
+    assert anchor is not None
+    assert anchor.anilist_id == 900
+    assert anchor.local_episode == 5
