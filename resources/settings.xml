@@ -1355,6 +1355,17 @@
                         <popup>false</popup>
                     </control>
                 </setting>
+                <setting id="search_aggregation_timeout" type="integer" label="Overall search timeout (seconds)" help="Maximum time to wait for all sources (Stremio, Burst, Jackett, Prowlarr...) before showing whatever results have arrived.">
+                    <default>60</default>
+                    <constraints>
+                        <minimum>15</minimum>
+                        <maximum>180</maximum>
+                        <step>5</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
                 <setting id="indexers_desc_length" type="integer" label="30026" help="30825">
                     <default>0</default>
                     <constraints>
