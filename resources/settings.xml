@@ -1078,6 +1078,17 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="debrid_cache_wait_timeout" type="integer" label="90700" help="90701">
+                    <default>120</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>600</maximum>
+                        <step>15</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                </setting>
                 <setting id="autoscrape_next_episode" type="boolean" label="90171" help="90172">
                     <default>false</default>
                     <control type="toggle" />

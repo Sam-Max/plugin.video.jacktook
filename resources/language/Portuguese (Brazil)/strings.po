@@ -3723,6 +3723,22 @@ msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Cancelar e Esperar"
 
+msgctxt "#90700"
+msgid "Wait for debrid caching (seconds)"
+msgstr "Esperar o cache no debrid (segundos)"
+
+msgctxt "#90701"
+msgid "When a torrent is not yet cached on your debrid service, wait up to this many seconds for it to finish downloading there before giving up. 0 disables waiting and fails immediately, matching the previous behavior."
+msgstr "Quando um torrent ainda não está em cache no seu serviço debrid, espera até esta quantidade de segundos até que ele termine de ser baixado lá antes de desistir. 0 desativa a espera e falha imediatamente, mantendo o comportamento anterior."
+
+msgctxt "#90702"
+msgid "Waiting for %s to finish caching this torrent..."
+msgstr "Esperando o %s terminar de colocar este torrent em cache..."
+
+msgctxt "#90703"
+msgid "Debrid caching"
+msgstr "Cache no debrid"
+
 msgctxt "#90742"
 msgid "Addon Settings"
 msgstr "Configurações do addon"
