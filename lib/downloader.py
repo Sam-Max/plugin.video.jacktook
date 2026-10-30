@@ -6,7 +6,7 @@ import ssl
 import threading
 import time
 from typing import Optional
-from urllib.parse import parse_qsl, unquote, urlparse
+from urllib.parse import unquote, urlparse
 from urllib.request import Request, urlopen
 
 import xbmc
@@ -22,7 +22,11 @@ from lib.db.cached import MemoryCache
 from lib.download_manager import DownloadManager
 from lib.gui.custom_progress import CustomProgressDialog
 from lib.nav.debrid import resolve_cloud_download_url
-from lib.utils.general.utils import set_pluging_category, supported_video_extensions
+from lib.utils.general.utils import (
+    set_pluging_category,
+    split_url_headers,
+    supported_video_extensions,
+)
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     action_url_run,
@@ -318,9 +322,8 @@ class Downloader:
 
     def _prepare_url(self):
         try:
-            if "|" in self.url:
-                self.headers = dict(parse_qsl(self.url.rsplit("|", 1)[1]))
-                self.url = self.url.split("|")[0]
+            self.url, parsed_headers = split_url_headers(self.url)
+            self.headers.update(parsed_headers)
         except Exception as e:
             kodilog(f"[Downloader] Failed to parse headers: {e!s}")
 

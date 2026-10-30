@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import unquote
 from zipfile import ZipFile
 
@@ -1591,6 +1591,31 @@ def is_magnet_link(link):
 
 def is_url(url):
     return bool(re.match(URL_REGEX, url))
+
+
+def split_url_headers(url: str) -> Tuple[str, Dict[str, str]]:
+    """Split Burst-style ``url|Header=value|Header=value`` locators.
+
+    Returns the bare URL and the parsed headers. Malformed chunks are ignored.
+    """
+    if not isinstance(url, str) or "|" not in url:
+        return url, {}
+    base, *chunks = url.split("|")
+    headers: Dict[str, str] = {}
+    for chunk in chunks:
+        key, separator, value = chunk.partition("=")
+        key = key.strip()
+        if separator and key:
+            headers[key] = value
+    return base, headers
+
+
+def join_url_headers(url: str, headers: Dict[str, str]) -> str:
+    """Rebuild a ``url|Header=value`` locator from a URL and its headers."""
+    if not headers:
+        return url
+    suffix = "|".join(f"{key}={value}" for key, value in headers.items())
+    return f"{url}|{suffix}"
 
 
 def info_hash_to_magnet(info_hash):

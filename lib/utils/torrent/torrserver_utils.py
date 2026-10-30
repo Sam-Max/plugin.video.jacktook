@@ -19,6 +19,7 @@ from lib.utils.general.utils import (
     build_list_item,
     get_info_hash_from_magnet,
     set_pluging_category,
+    split_url_headers,
 )
 from lib.utils.kodi.kodi_formats import (
     is_displayable,
@@ -303,7 +304,10 @@ def add_source_to_torrserver(magnet="", url="", info_hash="", title="", poster="
 
         if url and url.startswith("http"):
             try:
-                response = requests.get(url, timeout=15, headers=USER_AGENT_HEADER)
+                request_url, url_headers = split_url_headers(url)
+                request_headers = dict(USER_AGENT_HEADER)
+                request_headers.update(url_headers)
+                response = requests.get(request_url, timeout=15, headers=request_headers)
                 response.raise_for_status()
                 torrent_obj = BytesIO(response.content)
                 torrent_obj.name = "torrent.torrent"
