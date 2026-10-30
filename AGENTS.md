@@ -6,7 +6,7 @@ Guidance for agentic coding assistants working in `plugin.video.jacktook`.
 
 - Project type: Kodi video addon (`plugin.video.jacktook`)
 - Main language: Python
-- Runtime target: Kodi Python runtime (`xbmc.python` 3.00.0 in `addon.xml`)
+- Runtime target: Kodi Python runtime (`xbmc.python` 3.0.1 in `addon.xml`)
 - Practical local interpreter: `python3` (the `python` command is not available here)
 - Primary entry points:
   - `jacktook.py` (plugin source entry)
