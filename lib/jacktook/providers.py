@@ -1,4 +1,4 @@
-from ..utils.kodi.utils import kodilog
+from ..utils.kodi.utils import JACKTOOK_BURST_ADOON_ID, kodilog
 from .listener import ProviderListenerDialog
 from .provider_base import (
     ProviderResult,
@@ -6,6 +6,20 @@ from .provider_base import (
     send_to_providers,
 )
 from .utils import NoProvidersError
+
+BURST_SILENT_MIN_VERSION = (0, 0, 100)
+
+
+def _burst_supports_silent():
+    """Older Burst builds do not accept the ``silent`` keyword."""
+    try:
+        from xbmcaddon import Addon
+
+        version = str(Addon(JACKTOOK_BURST_ADOON_ID).getAddonInfo("version"))
+        parts = tuple(int(part) for part in version.split(".") if part.isdigit())
+        return parts >= BURST_SILENT_MIN_VERSION
+    except Exception:
+        return False
 
 
 def burst_search(query, silent=False):
@@ -42,7 +56,14 @@ def search(method, *args, **kwargs):
         raise NoProvidersError("No providers available")
 
     with ProviderListenerDialog(providers, method, timeout=30, silent=silent) as listener:
-        send_to_providers(providers, method, *args, **kwargs)
+        other_providers = [p for p in providers if p != JACKTOOK_BURST_ADOON_ID]
+        if other_providers:
+            send_to_providers(other_providers, method, *args, **kwargs)
+        if JACKTOOK_BURST_ADOON_ID in providers:
+            burst_kwargs = dict(kwargs)
+            if _burst_supports_silent():
+                burst_kwargs["silent"] = silent
+            send_to_providers([JACKTOOK_BURST_ADOON_ID], method, *args, **burst_kwargs)
 
     results = []
     for provider, provider_results in listener.data.items():

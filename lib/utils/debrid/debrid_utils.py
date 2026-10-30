@@ -37,7 +37,9 @@ from lib.utils.general.utils import (
     is_rd_enabled,
     is_tb_enabled,
     is_url,
+    join_url_headers,
     set_cached,
+    split_url_headers,
 )
 from lib.utils.kodi.logging import summarize_locator_for_log
 from lib.utils.kodi.utils import get_setting, kodilog, notification, translation
@@ -454,17 +456,21 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
     info_hash = ""
     torrent_url = ""
 
-    if not is_url(uri):
+    bare_uri, uri_headers = split_url_headers(uri)
+    if not is_url(bare_uri):
         return torrent_data, magnet, info_hash, torrent_url
 
+    request_headers = dict(USER_AGENT_HEADER)
+    request_headers.update(uri_headers)
+
     try:
-        current_uri = uri
+        current_uri = bare_uri
         for _redirect_count in range(5):
             res = requests.get(
                 current_uri,
                 allow_redirects=False,
                 timeout=10,
-                headers=USER_AGENT_HEADER,
+                headers=request_headers,
             )
             kodilog(
                 f"get_torrent_data_from_uri: GET request to {summarize_locator_for_log(current_uri)} returned status code: {res.status_code}"
@@ -503,7 +509,7 @@ def get_torrent_data_from_uri(uri: str) -> Tuple[bytes, str, str, str]:
                 if magnet:
                     torrent_data = bytes(res.content or b"")
                     info_hash = get_info_hash_from_magnet(magnet).lower()
-                    torrent_url = current_uri
+                    torrent_url = join_url_headers(current_uri, uri_headers)
                     kodilog(
                         f"get_torrent_data_from_uri: Preserving torrent URL for playback: {summarize_locator_for_log(torrent_url)}"
                     )
