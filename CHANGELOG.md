@@ -1,3 +1,50 @@
+## 1.22.0
+- Torrents: Added a Torznab search entry to the torrents menu, served by TorrServer and played through Jacktorr, with a clear hint when the server reports the feature as disabled.
+- Jackett: Added support for public Torznab-compatible instances such as JacRed (jac.red), with an optional port and API key, retries for rate-limited responses, and feeds whose guid/link elements carry XML attributes.
+- Anime: Added an Anime > Search entry for TV shows and movies, narrowed by TMDB animation genre and anime keyword.
+- Anime: Season names now anchor to their cour, episodes match across differing TMDB/TVDB season schemes, debrid packs resolve the cour-local episode number, and cours are ordered by full air date.
+- TorBox: Cloud downloads are now playable and browse in pages of 20 with a "Next Page (x/y)" entry, uploads refresh the cached listing, and failed requests are reported instead of being cached as an empty library.
+- TorBox: Picks the requested season and episode inside packs, waits for delayed torrent metadata, reuses cached ready metadata to speed up playback start, and routes CDN links through a short-lived public IP cache.
+- Player: Shows average video bitrate (Mbps and MB/s), resolution, video codec and audio details while paused, controlled by the new "Show bitrate on pause" setting.
+- Player: No longer reports "Playback could not be started" while the torrent client is still buffering, treats installed-but-disabled torrent clients as unavailable, and notifies when playback cannot start.
+- Filters: Episode filtering understands Russian and Ukrainian season/episode ranges used by JacRed, Rutracker, Kinozal and LostFilm titles, and season packs no longer appear twice.
+- Search: Added "Search with original title" mode, which searches without the TMDB year when release titles use a different one.
+- Cache: Added "Clear search cache" under Others > Clear Cache, the cache toggle is now honored for torrent searches, and stale cached results are normalized.
+- Library: "Add to Library" from the context menu no longer hangs and keeps TMDB show titles, so entries appear under My Shows.
+- Providers: The Burst silent flag is passed only to Burst builds that support it, header-suffixed torrent URLs are parsed correctly, and query credentials are redacted from client error logs.
+- Stremio: Stream search failures are now logged with exception details for diagnosis.
+- Localization: Updated Romanian translations and completed missing Portuguese, Brazilian Portuguese, Romanian, Russian and Spanish strings.
+- Compatibility: The addon now declares xbmc.python 3.0.1, so Kodi 20 Nexus or newer is required, matching the documented requirement.
+
+Spanish:
+- Torrents: Añadida una entrada de búsqueda Torznab al menú de torrents, servida por TorrServer y reproducida mediante Jacktorr, con un aviso claro cuando el servidor indica que la función está deshabilitada.
+- Jackett: Añadido soporte para instancias públicas compatibles con Torznab como JacRed (jac.red), con puerto y API key opcionales, reintentos ante límites de peticiones y feeds cuyos elementos guid/link llevan atributos XML.
+- Anime: Añadida una entrada Anime > Buscar para series y películas, acotada por el género de animación de TMDB y la palabra clave de anime.
+- Anime: Los nombres de temporada ahora se anclan a su cour, los episodios se emparejan entre esquemas de temporada distintos de TMDB/TVDB, los packs de debrid resuelven el número de episodio local del cour y los cours se ordenan por fecha de emisión completa.
+- TorBox: Las descargas en la nube ahora son reproducibles y se navegan en páginas de 20 con una entrada "Next Page (x/y)", las subidas refrescan el listado en caché y las peticiones fallidas se notifican en lugar de guardarse como una biblioteca vacía.
+- TorBox: Selecciona la temporada y el episodio solicitados dentro de los packs, espera los metadatos diferidos del torrent, reutiliza metadatos listos en caché para acelerar el inicio de reproducción y enruta los enlaces CDN con una caché de IP pública de corta duración.
+- Reproductor: Muestra el bitrate medio de vídeo (Mbps y MB/s), la resolución, el códec de vídeo y los detalles de audio durante la pausa, controlado por el nuevo ajuste "Show bitrate on pause".
+- Reproductor: Ya no informa "Playback could not be started" mientras el cliente de torrents sigue almacenando en búfer, trata los clientes de torrents instalados pero deshabilitados como no disponibles y notifica cuando la reproducción no puede iniciarse.
+- Filtros: El filtrado de episodios entiende los rangos de temporada/episodio en ruso y ucraniano usados por los títulos de JacRed, Rutracker, Kinozal y LostFilm, y los packs de temporada ya no aparecen duplicados.
+- Búsqueda: Añadido el modo "Search with original title", que busca sin el año de TMDB cuando los títulos de las publicaciones usan otro.
+- Caché: Añadido "Clear search cache" en Others > Clear Cache, el interruptor de caché ahora se respeta en las búsquedas de torrents y los resultados obsoletos se normalizan.
+- Biblioteca: "Añadir a la biblioteca" desde el menú contextual ya no se bloquea y conserva los títulos de series de TMDB, por lo que las entradas aparecen en Mis series.
+- Proveedores: El flag silent de Burst solo se envía a las versiones de Burst que lo soportan, las URLs de torrents con cabeceras se parsean correctamente y las credenciales de consulta se ocultan en los logs de error de los clientes.
+- Stremio: Los fallos de búsqueda de streams ahora se registran con detalles de la excepción para su diagnóstico.
+- Localización: Actualizadas las traducciones al rumano y completadas las cadenas faltantes en portugués, portugués de Brasil, rumano, ruso y español.
+- Compatibilidad: El addon ahora declara xbmc.python 3.0.1, por lo que requiere Kodi 20 Nexus o superior, en línea con el requisito documentado.
+
+Note:
+If you enjoy this addon, please consider supporting the project with a donation. Your contributions help keep improving and maintaining it. Thank you!
+
+Si disfrutas de este addon, por favor considera apoyar el proyecto con una donación. Tus contribuciones ayudan a seguir mejorándolo y manteniéndolo. ¡Gracias!
+
+Dacă îți place acest add-on, te rog să iei în considerare susținerea proiectului printr-o donație. Contribuțiile tale ajută la îmbunătățirea și menținerea acestuia. Mulțumesc!
+
+Если вам нравится этот аддон, пожалуйста, подумайте о поддержке проекта пожертвованием. Ваш вклад помогает улучшать и поддерживать его. Спасибо!
+
+Se você gosta deste addon, considere apoiar o projeto com uma doação. As suas contribuições ajudam a continuar melhorando e mantendo-o. Obrigado!
+
 ## 1.21.0
 - Anime: Overhauled anime support with canonical metadata and native routing, season-aware stream routing, title search under identity aliases, dubbed-release badges in source select, and AniSkip skip times merged into the player skip flow.
 - Playback: Migrated IntroDB to v3 and added ending (credits) skip; fixed skip intro/outro with the new IntroDB v3 format.
