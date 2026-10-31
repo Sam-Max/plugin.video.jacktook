@@ -1,6 +1,11 @@
 import hashlib
 import json
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    Future,
+    ThreadPoolExecutor,
+    TimeoutError as FuturesTimeoutError,
+    as_completed,
+)
 from typing import Any, List, Mapping, Optional
 
 import xbmc
@@ -57,7 +62,12 @@ from lib.utils.general.utils import (
     set_watched_title,
     truthy_param,
 )
-from lib.utils.kodi.settings import auto_play_enabled, get_setting, is_cache_enabled
+from lib.utils.kodi.settings import (
+    auto_play_enabled,
+    get_search_aggregation_timeout,
+    get_setting,
+    is_cache_enabled,
+)
 from lib.utils.kodi.utils import (
     ADDON_PATH,
     cancel_playback,
@@ -1286,24 +1296,41 @@ def _collect_search_results(tasks, listener, show_dialog) -> List[TorrentStream]
     total_tasks = len(tasks)
     completed_tasks = 0
 
-    for future in as_completed(tasks):
-        try:
-            completed_tasks += 1
-            if show_dialog and total_tasks > 0:
-                percent = int(completed_tasks / total_tasks * 100)
-                update_dialog("Searching", f"Searching... {percent}%", listener.dialog, percent)
+    # Without an overall deadline, one slow/stalled source (an indexer with
+    # its own timeout that's too generous, or one that never resolves at
+    # all) blocks every other already-finished result from ever reaching the
+    # user. Bound the whole wait so the UI always moves on, even if some
+    # tasks are left running in the background.
+    aggregation_timeout = get_search_aggregation_timeout()
+    try:
+        completed_iter = as_completed(tasks, timeout=aggregation_timeout)
+        for future in completed_iter:
+            try:
+                completed_tasks += 1
+                if show_dialog and total_tasks > 0:
+                    percent = int(completed_tasks / total_tasks * 100)
+                    update_dialog(
+                        "Searching", f"Searching... {percent}%", listener.dialog, percent
+                    )
 
-            results = future.result()
-            kodilog(
-                f"Search task completed with {len(results) if results else 0} result(s)",
-                level=xbmc.LOGDEBUG,
-            )
-            results_by_future[future] = results or []
-        except Exception as e:
-            import traceback
+                results = future.result()
+                kodilog(
+                    f"Search task completed with {len(results) if results else 0} result(s)",
+                    level=xbmc.LOGDEBUG,
+                )
+                results_by_future[future] = results or []
+            except Exception as e:
+                import traceback
 
-            error_details = traceback.format_exc()
-            kodilog(f"Error resolving future result in thread pool: {e}\n{error_details}")
+                error_details = traceback.format_exc()
+                kodilog(f"Error resolving future result in thread pool: {e}\n{error_details}")
+    except FuturesTimeoutError:
+        still_running = total_tasks - completed_tasks
+        kodilog(
+            f"Search aggregation timed out after {aggregation_timeout}s with "
+            f"{still_running} of {total_tasks} source(s) still pending; "
+            "showing results gathered so far"
+        )
 
     total_results = []
     for future in tasks:
@@ -1703,7 +1730,8 @@ def _run_simple_search(
         if show_dialog:
             listener.dialog.create("")
 
-        with ThreadPoolExecutor(max_workers=_search_worker_count()) as executor:
+        executor = ThreadPoolExecutor(max_workers=_search_worker_count())
+        try:
             _submit_search_tasks(
                 executor,
                 tasks,
@@ -1726,6 +1754,13 @@ def _run_simple_search(
                 anime_target=anime_target,
             )
             total_results = _collect_search_results(tasks, listener, show_dialog)
+        finally:
+            # ThreadPoolExecutor's own context manager calls shutdown(wait=True),
+            # which would block here until every task finishes - silently
+            # undoing the aggregation timeout _collect_search_results just
+            # enforced. Let any straggler keep running in the background
+            # instead of making the UI wait on it a second time.
+            executor.shutdown(wait=False)
 
     return total_results
 

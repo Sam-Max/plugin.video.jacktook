@@ -1,7 +1,9 @@
+import concurrent.futures
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Optional
 
+import requests
 from requests import Session
 from requests.adapters import HTTPAdapter
 
@@ -43,6 +45,33 @@ class BaseClient(ABC):
         adapter = HTTPAdapter(max_retries=retry)
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
+
+    def safe_get(self, url: str, **kwargs: Any) -> Any:
+        """``session.get`` with a real wall-clock deadline.
+
+        ``requests``'s own ``timeout`` only bounds the gap between individual
+        socket reads, not the request as a whole - a server that trickles
+        data slowly enough (an anti-bot challenge holding the connection
+        open, for instance) never trips it and can hang far past the
+        caller's configured timeout. Enforce that same value as an actual
+        deadline around the whole send+read instead, so a stalled response
+        can't block the caller indefinitely. Uses whatever ``timeout`` the
+        caller already passed in (falling back to ``self.timeout``) rather
+        than a new hardcoded value.
+        """
+        deadline = kwargs.get("timeout", self.timeout)
+        if isinstance(deadline, (tuple, list)):
+            deadline = sum(deadline)
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(self.session.get, url, **kwargs)
+        try:
+            return future.result(timeout=deadline)
+        except concurrent.futures.TimeoutError:
+            raise requests.exceptions.Timeout(
+                f"Request exceeded hard timeout of {deadline}s (stalled response)"
+            )
+        finally:
+            executor.shutdown(wait=False)
 
     @abstractmethod
     def search(
