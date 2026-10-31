@@ -6,6 +6,7 @@ import xbmcgui
 
 from lib.api.fanart.fanart import get_fanart
 from lib.api.imdb.imdb_scraper import get_imdb_extras
+from lib.api.imdb.ratings import get_imdb_ratings
 from lib.clients.tmdb.utils.utils import LANGUAGES, tmdb_get
 from lib.gui.base_window import BaseWindow
 from lib.utils.general.utils import truncate_text
@@ -649,6 +650,16 @@ class ExtrasWindow(BaseWindow):
 
     # ─── IMDb/TMDB Reviews, Trivia, Blunders, Comments ────────────────────────
 
+    def _show_imdb_rating(self):
+        """Replace the TMDB score with the IMDb rating once the IMDb id is known."""
+        try:
+            rating = get_imdb_ratings([self.imdb_id]).get(self.imdb_id)
+            if rating:
+                self.getControl(4005).setLabel(f"IMDb {rating[0]:.1f}")
+                self.setProperty("tmdb_rating", "true")
+        except Exception as e:
+            kodilog(f"Error showing IMDb rating: {e}")
+
     def fetch_imdb_data(self):
         # Wait up to 5 seconds for fetch_details_and_artwork to set self.imdb_id
         self._details_ready.wait(timeout=5)
@@ -658,6 +669,9 @@ class ExtrasWindow(BaseWindow):
             self._fetch_tmdb_reviews()
             self._fetch_trakt_comments()
             return
+
+        if get_setting("imdb_ratings_enabled"):
+            self._show_imdb_rating()
 
         # Fetch all IMDb extras in a single GraphQL call
         try:
