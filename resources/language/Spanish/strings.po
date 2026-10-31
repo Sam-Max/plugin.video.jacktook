@@ -3736,6 +3736,22 @@ msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Cancelar y Esperar"
 
+msgctxt "#90700"
+msgid "Wait for Real-Debrid caching (seconds)"
+msgstr "Esperar la caché de Real-Debrid (segundos)"
+
+msgctxt "#90701"
+msgid "When a torrent is not cached on Real-Debrid, wait up to this many seconds for Real-Debrid to finish downloading it before giving up. 0 disables waiting and fails immediately."
+msgstr "Cuando un torrent no está en caché en Real-Debrid, espera hasta esta cantidad de segundos a que Real-Debrid termine de descargarlo antes de rendirse. 0 desactiva la espera y falla de inmediato."
+
+msgctxt "#90702"
+msgid "Waiting for Real-Debrid to finish caching this torrent..."
+msgstr "Esperando a que Real-Debrid termine de cachear este torrent..."
+
+msgctxt "#90703"
+msgid "Real-Debrid caching"
+msgstr "Caché de Real-Debrid"
+
 msgctxt "#90730"
 msgid "Search with title + year"
 msgstr "Buscar con título + año"
