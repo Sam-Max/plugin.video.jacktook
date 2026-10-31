@@ -3724,20 +3724,20 @@ msgid "Cancel & Wait"
 msgstr "Cancelar e Esperar"
 
 msgctxt "#90700"
-msgid "Wait for debrid caching (seconds)"
-msgstr "Esperar o cache no debrid (segundos)"
+msgid "Wait for Real-Debrid caching (seconds)"
+msgstr "Esperar o cache do Real-Debrid (segundos)"
 
 msgctxt "#90701"
-msgid "When a torrent is not yet cached on your debrid service, wait up to this many seconds for it to finish downloading there before giving up. 0 disables waiting and fails immediately, matching the previous behavior."
-msgstr "Quando um torrent ainda não está em cache no seu serviço debrid, espera até esta quantidade de segundos até que ele termine de ser baixado lá antes de desistir. 0 desativa a espera e falha imediatamente, mantendo o comportamento anterior."
+msgid "When a torrent is not cached on Real-Debrid, wait up to this many seconds for Real-Debrid to finish downloading it before giving up. 0 disables waiting and fails immediately."
+msgstr "Quando um torrent ainda não está em cache no Real-Debrid, espera até esta quantidade de segundos até que o Real-Debrid termine de baixá-lo antes de desistir. 0 desativa a espera e falha imediatamente."
 
 msgctxt "#90702"
-msgid "Waiting for %s to finish caching this torrent..."
-msgstr "Esperando o %s terminar de colocar este torrent em cache..."
+msgid "Waiting for Real-Debrid to finish caching this torrent..."
+msgstr "Esperando o Real-Debrid terminar de colocar este torrent em cache..."
 
 msgctxt "#90703"
-msgid "Debrid caching"
-msgstr "Cache no debrid"
+msgid "Real-Debrid caching"
+msgstr "Cache do Real-Debrid"
 
 msgctxt "#90742"
 msgid "Addon Settings"

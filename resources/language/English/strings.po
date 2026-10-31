@@ -4156,20 +4156,20 @@ msgid "Cancel & Wait"
 msgstr "Cancel & Wait"
 
 msgctxt "#90700"
-msgid "Wait for debrid caching (seconds)"
-msgstr "Wait for debrid caching (seconds)"
+msgid "Wait for Real-Debrid caching (seconds)"
+msgstr "Wait for Real-Debrid caching (seconds)"
 
 msgctxt "#90701"
-msgid "When a torrent is not yet cached on your debrid service, wait up to this many seconds for it to finish downloading there before giving up. 0 disables waiting and fails immediately, matching the previous behavior."
-msgstr "When a torrent is not yet cached on your debrid service, wait up to this many seconds for it to finish downloading there before giving up. 0 disables waiting and fails immediately, matching the previous behavior."
+msgid "When a torrent is not cached on Real-Debrid, wait up to this many seconds for Real-Debrid to finish downloading it before giving up. 0 disables waiting and fails immediately."
+msgstr "When a torrent is not cached on Real-Debrid, wait up to this many seconds for Real-Debrid to finish downloading it before giving up. 0 disables waiting and fails immediately."
 
 msgctxt "#90702"
-msgid "Waiting for %s to finish caching this torrent..."
-msgstr "Waiting for %s to finish caching this torrent..."
+msgid "Waiting for Real-Debrid to finish caching this torrent..."
+msgstr "Waiting for Real-Debrid to finish caching this torrent..."
 
 msgctxt "#90703"
-msgid "Debrid caching"
-msgstr "Debrid caching"
+msgid "Real-Debrid caching"
+msgstr "Real-Debrid caching"
 
 msgctxt "#90712"
 msgid "Views"

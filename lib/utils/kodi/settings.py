@@ -61,10 +61,6 @@ def get_prowlarr_timeout():
     return get_int_setting("prowlarr_timeout")
 
 
-def get_debrid_cache_wait_timeout():
-    return get_int_setting("debrid_cache_wait_timeout")
-
-
 def trakt_client():
     return get_setting("trakt_client", "")
 

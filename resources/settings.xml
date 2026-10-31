@@ -210,6 +210,22 @@
                         </dependency>
                     </dependencies>
                 </setting>
+                <setting id="debrid_cache_wait_timeout" type="integer" label="90700" help="90701">
+                    <default>0</default>
+                    <constraints>
+                        <minimum>0</minimum>
+                        <maximum>600</maximum>
+                        <step>15</step>
+                    </constraints>
+                    <control type="slider" format="integer">
+                        <popup>false</popup>
+                    </control>
+                    <dependencies>
+                        <dependency type="visible">
+                            <condition operator="is" setting="real_debrid_enabled">true</condition>
+                        </dependency>
+                    </dependencies>
+                </setting>
             </group>
             <group id="alldebrid" label="90121">
                 <setting id="alldebrid_enabled" type="boolean" label="30734" help="30824">
@@ -1077,17 +1093,6 @@
                             <condition operator="is" setting="super_quick_play">true</condition>
                         </dependency>
                     </dependencies>
-                </setting>
-                <setting id="debrid_cache_wait_timeout" type="integer" label="90700" help="90701">
-                    <default>120</default>
-                    <constraints>
-                        <minimum>0</minimum>
-                        <maximum>600</maximum>
-                        <step>15</step>
-                    </constraints>
-                    <control type="slider" format="integer">
-                        <popup>false</popup>
-                    </control>
                 </setting>
                 <setting id="autoscrape_next_episode" type="boolean" label="90171" help="90172">
                     <default>false</default>
