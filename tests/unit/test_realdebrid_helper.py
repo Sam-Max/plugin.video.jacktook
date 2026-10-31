@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+import lib.clients.debrid.realdebrid as realdebrid_module
 from lib.api.debrid.base import ProviderException
 from lib.clients.debrid.realdebrid import RealDebridHelper
 from lib.domain.torrent import TorrentStream
@@ -382,3 +383,221 @@ def test_check_cached_stops_after_a_short_page():
 
     assert helper.client.get_user_torrent_list.call_count == 1
     assert [res.infoHash for res in cached_results] == ["only-one"]
+
+
+class _FakeProgress:
+    def __init__(self, canceled=False):
+        self.canceled = canceled
+        self.created = False
+        self.closed = False
+        self.updates = []
+
+    def create(self, heading, message=None):
+        self.created = True
+
+    def update(self, percent, message=None):
+        self.updates.append((percent, message))
+
+    def iscanceled(self):
+        return self.canceled
+
+    def close(self):
+        self.closed = True
+
+
+class _FakeMonitor:
+    def abortRequested(self):
+        return False
+
+    def waitForAbort(self, timeout):
+        return False
+
+
+class _SequenceClient:
+    def __init__(self, snapshots, error_at=None):
+        self._snapshots = list(snapshots)
+        self._error_at = error_at
+        self.calls = 0
+        self.selected = []
+
+    def get_torrent_info(self, torrent_id):
+        self.calls += 1
+        if self._error_at is not None and self.calls == self._error_at:
+            raise RuntimeError("transient Real-Debrid error")
+        index = min(self.calls - 1, len(self._snapshots) - 1)
+        return dict(self._snapshots[index])
+
+    def select_files(self, torrent_id, ids):
+        self.selected.append((torrent_id, ids))
+
+
+def _patch_cache_wait(monkeypatch, timeout, progress=None):
+    progress = progress or _FakeProgress()
+    monkeypatch.setattr(realdebrid_module, "DialogProgress", lambda: progress)
+    monkeypatch.setattr(realdebrid_module, "Monitor", _FakeMonitor)
+    monkeypatch.setattr(
+        realdebrid_module,
+        "translation",
+        lambda string_id: "string-%s" if string_id == 90702 else f"string-{string_id}",
+    )
+    monkeypatch.setattr(
+        realdebrid_module,
+        "get_setting",
+        lambda key, default=None: timeout if key == "debrid_cache_wait_timeout" else default,
+    )
+    return progress
+
+
+def _wait_helper(client):
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = client
+    return helper
+
+
+def test_wait_for_cached_links_returns_immediately_when_links_present(monkeypatch):
+    progress = _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient([{"id": "tid", "status": "downloaded", "links": ["link"]}])
+
+    info = _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert info["links"] == ["link"]
+    assert client.calls == 1
+    assert progress.created is False
+
+
+def test_wait_for_cached_links_disabled_returns_after_single_check(monkeypatch):
+    progress = _patch_cache_wait(monkeypatch, 0)
+    client = _SequenceClient([{"id": "tid", "status": "queued", "files": []}])
+
+    info = _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert "links" not in info
+    assert client.calls == 1
+    assert progress.created is False
+
+
+def test_wait_for_cached_links_polls_until_links_appear(monkeypatch):
+    progress = _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient(
+        [
+            {"id": "tid", "status": "queued", "files": []},
+            {"id": "tid", "status": "downloading", "progress": 40, "files": []},
+            {"id": "tid", "status": "downloaded", "progress": 100, "links": ["link"]},
+        ]
+    )
+
+    info = _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert info["links"] == ["link"]
+    assert client.calls == 3
+    assert progress.created is True
+    assert progress.closed is True
+    assert progress.updates
+
+
+def test_wait_for_cached_links_selects_files_before_waiting(monkeypatch):
+    _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient(
+        [
+            {
+                "id": "tid",
+                "status": "magnet_conversion",
+                "files": [{"id": 11, "path": "/Show/S01E01.mkv"}],
+            },
+            {
+                "id": "tid",
+                "status": "waiting_files_selection",
+                "files": [{"id": 11, "path": "/Show/S01E01.mkv", "selected": 0}],
+            },
+            {
+                "id": "tid",
+                "status": "downloading",
+                "files": [{"id": 11, "path": "/Show/S01E01.mkv", "selected": 1}],
+                "links": ["link"],
+            },
+        ]
+    )
+
+    info = _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert client.selected == [("tid", "11")]
+    assert info["links"] == ["link"]
+
+
+def test_wait_for_cached_links_survives_transient_api_error(monkeypatch):
+    _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient(
+        [
+            {"id": "tid", "status": "queued", "files": []},
+            {"id": "tid", "status": "downloaded", "links": ["link"]},
+        ],
+        error_at=2,
+    )
+
+    info = _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert info["links"] == ["link"]
+    assert client.calls == 3
+
+
+def test_wait_for_cached_links_stops_on_downloaded_without_links(monkeypatch):
+    _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient(
+        [
+            {"id": "tid", "status": "queued", "files": []},
+            {"id": "tid", "status": "downloaded", "links": [], "files": []},
+        ]
+    )
+
+    with pytest.raises(ProviderException, match="finished the download but no links"):
+        _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert client.calls == 2
+
+
+def test_wait_for_cached_links_reports_timeout(monkeypatch):
+    _patch_cache_wait(monkeypatch, 6)
+    client = _SequenceClient([{"id": "tid", "status": "downloading", "progress": 10, "files": []}])
+
+    with pytest.raises(ProviderException, match="within 6s"):
+        _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert client.calls == 3
+
+
+def test_wait_for_cached_links_reports_cancellation(monkeypatch):
+    progress = _FakeProgress(canceled=True)
+    _patch_cache_wait(monkeypatch, 120, progress=progress)
+    client = _SequenceClient([{"id": "tid", "status": "downloading", "files": []}])
+
+    with pytest.raises(ProviderException, match="Cancelled while waiting"):
+        _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert client.calls == 1
+    assert progress.closed is True
+
+
+def test_wait_for_cached_links_reports_terminal_status(monkeypatch):
+    _patch_cache_wait(monkeypatch, 120)
+    client = _SequenceClient(
+        [
+            {"id": "tid", "status": "queued", "files": []},
+            {"id": "tid", "status": "error", "files": []},
+        ]
+    )
+
+    with pytest.raises(ProviderException, match="cannot be downloaded: error"):
+        _wait_helper(client)._wait_for_cached_links("tid")
+
+    assert client.calls == 2
+
+
+def test_get_link_keeps_fail_fast_message_when_wait_disabled():
+    helper = RealDebridHelper.__new__(RealDebridHelper)
+    helper.client = MagicMock()
+    helper.add_magnet = MagicMock(return_value="torrent-id")
+    helper.client.get_torrent_info.return_value = {"links": [], "files": []}
+
+    with patch("lib.clients.debrid.realdebrid.get_setting", return_value=0):
+        with pytest.raises(ProviderException, match=r"No links found in torrent info\."):
+            helper.get_link("info-hash", {})
