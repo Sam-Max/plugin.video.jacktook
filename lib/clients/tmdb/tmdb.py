@@ -35,6 +35,7 @@ from lib.utils.kodi.utils import (
     build_url,
     close_busy_dialog,
     end_of_directory,
+    get_setting,
     kodilog,
     make_list_item,
     notification,
@@ -634,14 +635,38 @@ class TmdbClient(BaseTmdbClient):
         ids["imdb_id"] = tmdb_obj.get("external_ids", {}).get("imdb_id", "")
         tvdb_id = tmdb_obj.get("external_ids", {}).get("tvdb_id", "") or ""
         ids["tvdb_id"] = tvdb_id
-        number_of_seasons = tmdb_obj.get("number_of_seasons", 1) or 1
-        if number_of_seasons == 1:
+        # number_of_seasons excludes season 0 (specials), so the season list is
+        # the only route that can expose them. Decide from the real seasons.
+        seasons = tmdb_obj.get("seasons") or []
+        real_season_numbers = [
+            number
+            for number in (
+                TmdbClient._get_result_value(season, "season_number") for season in seasons
+            )
+            if number and number > 0
+        ]
+        has_specials = any(
+            TmdbClient._get_result_value(season, "season_number") == 0
+            and (TmdbClient._get_result_value(season, "episode_count", 0) or 0) > 0
+            for season in seasons
+        )
+
+        if real_season_numbers:
+            season_count = len(real_season_numbers)
+            single_season = real_season_numbers[0]
+        else:
+            season_count = tmdb_obj.get("number_of_seasons", 1) or 1
+            single_season = season_count
+            has_specials = False
+
+        show_specials = has_specials and bool(get_setting("include_tvshow_specials"))
+        if season_count == 1 and not show_specials:
             TmdbClient.show_episodes_details(
                 tv_name=title,
                 ids=ids,
                 mode=mode,
                 media_type=media_type,
-                season=number_of_seasons,
+                season=single_season,
                 anime=anime,
             )
         else:
