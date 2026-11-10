@@ -281,6 +281,8 @@ def tmdb_get(path, params=None) -> Optional[AsObj]:
         "tv_details": lambda p: TV().details(p["id"] if isinstance(p, dict) else p),
         "season_details": lambda p: Season().details(p["id"], p["season"]),
         "episode_details": lambda p: Episode().details(p["id"], p["season"], p["episode"]),
+        "movie_external_ids": lambda p: Movie().external_ids(p),
+        "tv_external_ids": lambda p: TV().external_ids(p),
         "episode_external_ids": lambda p: Episode().external_ids(
             p["id"], p["season"], p["episode"]
         ),

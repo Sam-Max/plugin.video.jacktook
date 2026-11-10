@@ -1804,6 +1804,12 @@
                     <control type="edit" format="string" />
                 </setting>
             </group>
+            <group id="imdb_ratings" label="91075">
+                <setting id="imdb_ratings_enabled" type="boolean" label="91075" help="91076">
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
             <group id="rpdb" label="90762">
                 <setting id="rpdb_enabled" type="boolean" label="90762" help="90764">
                     <default>false</default>

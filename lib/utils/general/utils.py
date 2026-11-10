@@ -20,6 +20,7 @@ from xbmcgui import Dialog, DialogProgressBG
 from xbmcplugin import addDirectoryItem, setContent, setPluginCategory
 
 from lib.api.fanart.fanart import get_fanart
+from lib.api.imdb.ratings import IMDB_ID_PROPERTY, IMDB_TMDB_REF_PROPERTY
 from lib.api.tmdbv3api.tmdb import TMDb
 from lib.api.trakt.lists_cache import lists_cache
 from lib.api.trakt.main_cache import main_cache
@@ -436,6 +437,8 @@ def set_media_infoTag(list_item, data, fanart_data=None, mode="video", detailed=
     _set_media_type(info_tag, mode)
     _set_identification(info_tag, data)
     _set_artwork(list_item, data, fanart_data)
+    _set_rpdb_poster(list_item, data, mode)
+    _set_rating(list_item, info_tag, data, mode)
     _set_released_info(info_tag, data)
     _set_trakt_ui_state(list_item, info_tag, data, mode)
     _set_simkl_indicator_identity(list_item, data, mode)
@@ -494,6 +497,46 @@ def _set_artwork(list_item, data, fanart_data):
     set_listitem_artwork(list_item, data, fanart_data)
 
 
+def _set_rpdb_poster(list_item, data, mode):
+    # TMDB collections are rendered as "movies" too but carry a collection id and no title.
+    if mode == "movies" and not data.get("title"):
+        return
+    poster = get_rpdb_list_poster(data.get("id"), mode)
+    if poster:
+        list_item.setArt({"poster": poster})
+
+
+def _set_rating(list_item, info_tag, data, mode):
+    # With IMDb ratings on, the TMDB score is only the fallback: add_directory_items_batch
+    # replaces it with the IMDb rating (also shown in Label2) wherever IMDb has one.
+    imdb_enabled = get_setting("imdb_ratings_enabled")
+    if imdb_enabled:
+        _set_imdb_rating_identity(list_item, data, mode)
+    try:
+        rating = float(data.get("vote_average", data.get("rating", 0)) or 0)
+        votes = int(data.get("vote_count", data.get("votes", 0)) or 0)
+    except (TypeError, ValueError):
+        return
+    if rating <= 0:
+        return
+    info_tag.setRating(rating, votes, "tmdb", True)
+    if not imdb_enabled:
+        list_item.setLabel2(f"{rating:.1f}")
+
+
+def _set_imdb_rating_identity(list_item, data, mode):
+    media_type = {"movies": "movie", "tv": "tv"}.get(mode)
+    # TMDB collections are rendered as "movies" too but carry a collection id and no title.
+    if not media_type or (media_type == "movie" and not data.get("title")):
+        return
+    imdb_id = data.get("imdb_id") or ""
+    tmdb_id = data.get("id") or ""
+    if imdb_id:
+        list_item.setProperty(IMDB_ID_PROPERTY, str(imdb_id))
+    if tmdb_id:
+        list_item.setProperty(IMDB_TMDB_REF_PROPERTY, f"{media_type}:{tmdb_id}")
+
+
 def _set_released_info(info_tag, data):
     if "first_air_date" in data:
         first_air_date = data["first_air_date"]
@@ -515,11 +558,6 @@ def _set_released_info(info_tag, data):
 
 
 def _set_detailed_info(info_tag, data, mode):
-    # Rating
-    info_tag.setRating(
-        data.get("vote_average", data.get("rating", 0)),
-        votes=data.get("vote_count", data.get("votes", 0)),
-    )
     info_tag.setUserRating(int(float(data.get("popularity", 0))))
 
     # Classification
@@ -814,6 +852,23 @@ def extract_tmdb_logo_url(data):
 
 def tmdb_url(path, size):
     return f"https://image.tmdb.org/t/p/{size}{path}" if path else ""
+
+
+RPDB_FREE_API_KEY = "t0-free-rpdb"
+RPDB_POSTER_KINDS = {"movies": "movie", "movie": "movie", "tv": "series", "tvshow": "series"}
+
+
+def get_rpdb_list_poster(tmdb_id, mode) -> str:
+    """RPDB poster URL with the IMDb rating drawn on it, or "" when it does not apply.
+
+    The image endpoint takes TMDB ids directly, so list views need no extra request,
+    and it works with RPDB's free key when no personal key is set.
+    """
+    kind = RPDB_POSTER_KINDS.get(mode)
+    if not tmdb_id or not kind or not get_setting("rpdb_enabled"):
+        return ""
+    api_key = get_setting("rpdb_api_key", "") or RPDB_FREE_API_KEY
+    return f"https://api.ratingposterdb.com/{api_key}/tmdb/poster-default/{kind}-{tmdb_id}.jpg"
 
 
 def get_rpdb_poster(imdb_id, api_key):

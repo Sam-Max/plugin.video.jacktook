@@ -790,8 +790,10 @@ def make_list_item(label="", path="", offscreen=True):
 
 def add_directory_items_batch(items):
     if items:
+        from lib.api.imdb.ratings import apply_imdb_ratings
         from lib.utils.simkl_indicators import apply_simkl_indicators
 
+        apply_imdb_ratings(items)
         apply_simkl_indicators(items)
         addDirectoryItems(get_addon_handle(), items)
 
