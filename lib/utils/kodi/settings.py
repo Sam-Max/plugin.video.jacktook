@@ -61,6 +61,10 @@ def get_prowlarr_timeout():
     return get_int_setting("prowlarr_timeout")
 
 
+def get_search_aggregation_timeout():
+    return get_int_setting("search_aggregation_timeout")
+
+
 def trakt_client():
     return get_setting("trakt_client", "")
 

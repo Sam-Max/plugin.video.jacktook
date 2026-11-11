@@ -124,7 +124,7 @@ class StremioAddonCatalogsClient(BaseClient):
         kodilog(f"Stremio catalog request: {log_context}")
 
         try:
-            res = self.session.get(
+            res = self.safe_get(
                 url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
             )
         except Exception:
@@ -165,7 +165,7 @@ class StremioAddonCatalogsClient(BaseClient):
 
         kodilog(f"Stremio meta request: catalog_type={catalog_type}")
 
-        res = self.session.get(
+        res = self.safe_get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
         )
         if res.status_code != 200:
@@ -183,7 +183,7 @@ class StremioAddonCatalogsClient(BaseClient):
 
         kodilog(f"Stremio stream request: catalog_type={catalog_type}")
 
-        res = self.session.get(
+        res = self.safe_get(
             url, headers=USER_AGENT_HEADER, timeout=get_int_setting("stremio_timeout")
         )
         if res.status_code != 200:
@@ -269,7 +269,7 @@ class StremioAddonClient(BaseClient):
                 f"type={'series' if mode == 'tv' or media_type == 'tv' else 'movie'}"
             )
 
-            res = self.session.get(
+            res = self.safe_get(
                 url,
                 headers=USER_AGENT_HEADER,
                 timeout=get_int_setting("stremio_timeout"),
