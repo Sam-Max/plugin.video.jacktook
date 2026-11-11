@@ -3723,6 +3723,22 @@ msgctxt "#90699"
 msgid "Cancel & Wait"
 msgstr "Отменить и Подождать"
 
+msgctxt "#90700"
+msgid "Wait for Real-Debrid caching (seconds)"
+msgstr "Ожидать кеширования Real-Debrid (секунды)"
+
+msgctxt "#90701"
+msgid "When a torrent is not cached on Real-Debrid, wait up to this many seconds for Real-Debrid to finish downloading it before giving up. 0 disables waiting and fails immediately."
+msgstr "Если торрент ещё не закеширован на Real-Debrid, ожидать до указанного числа секунд, пока Real-Debrid завершит его загрузку, прежде чем сдаться. 0 отключает ожидание и завершается сразу."
+
+msgctxt "#90702"
+msgid "Waiting for Real-Debrid to finish caching this torrent..."
+msgstr "Ожидание завершения кеширования этого торрента на Real-Debrid..."
+
+msgctxt "#90703"
+msgid "Real-Debrid caching"
+msgstr "Кеширование Real-Debrid"
+
 msgctxt "#90742"
 msgid "Addon Settings"
 msgstr "Настройки аддона"

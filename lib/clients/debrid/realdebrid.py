@@ -3,6 +3,9 @@ import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple, cast
 
+from xbmc import Monitor
+from xbmcgui import DialogProgress
+
 from lib.api.debrid.base import ProviderException
 from lib.api.debrid.realdebrid import RealDebrid
 from lib.clients.debrid.common import (
@@ -172,10 +175,82 @@ class RealDebridHelper:
             if torrents_ids:
                 self.client.select_files(torrent_info["id"], ",".join(torrents_ids))
 
+    def _wait_for_cached_links(self, torrent_id: str) -> Dict[str, Any]:
+        """Polls Real-Debrid until the torrent finishes caching or a timeout elapses.
+
+        A torrent that is not yet cached on Real-Debrid is downloaded there from the
+        swarm, which can take anywhere from seconds to minutes depending on seeders.
+        Without this wait, a non-instantly-cached torrent fails with "No links found"
+        on the very first check.
+        """
+        torrent_info = self.client.get_torrent_info(torrent_id)
+        if torrent_info.get("links"):
+            return torrent_info
+
+        wait_timeout = int(get_setting("debrid_cache_wait_timeout", 0) or 0)
+        if wait_timeout <= 0:
+            return torrent_info
+
+        poll_interval = 3
+        progress = DialogProgress()
+        monitor = Monitor()
+        canceled = False
+        selection_attempted = False
+        last_status = ""
+        try:
+            progress.create(translation(90703), translation(90702))
+            elapsed = 0
+            while elapsed < wait_timeout:
+                if progress.iscanceled() or monitor.abortRequested():
+                    canceled = True
+                    break
+                if monitor.waitForAbort(poll_interval) or progress.iscanceled():
+                    canceled = True
+                    break
+                elapsed += poll_interval
+                try:
+                    torrent_info = self.client.get_torrent_info(torrent_id)
+                except Exception as exc:
+                    kodilog(f"RealDebridHelper: transient error while waiting for cache: {exc}")
+                    continue
+                last_status = torrent_info.get("status", "")
+                if last_status in ("magnet_error", "error", "virus", "dead"):
+                    break
+                if torrent_info.get("links"):
+                    break
+                if last_status == "waiting_files_selection":
+                    if not torrent_info.get("files") or selection_attempted:
+                        break
+                    self.handle_file_selection(torrent_info, False)
+                    selection_attempted = True
+                if last_status == "downloaded":
+                    break
+                percent = min(int(elapsed * 100 / wait_timeout), 100)
+                progress.update(
+                    percent,
+                    f"{translation(90702)} ({last_status}, {torrent_info.get('progress', 0)}%)",
+                )
+        finally:
+            progress.close()
+
+        if torrent_info.get("links"):
+            return torrent_info
+        if canceled:
+            raise ProviderException(
+                "Cancelled while waiting for Real-Debrid to cache this torrent."
+            )
+        if last_status in ("magnet_error", "error", "virus", "dead"):
+            raise ProviderException(f"Torrent cannot be downloaded: {last_status}")
+        if last_status == "downloaded":
+            raise ProviderException("Real-Debrid finished the download but no links are available.")
+        raise ProviderException(
+            f"Real-Debrid did not finish caching this torrent within {wait_timeout}s."
+        )
+
     def get_link(self, info_hash: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Gets a direct download link for a Real-Debrid torrent."""
         torrent_id = self.add_magnet(info_hash)
-        torrent_info = self.client.get_torrent_info(torrent_id)
+        torrent_info = self._wait_for_cached_links(torrent_id)
         links = torrent_info.get("links", [])
         files = torrent_info.get("files", [])
 
