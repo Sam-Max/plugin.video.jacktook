@@ -46,6 +46,7 @@ from lib.utils.general.utils import (
     build_media_metadata,
     cache_results,
     clean_auto_play_undesired,
+    filter_by_auto_play_quality,
     get_cached_results,
     info_hash_to_magnet,
     normalize_cached_results,
@@ -1990,9 +1991,7 @@ def auto_play(
         return False
 
     preferred_quality = str(get_setting("auto_play_quality"))
-    quality_matches = [
-        r for r in filtered_results if preferred_quality.lower() in r.quality.lower()
-    ]
+    quality_matches = filter_by_auto_play_quality(filtered_results, preferred_quality)
 
     if not quality_matches:
         notification("No sources found with the preferred quality.")

@@ -21,6 +21,7 @@ from lib.utils.general.utils import (
     Indexer,
     IndexerType,
     Players,
+    filter_by_auto_play_quality,
     torrent_clients,
 )
 from lib.utils.kodi.logging import summarize_locator_for_log
@@ -632,7 +633,7 @@ def autoscrape_next_episode(
 
         # Apply auto_play heuristics to select best source
         preferred_quality = str(get_setting("auto_play_quality", "1080p"))
-        quality_matches = [r for r in results if preferred_quality.lower() in r.quality.lower()]
+        quality_matches = filter_by_auto_play_quality(results, preferred_quality)
         if not quality_matches:
             quality_matches = results
 
