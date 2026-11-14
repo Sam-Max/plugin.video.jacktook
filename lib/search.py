@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from typing import Any, List, Mapping, Optional
 
@@ -37,6 +38,7 @@ from lib.gui.search_status_window import SearchStatusWindow, SearchTaskManager
 from lib.player import JacktookPLayer
 from lib.utils.clients.utils import get_client, update_dialog
 from lib.utils.debrid.debrid_utils import check_debrid_cached, is_supported_debrid_type
+from lib.utils.general.processors import Quality
 from lib.utils.general.utils import (
     DialogListener,
     Indexer,
@@ -667,6 +669,36 @@ def _handle_super_quick_play(params: dict) -> bool:
     return False
 
 
+def _enrich_bypassed_quality(results: List[TorrentStream]) -> None:
+    """Fill missing display quality without applying filters or provider sorting."""
+    quality_tokens = {
+        "480p": Quality.LOW,
+        "720p": Quality.MEDIUM,
+        "1080p": Quality.HIGH,
+        "2160": Quality.ULTRA,
+        "2160p": Quality.ULTRA,
+        "4k": Quality.ULTRA,
+    }
+    for result in results:
+        if result.quality not in ("", "N/A", Quality.UNKNOWN.value[1], None):
+            continue
+        metadata = _source_values(result.stremioMetadata)
+        candidates = [result.title] + [
+            metadata.get(field) for field in ("filename", "title", "description", "name")
+        ]
+        for text in candidates:
+            if not isinstance(text, str):
+                continue
+            match = re.search(
+                r"(?<![a-z0-9])(480p|720p|1080p|2160p?|4k)(?![a-z0-9])",
+                text,
+                re.IGNORECASE,
+            )
+            if match:
+                result.quality = quality_tokens[match.group().lower()].value[1]
+                break
+
+
 def _process_search_results(
     results,
     mode,
@@ -697,6 +729,7 @@ def _process_search_results(
 
         bypassed_streams = [res for res in results if is_bypassed(res)]
         other_results = [res for res in results if not is_bypassed(res)]
+        _enrich_bypassed_quality(bypassed_streams)
 
     pre_results = []
     if other_results:

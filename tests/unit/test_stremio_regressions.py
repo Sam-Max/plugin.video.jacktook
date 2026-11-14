@@ -1,5 +1,8 @@
 import json
+from copy import deepcopy
 from unittest.mock import MagicMock
+
+import pytest
 
 from lib import search
 from lib.api.stremio.addon_manager import AddonManager
@@ -12,6 +15,131 @@ from lib.clients.stremio.constants import (
 )
 from lib.domain.torrent import TorrentStream
 from lib.utils.debrid import debrid_utils
+from lib.utils.general import processors, utils
+from lib.utils.general.processors import Quality
+
+
+@pytest.fixture
+def quality_pipeline(monkeypatch):
+    addon = AddonManager(
+        [
+            {
+                "manifest": {"id": "org.torrentio", "name": "Torrentio"},
+                "transportUrl": "https://example.com/manifest.json",
+                "transportName": "custom",
+            }
+        ]
+    ).addons[0]
+    settings = {
+        "stremio_bypass_addons": True,
+        "stremio_bypass_addon_list": addon.key(),
+        "unknown_quality_enabled": False,
+        "torrent_enable": True,
+        "indexers_total_results": 100,
+        "indexers_sort_by": "none",
+        "filter_size_enabled": False,
+    }
+
+    def get_setting(key, default=None):
+        return settings.get(key, default)
+
+    for module in (search, processors, utils):
+        monkeypatch.setattr(module, "get_setting", get_setting)
+    monkeypatch.setattr(search, "check_debrid_cached", lambda *args, **kwargs: [])
+    monkeypatch.setattr(helpers.cache, "get", lambda key: None)
+    client = addon_client.StremioAddonClient(addon)
+
+    def process(streams):
+        return search._process_search_results(
+            streams,
+            "movies",
+            "",
+            1,
+            1,
+            "",
+            "Movie",
+            "movies",
+            False,
+            suppress_debrid_dialog=True,
+            suppress_busy_dialog=True,
+        )
+
+    return client, settings, process
+
+
+@pytest.mark.parametrize("legacy_selection", [False, True])
+def test_bypassed_quality_enrichment_preserves_native_streams(quality_pipeline, legacy_selection):
+    client, settings, process = quality_pipeline
+    if legacy_selection:
+        settings["stremio_bypass_addon_list"] = "torrentio"
+    payloads = [
+        {"title": "Movie.720p.WEB-DL"},
+        {"title": "Unknown release"},
+        {"title": "Movie.1080p.WEB-DL"},
+        {"title": "Movie", "name": "Torrentio\n1080P"},
+        {"title": "Movie.480p"},
+        {"title": "Movie.2160p"},
+        {"title": "Movie", "name": "Torrentio\n4K"},
+        {"title": "Movie", "description": "Movie\n720P"},
+        {"title": "Movie.1080p", "behaviorHints": {"filename": "Movie.mkv"}},
+        {"title": "Movie.2160p"},
+    ]
+    for index, payload in enumerate(payloads):
+        payload.update(
+            url=f"https://example.com/video/{index}",
+            subtitles=[{"url": "https://example.com/sub.vtt", "lang": "eng"}],
+        )
+    streams = client.parse_response({"streams": payloads})
+    streams[-1].quality = Quality.LOW.value[1]
+    before = [deepcopy(vars(stream)) for stream in streams]
+
+    results = process(streams)
+
+    assert len(results) == len(payloads)
+    assert all(result is original for result, original in zip(results, streams))
+    assert [result.quality for result in results] == [
+        quality.value[1] if quality else "N/A"
+        for quality in (
+            Quality.MEDIUM,
+            None,
+            Quality.HIGH,
+            Quality.HIGH,
+            Quality.LOW,
+            Quality.ULTRA,
+            Quality.ULTRA,
+            Quality.MEDIUM,
+            Quality.HIGH,
+            Quality.LOW,
+        )
+    ]
+    for result, original in zip(results, before):
+        assert {key: value for key, value in vars(result).items() if key != "quality"} == {
+            key: value for key, value in original.items() if key != "quality"
+        }
+
+
+def test_non_bypassed_quality_grouping_and_unknown_filter_are_unchanged(quality_pipeline):
+    client, settings, process = quality_pipeline
+    settings["stremio_bypass_addon_list"] = "another-instance"
+    streams = client.parse_response(
+        {
+            "streams": [
+                {"title": title, "url": f"https://example.com/video/{index}"}
+                for index, title in enumerate(
+                    ("Movie.720p", "Unknown release", "Movie.1080p", "Movie.480p", "Movie.2160p")
+                )
+            ]
+        }
+    )
+    before = [deepcopy(stream.stremioMetadata) for stream in streams]
+
+    results = process(streams)
+
+    assert results == [streams[index] for index in (4, 2, 0, 3)]
+    assert [result.quality for result in results] == [
+        quality.value[1] for quality in (Quality.ULTRA, Quality.HIGH, Quality.MEDIUM, Quality.LOW)
+    ]
+    assert [stream.stremioMetadata for stream in streams] == before
 
 
 def test_add_task_if_enabled_managed_submits_enabled_task(monkeypatch):
