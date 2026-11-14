@@ -1550,6 +1550,22 @@ def clean_auto_play_undesired(results: List[TorrentStream]) -> List[TorrentStrea
     ]
 
 
+AUTO_PLAY_QUALITY_ANY = "Any"
+
+
+def filter_by_auto_play_quality(
+    results: List[TorrentStream], preferred_quality: str
+) -> List[TorrentStream]:
+    """Keep the results matching the auto-play quality, in their original order.
+
+    "Any" disables the filter so the source's own ranking decides.
+    """
+    preferred_quality = str(preferred_quality)
+    if preferred_quality.lower() == AUTO_PLAY_QUALITY_ANY.lower():
+        return list(results)
+    return [r for r in results if preferred_quality.lower() in r.quality.lower()]
+
+
 def is_torrent_url(uri):
     res = requests.head(uri, timeout=20, headers=USER_AGENT_HEADER)
     return bool(

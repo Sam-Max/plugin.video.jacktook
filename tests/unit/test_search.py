@@ -1567,3 +1567,55 @@ class TestSearchClient:
             )
 
         mock_infer.assert_not_called()
+
+
+def _quality_source(title, quality):
+    source = _auto_play_source(IndexerType.TORRENT)
+    source.title = title
+    source.quality = quality
+    return source
+
+
+def test_auto_play_any_quality_keeps_source_order():
+    from lib import search
+
+    first = _quality_source("first.720p", "720p")
+    second = _quality_source("second.2160p", "4K")
+    settings = lambda key, default=None: (  # noqa: E731
+        "Any" if key == "auto_play_quality" else _autoplay_setting(key, default)
+    )
+    with patch("lib.search._prepare_stremio_results", return_value=[first, second]), patch(
+        "lib.search.clean_auto_play_undesired", side_effect=lambda r: r
+    ), patch("lib.search.get_setting", side_effect=settings), patch(
+        "lib.search.build_media_metadata", return_value={}
+    ), patch(
+        "lib.search.resolve_playback_url", side_effect=lambda data: data
+    ) as resolve_playback_url, patch("lib.search.JacktookPLayer"):
+        assert search.auto_play([first, second], {"tmdb_id": "1"}, {}, "movies") is True
+
+    assert resolve_playback_url.call_args.kwargs["data"]["title"] == "first.720p"
+
+
+def test_auto_play_fixed_quality_still_filters():
+    from lib import search
+
+    first = _quality_source("first.720p", "720p")
+    second = _quality_source("second.1080p", "1080p")
+    with patch("lib.search._prepare_stremio_results", return_value=[first, second]), patch(
+        "lib.search.clean_auto_play_undesired", side_effect=lambda r: r
+    ), patch("lib.search.get_setting", side_effect=_autoplay_setting), patch(
+        "lib.search.build_media_metadata", return_value={}
+    ), patch(
+        "lib.search.resolve_playback_url", side_effect=lambda data: data
+    ) as resolve_playback_url, patch("lib.search.JacktookPLayer"):
+        assert search.auto_play([first, second], {"tmdb_id": "1"}, {}, "movies") is True
+
+    assert resolve_playback_url.call_args.kwargs["data"]["title"] == "second.1080p"
+
+
+def test_filter_by_auto_play_quality_any_is_case_insensitive_passthrough():
+    from lib.utils.general.utils import filter_by_auto_play_quality
+
+    results = [_quality_source("a", "720p"), _quality_source("b", "4K")]
+    assert filter_by_auto_play_quality(results, "any") == results
+    assert filter_by_auto_play_quality(results, "4K") == [results[1]]
